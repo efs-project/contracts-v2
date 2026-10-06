@@ -1,0 +1,14 @@
+{
+  "name": "efs-contracts-v2-foundation",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@12.6.0",
+  "devEngines": {
+    "runtime": { "name": "node", "version": "24.21.0", "onFail": "error" },
+    "packageManager": { "name": "pnpm", "version": "12.6.0", "onFail": "error" }
+  },
+  "scripts": {
+    "check": "node tools/checks.mjs"
+  }
+}

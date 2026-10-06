@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MIT
+packages: []
+strictDepBuilds: true
+allowBuilds: {}
+minimumReleaseAge: 1440

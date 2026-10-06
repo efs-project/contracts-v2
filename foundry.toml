@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+# Tooling fixture settings only. Future protocol build/identity policy remains undecided.
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["dependencies"]
+solc_version = "0.8.37"
+evm_version = "prague"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+fuzz = { runs = 32 }
+
+[profile.ci]
+fuzz = { runs = 256 }
+
+[fmt]
+line_length = 100
+
+[dependencies]
+forge-std = "1.16.2"
+
+[soldeer]
+remappings_generate = false
+remappings_regenerate = false
