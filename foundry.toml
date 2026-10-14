@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Tooling fixture settings only. Future protocol build/identity policy remains undecided.
+# Build and identity policy for the EFS v2 contracts (see docs/BUILD-IDENTITY.md).
 [profile.default]
 src = "src"
 test = "test"
@@ -10,16 +10,29 @@ evm_version = "prague"
 optimizer = true
 optimizer_runs = 200
 via_ir = true
+# Identity policy (D1): runtime bytes carry no metadata hash, only the 3-byte solc version trailer,
+# so comment/path/remapping changes never change a rule codehash or a Type id.
+bytecode_hash = "none"
+cbor_metadata = true
 fuzz = { runs = 32 }
 
 [profile.ci]
 fuzz = { runs = 256 }
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
+
+# Glamsterdam (EIP-7954/8037/8038) is live on Sepolia since 2026-10-06 with no mainnet date. Release bytes
+# stay `prague`; solc 0.8.37 treats `amsterdam` as experimental, so repriced gas is measured on anvil with
+# `--hardfork` at the size/gas checkpoint rather than through a compiler profile.
 
 [fmt]
 line_length = 100
 
 [dependencies]
-forge-std = "1.16.2"
+forge-std = "1.17.0"
+"@openzeppelin-contracts" = "5.6.1"
+"@openzeppelin-contracts-upgradeable" = "5.6.1"
 
 [soldeer]
 remappings_generate = false
