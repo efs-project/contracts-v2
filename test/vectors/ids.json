@@ -1,0 +1,57 @@
+{
+  "schema": "efs2/vectors/ids/1",
+  "generator": "tools/vectors.mjs (viem keccak256 + encodeAbiParameters)",
+  "domains": {
+    "record": "0xa9b8140bd3398d14fe72a4e868ca64b6bb119c3ee51354b50457d56da12552e3",
+    "position": "0x8d799c7b7064c52f591ec7dd83328143cf1489beb1af2c305d90cf2cde7407e3",
+    "binding": "0xfbc7067cf7411d9b4b89871c89041dd259dadaba90b115026f41239cbbf53c06",
+    "scope": "0x92daa38d3049c86476ecdbfb3e06a74ab958d8ed37d583b3c0d9173128f840f3",
+    "posting": "0x15362da6306364a58a4c0a713b93f4a9bbdeb993c835d3435f5c97c8d5a0afd2",
+    "subject": "0xc0c0cdafc7b89f00f1f976e698195cb28121446967001f8bd7840204218bcb20",
+    "principal": "0x7f4ebbf8f6e4cdd030c23f45748ab93cbccd84be9aa2ac2b542059e0052e46cb",
+    "type": "0x44ac7bc1be9e89e7c6fc3842810f6c4a263682285ecc7f254d0a7fe7b2af799e"
+  },
+  "inputs": {
+    "eoa": "0x1111111111111111111111111111111111111111",
+    "contractAddress": "0x2222222222222222222222222222222222222222",
+    "realmOrigin": "0x6500744ab1e8f985f5ce5e56b7f81dc711047069e079e46d54c2451c78c1967d",
+    "shape": "0x3741564424fd4a6edc70777734a05431f75cb968b3653608a1709a941defb4e0",
+    "ruleId": "0x1e2bd6bb526c34926ddf4a4956d23d13440fbfb349c391f600b698e3ecca21a0",
+    "refTypes": [
+      "0x554de9ffec3fd1a0c2299b4dab4ec0dc84845dea41aef9f8e8996794320d1d6d",
+      "0x4e6f6147a4aae0655596e0e750c4bffb7d69ece323bdde62a1cb818728f1ce19"
+    ],
+    "body": "0x68656c6c6f2c20656673",
+    "bodyHash": "0x0f57bb7c650b1c86948d492a978437603a46c4101d04313e4f18213a49b530f1",
+    "salt": "0xb17ab2c5b00945286ef1b96e7beb572174fece6cc682aba127d7efbcccf245a9",
+    "purpose": "0x07167a05890e9fcaccbdf11abbb65a3aa14bccfe41825ce441803003862ce5df",
+    "role": "0x3ab8f5737411af4fd40f522d0952f0b4cd40d770c063daded275786a57c0a584",
+    "ordinal": 3,
+    "spec": 2,
+    "scalarKind": 7,
+    "value": "0xb1dcd004c56bce7c06bb44bf61eccf12120f79be2abcf24023af5bcb71d9e668",
+    "algorithm": "0xaf55790ffe3aced4bba4137afd958140c8b3138f4a53685d60bc4f3afe4e94bb"
+  },
+  "outputs": {
+    "eoaPrincipal": "0x0000000000000000000000001111111111111111111111111111111111111111",
+    "contractPrincipal": "0x11f69132d8f9e260f9d6107b3fc57fba4e37c212db3da836ced58b09730bea03",
+    "typeId": "0xd36115a3269e7bf575897169b12ae56c4ed055b1fa568be7e3190627b2c52c8a",
+    "typeIdNoRefs": "0xd77656552a2285731f4e375819bd86803744f9a356406916daa91ba5fac9416b",
+    "recordId": "0x1768dbf80ba6d159b73a0ebfebcfdc80fdb737ecb2b53db3fa1dc92658a0d631",
+    "recordFromHash": "0x1768dbf80ba6d159b73a0ebfebcfdc80fdb737ecb2b53db3fa1dc92658a0d631",
+    "subjectId": "0xd51c23611574708b6c3b6f605dbda24bf40ce6bfa5dcf1bd341c1b48e300dd45",
+    "positionKey": "0xd704d6a0469b97120baae1751b073ce96ed5ceb49c9a72255106214df93463ee",
+    "bindingKey": "0xbfd5d71f12554e9f911148d9288a71248017cabdf8ff97c26dcfe02a9b15eea5",
+    "scopeKey": "0x4887bb75b669ed00eb6644579cbc898d83e1b9cf28aeefea4445c72761e641ca",
+    "byTypeList": "0xce0514c955277d0f3a2496a911333427afd8f1083ab5f13c1e2aa7270ac89ee4",
+    "byAuthorList": "0x70686cc45b620f4d21ca424691211f6e3b74c15c8962170cf8ebdd0a35f3a8b0",
+    "backlinkList": "0xec194ae439be15d35126b10f2a08139f1ec6403c92a1f14ad14092f868e65678",
+    "historyList": "0xbb55034f2e93a774ee4e34577cd1fdaaac29db6578658af9c24c7911056fe4f4",
+    "scopeList": "0x703e2a183633daf929ce8200252f5fd140c71a64b8b6aa6190f591a8b3d03b0f",
+    "referenceList": "0xa6004f30324c30d83978ab8c46f7d019e7bdc6d7dab19f4d42d95ebdc8f5a59e",
+    "byRecordList": "0x84726077a69601cdb0033f4041fc04c14792a56bd72ccb17df53a7cf55058975",
+    "uniqueByTypeList": "0x63cfb1877b30eb1bbbeaaf04852d130ffd5a70734147c7ff9c3d399bba13a393",
+    "scalarList": "0xc0599a326390f23ef169d2d4ce56b13d14e6fdd944ba980e49963c978e38a707",
+    "digestList": "0x3effaccbe9472d136e8d367292b88a54f00085282d63828dacc934b74edc17bf"
+  }
+}
