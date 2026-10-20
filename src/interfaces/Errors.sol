@@ -77,7 +77,7 @@ error E_TRANSITION_COOLDOWN(uint48 until);
 error E_TRANSITION_TARGET(uint32 target);
 error E_MIGRATION_SCOPE(bytes32 root);
 error E_HOT_ABI(address unit);
-error E_CODE_SHAPE(address target, uint8 reason); // 1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 proxy shape
+error E_CODE_SHAPE(address target, uint8 reason); // 1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 EIP-1167 proxy 6 codehash mismatch
 error E_CONTROLLER(uint8 field); // 1 controller 2 codehash 3 owner
 error E_FREEZE_PRECHECK(uint8 check);
 error E_RESERVED(uint8 field, uint256 value);

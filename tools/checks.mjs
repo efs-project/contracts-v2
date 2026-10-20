@@ -116,7 +116,9 @@ for (const path of files("src").filter((p) => p.endsWith(".sol"))) {
 }
 
 // Opcode lints over built artifacts (design I3, §3.1 row 2): the zero-write ingress and the apply delegate.
-// Push data and the CBOR trailer named by the last two bytes are skipped, like CodeScan on chain.
+// The same reachability rule as CodeScan on chain: push data is skipped; a halting opcode (STOP, JUMP, RETURN,
+// REVERT, INVALID) ends reachability until the next JUMPDEST, so compiler data sections placed after INVALID
+// (32-byte constants, the CBOR trailer) are not misread as code unless a JUMPDEST byte makes them reachable.
 const forbiddenIn = {
   "out/LedgerIngress.sol/LedgerIngress.json": { SSTORE: 0x55, TSTORE: 0x5d, CREATE: 0xf0, CALLCODE: 0xf2, DELEGATECALL: 0xf4, CREATE2: 0xf5, SELFDESTRUCT: 0xff },
   "out/LedgerApply.sol/LedgerApply.json": { CREATE: 0xf0, CALL: 0xf1, CALLCODE: 0xf2, DELEGATECALL: 0xf4, CREATE2: 0xf5, STATICCALL: 0xfa, SELFDESTRUCT: 0xff },
@@ -125,13 +127,16 @@ const pendingLints = [];
 for (const [artifact, forbidden] of Object.entries(forbiddenIn)) {
   if (!existsSync(join(root, artifact))) { pendingLints.push(artifact); continue; }
   const code = Buffer.from(JSON.parse(read(artifact)).deployedBytecode.object.replace(/^0x/, ""), "hex");
-  const trailer = code.length >= 2 ? code.readUInt16BE(code.length - 2) + 2 : 0;
-  const end = trailer <= code.length ? code.length - trailer : code.length;
   const byName = Object.fromEntries(Object.entries(forbidden).map(([n, op]) => [op, n]));
-  for (let pc = 0; pc < end; pc++) {
+  const halting = new Set([0x00, 0x56, 0xf3, 0xfd, 0xfe]);
+  let reachable = true;
+  for (let pc = 0; pc < code.length; pc++) {
     const op = code[pc];
     if (op >= 0x60 && op <= 0x7f) { pc += op - 0x5f; continue; }
+    if (op === 0x5b) { reachable = true; continue; }
+    if (!reachable) continue;
     assert.ok(!(op in byName), `${artifact}: forbidden opcode ${byName[op]} at pc ${pc}`);
+    if (halting.has(op)) reachable = false;
   }
 }
 
