@@ -1,0 +1,200 @@
+{
+  "schema": "efs-artifact/1",
+  "name": "DirectoryAliasRule",
+  "source": "src/profiles/DirectoryAliasRule.sol",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "directoryTypeId_",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "accept",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type": "tuple",
+          "internalType": "struct AcceptContext",
+          "components": [
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "realmId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "grade",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "ledger",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "index",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "registry",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "descriptorBlob",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "customPredicate",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "bindingId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "refs",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "refHeaders",
+          "type": "tuple[]",
+          "internalType": "struct RefHeader[]",
+          "components": [
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "firstAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "length",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "word0",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "word1",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "word2",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "directoryTypeId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "error",
+      "name": "E_FILES_CONTEXT",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "caller",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "E_FILES_REFUSED",
+      "inputs": [
+        {
+          "name": "code",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ]
+    }
+  ],
+  "methodIdentifiers": {
+    "accept((bytes32,bytes32,bytes32,uint64,uint32,uint8,uint8,address,address,address,address,address,bytes32),bytes,bytes32[],(bytes32,uint64,uint32,bytes32,bytes32,bytes32)[])": "90109bcc",
+    "directoryTypeId()": "6270af6c"
+  },
+  "bytecode": "0x608034604d57601f61049038819003918201601f19168301916001600160401b03831184841017605157808492602094604052833981010312604d57515f5560405161042a90816100668239f35b5f80fd5b634e487b7160e01b5f52604160045260245ffdfe6080806040526004361015610012575f80fd5b5f3560e01c9081636270af6c146103a357506390109bcc14610032575f80fd5b346102605736600319016102008112610260576101a013610260576101a43567ffffffffffffffff811161026057366023820112156102605780600401359067ffffffffffffffff8211610260573660248383010111610260576101c43567ffffffffffffffff811161026057366023820112156102605780600401359067ffffffffffffffff821161026057602436918360051b010111610260576101e4359067ffffffffffffffff821161026057366023830112156102605781600401359167ffffffffffffffff8311610260576024369160c08502010111610260576101196103bc565b336001600160a01b039091160361037757159081159161036d575b506103595760408203610345578160201161026057602481013591604011610260576044013581156103315760018103610277575060a06001600160a01b0361017b6103bc565b169160246040518094819363488eb5a360e01b835260048301525afa801561026c575f915f916101f2575b5067ffffffffffffffff16159081156101e6575b506101d2575b60405163240426f360e21b8152602090f35b63157bf4b960e21b5f52600560045260245ffd5b90505f5414155f6101ba565b91505060a0813d60a011610264575b8161020e60a093836103d2565b8101031261026057805161022460208301610408565b91604081015163ffffffff8116036102605780610245606060809301610408565b50015160ff811603610260579067ffffffffffffffff6101a6565b5f80fd5b3d9150610201565b6040513d5f823e3d90fd5b60020361031e5760206001600160a01b036102906103bc565b1691602460405180948193636e40f6ed60e11b835260048301525afa801561026c575f906102dd575b67ffffffffffffffff9150166101c05763157bf4b960e21b5f52600660045260245ffd5b506020813d602011610316575b816102f7602093836103d2565b810103126102605761031167ffffffffffffffff91610408565b6102b9565b3d91506102ea565b63157bf4b960e21b5f526004805260245ffd5b63157bf4b960e21b5f52600360045260245ffd5b63157bf4b960e21b5f52600260045260245ffd5b63157bf4b960e21b5f52600160045260245ffd5b905015155f610134565b61037f6103bc565b63479684d560e11b5f9081526001600160a01b039190911660045233602452604490fd5b34610260575f366003190112610260576020905f548152f35b60e4356001600160a01b03811681036102605790565b90601f8019910116810190811067ffffffffffffffff8211176103f457604052565b634e487b7160e01b5f52604160045260245ffd5b519067ffffffffffffffff821682036102605756fea164736f6c6343000825000a",
+  "deployedBytecode": "0x6080806040526004361015610012575f80fd5b5f3560e01c9081636270af6c146103a357506390109bcc14610032575f80fd5b346102605736600319016102008112610260576101a013610260576101a43567ffffffffffffffff811161026057366023820112156102605780600401359067ffffffffffffffff8211610260573660248383010111610260576101c43567ffffffffffffffff811161026057366023820112156102605780600401359067ffffffffffffffff821161026057602436918360051b010111610260576101e4359067ffffffffffffffff821161026057366023830112156102605781600401359167ffffffffffffffff8311610260576024369160c08502010111610260576101196103bc565b336001600160a01b039091160361037757159081159161036d575b506103595760408203610345578160201161026057602481013591604011610260576044013581156103315760018103610277575060a06001600160a01b0361017b6103bc565b169160246040518094819363488eb5a360e01b835260048301525afa801561026c575f915f916101f2575b5067ffffffffffffffff16159081156101e6575b506101d2575b60405163240426f360e21b8152602090f35b63157bf4b960e21b5f52600560045260245ffd5b90505f5414155f6101ba565b91505060a0813d60a011610264575b8161020e60a093836103d2565b8101031261026057805161022460208301610408565b91604081015163ffffffff8116036102605780610245606060809301610408565b50015160ff811603610260579067ffffffffffffffff6101a6565b5f80fd5b3d9150610201565b6040513d5f823e3d90fd5b60020361031e5760206001600160a01b036102906103bc565b1691602460405180948193636e40f6ed60e11b835260048301525afa801561026c575f906102dd575b67ffffffffffffffff9150166101c05763157bf4b960e21b5f52600660045260245ffd5b506020813d602011610316575b816102f7602093836103d2565b810103126102605761031167ffffffffffffffff91610408565b6102b9565b3d91506102ea565b63157bf4b960e21b5f526004805260245ffd5b63157bf4b960e21b5f52600360045260245ffd5b63157bf4b960e21b5f52600260045260245ffd5b63157bf4b960e21b5f52600160045260245ffd5b905015155f610134565b61037f6103bc565b63479684d560e11b5f9081526001600160a01b039190911660045233602452604490fd5b34610260575f366003190112610260576020905f548152f35b60e4356001600160a01b03811681036102605790565b90601f8019910116810190811067ffffffffffffffff8211176103f457604052565b634e487b7160e01b5f52604160045260245ffd5b519067ffffffffffffffff821682036102605756fea164736f6c6343000825000a",
+  "immutables": [],
+  "storageLayout": "test/snapshots/layout/",
+  "interfaces": "test/snapshots/abi/"
+}

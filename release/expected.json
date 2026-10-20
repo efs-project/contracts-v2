@@ -1,0 +1,94 @@
+{
+  "schema": "efs-fixture-expected/1",
+  "seedVersion": "efs-fixture-seed/1",
+  "chainId": 31337,
+  "ledger": "0x2939D531EB8bd5D5227fF76f193eE5443e4FC07c",
+  "executionSet": "0x673d4b453ef8512bdcaa84ff7f0d30dffb6a54a7a382ebeca007bb964c912b6d",
+  "revision": 1,
+  "root": {
+    "directoryRecordId": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+    "subjectId": "0xbf64fbc93b9cf24114f8bcc65f37a45b95be4369488da9a01bf22b31e8ed2b34",
+    "principalId": "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+  },
+  "folder": {
+    "name": "docs",
+    "directoryRecordId": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+    "subjectId": "0xedf5c1d34b036c512819a1a9b92ce9c42063dd97618f3efedecc5821268935ff",
+    "nameRecordId": "0xd72aeae668a8b6c3366a67d8ee592864900d7c64a09890b98df77113dc168748",
+    "bindingKey": "0x5b6a2ecfedaec29782f42b57eb130b3a23ddde29c810309c38de086fa827f33e",
+    "scopeKey": "0xb16847514d75cfaee9d32b8972a84851e92f0ac20882b57a2f07a480ada78a8f"
+  },
+  "file": {
+    "name": "readme.txt",
+    "subjectId": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+    "rootRecordId": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+    "nameRecordId": "0x2caced3464a66c078e11adc1f871c10058ad3ecd4683a53bb8132cceb4547e39",
+    "headKey": "0x6e6b149b64d17813aa375cef8b3efc5c20a7b6e25d5d7f5da65aef72a1964d6e",
+    "bindingKey": "0xeb8dec99e7deaec3332d0e20983c46337290a136de40edbfc84d70f30220d25e",
+    "scopeKey": "0x928db50e5df04b44c90f45d67399cc23ea726beff14ddee25532353134b1a075",
+    "body": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d14d656574696e672061742031303a30302e0a"
+  },
+  "counts": {
+    "admissions": 11,
+    "records": 5,
+    "bindings": 3,
+    "publications": 3
+  },
+  "typeIds": {
+    "files-root/1": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+    "files-child/1": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+    "files-directory/1": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+    "files-name/2": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+    "files-bytes/1": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+    "files-content/1": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+    "files-external/1": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+    "directory-alias/1": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
+    "realm-notice/1": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903"
+  },
+  "catalogCount": 9,
+  "heads": [
+    {
+      "key": "0x5b6a2ecfedaec29782f42b57eb130b3a23ddde29c810309c38de086fa827f33e",
+      "state": 1,
+      "revision": 1,
+      "target": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+      "what": "FOLDER root/docs → docs directory"
+    },
+    {
+      "key": "0x6e6b149b64d17813aa375cef8b3efc5c20a7b6e25d5d7f5da65aef72a1964d6e",
+      "state": 1,
+      "revision": 1,
+      "target": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+      "what": "HEAD readme → files-root/1 record"
+    },
+    {
+      "key": "0xeb8dec99e7deaec3332d0e20983c46337290a136de40edbfc84d70f30220d25e",
+      "state": 1,
+      "revision": 1,
+      "target": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+      "what": "FOLDER docs/readme.txt → file subject"
+    }
+  ],
+  "records": [
+    {
+      "id": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+      "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4"
+    },
+    {
+      "id": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+      "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4"
+    },
+    {
+      "id": "0xd72aeae668a8b6c3366a67d8ee592864900d7c64a09890b98df77113dc168748",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c"
+    },
+    {
+      "id": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+      "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0"
+    },
+    {
+      "id": "0x2caced3464a66c078e11adc1f871c10058ad3ecd4683a53bb8132cceb4547e39",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c"
+    }
+  ]
+}

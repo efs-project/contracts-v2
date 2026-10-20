@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "efs-contracts-release/1",
+  "title": "efs-contracts-release/1 — the release manifest of design §13",
+  "description": "Written by tools/release.mjs from the identity build (out/) and the double build (out/release-ast). Digest = sha256 of the file bytes.",
+  "type": "object",
+  "required": ["schema", "version", "status", "source", "toolchain", "buildPlatform", "reproducibility", "files", "contracts", "profiles", "consumer", "privilegedRoles", "errors", "abi", "vectors", "dependencyRoot", "deployPlan"],
+  "properties": {
+    "schema": { "const": "efs-contracts-release/1" },
+    "toolchain": { "type": "object", "required": ["solc", "evmVersion", "optimizer", "viaIR", "bytecodeHash", "cborMetadata"], "properties": { "bytecodeHash": { "const": "none" }, "evmVersion": { "const": "prague" } } },
+    "reproducibility": { "type": "object", "required": ["builds", "unitsCompared", "runtimeAndInitcodeIdentical"] },
+    "files": { "type": "object", "additionalProperties": { "type": "string" } },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["source", "runtimeHash", "deployedBytecodeHash", "initcodeHash", "immutables", "sizes", "realmSpecific"],
+        "properties": { "immutables": { "type": "array", "items": { "type": "object", "required": ["name", "offsets"] } } }
+      }
+    },
+    "profiles": { "type": "object", "required": ["declarationKey", "types", "acceptors", "wrappers", "index", "limits", "layoutId", "hotAbiId", "statusVocabularyId", "storeAbiIds", "indexProfiles", "crossCheck"] },
+    "errors": { "type": "object", "required": ["path", "sha256", "count"] }
+  }
+}
