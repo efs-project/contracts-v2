@@ -22,7 +22,20 @@ export const DOM = {
   subject: h("efs2/subject/1"),
   principal: h("efs2/principal/1"),
   type: h("efs2/type/1"),
+  roleScope: h("efs2/vk/role-scope/1"),
+  realmOrigin: h("efs2/realm-origin/1"),
+  realm: h("efs2/realm/1"),
+  publication: h("efs2/publication/1"),
+  nativeIntent: h("efs2/native-intent/1"),
+  signedIntent: h("efs2/signed-intent/1"),
+  profile: h("efs2/acceptance-profile/1"),
+  describedShape: h("efs2/described-shape/1"),
+  roleKey: h("efs2/role-key/1"),
+  executionSet: h("efs2/execution-set/1"),
 };
+// Index families of design §10.2: keccak("efs2/family/<name>/1").
+export const FAMILIES = ["by-type", "by-author", "backlink", "history", "scope", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "roster", "live-scope"];
+export const familyId = (name) => keccak256(stringToHex(`efs2/family/${name}/1`));
 export const KIND = { byType: 1, byAuthor: 4, backlink: 5, history: 8, scope: 10, referencePosition: 11, byRecord: 12, uniqueByType: 13, scalar: 14, digest: 15 };
 
 export const keys = {
@@ -36,6 +49,12 @@ export const keys = {
   binding: (principal, position) => k(["bytes32", "bytes32", "bytes32"], [DOM.binding, principal, position]),
   scope: (principal, purpose, subject) => k(["bytes32", "bytes32", "bytes32", "bytes32"], [DOM.scope, principal, purpose, subject]),
   posting: (typeId, kind, ordinal, valueKey) => k(["bytes32", "bytes32", "uint256", "uint256", "bytes32"], [DOM.posting, typeId, BigInt(kind), BigInt(ordinal), valueKey]),
+  roleScope: (principal, purpose, role) => k(["bytes32", "bytes32", "bytes32", "bytes32"], [DOM.roleScope, principal, purpose, role]),
+  realmOrigin: (chainId, core, salt) => k(["bytes32", "uint64", "address", "bytes32"], [DOM.realmOrigin, chainId, core, salt]),
+  realmId: (origin, profile) => k(["bytes32", "bytes32", "uint16"], [DOM.realm, origin, profile]),
+  publicationId: (principal, intentDigest) => k(["bytes32", "bytes32", "bytes32"], [DOM.publication, principal, intentDigest]),
+  roleKey: (purpose, role) => k(["bytes32", "bytes32", "bytes32"], [DOM.roleKey, purpose, role]),
+  shape: (descriptor) => k(["bytes32", "bytes"], [DOM.describedShape, descriptor]),
 };
 const zero = pad("0x", { size: 32 });
 keys.byTypeList = (t) => keys.posting(t, KIND.byType, 0, zero);
@@ -78,8 +97,10 @@ const positionKey = keys.position(inputs.purpose, subjectId, inputs.role);
 const bindingKey = keys.binding(eoaPrincipal, positionKey);
 const scopeKey = keys.scope(eoaPrincipal, inputs.purpose, subjectId);
 
+const realmOrigin = keys.realmOrigin(11155111n, inputs.contractAddress, inputs.salt);
 const vectors = {
   schema: "efs2/vectors/ids/1",
+  families: Object.fromEntries(FAMILIES.map((n) => [n, familyId(n)])),
   generator: "tools/vectors.mjs (viem keccak256 + encodeAbiParameters)",
   domains: DOM,
   inputs,
@@ -104,6 +125,13 @@ const vectors = {
     uniqueByTypeList: keys.uniqueByTypeList(typeId),
     scalarList: keys.scalarList(typeId, inputs.spec, inputs.scalarKind, inputs.value),
     digestList: keys.digestList(inputs.algorithm, inputs.value),
+    roleScopeKey: keys.roleScope(eoaPrincipal, inputs.purpose, inputs.role),
+    realmOrigin,
+    realmId: keys.realmId(realmOrigin, 1),
+    contractPrincipalOfOrigin: keys.contractPrincipal(realmOrigin, inputs.contractAddress),
+    publicationId: keys.publicationId(eoaPrincipal, inputs.bodyHash),
+    roleKey: keys.roleKey(inputs.purpose, inputs.role),
+    shape: keys.shape(inputs.body),
   },
 };
 if (keys.recordFromHash(typeId, inputs.bodyHash) !== recordId) throw new Error("record derivations disagree");

@@ -33,6 +33,29 @@ library Keys {
     // declared rule identity, so the same descriptor yields the same id on every Realm and a changed
     // descriptor is a different Type, never a re-registration.
     bytes32 internal constant DOM_TYPE = keccak256("efs2/type/1");
+    // Role-scope key: keccak256(abi.encode(DOM_ROLE_SCOPE, principal, purpose, role)) — the index family 16 key
+    bytes32 internal constant DOM_ROLE_SCOPE = keccak256("efs2/vk/role-scope/1");
+    // Realm origin: keccak256(abi.encode(DOM_REALM_ORIGIN, genesisChainId, coreAddress, realmSalt)) — the one
+    // identity input that names a chain and an address; it qualifies contract principals (design §1.2 row 12)
+    bytes32 internal constant DOM_REALM_ORIGIN = keccak256("efs2/realm-origin/1");
+    // Realm id: keccak256(abi.encode(DOM_REALM, realmOrigin, genesisExecutionProfileId))
+    bytes32 internal constant DOM_REALM = keccak256("efs2/realm/1");
+    // Publication id: keccak256(abi.encode(DOM_PUBLICATION, principalId, intentDigest)) — emitted, never stored
+    bytes32 internal constant DOM_PUBLICATION = keccak256("efs2/publication/1");
+    // Native intent digest (design §5.8): keccak256(abi.encode(DOM_NATIVE_INTENT, realmId, principalId, nonce,
+    // deadline, expectedExecutionSet, expectedAcceptanceProfile, guardHash, actionsHash)) — the retry key
+    bytes32 internal constant DOM_NATIVE_INTENT = keccak256("efs2/native-intent/1");
+    // Signed intent digest (chain-free retry key): keccak256(abi.encode(DOM_SIGNED_INTENT, hashStruct(intent), actionsHash))
+    bytes32 internal constant DOM_SIGNED_INTENT = keccak256("efs2/signed-intent/1");
+    // Acceptance profile fold seed: keccak256(abi.encode(DOM_PROFILE, executionSet)), folded per leaf (design §6.2)
+    bytes32 internal constant DOM_PROFILE = keccak256("efs2/acceptance-profile/1");
+    // Descriptor shape: keccak256(abi.encode(DOM_DESCRIBED_SHAPE, descriptorBytes))
+    bytes32 internal constant DOM_DESCRIBED_SHAPE = keccak256("efs2/described-shape/1");
+    // Registry role key: keccak256(abi.encode(DOM_ROLE_KEY, purpose, role))
+    bytes32 internal constant DOM_ROLE_KEY = keccak256("efs2/role-key/1");
+    // Execution set (design §8.1): keccak256(abi.encode(DOM_EXECUTION_SET, layoutId, domainSeparator, ComponentSet,
+    // revisionOrdinal, executionProfileId, capabilities, acceptedChainId, limitsProfileId))
+    bytes32 internal constant DOM_EXECUTION_SET = keccak256("efs2/execution-set/1");
 
     // Posting-list kinds. 2, 3, 6, 7, 9 are reserved (never minted).
     uint8 internal constant KIND_BY_TYPE = 1;
@@ -75,6 +98,57 @@ library Keys {
             if (prefix == hex"ef0100") return principal(account);
         }
         return contractPrincipal(realmOrigin, account);
+    }
+
+    /// Role-scope key (index family 16): one list per (principal, purpose, role).
+    function roleScope(bytes32 principalId, bytes32 purpose, bytes32 role)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(DOM_ROLE_SCOPE, principalId, purpose, role));
+    }
+
+    /// Realm origin: fixed at genesis; the only id that names a chain and an address.
+    function realmOrigin(uint64 genesisChainId, address core, bytes32 realmSalt)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(DOM_REALM_ORIGIN, genesisChainId, core, realmSalt));
+    }
+
+    /// Realm id over the origin and the genesis execution profile.
+    function realmId(bytes32 origin, uint16 genesisExecutionProfileId)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(DOM_REALM, origin, genesisExecutionProfileId));
+    }
+
+    /// Publication id on every lane (design §7.3).
+    function publicationId(bytes32 principalId, bytes32 intentDigest)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(DOM_PUBLICATION, principalId, intentDigest));
+    }
+
+    /// Registry role key for role-expectation rows.
+    function roleKey(bytes32 purpose, bytes32 role) internal pure returns (bytes32) {
+        return keccak256(abi.encode(DOM_ROLE_KEY, purpose, role));
+    }
+
+    /// Descriptor shape commitment (design §9.1).
+    function shape(bytes calldata descriptor) internal pure returns (bytes32) {
+        return keccak256(abi.encode(DOM_DESCRIBED_SHAPE, descriptor));
+    }
+
+    /// Index family id: keccak256("efs2/family/<name>/1") (design §10.2).
+    function familyId(string memory name) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("efs2/family/", name, "/1"));
     }
 
     /// Exact Type id from its descriptor commitment, checked-reference Types and rule identity.

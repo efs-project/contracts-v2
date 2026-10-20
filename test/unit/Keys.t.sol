@@ -30,6 +30,16 @@ contract KeysTest is Test {
         assertEq(Keys.DOM_SUBJECT, b32(".domains.subject"));
         assertEq(Keys.DOM_PRINCIPAL, b32(".domains.principal"));
         assertEq(Keys.DOM_TYPE, b32(".domains.type"));
+        assertEq(Keys.DOM_ROLE_SCOPE, b32(".domains.roleScope"));
+        assertEq(Keys.DOM_REALM_ORIGIN, b32(".domains.realmOrigin"));
+        assertEq(Keys.DOM_REALM, b32(".domains.realm"));
+        assertEq(Keys.DOM_PUBLICATION, b32(".domains.publication"));
+        assertEq(Keys.DOM_NATIVE_INTENT, b32(".domains.nativeIntent"));
+        assertEq(Keys.DOM_SIGNED_INTENT, b32(".domains.signedIntent"));
+        assertEq(Keys.DOM_PROFILE, b32(".domains.profile"));
+        assertEq(Keys.DOM_DESCRIBED_SHAPE, b32(".domains.describedShape"));
+        assertEq(Keys.DOM_ROLE_KEY, b32(".domains.roleKey"));
+        assertEq(Keys.DOM_EXECUTION_SET, b32(".domains.executionSet"));
         // The literal tags, so a change to the string shows up here and not only as a hash mismatch.
         assertEq(Keys.DOM_RECORD, keccak256("efs2/record/1"));
         assertEq(Keys.DOM_SCOPE, keccak256("efs2/vk/binding-scope/1"));
@@ -91,6 +101,55 @@ contract KeysTest is Test {
             Keys.digestList(b32(".inputs.algorithm"), b32(".inputs.value")),
             b32(".outputs.digestList")
         );
+    }
+
+    function testNewDerivationVectors() public view {
+        address contractAddress = addr(".inputs.contractAddress");
+        bytes32 eoaPrincipal = Keys.principal(addr(".inputs.eoa"));
+        assertEq(
+            Keys.roleScope(eoaPrincipal, b32(".inputs.purpose"), b32(".inputs.role")),
+            b32(".outputs.roleScopeKey")
+        );
+        bytes32 origin = Keys.realmOrigin(11155111, contractAddress, b32(".inputs.salt"));
+        assertEq(origin, b32(".outputs.realmOrigin"));
+        assertEq(Keys.realmId(origin, 1), b32(".outputs.realmId"));
+        assertEq(
+            Keys.contractPrincipal(origin, contractAddress),
+            b32(".outputs.contractPrincipalOfOrigin")
+        );
+        assertEq(
+            Keys.publicationId(eoaPrincipal, b32(".inputs.bodyHash")), b32(".outputs.publicationId")
+        );
+        assertEq(Keys.roleKey(b32(".inputs.purpose"), b32(".inputs.role")), b32(".outputs.roleKey"));
+        assertEq(this.shapeOf(vm.parseJsonBytes(json, ".inputs.body")), b32(".outputs.shape"));
+    }
+
+    function shapeOf(bytes calldata d) external pure returns (bytes32) {
+        return Keys.shape(d);
+    }
+
+    function testFamilyIds() public view {
+        string[13] memory names = [
+            "by-type",
+            "by-author",
+            "backlink",
+            "history",
+            "scope",
+            "reference-position",
+            "by-record",
+            "unique-by-type",
+            "scalar",
+            "digest",
+            "role-scope",
+            "roster",
+            "live-scope"
+        ];
+        for (uint256 i; i < names.length; ++i) {
+            assertEq(Keys.familyId(names[i]), b32(string.concat(".families.", names[i])), names[i]);
+            assertEq(
+                Keys.familyId(names[i]), keccak256(abi.encodePacked("efs2/family/", names[i], "/1"))
+            );
+        }
     }
 
     /// Posting kinds 2, 3, 6, 7 and 9 are reserved: no list helper mints them.
