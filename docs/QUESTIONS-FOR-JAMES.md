@@ -48,6 +48,7 @@ How these map to earlier question ids: the initialization plan's D1 (build ident
 38. **Native evidence rows store `acceptanceProfile = 0` (new)** — the facets re-derive `executionSet` and `indexObligations` from the revision row but not the acceptance profile (it needs the registry's policy and role history). Store it (one word per native publication) or keep deriving. *Recommend store it: one SSTORE, and recovery stays two calls.*
 
 39. **Alias records in folders (new, from the build)** — `FilesFinalValidator` (generation 1) accepts only file subjects and directory records as FOLDER targets, so a `directory-alias/1` record cannot be placed in a folder, though the naming note wants aliases at old names. Allowing it is a validator change (a new unit, hence a new generation) or a reader-side convention. *Recommend decide before the first persistent Realm: allow alias records as FOLDER targets in the gen-1 validator now (one branch), since changing it later costs a generation.*
+40. **A predicate's own `EXHAUSTED` reply (new, from the build)** — the wrapper treats a custom predicate's `EXHAUSTED` word as a refusal, so a hostile predicate cannot turn a refusal into "resubmit"; the cost is that a predicate which nests its own calls cannot report its own exhaustion (its caller sees `E_REJECTED`, class none). *Recommend keep the refusal: a predicate that needs nested calls declares a higher `validationGas` instead.*
 ---
 
 
