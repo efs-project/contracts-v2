@@ -43,7 +43,17 @@ library StateDigest {
     }
 
     function ledger(address a, LedgerKeys memory k) internal view returns (bytes32 h) {
-        h = realm(a);
+        return rows(a, k, realm(a));
+    }
+
+    /// The row digest without the realm words and counters: what an activation must leave untouched
+    /// outside its declared migration scope (design §16.5 #12).
+    function rowsOnly(address a, LedgerKeys memory k) internal view returns (bytes32) {
+        return rows(a, k, bytes32(0));
+    }
+
+    function rows(address a, LedgerKeys memory k, bytes32 seed) internal view returns (bytes32 h) {
+        h = seed;
         for (uint256 i; i < k.recordIds.length; ++i) {
             uint256 s = Layout.recordsCellsSlot(k.recordIds[i]);
             bytes32 w1 = raw(a, s + 1);
