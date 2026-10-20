@@ -4,3 +4,5 @@ cache/
 node_modules/
 .build-evidence/
 .DS_Store
+release/.anvil.log
+release/.fixture.json

@@ -57,7 +57,7 @@ revision row; the transient lock word.
 | NATIVE instance | `CREATE2(0x4e59b44847b379578588920cA78FbF26c0B4956C, salt 0, header.ruleInitcodeHash)` | `TypeRegistry.predictInstance` |
 | Descriptor blob | runtime `0x00 ‖ descriptor ‖ declarationSig`, SSTORE2 prologue, salt 0 | `DescriptorStore.predict` |
 | Codec | `efs2/described/1`: 134-byte header, 164-byte field rows, refTypes sentinels 0 ANY / 1 SELF / ≥ 2^16 exact | `DescribedCodec` |
-| Hot ABI id | `HOT_ABI_ID` of the ledger implementation (test builds: `keccak("efs2/ledger-hot/1:test")`) | readiness tuple, units |
+| Hot ABI id | `HOT_ABI_ID` of the ledger implementation: release builds `keccak("efs2/ledger-hot/1")`, test builds `keccak("efs2/ledger-hot/1:test")` | readiness tuple, units, the deploy plan |
 | Store ABI ids | `keccak("efs2/posting-store/1")`, `keccak("efs2/bitmap-store/1")` | `storeAbiId()` |
 | Index profiles | physical `keccak("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")`, callback `keccak("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs")`, manifest header `keccak("efs2/index-manifest/1")` | `RealmIndex` constants; inside `MANIFEST_HASH` |
 | Family ids | `keccak("efs2/family/<name>/1")`, thirteen names | `Keys.familyId` |
