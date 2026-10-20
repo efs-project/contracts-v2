@@ -63,7 +63,7 @@ interface IIndexReads {
     function postingSliceOf(
         FamilyId family,
         TypeId typeId,
-        uint64 ordinal,
+        uint8 ordinal,
         bytes32 value,
         uint64 from,
         uint16 n

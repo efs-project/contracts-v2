@@ -14,7 +14,7 @@
     "0x337f3f32": "manifestHash()",
     "0x1b37b478": "occurrencesOf(bytes32)",
     "0xd033b9df": "postingHeadOf(bytes32,bytes32,uint8,bytes32)",
-    "0x8c29cc88": "postingSliceOf(bytes32,bytes32,uint64,bytes32,uint64,uint16)",
+    "0x7db927a4": "postingSliceOf(bytes32,bytes32,uint8,bytes32,uint64,uint16)",
     "0xc922db2b": "postingStore()",
     "0x577bd336": "progress()",
     "0xd32b1e46": "provenFrom()",
@@ -746,8 +746,8 @@
         },
         {
           "name": "ordinal",
-          "type": "uint64",
-          "internalType": "uint64"
+          "type": "uint8",
+          "internalType": "uint8"
         },
         {
           "name": "value",

@@ -60,6 +60,7 @@ error E_INDEX_CALL(bytes inner); // none (the callback reverted with data; inner
 error E_INDEX_GAS(uint32 quoted, uint32 available); // resubmit
 error E_INDEX_RETURNDATA(uint256 size); // none
 error E_INDEX_FINAL(); // none
+error E_INDEX_ACK(uint8 phase); // none: a callback returned without the exact 32-byte selector acknowledgement (phase 2 prefix, 3 final)
 error E_DELEGATE_ONLY(); // none
 
 // ---- activation, transition, freeze and the controller (design §8) ---------------------------------------

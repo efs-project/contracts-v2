@@ -1,0 +1,1005 @@
+{
+  "name": "ILedgerControlDelegate",
+  "source": "src/interfaces/internal/ILedgerControlDelegate.sol",
+  "closure": false,
+  "methodIdentifiers": {
+    "0xaeccc0ad": "abortTransition()",
+    "0x2afd8501": "activate((uint32,(address,bytes32,address,bytes32,address,bytes32,bytes32,address,bytes32,address,bytes32,address,bytes32,address,address,bytes32),bytes32,uint16,uint16,uint64,(uint16,uint32,uint8,uint16,uint8,uint16,uint32,uint16,uint8,uint16,uint32,uint32,uint16,uint16,uint32,uint32,uint32),bytes32,bytes32,bytes32,bytes32[],bytes))",
+    "0xf4f1bc05": "beginTransition(uint32,uint48)",
+    "0x76ae9ba9": "freeze((uint32,(address,bytes32,address,bytes32,address,bytes32,bytes32,address,bytes32,address,bytes32,address,bytes32,address,address,bytes32),bytes32,uint16,uint16,uint64,(uint16,uint32,uint8,uint16,uint8,uint16,uint32,uint16,uint8,uint16,uint32,uint32,uint16,uint16,uint32,uint32,uint32),bytes32,bytes32,bytes32,bytes32[],bytes))",
+    "0xdfb4a037": "initialize((bytes32,address,address,address,uint16,(uint16,uint32,uint8,uint16,uint8,uint16,uint32,uint16,uint8,uint16,uint32,uint32,uint16,uint16,uint32,uint32,uint32)))"
+  },
+  "events": {
+    "0xcbe28fca4f02bd89f7512cfa817f836da54ae3388d668c7b0319c3a75d024ec0": "Activated(uint32,bytes32,uint64,uint64,uint16)",
+    "0x6511e64c08a2ad0ba65e57bb966b938bb3ee81de7d489274a7d5c65acf413258": "TransitionBegun(uint32,uint48)",
+    "0xc80cff9ec9b9c3bd69cbacb6c10575fe78964a935379cfacd37186f209e16065": "TransitionEnded(uint32,uint8)"
+  },
+  "errors": {},
+  "structs": {
+    "ActivationSet": [
+      {
+        "internalType": "uint32",
+        "name": "revision",
+        "type": "uint32"
+      },
+      {
+        "internalType": "struct ComponentSet",
+        "name": "components",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "layoutId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "executionProfileId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "capabilities",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint64",
+        "name": "acceptedChainId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "struct Limits",
+        "name": "limits",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedExecutionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dependencyRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "noticePrincipal",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "migrationScope",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "migration",
+        "type": "bytes"
+      }
+    ],
+    "ComponentSet": [
+      {
+        "internalType": "address",
+        "name": "ledgerImpl",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ledgerImplCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "registryImpl",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "registryImplCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "index",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexManifestHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "ingress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ingressCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "applyDelegate",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "applyCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controller",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "controllerCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controllerOwner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "steward",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "verifierProfilesRoot",
+        "type": "bytes32"
+      }
+    ],
+    "Limits": [
+      {
+        "internalType": "uint16",
+        "name": "maxActions",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxBody",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxRefs",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxReadSetPrincipals",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxReadSetPositions",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxWitness",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxTransitionBlocks",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "inlineWordMax",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "witnessRetention",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxBindsPerPublication",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxBodyBytesPerPublication",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxFreshSlotsPerPublication",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxReadIds",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxReadCount",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "floorFreshGas",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "floorRewriteGas",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "kernelTail",
+        "type": "uint32"
+      }
+    ],
+    "RealmInit": [
+      {
+        "internalType": "bytes32",
+        "name": "realmSalt",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controller",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registry",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "readerDirectory",
+        "type": "address"
+      },
+      {
+        "internalType": "uint16",
+        "name": "executionProfileId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "struct Limits",
+        "name": "limits",
+        "type": "tuple"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "event",
+      "name": "Activated",
+      "inputs": [
+        {
+          "name": "revision",
+          "type": "uint32",
+          "indexed": true,
+          "internalType": "uint32"
+        },
+        {
+          "name": "executionSet",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "activationBlock",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "admissionHigh",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "flags",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TransitionBegun",
+      "inputs": [
+        {
+          "name": "targetRevision",
+          "type": "uint32",
+          "indexed": true,
+          "internalType": "uint32"
+        },
+        {
+          "name": "deadlineBlock",
+          "type": "uint48",
+          "indexed": false,
+          "internalType": "uint48"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TransitionEnded",
+      "inputs": [
+        {
+          "name": "targetRevision",
+          "type": "uint32",
+          "indexed": true,
+          "internalType": "uint32"
+        },
+        {
+          "name": "how",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "function",
+      "name": "abortTransition",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "activate",
+      "inputs": [
+        {
+          "name": "set",
+          "type": "tuple",
+          "internalType": "struct ActivationSet",
+          "components": [
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "components",
+              "type": "tuple",
+              "internalType": "struct ComponentSet",
+              "components": [
+                {
+                  "name": "ledgerImpl",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "ledgerImplCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "registryImpl",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "registryImplCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "index",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "indexCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "indexManifestHash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "ingress",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "ingressCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "applyDelegate",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "applyCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "controller",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "controllerCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "controllerOwner",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "steward",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "verifierProfilesRoot",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "layoutId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionProfileId",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "capabilities",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "acceptedChainId",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "limits",
+              "type": "tuple",
+              "internalType": "struct Limits",
+              "components": [
+                {
+                  "name": "maxActions",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBody",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxRefs",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxReadSetPrincipals",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadSetPositions",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxWitness",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxTransitionBlocks",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "inlineWordMax",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "witnessRetention",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxBindsPerPublication",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBodyBytesPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxFreshSlotsPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxReadIds",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadCount",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "floorFreshGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "floorRewriteGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "kernelTail",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                }
+              ]
+            },
+            {
+              "name": "expectedExecutionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "dependencyRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "noticePrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "migrationScope",
+              "type": "bytes32[]",
+              "internalType": "bytes32[]"
+            },
+            {
+              "name": "migration",
+              "type": "bytes",
+              "internalType": "bytes"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "beginTransition",
+      "inputs": [
+        {
+          "name": "targetRevision",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "deadlineBlock",
+          "type": "uint48",
+          "internalType": "uint48"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "freeze",
+      "inputs": [
+        {
+          "name": "set",
+          "type": "tuple",
+          "internalType": "struct ActivationSet",
+          "components": [
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "components",
+              "type": "tuple",
+              "internalType": "struct ComponentSet",
+              "components": [
+                {
+                  "name": "ledgerImpl",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "ledgerImplCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "registryImpl",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "registryImplCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "index",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "indexCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "indexManifestHash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "ingress",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "ingressCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "applyDelegate",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "applyCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "controller",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "controllerCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "controllerOwner",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "steward",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "verifierProfilesRoot",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "layoutId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionProfileId",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "capabilities",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "acceptedChainId",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "limits",
+              "type": "tuple",
+              "internalType": "struct Limits",
+              "components": [
+                {
+                  "name": "maxActions",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBody",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxRefs",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxReadSetPrincipals",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadSetPositions",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxWitness",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxTransitionBlocks",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "inlineWordMax",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "witnessRetention",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxBindsPerPublication",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBodyBytesPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxFreshSlotsPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxReadIds",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadCount",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "floorFreshGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "floorRewriteGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "kernelTail",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                }
+              ]
+            },
+            {
+              "name": "expectedExecutionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "dependencyRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "noticePrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "migrationScope",
+              "type": "bytes32[]",
+              "internalType": "bytes32[]"
+            },
+            {
+              "name": "migration",
+              "type": "bytes",
+              "internalType": "bytes"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "initialize",
+      "inputs": [
+        {
+          "name": "init",
+          "type": "tuple",
+          "internalType": "struct RealmInit",
+          "components": [
+            {
+              "name": "realmSalt",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "controller",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "registry",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "readerDirectory",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "executionProfileId",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "limits",
+              "type": "tuple",
+              "internalType": "struct Limits",
+              "components": [
+                {
+                  "name": "maxActions",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBody",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxRefs",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxReadSetPrincipals",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadSetPositions",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxWitness",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxTransitionBlocks",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "inlineWordMax",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "witnessRetention",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxBindsPerPublication",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBodyBytesPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxFreshSlotsPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxReadIds",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadCount",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "floorFreshGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "floorRewriteGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "kernelTail",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    }
+  ]
+}

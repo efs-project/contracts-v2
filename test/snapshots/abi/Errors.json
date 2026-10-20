@@ -39,6 +39,7 @@
     "0x73147128": "E_HELPER_CODE(address)",
     "0x61b3a0aa": "E_HOT_ABI(address)",
     "0x998dcc3e": "E_IMPLEMENTATION(address,address)",
+    "0x625e5082": "E_INDEX_ACK(uint8)",
     "0x94b0e1fa": "E_INDEX_CALL(bytes)",
     "0xc0a89461": "E_INDEX_FINAL()",
     "0x9f4287ca": "E_INDEX_GAS(uint32,uint32)",
@@ -555,6 +556,17 @@
         }
       ],
       "name": "E_IMPLEMENTATION",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "phase",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_INDEX_ACK",
       "type": "error"
     },
     {

@@ -3,7 +3,7 @@
   "source": "src/interfaces/internal/ILedgerApply.sol",
   "closure": false,
   "methodIdentifiers": {
-    "0xe4957eef": "applyLeaf(uint8,uint64,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32),bytes,(uint8,uint8,uint8,uint8,uint8,uint8,uint32,uint16,address,bytes32,bytes32,address,address,bytes32,uint16,address,bytes32),bytes32,uint8,uint16,uint16)"
+    "0xe5b98a9e": "applyLeaf(uint8,uint64,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32),bytes,uint8,bytes32,uint8,uint16,uint16)"
   },
   "events": {},
   "errors": {},
@@ -176,93 +176,6 @@
         "name": "withdrawnPrincipal",
         "type": "bytes32"
       }
-    ],
-    "TypeInfo": [
-      {
-        "internalType": "uint8",
-        "name": "grade",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "refCount",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "wrapperVersion",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "ruleMode",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "dependencyClass",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "refHeaderWords",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint32",
-        "name": "validationGas",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint16",
-        "name": "policyRows",
-        "type": "uint16"
-      },
-      {
-        "internalType": "address",
-        "name": "mandatory",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "ruleId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "shape",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "descriptorBlob",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "policy",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "policyCodehash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint16",
-        "name": "policyRow",
-        "type": "uint16"
-      },
-      {
-        "internalType": "address",
-        "name": "custom",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "bindingId",
-        "type": "bytes32"
-      }
     ]
   },
   "abi": [
@@ -338,96 +251,9 @@
           "internalType": "bytes"
         },
         {
-          "name": "info",
-          "type": "tuple",
-          "internalType": "struct TypeInfo",
-          "components": [
-            {
-              "name": "grade",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "refCount",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "wrapperVersion",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "ruleMode",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "dependencyClass",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "refHeaderWords",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "validationGas",
-              "type": "uint32",
-              "internalType": "uint32"
-            },
-            {
-              "name": "policyRows",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
-              "name": "mandatory",
-              "type": "address",
-              "internalType": "address"
-            },
-            {
-              "name": "ruleId",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "shape",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "descriptorBlob",
-              "type": "address",
-              "internalType": "address"
-            },
-            {
-              "name": "policy",
-              "type": "address",
-              "internalType": "address"
-            },
-            {
-              "name": "policyCodehash",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "policyRow",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
-              "name": "custom",
-              "type": "address",
-              "internalType": "address"
-            },
-            {
-              "name": "bindingId",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            }
-          ]
+          "name": "refCount",
+          "type": "uint8",
+          "internalType": "uint8"
         },
         {
           "name": "principalId",
@@ -579,9 +405,14 @@
           ]
         },
         {
+          "name": "refCountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
           "name": "refs",
-          "type": "bytes32[]",
-          "internalType": "bytes32[]"
+          "type": "bytes32[8]",
+          "internalType": "bytes32[8]"
         }
       ],
       "stateMutability": "nonpayable"
