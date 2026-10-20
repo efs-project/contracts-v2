@@ -54,3 +54,20 @@ The contracts engineer (Fable) designs and writes the kernel, the apply and ingr
 1. S0.1 and S0.2 in parallel (delegated), S0.3 by the engineer: the storage contracts and `Layout` are the one-way doors everything else packs through.
 2. S0.4–S0.6, then C0.
 3. S1.1 immediately after, measured by day four of S1; the kernel number decides whether the ladder's first rung is applied before S1.2 starts.
+
+## Status (2026-10-20, end of the first build day)
+
+| Slice | State | Where |
+|---|---|---|
+| S0.1–S0.6 | done | `src/interfaces`, `src/lib/{Keys,CodePins,CodeScan}`, storage + `Layout`, `tools/{checks,layout,vectors,abi-snapshot}.mjs`, harness and doubles |
+| S1.1 kernel | done, measured | `src/core/{LedgerCore,LedgerApply,LedgerIngress,LedgerControl}.sol`; `test/unit/kernel`, `test/unit/ingress`, `test/integration/{Kernel,Retry,atomicity}`, `test/control` |
+| S1.2 registry | done (grades 1–3; the `DescribedTypeRule/1` wrapper in review) | `src/types/{DescribedCodec,DescriptorStore,TypeRegistry}.sol`; `test/unit/registry`, `test/integration/RealRegistry.t.sol` |
+| S1.3 index | done for generation 1 (replay through the decoder; build/backfill revert: no later family) | `src/index/{StoreBase,PostingStore,BitmapStore,RealmIndex,IndexReplayDecoder}.sol`; `test/index`, `test/integration/RealIndex.t.sol` |
+| S1.4 control and genesis | done | `src/control/{RealmController,RealmGenesis,IndexDeployer}.sol`; `test/control/RealmController.t.sol`, `test/index/IndexDeployer.t.sol` |
+| S1.5 facets and the consumer | done | `src/readers/{LedgerReads,LedgerViews}.sol`, `src/lib/EfsNative.sol`, `src/periphery/ReaderDirectory.sol`, `examples/NativeApp.sol`; `test/readers`, `test/consumer`, `test/periphery` |
+| S1b.1 rules | in review | `src/profiles/`, `test/profiles/`, `test/integration/FilesRecipes.t.sol` |
+| S1b.2 readers | not started | `LensReader`, `FilesPageReader` |
+| S1b.3 release surface | not started | `efs-fixture.mjs`, `release.json`, `deploy/plan.json` |
+| C1 | not started | sizes recorded in `docs/DESIGN.md` adoption note 16; gas on both schedules pending |
+
+Open items for James are Q1–Q38 in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.
