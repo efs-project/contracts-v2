@@ -57,6 +57,7 @@ abstract contract StoreBase {
     }
 
     function _attach(address g, uint48 admission) private {
+        if (!_attached()) _setAttached(); // the first live write attaches, even when the builder is the same generation
         WriterRange[] storage w = _writers();
         uint256 n = w.length;
         if (n != 0 && w[n - 1].generation == g && w[n - 1].toAdmission == 0) return;
@@ -64,7 +65,6 @@ abstract contract StoreBase {
             w[n - 1].toAdmission = admission == 0 ? 0 : admission - 1;
         }
         w.push(WriterRange(g, admission, 0));
-        if (!_attached()) _setAttached();
     }
 
     function _requireFamily(bytes32 family) internal view {

@@ -13,6 +13,7 @@ import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {IIndexHook} from "../interfaces/IIndexHook.sol";
 import {IPostingStore} from "../interfaces/IPostingStore.sol";
 import {IBitmapStore} from "../interfaces/IBitmapStore.sol";
+import {IIndexReplayDecoder} from "../interfaces/internal/IIndexReplayDecoder.sol";
 import {DigestSpec, Effect, FamilyEntry, Readiness, Unit, WorkModel} from "../interfaces/Index.sol";
 import {
     E_BACKFILL,
@@ -21,7 +22,8 @@ import {
     E_LEDGER,
     E_ORDER,
     E_REPLAY,
-    E_STAGED
+    E_STAGED,
+    E_WRITER
 } from "../interfaces/Errors.sol";
 
 /// @title RealmIndex — generation 1: an immutable dispatcher over the per-Realm family stores (design §10)
@@ -388,8 +390,70 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     }
 
     /// @inheritdoc IRealmIndex
-    function replayNextPublication(uint16) external pure returns (uint64) {
-        revert E_REPLAY(0); // the IndexBuild delegate of design §10.6 is not part of generation 1's first build
+    /// @dev Fresh stores only: both stores name this generation as INITIAL_WRITER and are unattached, this
+    ///      generation has never folded live, the ledger is idle. One publication per call, decoded by the
+    ///      pinned decoder (STATICCALL) and folded through `replayFold` on this contract, so the live fold
+    ///      code is the replay fold code; `maxFacts` bounds the leaves of that publication (≤ 64).
+    function replayNextPublication(uint16 maxFacts) external returns (uint64 processed) {
+        if (maxFacts == 0 || maxFacts > 64) revert E_REPLAY(6);
+        if (DECODER == address(0)) revert E_REPLAY(5);
+        Progress storage p = _gen().progress;
+        if (p.liveStarted != 0 || !_fresh()) revert E_REPLAY(1);
+        (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
+        if (phase != Phase.IDLE) revert E_REPLAY(3);
+        (,,, uint64 publications) = ILedgerHot(LEDGER).counts();
+        uint64 n = p.lastPublication + 1;
+        if (n > publications) return 0;
+        (bool ok, bytes memory ret) =
+            DECODER.staticcall(abi.encodeCall(IIndexReplayDecoder.payload, (LEDGER, n)));
+        if (!ok) _bubble(ret);
+        bytes memory encoded = abi.decode(ret, (bytes));
+        (ok, ret) = address(this).call(bytes.concat(this.replayFold.selector, encoded));
+        if (!ok) _bubble(ret);
+        processed = abi.decode(ret, (uint64));
+        if (processed > maxFacts) revert E_REPLAY(6);
+        p.replayStage = n == publications ? 3 : 2; // CAUGHT_UP : REPLAYING
+    }
+
+    /// The replay fold: the decoder's payload, applied exactly as a live `onAdmission` would be, by this
+    /// contract calling itself (the stores see the generation as INITIAL_WRITER before attachment).
+    function replayFold(uint64 publication, Effect[] calldata effects, bytes32[] calldata refs)
+        external
+        returns (uint64)
+    {
+        if (msg.sender != address(this)) revert E_WRITER(msg.sender);
+        Progress storage p = _gen().progress;
+        uint64 expected = p.lastProcessed + 1;
+        uint256 refIndex;
+        for (uint256 i; i < effects.length; ++i) {
+            Effect calldata e = effects[i];
+            if (e.admission != expected) revert E_ORDER(expected, e.admission);
+            if (e.publication != publication) revert E_STAGED(publication, e.publication);
+            _fold(e, refs[refIndex:refIndex + e.refCount]);
+            refIndex += e.refCount;
+            ++expected;
+        }
+        p.lastProcessed = uint48(expected - 1);
+        p.lastPublication = uint48(publication);
+        _foldHooks(effects, refs, publication);
+        return uint64(effects.length);
+    }
+
+    function _fresh() private view returns (bool) {
+        return IPostingStore(POSTING).initialWriter() == address(this)
+            && !IPostingStore(POSTING).attached()
+            && IBitmapStore(BITMAP).initialWriter() == address(this)
+            && !IBitmapStore(BITMAP).attached();
+    }
+
+    function _bubble(bytes memory ret) private pure {
+        assembly ("memory-safe") {
+            revert(add(ret, 32), mload(ret))
+        }
+    }
+
+    function decoder() external view returns (address) {
+        return DECODER;
     }
 
     /// @inheritdoc IRealmIndex
