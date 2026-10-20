@@ -136,7 +136,7 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
     }
 
     /// @inheritdoc ILedgerControl
-    function abortTransition() external {
+    function abortTransition() external idle notFrozen {
         _control();
     }
 

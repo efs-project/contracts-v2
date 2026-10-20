@@ -270,8 +270,7 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         bytes32[] memory supported = ILedgerHot(address(this)).supportedHotAbiIds();
         if (!_contains(supported, r.hotAbiId)) revert E_INDEX_NOT_READY(5);
         if (r.manifestHash != set.components.indexManifestHash) revert E_INDEX_NOT_READY(6);
-        (uint8 phase,,,) = _unpackLock(_lockWord());
-        if (phase != Phase.IDLE) revert E_INDEX_NOT_READY(7);
+        if (r.phase != Phase.IDLE) revert E_INDEX_NOT_READY(7); // the tuple must echo an idle ledger
         CountersStorage storage c = _counters();
         if (r.completedAdmission != c.admissions || r.completedPublication != c.publications) {
             revert E_INDEX_NOT_READY(8);
@@ -397,11 +396,13 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
     function _closeTransition(RealmStorage storage $, uint32 activated) private {
         uint32 target = $.transitionTarget;
         if (target == 0) return;
-        if (target == activated) {
-            emit TransitionEnded(target, 1);
-        } else if ($.transitionDeadline < block.number) {
+        // An expiry nobody observed ends the transition by expiry, with its cooldown, even when this
+        // activation is the one the transition announced (every transition targets revision + 1).
+        if ($.transitionDeadline < block.number) {
             emit TransitionEnded(target, 3);
             $.transitionCooldownUntil = $.transitionDeadline + $.limits.maxTransitionBlocks;
+        } else if (target == activated) {
+            emit TransitionEnded(target, 1);
         }
         $.transitionTarget = 0;
         $.transitionDeadline = 0;
