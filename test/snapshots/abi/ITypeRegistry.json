@@ -3,14 +3,18 @@
   "source": "src/interfaces/ITypeRegistry.sol",
   "closure": true,
   "methodIdentifiers": {
+    "0xb9c8d4ea": "DESCRIPTOR_STORE()",
+    "0x2dd31000": "FACTORY()",
     "0x1a93ec95": "activate(uint32)",
     "0x2af4f731": "activatePolicy(bytes32,address)",
     "0x514bc5f9": "activateWrapper(uint8,address)",
     "0xfa803ee5": "activeRevision()",
     "0x3a49d747": "binding(bytes32)",
+    "0xb7d74a44": "bindingDigest(bytes32)",
     "0xb9d00e79": "catalog(uint64)",
     "0x2e37a775": "catalogCount()",
     "0x6c252bcf": "declaration(bytes32)",
+    "0x502dc7b0": "declarationDigest(bytes32)",
     "0x42d8df12": "declareRoleExpectation(bytes32,bytes32,bytes32)",
     "0xd6009e53": "descriptorBytes(bytes32)",
     "0x5c60da1b": "implementation()",
@@ -18,6 +22,7 @@
     "0x56397c35": "ledger()",
     "0x2179a738": "mutations()",
     "0x3d8ca9f1": "policy(bytes32,uint16)",
+    "0xc418f714": "predictInstance(bytes32)",
     "0x64b69433": "refTypes(bytes32)",
     "0x10e63340": "registerDescribed(bytes,bytes,address,bytes)",
     "0xbabddf8b": "retainDeclaration(bytes,bytes)",
@@ -122,6 +127,32 @@
   "abi": [
     {
       "type": "function",
+      "name": "DESCRIPTOR_STORE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "FACTORY",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "activate",
       "inputs": [
         {
@@ -219,6 +250,25 @@
     },
     {
       "type": "function",
+      "name": "bindingDigest",
+      "inputs": [
+        {
+          "name": "bindingId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
       "name": "catalog",
       "inputs": [
         {
@@ -277,6 +327,25 @@
         }
       ],
       "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "declarationDigest",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
     },
     {
       "type": "function",
@@ -421,6 +490,25 @@
         }
       ],
       "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "predictInstance",
+      "inputs": [
+        {
+          "name": "ruleInitcodeHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "pure"
     },
     {
       "type": "function",

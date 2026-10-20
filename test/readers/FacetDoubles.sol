@@ -209,10 +209,28 @@ contract FacetRegistry is ITypeRegistry {
     function typeCommitment(bytes32) external pure returns (bytes32) {
         revert MockUnsupported(ITypeRegistry.typeCommitment.selector);
     }
+
+    function FACTORY() external pure returns (address) {
+        revert MockUnsupported(ITypeRegistry.FACTORY.selector);
+    }
+
+    function DESCRIPTOR_STORE() external pure returns (address) {
+        revert MockUnsupported(ITypeRegistry.DESCRIPTOR_STORE.selector);
+    }
+
+    function predictInstance(bytes32) external pure returns (address) {
+        revert MockUnsupported(ITypeRegistry.predictInstance.selector);
+    }
+
+    function declarationDigest(bytes32) external pure returns (bytes32) {
+        revert MockUnsupported(ITypeRegistry.declarationDigest.selector);
+    }
+
+    function bindingDigest(bytes32) external pure returns (bytes32) {
+        revert MockUnsupported(ITypeRegistry.bindingDigest.selector);
+    }
 }
 
-/// @notice Reverts every call with data (its runtime is etched over a registry or an index to prove a facet
-///         survives a component that cannot answer).
 contract RevertingEverything {
     error Refused();
 

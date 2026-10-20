@@ -194,6 +194,26 @@ contract MockRegistry is ITypeRegistry {
     function typeCommitment(bytes32) external pure returns (bytes32) {
         revert MockUnsupported(ITypeRegistry.typeCommitment.selector);
     }
+
+    function FACTORY() external pure returns (address) {
+        revert MockUnsupported(ITypeRegistry.FACTORY.selector);
+    }
+
+    function DESCRIPTOR_STORE() external pure returns (address) {
+        revert MockUnsupported(ITypeRegistry.DESCRIPTOR_STORE.selector);
+    }
+
+    function predictInstance(bytes32) external pure returns (address) {
+        revert MockUnsupported(ITypeRegistry.predictInstance.selector);
+    }
+
+    function declarationDigest(bytes32) external pure returns (bytes32) {
+        revert MockUnsupported(ITypeRegistry.declarationDigest.selector);
+    }
+
+    function bindingDigest(bytes32) external pure returns (bytes32) {
+        revert MockUnsupported(ITypeRegistry.bindingDigest.selector);
+    }
 }
 
 /// @notice A `MockRegistry` whose observed mutation counter moves during a publication, for the per-leaf basis

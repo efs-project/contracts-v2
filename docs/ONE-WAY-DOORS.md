@@ -48,6 +48,23 @@ revision row; the transient lock word.
 - `Retention` is numbered `1 LOG_ONLY, 2 STATE` (design §4.2).
 - Action kinds 1–7; 8/9 reserved for stage-then-commit.
 
+## Identity-bearing ids and ABI ids fixed by the first persistent registration or activation
+
+| Id | Value | Where |
+| --- | --- | --- |
+| Type declaration domain | EIP-712 `(name = "EFS Type Declaration", version = "1")`, no chain id, no verifying contract; struct `TypeDeclaration(bytes32 typeId)` | `TypeRegistry.declarationDigest`; inside every relayed declaration |
+| Custom binding | struct `TypeBinding(bytes32 bindingId)` under the same domain; `bindingId = keccak(abi.encode("efs2/described-binding/1", wrapperCodehash, chainid, registry, typeId, custom, customHash, customAbi = 1, key))` | `TypeRegistry.bindingDigest` |
+| NATIVE instance | `CREATE2(0x4e59b44847b379578588920cA78FbF26c0B4956C, salt 0, header.ruleInitcodeHash)` | `TypeRegistry.predictInstance` |
+| Descriptor blob | runtime `0x00 ‖ descriptor ‖ declarationSig`, SSTORE2 prologue, salt 0 | `DescriptorStore.predict` |
+| Codec | `efs2/described/1`: 134-byte header, 164-byte field rows, refTypes sentinels 0 ANY / 1 SELF / ≥ 2^16 exact | `DescribedCodec` |
+| Hot ABI id | `HOT_ABI_ID` of the ledger implementation (test builds: `keccak("efs2/ledger-hot/1:test")`) | readiness tuple, units |
+| Store ABI ids | `keccak("efs2/posting-store/1")`, `keccak("efs2/bitmap-store/1")` | `storeAbiId()` |
+| Index profiles | physical `keccak("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")`, callback `keccak("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs")`, manifest header `keccak("efs2/index-manifest/1")` | `RealmIndex` constants; inside `MANIFEST_HASH` |
+| Family ids | `keccak("efs2/family/<name>/1")`, thirteen names | `Keys.familyId` |
+| Purposes | `keccak("efs2/purpose/{head,folder,tag}/1")` | `Purpose` (Actions.sol) |
+| Notice kinds | `keccak("efs2/notice/{frozen,successor,migration}/1")`; body `abi.encode(kind, uint256 revision, bytes note)` | `ClosureConstants`; the freeze canary |
+| Error catalog | selectors and argument shapes in `test/snapshots/abi/Errors.json`; reason codes in the catalog comments | `abi:check` |
+
 ## Deadlines
 
 - **Q1 (structural `ruleId`)** closes at the first grade-1/2 Type registered on a persistent Realm

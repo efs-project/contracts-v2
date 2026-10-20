@@ -125,4 +125,21 @@ interface ITypeRegistry {
 
     /// keccak(typeId, mandatory, ruleId, policyRows, policyCodehash) for the SDK's per-Type pin.
     function typeCommitment(bytes32 typeId) external view returns (bytes32);
+
+    // ---- registration facts an outside app needs (design §9.3) ----
+
+    /// The deterministic-deployment factory every NATIVE instance is created through (salt 0).
+    function FACTORY() external view returns (address);
+
+    /// The descriptor blob store whose `predict` names the blob a registration expects.
+    function DESCRIPTOR_STORE() external view returns (address);
+
+    /// CREATE2(FACTORY, 0, initcode) for a descriptor's `ruleInitcodeHash`.
+    function predictInstance(bytes32 ruleInitcodeHash) external pure returns (address);
+
+    /// The chain-free EIP-712 digest a creator signs to declare `typeId`.
+    function declarationDigest(bytes32 typeId) external pure returns (bytes32);
+
+    /// The EIP-712 digest a creator signs to bind a custom predicate (the preimage binds chain and registry).
+    function bindingDigest(bytes32 bindingId) external pure returns (bytes32);
 }
