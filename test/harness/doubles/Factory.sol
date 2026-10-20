@@ -10,7 +10,7 @@ library Factory {
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
     address internal constant FACTORY = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
     bytes internal constant RUNTIME =
-        hex"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3";
+        hex"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3";
 
     function ensure() internal {
         if (FACTORY.code.length == 0) vm.etch(FACTORY, RUNTIME);
