@@ -101,3 +101,10 @@ library Capability {
     uint16 internal constant KEL_AUTHORITY = 1 << 8;
     uint16 internal constant STAGED_PUBLICATION = 1 << 9;
 }
+
+/// The three closure purposes (design §12.1): a file's HEAD, a directory's FOLDER entries, TAG (reserved to S3).
+library Purpose {
+    bytes32 internal constant HEAD = keccak256("efs2/purpose/head/1");
+    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
+    bytes32 internal constant TAG = keccak256("efs2/purpose/tag/1");
+}

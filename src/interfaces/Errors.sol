@@ -115,3 +115,8 @@ error E_NOT_IDLE();
 error E_SUCCESSOR(uint8 code);
 error E_RETIRED();
 error E_CANARY(uint8 lane);
+error E_GENESIS(uint8 step); // 0 already run 1 limits hash 2 controller address 3 registry proxy address 4 ledger proxy address 5..8 post-checks 9 implementation codehash 10 initcode hash 11 creation failed
+error E_DEPLOYER(uint8 step);
+
+// ---- reader directory (design §5.13) ----------------------------------------------------------------------
+error E_READER(address reader, uint8 code); // 1 already listed 2 names another ledger 3 malformed reply 4 list full // 0 already run 1 plan hash 2 store address 3 generation address 4 generation ledger

@@ -229,7 +229,9 @@ const sol = fmt.stdout;
 const json = JSON.stringify(manifest, null, 2) + "\n";
 
 const outputs = { "src/core/layout/Layout.sol": sol, "vectors/layout.json": json };
-for (const [probe, layout] of Object.entries(raw)) outputs[`test/snapshots/layout/${probe}.json`] = JSON.stringify(layout, null, 2) + "\n";
+// Snapshots omit `astId` (it shifts whenever any source is added) so the gate compares layout, not AST numbering.
+const stable = (layout) => ({ ...layout, storage: layout.storage.map(({ astId, ...rest }) => rest) });
+for (const [probe, layout] of Object.entries(raw)) outputs[`test/snapshots/layout/${probe}.json`] = JSON.stringify(stable(layout), null, 2) + "\n";
 let dirty = 0;
 for (const [path, content] of Object.entries(outputs)) {
   const abs = join(root, path);

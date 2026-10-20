@@ -26,6 +26,7 @@
     "0x7b1ececb": "E_DEADLINE_BOUND(uint48,uint32)",
     "0xb13a0b3f": "E_DECLARATION(uint8)",
     "0x6244bd3d": "E_DELEGATE_ONLY()",
+    "0x5d3b73d2": "E_DEPLOYER(uint8)",
     "0x7106dafd": "E_DESIGNATOR(address)",
     "0xb7096410": "E_EXECUTION_DRIFT(address,address)",
     "0xe353574a": "E_EXECUTION_SET(bytes32,bytes32)",
@@ -35,6 +36,7 @@
     "0xea3b2fde": "E_FREEZE_PRECHECK(uint8)",
     "0xabdd33df": "E_FROZEN()",
     "0x6667c3b4": "E_GAS(uint8,uint32,uint32)",
+    "0x1d0b32cf": "E_GENESIS(uint8)",
     "0x923fa11b": "E_GRADE(uint8)",
     "0x73147128": "E_HELPER_CODE(address)",
     "0x61b3a0aa": "E_HOT_ABI(address)",
@@ -65,6 +67,7 @@
     "0x62c99498": "E_PIN(address,uint8)",
     "0x1b4fbe7a": "E_POLICY_REJECTED(uint8,bytes32,uint16)",
     "0x90ad6128": "E_PUBLICATION_ACTIVE()",
+    "0x9d11b35a": "E_READER(address,uint8)",
     "0x00c749f1": "E_READSET_SHAPE(uint8)",
     "0x381bf267": "E_READSET_STALE(bytes32,bytes32)",
     "0x3ad0f2e3": "E_REF(uint8,uint8,uint8)",
@@ -389,6 +392,17 @@
     {
       "inputs": [
         {
+          "internalType": "uint8",
+          "name": "step",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_DEPLOYER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address",
           "name": "target",
           "type": "address"
@@ -507,6 +521,17 @@
         }
       ],
       "name": "E_GAS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "step",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_GENESIS",
       "type": "error"
     },
     {
@@ -871,6 +896,22 @@
     {
       "inputs": [],
       "name": "E_PUBLICATION_ACTIVE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "reader",
+          "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_READER",
       "type": "error"
     },
     {

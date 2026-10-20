@@ -1,7 +1,6 @@
 {
   "storage": [
     {
-      "astId": 1099,
       "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
       "label": "probe_posting",
       "offset": 0,

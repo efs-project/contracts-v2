@@ -38,4 +38,8 @@ library ClosureConstants {
     uint32 internal constant WALLET_GAS_FLOOR = 300_000;
     /// The saturation threshold of every 48-bit counter and ordinal (design §4.1).
     uint64 internal constant SATURATION = (uint64(1) << 48) - 64;
+    /// realm-notice/1 kinds (design §12.1, §8.10): the freeze canary, the successor notice, the migration notice.
+    bytes32 internal constant NOTICE_FROZEN = keccak256("efs2/notice/frozen/1");
+    bytes32 internal constant NOTICE_SUCCESSOR = keccak256("efs2/notice/successor/1");
+    bytes32 internal constant NOTICE_MIGRATION = keccak256("efs2/notice/migration/1");
 }

@@ -52,6 +52,16 @@ library KernelDeploy {
 
     /// Deploys everything and initializes the proxy; `controller` becomes the ProxyAdmin owner and the
     /// realm's controller; `registry` is recorded in the realm. Writes stay disabled until `activate`.
+    /// The four implementations only (ingress, apply, control, core); the proxy is someone else's (RealmGenesis).
+    function deployImplementations() internal returns (Kernel memory k) {
+        k.ingress = new LedgerIngress(address(0));
+        k.applyDelegate = new LedgerApply();
+        k.control = new LedgerControl(address(k.ingress), address(k.applyDelegate), bytes32(0));
+        k.implementation = new LedgerCore(
+            address(k.ingress), address(k.applyDelegate), address(k.control), HOT_ABI_ID
+        );
+    }
+
     function deploy(address controller, address registry, bytes32 realmSalt)
         internal
         returns (Kernel memory k)
@@ -88,6 +98,18 @@ library KernelDeploy {
         address index,
         bytes32 manifestHash
     ) internal view returns (ActivationSet memory set) {
+        return genesisSet(k, controller, controller, registryImpl, index, manifestHash);
+    }
+
+    /// As above with an explicit controller owner (a RealmController's `owner()`).
+    function genesisSet(
+        Kernel memory k,
+        address controller,
+        address controllerOwner,
+        address registryImpl,
+        address index,
+        bytes32 manifestHash
+    ) internal view returns (ActivationSet memory set) {
         set.revision = 1;
         set.components = ComponentSet({
             ledgerImpl: address(k.implementation),
@@ -103,7 +125,7 @@ library KernelDeploy {
             applyCodehash: address(k.applyDelegate).codehash,
             controller: controller,
             controllerCodehash: controller.codehash,
-            controllerOwner: controller,
+            controllerOwner: controllerOwner,
             steward: address(0),
             verifierProfilesRoot: bytes32(0)
         });

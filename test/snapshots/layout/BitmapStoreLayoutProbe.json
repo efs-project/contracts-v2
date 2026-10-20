@@ -1,7 +1,6 @@
 {
   "storage": [
     {
-      "astId": 1105,
       "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
       "label": "probe_bitmap",
       "offset": 0,
