@@ -1,4 +1,11 @@
-# Foundation scope and tooling choices
+# Foundation scope and tooling choices (historical, 2026-10-06 → 2026-10-20)
+
+This note recorded the scaffold's scope before implementation was authorized. It is kept for
+provenance; the current policies are [BUILD-IDENTITY.md](BUILD-IDENTITY.md),
+[GAS-SCHEDULES.md](GAS-SCHEDULES.md) and the design ([DESIGN.md](DESIGN.md)). Since then:
+OpenZeppelin 5.6.1 and forge-std 1.17.0 are pinned, `bytecode_hash = "none"` is the identity
+policy, the source-empty check is retired, and `src/` holds production Solidity.
+
 
 The September 26 contracts initialization plan (revision 2) supports Foundry as the
 primary toolchain. James's October 6 clarification permits repository setup while

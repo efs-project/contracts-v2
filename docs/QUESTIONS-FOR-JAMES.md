@@ -1,0 +1,47 @@
+# Questions for James — EFS v2 core contracts
+
+Product choices the design (`docs/DESIGN.md` §21) leaves to the founder, each with the engineer's recommendation. Engineering choices are **not** listed here: §20 of the design records them with the alternative rejected and why, and C1 measurements resolve the rest by pre-stated rules.
+
+How these map to earlier question ids: the initialization plan's D1 (build identity = compiled bytes) is applied in the repository (`docs/BUILD-IDENTITY.md`); D2 (all Types described, permissionless) is the design's §9; D3a/D3b are the S4 import lane and the S2b ERC-1271 lane; D4 (branch protection) is a repository-settings item outside this list; D5 is Q18; D6 and the naming note's N1/N2 are Q7; N3 (alias-on-rename default) and N4 (`~efs` reservation) are client-side policy and the `files-name/2` rule respectively and stay open in the naming note.
+
+**Before S1 starts:** Q15 (who implements and who owns the M1 integration). **Before the first persistent Realm:** Q1, Q2, Q13, Q18, Q22. **Before S2 freezes the `Intent` typehash:** Q5, Q6. **Before S3:** Q16, Q32. **Before S5:** Q3, Q10, Q27, Q33. Everything else can wait for the checkpoint that measures it.
+
+## The questions (design §21)
+
+1. **Structural `ruleId`** — codehash named in the descriptor (this design) or a grammar-profile commitment? One-way door closing at the first grade-1/2 registration on a persistent Realm (before S3). *Recommend codehash.*
+2. **Signing domain** — chain- and deployment-bound EIP-712 with import as the only portability path. *Recommend bind.*
+3. **Freeze end state** — (A) one-way burn; (B) append-only steward for replayed generations and codec/verifier additions; (C) immutable code without proxies at S5. *Recommend A for testnets; decide B/C before S5.*
+4. **Supported inline body maximum under repricing** — 8,192 B (≈ 28.2M state gas, reservoir-only) or ≈ 4 KiB inline with a blob carrier above. *Recommend: measure at C1, publish in `limits`, keep the seam.*
+5. **Witness retention** — hash + log by default; must import-eligible plans use `SignatureStore` retention (otherwise their 1271 authorship is `UNKNOWN` for portability)? *Recommend: default hash + log; state retention required for import.*
+6. **Declaration signature profile** — EIP-712 EOA declarations at launch; ERC-1271 creators later. *Recommend yes.*
+7. **Names N1/N2** — `files-name/2` as the only Name Type; NFC and case policy in the client. *Recommend yes.*
+8. **Controller-owner change** — an activation (this design) or a recorded-only transfer. *Recommend activation.*
+9. **Static-client write profile for Devcon** — direct-EOA prompt first; relayed profiles later. *Recommend yes.*
+10. **Chain-id pin after freeze** — read-only on a fork unless posture B. *Recommend read-only.*
+11. **Index replacement and plan invalidation** — every replacement voids unsent signed plans (testnet) or scoped invalidation later. *Recommend accept now.*
+12. **State-only `publicationId → ordinal` lookup** — no map (this design). *Recommend no map.*
+13. **Realm-origin preimage** — confirm. *Recommend confirm.*
+14. **Paid complete listings** — accumulators in the closure. *Recommend accumulators.*
+15. **First-milestone owner and implementer** — blocks S1 start. *Recommend: Claude implements `contracts-v2` under the 2026-10-13 mandate, with one named integration owner for the SDK/client vertical (the PM's ask, `AN/pm-requirements-release.md:227` item 6).*
+16. **D-D narrowed** — presence families total; predicate families declared by Type authors in codec 2 as BITMAP families with per-scope coverage; K10 Etched; ROSTER reserved. *Recommend ratify.*
+17. **Withdraw semantics** — occurrence-only. *Recommend occurrence-only for S1.*
+18. **Testnet upgrade authority (the initialization plan's D5)** — EOA while data is disposable; a pinned Safe before data worth keeping. *Recommend as stated.*
+19. **Stateful (`CALL`-mode) rules** — later. *Recommend later.*
+20. **Record two one-line rulings** — the EAS exclusion and the frozen-dependency policy for Etched code (now mechanized as S16: every EFS code pin is scanned, dependency classes are disclosed, the terminal row carries `dependencyRoot`). *Recommend yes.*
+21. **Acceptor gas as a floor (new)** — rules receive all available gas above the kernel tail, so a hostile Type in a signed plan can burn a relayer's whole `tx.gas` (bounded by the relayer's own limit and simulation) in exchange for Types that a repricing can never brick. Alternative: a Realm-level multiplier cap re-tunable by activation before freeze. *Recommend the floor.*
+22. **Native lane bound by default (new)** — the SDK binds `expectedExecutionSet` and `expectedAcceptanceProfile` on every native call, so an activation or a policy activation between preparation and landing refuses the call (reprepare) instead of landing under changed rules. *Recommend bind by default; an explicit unbound option for apps that want "land anyway".*
+23. **Permissionless `ReaderDirectory` (new)** — anyone may list a reader that names the ledger; the SDK trusts `release.json`, the directory is discovery only (readers can be fixed after freeze). Alternative: owner-listed, dead after freeze. *Recommend permissionless.*
+24. **Freeze canary Type (new)** — `realm-notice/1` is registered at genesis and the freeze publishes a `frozen` record from the controller's principal. *Recommend yes.*
+25. **Descriptor cap 4,096 B (new)** — the measured prototype cap; larger Types are a codec-2 question. *Recommend keep.*
+26. **Non-atomic saves above the envelope (new)** — the SDK splits a save above the published maximum into several publications and labels it non-atomic (§12.2), while pm R3 (`AN/pm-requirements-release.md:138`) says a retry "never leaves half a save". Options: (a) accept the label and let the client surface a partially landed save as a visible state (each part keeps its own `AlreadyAdmitted` retry identity, so no part is ever duplicated); (b) stage-then-commit (kinds 8/9, b9) in a later kernel upgrade; (c) a smaller supported document. *Recommend (a) for M1 with the maximum published in `limits`, and (b) scheduled after S2.*
+27. **Cost envelope and venue (new)** — a create-file is ≈ 1.5M today and ≈ 5.4M under EIP-8037 (§14, estimates), and no first public chain is named. *Recommend: name the first public testnet chain before S5, take the envelope from the C1 measurement on that chain's schedule, and plan against EIP-8037 pricing.*
+28. **Registry self-report residual (new)** — a malicious registry implementation installed by activation can lie about `activeRevision()` until the freeze (risk 7; `AN/followup-6.md:360`, Q-J2). Options: accept until freeze (this design) or an immutable registry replaced by activation like the index. *Recommend accept until freeze; revisit only if a Safe-held upgrade key is retained after testnet.*
+29. **Lens defaults and the seed principal (new)** — the PM asks to surface the empty-principal-list default and the multi-lens merge rule (`AN/SUMMARY.txt:317-319`); the fixture seeds the root under an EOA fixture principal (§13). *Recommend: at the contract readers an empty principal list means "no lens", never "all data"; the client supplies its defaults from `efs-deployment/1.defaultLensPrincipals`; first-touch-wins merge for M1; keep the EOA seed principal for testnets.*
+30. **Devcon scope (new)** — whether Lists and a public home (M3) must be in the first testnet release (`AN/pm-requirements-release.md:227` item 7). *Recommend: Files plus the Solidity consumer for the first testnet; Lists and the home as S3 profiles.*
+31. **Types as registry rows or as Records (new)** — `AN/critique.md` C-2. This design keeps the registry (rows, pins, its own proxy) and leaves Types-as-Records as a later profile convention over the registry id (§9.5(vi)). *Recommend rows now; a `TypeDescriptor/1` Record profile later if wanted.*
+32. **Tags and the D-E budget (new)** — D-B and D-E (`OR:341-360`) rule one global concept id per folded string and a target of ≈ 50k gas per tag today (≈ 220k under Glamsterdam); a tag through the generic BIND path would cost ≈ 0.25M today and ≈ 1.2M under EIP-8037 (inferred from the §14 slot model: head, position, `bindingPosition`, admission row, plus history, role-scope, scope and backlink appends), roughly five times D-E. Tags are therefore outside C2 (§12.3) and designed in S3 against D-E — a dedicated tag family shape (for example a per-concept stance bitmap over principals rather than a binding per tag). *Recommend: hold tags to D-E and accept the S3 schedule; if D-E cannot be met, re-rule the budget explicitly rather than let the design widen it silently.*
+33. **Freeze-trace waivers (new)** — which §16.7 rows may be waived for a given Realm's freeze. *Recommend: none for a persistent Realm; any for a throwaway rehearsal.*
+
+---
+
+
