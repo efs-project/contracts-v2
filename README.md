@@ -37,6 +37,16 @@ enforces (`interfaces` ← `lib` ← `core`/`types`/`index`/`control` ← `reade
 formats; `docs/` the design, the plan, the build-identity and gas-schedule policies and the
 one-way doors. No sibling checkout is required to build or test.
 
+**What exists today (S1).** The kernel (`src/core`: `LedgerCore` behind an OZ transparent proxy with
+its three pinned delegates), the Type registry (`src/types`: `TypeRegistry` behind its proxy,
+`DescriptorStore`, `DescribedCodec`, the `DescribedTypeRule/1` wrapper), the index (`src/index`:
+per-Realm `PostingStore`/`BitmapStore`, the generation-1 `RealmIndex`, `IndexReplayDecoder`), the
+control plane (`src/control`: `RealmController`, `RealmGenesis`, `IndexDeployer`), the read facets
+(`src/readers`), the consumer library (`src/lib/EfsNative.sol`), the Files profile (`src/profiles`),
+the `ReaderDirectory` (`src/periphery`) and an external consumer example (`examples/NativeApp.sol`).
+`docs/IMPLEMENTATION-PLAN.md` carries the slice status; `docs/QUESTIONS-FOR-JAMES.md` the open
+product questions.
+
 The SDK consumes a pinned, reviewed release bundle (design §13); canonical deployed identities
 come from this repository's exact release build ([docs/BUILD-IDENTITY.md](docs/BUILD-IDENTITY.md)).
 
