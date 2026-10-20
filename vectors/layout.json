@@ -1780,7 +1780,7 @@
       "section": "index",
       "root": "0xafadaed06cad87ccf20afccb1a44eec86b687f3eab1409e879b2ae8416b40a00",
       "struct": "PostingStorage",
-      "slots": 4,
+      "slots": 5,
       "fields": [
         {
           "name": "attached",
@@ -1879,6 +1879,13 @@
             "mappings": [],
             "arrays": []
           }
+        },
+        {
+          "name": "familyIds",
+          "slot": 4,
+          "elemType": "bytes32",
+          "elemBytes": 32,
+          "elem": null
         }
       ]
     },
@@ -1886,7 +1893,7 @@
       "section": "index",
       "root": "0x4640202bf0ab6387cbfef29b92cbbb784eceffe554551be074390efd2b65b600",
       "struct": "BitmapStorage",
-      "slots": 6,
+      "slots": 7,
       "fields": [
         {
           "name": "attached",
@@ -2055,6 +2062,13 @@
             "mappings": [],
             "arrays": []
           }
+        },
+        {
+          "name": "familyIds",
+          "slot": 6,
+          "elemType": "bytes32",
+          "elemBytes": 32,
+          "elem": null
         }
       ]
     },

@@ -1,7 +1,7 @@
 {
   "storage": [
     {
-      "astId": 1105,
+      "astId": 1111,
       "contract": "test/harness/LayoutProbe.sol:GenerationLayoutProbe",
       "label": "probe_gen",
       "offset": 0,

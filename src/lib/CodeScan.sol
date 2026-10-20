@@ -18,18 +18,16 @@ import {E_CODE_SHAPE} from "../interfaces/Errors.sol";
 ///      `PUSH1`..`PUSH32` (0x60..0x7f) own their immediates. The last two bytes are a big-endian `u16`
 ///      `L` naming the solc CBOR trailer, the last `L + 2` bytes (`L + 2 > size` is reason 4). Under
 ///      `bytecode_hash = "none"` the trailer is `a1 64 "solc" 43 <maj min patch> 00 0a` (`L = 10`).
-///      Every forbidden opcode in the code region `[0, size - L - 2)` refuses. The trailer region is
-///      skipped as data only where execution cannot reach it, because a crafted runtime can name any
-///      `L`: the walk continues through it, and a forbidden opcode there still refuses (reason 3) when
-///      it is live — reachable by falling through from the last code-region instruction (or from pc 0),
-///      or after a `JUMPDEST` in the trailer, without an intervening `STOP`, `JUMP`, `RETURN`, `REVERT`
-///      or `INVALID`. Undefined opcodes count as non-halting, so a later fork cannot open a path. A solc
-///      trailer holds no forbidden byte and no `JUMPDEST`, so it never refuses; an IPFS-hash trailer
-///      (third-party builds) refuses only when its hash bytes are live and hold a forbidden opcode.
-///      Fail-closed residue: data sections inside the code region (via-IR appends them after the final
-///      `INVALID`) are walked as code, so a forbidden byte there refuses a runtime that could never
-///      execute it; EFS units are measured against this at C1.
-///
+///      A forbidden opcode refuses (reason 3) only where execution can reach it: a position is live from
+///      pc 0, after any `JUMPDEST`, or by falling through from a live instruction, and dead after a
+///      `STOP`, `JUMP`, `RETURN`, `REVERT` or `INVALID` until the next `JUMPDEST`. This is the EVM's own
+///      reachability: a jump lands only on a `JUMPDEST` outside push data, and nothing else enters a dead
+///      stretch. Undefined opcodes count as non-halting, so a later fork cannot open a path. The rule is
+///      the same in the code region and in the trailer, so the 32-byte constants via-IR places after the
+///      final `INVALID` (storage roots, family ids, selectors) never refuse a runtime that cannot execute
+///      them, while a crafted runtime that names any `L` is still walked to its last byte; a solc trailer
+///      holds no `JUMPDEST`, an IPFS-hash trailer (third-party builds) refuses only when its hash bytes
+///      are live and hold a forbidden opcode. `tools/checks.mjs` applies the identical rule off chain.
 ///      Gas: one table lookup per instruction (no bounds check: 64 sentinel bytes of 0xff stop the walk),
 ///      unrolled 16 times; ≈ 32 gas per instruction walked (`test/unit/CodeScan.t.sol` logs the figures).
 library CodeScan {
@@ -171,24 +169,34 @@ library CodeScan {
                 }
                 mstore(codeEnd, saved0)
                 mstore(add(codeEnd, 0x20), saved1)
-                if lt(p, codeEnd) {
-                    r := 3
-                    leave
-                }
 
-                // The trailer region, from the first instruction at or after `codeEnd` (inside it when
-                // a PUSH straddles the boundary). It is live on entry when pc 0 is in it or when the
-                // last code-region instruction falls through; the last group holds that instruction
-                // and no forbidden opcode.
-                let live := eq(codeEnd, c)
-                if iszero(live) {
-                    let last := group
-                    for { let q := group } lt(q, codeEnd) {} {
-                        last := q
-                        q := add(q, byte(0, mload(add(t, byte(0, mload(q))))))
+                // Liveness on entry to the exact walk below. A forbidden byte inside the code region is
+                // judged by reachability like any other: walk exactly from pc 0 to it. Otherwise the
+                // trailer is live on entry when pc 0 is in it or when the last code-region instruction
+                // falls through; the last group holds that instruction and no forbidden opcode.
+                let live := 1
+                switch lt(p, codeEnd)
+                case 1 {
+                    for { let q := c } lt(q, p) {} {
+                        let op := byte(0, mload(q))
+                        if eq(op, 0x5b) { live := 1 }
+                        if and(shr(op, HALTING), 1) { live := 0 }
+                        q := add(q, byte(0, mload(add(t, op))))
                     }
-                    live := iszero(and(shr(byte(0, mload(last)), HALTING), 1))
                 }
+                default {
+                    live := eq(codeEnd, c)
+                    if iszero(live) {
+                        let last := group
+                        for { let q := group } lt(q, codeEnd) {} {
+                            last := q
+                            q := add(q, byte(0, mload(add(t, byte(0, mload(q))))))
+                        }
+                        live := iszero(and(shr(byte(0, mload(last)), HALTING), 1))
+                    }
+                }
+                // The exact walk: from the first forbidden byte (or the trailer) to the end, a forbidden
+                // opcode refuses only where execution can reach it.
                 let end := add(c, n)
                 for { let q := p } lt(q, end) {} {
                     let op := byte(0, mload(q))

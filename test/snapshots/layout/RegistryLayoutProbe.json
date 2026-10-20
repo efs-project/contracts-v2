@@ -1,68 +1,68 @@
 {
   "storage": [
     {
-      "astId": 1066,
+      "astId": 1072,
       "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
       "label": "probe_types",
       "offset": 0,
       "slot": "0",
-      "type": "t_struct(TypesStorage)825_storage"
-    },
-    {
-      "astId": 1069,
-      "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
-      "label": "probe_declarations",
-      "offset": 0,
-      "slot": "2",
-      "type": "t_struct(DeclarationsStorage)850_storage"
-    },
-    {
-      "astId": 1072,
-      "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
-      "label": "probe_policy",
-      "offset": 0,
-      "slot": "3",
-      "type": "t_struct(PolicyStorage)880_storage"
+      "type": "t_struct(TypesStorage)831_storage"
     },
     {
       "astId": 1075,
       "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
-      "label": "probe_roles",
+      "label": "probe_declarations",
       "offset": 0,
-      "slot": "4",
-      "type": "t_struct(RolesStorage)912_storage"
+      "slot": "2",
+      "type": "t_struct(DeclarationsStorage)856_storage"
     },
     {
       "astId": 1078,
       "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
-      "label": "probe_bindings",
+      "label": "probe_policy",
       "offset": 0,
-      "slot": "6",
-      "type": "t_struct(BindingsStorage)938_storage"
+      "slot": "3",
+      "type": "t_struct(PolicyStorage)886_storage"
     },
     {
       "astId": 1081,
       "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
-      "label": "probe_wrappers",
+      "label": "probe_roles",
       "offset": 0,
-      "slot": "7",
-      "type": "t_struct(WrappersStorage)967_storage"
+      "slot": "4",
+      "type": "t_struct(RolesStorage)918_storage"
     },
     {
       "astId": 1084,
       "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
-      "label": "probe_catalog",
+      "label": "probe_bindings",
       "offset": 0,
-      "slot": "8",
-      "type": "t_struct(CatalogStorage)984_storage"
+      "slot": "6",
+      "type": "t_struct(BindingsStorage)944_storage"
     },
     {
       "astId": 1087,
       "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
+      "label": "probe_wrappers",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_struct(WrappersStorage)973_storage"
+    },
+    {
+      "astId": 1090,
+      "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
+      "label": "probe_catalog",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_struct(CatalogStorage)990_storage"
+    },
+    {
+      "astId": 1093,
+      "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
       "label": "probe_control",
       "offset": 0,
       "slot": "9",
-      "type": "t_struct(ControlStorage)1007_storage"
+      "type": "t_struct(ControlStorage)1013_storage"
     }
   ],
   "types": {
@@ -83,40 +83,40 @@
       "numberOfBytes": "32",
       "value": "t_mapping(t_uint256,t_bytes32)"
     },
-    "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(PolicyRow)871_storage))": {
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(PolicyRow)877_storage))": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => mapping(uint256 => struct RegistryStorage.PolicyRow))",
       "numberOfBytes": "32",
-      "value": "t_mapping(t_uint256,t_struct(PolicyRow)871_storage)"
+      "value": "t_mapping(t_uint256,t_struct(PolicyRow)877_storage)"
     },
-    "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(RoleRow)899_storage))": {
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(RoleRow)905_storage))": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => mapping(uint256 => struct RegistryStorage.RoleRow))",
       "numberOfBytes": "32",
-      "value": "t_mapping(t_uint256,t_struct(RoleRow)899_storage)"
+      "value": "t_mapping(t_uint256,t_struct(RoleRow)905_storage)"
     },
-    "t_mapping(t_bytes32,t_struct(BindingRow)931_storage)": {
+    "t_mapping(t_bytes32,t_struct(BindingRow)937_storage)": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => struct RegistryStorage.BindingRow)",
       "numberOfBytes": "32",
-      "value": "t_struct(BindingRow)931_storage"
+      "value": "t_struct(BindingRow)937_storage"
     },
-    "t_mapping(t_bytes32,t_struct(DeclarationRow)843_storage)": {
+    "t_mapping(t_bytes32,t_struct(DeclarationRow)849_storage)": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => struct RegistryStorage.DeclarationRow)",
       "numberOfBytes": "32",
-      "value": "t_struct(DeclarationRow)843_storage"
+      "value": "t_struct(DeclarationRow)849_storage"
     },
-    "t_mapping(t_bytes32,t_struct(TypeRow)812_storage)": {
+    "t_mapping(t_bytes32,t_struct(TypeRow)818_storage)": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => struct RegistryStorage.TypeRow)",
       "numberOfBytes": "32",
-      "value": "t_struct(TypeRow)812_storage"
+      "value": "t_struct(TypeRow)818_storage"
     },
     "t_mapping(t_bytes32,t_uint16)": {
       "encoding": "mapping",
@@ -132,34 +132,34 @@
       "numberOfBytes": "32",
       "value": "t_bytes32"
     },
-    "t_mapping(t_uint256,t_struct(PolicyRow)871_storage)": {
+    "t_mapping(t_uint256,t_struct(PolicyRow)877_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct RegistryStorage.PolicyRow)",
       "numberOfBytes": "32",
-      "value": "t_struct(PolicyRow)871_storage"
+      "value": "t_struct(PolicyRow)877_storage"
     },
-    "t_mapping(t_uint256,t_struct(RoleRow)899_storage)": {
+    "t_mapping(t_uint256,t_struct(RoleRow)905_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct RegistryStorage.RoleRow)",
       "numberOfBytes": "32",
-      "value": "t_struct(RoleRow)899_storage"
+      "value": "t_struct(RoleRow)905_storage"
     },
-    "t_mapping(t_uint256,t_struct(WrapperRow)960_storage)": {
+    "t_mapping(t_uint256,t_struct(WrapperRow)966_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct RegistryStorage.WrapperRow)",
       "numberOfBytes": "32",
-      "value": "t_struct(WrapperRow)960_storage"
+      "value": "t_struct(WrapperRow)966_storage"
     },
-    "t_struct(BindingRow)931_storage": {
+    "t_struct(BindingRow)937_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.BindingRow",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 926,
+          "astId": 932,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "custom",
           "offset": 0,
@@ -167,7 +167,7 @@
           "type": "t_address"
         },
         {
-          "astId": 928,
+          "astId": 934,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "customAbi",
           "offset": 20,
@@ -175,7 +175,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 930,
+          "astId": 936,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "bindingId",
           "offset": 0,
@@ -184,28 +184,28 @@
         }
       ]
     },
-    "t_struct(BindingsStorage)938_storage": {
+    "t_struct(BindingsStorage)944_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.BindingsStorage",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 937,
+          "astId": 943,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "rows",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_bytes32,t_struct(BindingRow)931_storage)"
+          "type": "t_mapping(t_bytes32,t_struct(BindingRow)937_storage)"
         }
       ]
     },
-    "t_struct(CatalogStorage)984_storage": {
+    "t_struct(CatalogStorage)990_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.CatalogStorage",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 983,
+          "astId": 989,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "typeAt",
           "offset": 0,
@@ -214,13 +214,13 @@
         }
       ]
     },
-    "t_struct(ControlStorage)1007_storage": {
+    "t_struct(ControlStorage)1013_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.ControlStorage",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 998,
+          "astId": 1004,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "ledger",
           "offset": 0,
@@ -228,7 +228,7 @@
           "type": "t_address"
         },
         {
-          "astId": 1000,
+          "astId": 1006,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "activeRevision",
           "offset": 20,
@@ -236,7 +236,7 @@
           "type": "t_uint32"
         },
         {
-          "astId": 1002,
+          "astId": 1008,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "wrapperCount",
           "offset": 24,
@@ -244,7 +244,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 1004,
+          "astId": 1010,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "mutations",
           "offset": 26,
@@ -252,7 +252,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 1006,
+          "astId": 1012,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "catalogCount",
           "offset": 0,
@@ -261,13 +261,13 @@
         }
       ]
     },
-    "t_struct(DeclarationRow)843_storage": {
+    "t_struct(DeclarationRow)849_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.DeclarationRow",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 838,
+          "astId": 844,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "key",
           "offset": 0,
@@ -275,7 +275,7 @@
           "type": "t_address"
         },
         {
-          "astId": 840,
+          "astId": 846,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "installed",
           "offset": 20,
@@ -283,7 +283,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 842,
+          "astId": 848,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "signatureHash",
           "offset": 0,
@@ -292,28 +292,28 @@
         }
       ]
     },
-    "t_struct(DeclarationsStorage)850_storage": {
+    "t_struct(DeclarationsStorage)856_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.DeclarationsStorage",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 849,
+          "astId": 855,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "rows",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_bytes32,t_struct(DeclarationRow)843_storage)"
+          "type": "t_mapping(t_bytes32,t_struct(DeclarationRow)849_storage)"
         }
       ]
     },
-    "t_struct(PolicyRow)871_storage": {
+    "t_struct(PolicyRow)877_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.PolicyRow",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 864,
+          "astId": 870,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "acceptor",
           "offset": 0,
@@ -321,7 +321,7 @@
           "type": "t_address"
         },
         {
-          "astId": 866,
+          "astId": 872,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "activatedAt",
           "offset": 20,
@@ -329,7 +329,7 @@
           "type": "t_uint40"
         },
         {
-          "astId": 868,
+          "astId": 874,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "mutationAt",
           "offset": 25,
@@ -337,7 +337,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 870,
+          "astId": 876,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "codehash",
           "offset": 0,
@@ -346,28 +346,28 @@
         }
       ]
     },
-    "t_struct(PolicyStorage)880_storage": {
+    "t_struct(PolicyStorage)886_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.PolicyStorage",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 879,
+          "astId": 885,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "rows",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(PolicyRow)871_storage))"
+          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(PolicyRow)877_storage))"
         }
       ]
     },
-    "t_struct(RoleRow)899_storage": {
+    "t_struct(RoleRow)905_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.RoleRow",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 894,
+          "astId": 900,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "expectedType",
           "offset": 0,
@@ -375,7 +375,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 896,
+          "astId": 902,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "activatedAt",
           "offset": 0,
@@ -383,7 +383,7 @@
           "type": "t_uint40"
         },
         {
-          "astId": 898,
+          "astId": 904,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "mutationAt",
           "offset": 5,
@@ -392,21 +392,21 @@
         }
       ]
     },
-    "t_struct(RolesStorage)912_storage": {
+    "t_struct(RolesStorage)918_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.RolesStorage",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 907,
+          "astId": 913,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "rows",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(RoleRow)899_storage))"
+          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_struct(RoleRow)905_storage))"
         },
         {
-          "astId": 911,
+          "astId": 917,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "count",
           "offset": 0,
@@ -415,13 +415,13 @@
         }
       ]
     },
-    "t_struct(TypeRow)812_storage": {
+    "t_struct(TypeRow)818_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.TypeRow",
       "numberOfBytes": "192",
       "members": [
         {
-          "astId": 777,
+          "astId": 783,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "grade",
           "offset": 0,
@@ -429,7 +429,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 779,
+          "astId": 785,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "refCount",
           "offset": 1,
@@ -437,7 +437,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 781,
+          "astId": 787,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "wrapperVersion",
           "offset": 2,
@@ -445,7 +445,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 783,
+          "astId": 789,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "ruleMode",
           "offset": 3,
@@ -453,7 +453,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 785,
+          "astId": 791,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "dependencyClass",
           "offset": 4,
@@ -461,7 +461,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 787,
+          "astId": 793,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "refHeaderWords",
           "offset": 5,
@@ -469,7 +469,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 789,
+          "astId": 795,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "validationGas",
           "offset": 6,
@@ -477,7 +477,7 @@
           "type": "t_uint24"
         },
         {
-          "astId": 791,
+          "astId": 797,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "policyRows",
           "offset": 9,
@@ -485,7 +485,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 793,
+          "astId": 799,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "registeredAt",
           "offset": 11,
@@ -493,7 +493,7 @@
           "type": "t_uint40"
         },
         {
-          "astId": 795,
+          "astId": 801,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "catalogOrdinal",
           "offset": 16,
@@ -501,7 +501,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 797,
+          "astId": 803,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "codecVersion",
           "offset": 22,
@@ -509,7 +509,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 799,
+          "astId": 805,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "textProfile",
           "offset": 23,
@@ -517,7 +517,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 801,
+          "astId": 807,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "shape",
           "offset": 0,
@@ -525,7 +525,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 803,
+          "astId": 809,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "ruleId",
           "offset": 0,
@@ -533,7 +533,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 805,
+          "astId": 811,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "mandatory",
           "offset": 0,
@@ -541,7 +541,7 @@
           "type": "t_address"
         },
         {
-          "astId": 807,
+          "astId": 813,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "descriptorBlob",
           "offset": 0,
@@ -549,7 +549,7 @@
           "type": "t_address"
         },
         {
-          "astId": 809,
+          "astId": 815,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "blobLength",
           "offset": 20,
@@ -557,7 +557,7 @@
           "type": "t_uint16"
         },
         {
-          "astId": 811,
+          "astId": 817,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "grammarProfile",
           "offset": 0,
@@ -566,21 +566,21 @@
         }
       ]
     },
-    "t_struct(TypesStorage)825_storage": {
+    "t_struct(TypesStorage)831_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.TypesStorage",
       "numberOfBytes": "64",
       "members": [
         {
-          "astId": 818,
+          "astId": 824,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "rows",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_bytes32,t_struct(TypeRow)812_storage)"
+          "type": "t_mapping(t_bytes32,t_struct(TypeRow)818_storage)"
         },
         {
-          "astId": 824,
+          "astId": 830,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "refTypes",
           "offset": 0,
@@ -589,13 +589,13 @@
         }
       ]
     },
-    "t_struct(WrapperRow)960_storage": {
+    "t_struct(WrapperRow)966_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.WrapperRow",
       "numberOfBytes": "96",
       "members": [
         {
-          "astId": 951,
+          "astId": 957,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "implementation",
           "offset": 0,
@@ -603,7 +603,7 @@
           "type": "t_address"
         },
         {
-          "astId": 953,
+          "astId": 959,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "codecVersion",
           "offset": 20,
@@ -611,7 +611,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 955,
+          "astId": 961,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "activatedAt",
           "offset": 21,
@@ -619,7 +619,7 @@
           "type": "t_uint40"
         },
         {
-          "astId": 957,
+          "astId": 963,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "codehash",
           "offset": 0,
@@ -627,7 +627,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 959,
+          "astId": 965,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "grammarProfile",
           "offset": 0,
@@ -636,18 +636,18 @@
         }
       ]
     },
-    "t_struct(WrappersStorage)967_storage": {
+    "t_struct(WrappersStorage)973_storage": {
       "encoding": "inplace",
       "label": "struct RegistryStorage.WrappersStorage",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 966,
+          "astId": 972,
           "contract": "test/harness/LayoutProbe.sol:RegistryLayoutProbe",
           "label": "rows",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_uint256,t_struct(WrapperRow)960_storage)"
+          "type": "t_mapping(t_uint256,t_struct(WrapperRow)966_storage)"
         }
       ]
     },

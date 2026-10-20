@@ -199,7 +199,8 @@ contract CodeScanTest is Test {
         }
     }
 
-    /// Property (b): a real forbidden opcode anywhere outside push data refuses.
+    /// Property (b): a real forbidden opcode anywhere outside push data refuses when execution can reach
+    /// it; the stream may halt, so a JUMPDEST makes the forbidden byte live (a halted one is data).
     function testFuzz_reason3_realForbiddenOpcodeFails(
         bytes32 seed,
         uint8 before,
@@ -208,10 +209,15 @@ contract CodeScanTest is Test {
     ) public {
         bytes memory code = bytes.concat(
             _stream(seed, bound(before, 0, 32)),
+            hex"5b",
             _forbidden(which),
             _stream(~seed, bound(afterwards, 0, 32))
         );
         assertEq(CodeScan.scan(_rt(code)), CodePins.FORBIDDEN_OPCODE);
+        // the same byte behind a halt, with no JUMPDEST, is unreachable data
+        bytes memory dead =
+            bytes.concat(_stream(seed, bound(before, 0, 32)), hex"00", _forbidden(which), hex"00");
+        assertEq(CodeScan.scan(_rt(dead)), 0);
         vm.etch(SLOT, _rt(code));
         _expectShape(SLOT, CodePins.FORBIDDEN_OPCODE);
         gate.requirePlainRuntime(SLOT);
@@ -328,7 +334,9 @@ contract CodeScanTest is Test {
         bytes memory prefix = _stream(seed, bound(count, 0, 32));
         bytes memory push = bytes.concat(bytes1(uint8(0x5f + w)), _repeat(0xf4, k));
         assertEq(CodeScan.scan(_rt(bytes.concat(prefix, push))), 0);
-        assertEq(CodeScan.scan(_rt(bytes.concat(prefix, hex"f4", push))), CodePins.FORBIDDEN_OPCODE);
+        assertEq(
+            CodeScan.scan(_rt(bytes.concat(prefix, hex"5bf4", push))), CodePins.FORBIDDEN_OPCODE
+        );
     }
 
     // ---- the trailer region is skipped only where execution cannot reach it -----------------------

@@ -27,6 +27,7 @@ abstract contract PostingStoreStorage {
         mapping(bytes32 postingKey => mapping(uint256 wordIndex => uint256)) words;
         WriterRange[] writers;
         uint8 attached; // set by the first live write; INITIAL_WRITER's right lapses when set
+        bytes32[] familyIds; // constructor-fixed (written once at construction)
     }
 
     bytes32 internal constant POSTING_ROOT =
@@ -68,6 +69,7 @@ abstract contract BitmapStoreStorage {
         mapping(bytes32 family => mapping(bytes32 scope => CoverageSlot)) coverage;
         WriterRange[] writers;
         uint8 attached;
+        bytes32[] familyIds; // constructor-fixed (written once at construction)
     }
 
     bytes32 internal constant BITMAP_ROOT =

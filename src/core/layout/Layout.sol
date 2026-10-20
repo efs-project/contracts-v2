@@ -831,7 +831,7 @@ library Layout {
         catalogCount = uint48(x);
     }
 
-    // ---- efs.index.v2.store.posting — PostingStorage, 4 slot(s)
+    // ---- efs.index.v2.store.posting — PostingStorage, 5 slot(s)
     bytes32 internal constant INDEX_STORE_POSTING_ROOT =
         0xafadaed06cad87ccf20afccb1a44eec86b687f3eab1409e879b2ae8416b40a00;
     uint256 internal constant INDEX_STORE_POSTING_ATTACHED_SLOT =
@@ -856,6 +856,14 @@ library Layout {
 
     function postingWritersElementSlot(uint256 i) internal pure returns (uint256) {
         return uint256(keccak256(abi.encode(uint256(INDEX_STORE_POSTING_ROOT) + 2))) + i * 1;
+    }
+
+    // familyIds: length at the slot, element i at keccak(slot) + i * 1
+    uint256 internal constant INDEX_STORE_POSTING_FAMILYIDS_LENGTH_SLOT =
+        uint256(INDEX_STORE_POSTING_ROOT) + 4;
+
+    function postingFamilyIdsElementSlot(uint256 i) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encode(uint256(INDEX_STORE_POSTING_ROOT) + 4))) + i * 1;
     }
 
     // slot +3 of PostingStorage: attached at bit 0
@@ -889,7 +897,7 @@ library Layout {
         toAdmission = uint48(x >> 208);
     }
 
-    // ---- efs.index.v2.store.bitmap — BitmapStorage, 6 slot(s)
+    // ---- efs.index.v2.store.bitmap — BitmapStorage, 7 slot(s)
     bytes32 internal constant INDEX_STORE_BITMAP_ROOT =
         0x4640202bf0ab6387cbfef29b92cbbb784eceffe554551be074390efd2b65b600;
     uint256 internal constant INDEX_STORE_BITMAP_ATTACHED_SLOT =
@@ -929,6 +937,14 @@ library Layout {
 
     function bitmapWritersElementSlot(uint256 i) internal pure returns (uint256) {
         return uint256(keccak256(abi.encode(uint256(INDEX_STORE_BITMAP_ROOT) + 4))) + i * 1;
+    }
+
+    // familyIds: length at the slot, element i at keccak(slot) + i * 1
+    uint256 internal constant INDEX_STORE_BITMAP_FAMILYIDS_LENGTH_SLOT =
+        uint256(INDEX_STORE_BITMAP_ROOT) + 6;
+
+    function bitmapFamilyIdsElementSlot(uint256 i) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encode(uint256(INDEX_STORE_BITMAP_ROOT) + 6))) + i * 1;
     }
 
     // slot +5 of BitmapStorage: attached at bit 0

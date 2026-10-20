@@ -1,12 +1,12 @@
 {
   "storage": [
     {
-      "astId": 1093,
+      "astId": 1099,
       "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
       "label": "probe_posting",
       "offset": 0,
       "slot": "0",
-      "type": "t_struct(PostingStorage)626_storage"
+      "type": "t_struct(PostingStorage)629_storage"
     }
   ],
   "types": {
@@ -14,6 +14,12 @@
       "encoding": "inplace",
       "label": "address",
       "numberOfBytes": "20"
+    },
+    "t_array(t_bytes32)dyn_storage": {
+      "encoding": "dynamic_array",
+      "label": "bytes32[]",
+      "numberOfBytes": "32",
+      "base": "t_bytes32"
     },
     "t_array(t_struct(WriterRange)597_storage)dyn_storage": {
       "encoding": "dynamic_array",
@@ -86,10 +92,10 @@
         }
       ]
     },
-    "t_struct(PostingStorage)626_storage": {
+    "t_struct(PostingStorage)629_storage": {
       "encoding": "inplace",
       "label": "struct PostingStoreStorage.PostingStorage",
-      "numberOfBytes": "128",
+      "numberOfBytes": "160",
       "members": [
         {
           "astId": 613,
@@ -122,6 +128,14 @@
           "offset": 0,
           "slot": "3",
           "type": "t_uint8"
+        },
+        {
+          "astId": 628,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "familyIds",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_array(t_bytes32)dyn_storage"
         }
       ]
     },
