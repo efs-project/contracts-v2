@@ -86,7 +86,7 @@ error E_UNSUPPORTED_ROW(uint8 row);
 
 // ---- registry (design §9) ----------------------------------------------------------------------------------
 error E_TYPE_EXISTS(bytes32 typeId);
-error E_BINDING(uint8 code); // 1 a binding argument on a grade that takes none 3 custom codehash 4 native codehash 5 binding signed by another key 6 existing row under another predicate 7 signature length 8 malleable 9 unrecoverable
+error E_BINDING(uint8 code); // 1 a binding argument on a grade that takes none 3 custom codehash 4 native codehash 5 binding signed by another key 6 existing row under another predicate 7 signature length 8 malleable 9 unrecoverable 10 binding id recomputed by the wrapper differs from the context's
 error E_DECLARATION(uint8 code); // 1 signature length 2 malleable or bad v 3 unrecoverable 4 signed by another key
 error E_CODEC(uint16 byteOffset, uint8 code); // codes 1..26 documented on DescribedCodec.parse; the DescriptorStore uses (0, 1) for an oversized blob
 error E_DESIGNATOR(address target);

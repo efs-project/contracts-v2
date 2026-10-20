@@ -211,11 +211,21 @@ library DescribedCodec {
                     uint256(bytes32(body[cursor:cursor + length]) >> ((32 - length) * 8));
                 if (value < lo || value > hi) revert E_BODY(leaf, 9);
             } else if (kind >= KIND_TEXT_LF) {
+                // the prototype's assembly scan: one calldata byte per step, no checked indexing
+                bool valid = true;
                 bool lf = kind == KIND_TEXT_LF;
-                for (uint256 q = cursor; q < cursor + length; ++q) {
-                    uint8 c = uint8(body[q]);
-                    if ((c < 0x20 || c > 0x7e) && !(lf && c == 0x0a)) revert E_BODY(leaf, 10);
+                assembly ("memory-safe") {
+                    let q := add(body.offset, cursor)
+                    let end := add(q, length)
+                    for {} lt(q, end) { q := add(q, 1) } {
+                        let c := byte(0, calldataload(q))
+                        if and(or(lt(c, 0x20), gt(c, 0x7e)), iszero(and(lf, eq(c, 0x0a)))) {
+                            valid := 0
+                            break
+                        }
+                    }
                 }
+                if (!valid) revert E_BODY(leaf, 10);
             }
             cursor += length;
         }
