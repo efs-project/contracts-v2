@@ -66,8 +66,8 @@ The contracts engineer (Fable) designs and writes the kernel, the apply and ingr
 | S1.4 control and genesis | done | `src/control/{RealmController,RealmGenesis,IndexDeployer}.sol`; `test/control/RealmController.t.sol`, `test/index/IndexDeployer.t.sol` |
 | S1.5 facets and the consumer | done | `src/readers/{LedgerReads,LedgerViews}.sol`, `src/lib/EfsNative.sol`, `src/periphery/ReaderDirectory.sol`, `examples/NativeApp.sol`; `test/readers`, `test/consumer`, `test/periphery` |
 | S1b.1 rules | done (75 tests; the M1 recipes end to end; gas on both schedules in `docs/GAS-SCHEDULES.md`) | `src/profiles/`, `test/profiles/`, `test/integration/FilesRecipes.t.sol` |
-| S1b.2 readers | in review | `LensReader`, `FilesPageReader`, `EfsFiles` |
-| S1b.3 release surface | in review | `tools/efs-fixture.mjs`, `release/`, `deploy/plan.json`, `gas/report.json` |
-| C1 | partial | sizes in `docs/DESIGN.md` adoption note 16; the M1 gas rows on both schedules in `docs/GAS-SCHEDULES.md`; the §14/§15 rewrite and `gasStateUsed` columns pending the readers and the release surface |
+| S1b.2 readers | done (`LensReader/1` 17,043 B, 48 tests; `FilesPageReader/1` 12,676 B, 45 tests; `EfsFiles`) | `src/readers/{LensReader,FilesPageReader}.sol`, `src/lib/EfsFiles.sol`; `test/readers` |
+| S1b.3 release surface | done (verify re-derives 263 facts; readers and the release hot-ABI id being folded in) | `tools/{deploy-plan,efs-fixture,release,gas-report}.mjs`, `deploy/plan.json`, `release/`, `artifacts/`, `gas/report.json`, `schemas/` |
+| C1 | closed for sizes and the M1 write rows (adoption notes 16 and 21, `docs/GAS-SCHEDULES.md`, `gas/report.json`); open: the two sides of 2^24, per-row slot counts, the 48-bit decision rule |
 
 Open items for James are Q1–Q40 in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.
