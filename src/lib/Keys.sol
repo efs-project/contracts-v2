@@ -75,18 +75,14 @@ library Keys {
     }
 
     /// Contract principal id, qualified by the Realm that observed it (kind 2).
-    function contractPrincipal(bytes32 realmOrigin, address account)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(DOM_PRINCIPAL, uint256(2), realmOrigin, account));
+    function contractPrincipal(bytes32 origin, address account) internal pure returns (bytes32) {
+        return keccak256(abi.encode(DOM_PRINCIPAL, uint256(2), origin, account));
     }
 
     /// The principal an account authors as. EIP-7702 delegation changes execution, not the signing
     /// key's namespace: exactly the 23-byte `ef0100 ‖ address` designator is a key principal, without
     /// following its target. Any other code is a contract principal of this Realm.
-    function principalFor(address account, bytes32 realmOrigin) internal view returns (bytes32) {
+    function principalFor(address account, bytes32 origin) internal view returns (bytes32) {
         uint256 size = account.code.length;
         if (size == 0) return principal(account);
         if (size == 23) {
@@ -97,7 +93,7 @@ library Keys {
             }
             if (prefix == hex"ef0100") return principal(account);
         }
-        return contractPrincipal(realmOrigin, account);
+        return contractPrincipal(origin, account);
     }
 
     /// Role-scope key (index family 16): one list per (principal, purpose, role).
@@ -152,12 +148,12 @@ library Keys {
     }
 
     /// Exact Type id from its descriptor commitment, checked-reference Types and rule identity.
-    function typeId(bytes32 shape, bytes32[] memory refTypes, bytes32 ruleId)
+    function typeId(bytes32 shape_, bytes32[] memory refTypes, bytes32 ruleId)
         internal
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encode(DOM_TYPE, shape, keccak256(abi.encode(refTypes)), ruleId));
+        return keccak256(abi.encode(DOM_TYPE, shape_, keccak256(abi.encode(refTypes)), ruleId));
     }
 
     function record(bytes32 typeId_, bytes memory body) internal pure returns (bytes32) {

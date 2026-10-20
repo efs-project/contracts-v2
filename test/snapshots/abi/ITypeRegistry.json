@@ -1,0 +1,759 @@
+{
+  "name": "ITypeRegistry",
+  "source": "src/interfaces/ITypeRegistry.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0x1a93ec95": "activate(uint32)",
+    "0x2af4f731": "activatePolicy(bytes32,address)",
+    "0x514bc5f9": "activateWrapper(uint8,address)",
+    "0xfa803ee5": "activeRevision()",
+    "0x3a49d747": "binding(bytes32)",
+    "0xb9d00e79": "catalog(uint64)",
+    "0x2e37a775": "catalogCount()",
+    "0x6c252bcf": "declaration(bytes32)",
+    "0x42d8df12": "declareRoleExpectation(bytes32,bytes32,bytes32)",
+    "0xd6009e53": "descriptorBytes(bytes32)",
+    "0x5c60da1b": "implementation()",
+    "0x485cc955": "initialize(address,address)",
+    "0x56397c35": "ledger()",
+    "0x2179a738": "mutations()",
+    "0x3d8ca9f1": "policy(bytes32,uint16)",
+    "0x64b69433": "refTypes(bytes32)",
+    "0x10e63340": "registerDescribed(bytes,bytes,address,bytes)",
+    "0xbabddf8b": "retainDeclaration(bytes,bytes)",
+    "0xaacf6937": "roleExpectation(bytes32,bytes32)",
+    "0x5047e7b6": "roleRow(bytes32,bytes32,uint16)",
+    "0x61444dcd": "roleRows(bytes32,bytes32)",
+    "0x36dfd02a": "typeCommitment(bytes32)",
+    "0x5b4e359b": "typeInfo(bytes32)",
+    "0x660df9aa": "wrapper(uint8)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "TypeInfo": [
+      {
+        "internalType": "uint8",
+        "name": "grade",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "refCount",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapperVersion",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "ruleMode",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "dependencyClass",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "refHeaderWords",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "validationGas",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "policyRows",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address",
+        "name": "mandatory",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ruleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "shape",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "descriptorBlob",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "policy",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "policyCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "policyRow",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address",
+        "name": "custom",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "bindingId",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "activate",
+      "inputs": [
+        {
+          "name": "revision",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "activatePolicy",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "acceptor",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "row",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "activateWrapper",
+      "inputs": [
+        {
+          "name": "version",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "implementation",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "activeRevision",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "binding",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "custom",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "customAbi",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "bindingId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "catalog",
+      "inputs": [
+        {
+          "name": "ordinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "catalogCount",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "declaration",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "key",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "installed",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "signatureHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "declareRoleExpectation",
+      "inputs": [
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "expectedType",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "row",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "descriptorBytes",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "implementation",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "initialize",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "wrapperV1",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "ledger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "mutations",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "policy",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "row",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "acceptor",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "codehash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "activatedAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "mutationAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "refTypes",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "registerDescribed",
+      "inputs": [
+        {
+          "name": "descriptor",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "declarationSig",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "nativeOrCustom",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "bindingSig",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "catalogOrdinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "retainDeclaration",
+      "inputs": [
+        {
+          "name": "descriptor",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "declarationSig",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "blob",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "roleExpectation",
+      "inputs": [
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "expectedType",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "row",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "roleRow",
+      "inputs": [
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "n",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "expectedType",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "activatedAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "roleRows",
+      "inputs": [
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "typeCommitment",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "typeInfo",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct TypeInfo",
+          "components": [
+            {
+              "name": "grade",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refCount",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "wrapperVersion",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "ruleMode",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "dependencyClass",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refHeaderWords",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "validationGas",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "policyRows",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "mandatory",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "ruleId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "shape",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "descriptorBlob",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "policy",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "policyCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "policyRow",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "custom",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "bindingId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "wrapper",
+      "inputs": [
+        {
+          "name": "version",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "implementation",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "codehash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "codecVersion",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "grammarProfile",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

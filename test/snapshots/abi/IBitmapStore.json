@@ -1,0 +1,530 @@
+{
+  "name": "IBitmapStore",
+  "source": "src/interfaces/IBitmapStore.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0x18e42334": "appendScopeEntry(bytes32,bytes32,uint64)",
+    "0xd9e6b370": "attached()",
+    "0x91b73ed4": "backfillOr(bytes32,bytes32,uint64,uint256,uint64)",
+    "0x6f60c856": "backfillSet(bytes32,bytes32,uint64,bool,uint64)",
+    "0x9c9d3a76": "familyIds()",
+    "0xfe619abf": "initialWriter()",
+    "0x4a304643": "lastMutation(bytes32)",
+    "0x56397c35": "ledger()",
+    "0x25f354b6": "liveAt(bytes32,uint64)",
+    "0x1a01bed4": "liveCount(bytes32)",
+    "0x94318fea": "liveWords(bytes32,bytes32,uint64,uint16)",
+    "0xf14e708d": "openCoverage(bytes32,bytes32,uint64)",
+    "0x4a7fc48d": "retireCoverage(bytes32,bytes32)",
+    "0x701c36d5": "scopeCoverage(bytes32,bytes32)",
+    "0x8e412b6d": "scopeEntry(bytes32,uint64)",
+    "0x8590fc69": "scopeHead(bytes32)",
+    "0xeb1fced8": "scopeSlice(bytes32,uint64,uint16)",
+    "0x16d276ce": "setBit(bytes32,bytes32,uint64,bool)",
+    "0xdd89581f": "stamp(bytes32)",
+    "0xe886b121": "storeAbiId()",
+    "0x8b2f5369": "writers()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "appendScopeEntry",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "bindingOrdinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "entryIndex",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "attached",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "backfillOr",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "wordIndex",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "orMask",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "backfillSet",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "entryIndex",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "value",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "familyIds",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "initialWriter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "lastMutation",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ledger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "liveAt",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "i",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bindingOrdinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "liveCount",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "liveWords",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "fromWord",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "n",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "openCoverage",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "liveFrom",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "retireCoverage",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "scopeCoverage",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "liveFrom",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "retiredAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "state",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "scopeEntry",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "i",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bindingOrdinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "scopeHead",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "count",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "live",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "lastMutation",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "liveBits0",
+          "type": "uint48",
+          "internalType": "uint48"
+        },
+        {
+          "name": "flags",
+          "type": "uint16",
+          "internalType": "uint16"
+        },
+        {
+          "name": "entry0",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "scopeSlice",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "from",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "n",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setBit",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "entryIndex",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "value",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "stamp",
+      "inputs": [
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "storeAbiId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "writers",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "generations",
+          "type": "address[]",
+          "internalType": "address[]"
+        },
+        {
+          "name": "from",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        },
+        {
+          "name": "to",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

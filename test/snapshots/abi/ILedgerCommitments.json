@@ -1,0 +1,990 @@
+{
+  "name": "ILedgerCommitments",
+  "source": "src/interfaces/ILedgerCommitments.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0xd62efcd9": "acceptanceProfileOf(address,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[])",
+    "0x85536f78": "actionsHash((uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[])",
+    "0x0d53731b": "bindingKey(bytes32,bytes32)",
+    "0x6484e02c": "headSnapshotHash(uint8,uint64,uint64,bytes32)",
+    "0xea1ee461": "indexFloor(address,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[])",
+    "0x500dca39": "indexObligationsOf(address)",
+    "0x8cd69fc5": "intentDigest((bytes32,bytes32,bytes32,bytes32,address,uint64,uint64,bytes32,bytes32,bytes32,uint16,bytes32,uint64),bytes32)",
+    "0x58a6ff84": "nativeIntentDigest(bytes32,bytes32,(uint64,uint64,bytes32,bytes32),bytes32,bytes32)",
+    "0xa69f8e70": "positionKey(bytes32,bytes32,bytes32)",
+    "0xcf2bc3e0": "postingKey(bytes32,bytes32,uint8,bytes32)",
+    "0x9175d308": "publicationIdOf(bytes32,bytes32)",
+    "0x0466b539": "readSetHash((bytes32[],bytes32[],bytes32[]))",
+    "0x3d5f40fd": "recordId(bytes32,bytes32)",
+    "0x2439bdda": "roleScopeKey(bytes32,bytes32,bytes32)",
+    "0x61390159": "scopeKey(bytes32,bytes32,bytes32)",
+    "0xc3018228": "signingDigest(bytes32,(bytes32,bytes32,bytes32,bytes32,address,uint64,uint64,bytes32,bytes32,bytes32,uint16,bytes32,uint64),bytes32)",
+    "0x4949e36a": "subjectId(bytes32,bytes32)",
+    "0x5926bc07": "typeIdOf(bytes32,bytes32[],bytes32)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "Action": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "bodyHashOrRecordId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "purpose",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "target",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "expectedRevision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      }
+    ],
+    "Intent": [
+      {
+        "internalType": "bytes32",
+        "name": "realmId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "realmOrigin",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "executionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "principalId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "nonce",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "deadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "acceptanceProfile",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexObligations",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "readSetHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "verifierProfile",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "authorityId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "authEpoch",
+        "type": "uint64"
+      }
+    ],
+    "Native": [
+      {
+        "internalType": "uint64",
+        "name": "nonce",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "deadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedExecutionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedAcceptanceProfile",
+        "type": "bytes32"
+      }
+    ],
+    "ReadSet": [
+      {
+        "internalType": "bytes32[]",
+        "name": "principals",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "positions",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "expectedHeads",
+        "type": "bytes32[]"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "acceptanceProfileOf",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "actions",
+          "type": "tuple[]",
+          "internalType": "struct Action[]",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bodyHashOrRecordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "expectedRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "salt",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "actionsHash",
+      "inputs": [
+        {
+          "name": "actions",
+          "type": "tuple[]",
+          "internalType": "struct Action[]",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bodyHashOrRecordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "expectedRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "salt",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "bindingKey",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "position",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "headSnapshotHash",
+      "inputs": [
+        {
+          "name": "state",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "revision",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "admission",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "canonicalTarget",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "indexFloor",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "actions",
+          "type": "tuple[]",
+          "internalType": "struct Action[]",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bodyHashOrRecordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "expectedRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "salt",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prefixFloor",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "finalReserve",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "freshSlots",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "rewrites",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "indexObligationsOf",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "intentDigest",
+      "inputs": [
+        {
+          "name": "intent",
+          "type": "tuple",
+          "internalType": "struct Intent",
+          "components": [
+            {
+              "name": "realmId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "realmOrigin",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "author",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "nonce",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "deadline",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "acceptanceProfile",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "indexObligations",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "readSetHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "verifierProfile",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "authorityId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "authEpoch",
+              "type": "uint64",
+              "internalType": "uint64"
+            }
+          ]
+        },
+        {
+          "name": "actionsHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "nativeIntentDigest",
+      "inputs": [
+        {
+          "name": "realmId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "ctx",
+          "type": "tuple",
+          "internalType": "struct Native",
+          "components": [
+            {
+              "name": "nonce",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "deadline",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "expectedExecutionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "expectedAcceptanceProfile",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "actionsHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "guardHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "positionKey",
+      "inputs": [
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "subject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "postingKey",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "TypeId"
+        },
+        {
+          "name": "ordinal",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "value",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "publicationIdOf",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "intentDigest",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "readSetHash",
+      "inputs": [
+        {
+          "name": "rs",
+          "type": "tuple",
+          "internalType": "struct ReadSet",
+          "components": [
+            {
+              "name": "principals",
+              "type": "bytes32[]",
+              "internalType": "bytes32[]"
+            },
+            {
+              "name": "positions",
+              "type": "bytes32[]",
+              "internalType": "bytes32[]"
+            },
+            {
+              "name": "expectedHeads",
+              "type": "bytes32[]",
+              "internalType": "bytes32[]"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "recordId",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "bodyHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "roleScopeKey",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "scopeKey",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "subject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "signingDigest",
+      "inputs": [
+        {
+          "name": "domainSeparator",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "intent",
+          "type": "tuple",
+          "internalType": "struct Intent",
+          "components": [
+            {
+              "name": "realmId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "realmOrigin",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "author",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "nonce",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "deadline",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "acceptanceProfile",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "indexObligations",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "readSetHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "verifierProfile",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "authorityId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "authEpoch",
+              "type": "uint64",
+              "internalType": "uint64"
+            }
+          ]
+        },
+        {
+          "name": "actionsHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "subjectId",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "typeIdOf",
+      "inputs": [
+        {
+          "name": "shape",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "refTypes",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "ruleId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    }
+  ]
+}

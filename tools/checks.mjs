@@ -101,6 +101,7 @@ for (const path of files("src").filter((p) => p.endsWith(".sol") && !p.startsWit
         else assert.ok(["core", "control"].includes(from), `${path}: only core/ and control/ may import core/ (except core/layout/)`);
       }
       if (closure.has(from)) assert.ok(closure.has(to), `${path}: the consumer closure imports outside itself`);
+      if (closure.has(from) && !path.startsWith("src/interfaces/internal/")) assert.ok(!resolved.startsWith("src/interfaces/internal/"), `${path}: the consumer closure must not import the kernel-internal interfaces`);
     }
   }
   if (closure.has(from)) assert.ok(!/\btransient\b|\btstore\(|\btload\(/.test(stripComments(source)), `${path}: the consumer closure must not use transient storage`);

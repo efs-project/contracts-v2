@@ -33,6 +33,18 @@ extra_output = ["storageLayout"]
 evm_version = "amsterdam"
 experimental = true
 
+# The consumer closure (design §5: src/interfaces/ outside internal/, and src/lib/Keys.sol through the probe in
+# test/closure/) at the pragma floor without via-IR; the default profile covers 0.8.37 with via-IR. Its own out/
+# and cache/ subdirectories keep the default artifacts (read by tools/abi-snapshot.mjs) and cache intact.
+[profile.closure]
+solc_version = "0.8.27"
+via_ir = false
+src = "src/interfaces"
+test = "test/closure"
+skip = ["src/interfaces/internal/**"]
+out = "out/closure"
+cache_path = "cache/closure"
+
 [fmt]
 line_length = 100
 

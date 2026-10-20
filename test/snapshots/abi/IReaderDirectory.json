@@ -1,0 +1,91 @@
+{
+  "name": "IReaderDirectory",
+  "source": "src/interfaces/Readers.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0x0bc7bf6a": "list(address,bytes32,address)",
+    "0xe3a36878": "readers(address,bytes32,uint16,uint16)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "list",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "kind",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "reader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "readers",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "kind",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "from",
+          "type": "uint16",
+          "internalType": "uint16"
+        },
+        {
+          "name": "count",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]",
+          "internalType": "address[]"
+        },
+        {
+          "name": "codehashes",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "layoutIds",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "physicalProfiles",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "next",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

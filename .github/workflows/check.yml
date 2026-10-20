@@ -32,6 +32,7 @@ jobs:
       - run: forge fmt --check
       - run: forge build --sizes
       - run: pnpm layout:check
+      - run: pnpm abi:check
       - run: forge test
         env:
           FOUNDRY_PROFILE: ci

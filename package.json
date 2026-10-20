@@ -20,7 +20,9 @@
     "check": "node tools/checks.mjs",
     "vectors": "node tools/vectors.mjs",
     "layout": "node tools/layout.mjs",
-    "layout:check": "node tools/layout.mjs --check"
+    "layout:check": "node tools/layout.mjs --check",
+    "abi:snapshot": "node tools/abi-snapshot.mjs",
+    "abi:check": "node tools/abi-snapshot.mjs --check"
   },
   "devDependencies": {
     "viem": "^2.57.7"

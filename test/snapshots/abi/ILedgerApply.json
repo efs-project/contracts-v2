@@ -1,0 +1,590 @@
+{
+  "name": "ILedgerApply",
+  "source": "src/interfaces/internal/ILedgerApply.sol",
+  "closure": false,
+  "methodIdentifiers": {
+    "0xe4957eef": "applyLeaf(uint8,uint64,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32),bytes,(uint8,uint8,uint8,uint8,uint8,uint8,uint32,uint16,address,bytes32,bytes32,address,address,bytes32,uint16,address,bytes32),bytes32,uint8,uint16,uint16)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "Action": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "bodyHashOrRecordId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "purpose",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "target",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "expectedRevision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      }
+    ],
+    "Effect": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "leaf",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "publication",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "principalId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "recordId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subjectId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "bindingOrdinal",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "position",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "purpose",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "revision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "prevAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "transitionKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "targetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "oldTargetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "refCount",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "freshRecord",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "target",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "oldTarget",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "withdrawnAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "withdrawnPrincipal",
+        "type": "bytes32"
+      }
+    ],
+    "TypeInfo": [
+      {
+        "internalType": "uint8",
+        "name": "grade",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "refCount",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "wrapperVersion",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "ruleMode",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "dependencyClass",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "refHeaderWords",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint32",
+        "name": "validationGas",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "policyRows",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address",
+        "name": "mandatory",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ruleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "shape",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "descriptorBlob",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "policy",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "policyCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "policyRow",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address",
+        "name": "custom",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "bindingId",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "applyLeaf",
+      "inputs": [
+        {
+          "name": "leaf",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "admission",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "action",
+          "type": "tuple",
+          "internalType": "struct Action",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bodyHashOrRecordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "expectedRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "salt",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "info",
+          "type": "tuple",
+          "internalType": "struct TypeInfo",
+          "components": [
+            {
+              "name": "grade",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refCount",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "wrapperVersion",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "ruleMode",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "dependencyClass",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refHeaderWords",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "validationGas",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "policyRows",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "mandatory",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "ruleId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "shape",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "descriptorBlob",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "policy",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "policyCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "policyRow",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "custom",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "bindingId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "principalKind",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "policyRow",
+          "type": "uint16",
+          "internalType": "uint16"
+        },
+        {
+          "name": "roleRow",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "effect",
+          "type": "tuple",
+          "internalType": "struct Effect",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "publication",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "recordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subjectId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bindingOrdinal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "position",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "prevAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "transitionKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "oldTargetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refCount",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "freshRecord",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "oldTarget",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "withdrawnAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "withdrawnPrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "refs",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    }
+  ]
+}
