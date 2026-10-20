@@ -50,3 +50,15 @@ inlined copy keeps its callee's source location. So `Keys.posting` counts every 
 callers, and the callers' rows exclude it. Most via-IR instructions map to the whole contract or to no
 source at all, and only blocks with at least one named instruction can carry a name. The
 `source-map coverage` line shows how much of the code the source map resolved directly.
+
+## layout.mjs
+
+Generates the storage layout artifacts from the compiler, never by hand. Run `pnpm layout` after changing
+any storage contract; `pnpm layout:check` (also run in CI) regenerates in memory and fails when a committed
+file is stale. It runs `forge inspect` on the test-only probes in `test/harness/LayoutProbe.sol`, combines
+each struct's member offsets with the ERC-7201 namespace roots, and writes `src/core/layout/Layout.sol`
+(roots, member slot constants, mapping and array slot derivations, one unpacker per packed word,
+`LAYOUT_ID` over the canonical ledger manifest), `vectors/layout.json` (the same manifest for the SDK's slot
+codecs and the oracle) and the raw snapshots under `test/snapshots/layout/`. The generated Solidity is
+passed through `forge fmt` so the check mode compares formatted output. A changed `LAYOUT_ID` means a
+one-way door moved; `test/unit/Layout.t.sol` pins the id and proves typed writes and raw reads agree.
