@@ -16,7 +16,7 @@ bytecode_hash = "none"
 cbor_metadata = true
 fuzz = { runs = 32 }
 # Golden vectors produced by independent tooling (tools/vectors.mjs) and read by the suites.
-fs_permissions = [{ access = "read", path = "./test/vectors" }]
+fs_permissions = [{ access = "read", path = "./test/vectors" }, { access = "read", path = "./test/snapshots" }]
 
 [profile.ci]
 fuzz = { runs = 256 }

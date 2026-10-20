@@ -25,6 +25,9 @@ import {
     E_HELPER_CODE,
     E_INDEX_GAS,
     E_INGRESS,
+    E_KIND,
+    E_SHAPE,
+    E_TARGET_TYPE,
     E_NATIVE_AMBIGUOUS,
     E_NONCE,
     E_NOT_CONTROLLER,
@@ -378,11 +381,28 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
         bytes32[] memory refs
     ) private {
         uint64 admission = ++r.admission;
-        bytes memory ret = _delegate(
-            INGRESS,
-            abi.encodeCall(ILedgerIngress.validateLeaf, (leaf, a, body, admission, p.principalId))
-        );
-        LeafVerdict memory v = abi.decode(ret, (LeafVerdict));
+        _checkShape(leaf, a, body.length);
+        LeafVerdict memory v;
+        bytes memory ret;
+        if (a.kind == ActionKind.PUBLISH || a.kind == ActionKind.REUSE) {
+            ret = _delegate(
+                INGRESS,
+                abi.encodeCall(
+                    ILedgerIngress.validateLeaf, (leaf, a, body, admission, p.principalId)
+                )
+            );
+            v = abi.decode(ret, (LeafVerdict));
+        } else if (a.kind == ActionKind.BIND) {
+            bytes32 expectedType;
+            (expectedType, v.roleRow) =
+                ITypeRegistry(_realm().registry).roleExpectation(a.purpose, a.role);
+            if (v.roleRow != 0 && expectedType != 0) {
+                bytes32 have = _records().cells[a.target].typeId;
+                if (have != expectedType) {
+                    revert E_TARGET_TYPE(leaf, expectedType, have, v.roleRow);
+                }
+            }
+        }
         ret = _delegate(
             APPLY,
             abi.encodeCall(
@@ -421,6 +441,46 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
         _counters().admissions = uint48(admission); // checkpoint: the staged frontier is visible through counts()
         _notifyIndex(r, ret);
         _recheck(r);
+    }
+
+    /// The per-kind zero-shape law (design §6.4): 1 missing required field, 2 forbidden field set, 3 body present.
+    function _checkShape(uint8 leaf, Action calldata a, uint256 bodyLen) private pure {
+        uint8 kind = a.kind;
+        bool zeroPos = a.purpose == 0 && a.subject == 0 && a.role == 0;
+        if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
+            if (a.typeId == 0 || a.bodyHashOrRecordId == 0) revert E_SHAPE(leaf, 1);
+            if (!zeroPos || a.target != 0 || a.salt != 0 || a.expectedRevision != 0) {
+                revert E_SHAPE(leaf, 2);
+            }
+            if (kind == ActionKind.REUSE && bodyLen != 0) revert E_SHAPE(leaf, 3);
+        } else if (
+            kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
+        ) {
+            if (a.purpose == 0 || a.subject == 0) revert E_SHAPE(leaf, 1);
+            if (kind == ActionKind.BIND ? a.target == 0 : a.target != 0) {
+                revert E_SHAPE(leaf, kind == ActionKind.BIND ? 1 : 2);
+            }
+            if (a.typeId != 0 || a.bodyHashOrRecordId != 0 || a.salt != 0) revert E_SHAPE(leaf, 2);
+            if (bodyLen != 0) revert E_SHAPE(leaf, 3);
+        } else if (kind == ActionKind.CREATE) {
+            if (a.salt == 0) revert E_SHAPE(leaf, 1);
+            if (
+                a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.target != 0
+                    || a.expectedRevision != 0
+            ) revert E_SHAPE(leaf, 2);
+            if (bodyLen != 0) revert E_SHAPE(leaf, 3);
+        } else if (kind == ActionKind.WITHDRAW) {
+            if (a.target == 0) revert E_SHAPE(leaf, 1);
+            if (
+                a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.salt != 0
+                    || a.expectedRevision != 0
+            ) revert E_SHAPE(leaf, 2);
+            if (bodyLen != 0) revert E_SHAPE(leaf, 3);
+        } else if (kind == ActionKind.STAGE_RESERVED || kind == ActionKind.COMMIT_RESERVED) {
+            revert E_RESERVED(2, kind);
+        } else {
+            revert E_KIND(leaf, kind);
+        }
     }
 
     /// Topic 3 and the id come from the apply delegate's words (typeId 5, recordId 6, subjectId 7, position 9).

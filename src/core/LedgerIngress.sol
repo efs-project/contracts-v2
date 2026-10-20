@@ -29,10 +29,7 @@ import {ILedgerIngress, LeafVerdict, Prepared} from "../interfaces/internal/ILed
 import {
     E_ACCEPTOR_CODE,
     E_BODY,
-    E_KIND,
     E_MISSING_RECORD,
-    E_SHAPE,
-    E_TARGET_TYPE,
     E_TYPE_MISMATCH,
     E_INDEX_FINAL,
     E_ACCEPTOR_GAS,
@@ -444,78 +441,23 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         bytes32 principalId
     ) external view delegateOnly returns (LeafVerdict memory v) {
         RealmStorage storage $ = _realm();
-        _checkShape(leaf, a, body.length);
-        uint8 kind = a.kind;
-        if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
-            TypeInfo memory info = ITypeRegistry($.registry).typeInfo(a.typeId);
-            if (info.mandatory == address(0)) revert E_UNKNOWN_TYPE(leaf, a.typeId);
-            bytes32 rid;
-            bytes memory bodyMem;
-            if (kind == ActionKind.PUBLISH) {
-                if (body.length > $.limits.maxBody) revert E_BODY(leaf, 1);
-                if (keccak256(body) != a.bodyHashOrRecordId) revert E_BODY(leaf, 2);
-                rid = Keys.recordFromHash(a.typeId, a.bodyHashOrRecordId);
-                bodyMem = body;
-            } else {
-                rid = a.bodyHashOrRecordId;
-                bytes32 have = _records().cells[rid].typeId;
-                if (have == 0) revert E_MISSING_RECORD(leaf, rid);
-                if (have != a.typeId) revert E_TYPE_MISMATCH(leaf, a.typeId, have);
-                bodyMem = _loadBody(rid);
-            }
-            v.refCount = info.refCount;
-            v.policyRow = info.policyRow;
-            _validateRecord(leaf, a.typeId, info, bodyMem, admission, principalId, $);
-        } else if (kind == ActionKind.BIND) {
-            bytes32 expectedType;
-            (expectedType, v.roleRow) = ITypeRegistry($.registry).roleExpectation(a.purpose, a.role);
-            if (v.roleRow != 0 && expectedType != 0) {
-                bytes32 have = _records().cells[a.target].typeId;
-                if (have != expectedType) {
-                    revert E_TARGET_TYPE(leaf, expectedType, have, v.roleRow);
-                }
-            }
-        }
-    }
-
-    /// The per-kind zero-shape law (design §6.4): 1 missing required field, 2 forbidden field set, 3 body present.
-    function _checkShape(uint8 leaf, Action calldata a, uint256 bodyLen) private pure {
-        uint8 kind = a.kind;
-        bool zeroPos = a.purpose == 0 && a.subject == 0 && a.role == 0;
-        if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
-            if (a.typeId == 0 || a.bodyHashOrRecordId == 0) revert E_SHAPE(leaf, 1);
-            if (!zeroPos || a.target != 0 || a.salt != 0 || a.expectedRevision != 0) {
-                revert E_SHAPE(leaf, 2);
-            }
-            if (kind == ActionKind.REUSE && bodyLen != 0) revert E_SHAPE(leaf, 3);
-        } else if (
-            kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
-        ) {
-            if (a.purpose == 0 || a.subject == 0) revert E_SHAPE(leaf, 1);
-            if (kind == ActionKind.BIND ? a.target == 0 : a.target != 0) {
-                revert E_SHAPE(leaf, kind == ActionKind.BIND ? 1 : 2);
-            }
-            if (a.typeId != 0 || a.bodyHashOrRecordId != 0 || a.salt != 0) revert E_SHAPE(leaf, 2);
-            if (bodyLen != 0) revert E_SHAPE(leaf, 3);
-        } else if (kind == ActionKind.CREATE) {
-            if (a.salt == 0) revert E_SHAPE(leaf, 1);
-            if (
-                a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.target != 0
-                    || a.expectedRevision != 0
-            ) revert E_SHAPE(leaf, 2);
-            if (bodyLen != 0) revert E_SHAPE(leaf, 3);
-        } else if (kind == ActionKind.WITHDRAW) {
-            if (a.target == 0) revert E_SHAPE(leaf, 1);
-            if (
-                a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.salt != 0
-                    || a.expectedRevision != 0
-            ) revert E_SHAPE(leaf, 2);
-            if (bodyLen != 0) revert E_SHAPE(leaf, 3);
-        } else if (kind == ActionKind.STAGE_RESERVED || kind == ActionKind.COMMIT_RESERVED) {
-            revert E_RESERVED(2, kind);
+        TypeInfo memory info = ITypeRegistry($.registry).typeInfo(a.typeId);
+        if (info.mandatory == address(0)) revert E_UNKNOWN_TYPE(leaf, a.typeId);
+        bytes memory bodyMem;
+        if (a.kind == ActionKind.PUBLISH) {
+            if (body.length > $.limits.maxBody) revert E_BODY(leaf, 1);
+            if (keccak256(body) != a.bodyHashOrRecordId) revert E_BODY(leaf, 2);
+            bodyMem = body;
         } else {
-            revert E_KIND(leaf, kind);
+            bytes32 rid = a.bodyHashOrRecordId;
+            bytes32 have = _records().cells[rid].typeId;
+            if (have == 0) revert E_MISSING_RECORD(leaf, rid);
+            if (have != a.typeId) revert E_TYPE_MISMATCH(leaf, a.typeId, have);
+            bodyMem = _loadBody(rid);
         }
+        v.refCount = info.refCount;
+        v.policyRow = info.policyRow;
+        _validateRecord(leaf, a.typeId, info, bodyMem, admission, principalId, $);
     }
 
     function _validateRecord(
@@ -928,22 +870,22 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         return Keys.typeId(shape, refTypes, ruleId);
     }
 
-    /// The §10.2 kind number of a family id (constants from test/vectors/ids.json); reverts for an unknown family.
+    /// The §10.2 kind number of a family id: the first eight bytes of each id (test/vectors/ids.json), packed
+    /// in declaration order, and the matching kinds; reverts for an unknown family.
+    bytes private constant FAMILY_PREFIXES =
+        hex"e4f7cc7ff76622e1d674025fa1091f86f564f360d1f5b65ade538e29eab736631fd035d41e55e58529d3bea0a01e3e2603b682942778e8b977b478e9ae9182faef3758cffd687b169f7b888d291c8c4ce84f1b109238a09c04369382b4c38d708433e20c283016a6";
+    bytes private constant FAMILY_KINDS = hex"010405080a0b0c0d0e0f101112";
+
     function _kindOf(FamilyId family) private pure returns (uint8) {
-        bytes32 f = FamilyId.unwrap(family);
-        if (f == 0xe4f7cc7ff76622e194a3ef2a8f23d6632b91cfda1f803fa443e9e04e43baa270) return 1; // by-type
-        if (f == 0xd674025fa1091f86834d22a642451cc45057f55537c4b4e65ee1139c390d1b8a) return 4; // by-author
-        if (f == 0xf564f360d1f5b65aacc3b70b5aa8bfd24bfcf28df404557ac647ae8d94954eb4) return 5; // backlink
-        if (f == 0xde538e29eab73663949ae6239c90dea8948cf7297cf44d0c79621ef8bf06e8ab) return 8; // history
-        if (f == 0x1fd035d41e55e585706a270bca0fa36d150e1cc27de3a1b40654d1835f64287e) return 10; // scope
-        if (f == 0x29d3bea0a01e3e26f8a6ae33a62bc05c74281c8a392b910123320f4dfa13a897) return 11; // reference-position
-        if (f == 0x03b682942778e8b9a07a8448019ba6862fac962d963305b6b7b613a80d29f2c4) return 12; // by-record
-        if (f == 0x77b478e9ae9182fa4afb6af49a4b8b55c121d339d14f0df963ed8eb50225beca) return 13; // unique-by-type
-        if (f == 0xef3758cffd687b1665b9ce936cfd31ff25a28a18a4be78504e93a88c8e996bb7) return 14; // scalar
-        if (f == 0x9f7b888d291c8c4c0d464b600e73c3c8f253b30195182648ead7c4c60c25b57d) return 15; // digest
-        if (f == 0xe84f1b109238a09c1b70a887b65cc922657c600d1e62c2925e843c8c3e189353) return 16; // role-scope
-        if (f == 0x04369382b4c38d701e16b5522fcf32484a616e6cfe7c310ee73c02c17813b9c8) return 17; // roster
-        if (f == 0x8433e20c283016a699d95d0a23d083dca2e2e5de9d0718f1de52e6ab42b46700) return 18; // live-scope
-        revert E_RESERVED(20, uint256(f));
+        bytes8 head = bytes8(FamilyId.unwrap(family));
+        bytes memory prefixes = FAMILY_PREFIXES;
+        for (uint256 i; i < 13; ++i) {
+            bytes8 candidate;
+            assembly ("memory-safe") {
+                candidate := mload(add(add(prefixes, 32), mul(i, 8)))
+            }
+            if (candidate == head) return uint8(FAMILY_KINDS[i]);
+        }
+        revert E_RESERVED(20, uint256(FamilyId.unwrap(family)));
     }
 }
