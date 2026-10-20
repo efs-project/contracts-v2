@@ -81,8 +81,12 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         } else if (kind == ActionKind.BIND) {
             row.a = action.target;
             (row.prevAdmission, row.targetKind) = _applyBind(action, principalId, admission, effect);
+            row.bindingOrdinal = uint48(effect.bindingOrdinal);
+            row.expectedRevision = uint48(action.expectedRevision);
         } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
             row.prevAdmission = _applyMaskOrRelease(kind, action, principalId, admission, effect);
+            row.bindingOrdinal = uint48(effect.bindingOrdinal); // names the position through bindingPosition[ordinal]
+            row.expectedRevision = uint48(action.expectedRevision);
         } else if (kind == ActionKind.CREATE) {
             row.a = action.salt;
             _applyCreate(action, principalId, principalKind, admission, effect);
