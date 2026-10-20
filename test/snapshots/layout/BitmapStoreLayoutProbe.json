@@ -1,0 +1,272 @@
+{
+  "storage": [
+    {
+      "astId": 1099,
+      "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+      "label": "probe_bitmap",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_struct(BitmapStorage)696_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_struct(WriterRange)597_storage)dyn_storage": {
+      "encoding": "dynamic_array",
+      "label": "struct WriterRange[]",
+      "numberOfBytes": "32",
+      "base": "t_struct(WriterRange)597_storage"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256)))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(bytes32 => mapping(uint256 => uint256)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256))"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_bytes32,t_struct(CoverageSlot)662_storage))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(bytes32 => struct BitmapStoreStorage.CoverageSlot))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes32,t_struct(CoverageSlot)662_storage)"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_bytes32,t_struct(CoverageSlot)662_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct BitmapStoreStorage.CoverageSlot)",
+      "numberOfBytes": "32",
+      "value": "t_struct(CoverageSlot)662_storage"
+    },
+    "t_mapping(t_bytes32,t_struct(ScopeHead)652_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct BitmapStoreStorage.ScopeHead)",
+      "numberOfBytes": "32",
+      "value": "t_struct(ScopeHead)652_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(BitmapStorage)696_storage": {
+      "encoding": "inplace",
+      "label": "struct BitmapStoreStorage.BitmapStorage",
+      "numberOfBytes": "192",
+      "members": [
+        {
+          "astId": 668,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "scopeHeads",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_bytes32,t_struct(ScopeHead)652_storage)"
+        },
+        {
+          "astId": 674,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "scopeEntries",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256))"
+        },
+        {
+          "astId": 682,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "bits",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_mapping(t_bytes32,t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256)))"
+        },
+        {
+          "astId": 689,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "coverage",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_mapping(t_bytes32,t_mapping(t_bytes32,t_struct(CoverageSlot)662_storage))"
+        },
+        {
+          "astId": 693,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "writers",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_array(t_struct(WriterRange)597_storage)dyn_storage"
+        },
+        {
+          "astId": 695,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "attached",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint8"
+        }
+      ]
+    },
+    "t_struct(CoverageSlot)662_storage": {
+      "encoding": "inplace",
+      "label": "struct BitmapStoreStorage.CoverageSlot",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 655,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "through",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 657,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "liveFrom",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 659,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "retiredAt",
+          "offset": 12,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 661,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "state",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_uint8"
+        }
+      ]
+    },
+    "t_struct(ScopeHead)652_storage": {
+      "encoding": "inplace",
+      "label": "struct BitmapStoreStorage.ScopeHead",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 641,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "count",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 643,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "live",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 645,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "lastMutation",
+          "offset": 12,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 647,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "liveBits0",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 649,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "flags",
+          "offset": 24,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 651,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "entry0",
+          "offset": 26,
+          "slot": "0",
+          "type": "t_uint48"
+        }
+      ]
+    },
+    "t_struct(WriterRange)597_storage": {
+      "encoding": "inplace",
+      "label": "struct WriterRange",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 592,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "generation",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 594,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "fromAdmission",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 596,
+          "contract": "test/harness/LayoutProbe.sol:BitmapStoreLayoutProbe",
+          "label": "toAdmission",
+          "offset": 26,
+          "slot": "0",
+          "type": "t_uint48"
+        }
+      ]
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint48": {
+      "encoding": "inplace",
+      "label": "uint48",
+      "numberOfBytes": "6"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

@@ -1,0 +1,2183 @@
+{
+  "schema": "efs2/layout/1",
+  "namespaces": {
+    "efs.ledger.v2.realm": {
+      "section": "ledger",
+      "root": "0xd1d82880908abd64876dc5abdb3d21a6118aa67f635eb0d222f8ae0c6374eb00",
+      "struct": "RealmStorage",
+      "slots": 18,
+      "fields": [
+        {
+          "name": "realmId",
+          "slot": 0,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "realmOrigin",
+          "slot": 1,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "realmSalt",
+          "slot": 2,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "genesisChainId",
+          "slot": 3,
+          "offset": 0,
+          "bytes": 8,
+          "type": "uint64"
+        },
+        {
+          "name": "acceptedChainId",
+          "slot": 3,
+          "offset": 8,
+          "bytes": 8,
+          "type": "uint64"
+        },
+        {
+          "name": "revision",
+          "slot": 3,
+          "offset": 16,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "frozen",
+          "slot": 3,
+          "offset": 20,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "controller",
+          "slot": 4,
+          "offset": 0,
+          "bytes": 20,
+          "type": "address"
+        },
+        {
+          "name": "executionProfileId",
+          "slot": 4,
+          "offset": 20,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "capabilities",
+          "slot": 4,
+          "offset": 22,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "genesisExecutionProfileId",
+          "slot": 4,
+          "offset": 24,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "registry",
+          "slot": 5,
+          "offset": 0,
+          "bytes": 20,
+          "type": "address"
+        },
+        {
+          "name": "index",
+          "slot": 6,
+          "offset": 0,
+          "bytes": 20,
+          "type": "address"
+        },
+        {
+          "name": "indexGeneration",
+          "slot": 6,
+          "offset": 20,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "executionSet",
+          "slot": 7,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "layoutId",
+          "slot": 8,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "domainSeparator",
+          "slot": 9,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "indexObligations",
+          "slot": 10,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "steward",
+          "slot": 11,
+          "offset": 0,
+          "bytes": 20,
+          "type": "address"
+        },
+        {
+          "name": "limitsProfileId",
+          "slot": 12,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        },
+        {
+          "name": "limits.maxActions",
+          "slot": 13,
+          "offset": 0,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.maxBody",
+          "slot": 13,
+          "offset": 2,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "limits.maxRefs",
+          "slot": 13,
+          "offset": 6,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "limits.maxReadSetPrincipals",
+          "slot": 13,
+          "offset": 7,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.maxReadSetPositions",
+          "slot": 13,
+          "offset": 9,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "limits.maxWitness",
+          "slot": 13,
+          "offset": 10,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.maxTransitionBlocks",
+          "slot": 13,
+          "offset": 12,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "limits.inlineWordMax",
+          "slot": 13,
+          "offset": 16,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.witnessRetention",
+          "slot": 13,
+          "offset": 18,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "limits.maxBindsPerPublication",
+          "slot": 13,
+          "offset": 19,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.maxBodyBytesPerPublication",
+          "slot": 13,
+          "offset": 21,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "limits.maxFreshSlotsPerPublication",
+          "slot": 13,
+          "offset": 25,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "limits.maxReadIds",
+          "slot": 13,
+          "offset": 29,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.maxReadCount",
+          "slot": 14,
+          "offset": 0,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "limits.floorFreshGas",
+          "slot": 14,
+          "offset": 2,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "limits.floorRewriteGas",
+          "slot": 14,
+          "offset": 6,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "limits.kernelTail",
+          "slot": 14,
+          "offset": 10,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "transitionTarget",
+          "slot": 15,
+          "offset": 0,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "transitionDeadline",
+          "slot": 15,
+          "offset": 4,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "transitionLastTarget",
+          "slot": 15,
+          "offset": 10,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "transitionCooldownUntil",
+          "slot": 15,
+          "offset": 14,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "readerDirectory",
+          "slot": 16,
+          "offset": 0,
+          "bytes": 20,
+          "type": "address"
+        },
+        {
+          "name": "noticePrincipal",
+          "slot": 17,
+          "offset": 0,
+          "bytes": 32,
+          "type": "bytes32"
+        }
+      ],
+      "mappings": [],
+      "arrays": []
+    },
+    "efs.ledger.v2.counters": {
+      "section": "ledger",
+      "root": "0x63eac95c642a8299ccca6df135b3f61f7cfd222a0712997d1cd9fcdcfa9e5500",
+      "struct": "CountersStorage",
+      "slots": 1,
+      "fields": [
+        {
+          "name": "admissions",
+          "slot": 0,
+          "offset": 0,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "records",
+          "slot": 0,
+          "offset": 6,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "bindings",
+          "slot": 0,
+          "offset": 12,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "publications",
+          "slot": 0,
+          "offset": 18,
+          "bytes": 6,
+          "type": "uint48"
+        }
+      ],
+      "mappings": [],
+      "arrays": []
+    },
+    "efs.ledger.v2.records": {
+      "section": "ledger",
+      "root": "0x7524f85143c406ba14d3b73dea3182e972b4d4504f1b783a38f0858767c1de00",
+      "struct": "RecordsStorage",
+      "slots": 2,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "cells",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "RecordCell",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "typeId",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "firstAdmission",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "length",
+                "slot": 1,
+                "offset": 6,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "occurrences",
+                "slot": 1,
+                "offset": 10,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "carrierKind",
+                "slot": 1,
+                "offset": 16,
+                "bytes": 1,
+                "type": "uint8"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "bodyWords",
+          "slot": 1,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "bytes32",
+          "valueBytes": 32,
+          "value": null
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.subjects": {
+      "section": "ledger",
+      "root": "0xe593fc8637d8cc4bf73cbb933a15ce289f597399c2da2882777592cc3ee4c000",
+      "struct": "SubjectsStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "cells",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "SubjectCell",
+          "valueBytes": 32,
+          "value": {
+            "fields": [
+              {
+                "name": "createAdmission",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "creatorKind",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 1,
+                "type": "uint8"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.admissions": {
+      "section": "ledger",
+      "root": "0x33042cebcd07e2f265085d626def780948525aefc12f3aa3822ae3531c63eb00",
+      "struct": "AdmissionsStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "uint256"
+          ],
+          "valueType": "AdmissionRow",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "kind",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "leaf",
+                "slot": 0,
+                "offset": 1,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "publication",
+                "slot": 0,
+                "offset": 2,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "bindingOrdinal",
+                "slot": 0,
+                "offset": 8,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "expectedRevision",
+                "slot": 0,
+                "offset": 14,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "prevAdmission",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "withdrawn",
+                "slot": 0,
+                "offset": 26,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "policyRow",
+                "slot": 0,
+                "offset": 27,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "roleRow",
+                "slot": 0,
+                "offset": 29,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "targetKind",
+                "slot": 0,
+                "offset": 31,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "a",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.publications": {
+      "section": "ledger",
+      "root": "0xe9165e74d7cf63baf9a84b176011c878a390e3e9f989a60de35575a350940a00",
+      "struct": "PublicationsStorage",
+      "slots": 2,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "evidence",
+          "slot": 0,
+          "keys": [
+            "uint256"
+          ],
+          "valueType": "EvidenceCell",
+          "valueBytes": 416,
+          "value": {
+            "fields": [
+              {
+                "name": "author",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "proofKind",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "principalKind",
+                "slot": 0,
+                "offset": 21,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "v",
+                "slot": 0,
+                "offset": 22,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "leafCount",
+                "slot": 0,
+                "offset": 23,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "firstAdmission",
+                "slot": 0,
+                "offset": 24,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "flags",
+                "slot": 0,
+                "offset": 30,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "nonce",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "deadline",
+                "slot": 1,
+                "offset": 6,
+                "bytes": 8,
+                "type": "uint64"
+              },
+              {
+                "name": "basisBlock",
+                "slot": 1,
+                "offset": 14,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "revision",
+                "slot": 1,
+                "offset": 20,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "verifierProfile",
+                "slot": 1,
+                "offset": 24,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "principalId",
+                "slot": 2,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "intentDigest",
+                "slot": 3,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "actionsHash",
+                "slot": 4,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "acceptanceProfile",
+                "slot": 5,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "indexObligations",
+                "slot": 6,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "readSetHash",
+                "slot": 7,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "witness0",
+                "slot": 8,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "witness1",
+                "slot": 9,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "submitter",
+                "slot": 10,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "authorityId",
+                "slot": 11,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "authEpoch",
+                "slot": 12,
+                "offset": 0,
+                "bytes": 8,
+                "type": "uint64"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "publicationAt",
+          "slot": 1,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "uint48",
+          "valueBytes": 6,
+          "value": null
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.bindings": {
+      "section": "ledger",
+      "root": "0xceda1ceb7d6e35dde16546393af20354114f252f7fbb4c227d63f743c35ffb00",
+      "struct": "BindingsStorage",
+      "slots": 3,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "heads",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "HeadRow",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "state",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "revision",
+                "slot": 0,
+                "offset": 1,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "admission",
+                "slot": 0,
+                "offset": 7,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "targetKind",
+                "slot": 0,
+                "offset": 13,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "prevAdmission",
+                "slot": 0,
+                "offset": 14,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "bindingOrdinal",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "notAfter",
+                "slot": 0,
+                "offset": 26,
+                "bytes": 5,
+                "type": "uint40"
+              },
+              {
+                "name": "target",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "bindingPosition",
+          "slot": 1,
+          "keys": [
+            "uint256"
+          ],
+          "valueType": "bytes32",
+          "valueBytes": 32,
+          "value": null
+        },
+        {
+          "name": "positions",
+          "slot": 2,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "PositionCell",
+          "valueBytes": 96,
+          "value": {
+            "fields": [
+              {
+                "name": "purpose",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "subject",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "role",
+                "slot": 2,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.principals": {
+      "section": "ledger",
+      "root": "0xf6114a07ac14eb57f9dac3ac5f41fd2824feddb467129b9fa50d96bc2daac900",
+      "struct": "PrincipalsStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "PrincipalRow",
+          "valueBytes": 32,
+          "value": {
+            "fields": [
+              {
+                "name": "nonce",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "viewMutationVersion",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 6,
+                "type": "uint48"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.revisions": {
+      "section": "ledger",
+      "root": "0xd9645fc105a27a63ec9effce4033ff09babd0e322d92c50976c833cd02e4eb00",
+      "struct": "RevisionsStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "uint256"
+          ],
+          "valueType": "RevisionRow",
+          "valueBytes": 800,
+          "value": {
+            "fields": [
+              {
+                "name": "activationBlock",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "admissionHigh",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "publicationHigh",
+                "slot": 0,
+                "offset": 12,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "activationTimestamp",
+                "slot": 0,
+                "offset": 18,
+                "bytes": 5,
+                "type": "uint40"
+              },
+              {
+                "name": "flags",
+                "slot": 0,
+                "offset": 23,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "executionProfileId",
+                "slot": 0,
+                "offset": 25,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "capabilities",
+                "slot": 0,
+                "offset": 27,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "executionSet",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "ledgerImpl",
+                "slot": 2,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "acceptedChainId",
+                "slot": 2,
+                "offset": 20,
+                "bytes": 8,
+                "type": "uint64"
+              },
+              {
+                "name": "ledgerImplCodehash",
+                "slot": 3,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "registryImpl",
+                "slot": 4,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "registryImplCodehash",
+                "slot": 5,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "index",
+                "slot": 6,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "indexGeneration",
+                "slot": 6,
+                "offset": 20,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "indexCodehash",
+                "slot": 7,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "indexManifestHash",
+                "slot": 8,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "ingress",
+                "slot": 9,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "ingressCodehash",
+                "slot": 10,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "applyDelegate",
+                "slot": 11,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "applyCodehash",
+                "slot": 12,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "controller",
+                "slot": 13,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "controllerCodehash",
+                "slot": 14,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "controllerOwner",
+                "slot": 15,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "steward",
+                "slot": 16,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "layoutId",
+                "slot": 17,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "verifierProfilesRoot",
+                "slot": 18,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "migrationHash",
+                "slot": 19,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "dependencyRoot",
+                "slot": 20,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "limitsProfileId",
+                "slot": 21,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "limits.maxActions",
+                "slot": 22,
+                "offset": 0,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.maxBody",
+                "slot": 22,
+                "offset": 2,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "limits.maxRefs",
+                "slot": 22,
+                "offset": 6,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "limits.maxReadSetPrincipals",
+                "slot": 22,
+                "offset": 7,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.maxReadSetPositions",
+                "slot": 22,
+                "offset": 9,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "limits.maxWitness",
+                "slot": 22,
+                "offset": 10,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.maxTransitionBlocks",
+                "slot": 22,
+                "offset": 12,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "limits.inlineWordMax",
+                "slot": 22,
+                "offset": 16,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.witnessRetention",
+                "slot": 22,
+                "offset": 18,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "limits.maxBindsPerPublication",
+                "slot": 22,
+                "offset": 19,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.maxBodyBytesPerPublication",
+                "slot": 22,
+                "offset": 21,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "limits.maxFreshSlotsPerPublication",
+                "slot": 22,
+                "offset": 25,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "limits.maxReadIds",
+                "slot": 22,
+                "offset": 29,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.maxReadCount",
+                "slot": 23,
+                "offset": 0,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "limits.floorFreshGas",
+                "slot": 23,
+                "offset": 2,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "limits.floorRewriteGas",
+                "slot": 23,
+                "offset": 6,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "limits.kernelTail",
+                "slot": 23,
+                "offset": 10,
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "noticePrincipal",
+                "slot": 24,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.types": {
+      "section": "registry",
+      "root": "0xb88a601303f5b59143b779b8925ece487b1fa8710d521523140b6c2d91568c00",
+      "struct": "TypesStorage",
+      "slots": 2,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "TypeRow",
+          "valueBytes": 192,
+          "value": {
+            "fields": [
+              {
+                "name": "grade",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "refCount",
+                "slot": 0,
+                "offset": 1,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "wrapperVersion",
+                "slot": 0,
+                "offset": 2,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "ruleMode",
+                "slot": 0,
+                "offset": 3,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "dependencyClass",
+                "slot": 0,
+                "offset": 4,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "refHeaderWords",
+                "slot": 0,
+                "offset": 5,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "validationGas",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 3,
+                "type": "uint24"
+              },
+              {
+                "name": "policyRows",
+                "slot": 0,
+                "offset": 9,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "registeredAt",
+                "slot": 0,
+                "offset": 11,
+                "bytes": 5,
+                "type": "uint40"
+              },
+              {
+                "name": "catalogOrdinal",
+                "slot": 0,
+                "offset": 16,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "codecVersion",
+                "slot": 0,
+                "offset": 22,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "textProfile",
+                "slot": 0,
+                "offset": 23,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "shape",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "ruleId",
+                "slot": 2,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "mandatory",
+                "slot": 3,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "descriptorBlob",
+                "slot": 4,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "blobLength",
+                "slot": 4,
+                "offset": 20,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "grammarProfile",
+                "slot": 5,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "refTypes",
+          "slot": 1,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "bytes32",
+          "valueBytes": 32,
+          "value": null
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.declarations": {
+      "section": "registry",
+      "root": "0x8f2637a7c7ef5342894e46d7ac564c4785ed47b68917ca992a8f09c97592e400",
+      "struct": "DeclarationsStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "DeclarationRow",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "key",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "installed",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "signatureHash",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.policy": {
+      "section": "registry",
+      "root": "0x7607b3cefdb65ccdfb170dbf9826aca7c3eb2dc0e0e0e5b7bce6a5dffc3f8400",
+      "struct": "PolicyStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "PolicyRow",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "acceptor",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "activatedAt",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 5,
+                "type": "uint40"
+              },
+              {
+                "name": "mutationAt",
+                "slot": 0,
+                "offset": 25,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "codehash",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.roles": {
+      "section": "registry",
+      "root": "0xff16ead419b5fba0549e2629eb15e3f34a6f0ce7330d7cbb2139b6c4e90ceb00",
+      "struct": "RolesStorage",
+      "slots": 2,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "RoleRow",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "expectedType",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "activatedAt",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 5,
+                "type": "uint40"
+              },
+              {
+                "name": "mutationAt",
+                "slot": 1,
+                "offset": 5,
+                "bytes": 6,
+                "type": "uint48"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "count",
+          "slot": 1,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "uint16",
+          "valueBytes": 2,
+          "value": null
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.bindings": {
+      "section": "registry",
+      "root": "0x8a64542b45955b344eb3568068f1a96cd4fb0b1d8aae3976b48ef53dd8a65a00",
+      "struct": "BindingsStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "BindingRow",
+          "valueBytes": 64,
+          "value": {
+            "fields": [
+              {
+                "name": "custom",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "customAbi",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "bindingId",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.wrappers": {
+      "section": "registry",
+      "root": "0x1f2457b895e07513acc7a811602edc7bb7a689b9636346c7d88f35b713b9cc00",
+      "struct": "WrappersStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "rows",
+          "slot": 0,
+          "keys": [
+            "uint256"
+          ],
+          "valueType": "WrapperRow",
+          "valueBytes": 96,
+          "value": {
+            "fields": [
+              {
+                "name": "implementation",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "codecVersion",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "activatedAt",
+                "slot": 0,
+                "offset": 21,
+                "bytes": 5,
+                "type": "uint40"
+              },
+              {
+                "name": "codehash",
+                "slot": 1,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              },
+              {
+                "name": "grammarProfile",
+                "slot": 2,
+                "offset": 0,
+                "bytes": 32,
+                "type": "bytes32"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.catalog": {
+      "section": "registry",
+      "root": "0xc84eebc1c1b2541cf63d04f7c3100d60f4e279f74ae58772ae0888ed60264000",
+      "struct": "CatalogStorage",
+      "slots": 1,
+      "fields": [],
+      "mappings": [
+        {
+          "name": "typeAt",
+          "slot": 0,
+          "keys": [
+            "uint256"
+          ],
+          "valueType": "bytes32",
+          "valueBytes": 32,
+          "value": null
+        }
+      ],
+      "arrays": []
+    },
+    "efs.registry.v2.control": {
+      "section": "registry",
+      "root": "0x746f5ca92ad4053adbc9ee32a7eb3c5322aee798e9dd1d4ffd591785f460be00",
+      "struct": "ControlStorage",
+      "slots": 2,
+      "fields": [
+        {
+          "name": "ledger",
+          "slot": 0,
+          "offset": 0,
+          "bytes": 20,
+          "type": "address"
+        },
+        {
+          "name": "activeRevision",
+          "slot": 0,
+          "offset": 20,
+          "bytes": 4,
+          "type": "uint32"
+        },
+        {
+          "name": "wrapperCount",
+          "slot": 0,
+          "offset": 24,
+          "bytes": 2,
+          "type": "uint16"
+        },
+        {
+          "name": "mutations",
+          "slot": 0,
+          "offset": 26,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "catalogCount",
+          "slot": 1,
+          "offset": 0,
+          "bytes": 6,
+          "type": "uint48"
+        }
+      ],
+      "mappings": [],
+      "arrays": []
+    },
+    "efs.index.v2.store.posting": {
+      "section": "index",
+      "root": "0xafadaed06cad87ccf20afccb1a44eec86b687f3eab1409e879b2ae8416b40a00",
+      "struct": "PostingStorage",
+      "slots": 4,
+      "fields": [
+        {
+          "name": "attached",
+          "slot": 3,
+          "offset": 0,
+          "bytes": 1,
+          "type": "uint8"
+        }
+      ],
+      "mappings": [
+        {
+          "name": "heads",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "PostingHead",
+          "valueBytes": 32,
+          "value": {
+            "fields": [
+              {
+                "name": "count",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "live",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "last",
+                "slot": 0,
+                "offset": 12,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "flags",
+                "slot": 0,
+                "offset": 18,
+                "bytes": 2,
+                "type": "uint16"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "words",
+          "slot": 1,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "uint256",
+          "valueBytes": 32,
+          "value": null
+        }
+      ],
+      "arrays": [
+        {
+          "name": "writers",
+          "slot": 2,
+          "elemType": "WriterRange",
+          "elemBytes": 32,
+          "elem": {
+            "fields": [
+              {
+                "name": "generation",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "fromAdmission",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "toAdmission",
+                "slot": 0,
+                "offset": 26,
+                "bytes": 6,
+                "type": "uint48"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ]
+    },
+    "efs.index.v2.store.bitmap": {
+      "section": "index",
+      "root": "0x4640202bf0ab6387cbfef29b92cbbb784eceffe554551be074390efd2b65b600",
+      "struct": "BitmapStorage",
+      "slots": 6,
+      "fields": [
+        {
+          "name": "attached",
+          "slot": 5,
+          "offset": 0,
+          "bytes": 1,
+          "type": "uint8"
+        }
+      ],
+      "mappings": [
+        {
+          "name": "scopeHeads",
+          "slot": 0,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "ScopeHead",
+          "valueBytes": 32,
+          "value": {
+            "fields": [
+              {
+                "name": "count",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "live",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "lastMutation",
+                "slot": 0,
+                "offset": 12,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "liveBits0",
+                "slot": 0,
+                "offset": 18,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "flags",
+                "slot": 0,
+                "offset": 24,
+                "bytes": 2,
+                "type": "uint16"
+              },
+              {
+                "name": "entry0",
+                "slot": 0,
+                "offset": 26,
+                "bytes": 6,
+                "type": "uint48"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        },
+        {
+          "name": "scopeEntries",
+          "slot": 1,
+          "keys": [
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "uint256",
+          "valueBytes": 32,
+          "value": null
+        },
+        {
+          "name": "bits",
+          "slot": 2,
+          "keys": [
+            "bytes32",
+            "bytes32",
+            "uint256"
+          ],
+          "valueType": "uint256",
+          "valueBytes": 32,
+          "value": null
+        },
+        {
+          "name": "coverage",
+          "slot": 3,
+          "keys": [
+            "bytes32",
+            "bytes32"
+          ],
+          "valueType": "CoverageSlot",
+          "valueBytes": 32,
+          "value": {
+            "fields": [
+              {
+                "name": "through",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "liveFrom",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "retiredAt",
+                "slot": 0,
+                "offset": 12,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "state",
+                "slot": 0,
+                "offset": 18,
+                "bytes": 1,
+                "type": "uint8"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": [
+        {
+          "name": "writers",
+          "slot": 4,
+          "elemType": "WriterRange",
+          "elemBytes": 32,
+          "elem": {
+            "fields": [
+              {
+                "name": "generation",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 20,
+                "type": "address"
+              },
+              {
+                "name": "fromAdmission",
+                "slot": 0,
+                "offset": 20,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "toAdmission",
+                "slot": 0,
+                "offset": 26,
+                "bytes": 6,
+                "type": "uint48"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ]
+    },
+    "efs.index.v2.gen": {
+      "section": "index",
+      "root": "0x1dec63f4cbafd6b4fe84cdc042050c704f9cdfe7f0d5bcbdfce1b30ca8f26300",
+      "struct": "GenStorage",
+      "slots": 2,
+      "fields": [
+        {
+          "name": "progress.lastProcessed",
+          "slot": 0,
+          "offset": 0,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "progress.lastPublication",
+          "slot": 0,
+          "offset": 6,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "progress.gapped",
+          "slot": 0,
+          "offset": 12,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "progress.liveStarted",
+          "slot": 0,
+          "offset": 13,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "progress.replayStage",
+          "slot": 0,
+          "offset": 14,
+          "bytes": 1,
+          "type": "uint8"
+        }
+      ],
+      "mappings": [
+        {
+          "name": "buildFrontier",
+          "slot": 1,
+          "keys": [
+            "bytes32"
+          ],
+          "valueType": "BuildFrontier",
+          "valueBytes": 32,
+          "value": {
+            "fields": [
+              {
+                "name": "through",
+                "slot": 0,
+                "offset": 0,
+                "bytes": 6,
+                "type": "uint48"
+              },
+              {
+                "name": "state",
+                "slot": 0,
+                "offset": 6,
+                "bytes": 1,
+                "type": "uint8"
+              }
+            ],
+            "mappings": [],
+            "arrays": []
+          }
+        }
+      ],
+      "arrays": []
+    },
+    "efs.ledger.v2.source": {
+      "section": "ledger",
+      "root": "0x2fca977fd3a2c6b167fb728d5b0bcfec6fb20471b834ea01ad3f693a92a9ca00",
+      "reserved": "reserved (S4 SourceEvidence)"
+    },
+    "efs.ledger.v2.staging": {
+      "section": "ledger",
+      "root": "0x5dd7299b00a7c05d3490b804591aa32f13000f9f1e77b236afb15ef1dcd26900",
+      "reserved": "reserved (stage-then-commit)"
+    },
+    "efs.ledger.v2.lock": {
+      "section": "ledger",
+      "root": "0x6c6eb23cf3b383a5fb365ecd153e56a97a2ae1f01e555420253212131c40d200",
+      "transient": true,
+      "fields": [
+        {
+          "name": "phase",
+          "slot": 0,
+          "offset": 0,
+          "bytes": 1,
+          "type": "uint8"
+        },
+        {
+          "name": "stagedPublication",
+          "slot": 0,
+          "offset": 1,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "admissionFrontier",
+          "slot": 0,
+          "offset": 7,
+          "bytes": 6,
+          "type": "uint48"
+        },
+        {
+          "name": "mutationsSnapshot",
+          "slot": 0,
+          "offset": 13,
+          "bytes": 6,
+          "type": "uint48"
+        }
+      ]
+    }
+  },
+  "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a"
+}

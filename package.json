@@ -18,7 +18,9 @@
   },
   "scripts": {
     "check": "node tools/checks.mjs",
-    "vectors": "node tools/vectors.mjs"
+    "vectors": "node tools/vectors.mjs",
+    "layout": "node tools/layout.mjs",
+    "layout:check": "node tools/layout.mjs --check"
   },
   "devDependencies": {
     "viem": "^2.57.7"
