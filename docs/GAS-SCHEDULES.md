@@ -48,3 +48,21 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
 Source: the 2026-10-13 slot accounting (follow-up 6 of the design analysis), derived from the prototype sources
 and cross-checked against the retained known-key classification of the create and the 64×4 fresh-versus-dedup
 delta (−0.4%).
+
+## Measured on 2026-10-20 (first-time writes; `forge test`, default profile = prague, `--profile amsterdam` = EIP-8037/8038 regular + state gas)
+
+Whole `execute` calls measured from the caller in `test/integration/FilesRecipes.t.sol` against the kernel, the real registry and the real generation-1 index with `FilesFinalValidator` pinned. First-time writes (fresh folder scopes, fresh postings), so 5–17 % over the §14 steady-state estimates.
+
+| Step | prague | amsterdam | §14 estimate (today / Glamsterdam) |
+| --- | ---: | ---: | --- |
+| Root seed (CREATE + PUBLISH files-directory/1) | 769,256 | 2,710,108 | — |
+| Create folder | 1,391,205 | 4,864,205 | ≈ 1.2M / ≈ 4.0M |
+| Create file | 1,669,939 | 5,854,065 | ≈ 1.5M / ≈ 5.4M |
+| Edit (files-child/1 + HEAD CAS) | 890,351 | 2,801,025 | ≈ 0.76M / ≈ 2.45M |
+| Rename + move (UNBIND + BIND) | 1,079,612 | 3,378,054 | ≈ 1.0M / ≈ 3.2M |
+| Remove (UNBIND) | 445,671 | 1,197,698 | ≈ 0.38M / ≈ 1.07M |
+| Restore (BIND) | 487,069 | 1,253,629 | ≈ 0.40M / ≈ 1.18M |
+| Release | 428,836 | 1,100,176 | ≈ 0.38M / ≈ 1.07M |
+| Bytes + content + empty sentinel + external | 1,859,163 | 6,636,253 | — |
+
+`files-name/2` validation: 3,400 gas for a 10-byte name, 43,580 for 255 ASCII bytes, 113,077 for 255 bytes of CJK. `FilesFinalValidator`: ≈ 5.3k gas per additional FOLDER bind. `LedgerViews.publication()`: 118k–225k gas per call. The C1 closure rewrites design §14 with these rows and adds `gasStateUsed` and the two sides of 2^24.
