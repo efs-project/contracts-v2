@@ -26,6 +26,7 @@ contract StoresTest is Test {
     bytes32 internal ROSTER = Keys.familyId("roster");
     bytes32 internal LIVE = Keys.familyId("live-scope");
     PostingKey internal KEY = PostingKey.wrap(keccak256("list"));
+    uint64 internal adm; // the stub's frontier, passed as the mutating admission
     ScopeKey internal S = ScopeKey.wrap(keccak256("scope"));
 
     function setUp() public {
@@ -44,10 +45,12 @@ contract StoresTest is Test {
 
     function _live(uint64 admission) internal {
         ledger.set(GEN, Phase.APPLYING, admission, 1);
+        adm = admission;
     }
 
     function _idle(uint64 admission) internal {
         ledger.set(GEN, Phase.IDLE, admission, 1);
+        adm = admission;
     }
 
     function _append(uint64 ordinal) internal {
@@ -61,9 +64,9 @@ contract StoresTest is Test {
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
         posting.append(FamilyId.wrap(BY_TYPE), KEY, 1, 0);
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm);
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
-        bitmap.stamp(S);
+        bitmap.stamp(S, adm);
         assertFalse(posting.attached());
         assertFalse(bitmap.attached());
     }
@@ -75,7 +78,7 @@ contract StoresTest is Test {
         posting.append(FamilyId.wrap(other), KEY, 1, 0);
         vm.prank(GEN);
         vm.expectRevert(abi.encodeWithSelector(E_FAMILY.selector, other));
-        bitmap.setBit(FamilyId.wrap(other), S, 0, true);
+        bitmap.setBit(FamilyId.wrap(other), S, 0, true, adm);
     }
 
     function testIndexInIdleIsBackfillOnly() public {
@@ -85,10 +88,10 @@ contract StoresTest is Test {
         posting.append(FamilyId.wrap(BY_TYPE), KEY, 1, 0);
         vm.prank(GEN);
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, GEN));
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm);
         vm.prank(GEN);
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, GEN));
-        bitmap.setBit(FamilyId.wrap(LIVE), S, 0, true);
+        bitmap.setBit(FamilyId.wrap(LIVE), S, 0, true, adm);
         assertFalse(posting.attached(), "an idle call never attaches");
     }
 
@@ -252,13 +255,13 @@ contract StoresTest is Test {
     function testScopeEntriesLiveBitsAndStamps() public {
         _live(11);
         vm.prank(GEN);
-        assertEq(bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1), 0);
+        assertEq(bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm), 0);
         _live(12);
         vm.prank(GEN);
-        assertEq(bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 4), 1);
+        assertEq(bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 4, adm), 1);
         _live(13);
         vm.prank(GEN);
-        assertEq(bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 9), 2);
+        assertEq(bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 9, adm), 2);
         (uint64 count, uint64 live, uint64 lastMutation, uint48 liveBits0,, uint64 entry0) =
             bitmap.scopeHead(S);
         assertEq(count, 3);
@@ -278,11 +281,11 @@ contract StoresTest is Test {
         _live(14);
         vm.prank(GEN);
         vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(9), uint64(9)));
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 9);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 9, adm);
 
         // a mask clears the bit, adjusts the live count, stamps; liveAt walks live entries only
         vm.prank(GEN);
-        bitmap.setBit(FamilyId.wrap(LIVE), S, 1, false);
+        bitmap.setBit(FamilyId.wrap(LIVE), S, 1, false, adm);
         (, live, lastMutation, liveBits0,,) = bitmap.scopeHead(S);
         assertEq(live, 2);
         assertEq(lastMutation, 14);
@@ -294,14 +297,14 @@ contract StoresTest is Test {
         // an idempotent clear changes nothing but the stamp
         _live(15);
         vm.prank(GEN);
-        bitmap.setBit(FamilyId.wrap(LIVE), S, 1, false);
+        bitmap.setBit(FamilyId.wrap(LIVE), S, 1, false, adm);
         (, live, lastMutation,,,) = bitmap.scopeHead(S);
         assertEq(live, 2);
         assertEq(lastMutation, 15);
         // restore
         _live(16);
         vm.prank(GEN);
-        bitmap.setBit(FamilyId.wrap(LIVE), S, 1, true);
+        bitmap.setBit(FamilyId.wrap(LIVE), S, 1, true, adm);
         (, live, lastMutation, liveBits0,,) = bitmap.scopeHead(S);
         assertEq(live, 3);
         assertEq(liveBits0, 7);
@@ -309,14 +312,14 @@ contract StoresTest is Test {
         // a bare stamp (REBIND) moves lastMutation only
         _live(17);
         vm.prank(GEN);
-        bitmap.stamp(S);
+        bitmap.stamp(S, adm);
         assertEq(bitmap.lastMutation(S), 17);
         (, live,,,,) = bitmap.scopeHead(S);
         assertEq(live, 3);
         // out-of-range entries are refused
         vm.prank(GEN);
         vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(3), uint64(3)));
-        bitmap.setBit(FamilyId.wrap(LIVE), S, 3, true);
+        bitmap.setBit(FamilyId.wrap(LIVE), S, 3, true, adm);
         vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(3), uint64(3)));
         bitmap.scopeEntry(S, 3);
     }
@@ -325,7 +328,7 @@ contract StoresTest is Test {
         for (uint64 i = 1; i <= 50; ++i) {
             _live(i);
             vm.prank(GEN);
-            bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, i);
+            bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, i, adm);
         }
         (uint64 count, uint64 live,, uint48 liveBits0,,) = bitmap.scopeHead(S);
         assertEq(count, 50);
@@ -335,7 +338,7 @@ contract StoresTest is Test {
         assertEq(bitmap.scopeEntry(S, 49), 50);
         assertEq(bitmap.scopeEntry(S, 48), 49);
         vm.prank(GEN);
-        bitmap.setBit(FamilyId.wrap(LIVE), S, 49, false);
+        bitmap.setBit(FamilyId.wrap(LIVE), S, 49, false, adm);
         assertEq(
             bitmap.liveWords(S, FamilyId.wrap(LIVE), 0, 1)[0],
             ((uint256(1) << 50) - 1) ^ (uint256(1) << 49)
@@ -351,17 +354,17 @@ contract StoresTest is Test {
     function testOtherBitmapFamiliesKeepTheirOwnWords() public {
         _live(1);
         vm.prank(GEN);
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm);
         _live(2);
         vm.prank(GEN);
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2, adm);
         vm.prank(GEN);
-        bitmap.setBit(FamilyId.wrap(ROSTER), S, 1, true);
+        bitmap.setBit(FamilyId.wrap(ROSTER), S, 1, true, adm);
         assertEq(bitmap.liveWords(S, FamilyId.wrap(ROSTER), 0, 1)[0], 2);
         assertEq(bitmap.liveWords(S, FamilyId.wrap(LIVE), 0, 1)[0], 3, "the live bits are separate");
         assertEq(bitmap.liveCount(S), 2, "a roster bit is not a live bit");
         vm.prank(GEN);
-        bitmap.setBit(FamilyId.wrap(ROSTER), S, 1, false);
+        bitmap.setBit(FamilyId.wrap(ROSTER), S, 1, false, adm);
         assertEq(bitmap.liveWords(S, FamilyId.wrap(ROSTER), 0, 1)[0], 0);
     }
 
@@ -370,9 +373,9 @@ contract StoresTest is Test {
     function testCoverageIsOpenedLiveAndBackfilledIdle() public {
         _live(20);
         vm.prank(GEN);
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm);
         vm.prank(GEN);
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2, adm);
         vm.prank(GEN);
         bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 20);
         (uint64 through, uint64 liveFrom, uint64 retiredAt, uint8 state) =
@@ -419,9 +422,9 @@ contract StoresTest is Test {
     function testCurrentStateBackfillSetsAndClearsLiveBits() public {
         _live(5);
         vm.prank(GEN);
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm);
         vm.prank(GEN);
-        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2, adm);
         vm.prank(GEN);
         bitmap.openCoverage(FamilyId.wrap(LIVE), S, 5);
         _idle(5);
@@ -460,5 +463,50 @@ contract StoresTest is Test {
         assertEq(posting.familyIds().length, 2);
         assertEq(bitmap.familyIds().length, 3);
         assertEq(bitmap.familyIds()[2], LIVE);
+    }
+
+    // ---- the mutating admission and backfill bounds (review findings) ---------------------------------------
+
+    function testStampAdmissionIsTheFrontierLiveAndAtMostTheFrontierInBuild() public {
+        _live(11);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(11), uint64(12)));
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, 12);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(11), uint64(10)));
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, 10);
+        vm.prank(GEN);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, 11);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(11), uint64(9)));
+        bitmap.stamp(S, 9);
+        // a builder replaying history stamps the admission it folds, never beyond the frontier
+        bytes32[] memory bf = new bytes32[](2);
+        bf[0] = SCOPE;
+        bf[1] = LIVE;
+        BitmapStore fresh = new BitmapStore(address(ledger), BUILDER, bf);
+        _idle(9);
+        vm.prank(BUILDER);
+        fresh.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, 3);
+        assertEq(fresh.lastMutation(S), 3, "the replayed stamp is the mutating admission");
+        vm.prank(BUILDER);
+        fresh.setBit(FamilyId.wrap(LIVE), S, 0, false, 7);
+        assertEq(fresh.lastMutation(S), 7);
+        vm.prank(BUILDER);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(9), uint64(10)));
+        fresh.stamp(S, 10);
+    }
+
+    function testBackfillSetBeyondCountIsRefused() public {
+        _live(5);
+        vm.prank(GEN);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, 5);
+        vm.prank(GEN);
+        bitmap.openCoverage(FamilyId.wrap(LIVE), S, 5);
+        _idle(5);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(1), uint64(3)));
+        bitmap.backfillSet(FamilyId.wrap(LIVE), S, 3, true, 3);
+        assertEq(bitmap.liveCount(S), 1, "no bit for an entry that is not there");
     }
 }

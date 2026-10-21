@@ -127,7 +127,11 @@ contract MigrationSuccessorTest is Test {
     /// This test pins the residual: such a successor is accepted only when the set pins its exact codehash and
     /// discloses its owner, so the choice is visible in the revision row. A design ruling is needed on whether
     /// that is the intended reading of "passthrough".
-    function test_call_only_passthrough_is_accepted_only_pinned_and_disclosed() public {
+    /// A CALL-only passthrough is a plain runtime (the scan passes it), but a successor must answer as a
+    /// controller of this Realm: `retired()`, `frozen()`, `ledger()` and `registryProxy()` are checked before
+    /// the activation, so a passthrough that does not carry the controller surface is refused (review
+    /// finding; Q41 keeps the question for one that forwards that surface to a real controller).
+    function test_call_only_passthrough_without_the_controller_surface_is_refused() public {
         PassthroughController passthrough = new PassthroughController();
         ActivationSet memory set = _set(2, address(passthrough));
         set.components.controllerOwner = address(0xBEEF);
@@ -136,7 +140,9 @@ contract MigrationSuccessorTest is Test {
         controller.migrate(address(passthrough), set);
         _assertUnchanged();
         set = _set(2, address(passthrough));
+        vm.expectRevert(); // `retired()` is not a function the passthrough answers
         controller.migrate(address(passthrough), set);
-        assertEq(hot.controller(), address(passthrough));
+        _assertUnchanged();
+        assertEq(hot.controller(), address(controller));
     }
 }

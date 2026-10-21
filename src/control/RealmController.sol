@@ -116,6 +116,13 @@ contract RealmController is IRealmController {
         if (set.components.controllerOwner != IRealmController(successor).owner()) {
             revert E_SUCCESSOR(3);
         }
+        // a successor that could never act would strand the control plane for good
+        if (successor == address(this)) revert E_SUCCESSOR(5);
+        if (IRealmController(successor).retired() || IRealmController(successor).frozen()) {
+            revert E_SUCCESSOR(6);
+        }
+        if (IRealmController(successor).ledger() != LEDGER) revert E_SUCCESSOR(7);
+        if (IRealmController(successor).registryProxy() != REGISTRY) revert E_SUCCESSOR(8);
         _activate(set, false);
         ProxyAdmin(LEDGER_ADMIN).transferOwnership(successor);
         ProxyAdmin(REGISTRY_ADMIN).transferOwnership(successor);
@@ -188,8 +195,8 @@ contract RealmController is IRealmController {
     /// @inheritdoc IRealmController
     function freeze(ActivationSet calldata finalSet, bytes[] calldata laneCanaries)
         external
-        onlyOwner
         live
+        onlyOwner
     {
         ILedgerHot hot = ILedgerHot(LEDGER);
         // 1. the controller's pre-checks (the ledger runs 1, 4, 5, 6, 7, 8 itself)
@@ -273,6 +280,17 @@ contract RealmController is IRealmController {
         (bool ok, bytes memory ret) = LEDGER.call(canary);
         if (!ok || ret.length < 64) revert E_CANARY(lane);
         (publication,) = abi.decode(ret, (uint64, uint64));
+        // the publication must be the lane it claims (proof kind 2 secp256k1, 3 ERC-1271) and must have
+        // published a realm-notice record: a canary proves its own lane, not any lane
+        ILedgerHot hot = ILedgerHot(LEDGER);
+        (, uint8 proofKind,,,, uint48 first,) = Layout.unpackEvidenceCellWord0(
+            hot.extsload(bytes32(Layout.publicationsEvidenceSlot(publication)))
+        );
+        if (proofKind != lane + 1) revert E_CANARY(lane);
+        bytes32 recordId = hot.extsload(bytes32(Layout.admissionsRowsSlot(first) + 1));
+        if (hot.extsload(bytes32(Layout.recordsCellsSlot(recordId))) != NOTICE_TYPE) {
+            revert E_CANARY(lane);
+        }
     }
 
     // =============================================================================================
@@ -287,8 +305,8 @@ contract RealmController is IRealmController {
     /// @inheritdoc IRealmController
     function declareRoleExpectation(bytes32 purpose, bytes32 role, bytes32 expectedType)
         external
-        onlyOwner
         live
+        onlyOwner
     {
         ITypeRegistry(REGISTRY).declareRoleExpectation(purpose, role, expectedType);
     }

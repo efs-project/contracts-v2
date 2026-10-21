@@ -32,11 +32,36 @@ import {DigestSpec, Effect, Readiness, Unit} from "../../src/interfaces/Index.so
 import {IPostingStore} from "../../src/interfaces/IPostingStore.sol";
 import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 import {AlreadyAdmitted, E_REPLAY} from "../../src/interfaces/Errors.sol";
+import {IIndexHook} from "../../src/interfaces/IIndexHook.sol";
+import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 
 /// @notice Design §10.6 replay: a second generation with fresh stores catches up on a history of every action
 ///         kind through the pinned decoder, its stores equal the live generation's family by family, its
 ///         readiness is re-derived at activation, and after the index replacement writes fold live into the
 ///         replayed stores while the pre-replacement publication retries as AlreadyAdmitted.
+/// A fold hook that tries to re-enter the replay from inside a fold.
+contract ReenteringHook is IIndexHook {
+    bool public reentered;
+    bytes public lastError;
+
+    function fold(Effect calldata, bytes32[] calldata, uint64) external returns (bytes4) {
+        try IRealmIndex(msg.sender).replayNextPublication(64) {
+            reentered = true;
+        } catch (bytes memory err) {
+            lastError = err;
+        }
+        return IIndexHook.fold.selector;
+    }
+
+    function validate(uint64, Effect[] calldata, bytes32[] calldata)
+        external
+        pure
+        returns (bytes4)
+    {
+        return IIndexHook.validate.selector;
+    }
+}
+
 contract ReplayTest is Test {
     KernelDeploy.Kernel internal k;
     MockRegistry internal registry;
@@ -166,6 +191,10 @@ contract ReplayTest is Test {
     // ---- the second generation -------------------------------------------------------------------------------
 
     function _gen2() internal returns (IndexDeployer d, RealmIndex ix) {
+        return _gen2With(new Unit[](0));
+    }
+
+    function _gen2With(Unit[] memory units) internal returns (IndexDeployer d, RealmIndex ix) {
         IndexDeployer.Plan memory plan;
         plan.hotAbiId = KernelDeploy.HOT_ABI_ID;
         plan.decoder = address(new IndexReplayDecoder());
@@ -174,7 +203,7 @@ contract ReplayTest is Test {
         plan.bitmapInitcode = type(BitmapStore).creationCode;
         plan.bitmapFamilies = IndexDeploy.bitmapFamilies();
         plan.generationInitcode = type(RealmIndex).creationCode;
-        plan.units = new Unit[](0);
+        plan.units = units;
         plan.specs = _specs();
         plan.work = IndexDoubleDefaults.workModel();
         d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
@@ -385,5 +414,57 @@ contract ReplayTest is Test {
         assertEq(effects[0].oldTarget, recordId);
         vm.expectRevert(abi.encodeWithSelector(E_REPLAY.selector, uint8(7)));
         dec.decode(k.proxy, 99);
+    }
+
+    // ---- review findings -------------------------------------------------------------------------------------
+
+    /// A replayed store stamps the mutating admission, not the frontier at replay time.
+    function testReplayStampsTheMutatingAdmission() public {
+        Action[] memory actions = new Action[](3);
+        actions[0].kind = ActionKind.CREATE;
+        actions[0].salt = salt;
+        actions[1].kind = ActionKind.PUBLISH;
+        actions[1].typeId = TYPE_OK;
+        actions[1].bodyHashOrRecordId = keccak256(body);
+        actions[2] = _bindKind(ActionKind.BIND, NAME, recordId, 0);
+        bytes[] memory bodies = new bytes[](3);
+        bodies[1] = body;
+        _exec(actions, bodies); // admissions 1..3, the bind at 3
+        Action memory a;
+        a.kind = ActionKind.PUBLISH;
+        a.typeId = TYPE_OK;
+        a.bodyHashOrRecordId = keccak256(other);
+        _one(a, other); // admission 4, no scope mutation
+        assertEq(g.bitmap.lastMutation(ScopeKey.wrap(scopeKey)), 3);
+        (IndexDeployer d, RealmIndex ix) = _gen2();
+        assertEq(_replayAll(ix), 2);
+        assertEq(
+            IBitmapStore(d.bitmapStore()).lastMutation(ScopeKey.wrap(scopeKey)), 3, "replayed stamp"
+        );
+    }
+
+    /// A fold hook cannot re-enter the replay: the nested call is refused and the stream stays in order.
+    function testAFoldHookCannotReenterTheReplay() public {
+        _history();
+        ReenteringHook hook = new ReenteringHook();
+        Unit[] memory units = new Unit[](1);
+        units[0] = Unit({
+            foldHook: address(hook),
+            foldCodehash: address(hook).codehash,
+            finalHook: address(0),
+            finalCodehash: 0,
+            familyIds: new bytes32[](0),
+            purposeFilter: 0,
+            hotAbiId: KernelDeploy.HOT_ABI_ID,
+            identity: keccak256("test/reentering-hook/1")
+        });
+        (, RealmIndex ix) = _gen2With(units);
+        assertEq(_replayAll(ix), 8);
+        assertFalse(hook.reentered(), "the nested replay was refused");
+        assertEq(bytes4(hook.lastError()), E_REPLAY.selector);
+        (uint64 processed, uint64 publication,) = ix.progress();
+        assertEq(processed, 11);
+        assertEq(publication, 8);
+        assertTrue(ix.replayReadiness().ready);
     }
 }

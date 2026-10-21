@@ -81,7 +81,7 @@ error E_HOT_ABI(address unit);
 error E_CODE_SHAPE(address target, uint8 reason); // 1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 EIP-1167 proxy 6 codehash mismatch
 error E_CONTROLLER(uint8 field); // 1 controller 2 codehash 3 owner
 error E_FREEZE_PRECHECK(uint8 check);
-error E_RESERVED(uint8 field, uint256 value);
+error E_RESERVED(uint8 field, uint256 value); // field 32: limits.maxActions outside 1..64 (the replay ceiling)
 error E_UNSUPPORTED_ROW(uint8 row);
 
 // ---- registry (design §9) ----------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ error E_COVERAGE(uint8 code); // 1 already open 2 nothing to retire
 error E_NOT_OWNER(address caller);
 error E_PENDING(address pending);
 error E_NOT_IDLE();
-error E_SUCCESSOR(uint8 code);
+error E_SUCCESSOR(uint8 code); // 1 codehash 2 controller field 3 owner 4 admins not moved 5 self 6 retired or frozen 7 another ledger 8 another registry
 error E_RETIRED();
 error E_CANARY(uint8 lane);
 error E_GENESIS(uint8 step); // 0 already run 1 limits hash 2 controller address 3 registry proxy address 4 ledger proxy address 5..8 post-checks 9 implementation codehash 10 initcode hash 11 creation failed

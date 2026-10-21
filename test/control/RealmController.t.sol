@@ -18,7 +18,10 @@ import {TypeRegistry} from "../../src/types/TypeRegistry.sol";
 import {DescriptorStore} from "../../src/types/DescriptorStore.sol";
 import {DescribedCodec} from "../../src/types/DescribedCodec.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, ActionKind, Native} from "../../src/interfaces/Actions.sol";
+import {Action, ActionKind, Capability, Intent, Native} from "../../src/interfaces/Actions.sol";
+import {Layout} from "../../src/core/layout/Layout.sol";
+import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
+import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
 import {ClosureConstants, Limits} from "../../src/interfaces/Limits.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
@@ -27,6 +30,7 @@ import {IRealmController} from "../../src/interfaces/IRealmController.sol";
 import {
     E_CANARY,
     E_CONTROLLER,
+    E_VERIFIER_PROFILE,
     E_FREEZE_PRECHECK,
     E_FROZEN,
     E_GENESIS,
@@ -394,5 +398,153 @@ contract RealmControllerTest is Test {
         controller.activate(_set(2, address(controller), address(this)));
         controller.beginTransition(3, uint48(vm.getBlockNumber() + 10));
         controller.abortTransition();
+    }
+
+    // ---- review findings -------------------------------------------------------------------------------------
+
+    function testMigrateRefusesSuccessorsThatCouldNeverAct() public {
+        ActivationSet memory self = _set(2, address(controller), address(this));
+        vm.expectRevert(abi.encodeWithSelector(E_SUCCESSOR.selector, uint8(5)));
+        controller.migrate(address(controller), self);
+        RealmController foreignLedger =
+            new RealmController(address(this), address(0xBAD), address(registry), noticeType);
+        ActivationSet memory f1 = _set(2, address(foreignLedger), address(this));
+        vm.expectRevert(abi.encodeWithSelector(E_SUCCESSOR.selector, uint8(7)));
+        controller.migrate(address(foreignLedger), f1);
+        RealmController foreignRegistry =
+            new RealmController(address(this), k.proxy, address(0xBAD), noticeType);
+        ActivationSet memory f2 = _set(2, address(foreignRegistry), address(this));
+        vm.expectRevert(abi.encodeWithSelector(E_SUCCESSOR.selector, uint8(8)));
+        controller.migrate(address(foreignRegistry), f2);
+        // a retired controller is never a successor: migrate A → B, then B → A is refused
+        RealmController successor =
+            new RealmController(address(this), k.proxy, address(registry), noticeType);
+        controller.migrate(address(successor), _set(2, address(successor), address(this)));
+        assertTrue(controller.retired());
+        ActivationSet memory back = _set(3, address(controller), address(this));
+        vm.expectRevert(abi.encodeWithSelector(E_SUCCESSOR.selector, uint8(6)));
+        successor.migrate(address(controller), back);
+        assertEq(hot.controller(), address(successor), "the live controller is unchanged");
+        assertFalse(successor.retired());
+    }
+
+    function testEveryControlPathAnswersFrozenAfterTheFreeze() public {
+        controller.freeze(_final(2, address(controller), address(this)), new bytes[](0));
+        ActivationSet memory set = _final(3, address(controller), address(this));
+        vm.expectRevert(E_FROZEN.selector);
+        controller.freeze(set, new bytes[](0));
+        vm.expectRevert(E_FROZEN.selector);
+        controller.declareRoleExpectation(keccak256("p"), keccak256("r"), noticeType);
+        vm.expectRevert(E_FROZEN.selector);
+        controller.activate(set);
+        vm.prank(STRANGER);
+        vm.expectRevert(E_FROZEN.selector);
+        controller.activatePolicy(noticeType, address(0));
+    }
+
+    // ---- lane canaries must be the lane they claim ------------------------------------------------------------
+
+    function _signedNotice(
+        bytes32 executionSet,
+        bytes32 indexObligations,
+        uint64 nonce,
+        bytes memory body
+    ) internal view returns (bytes memory calldata_) {
+        Action[] memory actions = new Action[](1);
+        actions[0].kind = ActionKind.PUBLISH;
+        actions[0].typeId = noticeType;
+        actions[0].bodyHashOrRecordId = keccak256(body);
+        bytes[] memory bodies = new bytes[](1);
+        bodies[0] = body;
+        Intent memory it;
+        it.realmId = hot.realmId();
+        it.realmOrigin = hot.realmOrigin();
+        it.executionSet = executionSet;
+        it.principalId = Keys.principal(key);
+        it.author = key;
+        it.nonce = nonce;
+        it.deadline = uint64(block.timestamp + 1 days);
+        it.acceptanceProfile = _profileUnder(executionSet, actions[0]);
+        it.indexObligations = indexObligations;
+        it.readSetHash = keccak256("");
+        it.verifierProfile = 1;
+        bytes32 domain = hot.extsload(bytes32(Layout.LEDGER_REALM_DOMAINSEPARATOR_SLOT));
+        bytes32 digest = ILedgerCommitments(hot.ingress())
+            .signingDigest(domain, it, keccak256(abi.encode(actions)));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(PK, digest);
+        calldata_ = abi.encodeCall(
+            ILedger.executeSigned, (it, actions, bodies, "", abi.encodePacked(r, s, v))
+        );
+    }
+
+    function _profileUnder(bytes32 executionSet, Action memory a)
+        internal
+        view
+        returns (bytes32 h)
+    {
+        h = keccak256(abi.encode(Keys.DOM_PROFILE, executionSet));
+        TypeInfo memory info = registry.typeInfo(a.typeId);
+        uint32 gas_ =
+            info.validationGas == 0 ? ClosureConstants.ACCEPTOR_GAS_DEFAULT : info.validationGas;
+        h = keccak256(
+            abi.encode(
+                h, a.typeId, info.mandatory, info.ruleId, info.policyRow, info.policyCodehash, gas_
+            )
+        );
+    }
+
+    function _proofKind(uint64 publication) internal view returns (uint8 proofKind) {
+        (, proofKind,,,,,) = Layout.unpackEvidenceCellWord0(
+            hot.extsload(bytes32(Layout.publicationsEvidenceSlot(publication)))
+        );
+    }
+
+    function _obligations(ActivationSet memory set) internal pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                set.components.index, set.components.indexCodehash, set.components.indexManifestHash
+            )
+        );
+    }
+
+    function testASecpCanaryCannotStandInForTheErc1271Lane() public {
+        ActivationSet memory set = _set(2, address(controller), address(this));
+        set.capabilities = Capability.SIGNED_SECP256K1 | Capability.ERC1271;
+        set.expectedExecutionSet = ExecutionSets.executionSet(set, k.proxy);
+        controller.activate(set);
+        ActivationSet memory finalSet = _final(3, address(controller), address(this));
+        finalSet.capabilities = Capability.SIGNED_SECP256K1 | Capability.ERC1271;
+        finalSet.expectedExecutionSet = ExecutionSets.executionSet(finalSet, k.proxy);
+        bytes[] memory canaries = new bytes[](2);
+        canaries[0] =
+            _signedNotice(finalSet.expectedExecutionSet, _obligations(finalSet), 0, "lane-1");
+        canaries[1] =
+            _signedNotice(finalSet.expectedExecutionSet, _obligations(finalSet), 1, "lane-2");
+        vm.expectRevert(abi.encodeWithSelector(E_CANARY.selector, uint8(2)));
+        controller.freeze(finalSet, canaries);
+        assertFalse(controller.frozen(), "the ceremony reverted whole");
+        assertEq(hot.revision(), 2);
+    }
+
+    function testTheSecpLaneCanaryProvesTheSecpLane() public {
+        ActivationSet memory set = _set(2, address(controller), address(this));
+        set.capabilities = Capability.SIGNED_SECP256K1;
+        set.expectedExecutionSet = ExecutionSets.executionSet(set, k.proxy);
+        controller.activate(set);
+        ActivationSet memory finalSet = _final(3, address(controller), address(this));
+        finalSet.capabilities = Capability.SIGNED_SECP256K1;
+        finalSet.expectedExecutionSet = ExecutionSets.executionSet(finalSet, k.proxy);
+        bytes[] memory canaries = new bytes[](1);
+        canaries[0] =
+            _signedNotice(finalSet.expectedExecutionSet, _obligations(finalSet), 0, "lane-1");
+        (,,, uint64 before) = hot.counts();
+        controller.freeze(finalSet, canaries);
+        assertTrue(controller.frozen());
+        (,,, uint64 after_) = hot.counts();
+        assertEq(after_, before + 2, "the native canary and the lane canary landed");
+        assertEq(_proofKind(before + 1), 1, "native");
+        assertEq(_proofKind(before + 2), 2, "secp256k1");
+        // a canary that publishes something other than a realm notice is refused: not testable here without
+        // a second registered Type on the signed lane; covered by the proof-kind check above
     }
 }

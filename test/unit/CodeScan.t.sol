@@ -366,6 +366,22 @@ contract CodeScanTest is Test {
         assertEq(CodeScan.scan(hex"600021f4f0f2f5ff0005"), CodePins.FORBIDDEN_OPCODE);
     }
 
+    /// Trailer-entry liveness is conservative when no forbidden byte was met inside the code region: a
+    /// dead stretch that does not end in a halting opcode counts as falling through (a documented false
+    /// positive, only possible with trailers that hold forbidden bytes); it is exact once the walk is exact.
+    function test_trailerEntryLivenessIsConservativeThenExact() public pure {
+        // INVALID SLT | trailer: DELEGATECALL STOP | L = 2 — the SLT is dead, but it does not halt
+        assertEq(CodeScan.scan(hex"fe12f4000002"), CodePins.FORBIDDEN_OPCODE, "conservative");
+        // the same stretch judged exactly once a (dead) forbidden byte starts the exact walk
+        assertEq(CodeScan.scan(hex"fef412f4000002"), 0, "exact");
+        // a halting last instruction makes the trailer data
+        assertEq(CodeScan.scan(hex"fe00f4000002"), 0);
+        // a JUMPDEST revives the stretch and the trailer byte is live
+        assertEq(CodeScan.scan(hex"fe5b12f4000002"), CodePins.FORBIDDEN_OPCODE);
+        // a live code region falling through into the trailer is refused
+        assertEq(CodeScan.scan(hex"12f4000002"), CodePins.FORBIDDEN_OPCODE);
+    }
+
     /// `L + 2 == size`: there is no code region, and pc 0 is live.
     function test_wholeRuntimeNamedAsTrailerIsStillScanned() public pure {
         assertEq(CodeScan.scan(hex"f4000002"), CodePins.FORBIDDEN_OPCODE);

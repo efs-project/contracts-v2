@@ -197,8 +197,11 @@ contract TypeRegistry is ITypeRegistry, Initializable, RegistryStorage {
             revert E_BLOB(blob);
         }
         DeclarationRow storage d = _declarations().rows[typeId];
-        d.key = h.declarationKey;
-        d.signatureHash = keccak256(declarationSig);
+        if (d.installed == 0) {
+            // an installed Type keeps the declaration its blob embeds: a second valid signature cannot drift it
+            d.key = h.declarationKey;
+            d.signatureHash = keccak256(declarationSig);
+        }
     }
 
     /// @inheritdoc ITypeRegistry

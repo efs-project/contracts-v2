@@ -4,7 +4,7 @@ pragma solidity 0.8.37;
 import {WriterRange} from "./storage/StoreStorage.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {Phase} from "../interfaces/Results.sol";
-import {E_FAMILY, E_WRITER} from "../interfaces/Errors.sol";
+import {E_FAMILY, E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 
 /// @title StoreBase — the write authorization every per-Realm index store enforces (design §4.6)
 /// @notice Let g = ledger.index() and phase = ledger.phase(). (1) msg.sender == g and phase != IDLE: a live
@@ -65,6 +65,19 @@ abstract contract StoreBase {
             w[n - 1].toAdmission = admission == 0 ? 0 : admission - 1;
         }
         w.push(WriterRange(g, admission, 0));
+    }
+
+    /// The admission a write stamps: a live write stamps the frontier exactly; a build or replay write
+    /// stamps the admission it is folding, never beyond the frontier.
+    function _stampAdmission(uint8 mode, uint48 frontier, uint64 admission)
+        internal
+        pure
+        returns (uint48)
+    {
+        if (mode == MODE_LIVE ? admission != frontier : admission > frontier) {
+            revert E_ORDER(frontier, admission);
+        }
+        return uint48(admission);
     }
 
     function _requireFamily(bytes32 family) internal view {

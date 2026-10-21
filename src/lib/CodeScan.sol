@@ -173,7 +173,12 @@ library CodeScan {
                 // Liveness on entry to the exact walk below. A forbidden byte inside the code region is
                 // judged by reachability like any other: walk exactly from pc 0 to it. Otherwise the
                 // trailer is live on entry when pc 0 is in it or when the last code-region instruction
-                // falls through; the last group holds that instruction and no forbidden opcode.
+                // falls through; the last group holds that instruction and no forbidden opcode. This is
+                // conservative, not exact: a dead stretch that does not end in a halting opcode (dead code
+                // or data after the last halt) counts as falling through, so a trailer holding a forbidden
+                // byte behind it is refused — a false positive only possible with third-party IPFS-hash
+                // trailers (a solc "none" trailer holds no forbidden byte), accepted because an exact
+                // pre-walk would double the cost of every scan at activation. `tools/checks.mjs` is exact.
                 let live := 1
                 switch lt(p, codeEnd)
                 case 1 {

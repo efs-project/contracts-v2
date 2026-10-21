@@ -321,7 +321,8 @@ contract ReentrancyTest is Test, IRelay {
         expected[17] = _add(
             address(candidateBitmap),
             abi.encodeCall(
-                BitmapStore.setBit, (FamilyId.wrap(roster), ScopeKey.wrap(keccak256("s")), 0, true)
+                BitmapStore.setBit,
+                (FamilyId.wrap(roster), ScopeKey.wrap(keccak256("s")), 0, true, 1)
             ),
             cand,
             abi.encodeWithSelector(E_WRITER.selector, cand)

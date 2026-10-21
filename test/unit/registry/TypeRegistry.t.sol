@@ -870,5 +870,21 @@ contract TypeRegistryTest is Test {
         assertEq(implementation_, address(w));
         assertEq(keccak256(registry.descriptorBytes(typeId)), keccak256(_native().encode()));
     }
-}
 
+    function testInstalledDeclarationIsNeverRewritten() public {
+        Descriptors.Params memory p = _native();
+        bytes memory d = p.encode();
+        (bytes32 typeId, bytes memory sig) = _declare(d);
+        registry.registerDescribed(d, sig, instance, "");
+        (address k1, bool installed1, bytes32 h1) = registry.declaration(typeId);
+        assertTrue(installed1);
+        // the row is written once; a later retention or registration leaves it as the blob embeds it
+        registry.retainDeclaration(d, sig);
+        registry.registerDescribed(d, sig, instance, "");
+        (address k2, bool installed2, bytes32 h2) = registry.declaration(typeId);
+        assertEq(k2, k1);
+        assertTrue(installed2);
+        assertEq(h2, h1);
+        assertEq(h2, keccak256(sig));
+    }
+}

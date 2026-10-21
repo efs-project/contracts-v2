@@ -22,6 +22,7 @@ import {FamilyEntry, Readiness, Unit} from "../interfaces/Index.sol";
 import {ILedgerControlDelegate} from "../interfaces/internal/ILedgerControlDelegate.sol";
 import {
     E_DEADLINE_BOUND,
+    E_RESERVED,
     E_DELEGATE_ONLY,
     E_EXPECTED_SET,
     E_FREEZE_PRECHECK,
@@ -106,6 +107,7 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         $.realmOrigin = Keys.realmOrigin(uint64(block.chainid), address(this), init.realmSalt);
         $.realmId = Keys.realmId($.realmOrigin, init.executionProfileId);
         $.layoutId = LAYOUT_ID;
+        _checkLimits(init.limits);
         $.limits = init.limits;
         $.limitsProfileId = keccak256(abi.encode(init.limits));
         // writes are disabled until the genesis activation clears this transition
@@ -145,7 +147,15 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             && a.maxReadIds >= b.maxReadIds && a.maxReadCount >= b.maxReadCount;
     }
 
+    /// The replay ceilings: a publication has at most 64 leaves (`replayNextPublication(maxFacts ≤ 64)`,
+    /// the decoder's one extsloadBatch of two slots per leaf, the evidence cell's uint8 leaf count), so a
+    /// Realm limit above it would admit publications no later generation could replay.
+    function _checkLimits(Limits calldata l) private pure {
+        if (l.maxActions == 0 || l.maxActions > 64) revert E_RESERVED(32, l.maxActions);
+    }
+
     function _activate(ActivationSet calldata set) private {
+        _checkLimits(set.limits);
         RealmStorage storage $ = _realm();
         uint32 current = $.revision;
         uint16 flags = msg.sig == ILedgerControl.freeze.selector ? REV_FROZEN : 0; // derived, never a literal argument

@@ -9,15 +9,26 @@ import {FamilyId, ScopeKey} from "./Actions.sol";
 interface IBitmapStore {
     /// The kind-10 list: head (count, live, lastMutation, liveBits0, entry0) and entry word in one call on
     /// FIRST_BIND.
-    function appendScopeEntry(FamilyId family, ScopeKey scope, uint64 bindingOrdinal)
-        external
-        returns (uint64 entryIndex);
+    /// `admission` is the mutating admission: equal to the ledger's frontier for a live write, at most the
+    /// frontier for a build or replay write (so a replayed store stamps what the live one stamped).
+    function appendScopeEntry(
+        FamilyId family,
+        ScopeKey scope,
+        uint64 bindingOrdinal,
+        uint64 admission
+    ) external returns (uint64 entryIndex);
 
     /// A BITMAP family's live hook; stamps lastMutation in the same SSTORE.
-    function setBit(FamilyId family, ScopeKey scope, uint64 entryIndex, bool value) external;
+    function setBit(
+        FamilyId family,
+        ScopeKey scope,
+        uint64 entryIndex,
+        bool value,
+        uint64 admission
+    ) external;
 
     /// REBIND/RESTORE without a bit change: lastMutation only.
-    function stamp(ScopeKey scope) external;
+    function stamp(ScopeKey scope, uint64 admission) external;
 
     /// A later BITMAP family's first live touch of a pre-declaration scope.
     function openCoverage(FamilyId family, ScopeKey scope, uint64 liveFrom) external;

@@ -53,12 +53,15 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
     // ---- writes ------------------------------------------------------------------------------------------
 
     /// @inheritdoc IBitmapStore
-    function appendScopeEntry(FamilyId family, ScopeKey scope, uint64 bindingOrdinal)
-        external
-        returns (uint64 entryIndex)
-    {
-        (uint8 mode, uint48 admission) = _authorize(FamilyId.unwrap(family));
+    function appendScopeEntry(
+        FamilyId family,
+        ScopeKey scope,
+        uint64 bindingOrdinal,
+        uint64 admission_
+    ) external returns (uint64 entryIndex) {
+        (uint8 mode, uint48 frontier) = _authorize(FamilyId.unwrap(family));
         if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        uint48 admission = _stampAdmission(mode, frontier, admission_);
         BitmapStorage storage $ = _bitmap();
         bytes32 s = ScopeKey.unwrap(scope);
         ScopeHead storage h = $.scopeHeads[s];
@@ -80,9 +83,16 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
     }
 
     /// @inheritdoc IBitmapStore
-    function setBit(FamilyId family, ScopeKey scope, uint64 entryIndex, bool value) external {
-        (uint8 mode, uint48 admission) = _authorize(FamilyId.unwrap(family));
+    function setBit(
+        FamilyId family,
+        ScopeKey scope,
+        uint64 entryIndex,
+        bool value,
+        uint64 admission_
+    ) external {
+        (uint8 mode, uint48 frontier) = _authorize(FamilyId.unwrap(family));
         if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        uint48 admission = _stampAdmission(mode, frontier, admission_);
         BitmapStorage storage $ = _bitmap();
         bytes32 s = ScopeKey.unwrap(scope);
         ScopeHead storage h = $.scopeHeads[s];
@@ -100,10 +110,11 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
     }
 
     /// @inheritdoc IBitmapStore
-    function stamp(ScopeKey scope) external {
-        (uint8 mode, uint48 admission) = _authorize(FAMILY_LIVE_SCOPE);
+    function stamp(ScopeKey scope, uint64 admission_) external {
+        (uint8 mode, uint48 frontier) = _authorize(FAMILY_LIVE_SCOPE);
         if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
-        _bitmap().scopeHeads[ScopeKey.unwrap(scope)].lastMutation = admission;
+        _bitmap().scopeHeads[ScopeKey.unwrap(scope)].lastMutation =
+            _stampAdmission(mode, frontier, admission_);
     }
 
     /// @inheritdoc IBitmapStore
@@ -151,6 +162,8 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
         CoverageSlot storage c = $.coverage[FamilyId.unwrap(family)][s];
         if (c.state != COVERAGE_OPEN) revert E_BACKFILL(1);
         if (through < c.through || through > c.liveFrom) revert E_BACKFILL(2);
+        uint48 count = $.scopeHeads[s].count;
+        if (entryIndex >= count) revert E_ORDER(count, entryIndex); // never a bit for an entry that is not there
         if (FamilyId.unwrap(family) == FAMILY_LIVE_SCOPE) {
             bool was = _liveBit($, s, entryIndex);
             if (was != value) {

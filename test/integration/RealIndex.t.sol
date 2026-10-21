@@ -21,6 +21,7 @@ import {Coverage, Phase} from "../../src/interfaces/Results.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerControl, ActivationSet} from "../../src/interfaces/ILedgerControl.sol";
+import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
 import {IIndexHook} from "../../src/interfaces/IIndexHook.sol";
 import {DigestSpec, Effect, Readiness, Unit} from "../../src/interfaces/Index.sol";
@@ -451,7 +452,7 @@ contract RealIndexTest is Test {
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
         g.posting.append(FamilyId.wrap(F_BY_TYPE), PostingKey.wrap(Keys.byTypeList(TYPE_OK)), 1, 0);
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
-        g.bitmap.stamp(ScopeKey.wrap(scopeKey));
+        g.bitmap.stamp(ScopeKey.wrap(scopeKey), 1);
     }
 
     // ---- rollback through the final hook -------------------------------------------------------------------------
@@ -518,5 +519,62 @@ contract RealIndexTest is Test {
         (uint8 phase,,,) = ILedgerHot(k2.proxy).phase();
         assertEq(phase, Phase.IDLE);
         assertTrue(g2.index.replayReadiness().ready);
+    }
+
+    // ---- review findings -------------------------------------------------------------------------------------
+
+    function testWithdrawOfTheVirtualFirstOccurrenceKeepsLiveHonest() public {
+        _seed(); // the record is admission 2
+        Action memory w;
+        w.kind = ActionKind.WITHDRAW;
+        w.target = bytes32(uint256(2));
+        _one(w, "", 1); // admission 4
+        (Coverage c, uint64 count, uint64 live, uint64[] memory entries) =
+            g.index.occurrencesOf(recordId);
+        assertEq(uint8(c), uint8(Coverage.COMPLETE));
+        assertEq(count, 1, "the withdrawn first occurrence is materialized as a dead entry");
+        assertEq(live, 0);
+        assertEq(entries[0], 2);
+        (,,, uint64 occ,) = hot.recordHeader(recordId);
+        assertEq(occ, 0);
+        _one(_reuse(TYPE_OK, recordId), "", 2); // admission 5
+        (, count, live, entries) = g.index.occurrencesOf(recordId);
+        assertEq(count, 2);
+        assertEq(live, 1, "live equals the ledger's occurrences");
+        assertEq(entries[1], 5);
+        (,,, occ,) = hot.recordHeader(recordId);
+        assertEq(occ, 1);
+        w.target = bytes32(uint256(5));
+        _one(w, "", 3);
+        (, count, live,) = g.index.occurrencesOf(recordId);
+        assertEq(count, 2);
+        assertEq(live, 0);
+        (,,, occ,) = hot.recordHeader(recordId);
+        assertEq(occ, 0);
+    }
+
+    function testTwoSpecsResolvingToOneKeyFoldOnce() public {
+        DigestSpec[] memory specs = new DigestSpec[](2);
+        specs[0] = DigestSpec({typeId: TYPE_OK, wordIndex: 0, algorithm: SHA256_ALG});
+        specs[1] = DigestSpec({typeId: TYPE_OK, wordIndex: 1, algorithm: SHA256_ALG});
+        IndexDeploy.Gen1 memory g2 =
+            IndexDeploy.deploy(k.proxy, KernelDeploy.HOT_ABI_ID, new Unit[](0), specs);
+        registry.setActiveRevision(2);
+        ActivationSet memory set = KernelDeploy.genesisSet(
+            k, address(this), address(registry), address(g2.index), g2.index.manifestHash()
+        );
+        set.revision = 2;
+        set.expectedExecutionSet = ExecutionSets.executionSet(set, k.proxy);
+        ILedgerControl(k.proxy).activate(set);
+        bytes memory twin = bytes.concat(bytes32(uint256(0xABCD)), bytes32(uint256(0xABCD)));
+        Action memory a = _publish(TYPE_OK, twin);
+        assertEq(_one(a, twin, 0), 1, "identical words under two specs still publish");
+        bytes32 value =
+            keccak256(abi.encode(bytes32(uint256(SHA256_ALG)), bytes32(uint256(0xABCD))));
+        (Coverage c, uint64 count, uint64 live,,) =
+            g2.index.postingHeadOf(FamilyId.wrap(F_DIGEST), TypeId.wrap(0), 0, value);
+        assertEq(uint8(c), uint8(Coverage.COMPLETE));
+        assertEq(count, 1, "folded once");
+        assertEq(live, 1);
     }
 }

@@ -9,7 +9,7 @@ abstract contract GenerationStorage {
         uint48 lastPublication;
         uint8 gapped;
         uint8 liveStarted;
-        uint8 replayStage; // 1 FRESH 2 REPLAYING 3 CAUGHT_UP
+        uint8 replayStage; // 1 FRESH 2 REPLAYING 3 CAUGHT_UP 4 IN_FLIGHT (a replay call in progress)
     }
 
     /// Ascending build of a later append-ordered family, before attachment.

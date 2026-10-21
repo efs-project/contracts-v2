@@ -266,12 +266,11 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                 if (spec.typeId != t) continue;
                 bytes32 word = ILedgerHot(LEDGER)
                     .extsload(bytes32(Layout.recordsBodyWordsSlot(e.recordId, spec.wordIndex)));
-                ps.append(
-                    FamilyId.wrap(F_DIGEST),
-                    PostingKey.wrap(Keys.digestList(bytes32(uint256(spec.algorithm)), word)),
-                    admission,
-                    0
-                );
+                PostingKey dk =
+                    PostingKey.wrap(Keys.digestList(bytes32(uint256(spec.algorithm)), word));
+                (,, uint64 dlast,) = ps.postingHead(dk);
+                if (dlast == admission) continue; // two specs resolving to one key fold once
+                ps.append(FamilyId.wrap(F_DIGEST), dk, admission, 0);
             }
         } else {
             // by-record is virtual until the second occurrence: materialize the first entry then
@@ -295,7 +294,9 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         if (e.oldTarget != 0) ps.release(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.oldTarget), 1);
         uint8 tk = e.transitionKind;
         if (tk == T_FIRST_BIND) {
-            bs.appendScopeEntry(FamilyId.wrap(F_SCOPE), ScopeKey.wrap(scope), e.bindingOrdinal);
+            bs.appendScopeEntry(
+                FamilyId.wrap(F_SCOPE), ScopeKey.wrap(scope), e.bindingOrdinal, admission
+            );
             ps.append(
                 FamilyId.wrap(F_ROLE_SCOPE),
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),
@@ -303,13 +304,14 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                 0
             );
         } else if (tk == T_REBIND) {
-            bs.stamp(ScopeKey.wrap(scope));
+            bs.stamp(ScopeKey.wrap(scope), admission);
         } else if (tk == T_RESTORE) {
             bs.setBit(
                 FamilyId.wrap(F_LIVE_SCOPE),
                 ScopeKey.wrap(scope),
                 _entryIndex(bs, scope, e.bindingOrdinal),
-                true
+                true,
+                admission
             );
         } else {
             // MASK or RELEASE
@@ -317,7 +319,8 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                 FamilyId.wrap(F_LIVE_SCOPE),
                 ScopeKey.wrap(scope),
                 _entryIndex(bs, scope, e.bindingOrdinal),
-                false
+                false,
+                admission
             );
         }
         if (e.kind == ActionKind.BIND) {
@@ -331,7 +334,10 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         ps.release(FamilyId.wrap(F_BY_AUTHOR), _pk(0, 4, 0, e.withdrawnPrincipal), 1);
         PostingKey key = _pk(0, 12, 0, e.recordId);
         (uint64 count,,,) = ps.postingHead(key);
-        if (count != 0) ps.release(FamilyId.wrap(F_BY_RECORD), key, 1);
+        // a withdrawn virtual first occurrence is materialized as a dead entry, so the list and the
+        // ledger's occurrence count never drift and replay folds the same stream (review finding)
+        if (count == 0) ps.append(FamilyId.wrap(F_BY_RECORD), key, e.withdrawnAdmission, 0);
+        ps.release(FamilyId.wrap(F_BY_RECORD), key, 1);
     }
 
     /// Bisection over the scope list (strictly increasing binding ordinals).
@@ -401,9 +407,11 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         if (p.liveStarted != 0 || !_fresh()) revert E_REPLAY(1);
         (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
         if (phase != Phase.IDLE) revert E_REPLAY(3);
+        if (p.replayStage == 4) revert E_REPLAY(3); // a fold hook re-entering the replay in flight
         (,,, uint64 publications) = ILedgerHot(LEDGER).counts();
         uint64 n = p.lastPublication + 1;
         if (n > publications) return 0;
+        p.replayStage = 4; // IN_FLIGHT
         (bool ok, bytes memory ret) =
             DECODER.staticcall(abi.encodeCall(IIndexReplayDecoder.payload, (LEDGER, n)));
         if (!ok) _bubble(ret);
