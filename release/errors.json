@@ -1154,7 +1154,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": null,
-      "meaning": null
+      "meaning": "field 32: limits.maxActions outside 1..64 (the replay ceiling)"
     },
     "0x322eb12b": {
       "name": "E_RETIRED",
@@ -1277,7 +1277,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": null,
-      "meaning": null
+      "meaning": "1 codehash 2 controller field 3 owner 4 admins not moved 5 self 6 retired or frozen 7 another ledger 8 another registry"
     },
     "0xbdc2c981": {
       "name": "E_TARGET_MISSING",
