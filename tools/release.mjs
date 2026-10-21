@@ -28,7 +28,7 @@ const budgetOf = (name) => sizes.units.find((u) => u.name === name) ?? null;
 // ---- per-unit facts ------------------------------------------------------------------------------------------------
 const stepOf = (name) => plan.steps.find((s) => s.kind === "CREATE2" && s.contract === name);
 const createdOf = (label) => plan.steps.find((s) => s.id === "G18").creates.find((c) => c.label === label);
-const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin"]);
+const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader"]);
 const contracts = {};
 let reproducible = 0;
 for (const name of Object.keys(UNITS)) {
@@ -144,6 +144,8 @@ const manifest = {
     limits: plan.limits,
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
+    hotAbiIdPreimage: plan.hotAbiIdString,
+    readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
     statusVocabularyId: keccak256(Buffer.from("efs2/status-vocabulary/1")),
     storeAbiIds: { posting: keccak256(Buffer.from("efs2/posting-store/1")), bitmap: keccak256(Buffer.from("efs2/bitmap-store/1")) },
     indexProfiles: { physical: keccak256(Buffer.from("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs")) },

@@ -42,6 +42,24 @@ adding one. If wanted, the obvious names are `release`, `deploy:plan`, `fixture:
   The amsterdam run writes `out/amsterdam` and `cache/amsterdam` and never touches the identity `out/`, because
   `[profile.amsterdam]` does not set its own `out`.
 
+### The hot-ABI id
+
+The release hot-ABI id is **`keccak256("efs2/ledger-hot/1")`** =
+`0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
+It is `LedgerCore`'s `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `RealmIndex`'s
+`hotAbiId` constructor argument and the `FilesFinalValidator` unit's `hotAbiId`. The suites keep
+`keccak256("efs2/ledger-hot/1:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
+`profiles.hotAbiId` with `hotAbiIdPreimage`, and `efs-deployment.json` as `hotAbiId` and `hotAbiIdString`.
+
+### The readers
+
+`LensReader(ledger, views, reads)` and `FilesPageReader(ledger, views, reads, files-name/2, files-root/1,
+files-child/1)` are CREATE2 steps **R1** and **R2**. Their constructors read `layoutId()` from the ledger proxy, so
+they follow G18; they run after the genesis activation (G20). **R3** and **R4** list them permissionlessly in the
+`ReaderDirectory` under the kind labels `keccak256("efs2/reader/lens/1")` and
+`keccak256("efs2/reader/files-page/1")` (the strings `test/periphery/ReaderDirectory.t.sol` uses; the directory does
+not interpret them). Both readers are realm-specific, because their immutables name the ledger proxy.
+
 ### The fixture key
 
 The fixture key is anvil's default account 0 (`0xf39F…2266`; its private key is printed by every `anvil`). It is the
@@ -56,8 +74,8 @@ presigned pre-EIP-155 transaction of Arachnid's deterministic-deployment proxy. 
 `0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989`, and the deployment document records
 `factory.method = "presigned-tx"`. If a node refuses an unprotected transaction, `up` falls back to `anvil_setCode`
 with the same runtime and records `"anvil_setCode"`. The runtime is read from the presigned transaction itself
-(14-byte prologue, then 69 bytes), not from `test/harness/doubles/Factory.sol`, whose constant is wrong (see
-HARNESS-BUG below).
+(14-byte prologue, then 69 bytes). `verify` compares it with `test/harness/doubles/Factory.sol`'s `RUNTIME` (now
+equal; see HARNESS-BUG below).
 
 ## Files
 
@@ -68,26 +86,27 @@ HARNESS-BUG below).
 | `tools/release.mjs` | Writes `release/release.json`, `release/errors.json` and `artifacts/`. |
 | `tools/gas-report.mjs` | Writes `gas/report.json`. |
 | `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the nine rules, `RefuseAllPolicy` and `FilesFinalValidator` through the factory in forge's EVM and returns `FilesTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
-| `deploy/plan.json` | `efs-deploy-plan/1`: 49 steps (F0, G1–G22), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the nine Type ids and descriptors, the seed and `planHash`. |
-| `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (28/28 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 79 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (nine Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId`, `statusVocabularyId`, store ABI ids, index profile ids, the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
+| `deploy/plan.json` | `efs-deploy-plan/1`: 53 steps (F0, G1–G20, R1–R4, G21–G22), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the nine Type ids and descriptors, the seed and `planHash`. |
+| `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (30/30 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 81 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (nine Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
 | `release/errors.json` | `efs-errors/1`: 104 file-level errors from `src/`, each with selector, signature, args, source, retry class (the first word of the trailing comment) and meaning. Every selector in `test/snapshots/abi/Errors.json` is reproduced. |
 | `artifacts/<Unit>.json` | `efs-artifact/1` per deployable unit: ABI, method identifiers, creation and runtime bytecode, named immutable offsets. `LedgerCore.json`'s ABI is the union of the kernel ABI with the events and errors of `LedgerApply`, `LedgerIngress` and `LedgerControl`. Interface ABIs are not copied: `abi.interfaces` points at `test/snapshots/abi/` (tools/abi-snapshot.mjs), and storage layouts at `test/snapshots/layout/`. |
-| `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; readers (none listed); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, subjectId, principalId}`; `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
+| `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids, plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, subjectId, principalId}`; `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
 | `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, file ids and binding keys, counts 11/5/3/3, the three heads, five records, catalog count 9). |
-| `release/.fixture.json`, `.anvil.pid`, `.anvil.log` | Fixture runtime state: rpc, pid, ttl, factory method, and the journal of all 50 transactions (hash, block, gasUsed). |
+| `release/.fixture.json`, `.anvil.pid`, `.anvil.log` | Fixture runtime state: rpc, pid, ttl, factory method, the journal of all 54 transactions (hash, block, gasUsed) and the two read estimates. |
 | `gas/report.json` | `efs-gas-report/1` (below). |
 | `schemas/*.schema.json` | JSON Schemas (draft 2020-12) for the six documents above. `verify` validates every document present against them, using the subset in `deploy-plan.mjs validate`. They are drafts: `schemas/README.md` says release schemas land after review. |
 
 ## What `verify` reproduces
 
-263 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
+288 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
 build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested and fails.
 
 1. **Documents.** `planHash` (recomputed, and equal to `deploy/plan.json`), the ledger address, the execution set, the
    root, and `releaseDigest` against `sha256(release/release.json)`. All six documents are validated against
    `schemas/`.
-2. **Code, byte for byte.** The factory runtime and its codehash. For the 25 units the plan deploys, the runtime is
-   compared byte for byte with the artifact plus the planned immutables. Codehashes are checked for those 25, the 5
+2. **Code, byte for byte.** The factory runtime and its codehash. For the 27 units the plan deploys (the two readers
+   included), the runtime is compared byte for byte with the artifact plus the planned immutables. Codehashes are
+   checked for those 27, the 5
    `RealmGenesis` creations (controller, both proxies, both ProxyAdmins) and the 9 descriptor blobs.
 3. **Genesis.** `controller()`, `registryProxy()` and `ledgerProxy()` equal the plan, `predict()` equals the plan,
    and a second `run()` reverts with exactly `E_GENESIS(0)` (checked by `eth_call`).
@@ -105,15 +124,21 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
    id.
 9. **The seed.** Five record headers, three heads (state, revision, target), three subjects created, the fixture
    principal's nonce of 3, and both folder scopes (1 entry, 1 live).
-10. **Cold pin.** What an SDK holding only `release.json` and `efs-deployment.json` does on first contact.
+10. **The readers.** `LensReader`'s `ledger()`, `VIEWS`, `READS` and `layoutId()`; `FilesPageReader`'s `LEDGER`,
+    `VIEWS`, `READS`, `LAYOUT`, `NAME_TYPE`, `ROOT_TYPE` and `CHILD_TYPE`. For each kind label, the directory's
+    `readers(ledger, kind)` must be exactly that reader with its codehash, `layoutId` and the generation-1 physical
+    profile, and the deployment document must list it. One page of `docs/` through `listDirectory` must be PRESENT
+    and `COMPLETE` with exactly one row (`readme.txt` → the file subject, HEAD → its root record). `LedgerReads.record`
+    of that root record must return PRESENT with the right Type, word 0 and body.
+11. **Cold pin.** What an SDK holding only `release.json` and `efs-deployment.json` does on first contact.
 
 ### Cold-pin call count (observed)
 
-**7 logical calls in 2 HTTP envelopes**: `eth_chainId`, `eth_getBlockByNumber`, `eth_call LedgerReads.describe`,
-`eth_getStorageAt(ledgerProxy, ERC-1967 implementation slot)`, then `eth_getCode` ×3 (implementation,
-`LedgerReads`, `LedgerViews`). The design bound is ≤ 9 calls and ≤ 2 envelopes. It counts five `eth_getCode`; the
-two readers (`LensReader`, `FilesPageReader`) are not in this tree, so 7 is 9 minus those two. `verify` checks the
-chain id, the implementation, and each codehash against `describe()` and the release.
+**9 logical calls in 2 HTTP envelopes**: `eth_chainId`, `eth_getBlockByNumber`, `eth_call LedgerReads.describe`,
+`eth_getStorageAt(ledgerProxy, ERC-1967 implementation slot)`, then `eth_getCode` ×5 (implementation,
+`LedgerReads`, `LedgerViews`, `LensReader`, `FilesPageReader`). That is exactly the design bound of ≤ 9 calls and
+≤ 2 envelopes, and `verify` fails if it is exceeded. `verify` checks the chain id, the implementation, and each of the
+five codehashes against `describe()` and the release.
 
 ## The `executionSet()` offline equality proof
 
@@ -131,7 +156,7 @@ chain id, the implementation, and each codehash against `describe()` and the rel
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs2/fixture/realm/1")`) the value is
-  `0x673d4b45…912b6d`.
+  `0x863d4eb7487f3255978b9b38bbb4760b2147accc3fe7376610f3d60e4beb9baa`.
 
 ## Gas rows written (`gas/report.json`)
 
@@ -155,10 +180,30 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 | Restore a released placement (Move-back analog) | 501,935 | 1,349,182 (881,280) |
 | WITHDRAW | 409,230 | 1,160,902 (783,360) |
 
-The report also carries 27 supplementary recipe steps and the fixture's 50 transaction receipts, which are prague
+**Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
+calldata cost, and each read is one `eth_call`:
+
+- `FilesPageReader.listDirectory`, one page of `docs/` (limit 32, one principal, unbound basis, F_NAME | F_HEADER |
+  F_KIND): 291,965 gas, 548 B calldata, 1,088 B returndata.
+- `LedgerReads.record` of the seeded file's root record: 87,849 gas, 68 B calldata, 544 B returndata.
+
+The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, whose `console2.log` lines `forge test
+--json -vv` exposes in `decoded_logs`. Each run lists all 1,000 live rows; per-page detail is in the report:
+
+| Run | Calls | Max gas per page | Total gas | Max / total returndata |
+|---|---:|---:|---:|---:|
+| warm, 30M per call | 6 | 30.0M | 157.1M | 74,720 / 389,664 B |
+| cold, 30M per call | 6 | 30.0M | 157.1M | 74,720 / 389,664 B |
+| warm, 50M per call | 4 | 51.0M | 162.0M | 121,952 / 387,680 B |
+| pages of 100 rows | 11 | 15.3M | 151.8M | 39,392 / 394,624 B |
+
+The prototype needed 199 calls.
+
+The report also carries 27 supplementary recipe steps and the fixture's 54 transaction receipts, which are prague
 only and include intrinsic cost:
 
 - Genesis code deposit: 43.3M over 26 transactions.
+- The readers (R1–R4): 6.90M (`LensReader` 3.76M, `FilesPageReader` 2.81M, each listing 0.16M).
 - The nine descriptor blobs: 1.23M.
 - **Genesis activation: 4.15M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure).
 - `registerDescribed`: 0.24–0.27M each (design ≈ 0.30M).
@@ -169,19 +214,9 @@ only and include intrinsic cost:
 None found in `src/`. Genesis, activation, registration and seed all ran as specified, and every predicted address
 and runtime hash matched the chain.
 
-**HARNESS-BUG (test/, not src/).** `test/harness/doubles/Factory.sol` `RUNTIME` is 70 bytes; the canonical runtime is
-69. The constant has one extra `ff` inside the leading `PUSH32` (32 `ff` bytes, then `e0`, where the canonical form
-is 31 `ff` bytes then `e0`). Etched, the code would push `2^256−1` and then execute `0xe0`, an undefined opcode in
-legacy code, so every factory call would revert.
-
-The suites pass anyway because Foundry's test EVM pre-deploys the canonical factory at `0x4e59…956C`, so
-`Factory.ensure()` never etches. It would surface in any environment without that default: a forked chain without
-the factory, `anvil --disable-default-create2-deployer`, or a non-Foundry runner.
-
-- **Reproduction.** `node tools/efs-fixture.mjs up && node tools/efs-fixture.mjs verify` prints
-  `Factory.sol RUNTIME differs (70 bytes vs 69)`. The runtime the presigned transaction actually deploys hashes to
-  the well-known `0x2fa86add…4989`.
-- **Fix (for test/'s owner).** Delete one `ff`.
+**HARNESS-BUG (fixed upstream in `be20323`).** `test/harness/doubles/Factory.sol` `RUNTIME` had one stray `ff`
+(70 bytes; the canonical runtime is 69). `verify` now prints `Factory.sol RUNTIME matches`, and the deployment
+document records `factory.harnessRuntimeMatches: true`.
 
 ## DESIGN-DIVERGENCE
 
@@ -197,9 +232,8 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 4. **G13.** `LAYOUT_ID` is a compiled constant, not an immutable. `PREDECESSOR_LAYOUT_ID` is on `LedgerControl`.
    `SUPPORTED_HOT_ABI_IDS` is computed as `[HOT_ABI_ID]`. `LedgerCore` has no `SELF` immutable.
 5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs2/ledger-hot/1" ‖ sorted selectors ‖ return layouts)`), but
-   neither `src/` nor `vectors/` commits one. The release uses the suites' `keccak256("efs2/ledger-hot/1:test")`
-   from `test/harness/KernelDeploy.sol` rather than inventing an identity. This needs a decision before any real
-   release.
+   neither `src/` nor `vectors/` commits one. On the coordinator's instruction the release uses the plain string id
+   `keccak256("efs2/ledger-hot/1")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
 6. **G15: `RealmGenesis`' constructor differs from the design.** It is `(owner, ledgerImpl, registryImpl, realmSalt,
    executionProfileId, limitsHash, readerDirectory, wrapperV1, noticeType, controllerInitcodeHash, proxyInitcodeHash)`.
    It reads the implementation codehashes itself, takes the limits only as a hash, and receives the controller and
@@ -216,8 +250,8 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    (the §4.2 values).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;
     they are not "generated for layoutId" by argument.
-11. **Readers.** `LensReader` and `FilesPageReader` are absent, so the cold pin needs 3 `eth_getCode` calls, not 5.
-    `ReaderDirectory` lists nothing: `LedgerReads` and `LedgerViews` are facets, not `IReader`s.
+11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20. The facets `LedgerReads` and
+    `LedgerViews` are not `IReader`s and are not listed; only the two readers are.
 12. **§13 `fixture/`.** There is no `fixture/` directory, no forge-script-encoded seed transactions, no
     `EfsFixture.sol` and no Multicall3 etch, and there are no `--state-dir` or `--hardfork` options. The seed is
     encoded in JS (`EfsNative`-equivalent: both expectations bound through `executionSet()` and the ingress's
@@ -237,7 +271,8 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
   need a state-diff pass. `tx.gas` below and above 2^24 is not varied, and there are no amsterdam fixture receipts:
   release bytes under `anvil --hardfork amsterdam` would need the reservoir and `tx.gas` above 2^24 for the genesis
   code deposit.
-- **Read rows** (pages, file reads, recovery, the 1,000-entry traversal). They need the absent readers.
+- **Remaining read rows.** Confirm/recovery reads, `LensReader.headsAt` at 64 principals, and read rows on
+  amsterdam (reads are not repriced, so they are prague only).
 - **`vectors/execution-set.json`, `manifest.json`, `hot-abi.json`, `names.json` and the other §13 vectors.** These are
   generator work for `tools/vectors.mjs`'s owner. `release.json` hashes the two vector files that exist.
 - **The wrapper, the signed lane, guards, freeze and upgrades.** Out of S1b.3.

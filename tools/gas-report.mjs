@@ -17,17 +17,19 @@ const o = parseArgs(process.argv.slice(2), ["skip-amsterdam"]);
 const SUITE = "test/integration/FilesRecipes.t.sol";
 const git = (...args) => { try { return execFileSync("git", args, { cwd: root }).toString().trim(); } catch { return null; } };
 
-function run(profile) {
+function run(profile, suite = SUITE) {
   const env = { ...process.env, FOUNDRY_PROFILE: profile };
   if (profile !== "default") Object.assign(env, { FOUNDRY_OUT: `out/${profile}`, FOUNDRY_CACHE_PATH: `cache/${profile}` });
-  const r = spawnSync("perl", ["-e", "alarm 900; exec @ARGV", "forge", "test", "--match-path", SUITE, "--json", "-vv"], { cwd: root, env, encoding: "utf8", timeout: 900_000, maxBuffer: 256 << 20 });
+  const r = spawnSync("perl", ["-e", "alarm 900; exec @ARGV", "forge", "test", "--match-path", suite, "--json", "-vv"], { cwd: root, env, encoding: "utf8", timeout: 900_000, maxBuffer: 256 << 20 });
   const start = r.stdout.indexOf("{");
   assert.ok(start >= 0, `forge test (${profile}) printed no JSON (exit ${r.status}): ${r.stderr.slice(-3000)}`);
   const json = JSON.parse(r.stdout.slice(start));
   const out = {};
-  for (const suite of Object.values(json)) {
-    for (const [test, res] of Object.entries(suite.test_results)) {
+  Object.defineProperty(out, "raw", { value: {}, enumerable: false });
+  for (const result of Object.values(json)) {
+    for (const [test, res] of Object.entries(result.test_results)) {
       assert.equal(res.status, "Success", `${profile}: ${test} ${res.status} ${res.reason ?? ""}`);
+      out.raw[test] = res.decoded_logs ?? [];
       for (const line of res.decoded_logs ?? []) {
         const m = line.match(/^(.*?) (frame state gas|frame gas|gas): (-?\d+)$/);
         if (!m) continue;
@@ -80,6 +82,7 @@ if (existsSync(statePath)) {
     rows: [
       { row: "Genesis code deposit (every CREATE2 of G1–G19 + RealmGenesis.run)", gasUsed: sum(by((id) => /^G(1[0-9]?|2c?|[3-9])(\.|$)/.test(id) && !id.startsWith("G11"))), transactions: by((id) => /^G(1[0-9]?|2c?|[3-9])(\.|$)/.test(id) && !id.startsWith("G11")).length },
       { row: "Descriptor blobs (G11, nine DescriptorStore.put)", gasUsed: sum(by((id) => id.startsWith("G11."))), transactions: 9 },
+      { row: "Readers (R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list)", gasUsed: sum(by((id) => /^R[1-4]$/.test(id))), transactions: by((id) => /^R[1-4]$/.test(id)).length },
       { row: "Activation (genesis, G20)", gasUsed: sum(by((id) => id === "G20")), design: { prague: "≈ 1.1–1.9M", amsterdam: "≈ 3.5–4.3M" } },
       ...by((id) => id.startsWith("G21.")).map((j) => ({ row: `Described registration, NATIVE (${j.id})`, gasUsed: j.gasUsed, design: { prague: "≈ 0.30M", amsterdam: "≈ 1.55M" } })),
       ...by((id) => id.startsWith("G22.")).map((j) => ({ row: `Seed ${j.label}`, gasUsed: j.gasUsed })),
@@ -87,6 +90,29 @@ if (existsSync(statePath)) {
     journal: st.journal,
   };
 }
+
+// reads: the fixture's eth_estimateGas rows (prague) and the 1,000-entry traversal of test/readers/LargeDirectory.t.sol
+const LARGE = "test/readers/LargeDirectory.t.sol";
+const large = run("default", LARGE).raw;
+const largeRows = Object.entries(large).sort().map(([test, logs]) => {
+  const nums = (re) => logs.map((l) => l.match(re)).find(Boolean)?.slice(1).map(Number) ?? null;
+  const head = logs.map((l) => l.match(/^(.*) pages \(calls\), rows (\d+) (\d+)$/)).find(Boolean);
+  assert.ok(head, `${LARGE}:${test}: no summary line`);
+  const [maxGas, totalGas] = nums(/^ {2}max gas per page, total gas (\d+) (\d+)$/);
+  const [maxBytes, totalBytes] = nums(/^ {2}max returndata bytes per page, total (\d+) (\d+)$/);
+  const pages = [];
+  for (let i = 0; i < logs.length; i++) {
+    const m = logs[i].match(/ page, rows, scanStatus (\d+) (\d+) (\d+)$/);
+    const g = logs[i + 1]?.match(/^ {2}gas, returndata bytes (\d+) (\d+)$/);
+    if (m && g) pages.push({ page: Number(m[1]), rows: Number(m[2]), scanStatus: Number(m[3]), gas: Number(g[1]), returndataBytes: Number(g[2]) });
+  }
+  return { row: `Read: 1,000-entry filtered folder through FilesPageReader.listDirectory (${head[1]})`, source: { suite: LARGE, test }, prague: { calls: Number(head[2]), rows: Number(head[3]), maxGasPerPage: maxGas, totalGas, maxReturndataBytesPerPage: maxBytes, totalReturndataBytes: totalBytes, pages } };
+});
+const fixtureReads = fixture ? JSON.parse(readFileSync(statePath, "utf8")).reads ?? [] : [];
+const readRows = [
+  ...fixtureReads.map((r) => ({ row: r.row, source: { fixture: "release/.fixture.json reads", to: r.to, function: r.function }, prague: { estimateGas: r.estimateGas, calldataBytes: r.calldataBytes, returndataBytes: r.returndataBytes, rpcCalls: r.rpcCalls }, note: r.note })),
+  ...largeRows,
+];
 
 const report = {
   schema: "efs-gas-report/1",
@@ -101,15 +127,17 @@ const report = {
   },
   rows,
   supplementary,
+  reads: readRows,
   fixtureReceipts: fixture,
   notCovered: [
     "fresh / rewritten / cleared slot counts, code bytes and accounts per row (needs a state-diff pass; §14 columns)",
     "tx.gas below and above 2^24 on amsterdam (the suite does not vary tx.gas)",
-    "read rows: RPC-call counts, returndata bytes and cold-versus-warm gas for page, file read, confirm, recovery and the 1,000-entry traversal (LensReader/FilesPageReader are not in this tree); the cold pin's call count is printed by `efs-fixture.mjs verify`",
+    "read rows on amsterdam (reads are unrepriced; prague only), confirm and recovery reads, LensReader.headsAt at 64 principals; the cold pin's call count is printed by `efs-fixture.mjs verify`",
     "20-edit staged save, signed lane, guards, CUSTOM registration, policy activation, freeze, kernel upgrade",
   ],
 };
 mkdirSync(join(root, "gas"), { recursive: true });
 writeFileSync(join(root, "gas/report.json"), toJSON(report));
-console.log(`gas-report: gas/report.json (${rows.length} §14 rows, ${supplementary.length} supplementary steps, prague${amsterdam ? " + amsterdam" : ""}${fixture ? `, ${fixture.journal.length} fixture receipts` : ""})`);
+console.log(`gas-report: gas/report.json (${rows.length} §14 rows, ${readRows.length} read rows, ${supplementary.length} supplementary steps, prague${amsterdam ? " + amsterdam" : ""}${fixture ? `, ${fixture.journal.length} fixture receipts` : ""})`);
+for (const r of readRows) console.log(`  ${r.row.slice(0, 110)}: ${JSON.stringify({ ...r.prague, pages: undefined })}`);
 for (const r of rows) console.log(`  ${r.row.padEnd(78)} prague ${String(r.prague.gas).padStart(9)}${r.amsterdam ? `  amsterdam ${String(r.amsterdam.gas).padStart(9)} (state ${r.amsterdam.frameStateGas ?? 0})` : ""}`);

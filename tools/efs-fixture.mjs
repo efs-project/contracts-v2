@@ -164,6 +164,10 @@ async function up(o) {
     } else if (step.id === "G20") {
       if ((await read(pub, ledger, "LedgerCore", "revision")) === 0) await send(step, step.to, step.data);
       assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.activation.expectedExecutionSet, "G20 executionSet");
+    } else if (step.id === "R3" || step.id === "R4") {
+      const [l, kind, reader] = step.args;
+      const listed = await read(pub, step.to, "ReaderDirectory", "readers", [l, kind, 0, 16]);
+      if (!listed[0].some((x) => x.toLowerCase() === reader.toLowerCase())) await send(step, step.to, step.data);
     } else if (step.id.startsWith("G21.")) {
       await send(step, step.to, step.data);
     } else if (step.kind === "EXECUTE") {
@@ -175,11 +179,12 @@ async function up(o) {
     }
   }
   console.log(`efs-fixture: genesis + registration + seed done (${journal.length} transactions, factory via ${factoryMethod})`);
+  const reads = await readEstimates(rpc, plan, account.address);
 
   const deployment = await deploymentDocument({ plan, planHash, pub, url, factoryMethod, journal, account });
   writeFileSync(join(REL, "efs-deployment.json"), toJSON(deployment));
   writeFileSync(join(REL, "expected.json"), toJSON(expectedDocument(plan, deployment)));
-  writeFileSync(STATE, toJSON({ url, port, chainId, realmSalt, pid: child.pid, ttl, startedAt: new Date().toISOString(), factoryMethod, journal }));
+  writeFileSync(STATE, toJSON({ url, port, chainId, realmSalt, pid: child.pid, ttl, startedAt: new Date().toISOString(), factoryMethod, journal, reads }));
   console.log(`efs-fixture: wrote release/efs-deployment.json and release/expected.json (ledger ${ledger}, root ${plan.seed.root.directoryRecordId})`);
 }
 
@@ -205,6 +210,29 @@ async function execute(pub, wallet, plan, step) {
   step.publication = Number(publication);
   step.nonce = Number(nonce);
   step.ctx = jsonable(ctx);
+}
+
+/** The seeded folder's first page through FilesPageReader.listDirectory and the seeded file's record through
+ *  LedgerReads.record: calldata, eth_estimateGas and returndata bytes on the fixture (prague). */
+function readCalls(plan) {
+  const a = plan.addresses;
+  const page = { fields: 7, tagConcept: pad("0x", { size: 32 }), kinds: 0 }; // F_NAME | F_HEADER | F_KIND, every kind
+  const unbound = { executionSet: pad("0x", { size: 32 }), revision: 0, indexGeneration: 0, registryMutations: 0n, admissionHighWater: 0n, phase: 0 };
+  return [
+    { row: "Read: FilesPageReader.listDirectory, the seeded folder docs/ (one page, limit 32, one principal, unbound basis)", contract: "FilesPageReader", to: a.filesPageReader, functionName: "listDirectory", args: [plan.seed.folder.directoryRecordId, [plan.seed.principalId], page, unbound, "0x", 32, 0n] },
+    { row: "Read: LedgerReads.record of the seeded file's files-root/1 record", contract: "LedgerReads", to: a.ledgerReads, functionName: "record", args: [a.ledgerProxy, plan.seed.file.rootRecordId] },
+  ];
+}
+
+async function readEstimates(rpc, plan, from) {
+  const out = [];
+  for (const c of readCalls(plan)) {
+    const data = encodeFunctionData({ abi: abiOf(c.contract), functionName: c.functionName, args: c.args });
+    const ret = await rpc.call("eth_call", [{ to: c.to, data }, "latest"]);
+    const gas = Number(await rpc.call("eth_estimateGas", [{ from, to: c.to, data }, "latest"]));
+    out.push({ row: c.row, to: c.to, function: c.functionName, calldataBytes: (data.length - 2) / 2, returndataBytes: (ret.length - 2) / 2, estimateGas: gas, rpcCalls: 1, note: "eth_estimateGas of a transaction to the view (includes the 21,000 intrinsic and calldata cost); one eth_call serves the read" });
+  }
+  return out;
 }
 
 async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, journal, account }) {
@@ -243,6 +271,7 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     activation: { revision: 1, executionSet: d.executionSet, txHash: tx.G20?.txHash ?? null, blockNumber: tx.G20?.blockNumber ?? null, capabilities: 0, acceptedChainId: plan.chainId, dependencyRoot: plan.activation.dependencyRoot, set: jsonable(plan.activation) },
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
+    hotAbiIdString: plan.hotAbiIdString,
     executionProfileId: plan.executionProfileId,
     limits: plan.limits,
     limitsProfileId: plan.realm.limitsProfileId,
@@ -260,7 +289,12 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     typeIds,
     profile: plan.profile.map(({ descriptor, declarationSig, ...p }) => p),
     privilegedRoles: { controllerOwner: account.address, ledgerProxyAdminOwner: a.controller, registryProxyAdminOwner: a.controller, steward: zeroAddress, noticePrincipal: plan.activation.noticePrincipal },
-    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, listed: [], note: "LensReader and FilesPageReader are not in this release (in progress elsewhere); nothing is listed in the ReaderDirectory" },
+    readers: {
+      ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory,
+      lensReader: { address: a.lensReader, runtimeCodehash: plan.readers.lens.runtimeCodehash, kind: plan.readers.lens.kind, kindLabel: plan.readers.lens.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R1?.txHash ?? null },
+      filesPageReader: { address: a.filesPageReader, runtimeCodehash: plan.readers.filesPage.runtimeCodehash, kind: plan.readers.filesPage.kind, kindLabel: plan.readers.filesPage.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, nameType: typeIds["files-name/2"], rootType: typeIds["files-root/1"], childType: typeIds["files-child/1"], txHash: tx.R2?.txHash ?? null },
+      listed: await listedReaders(pub, plan),
+    },
     seed: { version: plan.seed.version, transactions: plan.steps.filter((s) => s.kind === "EXECUTE").map((s) => ({ id: s.id, label: s.label, txHash: s.txHash ?? tx[s.id]?.txHash ?? null, publication: s.publication ?? tx[s.id]?.publication ?? null, actions: s.actions, bodies: s.bodies })) },
     root: plan.seed.root,
     defaultLensPrincipals: [plan.seed.principalId],
@@ -268,6 +302,15 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     rpc: { url, chainId: plan.chainId, hardfork: "prague" },
     evidenceGrade: "local-fixture",
   };
+}
+
+async function listedReaders(pub, plan) {
+  const out = [];
+  for (const r of [plan.readers.lens, plan.readers.filesPage]) {
+    const [readers, codehashes, layoutIds, physical] = await read(pub, plan.addresses.readerDirectory, "ReaderDirectory", "readers", [plan.addresses.ledgerProxy, r.kind, 0, 16]);
+    readers.forEach((x, i) => out.push({ kind: r.kind, kindLabel: r.kindLabel, ordinal: i, reader: x, codehash: codehashes[i], layoutId: layoutIds[i], physicalProfile: physical[i] }));
+  }
+  return out;
 }
 
 function immutableOffsets(name) {
@@ -458,6 +501,30 @@ async function verify() {
   eq("seed scope docs", [scope2[0], scope2[1]], [1n, 1n]);
   eq("seed root-is-directory", (await read(pub, a.ledgerProxy, "LedgerCore", "recordHeader", [dep.root.directoryRecordId]))[0], dep.typeIds["files-directory/1"]);
 
+  // 9b. the readers: immutables, the directory listing, and one page of the seeded folder
+  const lensR = a.lensReader;
+  const pageR = a.filesPageReader;
+  eq("readers lens.ledger", await read(pub, lensR, "LensReader", "ledger"), a.ledgerProxy);
+  eq("readers lens.VIEWS", await read(pub, lensR, "LensReader", "VIEWS"), a.ledgerViews);
+  eq("readers lens.READS", await read(pub, lensR, "LensReader", "READS"), a.ledgerReads);
+  eq("readers lens.layoutId", await read(pub, lensR, "LensReader", "layoutId"), plan.layoutId);
+  for (const [fn, want] of [["LEDGER", a.ledgerProxy], ["VIEWS", a.ledgerViews], ["READS", a.ledgerReads], ["LAYOUT", plan.layoutId], ["NAME_TYPE", dep.typeIds["files-name/2"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]]]) {
+    eq(`readers page.${fn}`, await read(pub, pageR, "FilesPageReader", fn), want);
+  }
+  const physical = keccak256(toHex("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"));
+  for (const r of [plan.readers.lens, plan.readers.filesPage]) {
+    const [readers, codehashes, layoutIds, profiles] = await read(pub, a.readerDirectory, "ReaderDirectory", "readers", [a.ledgerProxy, r.kind, 0, 16]);
+    eq(`readers directory ${r.kindLabel}`, [readers, codehashes, layoutIds, profiles], [[r.address], [r.runtimeCodehash], [plan.layoutId], [physical]]);
+    eq(`readers deployment ${r.kindLabel}`, dep.readers.listed.find((x) => x.kind === r.kind)?.reader, r.address);
+  }
+  const [pageCall] = readCalls(plan);
+  const pg = await read(pub, pageR, "FilesPageReader", "listDirectory", pageCall.args);
+  eq("readers page.status", pg.q.status, 2); // PRESENT
+  eq("readers page.rows", pg.rows.map((r) => [r.name, r.target, r.headRecord, r.rowKind]), [[toHex("readme.txt"), exp.file.subjectId, exp.file.rootRecordId, 1]]);
+  eq("readers page.listingCoverage", pg.listingCoverage, 3); // COMPLETE
+  const rec = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, exp.file.rootRecordId]);
+  eq("readers record", [rec[0], rec[1].typeId, rec[1].word0, rec[2]], [2, dep.typeIds["files-root/1"], exp.file.subjectId, exp.file.body]);
+
   // 10. cold pin (design §12.3): what an SDK with only release.json + efs-deployment.json does on first contact
   rpc.reset();
   const describeData = encodeFunctionData({ abi: abiOf("LedgerReads"), functionName: "describe", args: [a.ledgerProxy] });
@@ -466,7 +533,7 @@ async function verify() {
   ]);
   const pinned = decodeFunctionResult({ abi: abiOf("LedgerReads"), functionName: "describe", data: describeRaw });
   const impl = getAddress(`0x${implWord.slice(26)}`);
-  const getCodes = [impl, a.ledgerReads, a.ledgerViews]; // the two readers of §12.3 are not in this release
+  const getCodes = [impl, a.ledgerReads, a.ledgerViews, a.lensReader, a.filesPageReader];
   const codes = await rpc.batch(getCodes.map((x) => ["eth_getCode", [x, block.number]]));
   eq("coldpin chainId", Number(chainHex), pinned.acceptedChainId);
   eq("coldpin impl", impl, pinned.ledgerImpl);
@@ -474,6 +541,8 @@ async function verify() {
   eq("coldpin impl-release", keccak256(codes[0]), plan.units.LedgerCore.runtimeCodehash);
   eq("coldpin reads-codehash", keccak256(codes[1]), pinned.thisFacetCodehash);
   eq("coldpin views-codehash", keccak256(codes[2]), plan.units.LedgerViews.runtimeCodehash);
+  eq("coldpin lens-codehash", keccak256(codes[3]), plan.readers.lens.runtimeCodehash);
+  eq("coldpin page-codehash", keccak256(codes[4]), plan.readers.filesPage.runtimeCodehash);
   const coldCalls = Object.values(rpc.counts).reduce((x, y) => x + y, 0);
   const coldEnvelopes = rpc.envelopes;
 

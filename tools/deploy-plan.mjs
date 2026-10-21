@@ -50,9 +50,12 @@ export const FACTORY = {
 /** anvil's first default key: a public throwaway, the fixture's owner, declaration key and seed principal. */
 export const FIXTURE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 export const DEFAULTS = { chainId: 31337, realmSalt: h("efs2/fixture/realm/1"), executionProfileId: 1 };
-/** No canonical HOT_ABI_ID derivation is committed (design §5.3 names a formula; src/ and vectors/ carry none):
- *  the release uses the suites' id, test/harness/KernelDeploy.sol HOT_ABI_ID. DESIGN-DIVERGENCE in tools/RELEASE.md. */
-export const HOT_ABI_ID = h("efs2/ledger-hot/1:test");
+/** The release hot-ABI id: keccak256("efs2/ledger-hot/1") (the suites keep "efs2/ledger-hot/1:test"). It is
+ *  LedgerCore's HOT_ABI_ID immutable, RealmIndex's HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
+export const HOT_ABI_ID_STRING = "efs2/ledger-hot/1";
+export const HOT_ABI_ID = h(HOT_ABI_ID_STRING);
+/** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
+export const READER_KINDS = { lens: h("efs2/reader/lens/1"), filesPage: h("efs2/reader/files-page/1") };
 /** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values. */
 export const LIMITS = {
   maxActions: 64, maxBody: 8192, maxRefs: 8, maxReadSetPrincipals: 64, maxReadSetPositions: 4, maxWitness: 4096,
@@ -121,7 +124,7 @@ export const UNITS = {
   FilesRootRule: "FilesRootRule", FilesChildRule: "FilesChildRule", FilesDirectoryRule: "FilesDirectoryRule", FilesNameRule: "FilesNameRule",
   FilesBytesRule: "FilesBytesRule", FilesContentRule: "FilesContentRule", FilesExternalContentRule: "FilesExternalContentRule",
   DirectoryAliasRule: "DirectoryAliasRule", RealmNoticeRule: "RealmNoticeRule", RefuseAllPolicy: "RefuseAllPolicy",
-  TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin",
+  TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin", LensReader: "LensReader", FilesPageReader: "FilesPageReader",
 };
 
 // ---- immutables: names → offsets ------------------------------------------------------------------------------------
@@ -424,6 +427,14 @@ export async function buildPlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAUL
   set.expectedExecutionSet = executionSet(set, ledgerProxy);
   steps.push({ id: "G20", kind: "CALL", contract: "RealmController", to: controller, from: owner, function: "activate(ActivationSet)", args: jsonable([set]), postCheck: "ledger.executionSet() == expectedExecutionSet; revision 1; index installed", data: encodeFunctionData({ abi: artifact("RealmController").abi, functionName: "activate", args: [set] }) });
 
+  // R1–R4: the two readers (their constructors read layoutId() from the ledger proxy, so they follow G18) and their
+  // permissionless ReaderDirectory listings (advisory discovery hints; design §5.13)
+  const lens = add("R1", "LensReader", [ledgerProxy, views.address, reads.address], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId, F_SCOPE: familyId("scope") });
+  const page = add("R2", "FilesPageReader", [ledgerProxy, views.address, reads.address, ids[T.NAME], ids[T.ROOT], ids[T.CHILD]], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId, NAME_TYPE: ids[T.NAME], ROOT_TYPE: ids[T.ROOT], CHILD_TYPE: ids[T.CHILD] });
+  const listing = (id, kind, reader, label) => steps.push({ id, kind: "CALL", contract: "ReaderDirectory", to: directory.address, function: "list(address,bytes32,address)", label, args: [ledgerProxy, kind, reader], postCheck: "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile", data: encodeFunctionData({ abi: artifact("ReaderDirectory").abi, functionName: "list", args: [ledgerProxy, kind, reader] }) });
+  listing("R3", READER_KINDS.lens, lens.address, "list LensReader under efs2/reader/lens/1");
+  listing("R4", READER_KINDS.filesPage, page.address, "list FilesPageReader under efs2/reader/files-page/1");
+
   // G21: permissionless registration of the nine Types
   for (const t of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
     steps.push({ id: `G21.${t}`, kind: "CALL", contract: "TypeRegistry", to: registryProxy, function: "registerDescribed(bytes,bytes,address,bytes)", type: TYPE_NAMES[t], typeId: ids[t], postCheck: "returns typeId; typeInfo(typeId).mandatory == instance", data: encodeFunctionData({ abi: artifact("TypeRegistry").abi, functionName: "registerDescribed", args: [descriptors[t], profile[t].declarationSig, instances[t], "0x"] }) });
@@ -439,7 +450,9 @@ export async function buildPlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAUL
     chainId, realmSalt, owner, fixturePrincipal: owner, declarationKey: owner, factory: FACTORY.address,
     hotAbiId: HOT_ABI_ID, layoutId, executionProfileId, limits: LIMITS, workModel: WORK_MODEL,
     genesis: { address: G, nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } },
-    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address },
+    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address },
+    readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs2/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs2/reader/files-page/1", runtimeCodehash: page.runtimeCodehash } },
+    hotAbiIdString: HOT_ABI_ID_STRING,
     realm, activation: set, index: { address: index.address, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
     profile, seed: seed.expected, units, steps,
   };

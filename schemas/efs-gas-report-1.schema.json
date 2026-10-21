@@ -1,13 +1,55 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "efs-gas-report/1",
-  "title": "efs-gas-report/1 — measured §14 rows on both schedules",
+  "title": "efs-gas-report/1 \u2014 measured \u00a714 rows on both schedules",
   "description": "Written by tools/gas-report.mjs. prague/amsterdam cells: {gas, frameGas, frameStateGas?} from test/integration/FilesRecipes.t.sol logs; fixtureReceipts: transaction gasUsed on anvil --hardfork prague.",
   "type": "object",
-  "required": ["schema", "measurement", "method", "rows", "supplementary", "fixtureReceipts", "notCovered"],
+  "required": [
+    "schema",
+    "measurement",
+    "method",
+    "rows",
+    "supplementary",
+    "reads",
+    "fixtureReceipts",
+    "notCovered"
+  ],
   "properties": {
-    "schema": { "const": "efs-gas-report/1" },
-    "measurement": { "type": "object", "required": ["commit", "dirtyFiles", "date", "foundry"] },
-    "rows": { "type": "array", "items": { "type": "object", "required": ["row", "source", "prague", "amsterdam", "designEstimate"] } }
+    "schema": {
+      "const": "efs-gas-report/1"
+    },
+    "measurement": {
+      "type": "object",
+      "required": [
+        "commit",
+        "dirtyFiles",
+        "date",
+        "foundry"
+      ]
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "row",
+          "source",
+          "prague",
+          "amsterdam",
+          "designEstimate"
+        ]
+      }
+    },
+    "reads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "row",
+          "source",
+          "prague"
+        ]
+      }
+    }
   }
 }
