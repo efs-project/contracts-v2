@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "efs-deploy-plan/1",
+  "title": "efs-deploy-plan/1 — the genesis plan of design §8.2, computed offline",
+  "description": "Written by tools/deploy-plan.mjs. Every CREATE2 step names its initcode hash, predicted address and runtime code hash (immutables filled); every call step its calldata hash and post-check. planHash = keccak256 of this document without planHash.",
+  "type": "object",
+  "required": ["schema", "chainId", "realmSalt", "owner", "fixturePrincipal", "declarationKey", "factory", "hotAbiId", "layoutId", "executionProfileId", "limits", "workModel", "genesis", "addresses", "realm", "activation", "index", "profile", "seed", "steps", "planHash"],
+  "properties": {
+    "schema": { "const": "efs-deploy-plan/1" },
+    "genesis": { "type": "object", "required": ["address", "nonces"] },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "contract", "postCheck"],
+        "properties": {
+          "kind": { "enum": ["FACTORY", "CREATE2", "CALL", "EXECUTE"] },
+          "address": { "type": "string" },
+          "initcodeHash": { "type": "string" },
+          "runtimeCodehash": { "type": "string" },
+          "calldataHash": { "type": "string" }
+        }
+      }
+    },
+    "planHash": { "type": "string" }
+  }
+}

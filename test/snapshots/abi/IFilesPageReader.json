@@ -1,0 +1,655 @@
+{
+  "name": "IFilesPageReader",
+  "source": "src/interfaces/Readers.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0xca3e077c": "layoutId()",
+    "0x56397c35": "ledger()",
+    "0x9d424eda": "listDirectory(bytes32,bytes32[],(uint32,bytes32,uint8),(bytes32,uint32,uint32,uint64,uint64,uint8),bytes,uint32,uint256)",
+    "0xf3fa6441": "lookupName(bytes32,bytes32,bytes32[],(bytes32,uint32,uint32,uint64,uint64,uint8))",
+    "0x5fd7c347": "supportedProfiles()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "BasisCommit": [
+      {
+        "internalType": "bytes32",
+        "name": "executionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "revision",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "indexGeneration",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "registryMutations",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admissionHighWater",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "phase",
+        "type": "uint8"
+      }
+    ],
+    "IFilesPageReader.DirectoryPage": [
+      {
+        "internalType": "struct Qualified",
+        "name": "q",
+        "type": "tuple"
+      },
+      {
+        "internalType": "struct IFilesPageReader.Row[]",
+        "name": "rows",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "enum Coverage",
+        "name": "listingCoverage",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "frontier",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes",
+        "name": "next",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint64",
+        "name": "scanned",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "rawTotal",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "observedCurrent",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "selectedSoFar",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "inventoryPin",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "scanStatus",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "startsAtOrigin",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "completeFromOrigin",
+        "type": "bool"
+      }
+    ],
+    "IFilesPageReader.Query": [
+      {
+        "internalType": "uint32",
+        "name": "fields",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "tagConcept",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "kinds",
+        "type": "uint8"
+      }
+    ],
+    "IFilesPageReader.Row": [
+      {
+        "internalType": "bytes32",
+        "name": "position",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "name",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint8",
+        "name": "targetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "target",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "headRecord",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "headRevision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "headerWord0",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "rowKind",
+        "type": "uint8"
+      }
+    ],
+    "Qualified": [
+      {
+        "internalType": "enum Status",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "struct BasisCommit",
+        "name": "observed",
+        "type": "tuple"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "layoutId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ledger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "listDirectory",
+      "inputs": [
+        {
+          "name": "folderSubject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "principals",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "q",
+          "type": "tuple",
+          "internalType": "struct IFilesPageReader.Query",
+          "components": [
+            {
+              "name": "fields",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "tagConcept",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "kinds",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        },
+        {
+          "name": "expected",
+          "type": "tuple",
+          "internalType": "struct BasisCommit",
+          "components": [
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHighWater",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        },
+        {
+          "name": "continuation",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "limit",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "gasReserve",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct IFilesPageReader.DirectoryPage",
+          "components": [
+            {
+              "name": "q",
+              "type": "tuple",
+              "internalType": "struct Qualified",
+              "components": [
+                {
+                  "name": "status",
+                  "type": "uint8",
+                  "internalType": "enum Status"
+                },
+                {
+                  "name": "observed",
+                  "type": "tuple",
+                  "internalType": "struct BasisCommit",
+                  "components": [
+                    {
+                      "name": "executionSet",
+                      "type": "bytes32",
+                      "internalType": "bytes32"
+                    },
+                    {
+                      "name": "revision",
+                      "type": "uint32",
+                      "internalType": "uint32"
+                    },
+                    {
+                      "name": "indexGeneration",
+                      "type": "uint32",
+                      "internalType": "uint32"
+                    },
+                    {
+                      "name": "registryMutations",
+                      "type": "uint64",
+                      "internalType": "uint64"
+                    },
+                    {
+                      "name": "admissionHighWater",
+                      "type": "uint64",
+                      "internalType": "uint64"
+                    },
+                    {
+                      "name": "phase",
+                      "type": "uint8",
+                      "internalType": "uint8"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "rows",
+              "type": "tuple[]",
+              "internalType": "struct IFilesPageReader.Row[]",
+              "components": [
+                {
+                  "name": "position",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "name",
+                  "type": "bytes",
+                  "internalType": "bytes"
+                },
+                {
+                  "name": "targetKind",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "target",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "headRecord",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "headRevision",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "admission",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "headerWord0",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "rowKind",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                }
+              ]
+            },
+            {
+              "name": "listingCoverage",
+              "type": "uint8",
+              "internalType": "enum Coverage"
+            },
+            {
+              "name": "frontier",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "next",
+              "type": "bytes",
+              "internalType": "bytes"
+            },
+            {
+              "name": "scanned",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "rawTotal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "observedCurrent",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "selectedSoFar",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "inventoryPin",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "scanStatus",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "startsAtOrigin",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "completeFromOrigin",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "lookupName",
+      "inputs": [
+        {
+          "name": "folderSubject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "nameRole",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "principals",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "expected",
+          "type": "tuple",
+          "internalType": "struct BasisCommit",
+          "components": [
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHighWater",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Qualified",
+          "components": [
+            {
+              "name": "status",
+              "type": "uint8",
+              "internalType": "enum Status"
+            },
+            {
+              "name": "observed",
+              "type": "tuple",
+              "internalType": "struct BasisCommit",
+              "components": [
+                {
+                  "name": "executionSet",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "revision",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "indexGeneration",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "registryMutations",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "admissionHighWater",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "phase",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct IFilesPageReader.Row",
+          "components": [
+            {
+              "name": "position",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "name",
+              "type": "bytes",
+              "internalType": "bytes"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "headRecord",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "headRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "headerWord0",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "rowKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "supportedProfiles",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "callbackProfiles",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "physicalProfiles",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

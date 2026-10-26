@@ -1,0 +1,193 @@
+{
+  "storage": [
+    {
+      "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+      "label": "probe_posting",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_struct(PostingStorage)629_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_bytes32)dyn_storage": {
+      "encoding": "dynamic_array",
+      "label": "bytes32[]",
+      "numberOfBytes": "32",
+      "base": "t_bytes32"
+    },
+    "t_array(t_struct(WriterRange)597_storage)dyn_storage": {
+      "encoding": "dynamic_array",
+      "label": "struct WriterRange[]",
+      "numberOfBytes": "32",
+      "base": "t_struct(WriterRange)597_storage"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_bytes32,t_struct(PostingHead)607_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct PostingStoreStorage.PostingHead)",
+      "numberOfBytes": "32",
+      "value": "t_struct(PostingHead)607_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(PostingHead)607_storage": {
+      "encoding": "inplace",
+      "label": "struct PostingStoreStorage.PostingHead",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 600,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "count",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 602,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "live",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 604,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "last",
+          "offset": 12,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 606,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "flags",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_uint16"
+        }
+      ]
+    },
+    "t_struct(PostingStorage)629_storage": {
+      "encoding": "inplace",
+      "label": "struct PostingStoreStorage.PostingStorage",
+      "numberOfBytes": "160",
+      "members": [
+        {
+          "astId": 613,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "heads",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_bytes32,t_struct(PostingHead)607_storage)"
+        },
+        {
+          "astId": 619,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "words",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256))"
+        },
+        {
+          "astId": 623,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "writers",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_array(t_struct(WriterRange)597_storage)dyn_storage"
+        },
+        {
+          "astId": 625,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "attached",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 628,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "familyIds",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_array(t_bytes32)dyn_storage"
+        }
+      ]
+    },
+    "t_struct(WriterRange)597_storage": {
+      "encoding": "inplace",
+      "label": "struct WriterRange",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 592,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "generation",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 594,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "fromAdmission",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 596,
+          "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
+          "label": "toAdmission",
+          "offset": 26,
+          "slot": "0",
+          "type": "t_uint48"
+        }
+      ]
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint48": {
+      "encoding": "inplace",
+      "label": "uint48",
+      "numberOfBytes": "6"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

@@ -1,0 +1,1002 @@
+{
+  "schema": "efs-deployment/1",
+  "releaseDigest": "0xef45c6d038e12313711ff50722370916bfe50548cd7a04db509dcce9b2e01a3a",
+  "planHash": "0x38e9de2ec3fc613f39a61a39eb7103b81369912e212cb1098333873d42fe891c",
+  "chainId": 31337,
+  "realmId": "0x8383464f9245c74cc02d28458cea789245a3f2f751375e57cd26e8fcf266e741",
+  "realmOrigin": "0x700b019ee0f768fa305de4ba08cd8e05a3653208234a19f14585453891fdfb63",
+  "realmSalt": "0x06e8c5a9dec57466cea3796567f852b3ba8df0f97690f58ef472622a65fc710f",
+  "factory": {
+    "address": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+    "method": "presigned-tx",
+    "deployer": "0x3fab184622dc19b6109349b94811493bf2a45362",
+    "presignedTx": "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222",
+    "runtimeCodehash": "0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989",
+    "harnessRuntimeMatches": true
+  },
+  "genesis": {
+    "address": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+    "nonces": {
+      "controller": 1,
+      "registryProxy": 2,
+      "ledgerProxy": 3
+    },
+    "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+    "blockNumber": 36,
+    "blockHash": "0x1f4915e1d8f19b5a33327a83c612087e1fb8332d15155ea17fdabe1542fe9953"
+  },
+  "activation": {
+    "revision": 1,
+    "executionSet": "0x3f9d3371aac7184c21133dd9e13ac77d6f745c9356a8160b4e84ccb62e509482",
+    "txHash": "0x7ba6ad6ff1666c264949cf7d1f1a25ab634c56de9afcec7ab328c2ccbf822be9",
+    "blockNumber": 38,
+    "capabilities": 0,
+    "acceptedChainId": 31337,
+    "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "set": {
+      "revision": 1,
+      "components": {
+        "ledgerImpl": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+        "ledgerImplCodehash": "0xd626158584ff575da104d03c257820941a87aa6250c5419b746f7b735c47b420",
+        "registryImpl": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+        "registryImplCodehash": "0xcd95d3b7b5462b1395c4206229afa2559d140b6ccad0f4e1f0a8c68f64e7d819",
+        "index": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+        "indexCodehash": "0x80bed77b105a991604b002ad263b9c2c504a9084c9347fa5d72c4e228ec6826c",
+        "indexManifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+        "ingress": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+        "ingressCodehash": "0xe990782d927ad2d9771f3dcd6bca128fc8bbacbd5975cd55b3ef526ab551521d",
+        "applyDelegate": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+        "applyCodehash": "0x67f4704f949fdb41497c556a383ae9c857d940f7da3637f9296fa86b307a19b8",
+        "controller": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+        "controllerCodehash": "0xb9e95350fcbceb83e5d78a887f2ad656a131d3463fd2bba26f6426670da4d88f",
+        "controllerOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "steward": "0x0000000000000000000000000000000000000000",
+        "verifierProfilesRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+      "executionProfileId": 1,
+      "capabilities": 0,
+      "acceptedChainId": "31337",
+      "limits": {
+        "maxActions": 64,
+        "maxBody": 8192,
+        "maxRefs": 8,
+        "maxReadSetPrincipals": 64,
+        "maxReadSetPositions": 4,
+        "maxWitness": 4096,
+        "maxTransitionBlocks": 7200,
+        "inlineWordMax": 256,
+        "witnessRetention": 1,
+        "maxBindsPerPublication": 64,
+        "maxBodyBytesPerPublication": 16384,
+        "maxFreshSlotsPerPublication": 600,
+        "maxReadIds": 64,
+        "maxReadCount": 256,
+        "floorFreshGas": 22100,
+        "floorRewriteGas": 5000,
+        "kernelTail": 20000
+      },
+      "expectedExecutionSet": "0x3f9d3371aac7184c21133dd9e13ac77d6f745c9356a8160b4e84ccb62e509482",
+      "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "migrationScope": [],
+      "migration": "0x"
+    }
+  },
+  "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+  "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+  "hotAbiIdString": "efs2/ledger-hot/1",
+  "executionProfileId": 1,
+  "limits": {
+    "maxActions": 64,
+    "maxBody": 8192,
+    "maxRefs": 8,
+    "maxReadSetPrincipals": 64,
+    "maxReadSetPositions": 4,
+    "maxWitness": 4096,
+    "maxTransitionBlocks": 7200,
+    "inlineWordMax": 256,
+    "witnessRetention": 1,
+    "maxBindsPerPublication": 64,
+    "maxBodyBytesPerPublication": 16384,
+    "maxFreshSlotsPerPublication": 600,
+    "maxReadIds": 64,
+    "maxReadCount": 256,
+    "floorFreshGas": 22100,
+    "floorRewriteGas": 5000,
+    "kernelTail": 20000
+  },
+  "limitsProfileId": "0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055",
+  "domainSeparator": "0xa1af9c9004b33e3f5576a4f73b2dc0a594b5e43f459cbcd0dd273a651f5ad513",
+  "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "ledger": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+  "registry": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+  "controller": {
+    "address": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+    "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "frozen": false
+  },
+  "proxies": {
+    "ledger": {
+      "address": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "implementation": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+      "expectedImplementation": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+      "proxyAdmin": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+      "expectedProxyAdmin": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+      "proxyAdminOwner": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+      "immutableReferences": {
+        "_admin": [
+          7
+        ]
+      },
+      "initializer": "0xdfb4a03706e8c5a9dec57466cea3796567f852b3ba8df0f97690f58ef472622a65fc710f000000000000000000000000a20ef4ec27dc1aee2ed35a6b330a4f59f61d30fd000000000000000000000000a4f2b4aa7a20260cd1b54d88695d27fc1562678b00000000000000000000000077865d8b084589021d9695865475cbed4fc16c3100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001c200000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000565400000000000000000000000000000000000000000000000000000000000013880000000000000000000000000000000000000000000000000000000000004e20"
+    },
+    "registry": {
+      "address": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "implementation": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+      "expectedImplementation": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+      "proxyAdmin": "0xd4D0CC003F8e169b2C7770B988aD0F93A95079B8",
+      "expectedProxyAdmin": "0xd4D0CC003F8e169b2C7770B988aD0F93A95079B8",
+      "proxyAdminOwner": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+      "immutableReferences": {
+        "_admin": [
+          7
+        ]
+      },
+      "initializer": "0x485cc9550000000000000000000000000c18625727e6ee510b318ee47f225ef4e4c2e9ab0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "contracts": {
+    "LedgerIngress": {
+      "address": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+      "runtimeCodehash": "0xe990782d927ad2d9771f3dcd6bca128fc8bbacbd5975cd55b3ef526ab551521d",
+      "initcodeHash": "0x4536bdf16f7c224ec9f7bd0e26a03949347ac19e09066cd9eb9232ffde525923",
+      "step": "G1",
+      "txHash": "0x724f203ca6e7dd77be4fe16f469727af48749295adfbc058e91ddb5d456183cc",
+      "blockNumber": 3
+    },
+    "LedgerApply": {
+      "address": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+      "runtimeCodehash": "0x67f4704f949fdb41497c556a383ae9c857d940f7da3637f9296fa86b307a19b8",
+      "initcodeHash": "0x6a4fd6c8b8bec9f0d5b8dcf8ffecfeaea7f50aafff176e4d622dbaa346ce6f72",
+      "step": "G2",
+      "txHash": "0x6a73ff4d665bd711ba959fc499bec60d667b7ceb8c1568f8270c437e0f72a5b4",
+      "blockNumber": 4
+    },
+    "LedgerControl": {
+      "address": "0x5D670386cDee33e5DcBE97BC3CD19Afd6b9e6fEC",
+      "runtimeCodehash": "0x0f501458a2448cadb79d1018f5eccf94567231665814eb55a99e280bd9d61c9d",
+      "initcodeHash": "0x64304c489c05b0f82c6a190a7cf8d393b7ef167192f787ffede22d543a27e69b",
+      "step": "G2c",
+      "txHash": "0x6e6cbcc1e56a6dfb560ee8d2202355f263ecac3f300ccd04b34c3b2cbc173410",
+      "blockNumber": 5
+    },
+    "LedgerReads": {
+      "address": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+      "runtimeCodehash": "0xaa89f1141c26017d1c695ccad179084c97ae2ec0022cb8ed93218120ae07ca2a",
+      "initcodeHash": "0xb80723cc8b90da8587708f3b4c722b635681d5c8c30abd8674e52122c2f53e29",
+      "step": "G3",
+      "txHash": "0x9c7d3f81af7fa53a4ffd8f1c3005a39064552f1fda6885b642c43ac9477c7ed9",
+      "blockNumber": 6
+    },
+    "LedgerViews": {
+      "address": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+      "runtimeCodehash": "0x81881017ed541616fb2cf9b16a2308047ad41504e1c583b8926d572bdeea1956",
+      "initcodeHash": "0x27fdd7bd1a161d95bf9f96f0584b13f93d2b8e818bc3407b56f21952242d3af4",
+      "step": "G4",
+      "txHash": "0x47b78582a6db300477df18ccac107667bc252c8d7bdada206b39cc25cdee3afc",
+      "blockNumber": 7
+    },
+    "DescriptorStore": {
+      "address": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "runtimeCodehash": "0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc",
+      "initcodeHash": "0x1363fc585b181d63c159a0ce2b1d098929fc84062718e7b7d5546e267c707666",
+      "step": "G5",
+      "txHash": "0xb170e63838b7d66895649d5ebdff83ab6be06f769f1205cc35b9bb498dc5857b",
+      "blockNumber": 8
+    },
+    "IndexReplayDecoder": {
+      "address": "0xb7257b6d99AF8c53675a99c4bF5F67ddAF8cB0e8",
+      "runtimeCodehash": "0xdace7aa35ec6b4b7f8070ed8106972a6ee9c68e67c82ec1c693005c9030129b3",
+      "initcodeHash": "0xb3e01a8a5ed68509a2c55894364b69f3cf8cdf1d82893229bf373ecd83e76521",
+      "step": "G7",
+      "txHash": "0x6087551754afd4d58ba6d3e67a22de7d264755e4784f1bdd99b2e65eab27b6cd",
+      "blockNumber": 9
+    },
+    "ReaderDirectory": {
+      "address": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "runtimeCodehash": "0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f",
+      "initcodeHash": "0x4268ae3928ec9b4595b4b109584902f9787c486806b09cfd2e52c189119a45c5",
+      "step": "G8",
+      "txHash": "0x7291b62cb7ae944b9ff60be2e4f332d0020cca3b64376879ebecdc257733624a",
+      "blockNumber": 10
+    },
+    "FilesBytesRule": {
+      "address": "0x79A96205C36aA437AF3d927eEdC76CbF91e25066",
+      "runtimeCodehash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+      "initcodeHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+      "step": "G10.4",
+      "txHash": "0x97a9a012fce9ee01819a290a73edfe585b96b14180c4b52deced2b555a75ee38",
+      "blockNumber": 11
+    },
+    "FilesRootRule": {
+      "address": "0x7911a2FD9FA513219f133b8845b94cc8FdE80C13",
+      "runtimeCodehash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+      "initcodeHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+      "step": "G10.0",
+      "txHash": "0x6a5066c8369b44793f65cd6f9e7cccf68262760a96f8dcfe34c939dfd54f87b7",
+      "blockNumber": 12
+    },
+    "FilesDirectoryRule": {
+      "address": "0x7E4D24600c2055b222b99BD46f5b827B5f6CA2d7",
+      "runtimeCodehash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+      "initcodeHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+      "step": "G10.2",
+      "txHash": "0x54756fbff221bd445695f79fd25f20a1b3c1d5f50c37fdadbda959ddfabfbb75",
+      "blockNumber": 13
+    },
+    "FilesNameRule": {
+      "address": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+      "runtimeCodehash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+      "initcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+      "step": "G10.3",
+      "txHash": "0x6171b5f3d8e0f83d425f421d4ccb48b6d18e6e32f0e354759450bb1966e60d69",
+      "blockNumber": 14
+    },
+    "RealmNoticeRule": {
+      "address": "0x52c37C05ef93AF26B65f93C2Ff406F010b67427b",
+      "runtimeCodehash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+      "initcodeHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+      "step": "G10.8",
+      "txHash": "0x90764651bc40d4f798ea1acf82abbb98b1f6d327a4f646311c0cf84f87a10881",
+      "blockNumber": 15
+    },
+    "FilesContentRule": {
+      "address": "0x85E6912791f367537750B2c0bCc9cC118B09a485",
+      "runtimeCodehash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+      "initcodeHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+      "step": "G10.5",
+      "txHash": "0x7a3f0db765281bd21321b9fb17005e6312b6ca285827b6c50f502d90d37d938c",
+      "blockNumber": 16
+    },
+    "FilesExternalContentRule": {
+      "address": "0x4ACc18120Be607e31314Add0b19c74aF22D3e35e",
+      "runtimeCodehash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+      "initcodeHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+      "step": "G10.6",
+      "txHash": "0x289c4fe95db48e4c34d7f079b8f45c719222b7fae6816128581e1867c148c4cc",
+      "blockNumber": 17
+    },
+    "FilesChildRule": {
+      "address": "0x7E6a895619ccB1Fc5475f58E35dA18591e53D9FB",
+      "runtimeCodehash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+      "initcodeHash": "0xba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86",
+      "step": "G10.1",
+      "txHash": "0x886d3af57236e2e0b5163613abae5e1250c070ad44f9364afbe340e2199b7dee",
+      "blockNumber": 18
+    },
+    "DirectoryAliasRule": {
+      "address": "0x36C19753102fEf320dD253002fc54E58F4afd8A7",
+      "runtimeCodehash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+      "initcodeHash": "0xab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078",
+      "step": "G10.7",
+      "txHash": "0x4de96bee0e955d6891d492d1d65615ee34f8fcf21f080d34d70c189d70d5002c",
+      "blockNumber": 19
+    },
+    "RefuseAllPolicy": {
+      "address": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
+      "runtimeCodehash": "0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44",
+      "initcodeHash": "0xf1cc6fddd352b389b2d50d584edb19d25b7000795cedab66a3ae29b0b30eb418",
+      "step": "G10.policy",
+      "txHash": "0xd03f817264ee93d54090e0d73c21e86e71467f90253d2a226cd1822e26a33228",
+      "blockNumber": 20
+    },
+    "FilesFinalValidator": {
+      "address": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+      "runtimeCodehash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+      "initcodeHash": "0xf9d46954cf23a7c0ee01c8d19c6f0bf431fc32c89d8726c1842ecde05540c498",
+      "step": "G12",
+      "txHash": "0xb6458eb7bc831b11bb762805ec7fc87728314fce7116350aef86fb3489512f12",
+      "blockNumber": 30
+    },
+    "LedgerCore": {
+      "address": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+      "runtimeCodehash": "0xd626158584ff575da104d03c257820941a87aa6250c5419b746f7b735c47b420",
+      "initcodeHash": "0x92dca8b1b90744089d509557e753646cf1d8237816aa4d2c1b7a35765aa0cfba",
+      "step": "G13",
+      "txHash": "0x40e401271da7a3bf7002a321d4a2b6824da674c0e261f8a4446065a711f2c2b0",
+      "blockNumber": 31
+    },
+    "TypeRegistry": {
+      "address": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+      "runtimeCodehash": "0xcd95d3b7b5462b1395c4206229afa2559d140b6ccad0f4e1f0a8c68f64e7d819",
+      "initcodeHash": "0x283341008e8d78387d60ea32b94d27c8980d2cce76bd261fd1e66c6d71a97522",
+      "step": "G14",
+      "txHash": "0x6f55c3091c3bc8de27562d21748a1b24395c668c44982ba9273516e5894df754",
+      "blockNumber": 32
+    },
+    "RealmGenesis": {
+      "address": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "runtimeCodehash": "0x89917f2cb189e10ec672c8764dd47ba0d284cc230267a667d9db6100310b5fd2",
+      "initcodeHash": "0xb94f2965a7fb154066558b0e21125aa7d3f4c10f4e4b076ab3e789fa531a034c",
+      "step": "G15",
+      "txHash": "0x7505e7e168704db96d9fca48e3915b108c90507d804c0c9d74e4960815be86ba",
+      "blockNumber": 33
+    },
+    "PostingStore": {
+      "address": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+      "runtimeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4",
+      "initcodeHash": "0x750be26d903307a154bf2049ba8050c2d8fe03ae6a84d60477faab38213839d0",
+      "step": "G16",
+      "txHash": "0xaa00c55b22f5c7aaeff9c9c5ab47f0ac1ba53ec113140e6be159142e88f69d5e",
+      "blockNumber": 34
+    },
+    "BitmapStore": {
+      "address": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+      "runtimeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33",
+      "initcodeHash": "0xc036b86cae337062ba50437669466ec181c1e9e3ab79540853776ade130b3565",
+      "step": "G17",
+      "txHash": "0xb4bef750270383a5df08b61ee2d9adfc8a61d78ece6f4b340b752a15f7c067cf",
+      "blockNumber": 35
+    },
+    "RealmController": {
+      "address": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+      "runtimeCodehash": "0xb9e95350fcbceb83e5d78a887f2ad656a131d3463fd2bba26f6426670da4d88f",
+      "step": "G18",
+      "creator": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "nonce": 1,
+      "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+      "blockNumber": 36
+    },
+    "TypeRegistryProxy": {
+      "address": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "runtimeCodehash": "0xb64b3c2d8d639a2491cd1332b87341aa7a6fed5e398fea5f31bfae9777003ade",
+      "step": "G18",
+      "creator": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "nonce": 2,
+      "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+      "blockNumber": 36
+    },
+    "LedgerProxy": {
+      "address": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "runtimeCodehash": "0xf17d6c34eed151023a07943e793b5cc8162fbd024237cc3746499bb4bb5ce6cf",
+      "step": "G18",
+      "creator": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "nonce": 3,
+      "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+      "blockNumber": 36
+    },
+    "RegistryProxyAdmin": {
+      "address": "0xd4D0CC003F8e169b2C7770B988aD0F93A95079B8",
+      "runtimeCodehash": "0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2",
+      "step": "G18",
+      "creator": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "nonce": 1,
+      "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+      "blockNumber": 36
+    },
+    "LedgerProxyAdmin": {
+      "address": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+      "runtimeCodehash": "0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2",
+      "step": "G18",
+      "creator": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "nonce": 1,
+      "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+      "blockNumber": 36
+    },
+    "RealmIndex": {
+      "address": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+      "runtimeCodehash": "0x80bed77b105a991604b002ad263b9c2c504a9084c9347fa5d72c4e228ec6826c",
+      "initcodeHash": "0x0b121ea594586b7b45f3cd95e27c6bb2c77d4d074c7ff508abbffd6e36058a5c",
+      "step": "G19",
+      "txHash": "0x8f22d1faad45c1e88ab46bec9dceb6d8d29f8c911e0f3f9852f945bbcb1c6bab",
+      "blockNumber": 37
+    },
+    "LensReader": {
+      "address": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+      "runtimeCodehash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f",
+      "initcodeHash": "0x27cfd6c6652d1d193b5c3a18603e6e7ba82dd294b5887746cd2b4ac48c0ff7e9",
+      "step": "R1",
+      "txHash": "0x80e284c5381eb360742596586cadf08fa29b2c2b72b6380b1870ec132b76d8fd",
+      "blockNumber": 39
+    },
+    "FilesPageReader": {
+      "address": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+      "runtimeCodehash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8",
+      "initcodeHash": "0x582dec83374e53fa8f52d5ca3447af04fc9a9b16fa6c06699c1820c81feb8c2d",
+      "step": "R2",
+      "txHash": "0x889708003134ec0d5d44fade1757d25dfbd237abbec1883a91ae44b665c70968",
+      "blockNumber": 40
+    }
+  },
+  "index": {
+    "address": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+    "generation": 1,
+    "manifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+    "indexObligations": "0xaa658ac0e015d494fe93d2033f28d955120e55bd96918de17d7bbbb5c47afec6",
+    "stores": {
+      "posting": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+      "bitmap": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022"
+    },
+    "families": [
+      {
+        "familyId": "0xe4f7cc7ff76622e194a3ef2a8f23d6632b91cfda1f803fa443e9e04e43baa270",
+        "kind": 1,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0x620560dcb2daef0593f4620f205e0b64a1cd40b7cc26403e5433446b6e2e4889",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xd674025fa1091f86834d22a642451cc45057f55537c4b4e65ee1139c390d1b8a",
+        "kind": 4,
+        "universe": 2,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0xc990cf37e47815b1592813f335963f9d3639a12f920a01c5c28cdd160be06c18",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xf564f360d1f5b65aacc3b70b5aa8bfd24bfcf28df404557ac647ae8d94954eb4",
+        "kind": 5,
+        "universe": 4,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 3,
+        "recipe": "0xb00d103342bac00e780ffefca0a39b6331afbe2f9fad81213724828fdba7663e",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xde538e29eab73663949ae6239c90dea8948cf7297cf44d0c79621ef8bf06e8ab",
+        "kind": 8,
+        "universe": 3,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x069b6904dc14a3268cdb31165fa41efe3f7424594045ecbb994db539d403603f",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x1fd035d41e55e585706a270bca0fa36d150e1cc27de3a1b40654d1835f64287e",
+        "kind": 10,
+        "universe": 3,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x086e77f7429636d6799ac58780bbf7333f65ab0a3e6ec8eba205acf618bfcd04",
+        "fromAdmission": "1",
+        "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+      },
+      {
+        "familyId": "0x29d3bea0a01e3e26f8a6ae33a62bc05c74281c8a392b910123320f4dfa13a897",
+        "kind": 11,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x8ce4944707b924a08894cd50beccc7d5c9375c5950a6757e616f12b08d64464b",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x03b682942778e8b9a07a8448019ba6862fac962d963305b6b7b613a80d29f2c4",
+        "kind": 12,
+        "universe": 5,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0xc063e82b64226b9fe6666f814eebf93c4caa198dd583a57905ec2a88f1e78e17",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x77b478e9ae9182fa4afb6af49a4b8b55c121d339d14f0df963ed8eb50225beca",
+        "kind": 13,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x1631a66eb33bc5baf84d693be8d366018694427c9fccc13fa03477179257bbc2",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xef3758cffd687b1665b9ce936cfd31ff25a28a18a4be78504e93a88c8e996bb7",
+        "kind": 14,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x5eeb7cf0dd3a7b93f5ea5696e12056390083dfc7c2e244b7411503ce8f374d78",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x9f7b888d291c8c4c0d464b600e73c3c8f253b30195182648ead7c4c60c25b57d",
+        "kind": 15,
+        "universe": 5,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0xf70730a8c88af87ab6033a6fefe7a341e89c670f597fcbc86238cf43bdee7d8e",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xe84f1b109238a09c1b70a887b65cc922657c600d1e62c2925e843c8c3e189353",
+        "kind": 16,
+        "universe": 3,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x72487e74252edcf900f83e8914d64acbc54f8916790b01732f6d16b0b5d89e5d",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x04369382b4c38d701e16b5522fcf32484a616e6cfe7c310ee73c02c17813b9c8",
+        "kind": 17,
+        "universe": 3,
+        "shape": 2,
+        "mandatory": false,
+        "liveSemantics": 2,
+        "recipe": "0xa9cc5767a62556cc143fb409a2d65609a92db50518b6886ef77a0f6a54338156",
+        "fromAdmission": "18446744073709551615",
+        "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+      },
+      {
+        "familyId": "0x8433e20c283016a699d95d0a23d083dca2e2e5de9d0718f1de52e6ab42b46700",
+        "kind": 18,
+        "universe": 3,
+        "shape": 2,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0xe38f9e856587c24e3f3ccca8e2d8eb34496e6aa2f5f8b8e2982778c00d9ab5fc",
+        "fromAdmission": "1",
+        "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+      }
+    ],
+    "units": [
+      {
+        "foldHook": "0x0000000000000000000000000000000000000000",
+        "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "finalHook": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+        "finalCodehash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+        "familyIds": [],
+        "purposeFilter": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+        "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+        "identity": "0xa89c6584560250f4b64dc0d9db67fa27411f198aed2c229b7af78b254adc2e04"
+      }
+    ],
+    "digestSpecs": [
+      {
+        "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+        "wordIndex": 5,
+        "algorithm": 1
+      },
+      {
+        "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+        "wordIndex": 5,
+        "algorithm": 1
+      }
+    ],
+    "workModel": {
+      "formulaVersion": 1,
+      "freshPerPublication": 2,
+      "rwPerPublication": 10,
+      "freshPerPublishFresh": 10,
+      "rwPerPublish": 50,
+      "freshPerBindFresh": 30,
+      "rwPerBind": 40,
+      "freshPerRef": 10,
+      "freshPerDigestSpec": 10,
+      "computeBase": 60000,
+      "computePerAction": 25000,
+      "computePerHookEffect": 60000,
+      "finalComputeBase": 60000,
+      "finalComputePerBind": 120000
+    }
+  },
+  "typeIds": {
+    "files-root/1": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+    "files-child/1": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+    "files-directory/1": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+    "files-name/2": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+    "files-bytes/1": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+    "files-content/1": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+    "files-external/1": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+    "directory-alias/1": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
+    "realm-notice/1": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903"
+  },
+  "profile": [
+    {
+      "type": "files-root/1",
+      "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+      "rule": "FilesRootRule",
+      "instance": "0x7911a2FD9FA513219f133b8845b94cc8FdE80C13",
+      "ruleCodehash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+      "ruleInitcodeHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+      "refTypes": [],
+      "shape": "0x1f129f278a96cfd6eeb5dca0a39cdf4636f53d97bcdf9a6e28eda8a6d8ce1e76",
+      "descriptorBytes": 227,
+      "blob": "0x02d804CFb824Dc38587397645457eBC25BE859Ec",
+      "blobCodehash": "0xef8ee3876d861a4d1a1413c83ba1cbf430f191f100214c81f2df836eb884ab4d"
+    },
+    {
+      "type": "files-child/1",
+      "typeId": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+      "rule": "FilesChildRule",
+      "instance": "0x7E6a895619ccB1Fc5475f58E35dA18591e53D9FB",
+      "ruleCodehash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+      "ruleInitcodeHash": "0xba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86",
+      "refTypes": [
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "shape": "0x46987c45f141e49dd5b09e5473e46a662bca134e12e0220c2bd0f1a039c7d378",
+      "descriptorBytes": 418,
+      "blob": "0xC52C4A57f7317733D6300118AAB7b257E4EF02fE",
+      "blobCodehash": "0x684bd6f10074d24510409cdf4945ca34d5d304ed0f89ee96152786e8c916c178"
+    },
+    {
+      "type": "files-directory/1",
+      "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+      "rule": "FilesDirectoryRule",
+      "instance": "0x7E4D24600c2055b222b99BD46f5b827B5f6CA2d7",
+      "ruleCodehash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+      "ruleInitcodeHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+      "refTypes": [],
+      "shape": "0xc967bf92d3aabf77392d90e0e2544dcdf014703871b29258581af75eceb74ecd",
+      "descriptorBytes": 231,
+      "blob": "0x067628b1d2C89C6A39eB6E6eD5C6846318bf6989",
+      "blobCodehash": "0x320c563e6a8af6a0faf5205be0a7d563f562fa0b3c87bd2872f6572243aa4d02"
+    },
+    {
+      "type": "files-name/2",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+      "rule": "FilesNameRule",
+      "instance": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+      "ruleCodehash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+      "ruleInitcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+      "refTypes": [],
+      "shape": "0xc6a15a37f8ff199085cd5b8141e9106fc8e8c3f0b62e6c97b8acef59525ad98d",
+      "descriptorBytes": 242,
+      "blob": "0x419DD5744ceD310b2149fa8b3b030Ee62a63bD80",
+      "blobCodehash": "0xb4bb22f3dd1df5d21b23631b778d8f78c2e229ffeebb4cc9cae44fcecdde6277"
+    },
+    {
+      "type": "files-bytes/1",
+      "typeId": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+      "rule": "FilesBytesRule",
+      "instance": "0x79A96205C36aA437AF3d927eEdC76CbF91e25066",
+      "ruleCodehash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+      "ruleInitcodeHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+      "refTypes": [],
+      "shape": "0x206302f8da7919ef7b1e1ca073c97ea91d2b675cb5cabe40c776b811e98f96e4",
+      "descriptorBytes": 201,
+      "blob": "0xC368CF1B81d043CCA0a5517D23EE8775EC845F3C",
+      "blobCodehash": "0x9d992d1eadec422e4d6e7e6165f2697fbed1e1110496eb27ae9aed4315660f51"
+    },
+    {
+      "type": "files-content/1",
+      "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+      "rule": "FilesContentRule",
+      "instance": "0x85E6912791f367537750B2c0bCc9cC118B09a485",
+      "ruleCodehash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+      "ruleInitcodeHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+      "refTypes": [
+        "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563"
+      ],
+      "shape": "0xc175e366cf02f8ce430fda37e57e7e36fab274d8a2fa35694863db7f6282f955",
+      "descriptorBytes": 439,
+      "blob": "0x303e11da45b2B586f55Bfa6a34f3cC944D73370E",
+      "blobCodehash": "0xa941fa1d31a7ffac95e15606e7ee71e6aa36da3c1d1f6e633762b5336f65e952"
+    },
+    {
+      "type": "files-external/1",
+      "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+      "rule": "FilesExternalContentRule",
+      "instance": "0x4ACc18120Be607e31314Add0b19c74aF22D3e35e",
+      "ruleCodehash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+      "ruleInitcodeHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+      "refTypes": [
+        "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563"
+      ],
+      "shape": "0xcfc4222770162f699617d5f46ff9d02e8571560f41090a58cbef031ecc5ccb0d",
+      "descriptorBytes": 425,
+      "blob": "0x645749438E096fdB63489300c47C87C818EcF28a",
+      "blobCodehash": "0x8afdb4261a2158d62c5185fba21e2f7e59e3586b91e4ed3bece19691137e67e9"
+    },
+    {
+      "type": "directory-alias/1",
+      "typeId": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
+      "rule": "DirectoryAliasRule",
+      "instance": "0x36C19753102fEf320dD253002fc54E58F4afd8A7",
+      "ruleCodehash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+      "ruleInitcodeHash": "0xab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078",
+      "refTypes": [],
+      "shape": "0x53e650cb9c3ec74cc865e9058707b37f333d38bb81110185a9c81784dd5d1c2e",
+      "descriptorBytes": 244,
+      "blob": "0xcA3580e44436527E03FA157D36333DE73dD783fB",
+      "blobCodehash": "0x937b2fa309ed7eb507c177a199371921da253bef72192246c5d74358113b0b32"
+    },
+    {
+      "type": "realm-notice/1",
+      "typeId": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903",
+      "rule": "RealmNoticeRule",
+      "instance": "0x52c37C05ef93AF26B65f93C2Ff406F010b67427b",
+      "ruleCodehash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+      "ruleInitcodeHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+      "refTypes": [],
+      "shape": "0x718d135c8280bacb9d74cffb1ac3afe06464b935ffe2e7589a49c55c964cf591",
+      "descriptorBytes": 239,
+      "blob": "0xde78624d05f61E51eEDE3Df36E4037a23f2284Bc",
+      "blobCodehash": "0x0922d8d7dc34c39189c3c82b044192467c6c3e6480f7a0bcbdf4e21bbb2e42f5"
+    }
+  ],
+  "privilegedRoles": {
+    "controllerOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "ledgerProxyAdminOwner": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+    "registryProxyAdminOwner": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+    "steward": "0x0000000000000000000000000000000000000000",
+    "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "readers": {
+    "ledgerReads": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+    "ledgerViews": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+    "readerDirectory": "0x77865D8B084589021D9695865475cBED4fc16c31",
+    "lensReader": {
+      "address": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+      "runtimeCodehash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f",
+      "kind": "0x75cd7c9277fd0eefc44867edc4a3e8b3ed3bd2fa85711c9ec7602db542adaeef",
+      "kindLabel": "efs2/reader/lens/1",
+      "ledger": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "views": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+      "reads": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+      "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+      "txHash": "0x80e284c5381eb360742596586cadf08fa29b2c2b72b6380b1870ec132b76d8fd"
+    },
+    "filesPageReader": {
+      "address": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+      "runtimeCodehash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8",
+      "kind": "0x3fa6dca5d3eeb67bd6e6db3a6dc96459ec38dd26e082cb43f904a5bffb05f456",
+      "kindLabel": "efs2/reader/files-page/1",
+      "ledger": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "views": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+      "reads": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+      "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+      "nameType": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+      "rootType": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+      "childType": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+      "txHash": "0x889708003134ec0d5d44fade1757d25dfbd237abbec1883a91ae44b665c70968"
+    },
+    "listed": [
+      {
+        "kind": "0x75cd7c9277fd0eefc44867edc4a3e8b3ed3bd2fa85711c9ec7602db542adaeef",
+        "kindLabel": "efs2/reader/lens/1",
+        "ordinal": 0,
+        "reader": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+        "codehash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f",
+        "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+        "physicalProfile": "0x8e2af679072bc2d7d70e796e42d55bc8f6c09c4272e767fa5583ea2f90fd8122"
+      },
+      {
+        "kind": "0x3fa6dca5d3eeb67bd6e6db3a6dc96459ec38dd26e082cb43f904a5bffb05f456",
+        "kindLabel": "efs2/reader/files-page/1",
+        "ordinal": 0,
+        "reader": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+        "codehash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8",
+        "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+        "physicalProfile": "0x8e2af679072bc2d7d70e796e42d55bc8f6c09c4272e767fa5583ea2f90fd8122"
+      }
+    ]
+  },
+  "seed": {
+    "version": "efs-fixture-seed/1",
+    "transactions": [
+      {
+        "id": "G22.root",
+        "label": "seed root (CREATE + PUBLISH files-directory/1)",
+        "txHash": "0x05c55cc0681a46516e5cbbbe24410d05cfe82950a22e9ea4cd13c15defe3a09f",
+        "publication": 1,
+        "actions": [
+          {
+            "kind": 5,
+            "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0xd6c66cad06fe14fdb6ce9297d80d32f24d7428996d0045cbf90cc345c677ba16"
+          },
+          {
+            "kind": 1,
+            "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+            "bodyHashOrRecordId": "0xdb309c3cd8a140b2f98ba2d136048108ee83b829eb5fe6249c061d6a1e0b4879",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "bodies": [
+          "0x",
+          "0xbf64fbc93b9cf24114f8bcc65f37a45b95be4369488da9a01bf22b31e8ed2b34"
+        ]
+      },
+      {
+        "id": "G22.folder",
+        "label": "seed folder docs/ (CREATE, PUBLISH directory, PUBLISH name, BIND FOLDER)",
+        "txHash": "0x6e5d4ddf3d9f25aa119ec122caf67f8d8d59db0ec5b5e73261a37e76d4c6fe90",
+        "publication": 2,
+        "actions": [
+          {
+            "kind": 5,
+            "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0x6bf9054545420e9e9f4aa4f353a32c7d0d52c11dbcdda56c53be8375cafeebb1"
+          },
+          {
+            "kind": 1,
+            "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+            "bodyHashOrRecordId": "0xc7e98cde2eba9b2ad842b9c8636cd18610a34250b04fb8b2603853a6a216757b",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "kind": 1,
+            "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+            "bodyHashOrRecordId": "0x6bf9054545420e9e9f4aa4f353a32c7d0d52c11dbcdda56c53be8375cafeebb1",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "kind": 3,
+            "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "purpose": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+            "subject": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+            "role": "0x6bf9054545420e9e9f4aa4f353a32c7d0d52c11dbcdda56c53be8375cafeebb1",
+            "target": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "bodies": [
+          "0x",
+          "0xedf5c1d34b036c512819a1a9b92ce9c42063dd97618f3efedecc5821268935ff",
+          "0x646f6373",
+          "0x"
+        ]
+      },
+      {
+        "id": "G22.file",
+        "label": "seed file docs/readme.txt (CREATE, PUBLISH root, PUBLISH name, BIND HEAD, BIND FOLDER)",
+        "txHash": "0xc3d826e60353551396e8d6858218ee00b842df60628354dc112767b09ed2d3bd",
+        "publication": 3,
+        "actions": [
+          {
+            "kind": 5,
+            "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0xec9369150df74b211844eb9a9fb08de76d3277f56292f8301a4e7e3ad574adc8"
+          },
+          {
+            "kind": 1,
+            "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+            "bodyHashOrRecordId": "0x94a81e460d23273a343427a3d9115f20aa2c5b84745ea8ac33c079bfe9995681",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "kind": 1,
+            "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+            "bodyHashOrRecordId": "0x31f491635b16d6fb45a7d770fcbcc8cbb6eae32ac98ab622631f4bc4a8c7e9ce",
+            "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "kind": 3,
+            "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "purpose": "0x07167a05890e9fcaccbdf11abbb65a3aa14bccfe41825ce441803003862ce5df",
+            "subject": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+            "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "target": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "kind": 3,
+            "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "purpose": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+            "subject": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+            "role": "0x31f491635b16d6fb45a7d770fcbcc8cbb6eae32ac98ab622631f4bc4a8c7e9ce",
+            "target": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+            "expectedRevision": "0",
+            "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "bodies": [
+          "0x",
+          "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d14d656574696e672061742031303a30302e0a",
+          "0x726561646d652e747874",
+          "0x",
+          "0x"
+        ]
+      }
+    ]
+  },
+  "root": {
+    "directoryRecordId": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+    "subjectId": "0xbf64fbc93b9cf24114f8bcc65f37a45b95be4369488da9a01bf22b31e8ed2b34",
+    "principalId": "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+  },
+  "defaultLensPrincipals": [
+    "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+  ],
+  "actors": {
+    "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "fixturePrincipal": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "fixturePrincipalId": "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "declarationKey": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "fixtureKey": "anvil default account 0 (public test key; never use with value)"
+  },
+  "rpc": {
+    "url": "http://127.0.0.1:8560",
+    "chainId": 31337,
+    "hardfork": "prague"
+  },
+  "evidenceGrade": "local-fixture"
+}

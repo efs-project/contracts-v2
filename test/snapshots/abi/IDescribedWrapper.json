@@ -1,0 +1,274 @@
+{
+  "name": "IDescribedWrapper",
+  "source": "src/interfaces/internal/IDescribedWrapper.sol",
+  "closure": false,
+  "methodIdentifiers": {
+    "0x90109bcc": "accept((bytes32,bytes32,bytes32,uint64,uint32,uint8,uint8,address,address,address,address,address,bytes32),bytes,bytes32[],(bytes32,uint64,uint32,bytes32,bytes32,bytes32)[])",
+    "0x9bad6d4d": "codecVersion()",
+    "0xb70d42e9": "grammarProfile()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "AcceptContext": [
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "realmId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "principalId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "revision",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "grade",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "leaf",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "ledger",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "index",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registry",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "descriptorBlob",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "customPredicate",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "bindingId",
+        "type": "bytes32"
+      }
+    ],
+    "RefHeader": [
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "firstAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "length",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "word0",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "word1",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "word2",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "accept",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type": "tuple",
+          "internalType": "struct AcceptContext",
+          "components": [
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "realmId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "grade",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "ledger",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "index",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "registry",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "descriptorBlob",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "customPredicate",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "bindingId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "refs",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "refHeaders",
+          "type": "tuple[]",
+          "internalType": "struct RefHeader[]",
+          "components": [
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "firstAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "length",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "word0",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "word1",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "word2",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "codecVersion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "grammarProfile",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    }
+  ]
+}

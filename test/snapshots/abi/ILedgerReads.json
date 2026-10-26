@@ -1,0 +1,2419 @@
+{
+  "name": "ILedgerReads",
+  "source": "src/interfaces/ILedgerReads.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0xf781a654": "admission(address,uint64)",
+    "0x30615390": "admissions(address,uint64,uint16)",
+    "0xf1aad834": "basis(address)",
+    "0xe2a9f408": "bindingPosition(address,uint64)",
+    "0x855c39be": "bodySlice(address,bytes32,uint32,uint32)",
+    "0xabf704f7": "bodyWords(address,bytes32,uint32,uint16)",
+    "0x806c40f1": "describe(address)",
+    "0x44e3bd50": "evidence(address,uint64)",
+    "0x24e8393d": "head(address,bytes32)",
+    "0xc662b33e": "positionCell(address,bytes32)",
+    "0xc216444b": "principalsOf(address,address[])",
+    "0xd1825d4a": "publicationAt(address,bytes32,uint64)",
+    "0x170c6999": "record(address,bytes32)",
+    "0xf1029100": "recordHeader(address,bytes32)",
+    "0xc38b1c57": "revisionAt(address,uint32)",
+    "0xe315e5a0": "subjectInfo(address,bytes32)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "AdmissionRow": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "leaf",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "publication",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "bindingOrdinal",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "expectedRevision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "prevAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "withdrawn",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint16",
+        "name": "policyRow",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "roleRow",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "targetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "a",
+        "type": "bytes32"
+      }
+    ],
+    "BasisCommit": [
+      {
+        "internalType": "bytes32",
+        "name": "executionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "revision",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "indexGeneration",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "registryMutations",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admissionHighWater",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "phase",
+        "type": "uint8"
+      }
+    ],
+    "ComponentSet": [
+      {
+        "internalType": "address",
+        "name": "ledgerImpl",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ledgerImplCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "registryImpl",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "registryImplCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "index",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexManifestHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "ingress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ingressCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "applyDelegate",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "applyCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controller",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "controllerCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controllerOwner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "steward",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "verifierProfilesRoot",
+        "type": "bytes32"
+      }
+    ],
+    "Description": [
+      {
+        "internalType": "bytes32",
+        "name": "realmId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "realmOrigin",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "realmSalt",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "genesisChainId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "acceptedChainId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes8",
+        "name": "chainNamespace",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "chainReference",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "executionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "revision",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "revisionBlock",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "revisionAdmissionHigh",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "layoutId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "hotAbiId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "executionProfileId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "capabilities",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address",
+        "name": "ledgerImpl",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ledgerImplCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "ingress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ingressCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "applyDelegate",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "applyCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "registry",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registryImpl",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "registryImplCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "registryMutations",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "catalogCount",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "index",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "indexGeneration",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexManifestHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexObligations",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controller",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "controllerCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "controllerOwner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "steward",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "frozen",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "phase",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "readerDirectory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "thisFacet",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "thisFacetCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "facetVersion",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admissions",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "records",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "bindings",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "publications",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "domainSeparator",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "limitsProfileId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "statusVocabularyId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "verifierProfilesRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dependencyRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "struct Limits",
+        "name": "limits",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "noticePrincipal",
+        "type": "bytes32"
+      }
+    ],
+    "Evidence": [
+      {
+        "internalType": "bytes32",
+        "name": "principalId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "submitter",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "proofKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "principalKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "verifierProfile",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "leafCount",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "firstAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "nonce",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "deadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "basisBlock",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "revision",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "executionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "intentDigest",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "actionsHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "acceptanceProfile",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "indexObligations",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "readSetHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "witness0",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "witness1",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "imported",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "guarded",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "executionBound",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "acceptanceBound",
+        "type": "bool"
+      },
+      {
+        "internalType": "enum Retention",
+        "name": "retention",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "publicationId",
+        "type": "bytes32"
+      }
+    ],
+    "Head": [
+      {
+        "internalType": "uint8",
+        "name": "state",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "revision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "targetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "prevAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "bindingOrdinal",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint40",
+        "name": "notAfter",
+        "type": "uint40"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "target",
+        "type": "bytes32"
+      }
+    ],
+    "Limits": [
+      {
+        "internalType": "uint16",
+        "name": "maxActions",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxBody",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxRefs",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxReadSetPrincipals",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxReadSetPositions",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxWitness",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxTransitionBlocks",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "inlineWordMax",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "witnessRetention",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxBindsPerPublication",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxBodyBytesPerPublication",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxFreshSlotsPerPublication",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxReadIds",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxReadCount",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "floorFreshGas",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "floorRewriteGas",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "kernelTail",
+        "type": "uint32"
+      }
+    ],
+    "RecordHeader": [
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "firstAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "length",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "occurrences",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "carrierKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "word0",
+        "type": "bytes32"
+      }
+    ],
+    "Revision": [
+      {
+        "internalType": "uint32",
+        "name": "ordinal",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "activationBlock",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admissionHigh",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "publicationHigh",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "activationTimestamp",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint16",
+        "name": "flags",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "executionSet",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "struct ComponentSet",
+        "name": "components",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "layoutId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "executionProfileId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "capabilities",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint64",
+        "name": "acceptedChainId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint32",
+        "name": "indexGeneration",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "migrationHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dependencyRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "limitsProfileId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "struct Limits",
+        "name": "limits",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "noticePrincipal",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "admission",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "ordinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct AdmissionRow",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "publication",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "bindingOrdinal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "expectedRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "prevAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "withdrawn",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "policyRow",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "roleRow",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "a",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "admissions",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "from",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "count",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple[]",
+          "internalType": "struct AdmissionRow[]",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "publication",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "bindingOrdinal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "expectedRevision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "prevAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "withdrawn",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "policyRow",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "roleRow",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "a",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "next",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct BasisCommit",
+          "components": [
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHighWater",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "basis",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct BasisCommit",
+          "components": [
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHighWater",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "bindingPosition",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "bindingOrdinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "position",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "bodySlice",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "offset",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "length",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "bodyWords",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "fromWord",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "count",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "describe",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Description",
+          "components": [
+            {
+              "name": "realmId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "realmOrigin",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "realmSalt",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "genesisChainId",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "acceptedChainId",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "chainNamespace",
+              "type": "bytes8",
+              "internalType": "bytes8"
+            },
+            {
+              "name": "chainReference",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "revisionBlock",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "revisionAdmissionHigh",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "layoutId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "hotAbiId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionProfileId",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "capabilities",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "ledgerImpl",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "ledgerImplCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "ingress",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "ingressCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "applyDelegate",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "applyCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "registry",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "registryImpl",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "registryImplCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "catalogCount",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "index",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "indexCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexManifestHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "indexObligations",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "controller",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "controllerCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "controllerOwner",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "steward",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "frozen",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "readerDirectory",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "thisFacet",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "thisFacetCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "facetVersion",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "admissions",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "records",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "bindings",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "publications",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "domainSeparator",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "limitsProfileId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "statusVocabularyId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "verifierProfilesRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "dependencyRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "limits",
+              "type": "tuple",
+              "internalType": "struct Limits",
+              "components": [
+                {
+                  "name": "maxActions",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBody",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxRefs",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxReadSetPrincipals",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadSetPositions",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxWitness",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxTransitionBlocks",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "inlineWordMax",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "witnessRetention",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxBindsPerPublication",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBodyBytesPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxFreshSlotsPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxReadIds",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadCount",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "floorFreshGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "floorRewriteGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "kernelTail",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                }
+              ]
+            },
+            {
+              "name": "noticePrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "evidence",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Evidence",
+          "components": [
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "author",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "submitter",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "proofKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "principalKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "verifierProfile",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "leafCount",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "firstAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "nonce",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "deadline",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "basisBlock",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "intentDigest",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "actionsHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "acceptanceProfile",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "indexObligations",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "readSetHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "witness0",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "witness1",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "v",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "imported",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "guarded",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "executionBound",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "acceptanceBound",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "retention",
+              "type": "uint8",
+              "internalType": "enum Retention"
+            },
+            {
+              "name": "publicationId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "head",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "bindingKey",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Head",
+          "components": [
+            {
+              "name": "state",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "revision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "prevAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "bindingOrdinal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "notAfter",
+              "type": "uint40",
+              "internalType": "uint40"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "positionCell",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "position",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "subject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "principalsOf",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "accounts",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "publicationAt",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "nonce",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "intentDigest",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "record",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct RecordHeader",
+          "components": [
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "firstAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "length",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "occurrences",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "carrierKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "word0",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct BasisCommit",
+          "components": [
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHighWater",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "recordHeader",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct RecordHeader",
+          "components": [
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "firstAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "length",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "occurrences",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "carrierKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "word0",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "revisionAt",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "n",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Revision",
+          "components": [
+            {
+              "name": "ordinal",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "activationBlock",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHigh",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "publicationHigh",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "activationTimestamp",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "flags",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "components",
+              "type": "tuple",
+              "internalType": "struct ComponentSet",
+              "components": [
+                {
+                  "name": "ledgerImpl",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "ledgerImplCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "registryImpl",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "registryImplCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "index",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "indexCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "indexManifestHash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "ingress",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "ingressCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "applyDelegate",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "applyCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "controller",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "controllerCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "controllerOwner",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "steward",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "verifierProfilesRoot",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "layoutId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "executionProfileId",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "capabilities",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "acceptedChainId",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "migrationHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "dependencyRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "limitsProfileId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "limits",
+              "type": "tuple",
+              "internalType": "struct Limits",
+              "components": [
+                {
+                  "name": "maxActions",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBody",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxRefs",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxReadSetPrincipals",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadSetPositions",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxWitness",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxTransitionBlocks",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "inlineWordMax",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "witnessRetention",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maxBindsPerPublication",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxBodyBytesPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxFreshSlotsPerPublication",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "maxReadIds",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "maxReadCount",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "floorFreshGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "floorRewriteGas",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "kernelTail",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                }
+              ]
+            },
+            {
+              "name": "noticePrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "subjectInfo",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "subjectId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "enum Status"
+        },
+        {
+          "name": "createdAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "creatorPrincipal",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

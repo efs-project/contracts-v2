@@ -1,0 +1,350 @@
+{
+  "schema": "efs2/sizes/1",
+  "source": "docs/DESIGN.md \u00a73.1 (units), \u00a73.3 (gate), \u00a715 (size table)",
+  "note": "Budgets gate CI (test/size/Budgets.t.sol). nominal/pessimistic are the design estimates (status \"estimate\"), never measurements; pessimistic = nominal +15 %. argsEstimate is the constructor-argument allowance added to the bare initcode until each unit is deployed with real arguments (status \"estimate\"). measured stays null until a release regenerates this file; Budgets.t.sol logs the live measurement on every run.",
+  "limits": {
+    "runtimeBudget": 19660,
+    "runtimeWarning": 17500,
+    "initcodeBudget": 36864,
+    "eip170": 24576,
+    "eip3860": 49152
+  },
+  "units": [
+    {
+      "name": "LedgerCore",
+      "artifact": "LedgerCore.sol:LedgerCore",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 16400,
+        "pessimistic": 18900,
+        "prototypeMeasured": 24524,
+        "basis": "design \u00a73.2 line items; full kernel ABI incl. the signed lane and the import stub; rungs 1\u20133 of the \u00a73.2 ladder give \u2248 15,000 / 17,250"
+      },
+      "measured": null
+    },
+    {
+      "name": "LedgerApply",
+      "artifact": "LedgerApply.sol:LedgerApply",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 7600,
+        "pessimistic": 8700,
+        "prototypeMeasured": null,
+        "basis": "measured apply arms 7,897 B inside the prototype Ledger \u2212 _accept 533 \u2212 _checkRefs 456 + Effect/3 building \u2248 700"
+      },
+      "measured": null
+    },
+    {
+      "name": "LedgerIngress",
+      "artifact": "LedgerIngress.sol:LedgerIngress",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 11500,
+        "pessimistic": 13200,
+        "prototypeMeasured": 12884,
+        "basis": "S1 (two lanes + guard codec + validateLeaf + floor quoting + dispatch + readiness); S2 15,500 / 17,800; prototype PublicationSupport 12,884 B with six lanes"
+      },
+      "measured": null
+    },
+    {
+      "name": "LedgerReads",
+      "artifact": "LedgerReads.sol:LedgerReads",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 12000,
+        "pessimistic": 13800,
+        "prototypeMeasured": null,
+        "basis": "exact-row views: raw getters + struct encoders + describe() \u2248 1.5 KB + \u2248 405\u2013450 B per forwarded read \u00d7 16"
+      },
+      "measured": null
+    },
+    {
+      "name": "LedgerViews",
+      "artifact": "LedgerViews.sol:LedgerViews",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 11000,
+        "pessimistic": 12700,
+        "prototypeMeasured": null,
+        "basis": "composites: publication() with Effect/3 reconstruction, headsAt, heads, records, acceptanceBasis, historyAt, headSnapshots"
+      },
+      "measured": null
+    },
+    {
+      "name": "TypeRegistry",
+      "artifact": "TypeRegistry.sol:TypeRegistry",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 12500,
+        "pessimistic": 14400,
+        "prototypeMeasured": 14914,
+        "basis": "prototype 14,914 B incl. \u2248 4.4 KiB embedded wrapper initcode; \u2212 opaque path/CREATE + grades, CREATE2 instance check, descriptor cap, role rows, catalog, EIP-712 declaration verify"
+      },
+      "measured": null
+    },
+    {
+      "name": "DescribedTypeRule",
+      "artifact": "DescribedTypeRule.sol:DescribedTypeRule",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 5200,
+        "pessimistic": 6000,
+        "prototypeMeasured": 4380,
+        "basis": "v1 singleton wrapper: prototype 4,380 B + codec-1 header extensions + context checks incl. ctx.ledger"
+      },
+      "measured": null
+    },
+    {
+      "name": "DescriptorStore",
+      "artifact": "DescriptorStore.sol:DescriptorStore",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 1000,
+        "pessimistic": 1200,
+        "prototypeMeasured": null,
+        "basis": "one CREATE2 + hash + length check"
+      },
+      "measured": null
+    },
+    {
+      "name": "RealmIndex",
+      "artifact": "RealmIndex.sol:RealmIndex",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 3700,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 12500,
+        "pessimistic": 14400,
+        "prototypeMeasured": 20981,
+        "basis": "gen-1 dispatcher, top-down from the Files-capable prototype index 20,981 B \u2212 posting/scope storage moved to stores \u2248 5.5 KB \u2212 replay/build drivers moved to IndexBuild \u2248 4 KB + Effect/3 decode, unit iteration, digest specs, coverage \u2248 1 KB; initcode adds the \u2248 3.7 KB manifest"
+      },
+      "measured": null
+    },
+    {
+      "name": "PostingStore",
+      "artifact": "PostingStore.sol:PostingStore",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 5500,
+        "pessimistic": 6300,
+        "prototypeMeasured": null,
+        "basis": "_append/_release + packed-word reads \u2248 2.5 KB + writer gate + postingHeadOf preimage reads + oracle getters"
+      },
+      "measured": null
+    },
+    {
+      "name": "BitmapStore",
+      "artifact": "BitmapStore.sol:BitmapStore",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 5000,
+        "pessimistic": 5800,
+        "prototypeMeasured": null,
+        "basis": "scope-list append with packed words \u2248 1 KB, set/clear/stamp, liveWords, liveAt bisection, coverage slots"
+      },
+      "measured": null
+    },
+    {
+      "name": "IndexBuild",
+      "artifact": "IndexBuild.sol:IndexBuild",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 6000,
+        "pessimistic": 6900,
+        "prototypeMeasured": null,
+        "basis": "replay/build/backfill drivers moved out of the dispatcher"
+      },
+      "measured": null
+    },
+    {
+      "name": "IndexReplayDecoder",
+      "artifact": "IndexReplayDecoder.sol:IndexReplayDecoder",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 5200,
+        "pessimistic": 6000,
+        "prototypeMeasured": 4359,
+        "basis": "prototype 4,359 B + revision validation + Effect/3 reconstruction incl. oldTarget"
+      },
+      "measured": null
+    },
+    {
+      "name": "FilesFinalValidator",
+      "artifact": "FilesFinalValidator.sol:FilesFinalValidator",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 5500,
+        "pessimistic": 6300,
+        "prototypeMeasured": 5417,
+        "basis": "prototype 5,417 B"
+      },
+      "measured": null
+    },
+    {
+      "name": "RealmController",
+      "artifact": "RealmController.sol:RealmController",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 6000,
+        "pessimistic": 6900,
+        "prototypeMeasured": null,
+        "basis": "ownership \u2248 0.5 KB + sequencing + ceremony + scan \u2248 0.9 KB"
+      },
+      "measured": null
+    },
+    {
+      "name": "RealmGenesis",
+      "artifact": "RealmGenesis.sol:RealmGenesis",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 3000,
+        "pessimistic": 3500,
+        "prototypeMeasured": null,
+        "basis": "single-use CREATE2 genesis contract"
+      },
+      "measured": null
+    },
+    {
+      "name": "IndexDeployer",
+      "artifact": "IndexDeployer.sol:IndexDeployer",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 2500,
+        "pessimistic": 2900,
+        "prototypeMeasured": null,
+        "basis": "single-use CREATE2 deployer of fresh stores and a later generation"
+      },
+      "measured": null
+    },
+    {
+      "name": "ReaderDirectory",
+      "artifact": "ReaderDirectory.sol:ReaderDirectory",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 1500,
+        "pessimistic": 1800,
+        "prototypeMeasured": null,
+        "basis": "permissionless append-only directory"
+      },
+      "measured": null
+    },
+    {
+      "name": "LensReader",
+      "artifact": "LensReader.sol:LensReader",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 12000,
+        "pessimistic": 13800,
+        "prototypeMeasured": 15006,
+        "basis": "prototype 15,006 B \u2212 probe loop absorbed by headsAt \u2248 3 KB \u2212 address APIs \u2248 1 KB + resolveRecord + per-call index resolution"
+      },
+      "measured": null
+    },
+    {
+      "name": "FilesPageReader",
+      "artifact": "FilesPageReader.sol:FilesPageReader",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 15000,
+        "pessimistic": 17300,
+        "prototypeMeasured": 16966,
+        "basis": "prototype 16,966 B \u2212 substring search \u2212 assembly name buffer + Page struct + continuation binding"
+      },
+      "measured": null
+    },
+    {
+      "name": "LedgerControl",
+      "artifact": "LedgerControl.sol:LedgerControl",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 256,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 16500,
+        "pessimistic": 19000,
+        "prototypeMeasured": null,
+        "basis": "measured apply arms 7,897 B inside the prototype Ledger \u2212 _accept 533 \u2212 _checkRefs 456 + Effect/3 building \u2248 700"
+      },
+      "measured": null
+    }
+  ]
+}

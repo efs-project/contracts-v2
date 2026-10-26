@@ -1,0 +1,1779 @@
+{
+  "schema": "efs-contracts-release/1",
+  "version": "0.0.0-s1b.3-local",
+  "status": "local fixture release (not reviewed, not published)",
+  "source": {
+    "commit": "66b8f8090cf801359b104cbb334318af413e8dfd",
+    "tree": "adb547f2faadcf78f58f89586707c3492dd3fdaa",
+    "dirty": 6,
+    "standardJsonInputHash": null
+  },
+  "toolchain": {
+    "solc": "0.8.37+commit.f401782d",
+    "evmVersion": "prague",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "viaIR": true,
+    "bytecodeHash": "none",
+    "cborMetadata": true,
+    "foundry": "forge Version: 1.8.3",
+    "node": "v24.21.0",
+    "viem": "2.57.7"
+  },
+  "buildPlatform": {
+    "os": "darwin",
+    "osRelease": "25.6.0",
+    "arch": "arm64"
+  },
+  "reproducibility": {
+    "builds": [
+      "out",
+      "out/release-ast"
+    ],
+    "unitsCompared": 30,
+    "runtimeAndInitcodeIdentical": true,
+    "note": "the AST build is a second full compile with the identity settings plus AST output; tools/deploy-plan.mjs refuses any unit whose bytes differ"
+  },
+  "files": {
+    "src/core/LedgerIngress.sol": "0xf11a66d8699168fb8f46698261fe14764a008ac6f1d3acb62044c65075a5bf22",
+    "src/core/layout/Layout.sol": "0x25a047067897de3daa9ff7e68fde6ecb29a8e4ddd13af06f235252ee72dadfd1",
+    "src/core/storage/LedgerStorage.sol": "0x1ad729301b471bf54bc4f91bf403367e5fe76c2080750fcef2c481f8a9271c5b",
+    "src/interfaces/Actions.sol": "0x5c503f6aacc86841f2f8c900b5d76e2f818016b09fe2e176bd0f1cd1f82307be",
+    "src/interfaces/Errors.sol": "0x4c39c2ceaf4555ba5e19b5cf6ceaf458e3266b44f79af9dfdb989183fb9dfb33",
+    "src/interfaces/IAcceptor.sol": "0x81d1fdcc3e1955e19ea037107032dd510058ece7efb5b0ad39b914a1e8f3980e",
+    "src/interfaces/IIndexReads.sol": "0x64d7b9c9009df70f0d5b8f1d4fe7cf53f3b069b66db65441df4c23d922f1b619",
+    "src/interfaces/ILedgerCommitments.sol": "0x6828cf2bfe8f99fb9b7da0966f4c52473dc58fb65156cc60f5233195459fbc5e",
+    "src/interfaces/ILedgerHot.sol": "0x6fb4292dababd29edc203044fabce266af2596ffc15622b070b63e15b8ba2647",
+    "src/interfaces/IRealmIndex.sol": "0x64e4e6eb8c0cb40489e214d3440ddb22ca7d2fcaa695c0a73a312db3af0bc977",
+    "src/interfaces/ITypeRegistry.sol": "0x121036fa1f5433eaedd1a0c4105f156c8b3ca5aee90f21499dad3fa01ab71403",
+    "src/interfaces/Index.sol": "0xbc636f9785b917410cdfaf58421a418ddf339744624fafd7328fc8f3e860354c",
+    "src/interfaces/Limits.sol": "0x90c4a1d9276272cdfb312036fe22efff0f6ae27f70167cff2fdc7d49423e8586",
+    "src/interfaces/Results.sol": "0x0d44cc07ac912d484eb42579fda117b618ec25730756fde3810a8da589624649",
+    "src/interfaces/internal/ILedgerIngress.sol": "0xa6a30757e180a6d999211737374f6831fbd2f198ac410c20204ead68cf95d783",
+    "src/lib/CodePins.sol": "0x242d70fb6037dec503ba3d29628bdde56bf61c158e4ff73b2edfe0473378ae4e",
+    "src/lib/Keys.sol": "0x62c90f6fde0c6c0673e8dd6f4cff67670dbb38f8a8e22717e4007243b2133e6e",
+    "src/core/LedgerApply.sol": "0xe2b9baf4686d69b381a83062cdcdbc4755fb6b13f592013994f25810d4bd9b6a",
+    "src/interfaces/internal/ILedgerApply.sol": "0xadaf77f23f5342abd00c0b20085548cb9527c4ed2dacb85aa63cc71fd5d1278d",
+    "src/core/LedgerControl.sol": "0x4694a7c08b2b55ce49a58fd434f105b8ba90f5bfd102a034499ab4789effa917",
+    "src/interfaces/ILedgerControl.sol": "0x30c58e8e4682bfedcda8ecd83ee4e2811cb185060fcc9a976051541a8c5f02e6",
+    "src/interfaces/IPostingStore.sol": "0xe3cdf4a5d9c2ed3b83310742eae92762a1905fdc8d79bc3cc2c88cfce6eab473",
+    "src/interfaces/internal/ILedgerControlDelegate.sol": "0x8d1b8806301722bcc1fb48e5b19145e00627cdbac20c223bd58333af67d51671",
+    "src/lib/CodeScan.sol": "0x13b9a14bb6ff97cdccbbed1efd2740cbbe49691bf1fdbd635a89a1fc475b27e5",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/utils/Initializable.sol": "0xf527a063813c2bf60c153fb08e38539578935402894fcc36fac42324ca325d3b",
+    "dependencies/@openzeppelin-contracts-upgradeable-5.6.1/proxy/utils/Initializable.sol": "0xa8b2a4ade9afe90f8e5026906c69911489389f2a892c5e4fe3de5cb918869251",
+    "src/core/LedgerCore.sol": "0x537da2b03ca31ffff3f674f5ef7007dec07a3c1463af858a94423005ea19a5f9",
+    "src/interfaces/ILedger.sol": "0xd6340748855349bae4b47623f291d7817d6d728d575d3c2a1601e2810d2a0458",
+    "src/interfaces/ILedgerReads.sol": "0x7ee3e358afce66694166f0a59c786c65b4e6e01369b031ce1828af62a4d2606f",
+    "src/interfaces/Views.sol": "0x15c1279e351358f246ada93c37ee0d588cf2039d6b29a774869cfc1a071720b8",
+    "src/readers/LedgerReads.sol": "0x449e741a308d75a4f834f0072da90870593d6b345589c65b22b3d25bf867e318",
+    "src/interfaces/ILedgerViews.sol": "0x04acf582915ec566cd4bc5fa9bc2f9f278e2feae06f9fdb02ff5136ba40874cb",
+    "src/readers/LedgerViews.sol": "0x383fe719a8a2a19726ed1230f7dd44a0d98565a3e55e5765af53c444c45074d4",
+    "src/interfaces/internal/IDescriptorStore.sol": "0xfac9904c8cb6f5598b9355cfe0b92991c1364df99f6deb8c74a2a01d8aa8a7bd",
+    "src/types/DescriptorStore.sol": "0x92b8fc770ff2e862400e68e0594d7093b3e853dfde5301efb4359fb6f6aa2007",
+    "src/index/IndexReplayDecoder.sol": "0x83a18fcec8524a2be0a0a642d520df67c39a512716cee2cde083d6d7cee131f3",
+    "src/interfaces/internal/IIndexReplayDecoder.sol": "0x08790824d4d2146e734c9082f86e589bab52cf8b8fa22ba5355384e1dcb831cd",
+    "src/interfaces/Readers.sol": "0x8165b01329bb3be6d469800cff00fe35852663439d5786474e9ca9778f360519",
+    "src/periphery/ReaderDirectory.sol": "0xc8102fddd1bbb84f0638525f981778527860a2b71988171a94d310f5e10b6043",
+    "src/interfaces/internal/IDescribedWrapper.sol": "0x861881859804802e1fca45354ac21e74dc4e457c1d3d25b4e38a48b7581ae8ee",
+    "src/types/DescribedCodec.sol": "0x690f897628da6f3535fd2ce15bb017e869140fa1c72ae79ded7ef483a246b4a8",
+    "src/types/TypeRegistry.sol": "0x2d2f4a60736cf66f7d07bedfdd946eed2cb17cd591eb4544f342b5f73667250d",
+    "src/types/storage/RegistryStorage.sol": "0x3be35f30783bbf81fe401416ec8adb1e3891d42b40bc83b993dc30043d168059",
+    "dependencies/@openzeppelin-contracts-5.6.1/access/Ownable.sol": "0x38578bd71c0a909840e67202db527cc6b4e6b437e0f39f0c909da32c1e30cb81",
+    "dependencies/@openzeppelin-contracts-5.6.1/interfaces/IERC1967.sol": "0xc4e901318ab6d4963582c62c62ce988a34c68dbae71846b67decacde79e9a317",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/ERC1967/ERC1967Proxy.sol": "0x41a3040398d53999dea3251ff8906e11ec1a699362a1d8f4a55bfc7709cc00f3",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/ERC1967/ERC1967Utils.sol": "0xa89ba2032ab25959c6fde1e508ebf8f966ff632703d3ef79684f578a8fa8033f",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/Proxy.sol": "0xfa8aae37b2939371fcbce48b814c0d5c7e57e3e267f348459f29941937746c98",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/beacon/IBeacon.sol": "0xc1c9726bbb0ec4c540c7c98059dcded69a8586b46c168036672381033ee76239",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/transparent/ProxyAdmin.sol": "0x4da9a90b1c8b45fdab7d73d8cf81f51cf7d990657ee4e3f943492c3bf0e4c2f1",
+    "dependencies/@openzeppelin-contracts-5.6.1/proxy/transparent/TransparentUpgradeableProxy.sol": "0x58c759fe76057e1cefa8909b446357aae5cac8a8ba7e6401650208d1b0481508",
+    "dependencies/@openzeppelin-contracts-5.6.1/utils/Address.sol": "0x73e54e15285455f0e01e136c3663732641537614723ae5dbd820eb3cb036b1fd",
+    "dependencies/@openzeppelin-contracts-5.6.1/utils/Context.sol": "0x847fda5460fee70f56f4200f59b82ae622bb03c79c77e67af010e31b7e2cc5b6",
+    "dependencies/@openzeppelin-contracts-5.6.1/utils/Errors.sol": "0x0704b9d6c032cca8512a3bc3f30f49f86f1f03102d2896a3d23e794b82efea66",
+    "dependencies/@openzeppelin-contracts-5.6.1/utils/LowLevelCall.sol": "0xe128cbe9c6c406d5a42c26e4079c0a95b369ce552f2d0c3dfd2fcb836c5708f2",
+    "dependencies/@openzeppelin-contracts-5.6.1/utils/StorageSlot.sol": "0x75704538dcb223239280c6726d9a31cf769a7816718517c997fc7d63bdb70778",
+    "src/control/RealmGenesis.sol": "0x829b5adb7eafafcfd19e7077739b629ab485570dbc3b3f22f27672215a1ff45a",
+    "src/interfaces/IRealmController.sol": "0x66f309053ea3b5bbe85da1b9643c5ccb6f7f5130a9d75ac4458a2bec0e0be8b0",
+    "src/control/RealmController.sol": "0x6574babae8cb688921f0ee3ef47cafe1e56541b378634576fd5c51220c90d890",
+    "src/index/PostingStore.sol": "0xbc4e7771df96ede121a455de70598f27a16584b7617e97e8fe7c21ca55920435",
+    "src/index/StoreBase.sol": "0x1569cf04f0f9a97442e886b9d68bac2fef5d3519f0b78d42479cb4587b2cc6ed",
+    "src/index/storage/StoreStorage.sol": "0x4f4aff270cdb37492c3be555ec7efc8a88813abbfe22d9aad3b4ffa90b25892e",
+    "src/index/BitmapStore.sol": "0x43e9daac68e1b90ff7b9de01161ff5c1f29b360cbded05fcd23c86ac310c665e",
+    "src/interfaces/IBitmapStore.sol": "0x6d5525a5ad4865503abadb50ac5b246ba36788a65e6e73d911aac3cf0100e2cd",
+    "src/index/RealmIndex.sol": "0xa9b42cd76c0b7d7bca5ab43e03e01c231fae62358b5480804a552d9f0650137f",
+    "src/index/storage/GenerationStorage.sol": "0x199b397b307bc01111eafc03a320ca1675cac26c66efef2868bb12a02fb70ee0",
+    "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
+    "src/profiles/FilesFinalValidator.sol": "0x5a77be4b1dfebadfd9fe5345cca4a87850c30da0aa3b0db146d8dddc82856bb8",
+    "src/profiles/FilesProfile.sol": "0xbe98483bec0b1cb15bbae7ea887a8aded8289e28e13b9f9236867877d12ba040",
+    "src/profiles/FilesRootRule.sol": "0x4aa46711f03e6fd3d30bf2c9333190e888aa308a9ec7f1f32a4187cb8a993769",
+    "src/profiles/FilesChildRule.sol": "0x586e62c49a3ec40ad475caad4b08f8528c12a7c388a47577b54f6269d0ff40a9",
+    "src/profiles/FilesDirectoryRule.sol": "0xe44144eaf106f5261e57858310e98b18797af64e6de69dfb3051e4e3f02d4f8a",
+    "src/profiles/FilesNameRule.sol": "0x9cd9ea1ed3906f4383ccfbe1469cfa3877610e889ea37472fd1f8b482e98d9a5",
+    "src/profiles/FilesBytesRule.sol": "0xe54cf058154dc44c9a288296bfdbadf69814f7582219ea6d9c934231f2735f29",
+    "src/profiles/FilesContentRule.sol": "0xf3156df8083ec1b7a8e7846c750730dd90702fbd4f30c6a7052bb3148791bf95",
+    "src/profiles/FilesExternalContentRule.sol": "0xfc7c5c0f61f5f63fabdcaa653714fa84cdf8b0253035053a1e7e8f5176e163f3",
+    "src/profiles/DirectoryAliasRule.sol": "0x1570214f1e21e82565b7ee47b0dee43464274d042ac03f88b3aab152861668a8",
+    "src/profiles/RealmNoticeRule.sol": "0x0deaf5e2bacc58d532d2808c3c9d7efa768d23e7404504891a9be9596f99e97c",
+    "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
+    "src/readers/LensReader.sol": "0x62a452011875730a2f46245fae5a4dd569773dd74b1ef5a89593029af53e7655",
+    "src/readers/FilesPageReader.sol": "0xd1062a68b340de8a8b0aa9d5b6970c0d4003e12d13549b7ba1b961629852e560"
+  },
+  "contracts": {
+    "LedgerIngress": {
+      "source": "src/core/LedgerIngress.sol",
+      "runtimeHash": "0x784ca0a25d2b2a0ca93a5f4a392fa4c0a350cd257137fc80a0610f8b05050d8f",
+      "deployedBytecodeHash": "0xe990782d927ad2d9771f3dcd6bca128fc8bbacbd5975cd55b3ef526ab551521d",
+      "initcodeHash": "0x74f3969aecf85f64e0bf3b6520181420c879debc4ececb658eec4ebd69bdd753",
+      "initcodeWithArgsHash": "0x4536bdf16f7c224ec9f7bd0e26a03949347ac19e09066cd9eb9232ffde525923",
+      "address": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+      "realmSpecific": false,
+      "planStep": "G1",
+      "immutables": [
+        {
+          "name": "SELF",
+          "offsets": [
+            1944,
+            2710,
+            6466,
+            8143,
+            9008
+          ]
+        },
+        {
+          "name": "SIGNATURE_STORE",
+          "offsets": [
+            11029
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 19581,
+        "initcode": 19753,
+        "initcodeWithArgs": 19785
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "LedgerApply": {
+      "source": "src/core/LedgerApply.sol",
+      "runtimeHash": "0xcf3011ec755dc81057b5be9164034addb108a5243b54302d215a338a344a01b2",
+      "deployedBytecodeHash": "0x67f4704f949fdb41497c556a383ae9c857d940f7da3637f9296fa86b307a19b8",
+      "initcodeHash": "0x6a4fd6c8b8bec9f0d5b8dcf8ffecfeaea7f50aafff176e4d622dbaa346ce6f72",
+      "initcodeWithArgsHash": "0x6a4fd6c8b8bec9f0d5b8dcf8ffecfeaea7f50aafff176e4d622dbaa346ce6f72",
+      "address": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+      "realmSpecific": false,
+      "planStep": "G2",
+      "immutables": [
+        {
+          "name": "SELF",
+          "offsets": [
+            406
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 5457,
+        "initcode": 5496,
+        "initcodeWithArgs": 5496
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "LedgerControl": {
+      "source": "src/core/LedgerControl.sol",
+      "runtimeHash": "0xea08c9beba308e8e26f1d67fbbe6901bc7918fd77563cf58c929fa73ef99f850",
+      "deployedBytecodeHash": "0x0f501458a2448cadb79d1018f5eccf94567231665814eb55a99e280bd9d61c9d",
+      "initcodeHash": "0xd9096a61a1fd472f9587d2173fb8e0d9e05ffafcb5c6762103a9127bbed0d9e2",
+      "initcodeWithArgsHash": "0x64304c489c05b0f82c6a190a7cf8d393b7ef167192f787ffede22d543a27e69b",
+      "address": "0x5D670386cDee33e5DcBE97BC3CD19Afd6b9e6fEC",
+      "realmSpecific": false,
+      "planStep": "G2c",
+      "immutables": [
+        {
+          "name": "APPLY",
+          "offsets": [
+            2711,
+            5970
+          ]
+        },
+        {
+          "name": "APPLY_CODEHASH",
+          "offsets": [
+            4086,
+            10981
+          ]
+        },
+        {
+          "name": "INGRESS",
+          "offsets": [
+            3069,
+            5898
+          ]
+        },
+        {
+          "name": "INGRESS_CODEHASH",
+          "offsets": [
+            4144,
+            11078
+          ]
+        },
+        {
+          "name": "PREDECESSOR_LAYOUT_ID",
+          "offsets": [
+            3989,
+            11490
+          ]
+        },
+        {
+          "name": "SELF",
+          "offsets": [
+            204,
+            910,
+            2777,
+            3133,
+            4196
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 16764,
+        "initcode": 17058,
+        "initcodeWithArgs": 17154
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "LedgerCore": {
+      "source": "src/core/LedgerCore.sol",
+      "runtimeHash": "0x059f73e1514751c1a88e7c5d907d61e4e445345be3918bc3460efc5696467f8c",
+      "deployedBytecodeHash": "0xd626158584ff575da104d03c257820941a87aa6250c5419b746f7b735c47b420",
+      "initcodeHash": "0x233bad292b3fe98426e99f1e62ac2c2490967e0108a69406c8e641f79c186a54",
+      "initcodeWithArgsHash": "0x92dca8b1b90744089d509557e753646cf1d8237816aa4d2c1b7a35765aa0cfba",
+      "address": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+      "realmSpecific": false,
+      "planStep": "G13",
+      "immutables": [
+        {
+          "name": "APPLY",
+          "offsets": [
+            4908,
+            7043,
+            10394,
+            13363
+          ]
+        },
+        {
+          "name": "APPLY_CODEHASH",
+          "offsets": [
+            3337,
+            7077
+          ]
+        },
+        {
+          "name": "CONTROL",
+          "offsets": [
+            3905,
+            5997
+          ]
+        },
+        {
+          "name": "CONTROL_CODEHASH",
+          "offsets": [
+            3071,
+            6032
+          ]
+        },
+        {
+          "name": "HOT_ABI_ID",
+          "offsets": [
+            3431,
+            5291
+          ]
+        },
+        {
+          "name": "INGRESS",
+          "offsets": [
+            2348,
+            4560,
+            5221,
+            6971,
+            7604,
+            10820,
+            13425
+          ]
+        },
+        {
+          "name": "INGRESS_CODEHASH",
+          "offsets": [
+            3704,
+            7005
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 14452,
+        "initcode": 15299,
+        "initcodeWithArgs": 15427
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "LedgerReads": {
+      "source": "src/readers/LedgerReads.sol",
+      "runtimeHash": "0xaa89f1141c26017d1c695ccad179084c97ae2ec0022cb8ed93218120ae07ca2a",
+      "deployedBytecodeHash": "0xaa89f1141c26017d1c695ccad179084c97ae2ec0022cb8ed93218120ae07ca2a",
+      "initcodeHash": "0xb80723cc8b90da8587708f3b4c722b635681d5c8c30abd8674e52122c2f53e29",
+      "initcodeWithArgsHash": "0xb80723cc8b90da8587708f3b4c722b635681d5c8c30abd8674e52122c2f53e29",
+      "address": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+      "realmSpecific": false,
+      "planStep": "G3",
+      "immutables": [],
+      "sizes": {
+        "runtime": 17479,
+        "initcode": 17505,
+        "initcodeWithArgs": 17505
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "LedgerViews": {
+      "source": "src/readers/LedgerViews.sol",
+      "runtimeHash": "0x81881017ed541616fb2cf9b16a2308047ad41504e1c583b8926d572bdeea1956",
+      "deployedBytecodeHash": "0x81881017ed541616fb2cf9b16a2308047ad41504e1c583b8926d572bdeea1956",
+      "initcodeHash": "0x27fdd7bd1a161d95bf9f96f0584b13f93d2b8e818bc3407b56f21952242d3af4",
+      "initcodeWithArgsHash": "0x27fdd7bd1a161d95bf9f96f0584b13f93d2b8e818bc3407b56f21952242d3af4",
+      "address": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+      "realmSpecific": false,
+      "planStep": "G4",
+      "immutables": [],
+      "sizes": {
+        "runtime": 14857,
+        "initcode": 14883,
+        "initcodeWithArgs": 14883
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "DescriptorStore": {
+      "source": "src/types/DescriptorStore.sol",
+      "runtimeHash": "0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc",
+      "deployedBytecodeHash": "0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc",
+      "initcodeHash": "0x1363fc585b181d63c159a0ce2b1d098929fc84062718e7b7d5546e267c707666",
+      "initcodeWithArgsHash": "0x1363fc585b181d63c159a0ce2b1d098929fc84062718e7b7d5546e267c707666",
+      "address": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "realmSpecific": false,
+      "planStep": "G5",
+      "immutables": [],
+      "sizes": {
+        "runtime": 757,
+        "initcode": 783,
+        "initcodeWithArgs": 783
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "IndexReplayDecoder": {
+      "source": "src/index/IndexReplayDecoder.sol",
+      "runtimeHash": "0xb93dc2430acc01a6de4a230ed0a3f89f6b6d5e4edbf2bc0204246368f4599535",
+      "deployedBytecodeHash": "0xdace7aa35ec6b4b7f8070ed8106972a6ee9c68e67c82ec1c693005c9030129b3",
+      "initcodeHash": "0xb3e01a8a5ed68509a2c55894364b69f3cf8cdf1d82893229bf373ecd83e76521",
+      "initcodeWithArgsHash": "0xb3e01a8a5ed68509a2c55894364b69f3cf8cdf1d82893229bf373ecd83e76521",
+      "address": "0xb7257b6d99AF8c53675a99c4bF5F67ddAF8cB0e8",
+      "realmSpecific": false,
+      "planStep": "G7",
+      "immutables": [
+        {
+          "name": "LAYOUT_ID",
+          "offsets": [
+            155,
+            1519
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 5371,
+        "initcode": 5448,
+        "initcodeWithArgs": 5448
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "ReaderDirectory": {
+      "source": "src/periphery/ReaderDirectory.sol",
+      "runtimeHash": "0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f",
+      "deployedBytecodeHash": "0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f",
+      "initcodeHash": "0x4268ae3928ec9b4595b4b109584902f9787c486806b09cfd2e52c189119a45c5",
+      "initcodeWithArgsHash": "0x4268ae3928ec9b4595b4b109584902f9787c486806b09cfd2e52c189119a45c5",
+      "address": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "realmSpecific": false,
+      "planStep": "G8",
+      "immutables": [],
+      "sizes": {
+        "runtime": 1495,
+        "initcode": 1521,
+        "initcodeWithArgs": 1521
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "TypeRegistry": {
+      "source": "src/types/TypeRegistry.sol",
+      "runtimeHash": "0xa2d2a345facdb784f1d0b2c52c5092af783be47f111ffc879ab01165a640e9a6",
+      "deployedBytecodeHash": "0xcd95d3b7b5462b1395c4206229afa2559d140b6ccad0f4e1f0a8c68f64e7d819",
+      "initcodeHash": "0x59d227cba86071261e04e516ecbf9c55ec04702a497892cf0af301571be74289",
+      "initcodeWithArgsHash": "0x283341008e8d78387d60ea32b94d27c8980d2cce76bd261fd1e66c6d71a97522",
+      "address": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+      "realmSpecific": false,
+      "planStep": "G14",
+      "immutables": [
+        {
+          "name": "DESCRIPTOR_STORE",
+          "offsets": [
+            876,
+            12612
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 15451,
+        "initcode": 15773,
+        "initcodeWithArgs": 15805
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "RealmGenesis": {
+      "source": "src/control/RealmGenesis.sol",
+      "runtimeHash": "0xb68cc57e0afcf66d48f730ba4e1b1fa4e8c1c9ea581c0cc342a7cb1e8128f44d",
+      "deployedBytecodeHash": "0x89917f2cb189e10ec672c8764dd47ba0d284cc230267a667d9db6100310b5fd2",
+      "initcodeHash": "0x755aac83a972c11fbf2c173803c0546a28b3bccadda740f554f52fca37f7d3d2",
+      "initcodeWithArgsHash": "0xb94f2965a7fb154066558b0e21125aa7d3f4c10f4e4b076ab3e789fa531a034c",
+      "address": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "realmSpecific": true,
+      "planStep": "G15",
+      "immutables": [
+        {
+          "name": "CONTROLLER_INITCODE_HASH",
+          "offsets": [
+            843,
+            3516
+          ]
+        },
+        {
+          "name": "EXECUTION_PROFILE_ID",
+          "offsets": [
+            1471,
+            4217
+          ]
+        },
+        {
+          "name": "LEDGER_IMPL",
+          "offsets": [
+            889,
+            3796
+          ]
+        },
+        {
+          "name": "LEDGER_IMPL_CODEHASH",
+          "offsets": [
+            924,
+            3458
+          ]
+        },
+        {
+          "name": "LIMITS_HASH",
+          "offsets": [
+            787,
+            3614
+          ]
+        },
+        {
+          "name": "NOTICE_TYPE",
+          "offsets": [
+            1069,
+            3924
+          ]
+        },
+        {
+          "name": "OWNER",
+          "offsets": [
+            1000,
+            4146
+          ]
+        },
+        {
+          "name": "PROXY_INITCODE_HASH",
+          "offsets": [
+            3296,
+            3740
+          ]
+        },
+        {
+          "name": "READER_DIRECTORY",
+          "offsets": [
+            247,
+            1427
+          ]
+        },
+        {
+          "name": "REALM_SALT",
+          "offsets": [
+            1365,
+            4050
+          ]
+        },
+        {
+          "name": "REGISTRY_IMPL",
+          "offsets": [
+            1247,
+            3183,
+            3980
+          ]
+        },
+        {
+          "name": "REGISTRY_IMPL_CODEHASH",
+          "offsets": [
+            3217,
+            3866
+          ]
+        },
+        {
+          "name": "WRAPPER_V1",
+          "offsets": [
+            1186,
+            3670
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 5121,
+        "initcode": 5627,
+        "initcodeWithArgs": 5979
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "RealmController": {
+      "source": "src/control/RealmController.sol",
+      "runtimeHash": "0xb447462c26fc459b3195224844feee6f3fef0f4d115ca14324b56d6d03be71eb",
+      "deployedBytecodeHash": "0xb9e95350fcbceb83e5d78a887f2ad656a131d3463fd2bba26f6426670da4d88f",
+      "initcodeHash": "0x15f15955f465b96e1f2f7f809f9a83d915f53357d806bcc33b0c61535544f1df",
+      "initcodeWithArgsHash": null,
+      "address": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+      "realmSpecific": true,
+      "planStep": "G18",
+      "immutables": [
+        {
+          "name": "LEDGER",
+          "offsets": [
+            373,
+            935,
+            1169,
+            1453,
+            1537,
+            1613,
+            1767,
+            1933,
+            2557,
+            2901,
+            2993,
+            3551,
+            3754,
+            3938,
+            4084,
+            4640,
+            4843,
+            5039,
+            5185,
+            6168,
+            7269,
+            8781,
+            9628,
+            12329,
+            13966,
+            14891
+          ]
+        },
+        {
+          "name": "LEDGER_ADMIN",
+          "offsets": [
+            2677,
+            7181,
+            9051,
+            9149,
+            9766,
+            14690
+          ]
+        },
+        {
+          "name": "NOTICE_TYPE",
+          "offsets": [
+            2210,
+            4143,
+            5244,
+            11003
+          ]
+        },
+        {
+          "name": "REGISTRY",
+          "offsets": [
+            1277,
+            9715,
+            11122,
+            11411,
+            11808,
+            12145,
+            14088
+          ]
+        },
+        {
+          "name": "REGISTRY_ADMIN",
+          "offsets": [
+            2761,
+            6965,
+            9088,
+            9857,
+            11526,
+            14492
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 16160,
+        "initcode": 16836,
+        "initcodeWithArgs": null
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "PostingStore": {
+      "source": "src/index/PostingStore.sol",
+      "runtimeHash": "0x3b1268d3f0782b106f5b89c325564804f14c788466a6c2416fbc1d9b4a30b6b3",
+      "deployedBytecodeHash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4",
+      "initcodeHash": "0xfc58df2f4a3cdb903516191bc58cfec65ce8e73b1b6b3e5bf462cf4ffd5cb68a",
+      "initcodeWithArgsHash": "0x750be26d903307a154bf2049ba8050c2d8fe03ae6a84d60477faab38213839d0",
+      "address": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+      "realmSpecific": true,
+      "planStep": "G16",
+      "immutables": [
+        {
+          "name": "INITIAL_WRITER",
+          "offsets": [
+            2619,
+            3753
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            2687,
+            3582
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 5453,
+        "initcode": 5932,
+        "initcodeWithArgs": 6380
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "BitmapStore": {
+      "source": "src/index/BitmapStore.sol",
+      "runtimeHash": "0xadd3a294cc26e0dabdb6a61960fd892166eb1bc62ad4d91d697ad1e325cc2ce7",
+      "deployedBytecodeHash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33",
+      "initcodeHash": "0x523b4f353001d8608ae0a65042d43276ca0bc85eb39bd6619adf6383ec7d951c",
+      "initcodeWithArgsHash": "0xc036b86cae337062ba50437669466ec181c1e9e3ab79540853776ade130b3565",
+      "address": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+      "realmSpecific": true,
+      "planStep": "G17",
+      "immutables": [
+        {
+          "name": "FAMILY_LIVE_SCOPE",
+          "offsets": [
+            1324,
+            1669,
+            2305,
+            3497,
+            3885,
+            5349,
+            7013
+          ]
+        },
+        {
+          "name": "INITIAL_WRITER",
+          "offsets": [
+            4448,
+            6014
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            4582,
+            5843
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 7783,
+        "initcode": 8446,
+        "initcodeWithArgs": 8670
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "RealmIndex": {
+      "source": "src/index/RealmIndex.sol",
+      "runtimeHash": "0x1f737a0da358fa4e6272aae90cb1869e00095f6c16588840c23e2f32debda4e6",
+      "deployedBytecodeHash": "0x80bed77b105a991604b002ad263b9c2c504a9084c9347fa5d72c4e228ec6826c",
+      "initcodeHash": "0x7199a6d240dec0da8d467df70820337203ee93daa3fe349feeca4e0086005aee",
+      "initcodeWithArgsHash": "0x0b121ea594586b7b45f3cd95e27c6bb2c77d4d074c7ff508abbffd6e36058a5c",
+      "address": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+      "realmSpecific": true,
+      "planStep": "G19",
+      "immutables": [
+        {
+          "name": "BITMAP",
+          "offsets": [
+            4782,
+            11880,
+            12012,
+            14858
+          ]
+        },
+        {
+          "name": "DECODER",
+          "offsets": [
+            6070,
+            10942
+          ]
+        },
+        {
+          "name": "F_BACKLINK",
+          "offsets": [
+            15705,
+            16481
+          ]
+        },
+        {
+          "name": "F_BY_AUTHOR",
+          "offsets": [
+            12937,
+            16844
+          ]
+        },
+        {
+          "name": "F_BY_RECORD",
+          "offsets": [
+            7320,
+            14258,
+            14479,
+            17014,
+            17137
+          ]
+        },
+        {
+          "name": "F_BY_TYPE",
+          "offsets": [
+            12840,
+            16744
+          ]
+        },
+        {
+          "name": "F_DIGEST",
+          "offsets": [
+            10409,
+            13424
+          ]
+        },
+        {
+          "name": "F_HISTORY",
+          "offsets": [
+            15171
+          ]
+        },
+        {
+          "name": "F_LIVE_SCOPE",
+          "offsets": [
+            16196,
+            16348
+          ]
+        },
+        {
+          "name": "F_REFERENCE_POSITION",
+          "offsets": [
+            13169
+          ]
+        },
+        {
+          "name": "F_ROLE_SCOPE",
+          "offsets": [
+            15578
+          ]
+        },
+        {
+          "name": "F_SCOPE",
+          "offsets": [
+            15317
+          ]
+        },
+        {
+          "name": "F_UNIQUE_BY_TYPE",
+          "offsets": [
+            13107
+          ]
+        },
+        {
+          "name": "HOT_ABI_ID",
+          "offsets": [
+            1585,
+            2029
+          ]
+        },
+        {
+          "name": "LAYOUT_ID",
+          "offsets": [
+            1991,
+            3726
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            1870,
+            2813,
+            3950,
+            5329,
+            6341,
+            7638,
+            7965,
+            8540,
+            10301,
+            10647,
+            11039,
+            12336,
+            12647,
+            13466,
+            14395
+          ]
+        },
+        {
+          "name": "MANIFEST_HASH",
+          "offsets": [
+            2143,
+            5026
+          ]
+        },
+        {
+          "name": "POSTING",
+          "offsets": [
+            6002,
+            7393,
+            8313,
+            10529,
+            11756,
+            12745,
+            14822,
+            16674
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 18932,
+        "initcode": 28434,
+        "initcodeWithArgs": 29682
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "FilesFinalValidator": {
+      "source": "src/profiles/FilesFinalValidator.sol",
+      "runtimeHash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+      "deployedBytecodeHash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+      "initcodeHash": "0x21bd98a0c257119193aad0f8a1150faa83d6b52eca3e36efd8d125fe6d3d7c76",
+      "initcodeWithArgsHash": "0xf9d46954cf23a7c0ee01c8d19c6f0bf431fc32c89d8726c1842ecde05540c498",
+      "address": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+      "realmSpecific": false,
+      "planStep": "G12",
+      "immutables": [],
+      "sizes": {
+        "runtime": 1907,
+        "initcode": 2018,
+        "initcodeWithArgs": 2082
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "FilesRootRule": {
+      "source": "src/profiles/FilesRootRule.sol",
+      "runtimeHash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+      "deployedBytecodeHash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+      "initcodeHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+      "initcodeWithArgsHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+      "address": "0x7911a2FD9FA513219f133b8845b94cc8FdE80C13",
+      "realmSpecific": false,
+      "planStep": "G10.0",
+      "immutables": [],
+      "sizes": {
+        "runtime": 717,
+        "initcode": 743,
+        "initcodeWithArgs": 743
+      },
+      "budget": null
+    },
+    "FilesChildRule": {
+      "source": "src/profiles/FilesChildRule.sol",
+      "runtimeHash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+      "deployedBytecodeHash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+      "initcodeHash": "0xae25c8c9ffc4ae6d02e9f40885df7c08d3a83f659f3801b697d5301d73544e2a",
+      "initcodeWithArgsHash": "0xba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86",
+      "address": "0x7E6a895619ccB1Fc5475f58E35dA18591e53D9FB",
+      "realmSpecific": false,
+      "planStep": "G10.1",
+      "immutables": [],
+      "sizes": {
+        "runtime": 811,
+        "initcode": 913,
+        "initcodeWithArgs": 945
+      },
+      "budget": null
+    },
+    "FilesDirectoryRule": {
+      "source": "src/profiles/FilesDirectoryRule.sol",
+      "runtimeHash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+      "deployedBytecodeHash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+      "initcodeHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+      "initcodeWithArgsHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+      "address": "0x7E4D24600c2055b222b99BD46f5b827B5f6CA2d7",
+      "realmSpecific": false,
+      "planStep": "G10.2",
+      "immutables": [],
+      "sizes": {
+        "runtime": 779,
+        "initcode": 805,
+        "initcodeWithArgs": 805
+      },
+      "budget": null
+    },
+    "FilesNameRule": {
+      "source": "src/profiles/FilesNameRule.sol",
+      "runtimeHash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+      "deployedBytecodeHash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+      "initcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+      "initcodeWithArgsHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+      "address": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+      "realmSpecific": false,
+      "planStep": "G10.3",
+      "immutables": [],
+      "sizes": {
+        "runtime": 1683,
+        "initcode": 1709,
+        "initcodeWithArgs": 1709
+      },
+      "budget": null
+    },
+    "FilesBytesRule": {
+      "source": "src/profiles/FilesBytesRule.sol",
+      "runtimeHash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+      "deployedBytecodeHash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+      "initcodeHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+      "initcodeWithArgsHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+      "address": "0x79A96205C36aA437AF3d927eEdC76CbF91e25066",
+      "realmSpecific": false,
+      "planStep": "G10.4",
+      "immutables": [],
+      "sizes": {
+        "runtime": 571,
+        "initcode": 597,
+        "initcodeWithArgs": 597
+      },
+      "budget": null
+    },
+    "FilesContentRule": {
+      "source": "src/profiles/FilesContentRule.sol",
+      "runtimeHash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+      "deployedBytecodeHash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+      "initcodeHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+      "initcodeWithArgsHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+      "address": "0x85E6912791f367537750B2c0bCc9cC118B09a485",
+      "realmSpecific": false,
+      "planStep": "G10.5",
+      "immutables": [],
+      "sizes": {
+        "runtime": 1342,
+        "initcode": 1368,
+        "initcodeWithArgs": 1368
+      },
+      "budget": null
+    },
+    "FilesExternalContentRule": {
+      "source": "src/profiles/FilesExternalContentRule.sol",
+      "runtimeHash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+      "deployedBytecodeHash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+      "initcodeHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+      "initcodeWithArgsHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+      "address": "0x4ACc18120Be607e31314Add0b19c74aF22D3e35e",
+      "realmSpecific": false,
+      "planStep": "G10.6",
+      "immutables": [],
+      "sizes": {
+        "runtime": 2231,
+        "initcode": 2257,
+        "initcodeWithArgs": 2257
+      },
+      "budget": null
+    },
+    "DirectoryAliasRule": {
+      "source": "src/profiles/DirectoryAliasRule.sol",
+      "runtimeHash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+      "deployedBytecodeHash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+      "initcodeHash": "0x3f87e0250eeab97232dc16528c2247da6e2fea90fb3a743bb4ad8983a629ca47",
+      "initcodeWithArgsHash": "0xab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078",
+      "address": "0x36C19753102fEf320dD253002fc54E58F4afd8A7",
+      "realmSpecific": false,
+      "planStep": "G10.7",
+      "immutables": [],
+      "sizes": {
+        "runtime": 1066,
+        "initcode": 1168,
+        "initcodeWithArgs": 1200
+      },
+      "budget": null
+    },
+    "RealmNoticeRule": {
+      "source": "src/profiles/RealmNoticeRule.sol",
+      "runtimeHash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+      "deployedBytecodeHash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+      "initcodeHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+      "initcodeWithArgsHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+      "address": "0x52c37C05ef93AF26B65f93C2Ff406F010b67427b",
+      "realmSpecific": false,
+      "planStep": "G10.8",
+      "immutables": [],
+      "sizes": {
+        "runtime": 1389,
+        "initcode": 1415,
+        "initcodeWithArgs": 1415
+      },
+      "budget": null
+    },
+    "RefuseAllPolicy": {
+      "source": "src/profiles/RefuseAllPolicy.sol",
+      "runtimeHash": "0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44",
+      "deployedBytecodeHash": "0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44",
+      "initcodeHash": "0xf1cc6fddd352b389b2d50d584edb19d25b7000795cedab66a3ae29b0b30eb418",
+      "initcodeWithArgsHash": "0xf1cc6fddd352b389b2d50d584edb19d25b7000795cedab66a3ae29b0b30eb418",
+      "address": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
+      "realmSpecific": false,
+      "planStep": "G10.policy",
+      "immutables": [],
+      "sizes": {
+        "runtime": 266,
+        "initcode": 292,
+        "initcodeWithArgs": 292
+      },
+      "budget": null
+    },
+    "TransparentUpgradeableProxy": {
+      "source": "dependencies/@openzeppelin-contracts-5.6.1/proxy/transparent/TransparentUpgradeableProxy.sol",
+      "runtimeHash": "0xc4ddd8038761914d6bf91bd99ce988c014962f260dc993d6f84506d3a4b18738",
+      "deployedBytecodeHash": "0xf17d6c34eed151023a07943e793b5cc8162fbd024237cc3746499bb4bb5ce6cf",
+      "initcodeHash": "0xca5351612286ac2bd48096bf434523675b8877a83369c98716520f0cf891ad8e",
+      "initcodeWithArgsHash": null,
+      "address": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "realmSpecific": true,
+      "planStep": "G18",
+      "immutables": [
+        {
+          "name": "_admin",
+          "offsets": [
+            7
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 720,
+        "initcode": 2605,
+        "initcodeWithArgs": null
+      },
+      "budget": null
+    },
+    "ProxyAdmin": {
+      "source": "dependencies/@openzeppelin-contracts-5.6.1/proxy/transparent/ProxyAdmin.sol",
+      "runtimeHash": "0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2",
+      "deployedBytecodeHash": "0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2",
+      "initcodeHash": "0xb2563a4ddd1ef9c4209405cfbd4f62fd8335d8d87d9938db03493f8b4ed1932e",
+      "initcodeWithArgsHash": null,
+      "address": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+      "realmSpecific": true,
+      "planStep": "G18",
+      "immutables": [],
+      "sizes": {
+        "runtime": 838,
+        "initcode": 1047,
+        "initcodeWithArgs": null
+      },
+      "budget": null
+    },
+    "LensReader": {
+      "source": "src/readers/LensReader.sol",
+      "runtimeHash": "0xee651b0e033b9f3baa8eab37f051a9ae4f05a91b8ac99faa500d2bc0b0eb8e23",
+      "deployedBytecodeHash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f",
+      "initcodeHash": "0x2c00db4fc88720135901f2a60b65f6bccd07d6591e124cbcb97654f02157f6f0",
+      "initcodeWithArgsHash": "0x27cfd6c6652d1d193b5c3a18603e6e7ba82dd294b5887746cd2b4ac48c0ff7e9",
+      "address": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+      "realmSpecific": true,
+      "planStep": "R1",
+      "immutables": [
+        {
+          "name": "F_SCOPE",
+          "offsets": [
+            11743
+          ]
+        },
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            370
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            1389,
+            2078,
+            6708,
+            7349,
+            7831,
+            9378,
+            9814,
+            11345,
+            14632,
+            16315
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            426,
+            2132,
+            10175,
+            11040,
+            16281
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            2891,
+            7941,
+            14708
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 17043,
+        "initcode": 17615,
+        "initcodeWithArgs": 17711
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    },
+    "FilesPageReader": {
+      "source": "src/readers/FilesPageReader.sol",
+      "runtimeHash": "0x1569d127c575e649bb7f908e45237ff19a49892011cdbf610d2012ecddb5ac76",
+      "deployedBytecodeHash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8",
+      "initcodeHash": "0x2877556f144d3caba37145b6ee6372a7a8fe39f40afb5e85e3026a8b92c56c58",
+      "initcodeWithArgsHash": "0x582dec83374e53fa8f52d5ca3447af04fc9a9b16fa6c06699c1820c81feb8c2d",
+      "address": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+      "realmSpecific": true,
+      "planStep": "R2",
+      "immutables": [
+        {
+          "name": "CHILD_TYPE",
+          "offsets": [
+            910,
+            12261
+          ]
+        },
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            1786,
+            5490
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            1344,
+            2683,
+            5167,
+            8780,
+            10299,
+            11472,
+            12024
+          ]
+        },
+        {
+          "name": "NAME_TYPE",
+          "offsets": [
+            968,
+            11394
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            311,
+            5249,
+            10262,
+            12086
+          ]
+        },
+        {
+          "name": "ROOT_TYPE",
+          "offsets": [
+            1223,
+            12221
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1276,
+            8856
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 12676,
+        "initcode": 13246,
+        "initcodeWithArgs": 13438
+      },
+      "budget": {
+        "runtime": 19660,
+        "initcode": 36864
+      }
+    }
+  },
+  "profiles": {
+    "declarationKey": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "types": [
+      {
+        "type": "files-root/1",
+        "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+        "rule": "FilesRootRule",
+        "instance": "0x7911a2FD9FA513219f133b8845b94cc8FdE80C13",
+        "ruleCodehash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+        "ruleInitcodeHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+        "refTypes": [],
+        "shape": "0x1f129f278a96cfd6eeb5dca0a39cdf4636f53d97bcdf9a6e28eda8a6d8ce1e76",
+        "descriptor": "0x010003000102010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9e1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a6272532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca490051010066696c65732d726f6f742f316162692e656e636f64652866696c655375626a65637429207c7c20646f63756d656e743b20746865206669727374207265766973696f6e206f66206120637265617465642066696c65207375626a656374",
+        "descriptorBytes": 227,
+        "blob": "0x02d804CFb824Dc38587397645457eBC25BE859Ec",
+        "blobCodehash": "0xef8ee3876d861a4d1a1413c83ba1cbf430f191f100214c81f2df836eb884ab4d",
+        "declarationSig": "0xa23cbc23b506769b17d8581e7a412f86ec0a3124a4ee9582e1de2f11ba5df1d66cedee9d526eee9c08b7f12dab2390f581ef36ec7cee906d5968e0711423fbf11b",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "files-child/1",
+        "typeId": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+        "rule": "FilesChildRule",
+        "instance": "0x7E6a895619ccB1Fc5475f58E35dA18591e53D9FB",
+        "ruleCodehash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+        "ruleInitcodeHash": "0xba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86",
+        "refTypes": [
+          "0x0000000000000000000000000000000000000000000000000000000000000000"
+        ],
+        "shape": "0x46987c45f141e49dd5b09e5473e46a662bca134e12e0220c2bd0f1a039c7d378",
+        "descriptor": "0x010003010101010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9ab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7eba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86006b020066696c65732d6368696c642f316162692e656e636f646528706172656e745265636f72642c2066696c655375626a65637429207c7c20646f63756d656e743b20706172656e742069732066696c65732d726f6f742f31206f722066696c65732d6368696c642f31206f66207468652073616d652066696c659c155fba0c48d41d55f38f147f929a9581ded0c28be4af453c503b21c8fabb5ba47da88dc5f957d2ba8cf7a3c741d38c41ddb39c5f3f2277bcd45ddac0a209aa01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "descriptorBytes": 418,
+        "blob": "0xC52C4A57f7317733D6300118AAB7b257E4EF02fE",
+        "blobCodehash": "0x684bd6f10074d24510409cdf4945ca34d5d304ed0f89ee96152786e8c916c178",
+        "declarationSig": "0x9dd7a7f5b5d5e68fe4e24d2186720daa229faa7d99b49250f6037bdb6dc06a3b7a621f3138faf107b507250c7d03125fb2dc00ba69399d90e8bc815b4e554bb71c",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "files-directory/1",
+        "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+        "rule": "FilesDirectoryRule",
+        "instance": "0x7E4D24600c2055b222b99BD46f5b827B5f6CA2d7",
+        "ruleCodehash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+        "ruleInitcodeHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+        "refTypes": [],
+        "shape": "0xc967bf92d3aabf77392d90e0e2544dcdf014703871b29258581af75eceb74ecd",
+        "descriptor": "0x0100030001020101000000000011f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc97a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b67250050010066696c65732d6469726563746f72792f316162692e656e636f646528736565645375626a656374293b2061206469726563746f72792069732074686973207265636f72642c2073656564656420627920612063726561746564207375626a656374",
+        "descriptorBytes": 231,
+        "blob": "0x067628b1d2C89C6A39eB6E6eD5C6846318bf6989",
+        "blobCodehash": "0x320c563e6a8af6a0faf5205be0a7d563f562fa0b3c87bd2872f6572243aa4d02",
+        "declarationSig": "0xe4603ce1d4dc954c11f3857651720862e7f693762d3c20acbda464657285fd4f7af3c28172a220cac8a8b3367ebca030a77f01e2fe4ae7d598f80a2c7b1fe7161b",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "files-name/2",
+        "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+        "rule": "FilesNameRule",
+        "instance": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+        "ruleCodehash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+        "ruleInitcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+        "refTypes": [],
+        "shape": "0xc6a15a37f8ff199085cd5b8141e9106fc8e8c3f0b62e6c97b8acef59525ad98d",
+        "descriptor": "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9d73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17c2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af7460060010066696c65732d6e616d652f32726177205554462d38206e616d652c20312d3235352062797465732c2077656c6c2d666f726d65642c20627974652d65786163742c20636173652d73656e7369746976652c206e6f74202e206f72202e2e2c207e656673207265736572766564",
+        "descriptorBytes": 242,
+        "blob": "0x419DD5744ceD310b2149fa8b3b030Ee62a63bD80",
+        "blobCodehash": "0xb4bb22f3dd1df5d21b23631b778d8f78c2e229ffeebb4cc9cae44fcecdde6277",
+        "declarationSig": "0x65a138b7353245cf57fa1ec3d0b52acec316ee662289617be3e3c3032cbf66456b73627ce75a88e73302461917ffbdc7c0846961660f23a2b06adb3a933d75411c",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "files-bytes/1",
+        "typeId": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+        "rule": "FilesBytesRule",
+        "instance": "0x79A96205C36aA437AF3d927eEdC76CbF91e25066",
+        "ruleCodehash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+        "ruleInitcodeHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+        "refTypes": [],
+        "shape": "0x206302f8da7919ef7b1e1ca073c97ea91d2b675cb5cabe40c776b811e98f96e4",
+        "descriptor": "0x010003000101010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc956ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b79960120b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c710036010066696c65732d62797465732f31736861323536287061796c6f616429207c7c207061796c6f61643b207061796c6f6164206174206d6f73742038313630206279746573",
+        "descriptorBytes": 201,
+        "blob": "0xC368CF1B81d043CCA0a5517D23EE8775EC845F3C",
+        "blobCodehash": "0x9d992d1eadec422e4d6e7e6165f2697fbed1e1110496eb27ae9aed4315660f51",
+        "declarationSig": "0xe138fe02562d912d643d554bb5bfe6cf0c767d2b4ba330291fda5cc841a3b18010d34ecb0a89a8db822758d7200e712afdef347c2908cff7546b749593914a601b",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "files-content/1",
+        "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+        "rule": "FilesContentRule",
+        "instance": "0x85E6912791f367537750B2c0bCc9cC118B09a485",
+        "ruleCodehash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+        "ruleInitcodeHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+        "refTypes": [
+          "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563"
+        ],
+        "shape": "0xc175e366cf02f8ce430fda37e57e7e36fab274d8a2fa35694863db7f6282f955",
+        "descriptor": "0x010003010101010100000000000ff39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9b1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0007e030066696c65732d636f6e74656e742f31313120776f726473205b62797465735265662c2076657273696f6e2c20636172726965722c2068617368416c672c206c656e6774682c207368613235362c206d656469612c206369706865722c206e6f6e636531322c20706c61696e746578744c656e6774682c20706c61696e746578745348413235364f725a65726f5da5df68a4b3b21e0076a47d22a9c8150e02800045d3a538f5f9b91f65ed86eaecd251c8212fd76efd198f023ac0880d1f6fbb5cabfe2d4df89de38f04f965f85f0100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+        "descriptorBytes": 439,
+        "blob": "0x303e11da45b2B586f55Bfa6a34f3cC944D73370E",
+        "blobCodehash": "0xa941fa1d31a7ffac95e15606e7ee71e6aa36da3c1d1f6e633762b5336f65e952",
+        "declarationSig": "0x0362426e8348fb8336433b82416cd94a061d2d58625ba8e5d2ca652b888561d146af82bd04593c00e5c06bb5b756be7465a0fc6d9b4d36d3b43ccb606939494c1c",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "files-external/1",
+        "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+        "rule": "FilesExternalContentRule",
+        "instance": "0x4ACc18120Be607e31314Add0b19c74aF22D3e35e",
+        "ruleCodehash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+        "ruleInitcodeHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+        "refTypes": [
+          "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563"
+        ],
+        "shape": "0xcfc4222770162f699617d5f46ff9d02e8571560f41090a58cbef031ecc5ccb0d",
+        "descriptor": "0x0100030101010101000000000010f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc99bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350c6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c006f010066696c65732d65787465726e616c2f313720776f726473205b62797465735265662c2076657273696f6e20322c20636172726965722032206172207c203320697066732c2068617368416c6720312c206c656e6774682c207368613235362c206c6f6361746f724c656e6774685d207c7c204153434949206c6f6361746f72a5df68a4b3b21e0076a47d22a9c8150e02800045d3a538f5f9b91f65ed86eaecd251c8212fd76efd198f023ac0880d1f6fbb5cabfe2d4df89de38f04f965f85f0100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+        "descriptorBytes": 425,
+        "blob": "0x645749438E096fdB63489300c47C87C818EcF28a",
+        "blobCodehash": "0x8afdb4261a2158d62c5185fba21e2f7e59e3586b91e4ed3bece19691137e67e9",
+        "declarationSig": "0x5b09841e2ac5ed10637ff057913fca1a62a95d3a08fd9e1f8d9e8a891b2e62f9622adaaa6195651538b59407fa939d4498ec4a64acf2b33bfd2810e8bff463651b",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "directory-alias/1",
+        "typeId": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
+        "rule": "DirectoryAliasRule",
+        "instance": "0x36C19753102fEf320dD253002fc54E58F4afd8A7",
+        "ruleCodehash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+        "ruleInitcodeHash": "0xab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078",
+        "refTypes": [],
+        "shape": "0x53e650cb9c3ec74cc865e9058707b37f333d38bb81110185a9c81784dd5d1c2e",
+        "descriptor": "0x0100030001020101000000000011f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9c10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667ab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078005d01006469726563746f72792d616c6961732f316162692e656e636f6465287461726765744f626a65637449642c206b696e64293b206b696e64203120612066696c65732d6469726563746f72792f31207265636f72642c2032206120637265617465642066696c65207375626a656374",
+        "descriptorBytes": 244,
+        "blob": "0xcA3580e44436527E03FA157D36333DE73dD783fB",
+        "blobCodehash": "0x937b2fa309ed7eb507c177a199371921da253bef72192246c5d74358113b0b32",
+        "declarationSig": "0xf3c189090bb5903dcb43aac47d3dc53514870b0e1212589ad7b494d89af626607a4fc7ad169ba0a13764c2684210e62894bc17dd43d3ca983197fb15a52610e81b",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      },
+      {
+        "type": "realm-notice/1",
+        "typeId": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903",
+        "rule": "RealmNoticeRule",
+        "instance": "0x52c37C05ef93AF26B65f93C2Ff406F010b67427b",
+        "ruleCodehash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+        "ruleInitcodeHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+        "refTypes": [],
+        "shape": "0x718d135c8280bacb9d74cffb1ac3afe06464b935ffe2e7589a49c55c964cf591",
+        "descriptor": "0x010003000102010100000000000ef39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9cb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1bd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f005b01007265616c6d2d6e6f746963652f316162692e656e636f64652862797465733332206b696e642c2075696e74323536207265766973696f6e2c206279746573206e6f7465293b206b696e642066726f7a656e207c20737563636573736f72207c206d6967726174696f6e",
+        "descriptorBytes": 239,
+        "blob": "0xde78624d05f61E51eEDE3Df36E4037a23f2284Bc",
+        "blobCodehash": "0x0922d8d7dc34c39189c3c82b044192467c6c3e6480f7a0bcbdf4e21bbb2e42f5",
+        "declarationSig": "0xf35d1c62bebae86fd53cc94a072a1abc77bbf7f2e56d146072ab091b9dd995f83da53742341486d37da21eb9e627f2913373bc52af706202f3eea3d5be6e64391c",
+        "grade": "NATIVE",
+        "wrapperVersion": 0
+      }
+    ],
+    "acceptors": {
+      "RefuseAllPolicy": {
+        "address": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
+        "codehash": "0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44"
+      }
+    },
+    "wrappers": [],
+    "index": {
+      "generation": 1,
+      "manifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+      "families": [
+        {
+          "familyId": "0xe4f7cc7ff76622e194a3ef2a8f23d6632b91cfda1f803fa443e9e04e43baa270",
+          "kind": 1,
+          "universe": 1,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 2,
+          "recipe": "0x620560dcb2daef0593f4620f205e0b64a1cd40b7cc26403e5433446b6e2e4889",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0xd674025fa1091f86834d22a642451cc45057f55537c4b4e65ee1139c390d1b8a",
+          "kind": 4,
+          "universe": 2,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 2,
+          "recipe": "0xc990cf37e47815b1592813f335963f9d3639a12f920a01c5c28cdd160be06c18",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0xf564f360d1f5b65aacc3b70b5aa8bfd24bfcf28df404557ac647ae8d94954eb4",
+          "kind": 5,
+          "universe": 4,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 3,
+          "recipe": "0xb00d103342bac00e780ffefca0a39b6331afbe2f9fad81213724828fdba7663e",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0xde538e29eab73663949ae6239c90dea8948cf7297cf44d0c79621ef8bf06e8ab",
+          "kind": 8,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x069b6904dc14a3268cdb31165fa41efe3f7424594045ecbb994db539d403603f",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0x1fd035d41e55e585706a270bca0fa36d150e1cc27de3a1b40654d1835f64287e",
+          "kind": 10,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x086e77f7429636d6799ac58780bbf7333f65ab0a3e6ec8eba205acf618bfcd04",
+          "fromAdmission": "1",
+          "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+          "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+        },
+        {
+          "familyId": "0x29d3bea0a01e3e26f8a6ae33a62bc05c74281c8a392b910123320f4dfa13a897",
+          "kind": 11,
+          "universe": 1,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x8ce4944707b924a08894cd50beccc7d5c9375c5950a6757e616f12b08d64464b",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0x03b682942778e8b9a07a8448019ba6862fac962d963305b6b7b613a80d29f2c4",
+          "kind": 12,
+          "universe": 5,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 2,
+          "recipe": "0xc063e82b64226b9fe6666f814eebf93c4caa198dd583a57905ec2a88f1e78e17",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0x77b478e9ae9182fa4afb6af49a4b8b55c121d339d14f0df963ed8eb50225beca",
+          "kind": 13,
+          "universe": 1,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x1631a66eb33bc5baf84d693be8d366018694427c9fccc13fa03477179257bbc2",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0xef3758cffd687b1665b9ce936cfd31ff25a28a18a4be78504e93a88c8e996bb7",
+          "kind": 14,
+          "universe": 1,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x5eeb7cf0dd3a7b93f5ea5696e12056390083dfc7c2e244b7411503ce8f374d78",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0x9f7b888d291c8c4c0d464b600e73c3c8f253b30195182648ead7c4c60c25b57d",
+          "kind": 15,
+          "universe": 5,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0xf70730a8c88af87ab6033a6fefe7a341e89c670f597fcbc86238cf43bdee7d8e",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0xe84f1b109238a09c1b70a887b65cc922657c600d1e62c2925e843c8c3e189353",
+          "kind": 16,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x72487e74252edcf900f83e8914d64acbc54f8916790b01732f6d16b0b5d89e5d",
+          "fromAdmission": "1",
+          "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+          "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+        },
+        {
+          "familyId": "0x04369382b4c38d701e16b5522fcf32484a616e6cfe7c310ee73c02c17813b9c8",
+          "kind": 17,
+          "universe": 3,
+          "shape": 2,
+          "mandatory": false,
+          "liveSemantics": 2,
+          "recipe": "0xa9cc5767a62556cc143fb409a2d65609a92db50518b6886ef77a0f6a54338156",
+          "fromAdmission": "18446744073709551615",
+          "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+          "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+        },
+        {
+          "familyId": "0x8433e20c283016a699d95d0a23d083dca2e2e5de9d0718f1de52e6ab42b46700",
+          "kind": 18,
+          "universe": 3,
+          "shape": 2,
+          "mandatory": true,
+          "liveSemantics": 2,
+          "recipe": "0xe38f9e856587c24e3f3ccca8e2d8eb34496e6aa2f5f8b8e2982778c00d9ab5fc",
+          "fromAdmission": "1",
+          "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+          "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+        }
+      ],
+      "units": [
+        {
+          "foldHook": "0x0000000000000000000000000000000000000000",
+          "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "finalHook": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+          "finalCodehash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+          "familyIds": [],
+          "purposeFilter": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+          "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+          "identity": "0xa89c6584560250f4b64dc0d9db67fa27411f198aed2c229b7af78b254adc2e04"
+        }
+      ],
+      "digestSpecs": [
+        {
+          "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+          "wordIndex": 5,
+          "algorithm": 1
+        },
+        {
+          "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+          "wordIndex": 5,
+          "algorithm": 1
+        }
+      ],
+      "workModel": {
+        "formulaVersion": 1,
+        "freshPerPublication": 2,
+        "rwPerPublication": 10,
+        "freshPerPublishFresh": 10,
+        "rwPerPublish": 50,
+        "freshPerBindFresh": 30,
+        "rwPerBind": 40,
+        "freshPerRef": 10,
+        "freshPerDigestSpec": 10,
+        "computeBase": 60000,
+        "computePerAction": 25000,
+        "computePerHookEffect": 60000,
+        "finalComputeBase": 60000,
+        "finalComputePerBind": 120000
+      },
+      "stores": {
+        "posting": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "bitmap": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022"
+      }
+    },
+    "limits": {
+      "maxActions": 64,
+      "maxBody": 8192,
+      "maxRefs": 8,
+      "maxReadSetPrincipals": 64,
+      "maxReadSetPositions": 4,
+      "maxWitness": 4096,
+      "maxTransitionBlocks": 7200,
+      "inlineWordMax": 256,
+      "witnessRetention": 1,
+      "maxBindsPerPublication": 64,
+      "maxBodyBytesPerPublication": 16384,
+      "maxFreshSlotsPerPublication": 600,
+      "maxReadIds": 64,
+      "maxReadCount": 256,
+      "floorFreshGas": 22100,
+      "floorRewriteGas": 5000,
+      "kernelTail": 20000
+    },
+    "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+    "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+    "hotAbiIdPreimage": "efs2/ledger-hot/1",
+    "readers": {
+      "lens": {
+        "address": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+        "kind": "0x75cd7c9277fd0eefc44867edc4a3e8b3ed3bd2fa85711c9ec7602db542adaeef",
+        "kindLabel": "efs2/reader/lens/1",
+        "runtimeCodehash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f"
+      },
+      "filesPage": {
+        "address": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+        "kind": "0x3fa6dca5d3eeb67bd6e6db3a6dc96459ec38dd26e082cb43f904a5bffb05f456",
+        "kindLabel": "efs2/reader/files-page/1",
+        "runtimeCodehash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8"
+      },
+      "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "facets": {
+        "ledgerReads": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+        "ledgerViews": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E"
+      }
+    },
+    "statusVocabularyId": "0x2c1d804a59f88f7d13cc3d939d934bd20956054fba1648021eebb083ffc39f1a",
+    "storeAbiIds": {
+      "posting": "0xfed9d4d5a9455b0882e40c80705e158f74494411ed0759003073157f822e512f",
+      "bitmap": "0x6d0a095e1ee5bd22fdfc5eef4536390361be82cf75808562ee120187f4c7bcd5"
+    },
+    "indexProfiles": {
+      "physical": "0x8e2af679072bc2d7d70e796e42d55bc8f6c09c4272e767fa5583ea2f90fd8122",
+      "callback": "0xef8340e852c2d57b9ddf03de57a4769de3cdb639f913d7aac8b49f7109c62637"
+    },
+    "crossCheck": {
+      "ran": true,
+      "command": "forge script script/Genesis.s.sol --sig \"profile(address)\" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --json",
+      "equal": [
+        "instances",
+        "ruleInitcodeHashes",
+        "descriptors",
+        "typeIds",
+        "refuseAll",
+        "validator",
+        "validatorIdentity"
+      ]
+    }
+  },
+  "consumer": {
+    "pragmaFloor": "^0.8.27",
+    "tested": [
+      {
+        "solc": "0.8.27",
+        "viaIR": false,
+        "profile": "closure"
+      },
+      {
+        "solc": "0.8.37+commit.f401782d",
+        "viaIR": true,
+        "evm": "prague",
+        "profile": "default"
+      }
+    ],
+    "remapping": "@efs/contracts-v2/=src/"
+  },
+  "privilegedRoles": {
+    "controllerOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "proxyAdminsOwner": "the Realm's RealmController",
+    "steward": null,
+    "note": "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)"
+  },
+  "errors": {
+    "path": "release/errors.json",
+    "sha256": "0xa1f4ce9770ef7a5a33cb5ce297a08d140d1eb5c414a61a037bc55541b4e4a959",
+    "count": 104
+  },
+  "abi": {
+    "interfaces": "test/snapshots/abi/",
+    "units": "artifacts/"
+  },
+  "vectors": {
+    "vectors/layout.json": "0x71a1a342969c39880445853bc544648b7e0fc35adf2b5cd0cab59c0aecf6579c",
+    "test/vectors/ids.json": "0xe6cc8c22b122da4efb06b2ec91c1b85fcfde5888e0a29416769761fd2526ef82"
+  },
+  "dependencyRoot": null,
+  "deployPlan": {
+    "path": "deploy/plan.json",
+    "genesis": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+    "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C"
+  }
+}

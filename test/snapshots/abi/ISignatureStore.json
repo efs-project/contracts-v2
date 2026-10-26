@@ -1,0 +1,56 @@
+{
+  "name": "ISignatureStore",
+  "source": "src/interfaces/internal/ISignatureStore.sol",
+  "closure": false,
+  "methodIdentifiers": {
+    "0x2de98f8f": "get(address,uint64)",
+    "0xc48c2d03": "put(uint64,bytes)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "get",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "put",
+      "inputs": [
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "witness",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    }
+  ]
+}

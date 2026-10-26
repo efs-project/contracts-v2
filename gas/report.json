@@ -1,0 +1,1557 @@
+{
+  "schema": "efs-gas-report/1",
+  "measurement": {
+    "commit": "66b8f8090cf801359b104cbb334318af413e8dfd",
+    "dirtyFiles": 10,
+    "date": "2026-10-21T00:25:21.091Z",
+    "foundry": "forge Version: 1.8.3"
+  },
+  "method": {
+    "suite": "test/integration/FilesRecipes.t.sol",
+    "prague": "FOUNDRY_PROFILE=default (evm prague, the release bytes)",
+    "amsterdam": "FOUNDRY_PROFILE=amsterdam FOUNDRY_OUT=out/amsterdam FOUNDRY_CACHE_PATH=cache/amsterdam (solc experimental amsterdam target; never release bytes)",
+    "gas": "gasleft() delta around ILedger.execute inside the test (excludes the 21,000 intrinsic and calldata cost)",
+    "frameGas": "vm.lastFrameGas().gasTotalUsed of the execute call frame",
+    "frameStateGas": "vm.lastFrameGas().gasStateUsed (EIP-8037 state gas; absent when 0, i.e. always under prague)"
+  },
+  "rows": [
+    {
+      "row": "Root seed (CREATE + PUBLISH files-directory/1), first write of the principal",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_root_seed()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      },
+      "designEstimate": null
+    },
+    {
+      "row": "Native 1-leaf PUBLISH, steady",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_child_parents_through_the_kernel()",
+        "label": "recipe publish directory"
+      },
+      "conditions": "files-directory/1, 32-byte body (the design row is 41 B / 2 words); the author has published before",
+      "prague": {
+        "gas": 578173,
+        "frameGas": 574428
+      },
+      "amsterdam": {
+        "gas": 1769999,
+        "frameGas": 493294,
+        "frameStateGas": 1272960
+      },
+      "designEstimate": {
+        "prague": "≈ 0.50M",
+        "amsterdam": "≈ 1.66M"
+      }
+    },
+    {
+      "row": "M1 create folder (CREATE, PUBLISH dir, PUBLISH name, BIND FOLDER), native",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe create folder"
+      },
+      "conditions": "first placement in the root folder (a fresh scope, not steady)",
+      "prague": {
+        "gas": 1391870,
+        "frameGas": 1386450
+      },
+      "amsterdam": {
+        "gas": 4864870,
+        "frameGas": 1040570,
+        "frameStateGas": 3818880
+      },
+      "designEstimate": {
+        "prague": "≈ 1.2M",
+        "amsterdam": "≈ 4.0M"
+      }
+    },
+    {
+      "row": "M1 create file (5 leaves), native, no guard",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe create file"
+      },
+      "conditions": "first placement in a fresh folder; 18-byte inline document",
+      "prague": {
+        "gas": 1671175,
+        "frameGas": 1665172
+      },
+      "amsterdam": {
+        "gas": 5855301,
+        "frameGas": 1247058,
+        "frameStateGas": 4602240
+      },
+      "designEstimate": {
+        "prague": "≈ 1.5M",
+        "amsterdam": "≈ 5.4M"
+      }
+    },
+    {
+      "row": "Edit (PUBLISH child + BIND HEAD rebind)",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe edit"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 890616,
+        "frameGas": 886280
+      },
+      "amsterdam": {
+        "gas": 2801302,
+        "frameGas": 740646,
+        "frameStateGas": 2056320
+      },
+      "designEstimate": {
+        "prague": "≈ 0.76M",
+        "amsterdam": "≈ 2.45M"
+      }
+    },
+    {
+      "row": "Rename / move (PUBLISH name + UNBIND + BIND), native",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe rename + move"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 1080580,
+        "frameGas": 1075691
+      },
+      "amsterdam": {
+        "gas": 3379034,
+        "frameGas": 926145,
+        "frameStateGas": 2448000
+      },
+      "designEstimate": {
+        "prague": "≈ 1.0M",
+        "amsterdam": "≈ 3.2M"
+      }
+    },
+    {
+      "row": "Remove (UNBIND; target word kept, no clear)",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe remove"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 446027,
+        "frameGas": 442264
+      },
+      "amsterdam": {
+        "gas": 1198054,
+        "frameGas": 410930,
+        "frameStateGas": 783360
+      },
+      "designEstimate": {
+        "prague": "≈ 0.38M",
+        "amsterdam": "≈ 1.07M"
+      }
+    },
+    {
+      "row": "Restore (BIND to a masked key, same target)",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe restore"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 487410,
+        "frameGas": 483644
+      },
+      "amsterdam": {
+        "gas": 1253982,
+        "frameGas": 466856,
+        "frameStateGas": 783360
+      },
+      "designEstimate": {
+        "prague": "≈ 0.40M",
+        "amsterdam": "≈ 1.18M"
+      }
+    },
+    {
+      "row": "RELEASE from mask, native",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_mask_then_release_then_restore_a_placement()",
+        "label": "recipe release a removed placement"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 409605,
+        "frameGas": 405865
+      },
+      "amsterdam": {
+        "gas": 1073745,
+        "frameGas": 384565,
+        "frameStateGas": 685440
+      },
+      "designEstimate": {
+        "prague": "≈ 0.38M",
+        "amsterdam": "≈ 1.07M"
+      }
+    },
+    {
+      "row": "RELEASE from BOUND, native (not a §14 row)",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe release"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 429192,
+        "frameGas": 425423
+      },
+      "amsterdam": {
+        "gas": 1100532,
+        "frameGas": 411323,
+        "frameStateGas": 685440
+      },
+      "designEstimate": null
+    },
+    {
+      "row": "Restore a released placement (BIND from RELEASED; §14 'Move-back' analog)",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_mask_then_release_then_restore_a_placement()",
+        "label": "recipe restore a released placement"
+      },
+      "conditions": "same target, not a different old target",
+      "prague": {
+        "gas": 502288,
+        "frameGas": 498545
+      },
+      "amsterdam": {
+        "gas": 1349535,
+        "frameGas": 464511,
+        "frameStateGas": 881280
+      },
+      "designEstimate": {
+        "prague": "≈ 0.41M",
+        "amsterdam": "≈ 1.2M"
+      }
+    },
+    {
+      "row": "WITHDRAW, native",
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_bind_before_its_parent_and_name_then_a_withdrawn_parent_stays_valid()",
+        "label": "recipe withdraw the directory occurrence"
+      },
+      "conditions": "as the suite runs it",
+      "prague": {
+        "gas": 457765,
+        "frameGas": 454049
+      },
+      "amsterdam": {
+        "gas": 1297423,
+        "frameGas": 412415,
+        "frameStateGas": 881280
+      },
+      "designEstimate": {
+        "prague": "≈ 0.40M",
+        "amsterdam": "≈ 1.1M"
+      }
+    }
+  ],
+  "supplementary": [
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_bind_before_its_parent_and_name_then_a_withdrawn_parent_stays_valid()",
+        "label": "recipe bind before its parent and name publish"
+      },
+      "prague": {
+        "gas": 1487795,
+        "frameGas": 1481815
+      },
+      "amsterdam": {
+        "gas": 5224755,
+        "frameGas": 1106135,
+        "frameStateGas": 4112640
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_bind_before_its_parent_and_name_then_a_withdrawn_parent_stays_valid()",
+        "label": "recipe place under a withdrawn directory"
+      },
+      "prague": {
+        "gas": 977503,
+        "frameGas": 973194
+      },
+      "amsterdam": {
+        "gas": 3239823,
+        "frameGas": 787514,
+        "frameStateGas": 2448000
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_bind_before_its_parent_and_name_then_a_withdrawn_parent_stays_valid()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_child_parents_through_the_kernel()",
+        "label": "recipe create + root (no binds)"
+      },
+      "prague": {
+        "gas": 702614,
+        "frameGas": 698311
+      },
+      "amsterdam": {
+        "gas": 2312840,
+        "frameGas": 545977,
+        "frameStateGas": 1762560
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_child_parents_through_the_kernel()",
+        "label": "recipe publish grandchild"
+      },
+      "prague": {
+        "gas": 668963,
+        "frameGas": 665253
+      },
+      "amsterdam": {
+        "gas": 2124649,
+        "frameGas": 554219,
+        "frameStateGas": 1566720
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_child_parents_through_the_kernel()",
+        "label": "recipe publish large child"
+      },
+      "prague": {
+        "gas": 1348927,
+        "frameGas": 1342727
+      },
+      "amsterdam": {
+        "gas": 2677099,
+        "frameGas": 1202093,
+        "frameStateGas": 1468800
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_child_parents_through_the_kernel()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_folder_bind_without_a_name_record_lands_nothing()",
+        "label": "recipe create + FOLDER bind before its name"
+      },
+      "prague": {
+        "gas": 1131047,
+        "frameGas": 1126181
+      },
+      "amsterdam": {
+        "gas": 3973541,
+        "frameGas": 835235,
+        "frameStateGas": 3133440
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_folder_bind_without_a_name_record_lands_nothing()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_inline_and_external_content_found_by_sha256()",
+        "label": "recipe inline bytes + content + sentinel + external"
+      },
+      "prague": {
+        "gas": 1861967,
+        "frameGas": 1856401
+      },
+      "amsterdam": {
+        "gas": 6639057,
+        "frameGas": 1345811,
+        "frameStateGas": 5287680
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_inline_and_external_content_found_by_sha256()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_mask_then_release_then_restore_a_placement()",
+        "label": "recipe create + place"
+      },
+      "prague": {
+        "gas": 1129598,
+        "frameGas": 1124743
+      },
+      "amsterdam": {
+        "gas": 3972092,
+        "frameGas": 833797,
+        "frameStateGas": 3133440
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_mask_then_release_then_restore_a_placement()",
+        "label": "recipe remove"
+      },
+      "prague": {
+        "gas": 443859,
+        "frameGas": 440121
+      },
+      "amsterdam": {
+        "gas": 1195885,
+        "frameGas": 408787,
+        "frameStateGas": 783360
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_mask_then_release_then_restore_a_placement()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_placement_laws_through_the_kernel()",
+        "label": "recipe create + name + place"
+      },
+      "prague": {
+        "gas": 1128882,
+        "frameGas": 1124027
+      },
+      "amsterdam": {
+        "gas": 3971364,
+        "frameGas": 833069,
+        "frameStateGas": 3133440
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_placement_laws_through_the_kernel()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_realm_notice_frozen_by_the_controller_principal()",
+        "label": "recipe realm-notice/1 frozen"
+      },
+      "prague": {
+        "gas": 635091,
+        "frameGas": 631333
+      },
+      "amsterdam": {
+        "gas": 2069177,
+        "frameGas": 498699,
+        "frameStateGas": 1566720
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_realm_notice_frozen_by_the_controller_principal()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_recipes_folder_file_edit_move_remove_restore_release()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_refuse_all_sunsets_a_type_with_the_nonce_intact()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_refused_placement_rolls_back_the_whole_batch()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_release_of_a_nonempty_directory_placement_keeps_its_children()",
+        "label": "recipe a folder at two names with a file inside"
+      },
+      "prague": {
+        "gas": 2655166,
+        "frameGas": 2646927
+      },
+      "amsterdam": {
+        "gas": 9559186,
+        "frameGas": 1913187,
+        "frameStateGas": 7637760
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_release_of_a_nonempty_directory_placement_keeps_its_children()",
+        "label": "recipe release one placement of a non-empty folder"
+      },
+      "prague": {
+        "gas": 447968,
+        "frameGas": 444267
+      },
+      "amsterdam": {
+        "gas": 1199994,
+        "frameGas": 412933,
+        "frameStateGas": 783360
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_release_of_a_nonempty_directory_placement_keeps_its_children()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_stale_cas_is_refused_whole()",
+        "label": "recipe create file without placement"
+      },
+      "prague": {
+        "gas": 1111953,
+        "frameGas": 1107091
+      },
+      "amsterdam": {
+        "gas": 3954471,
+        "frameGas": 816169,
+        "frameStateGas": 3133440
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_stale_cas_is_refused_whole()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    },
+    {
+      "source": {
+        "suite": "test/integration/FilesRecipes.t.sol",
+        "test": "test_type_ids_are_identical_across_realms_and_chains()",
+        "label": "recipe root seed (CREATE + PUBLISH directory)"
+      },
+      "prague": {
+        "gas": 769321,
+        "frameGas": 764890
+      },
+      "amsterdam": {
+        "gas": 2710161,
+        "frameGas": 551490,
+        "frameStateGas": 2154240
+      }
+    }
+  ],
+  "reads": [
+    {
+      "row": "Read: FilesPageReader.listDirectory, the seeded folder docs/ (one page, limit 32, one principal, unbound basis)",
+      "source": {
+        "fixture": "release/.fixture.json reads",
+        "to": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+        "function": "listDirectory"
+      },
+      "prague": {
+        "estimateGas": 291945,
+        "calldataBytes": 548,
+        "returndataBytes": 1088,
+        "rpcCalls": 1
+      },
+      "note": "eth_estimateGas of a transaction to the view (includes the 21,000 intrinsic and calldata cost); one eth_call serves the read"
+    },
+    {
+      "row": "Read: LedgerReads.record of the seeded file's files-root/1 record",
+      "source": {
+        "fixture": "release/.fixture.json reads",
+        "to": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+        "function": "record"
+      },
+      "prague": {
+        "estimateGas": 87849,
+        "calldataBytes": 68,
+        "returndataBytes": 544,
+        "rpcCalls": 1
+      },
+      "note": "eth_estimateGas of a transaction to the view (includes the 21,000 intrinsic and calldata cost); one eth_call serves the read"
+    },
+    {
+      "row": "Read: 1,000-entry filtered folder through FilesPageReader.listDirectory (cold 30M)",
+      "source": {
+        "suite": "test/readers/LargeDirectory.t.sol",
+        "test": "test_large_directory_cold_at_a_30M_call()"
+      },
+      "prague": {
+        "calls": 6,
+        "rows": 1000,
+        "maxGasPerPage": 30013031,
+        "totalGas": 157088027,
+        "maxReturndataBytesPerPage": 74720,
+        "totalReturndataBytes": 389664,
+        "pages": [
+          {
+            "page": 1,
+            "rows": 191,
+            "scanStatus": 3,
+            "gas": 29356031,
+            "returndataBytes": 74336
+          },
+          {
+            "page": 2,
+            "rows": 190,
+            "scanStatus": 3,
+            "gas": 29495461,
+            "returndataBytes": 73952
+          },
+          {
+            "page": 3,
+            "rows": 189,
+            "scanStatus": 3,
+            "gas": 29617163,
+            "returndataBytes": 73568
+          },
+          {
+            "page": 4,
+            "rows": 188,
+            "scanStatus": 3,
+            "gas": 29743333,
+            "returndataBytes": 73184
+          },
+          {
+            "page": 5,
+            "rows": 192,
+            "scanStatus": 3,
+            "gas": 30013031,
+            "returndataBytes": 74720
+          },
+          {
+            "page": 6,
+            "rows": 50,
+            "scanStatus": 1,
+            "gas": 8863008,
+            "returndataBytes": 19904
+          }
+        ]
+      }
+    },
+    {
+      "row": "Read: 1,000-entry filtered folder through FilesPageReader.listDirectory (limit 100)",
+      "source": {
+        "suite": "test/readers/LargeDirectory.t.sol",
+        "test": "test_large_directory_in_pages_of_100_rows()"
+      },
+      "prague": {
+        "calls": 11,
+        "rows": 1000,
+        "maxGasPerPage": 15254129,
+        "totalGas": 151757810,
+        "maxReturndataBytesPerPage": 39392,
+        "totalReturndataBytes": 394624,
+        "pages": [
+          {
+            "page": 1,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 14820767,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 2,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 14868257,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 3,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 14926401,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 4,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 14961743,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 5,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 15019910,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 6,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 15055484,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 7,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 15102354,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 8,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 15160503,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 9,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 15196095,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 10,
+            "rows": 100,
+            "scanStatus": 2,
+            "gas": 15254129,
+            "returndataBytes": 39392
+          },
+          {
+            "page": 11,
+            "rows": 0,
+            "scanStatus": 1,
+            "gas": 1392167,
+            "returndataBytes": 704
+          }
+        ]
+      }
+    },
+    {
+      "row": "Read: 1,000-entry filtered folder through FilesPageReader.listDirectory (warm 30M)",
+      "source": {
+        "suite": "test/readers/LargeDirectory.t.sol",
+        "test": "test_large_directory_warm_at_a_30M_call()"
+      },
+      "prague": {
+        "calls": 6,
+        "rows": 1000,
+        "maxGasPerPage": 30007204,
+        "totalGas": 157054281,
+        "maxReturndataBytesPerPage": 74720,
+        "totalReturndataBytes": 389664,
+        "pages": [
+          {
+            "page": 1,
+            "rows": 191,
+            "scanStatus": 3,
+            "gas": 29350212,
+            "returndataBytes": 74336
+          },
+          {
+            "page": 2,
+            "rows": 190,
+            "scanStatus": 3,
+            "gas": 29489650,
+            "returndataBytes": 73952
+          },
+          {
+            "page": 3,
+            "rows": 189,
+            "scanStatus": 3,
+            "gas": 29611360,
+            "returndataBytes": 73568
+          },
+          {
+            "page": 4,
+            "rows": 188,
+            "scanStatus": 3,
+            "gas": 29737538,
+            "returndataBytes": 73184
+          },
+          {
+            "page": 5,
+            "rows": 192,
+            "scanStatus": 3,
+            "gas": 30007204,
+            "returndataBytes": 74720
+          },
+          {
+            "page": 6,
+            "rows": 50,
+            "scanStatus": 1,
+            "gas": 8858317,
+            "returndataBytes": 19904
+          }
+        ]
+      }
+    },
+    {
+      "row": "Read: 1,000-entry filtered folder through FilesPageReader.listDirectory (warm 50M)",
+      "source": {
+        "suite": "test/readers/LargeDirectory.t.sol",
+        "test": "test_large_directory_warm_at_a_50M_call()"
+      },
+      "prague": {
+        "calls": 4,
+        "rows": 1000,
+        "maxGasPerPage": 51000802,
+        "totalGas": 161971925,
+        "maxReturndataBytesPerPage": 121952,
+        "totalReturndataBytes": 387680,
+        "pages": [
+          {
+            "page": 1,
+            "rows": 312,
+            "scanStatus": 3,
+            "gas": 50119685,
+            "returndataBytes": 120800
+          },
+          {
+            "page": 2,
+            "rows": 313,
+            "scanStatus": 3,
+            "gas": 50474194,
+            "returndataBytes": 121184
+          },
+          {
+            "page": 3,
+            "rows": 315,
+            "scanStatus": 3,
+            "gas": 51000802,
+            "returndataBytes": 121952
+          },
+          {
+            "page": 4,
+            "rows": 60,
+            "scanStatus": 1,
+            "gas": 10377244,
+            "returndataBytes": 23744
+          }
+        ]
+      }
+    }
+  ],
+  "fixtureReceipts": {
+    "hardfork": "prague",
+    "chainId": 31337,
+    "startedAt": "2026-10-21T00:24:44.987Z",
+    "rows": [
+      {
+        "row": "Genesis code deposit (every CREATE2 of G1–G19 + RealmGenesis.run)",
+        "gasUsed": 43836683,
+        "transactions": 26
+      },
+      {
+        "row": "Descriptor blobs (G11, nine DescriptorStore.put)",
+        "gasUsed": 1227713,
+        "transactions": 9
+      },
+      {
+        "row": "Readers (R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list)",
+        "gasUsed": 6904430,
+        "transactions": 4
+      },
+      {
+        "row": "Activation (genesis, G20)",
+        "gasUsed": 4190378,
+        "design": {
+          "prague": "≈ 1.1–1.9M",
+          "amsterdam": "≈ 3.5–4.3M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.0)",
+        "gasUsed": 258642,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.1)",
+        "gasUsed": 248689,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.2)",
+        "gasUsed": 241578,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.3)",
+        "gasUsed": 241735,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.4)",
+        "gasUsed": 241032,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.5)",
+        "gasUsed": 269247,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.6)",
+        "gasUsed": 269057,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.7)",
+        "gasUsed": 241743,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Described registration, NATIVE (G21.8)",
+        "gasUsed": 241711,
+        "design": {
+          "prague": "≈ 0.30M",
+          "amsterdam": "≈ 1.55M"
+        }
+      },
+      {
+        "row": "Seed seed root (CREATE + PUBLISH files-directory/1)",
+        "gasUsed": 764290
+      },
+      {
+        "row": "Seed seed folder docs/ (CREATE, PUBLISH directory, PUBLISH name, BIND FOLDER)",
+        "gasUsed": 1385827
+      },
+      {
+        "row": "Seed seed file docs/readme.txt (CREATE, PUBLISH root, PUBLISH name, BIND HEAD, BIND FOLDER)",
+        "gasUsed": 1664557
+      }
+    ],
+    "journal": [
+      {
+        "id": "F0.fund",
+        "label": "fund the factory deployer",
+        "txHash": "0x1830051f0c7350759cca1c95276d6919fcc6144ea70a45d1e72eea3dc7784c26",
+        "blockNumber": 1,
+        "blockHash": "0xded2517ec920fd51affb95469bff2c13db9dafcc949bed660c012d92eb901f65",
+        "gasUsed": 21000
+      },
+      {
+        "id": "F0",
+        "label": "factory presigned tx",
+        "txHash": "0xeddf9e61fb9d8f5111840daef55e5fde0041f5702856532cdbb5a02998033d26",
+        "blockNumber": 2,
+        "blockHash": "0x61695f252fbf97bf230448ddec3252ea680db8029a54f077e1f648b2f3058167",
+        "gasUsed": 68137
+      },
+      {
+        "id": "G1",
+        "label": "LedgerIngress",
+        "txHash": "0x724f203ca6e7dd77be4fe16f469727af48749295adfbc058e91ddb5d456183cc",
+        "blockNumber": 3,
+        "blockHash": "0x0eaa1db7d89d5817993504138db764af59b7126375f2cc2875d48768510d0b49",
+        "gasUsed": 4296612
+      },
+      {
+        "id": "G2",
+        "label": "LedgerApply",
+        "txHash": "0x6a73ff4d665bd711ba959fc499bec60d667b7ceb8c1568f8270c437e0f72a5b4",
+        "blockNumber": 4,
+        "blockHash": "0x017b0ac84c2c2675df3aa923a7e5ec20d2fc324260de84264e8bf5690687d32e",
+        "gasUsed": 1234970
+      },
+      {
+        "id": "G2c",
+        "label": "LedgerControl",
+        "txHash": "0x6e6cbcc1e56a6dfb560ee8d2202355f263ecac3f300ccd04b34c3b2cbc173410",
+        "blockNumber": 5,
+        "blockHash": "0x220afef2e30d4780829a223cfcfc51d67eadeed0db06c78665835d3ef3c3e1d6",
+        "gasUsed": 3689990
+      },
+      {
+        "id": "G3",
+        "label": "LedgerReads",
+        "txHash": "0x9c7d3f81af7fa53a4ffd8f1c3005a39064552f1fda6885b642c43ac9477c7ed9",
+        "blockNumber": 6,
+        "blockHash": "0x818a8de1286aaa816afcc1b3741a1a2e5f95610c480ee8d54e64ed3451798ca9",
+        "gasUsed": 3840114
+      },
+      {
+        "id": "G4",
+        "label": "LedgerViews",
+        "txHash": "0x47b78582a6db300477df18ccac107667bc252c8d7bdada206b39cc25cdee3afc",
+        "blockNumber": 7,
+        "blockHash": "0xc97402f57f141221ffa1ab2a8b0cd386d19d263197afc0b448ec6a26b0487b58",
+        "gasUsed": 3272229
+      },
+      {
+        "id": "G5",
+        "label": "DescriptorStore",
+        "txHash": "0xb170e63838b7d66895649d5ebdff83ab6be06f769f1205cc35b9bb498dc5857b",
+        "blockNumber": 8,
+        "blockHash": "0x1e51e188f1aeb8548bcbfc02b3e2e5407f34d483bddae0856a7aeac06bc9090a",
+        "gasUsed": 217390
+      },
+      {
+        "id": "G7",
+        "label": "IndexReplayDecoder",
+        "txHash": "0x6087551754afd4d58ba6d3e67a22de7d264755e4784f1bdd99b2e65eab27b6cd",
+        "blockNumber": 9,
+        "blockHash": "0x5c1f64241bc1ab25fd51c89587d9f7499388d40dc05b218a5e29da5eb02d5d11",
+        "gasUsed": 1216816
+      },
+      {
+        "id": "G8",
+        "label": "ReaderDirectory",
+        "txHash": "0x7291b62cb7ae944b9ff60be2e4f332d0020cca3b64376879ebecdc257733624a",
+        "blockNumber": 10,
+        "blockHash": "0x472581a11c21c89b488c73bfdf4acdef4c0926005b723541fe5b2f374f569c48",
+        "gasUsed": 377313
+      },
+      {
+        "id": "G10.4",
+        "label": "FilesBytesRule",
+        "txHash": "0x97a9a012fce9ee01819a290a73edfe585b96b14180c4b52deced2b555a75ee38",
+        "blockNumber": 11,
+        "blockHash": "0x5afafca21d1c795c8b2e66fd5b43d8ce8bbf1e20da06409812a8ea220589447b",
+        "gasUsed": 177308
+      },
+      {
+        "id": "G10.0",
+        "label": "FilesRootRule",
+        "txHash": "0x6a5066c8369b44793f65cd6f9e7cccf68262760a96f8dcfe34c939dfd54f87b7",
+        "blockNumber": 12,
+        "blockHash": "0x5c412106f72b0a50b92c2eb0099c02e6c51373df16239207f0386f97f34087b0",
+        "gasUsed": 208958
+      },
+      {
+        "id": "G10.2",
+        "label": "FilesDirectoryRule",
+        "txHash": "0x54756fbff221bd445695f79fd25f20a1b3c1d5f50c37fdadbda959ddfabfbb75",
+        "blockNumber": 13,
+        "blockHash": "0xfed23d4bd229cff6ade1db61a108e34b86c08cb60b4bab535c6581e05852a786",
+        "gasUsed": 222390
+      },
+      {
+        "id": "G10.3",
+        "label": "FilesNameRule",
+        "txHash": "0x6171b5f3d8e0f83d425f421d4ccb48b6d18e6e32f0e354759450bb1966e60d69",
+        "blockNumber": 14,
+        "blockHash": "0xe4e50606fb39f85424ea059f49e678d20c587302fe1fc0fc08350b1627113c5b",
+        "gasUsed": 418055
+      },
+      {
+        "id": "G10.8",
+        "label": "RealmNoticeRule",
+        "txHash": "0x90764651bc40d4f798ea1acf82abbb98b1f6d327a4f646311c0cf84f87a10881",
+        "blockNumber": 15,
+        "blockHash": "0x1b16b9d47f721f1509d0bcbb22d8a27fa57228bd8b180eeeb0110095024eb65d",
+        "gasUsed": 354535
+      },
+      {
+        "id": "G10.5",
+        "label": "FilesContentRule",
+        "txHash": "0x7a3f0db765281bd21321b9fb17005e6312b6ca285827b6c50f502d90d37d938c",
+        "blockNumber": 16,
+        "blockHash": "0x4ec4d22867a7c541e219662a45d2ba93498ccc9e94ae73d781c537e565ce85c7",
+        "gasUsed": 344271
+      },
+      {
+        "id": "G10.6",
+        "label": "FilesExternalContentRule",
+        "txHash": "0x289c4fe95db48e4c34d7f079b8f45c719222b7fae6816128581e1867c148c4cc",
+        "blockNumber": 17,
+        "blockHash": "0xc970882d3e57e84ef3b1c8431bad2e390a15306b26ae3a72185b8753267d571d",
+        "gasUsed": 536879
+      },
+      {
+        "id": "G10.1",
+        "label": "FilesChildRule",
+        "txHash": "0x886d3af57236e2e0b5163613abae5e1250c070ad44f9364afbe340e2199b7dee",
+        "blockNumber": 18,
+        "blockHash": "0xa9c8be1ac5986281b495940a2f11bb3f2d74716c66b6716125b450bbd82a7354",
+        "gasUsed": 253330
+      },
+      {
+        "id": "G10.7",
+        "label": "DirectoryAliasRule",
+        "txHash": "0x4de96bee0e955d6891d492d1d65615ee34f8fcf21f080d34d70c189d70d5002c",
+        "blockNumber": 19,
+        "blockHash": "0xc66b94f946026fbbfaa12a277febc52dc0f053a9f43a581fa8a52cb989d63865",
+        "gasUsed": 308572
+      },
+      {
+        "id": "G10.policy",
+        "label": "RefuseAllPolicy",
+        "txHash": "0xd03f817264ee93d54090e0d73c21e86e71467f90253d2a226cd1822e26a33228",
+        "blockNumber": 20,
+        "blockHash": "0x2ac06c8c0df4ab29b381481bc7db9aa6f19b9354df0365d9c518aa7b92b2556b",
+        "gasUsed": 111284
+      },
+      {
+        "id": "G11.0",
+        "label": "DescriptorStore",
+        "txHash": "0x4a1c44cc3dd998f545232a17b303c6cd7ef0553d007580aecf7fdc583f24555a",
+        "blockNumber": 21,
+        "blockHash": "0x0ef211c205611df99cfc9ddda70bea6fecc5cb63f8704e63b73601b0dd0e49dc",
+        "gasUsed": 121742
+      },
+      {
+        "id": "G11.1",
+        "label": "DescriptorStore",
+        "txHash": "0x4b57666d50d2cb18b0fc67dbd82241094881cc2b68905160e941196c76a41e21",
+        "blockNumber": 22,
+        "blockHash": "0xb43ffc39d4cc5f6f04b41e0e6a049df77cd28f4f0690463246ff68b61bbd1735",
+        "gasUsed": 162032
+      },
+      {
+        "id": "G11.2",
+        "label": "DescriptorStore",
+        "txHash": "0x24765809bf163f95f49c326f7e1660ae1df4f286223af90c0a54ab8a6a98891b",
+        "blockNumber": 23,
+        "blockHash": "0xf9863644db8cee47c040e73bf3ee3715910e3765381cb5baf849b8d0794c4c4f",
+        "gasUsed": 122578
+      },
+      {
+        "id": "G11.3",
+        "label": "DescriptorStore",
+        "txHash": "0x4e0ce9a8cf8735f4b9f1a983ff53052aa1df2c4ec97655628d387d998a4ec3f0",
+        "blockNumber": 24,
+        "blockHash": "0x63483dcd9337283061965f7c040cab9559e2f890566e19c9dd34818181bfa4af",
+        "gasUsed": 124910
+      },
+      {
+        "id": "G11.4",
+        "label": "DescriptorStore",
+        "txHash": "0x7ff2ee8877201bc10ce1861bf5087b9373ac22358ad9724c2d9fe94ce07f6f29",
+        "blockNumber": 25,
+        "blockHash": "0x0439d424eed660ee0f41127bad45c36711a29c65b101a528acab26b303835642",
+        "gasUsed": 116070
+      },
+      {
+        "id": "G11.5",
+        "label": "DescriptorStore",
+        "txHash": "0x3fe6b0176e7c83ea9b97ff9bb666d7a7f4ff051d88bb473991d1663ca92ed1d3",
+        "blockNumber": 26,
+        "blockHash": "0x54ad0a9a9c0923aaf23a7087d65d57bcf38a7d9669228f0ff84032c2b1bfb8e0",
+        "gasUsed": 166852
+      },
+      {
+        "id": "G11.6",
+        "label": "DescriptorStore",
+        "txHash": "0xb8625a242918072160156e05677a9ac376800bf2c10eaa4a183500e494ef55cd",
+        "blockNumber": 27,
+        "blockHash": "0xab9f474590623bb36c61dc6127fac1a97f4c1b479a806b1a0ba67e0d1766df62",
+        "gasUsed": 163876
+      },
+      {
+        "id": "G11.7",
+        "label": "DescriptorStore",
+        "txHash": "0x09e5abf96ff67823605e185831c0df844ca5a726857f5e19d0e0dea0bc83751d",
+        "blockNumber": 28,
+        "blockHash": "0xb7f1186d0acacfeb85488bb8718ed088e405c75ca003547b9b3e51db05c2cc07",
+        "gasUsed": 125367
+      },
+      {
+        "id": "G11.8",
+        "label": "DescriptorStore",
+        "txHash": "0x0bd8183483271373989490065057bd0d32fee2a1056eb852368e42db782d03c7",
+        "blockNumber": 29,
+        "blockHash": "0x75e921f8bf910c409f7ac2794a225221c211ab6e4660973de9e1b0f40db9379c",
+        "gasUsed": 124286
+      },
+      {
+        "id": "G12",
+        "label": "FilesFinalValidator",
+        "txHash": "0xb6458eb7bc831b11bb762805ec7fc87728314fce7116350aef86fb3489512f12",
+        "blockNumber": 30,
+        "blockHash": "0x4f53a9ee75dd18eac1b1f313f56c0908d5baf7ea3f9bdcbfdbf40a27eca1ea67",
+        "gasUsed": 513103
+      },
+      {
+        "id": "G13",
+        "label": "LedgerCore",
+        "txHash": "0x40e401271da7a3bf7002a321d4a2b6824da674c0e261f8a4446065a711f2c2b0",
+        "blockNumber": 31,
+        "blockHash": "0x3b076547e9014fc3da9c52565af964873843b7b160a86a974a9fd912f2a66554",
+        "gasUsed": 3224994
+      },
+      {
+        "id": "G14",
+        "label": "TypeRegistry",
+        "txHash": "0x6f55c3091c3bc8de27562d21748a1b24395c668c44982ba9273516e5894df754",
+        "blockNumber": 32,
+        "blockHash": "0x1cddf359b15047c98b38c0abb8202728ef946264142c7e071bcf836d4ff71559",
+        "gasUsed": 3428057
+      },
+      {
+        "id": "G15",
+        "label": "RealmGenesis",
+        "txHash": "0x7505e7e168704db96d9fca48e3915b108c90507d804c0c9d74e4960815be86ba",
+        "blockNumber": 33,
+        "blockHash": "0x976d812b2f734f269814102b5a30cb1fd08a43ed54f06d3d87e67b00f7bf442a",
+        "gasUsed": 1171378
+      },
+      {
+        "id": "G16",
+        "label": "PostingStore",
+        "txHash": "0xaa00c55b22f5c7aaeff9c9c5ab47f0ac1ba53ec113140e6be159142e88f69d5e",
+        "blockNumber": 34,
+        "blockHash": "0x28c37cdd41338ce333ac67109de267beeb6bdcbf1f0ff4372a35556900b50a51",
+        "gasUsed": 1495828
+      },
+      {
+        "id": "G17",
+        "label": "BitmapStore",
+        "txHash": "0xb4bef750270383a5df08b61ee2d9adfc8a61d78ece6f4b340b752a15f7c067cf",
+        "blockNumber": 35,
+        "blockHash": "0xaa518b4fa73bde5e862e06c6a898b714ad4bdbf67e2ca5c849bee249f32693f2",
+        "gasUsed": 1839132
+      },
+      {
+        "id": "G18",
+        "label": "RealmGenesis",
+        "txHash": "0x4075afa4b4fa0fb214e7ed2bc0642911e60ef0faed918830c215547ab27f4d97",
+        "blockNumber": 36,
+        "blockHash": "0x1f4915e1d8f19b5a33327a83c612087e1fb8332d15155ea17fdabe1542fe9953",
+        "gasUsed": 4957728
+      },
+      {
+        "id": "G19",
+        "label": "RealmIndex",
+        "txHash": "0x8f22d1faad45c1e88ab46bec9dceb6d8d29f8c911e0f3f9852f945bbcb1c6bab",
+        "blockNumber": 37,
+        "blockHash": "0x987f9082f8ba5ff3454de400168d46ab97d5638524c782096403389d9dfa7e69",
+        "gasUsed": 6125447
+      },
+      {
+        "id": "G20",
+        "label": "RealmController",
+        "txHash": "0x7ba6ad6ff1666c264949cf7d1f1a25ab634c56de9afcec7ab328c2ccbf822be9",
+        "blockNumber": 38,
+        "blockHash": "0x63768be25d4f6525741e840253665aee6bf7eb7105070b3b6bd4fc37ff547126",
+        "gasUsed": 4190378
+      },
+      {
+        "id": "R1",
+        "label": "LensReader",
+        "txHash": "0x80e284c5381eb360742596586cadf08fa29b2c2b72b6380b1870ec132b76d8fd",
+        "blockNumber": 39,
+        "blockHash": "0xf868f22f16b5b80fc597e3a166b07acded9ba537d9b62f4b9e45f197d831dcff",
+        "gasUsed": 3760560
+      },
+      {
+        "id": "R2",
+        "label": "FilesPageReader",
+        "txHash": "0x889708003134ec0d5d44fade1757d25dfbd237abbec1883a91ae44b665c70968",
+        "blockNumber": 40,
+        "blockHash": "0x2089d4a102120257dab7af8454cd1c7acf71862b8d1add59b33e07f372c59ac2",
+        "gasUsed": 2814758
+      },
+      {
+        "id": "R3",
+        "label": "list LensReader under efs2/reader/lens/1",
+        "txHash": "0x586d446261bb4b9852285ef45b07c9a937662e13854a57d6a91becdc9806d428",
+        "blockNumber": 41,
+        "blockHash": "0x34c1bfd36b95a4a3388406725be4268347cab525d2bffe4749e7bfb1bb277c12",
+        "gasUsed": 164671
+      },
+      {
+        "id": "R4",
+        "label": "list FilesPageReader under efs2/reader/files-page/1",
+        "txHash": "0xa93899ca0b415ab8d2e8bfa10591d325de006096028450cd1c094b7463a00c39",
+        "blockNumber": 42,
+        "blockHash": "0x03648a1d4721647c29e8c0ac04dc1d31a3bae5205164f273b719685243f4bf0f",
+        "gasUsed": 164441
+      },
+      {
+        "id": "G21.0",
+        "label": "TypeRegistry",
+        "txHash": "0xfd227395c02a48e5ce410328978ca1e56424dd5b77da5c9d93da3b371bb72539",
+        "blockNumber": 43,
+        "blockHash": "0x04fed28ac0b373615f7b353e1f144582ee074cb15f5b3d2c83088efb6adfd6a9",
+        "gasUsed": 258642
+      },
+      {
+        "id": "G21.1",
+        "label": "TypeRegistry",
+        "txHash": "0xdf748fb516e5e54d893ecc9d308822465f8ad466f3d834380595807d235d6400",
+        "blockNumber": 44,
+        "blockHash": "0x6c9542547ec181fa5585a21d71985d8c1073042c1e96354d27fd0937326f0be6",
+        "gasUsed": 248689
+      },
+      {
+        "id": "G21.2",
+        "label": "TypeRegistry",
+        "txHash": "0x0b244e141c6a3984218047e3a6622990604a275d376f781db65f486a4b61a1d1",
+        "blockNumber": 45,
+        "blockHash": "0x060bd0e58aa6cf709b7f975fb1c411669c067308874ed2467f48a3dfd786362f",
+        "gasUsed": 241578
+      },
+      {
+        "id": "G21.3",
+        "label": "TypeRegistry",
+        "txHash": "0x07bf416a12f9c9d849167707391590d757bf06fa24994b26c877a14dd63ebb73",
+        "blockNumber": 46,
+        "blockHash": "0xd88980f2ca1f3d139ebe477e23638b4893660f32d6990c32ad670a9f1e0bd5d2",
+        "gasUsed": 241735
+      },
+      {
+        "id": "G21.4",
+        "label": "TypeRegistry",
+        "txHash": "0x5306dc54ecfeda459e0c782b28c9a402341ddc054ea5e091a2e17c4bd9032f86",
+        "blockNumber": 47,
+        "blockHash": "0xea6252ac55c43e442d527f003aa0d62760ff4c6cba724700f92e5a125bbcb479",
+        "gasUsed": 241032
+      },
+      {
+        "id": "G21.5",
+        "label": "TypeRegistry",
+        "txHash": "0x0db20824384e70cdc58fc472286723ec592f003a3502d796c7f840f35ae794b9",
+        "blockNumber": 48,
+        "blockHash": "0x82b66b46b3620f54f57cc9a3b51b75fb818942a22ce6487c1b25023341863880",
+        "gasUsed": 269247
+      },
+      {
+        "id": "G21.6",
+        "label": "TypeRegistry",
+        "txHash": "0xabefb0117c15f34058bbdc7bd710de4eb1a6677ffc40e88a3c0e5c77b5a1de3e",
+        "blockNumber": 49,
+        "blockHash": "0x312985414909d86d31abc380fae4829726ef9932bb88159766896dfc61b56a59",
+        "gasUsed": 269057
+      },
+      {
+        "id": "G21.7",
+        "label": "TypeRegistry",
+        "txHash": "0xce3652d83208f9eba03851585d688ece363fdb75d90c7f62f254be3f566b8a2c",
+        "blockNumber": 50,
+        "blockHash": "0x50c9a6eec4438a8655cbb59facdb3170d82ff5780defd75a3e904031b4ce2a5f",
+        "gasUsed": 241743
+      },
+      {
+        "id": "G21.8",
+        "label": "TypeRegistry",
+        "txHash": "0xa9a03d4f05f2c4ac2357fd7cae5fe3a1789f189f999830b2bcf4c85e85bded42",
+        "blockNumber": 51,
+        "blockHash": "0xea58b0d214406460fa2badcb80d802d807fd0f11f17867b62a413f493d3f1291",
+        "gasUsed": 241711
+      },
+      {
+        "id": "G22.root",
+        "label": "seed root (CREATE + PUBLISH files-directory/1)",
+        "txHash": "0x05c55cc0681a46516e5cbbbe24410d05cfe82950a22e9ea4cd13c15defe3a09f",
+        "blockNumber": 52,
+        "blockHash": "0xf0043cf34b46946944a5f6ba08b28cb3a45fea4629a33d221d798c7a98ceb8ce",
+        "gasUsed": 764290,
+        "publication": 1
+      },
+      {
+        "id": "G22.folder",
+        "label": "seed folder docs/ (CREATE, PUBLISH directory, PUBLISH name, BIND FOLDER)",
+        "txHash": "0x6e5d4ddf3d9f25aa119ec122caf67f8d8d59db0ec5b5e73261a37e76d4c6fe90",
+        "blockNumber": 53,
+        "blockHash": "0xc84992ef31cad9193692eae4cef245bd8ca36da8064ea3db639a3c15a456b1a3",
+        "gasUsed": 1385827,
+        "publication": 2
+      },
+      {
+        "id": "G22.file",
+        "label": "seed file docs/readme.txt (CREATE, PUBLISH root, PUBLISH name, BIND HEAD, BIND FOLDER)",
+        "txHash": "0xc3d826e60353551396e8d6858218ee00b842df60628354dc112767b09ed2d3bd",
+        "blockNumber": 54,
+        "blockHash": "0xbdf0291facd70326fc4b9bc5d53760c7a9b47cfedd2da3378202b44cac2f829f",
+        "gasUsed": 1664557,
+        "publication": 3
+      }
+    ]
+  },
+  "notCovered": [
+    "fresh / rewritten / cleared slot counts, code bytes and accounts per row (needs a state-diff pass; §14 columns)",
+    "tx.gas below and above 2^24 on amsterdam (the suite does not vary tx.gas)",
+    "read rows on amsterdam (reads are unrepriced; prague only), confirm and recovery reads, LensReader.headsAt at 64 principals; the cold pin's call count is printed by `efs-fixture.mjs verify`",
+    "20-edit staged save, signed lane, guards, CUSTOM registration, policy activation, freeze, kernel upgrade"
+  ]
+}

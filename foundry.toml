@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Tooling fixture settings only. Future protocol build/identity policy remains undecided.
+# Build and identity policy for the EFS v2 contracts (see docs/BUILD-IDENTITY.md).
 [profile.default]
 src = "src"
 test = "test"
@@ -10,16 +10,48 @@ evm_version = "prague"
 optimizer = true
 optimizer_runs = 200
 via_ir = true
+# Identity policy (D1): runtime bytes carry no metadata hash, only the 3-byte solc version trailer,
+# so comment/path/remapping changes never change a rule codehash or a Type id.
+bytecode_hash = "none"
+cbor_metadata = true
 fuzz = { runs = 32 }
+# Golden vectors produced by independent tooling (tools/vectors.mjs) and read by the suites.
+fs_permissions = [{ access = "read", path = "./test/vectors" }, { access = "read", path = "./test/snapshots" }]
 
 [profile.ci]
 fuzz = { runs = 256 }
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
+
+
+# Glamsterdam (EIP-7954/8037/8038) is live on Sepolia since 2026-10-06 with no mainnet date. Release bytes
+# and identity gates use `prague`; this profile recompiles with solc's experimental `amsterdam` target so the
+# suites run under the repriced schedule and `vm.lastFrameGas().gasStateUsed` is meaningful. Never ship or
+# measure sizes from this profile.
+[profile.amsterdam]
+evm_version = "amsterdam"
+experimental = true
+
+# The consumer closure (design §5: src/interfaces/ outside internal/, and src/lib/Keys.sol through the probe in
+# test/closure/) at the pragma floor without via-IR; the default profile covers 0.8.37 with via-IR. Its own out/
+# and cache/ subdirectories keep the default artifacts (read by tools/abi-snapshot.mjs) and cache intact.
+[profile.closure]
+solc_version = "0.8.27"
+via_ir = false
+src = "src/interfaces"
+test = "test/closure"
+skip = ["src/interfaces/internal/**"]
+out = "out/closure"
+cache_path = "cache/closure"
 
 [fmt]
 line_length = 100
 
 [dependencies]
-forge-std = "1.16.2"
+forge-std = "1.17.0"
+"@openzeppelin-contracts" = "5.6.1"
+"@openzeppelin-contracts-upgradeable" = "5.6.1"
 
 [soldeer]
 remappings_generate = false

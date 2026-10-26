@@ -1,0 +1,1651 @@
+{
+  "schema": "efs-deploy-plan/1",
+  "chainId": 31337,
+  "realmSalt": "0x06e8c5a9dec57466cea3796567f852b3ba8df0f97690f58ef472622a65fc710f",
+  "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "fixturePrincipal": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "declarationKey": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+  "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+  "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+  "executionProfileId": 1,
+  "limits": {
+    "maxActions": 64,
+    "maxBody": 8192,
+    "maxRefs": 8,
+    "maxReadSetPrincipals": 64,
+    "maxReadSetPositions": 4,
+    "maxWitness": 4096,
+    "maxTransitionBlocks": 7200,
+    "inlineWordMax": 256,
+    "witnessRetention": 1,
+    "maxBindsPerPublication": 64,
+    "maxBodyBytesPerPublication": 16384,
+    "maxFreshSlotsPerPublication": 600,
+    "maxReadIds": 64,
+    "maxReadCount": 256,
+    "floorFreshGas": 22100,
+    "floorRewriteGas": 5000,
+    "kernelTail": 20000
+  },
+  "workModel": {
+    "formulaVersion": 1,
+    "freshPerPublication": 2,
+    "rwPerPublication": 10,
+    "freshPerPublishFresh": 10,
+    "rwPerPublish": 50,
+    "freshPerBindFresh": 30,
+    "rwPerBind": 40,
+    "freshPerRef": 10,
+    "freshPerDigestSpec": 10,
+    "computeBase": 60000,
+    "computePerAction": 25000,
+    "computePerHookEffect": 60000,
+    "finalComputeBase": 60000,
+    "finalComputePerBind": 120000
+  },
+  "genesis": {
+    "address": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+    "nonces": {
+      "controller": 1,
+      "registryProxy": 2,
+      "ledgerProxy": 3
+    }
+  },
+  "addresses": {
+    "ingress": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+    "apply": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+    "control": "0x5D670386cDee33e5DcBE97BC3CD19Afd6b9e6fEC",
+    "ledgerReads": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+    "ledgerViews": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+    "descriptorStore": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+    "indexReplayDecoder": "0xb7257b6d99AF8c53675a99c4bF5F67ddAF8cB0e8",
+    "readerDirectory": "0x77865D8B084589021D9695865475cBED4fc16c31",
+    "filesFinalValidator": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+    "refuseAllPolicy": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
+    "ledgerImpl": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+    "registryImpl": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+    "genesis": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+    "controller": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+    "registryProxy": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+    "ledgerProxy": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+    "ledgerAdmin": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+    "registryAdmin": "0xd4D0CC003F8e169b2C7770B988aD0F93A95079B8",
+    "postingStore": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+    "bitmapStore": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+    "index": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+    "lensReader": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+    "filesPageReader": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75"
+  },
+  "readers": {
+    "lens": {
+      "address": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+      "kind": "0x75cd7c9277fd0eefc44867edc4a3e8b3ed3bd2fa85711c9ec7602db542adaeef",
+      "kindLabel": "efs2/reader/lens/1",
+      "runtimeCodehash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f"
+    },
+    "filesPage": {
+      "address": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+      "kind": "0x3fa6dca5d3eeb67bd6e6db3a6dc96459ec38dd26e082cb43f904a5bffb05f456",
+      "kindLabel": "efs2/reader/files-page/1",
+      "runtimeCodehash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8"
+    }
+  },
+  "hotAbiIdString": "efs2/ledger-hot/1",
+  "realm": {
+    "chainId": 31337,
+    "realmSalt": "0x06e8c5a9dec57466cea3796567f852b3ba8df0f97690f58ef472622a65fc710f",
+    "realmOrigin": "0x700b019ee0f768fa305de4ba08cd8e05a3653208234a19f14585453891fdfb63",
+    "realmId": "0x8383464f9245c74cc02d28458cea789245a3f2f751375e57cd26e8fcf266e741",
+    "executionProfileId": 1,
+    "domainSeparator": "0xa1af9c9004b33e3f5576a4f73b2dc0a594b5e43f459cbcd0dd273a651f5ad513",
+    "limitsProfileId": "0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055",
+    "indexObligations": "0xaa658ac0e015d494fe93d2033f28d955120e55bd96918de17d7bbbb5c47afec6"
+  },
+  "activation": {
+    "revision": 1,
+    "components": {
+      "ledgerImpl": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+      "ledgerImplCodehash": "0xd626158584ff575da104d03c257820941a87aa6250c5419b746f7b735c47b420",
+      "registryImpl": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+      "registryImplCodehash": "0xcd95d3b7b5462b1395c4206229afa2559d140b6ccad0f4e1f0a8c68f64e7d819",
+      "index": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+      "indexCodehash": "0x80bed77b105a991604b002ad263b9c2c504a9084c9347fa5d72c4e228ec6826c",
+      "indexManifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+      "ingress": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+      "ingressCodehash": "0xe990782d927ad2d9771f3dcd6bca128fc8bbacbd5975cd55b3ef526ab551521d",
+      "applyDelegate": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+      "applyCodehash": "0x67f4704f949fdb41497c556a383ae9c857d940f7da3637f9296fa86b307a19b8",
+      "controller": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+      "controllerCodehash": "0xb9e95350fcbceb83e5d78a887f2ad656a131d3463fd2bba26f6426670da4d88f",
+      "controllerOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "steward": "0x0000000000000000000000000000000000000000",
+      "verifierProfilesRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+    "executionProfileId": 1,
+    "capabilities": 0,
+    "acceptedChainId": "31337",
+    "limits": {
+      "maxActions": 64,
+      "maxBody": 8192,
+      "maxRefs": 8,
+      "maxReadSetPrincipals": 64,
+      "maxReadSetPositions": 4,
+      "maxWitness": 4096,
+      "maxTransitionBlocks": 7200,
+      "inlineWordMax": 256,
+      "witnessRetention": 1,
+      "maxBindsPerPublication": 64,
+      "maxBodyBytesPerPublication": 16384,
+      "maxFreshSlotsPerPublication": 600,
+      "maxReadIds": 64,
+      "maxReadCount": 256,
+      "floorFreshGas": 22100,
+      "floorRewriteGas": 5000,
+      "kernelTail": 20000
+    },
+    "expectedExecutionSet": "0x3f9d3371aac7184c21133dd9e13ac77d6f745c9356a8160b4e84ccb62e509482",
+    "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "migrationScope": [],
+    "migration": "0x"
+  },
+  "index": {
+    "address": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+    "manifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+    "families": [
+      {
+        "familyId": "0xe4f7cc7ff76622e194a3ef2a8f23d6632b91cfda1f803fa443e9e04e43baa270",
+        "kind": 1,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0x620560dcb2daef0593f4620f205e0b64a1cd40b7cc26403e5433446b6e2e4889",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xd674025fa1091f86834d22a642451cc45057f55537c4b4e65ee1139c390d1b8a",
+        "kind": 4,
+        "universe": 2,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0xc990cf37e47815b1592813f335963f9d3639a12f920a01c5c28cdd160be06c18",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xf564f360d1f5b65aacc3b70b5aa8bfd24bfcf28df404557ac647ae8d94954eb4",
+        "kind": 5,
+        "universe": 4,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 3,
+        "recipe": "0xb00d103342bac00e780ffefca0a39b6331afbe2f9fad81213724828fdba7663e",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xde538e29eab73663949ae6239c90dea8948cf7297cf44d0c79621ef8bf06e8ab",
+        "kind": 8,
+        "universe": 3,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x069b6904dc14a3268cdb31165fa41efe3f7424594045ecbb994db539d403603f",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x1fd035d41e55e585706a270bca0fa36d150e1cc27de3a1b40654d1835f64287e",
+        "kind": 10,
+        "universe": 3,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x086e77f7429636d6799ac58780bbf7333f65ab0a3e6ec8eba205acf618bfcd04",
+        "fromAdmission": "1",
+        "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+      },
+      {
+        "familyId": "0x29d3bea0a01e3e26f8a6ae33a62bc05c74281c8a392b910123320f4dfa13a897",
+        "kind": 11,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x8ce4944707b924a08894cd50beccc7d5c9375c5950a6757e616f12b08d64464b",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x03b682942778e8b9a07a8448019ba6862fac962d963305b6b7b613a80d29f2c4",
+        "kind": 12,
+        "universe": 5,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0xc063e82b64226b9fe6666f814eebf93c4caa198dd583a57905ec2a88f1e78e17",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x77b478e9ae9182fa4afb6af49a4b8b55c121d339d14f0df963ed8eb50225beca",
+        "kind": 13,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x1631a66eb33bc5baf84d693be8d366018694427c9fccc13fa03477179257bbc2",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xef3758cffd687b1665b9ce936cfd31ff25a28a18a4be78504e93a88c8e996bb7",
+        "kind": 14,
+        "universe": 1,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x5eeb7cf0dd3a7b93f5ea5696e12056390083dfc7c2e244b7411503ce8f374d78",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x9f7b888d291c8c4c0d464b600e73c3c8f253b30195182648ead7c4c60c25b57d",
+        "kind": 15,
+        "universe": 5,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0xf70730a8c88af87ab6033a6fefe7a341e89c670f597fcbc86238cf43bdee7d8e",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0xe84f1b109238a09c1b70a887b65cc922657c600d1e62c2925e843c8c3e189353",
+        "kind": 16,
+        "universe": 3,
+        "shape": 1,
+        "mandatory": true,
+        "liveSemantics": 1,
+        "recipe": "0x72487e74252edcf900f83e8914d64acbc54f8916790b01732f6d16b0b5d89e5d",
+        "fromAdmission": "1",
+        "store": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "storeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4"
+      },
+      {
+        "familyId": "0x04369382b4c38d701e16b5522fcf32484a616e6cfe7c310ee73c02c17813b9c8",
+        "kind": 17,
+        "universe": 3,
+        "shape": 2,
+        "mandatory": false,
+        "liveSemantics": 2,
+        "recipe": "0xa9cc5767a62556cc143fb409a2d65609a92db50518b6886ef77a0f6a54338156",
+        "fromAdmission": "18446744073709551615",
+        "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+      },
+      {
+        "familyId": "0x8433e20c283016a699d95d0a23d083dca2e2e5de9d0718f1de52e6ab42b46700",
+        "kind": 18,
+        "universe": 3,
+        "shape": 2,
+        "mandatory": true,
+        "liveSemantics": 2,
+        "recipe": "0xe38f9e856587c24e3f3ccca8e2d8eb34496e6aa2f5f8b8e2982778c00d9ab5fc",
+        "fromAdmission": "1",
+        "store": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        "storeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33"
+      }
+    ],
+    "units": [
+      {
+        "foldHook": "0x0000000000000000000000000000000000000000",
+        "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "finalHook": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+        "finalCodehash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+        "familyIds": [],
+        "purposeFilter": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+        "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+        "identity": "0xa89c6584560250f4b64dc0d9db67fa27411f198aed2c229b7af78b254adc2e04"
+      }
+    ],
+    "specs": [
+      {
+        "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+        "wordIndex": 5,
+        "algorithm": 1
+      },
+      {
+        "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+        "wordIndex": 5,
+        "algorithm": 1
+      }
+    ],
+    "validatorIdentity": "0xa89c6584560250f4b64dc0d9db67fa27411f198aed2c229b7af78b254adc2e04"
+  },
+  "profile": [
+    {
+      "type": "files-root/1",
+      "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+      "rule": "FilesRootRule",
+      "instance": "0x7911a2FD9FA513219f133b8845b94cc8FdE80C13",
+      "ruleCodehash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+      "ruleInitcodeHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+      "refTypes": [],
+      "shape": "0x1f129f278a96cfd6eeb5dca0a39cdf4636f53d97bcdf9a6e28eda8a6d8ce1e76",
+      "descriptor": "0x010003000102010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9e1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a6272532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca490051010066696c65732d726f6f742f316162692e656e636f64652866696c655375626a65637429207c7c20646f63756d656e743b20746865206669727374207265766973696f6e206f66206120637265617465642066696c65207375626a656374",
+      "descriptorBytes": 227,
+      "declarationSig": "0xa23cbc23b506769b17d8581e7a412f86ec0a3124a4ee9582e1de2f11ba5df1d66cedee9d526eee9c08b7f12dab2390f581ef36ec7cee906d5968e0711423fbf11b",
+      "blob": "0x02d804CFb824Dc38587397645457eBC25BE859Ec",
+      "blobCodehash": "0xef8ee3876d861a4d1a1413c83ba1cbf430f191f100214c81f2df836eb884ab4d"
+    },
+    {
+      "type": "files-child/1",
+      "typeId": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+      "rule": "FilesChildRule",
+      "instance": "0x7E6a895619ccB1Fc5475f58E35dA18591e53D9FB",
+      "ruleCodehash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+      "ruleInitcodeHash": "0xba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86",
+      "refTypes": [
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "shape": "0x46987c45f141e49dd5b09e5473e46a662bca134e12e0220c2bd0f1a039c7d378",
+      "descriptor": "0x010003010101010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9ab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7eba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86006b020066696c65732d6368696c642f316162692e656e636f646528706172656e745265636f72642c2066696c655375626a65637429207c7c20646f63756d656e743b20706172656e742069732066696c65732d726f6f742f31206f722066696c65732d6368696c642f31206f66207468652073616d652066696c659c155fba0c48d41d55f38f147f929a9581ded0c28be4af453c503b21c8fabb5ba47da88dc5f957d2ba8cf7a3c741d38c41ddb39c5f3f2277bcd45ddac0a209aa01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "descriptorBytes": 418,
+      "declarationSig": "0x9dd7a7f5b5d5e68fe4e24d2186720daa229faa7d99b49250f6037bdb6dc06a3b7a621f3138faf107b507250c7d03125fb2dc00ba69399d90e8bc815b4e554bb71c",
+      "blob": "0xC52C4A57f7317733D6300118AAB7b257E4EF02fE",
+      "blobCodehash": "0x684bd6f10074d24510409cdf4945ca34d5d304ed0f89ee96152786e8c916c178"
+    },
+    {
+      "type": "files-directory/1",
+      "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+      "rule": "FilesDirectoryRule",
+      "instance": "0x7E4D24600c2055b222b99BD46f5b827B5f6CA2d7",
+      "ruleCodehash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+      "ruleInitcodeHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+      "refTypes": [],
+      "shape": "0xc967bf92d3aabf77392d90e0e2544dcdf014703871b29258581af75eceb74ecd",
+      "descriptor": "0x0100030001020101000000000011f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc97a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b67250050010066696c65732d6469726563746f72792f316162692e656e636f646528736565645375626a656374293b2061206469726563746f72792069732074686973207265636f72642c2073656564656420627920612063726561746564207375626a656374",
+      "descriptorBytes": 231,
+      "declarationSig": "0xe4603ce1d4dc954c11f3857651720862e7f693762d3c20acbda464657285fd4f7af3c28172a220cac8a8b3367ebca030a77f01e2fe4ae7d598f80a2c7b1fe7161b",
+      "blob": "0x067628b1d2C89C6A39eB6E6eD5C6846318bf6989",
+      "blobCodehash": "0x320c563e6a8af6a0faf5205be0a7d563f562fa0b3c87bd2872f6572243aa4d02"
+    },
+    {
+      "type": "files-name/2",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+      "rule": "FilesNameRule",
+      "instance": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+      "ruleCodehash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+      "ruleInitcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+      "refTypes": [],
+      "shape": "0xc6a15a37f8ff199085cd5b8141e9106fc8e8c3f0b62e6c97b8acef59525ad98d",
+      "descriptor": "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9d73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17c2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af7460060010066696c65732d6e616d652f32726177205554462d38206e616d652c20312d3235352062797465732c2077656c6c2d666f726d65642c20627974652d65786163742c20636173652d73656e7369746976652c206e6f74202e206f72202e2e2c207e656673207265736572766564",
+      "descriptorBytes": 242,
+      "declarationSig": "0x65a138b7353245cf57fa1ec3d0b52acec316ee662289617be3e3c3032cbf66456b73627ce75a88e73302461917ffbdc7c0846961660f23a2b06adb3a933d75411c",
+      "blob": "0x419DD5744ceD310b2149fa8b3b030Ee62a63bD80",
+      "blobCodehash": "0xb4bb22f3dd1df5d21b23631b778d8f78c2e229ffeebb4cc9cae44fcecdde6277"
+    },
+    {
+      "type": "files-bytes/1",
+      "typeId": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+      "rule": "FilesBytesRule",
+      "instance": "0x79A96205C36aA437AF3d927eEdC76CbF91e25066",
+      "ruleCodehash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+      "ruleInitcodeHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+      "refTypes": [],
+      "shape": "0x206302f8da7919ef7b1e1ca073c97ea91d2b675cb5cabe40c776b811e98f96e4",
+      "descriptor": "0x010003000101010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc956ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b79960120b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c710036010066696c65732d62797465732f31736861323536287061796c6f616429207c7c207061796c6f61643b207061796c6f6164206174206d6f73742038313630206279746573",
+      "descriptorBytes": 201,
+      "declarationSig": "0xe138fe02562d912d643d554bb5bfe6cf0c767d2b4ba330291fda5cc841a3b18010d34ecb0a89a8db822758d7200e712afdef347c2908cff7546b749593914a601b",
+      "blob": "0xC368CF1B81d043CCA0a5517D23EE8775EC845F3C",
+      "blobCodehash": "0x9d992d1eadec422e4d6e7e6165f2697fbed1e1110496eb27ae9aed4315660f51"
+    },
+    {
+      "type": "files-content/1",
+      "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+      "rule": "FilesContentRule",
+      "instance": "0x85E6912791f367537750B2c0bCc9cC118B09a485",
+      "ruleCodehash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+      "ruleInitcodeHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+      "refTypes": [
+        "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563"
+      ],
+      "shape": "0xc175e366cf02f8ce430fda37e57e7e36fab274d8a2fa35694863db7f6282f955",
+      "descriptor": "0x010003010101010100000000000ff39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9b1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0007e030066696c65732d636f6e74656e742f31313120776f726473205b62797465735265662c2076657273696f6e2c20636172726965722c2068617368416c672c206c656e6774682c207368613235362c206d656469612c206369706865722c206e6f6e636531322c20706c61696e746578744c656e6774682c20706c61696e746578745348413235364f725a65726f5da5df68a4b3b21e0076a47d22a9c8150e02800045d3a538f5f9b91f65ed86eaecd251c8212fd76efd198f023ac0880d1f6fbb5cabfe2d4df89de38f04f965f85f0100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+      "descriptorBytes": 439,
+      "declarationSig": "0x0362426e8348fb8336433b82416cd94a061d2d58625ba8e5d2ca652b888561d146af82bd04593c00e5c06bb5b756be7465a0fc6d9b4d36d3b43ccb606939494c1c",
+      "blob": "0x303e11da45b2B586f55Bfa6a34f3cC944D73370E",
+      "blobCodehash": "0xa941fa1d31a7ffac95e15606e7ee71e6aa36da3c1d1f6e633762b5336f65e952"
+    },
+    {
+      "type": "files-external/1",
+      "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+      "rule": "FilesExternalContentRule",
+      "instance": "0x4ACc18120Be607e31314Add0b19c74aF22D3e35e",
+      "ruleCodehash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+      "ruleInitcodeHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+      "refTypes": [
+        "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563"
+      ],
+      "shape": "0xcfc4222770162f699617d5f46ff9d02e8571560f41090a58cbef031ecc5ccb0d",
+      "descriptor": "0x0100030101010101000000000010f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc99bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350c6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c006f010066696c65732d65787465726e616c2f313720776f726473205b62797465735265662c2076657273696f6e20322c20636172726965722032206172207c203320697066732c2068617368416c6720312c206c656e6774682c207368613235362c206c6f6361746f724c656e6774685d207c7c204153434949206c6f6361746f72a5df68a4b3b21e0076a47d22a9c8150e02800045d3a538f5f9b91f65ed86eaecd251c8212fd76efd198f023ac0880d1f6fbb5cabfe2d4df89de38f04f965f85f0100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+      "descriptorBytes": 425,
+      "declarationSig": "0x5b09841e2ac5ed10637ff057913fca1a62a95d3a08fd9e1f8d9e8a891b2e62f9622adaaa6195651538b59407fa939d4498ec4a64acf2b33bfd2810e8bff463651b",
+      "blob": "0x645749438E096fdB63489300c47C87C818EcF28a",
+      "blobCodehash": "0x8afdb4261a2158d62c5185fba21e2f7e59e3586b91e4ed3bece19691137e67e9"
+    },
+    {
+      "type": "directory-alias/1",
+      "typeId": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
+      "rule": "DirectoryAliasRule",
+      "instance": "0x36C19753102fEf320dD253002fc54E58F4afd8A7",
+      "ruleCodehash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+      "ruleInitcodeHash": "0xab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078",
+      "refTypes": [],
+      "shape": "0x53e650cb9c3ec74cc865e9058707b37f333d38bb81110185a9c81784dd5d1c2e",
+      "descriptor": "0x0100030001020101000000000011f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9c10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667ab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078005d01006469726563746f72792d616c6961732f316162692e656e636f6465287461726765744f626a65637449642c206b696e64293b206b696e64203120612066696c65732d6469726563746f72792f31207265636f72642c2032206120637265617465642066696c65207375626a656374",
+      "descriptorBytes": 244,
+      "declarationSig": "0xf3c189090bb5903dcb43aac47d3dc53514870b0e1212589ad7b494d89af626607a4fc7ad169ba0a13764c2684210e62894bc17dd43d3ca983197fb15a52610e81b",
+      "blob": "0xcA3580e44436527E03FA157D36333DE73dD783fB",
+      "blobCodehash": "0x937b2fa309ed7eb507c177a199371921da253bef72192246c5d74358113b0b32"
+    },
+    {
+      "type": "realm-notice/1",
+      "typeId": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903",
+      "rule": "RealmNoticeRule",
+      "instance": "0x52c37C05ef93AF26B65f93C2Ff406F010b67427b",
+      "ruleCodehash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+      "ruleInitcodeHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+      "refTypes": [],
+      "shape": "0x718d135c8280bacb9d74cffb1ac3afe06464b935ffe2e7589a49c55c964cf591",
+      "descriptor": "0x010003000102010100000000000ef39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9cb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1bd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f005b01007265616c6d2d6e6f746963652f316162692e656e636f64652862797465733332206b696e642c2075696e74323536207265766973696f6e2c206279746573206e6f7465293b206b696e642066726f7a656e207c20737563636573736f72207c206d6967726174696f6e",
+      "descriptorBytes": 239,
+      "declarationSig": "0xf35d1c62bebae86fd53cc94a072a1abc77bbf7f2e56d146072ab091b9dd995f83da53742341486d37da21eb9e627f2913373bc52af706202f3eea3d5be6e64391c",
+      "blob": "0xde78624d05f61E51eEDE3Df36E4037a23f2284Bc",
+      "blobCodehash": "0x0922d8d7dc34c39189c3c82b044192467c6c3e6480f7a0bcbdf4e21bbb2e42f5"
+    }
+  ],
+  "seed": {
+    "version": "efs-fixture-seed/1",
+    "principalId": "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "root": {
+      "directoryRecordId": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+      "subjectId": "0xbf64fbc93b9cf24114f8bcc65f37a45b95be4369488da9a01bf22b31e8ed2b34",
+      "principalId": "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+    },
+    "folder": {
+      "name": "docs",
+      "directoryRecordId": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+      "subjectId": "0xedf5c1d34b036c512819a1a9b92ce9c42063dd97618f3efedecc5821268935ff",
+      "nameRecordId": "0xd72aeae668a8b6c3366a67d8ee592864900d7c64a09890b98df77113dc168748",
+      "bindingKey": "0x5b6a2ecfedaec29782f42b57eb130b3a23ddde29c810309c38de086fa827f33e",
+      "scopeKey": "0xb16847514d75cfaee9d32b8972a84851e92f0ac20882b57a2f07a480ada78a8f"
+    },
+    "file": {
+      "name": "readme.txt",
+      "subjectId": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+      "rootRecordId": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+      "nameRecordId": "0x2caced3464a66c078e11adc1f871c10058ad3ecd4683a53bb8132cceb4547e39",
+      "headKey": "0x6e6b149b64d17813aa375cef8b3efc5c20a7b6e25d5d7f5da65aef72a1964d6e",
+      "bindingKey": "0xeb8dec99e7deaec3332d0e20983c46337290a136de40edbfc84d70f30220d25e",
+      "scopeKey": "0x928db50e5df04b44c90f45d67399cc23ea726beff14ddee25532353134b1a075",
+      "body": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d14d656574696e672061742031303a30302e0a"
+    },
+    "counts": {
+      "admissions": 11,
+      "records": 5,
+      "bindings": 3,
+      "publications": 3
+    }
+  },
+  "steps": [
+    {
+      "id": "F0",
+      "kind": "FACTORY",
+      "contract": "DeterministicDeploymentProxy",
+      "address": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "deployer": "0x3fab184622dc19b6109349b94811493bf2a45362",
+      "presignedTx": "0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222",
+      "runtimeCodehash": "0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989",
+      "postCheck": "extcode(address) == the presigned tx runtime (codehash 0x2fa86add…4989)"
+    },
+    {
+      "id": "G1",
+      "kind": "CREATE2",
+      "contract": "LedgerIngress",
+      "source": "src/core/LedgerIngress.sol",
+      "address": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x4536bdf16f7c224ec9f7bd0e26a03949347ac19e09066cd9eb9232ffde525923",
+      "initcodeBytes": 19785,
+      "args": [
+        "0x0000000000000000000000000000000000000000"
+      ],
+      "runtimeCodehash": "0xe990782d927ad2d9771f3dcd6bca128fc8bbacbd5975cd55b3ef526ab551521d",
+      "runtimeBytes": 19581,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xf31541472f11bf580902efc6e01c71b05bb7aa4a057c71764c7b9062f663a86d"
+    },
+    {
+      "id": "G2",
+      "kind": "CREATE2",
+      "contract": "LedgerApply",
+      "source": "src/core/LedgerApply.sol",
+      "address": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x6a4fd6c8b8bec9f0d5b8dcf8ffecfeaea7f50aafff176e4d622dbaa346ce6f72",
+      "initcodeBytes": 5496,
+      "args": [],
+      "runtimeCodehash": "0x67f4704f949fdb41497c556a383ae9c857d940f7da3637f9296fa86b307a19b8",
+      "runtimeBytes": 5457,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x50358e48b530de7438fe3a3c8f5d8243a257f7da012cafbaf0f584df74452ea7"
+    },
+    {
+      "id": "G2c",
+      "kind": "CREATE2",
+      "contract": "LedgerControl",
+      "source": "src/core/LedgerControl.sol",
+      "address": "0x5D670386cDee33e5DcBE97BC3CD19Afd6b9e6fEC",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x64304c489c05b0f82c6a190a7cf8d393b7ef167192f787ffede22d543a27e69b",
+      "initcodeBytes": 17154,
+      "args": [
+        "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+        "0x80F56Ec471918c3bB379A80a84217B120971876f",
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "runtimeCodehash": "0x0f501458a2448cadb79d1018f5eccf94567231665814eb55a99e280bd9d61c9d",
+      "runtimeBytes": 16764,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x709202d2f6ba31c05a3eda8b32187239ccab1df08ce0f5f4285fa0d1361f8b01"
+    },
+    {
+      "id": "G3",
+      "kind": "CREATE2",
+      "contract": "LedgerReads",
+      "source": "src/readers/LedgerReads.sol",
+      "address": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xb80723cc8b90da8587708f3b4c722b635681d5c8c30abd8674e52122c2f53e29",
+      "initcodeBytes": 17505,
+      "args": [],
+      "runtimeCodehash": "0xaa89f1141c26017d1c695ccad179084c97ae2ec0022cb8ed93218120ae07ca2a",
+      "runtimeBytes": 17479,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x67635de7f0e311c5ad9420e97eed694060c99413bc700920a4c898e1f0e2239b"
+    },
+    {
+      "id": "G4",
+      "kind": "CREATE2",
+      "contract": "LedgerViews",
+      "source": "src/readers/LedgerViews.sol",
+      "address": "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x27fdd7bd1a161d95bf9f96f0584b13f93d2b8e818bc3407b56f21952242d3af4",
+      "initcodeBytes": 14883,
+      "args": [],
+      "runtimeCodehash": "0x81881017ed541616fb2cf9b16a2308047ad41504e1c583b8926d572bdeea1956",
+      "runtimeBytes": 14857,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xa552ccf6f3398ced6ccfb38f34a82e68ba0ead4d9f735dd005b5cdd1d67f1bf7"
+    },
+    {
+      "id": "G5",
+      "kind": "CREATE2",
+      "contract": "DescriptorStore",
+      "source": "src/types/DescriptorStore.sol",
+      "address": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x1363fc585b181d63c159a0ce2b1d098929fc84062718e7b7d5546e267c707666",
+      "initcodeBytes": 783,
+      "args": [],
+      "runtimeCodehash": "0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc",
+      "runtimeBytes": 757,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x5ab06e741830c43e7601084cc3fb789706749f9223e3993e10886eb6ce5b141a"
+    },
+    {
+      "id": "G7",
+      "kind": "CREATE2",
+      "contract": "IndexReplayDecoder",
+      "source": "src/index/IndexReplayDecoder.sol",
+      "address": "0xb7257b6d99AF8c53675a99c4bF5F67ddAF8cB0e8",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xb3e01a8a5ed68509a2c55894364b69f3cf8cdf1d82893229bf373ecd83e76521",
+      "initcodeBytes": 5448,
+      "args": [],
+      "runtimeCodehash": "0xdace7aa35ec6b4b7f8070ed8106972a6ee9c68e67c82ec1c693005c9030129b3",
+      "runtimeBytes": 5371,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xe196b2a904aeea4b287ce190a8d69b7e313a71049e078fc8b589fc70e218d3cd"
+    },
+    {
+      "id": "G8",
+      "kind": "CREATE2",
+      "contract": "ReaderDirectory",
+      "source": "src/periphery/ReaderDirectory.sol",
+      "address": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x4268ae3928ec9b4595b4b109584902f9787c486806b09cfd2e52c189119a45c5",
+      "initcodeBytes": 1521,
+      "args": [],
+      "runtimeCodehash": "0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f",
+      "runtimeBytes": 1495,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x4213bcc8d1d745131bef2803763582ff3754c1391c7e348d22a61b59fcdbaf10"
+    },
+    {
+      "id": "G10.4",
+      "kind": "CREATE2",
+      "contract": "FilesBytesRule",
+      "source": "src/profiles/FilesBytesRule.sol",
+      "address": "0x79A96205C36aA437AF3d927eEdC76CbF91e25066",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x20b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c71",
+      "initcodeBytes": 597,
+      "args": [],
+      "runtimeCodehash": "0x56ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b799601",
+      "runtimeBytes": 571,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesBytesRule",
+      "type": "files-bytes/1",
+      "calldataHash": "0x5c237cf2a52c73d90fae5e0d96e49759f47e05aeb0ecdf0bc8db31e2eedf0e66"
+    },
+    {
+      "id": "G10.0",
+      "kind": "CREATE2",
+      "contract": "FilesRootRule",
+      "source": "src/profiles/FilesRootRule.sol",
+      "address": "0x7911a2FD9FA513219f133b8845b94cc8FdE80C13",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x72532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca49",
+      "initcodeBytes": 743,
+      "args": [],
+      "runtimeCodehash": "0xe1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a62",
+      "runtimeBytes": 717,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesRootRule",
+      "type": "files-root/1",
+      "calldataHash": "0x246a263402e84b76595aa9d434e6d468a7351cd2e861a0121214316161814c54"
+    },
+    {
+      "id": "G10.2",
+      "kind": "CREATE2",
+      "contract": "FilesDirectoryRule",
+      "source": "src/profiles/FilesDirectoryRule.sol",
+      "address": "0x7E4D24600c2055b222b99BD46f5b827B5f6CA2d7",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b6725",
+      "initcodeBytes": 805,
+      "args": [],
+      "runtimeCodehash": "0x7a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc",
+      "runtimeBytes": 779,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesDirectoryRule",
+      "type": "files-directory/1",
+      "calldataHash": "0x961574071a794aa4b1509ec04c149ef79836f9f5a45aa4cb7149dc25c7382fe0"
+    },
+    {
+      "id": "G10.3",
+      "kind": "CREATE2",
+      "contract": "FilesNameRule",
+      "source": "src/profiles/FilesNameRule.sol",
+      "address": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+      "initcodeBytes": 1709,
+      "args": [],
+      "runtimeCodehash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
+      "runtimeBytes": 1683,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesNameRule",
+      "type": "files-name/2",
+      "calldataHash": "0x0ecd4e037cd35d7541a195ad63377e0c1348b82c00610097aece4d0375e16bc9"
+    },
+    {
+      "id": "G10.8",
+      "kind": "CREATE2",
+      "contract": "RealmNoticeRule",
+      "source": "src/profiles/RealmNoticeRule.sol",
+      "address": "0x52c37C05ef93AF26B65f93C2Ff406F010b67427b",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f",
+      "initcodeBytes": 1415,
+      "args": [],
+      "runtimeCodehash": "0xcb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1b",
+      "runtimeBytes": 1389,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "RealmNoticeRule",
+      "type": "realm-notice/1",
+      "calldataHash": "0xf4a290c1bbfea9e9c2e68fb3354fcd783d8954970dff33f27dcaf82fe344ea7e"
+    },
+    {
+      "id": "G10.5",
+      "kind": "CREATE2",
+      "contract": "FilesContentRule",
+      "source": "src/profiles/FilesContentRule.sol",
+      "address": "0x85E6912791f367537750B2c0bCc9cC118B09a485",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0",
+      "initcodeBytes": 1368,
+      "args": [],
+      "runtimeCodehash": "0xb1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b",
+      "runtimeBytes": 1342,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesContentRule",
+      "type": "files-content/1",
+      "calldataHash": "0x16633562abfdb2cad53471be90e9098d4d7d029c9aa375f5dab81e769d7415b6"
+    },
+    {
+      "id": "G10.6",
+      "kind": "CREATE2",
+      "contract": "FilesExternalContentRule",
+      "source": "src/profiles/FilesExternalContentRule.sol",
+      "address": "0x4ACc18120Be607e31314Add0b19c74aF22D3e35e",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xc6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c",
+      "initcodeBytes": 2257,
+      "args": [],
+      "runtimeCodehash": "0x9bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350",
+      "runtimeBytes": 2231,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesExternalContentRule",
+      "type": "files-external/1",
+      "calldataHash": "0x7883e8b3189b159ac7742939dd2ee8ae3ef6f003e1e2a9ee9a18226c96fe8c68"
+    },
+    {
+      "id": "G10.1",
+      "kind": "CREATE2",
+      "contract": "FilesChildRule",
+      "source": "src/profiles/FilesChildRule.sol",
+      "address": "0x7E6a895619ccB1Fc5475f58E35dA18591e53D9FB",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86",
+      "initcodeBytes": 945,
+      "args": [
+        "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0"
+      ],
+      "runtimeCodehash": "0xab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7e",
+      "runtimeBytes": 811,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "FilesChildRule",
+      "type": "files-child/1",
+      "calldataHash": "0x3f86deedfddc3013bd1a0514f70fa121195ecb37538f96c38004233ff968560f"
+    },
+    {
+      "id": "G10.7",
+      "kind": "CREATE2",
+      "contract": "DirectoryAliasRule",
+      "source": "src/profiles/DirectoryAliasRule.sol",
+      "address": "0x36C19753102fEf320dD253002fc54E58F4afd8A7",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078",
+      "initcodeBytes": 1200,
+      "args": [
+        "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4"
+      ],
+      "runtimeCodehash": "0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667",
+      "runtimeBytes": 1066,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "label": "DirectoryAliasRule",
+      "type": "directory-alias/1",
+      "calldataHash": "0xc6eb90875930f433c8ef56e60e8fd2e39eae8840ac29a828624989dc8ad70b23"
+    },
+    {
+      "id": "G10.policy",
+      "kind": "CREATE2",
+      "contract": "RefuseAllPolicy",
+      "source": "src/profiles/RefuseAllPolicy.sol",
+      "address": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xf1cc6fddd352b389b2d50d584edb19d25b7000795cedab66a3ae29b0b30eb418",
+      "initcodeBytes": 292,
+      "args": [],
+      "runtimeCodehash": "0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44",
+      "runtimeBytes": 266,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x214514acc987fbded7b34fa3eccf1d52ed5cb55b26e9972816976794248b174a"
+    },
+    {
+      "id": "G11.0",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-root/1",
+      "address": "0x02d804CFb824Dc38587397645457eBC25BE859Ec",
+      "args": [
+        "0x010003000102010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9e1f3f31933569d0e18c937818bd88c0177cceb1b45941ac5584ce19558812a6272532330377a7154b3d7b258b821239fc6d8ca15d7e06d301557a7577e11ca490051010066696c65732d726f6f742f316162692e656e636f64652866696c655375626a65637429207c7c20646f63756d656e743b20746865206669727374207265766973696f6e206f66206120637265617465642066696c65207375626a656374",
+        "0xa23cbc23b506769b17d8581e7a412f86ec0a3124a4ee9582e1de2f11ba5df1d66cedee9d526eee9c08b7f12dab2390f581ef36ec7cee906d5968e0711423fbf11b"
+      ],
+      "runtimeCodehash": "0xef8ee3876d861a4d1a1413c83ba1cbf430f191f100214c81f2df836eb884ab4d",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0x022fc597e44dad89655952d22064011cb92cee03e7a2db8abf0d4e4d82998c84"
+    },
+    {
+      "id": "G11.1",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-child/1",
+      "address": "0xC52C4A57f7317733D6300118AAB7b257E4EF02fE",
+      "args": [
+        "0x010003010101010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9ab3f0a19b5b5f71ee5e13d919fd0dea2eb80e812c6a702f01ee2e0544d868f7eba36a5f0eb8b7f03ad1a60bd4c41231fe279cb7f4f4b5b3d44be9611088fec86006b020066696c65732d6368696c642f316162692e656e636f646528706172656e745265636f72642c2066696c655375626a65637429207c7c20646f63756d656e743b20706172656e742069732066696c65732d726f6f742f31206f722066696c65732d6368696c642f31206f66207468652073616d652066696c659c155fba0c48d41d55f38f147f929a9581ded0c28be4af453c503b21c8fabb5ba47da88dc5f957d2ba8cf7a3c741d38c41ddb39c5f3f2277bcd45ddac0a209aa01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "0x9dd7a7f5b5d5e68fe4e24d2186720daa229faa7d99b49250f6037bdb6dc06a3b7a621f3138faf107b507250c7d03125fb2dc00ba69399d90e8bc815b4e554bb71c"
+      ],
+      "runtimeCodehash": "0x684bd6f10074d24510409cdf4945ca34d5d304ed0f89ee96152786e8c916c178",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0x77331632b4a8af8244cedc1c25f74ac15fa9b53ac5cfff60bc478cb94d18f779"
+    },
+    {
+      "id": "G11.2",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-directory/1",
+      "address": "0x067628b1d2C89C6A39eB6E6eD5C6846318bf6989",
+      "args": [
+        "0x0100030001020101000000000011f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc97a46d3e4951f6fcaa851afba7bdeee3b85a8932d4969380a97e8bce90c7a26bc3f465df438ce4351625991a559469c43c972004ca9abd897a399b2d7c16b67250050010066696c65732d6469726563746f72792f316162692e656e636f646528736565645375626a656374293b2061206469726563746f72792069732074686973207265636f72642c2073656564656420627920612063726561746564207375626a656374",
+        "0xe4603ce1d4dc954c11f3857651720862e7f693762d3c20acbda464657285fd4f7af3c28172a220cac8a8b3367ebca030a77f01e2fe4ae7d598f80a2c7b1fe7161b"
+      ],
+      "runtimeCodehash": "0x320c563e6a8af6a0faf5205be0a7d563f562fa0b3c87bd2872f6572243aa4d02",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0xe4a0da24738ebcdf2d4e5dbddb522e13c8b8e99e8e5c3f5ad8b37f54f1140b3b"
+    },
+    {
+      "id": "G11.3",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-name/2",
+      "address": "0x419DD5744ceD310b2149fa8b3b030Ee62a63bD80",
+      "args": [
+        "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9d73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17c2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af7460060010066696c65732d6e616d652f32726177205554462d38206e616d652c20312d3235352062797465732c2077656c6c2d666f726d65642c20627974652d65786163742c20636173652d73656e7369746976652c206e6f74202e206f72202e2e2c207e656673207265736572766564",
+        "0x65a138b7353245cf57fa1ec3d0b52acec316ee662289617be3e3c3032cbf66456b73627ce75a88e73302461917ffbdc7c0846961660f23a2b06adb3a933d75411c"
+      ],
+      "runtimeCodehash": "0xb4bb22f3dd1df5d21b23631b778d8f78c2e229ffeebb4cc9cae44fcecdde6277",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0x1daf527094694978b83913426290bd02077d7f73695a6b34e1ba69eb6a394201"
+    },
+    {
+      "id": "G11.4",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-bytes/1",
+      "address": "0xC368CF1B81d043CCA0a5517D23EE8775EC845F3C",
+      "args": [
+        "0x010003000101010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc956ea220dc01e7b101c58914fae5aa676e58640a3837376377004d8380b79960120b2593d2efbc58cc2331b5548d1df8150b57c31e1661913c2bfc724c2e15c710036010066696c65732d62797465732f31736861323536287061796c6f616429207c7c207061796c6f61643b207061796c6f6164206174206d6f73742038313630206279746573",
+        "0xe138fe02562d912d643d554bb5bfe6cf0c767d2b4ba330291fda5cc841a3b18010d34ecb0a89a8db822758d7200e712afdef347c2908cff7546b749593914a601b"
+      ],
+      "runtimeCodehash": "0x9d992d1eadec422e4d6e7e6165f2697fbed1e1110496eb27ae9aed4315660f51",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0xcb459abdfc65eb71605185a1affd291d2b3b7b2dbc20be20b93bc522ff3b9d13"
+    },
+    {
+      "id": "G11.5",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-content/1",
+      "address": "0x303e11da45b2B586f55Bfa6a34f3cC944D73370E",
+      "args": [
+        "0x010003010101010100000000000ff39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9b1af7c3a755e860073b344a97e9fb2b05d9ff53937cc696e743f5238ee3f2c8b2d7fe10131f2d9db14bf06efcb80f33182b1bbc6eab42a212426a0f5fa2f9db0007e030066696c65732d636f6e74656e742f31313120776f726473205b62797465735265662c2076657273696f6e2c20636172726965722c2068617368416c672c206c656e6774682c207368613235362c206d656469612c206369706865722c206e6f6e636531322c20706c61696e746578744c656e6774682c20706c61696e746578745348413235364f725a65726f5da5df68a4b3b21e0076a47d22a9c8150e02800045d3a538f5f9b91f65ed86eaecd251c8212fd76efd198f023ac0880d1f6fbb5cabfe2d4df89de38f04f965f85f0100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+        "0x0362426e8348fb8336433b82416cd94a061d2d58625ba8e5d2ca652b888561d146af82bd04593c00e5c06bb5b756be7465a0fc6d9b4d36d3b43ccb606939494c1c"
+      ],
+      "runtimeCodehash": "0xa941fa1d31a7ffac95e15606e7ee71e6aa36da3c1d1f6e633762b5336f65e952",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0x166cc94e555ff92e0150e02d14bbbcbb1868c3d776e6fd39915f3a726e96a460"
+    },
+    {
+      "id": "G11.6",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "files-external/1",
+      "address": "0x645749438E096fdB63489300c47C87C818EcF28a",
+      "args": [
+        "0x0100030101010101000000000010f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc99bbb6e2fe97fe780a294bbb00004eece2540fbd2af321747fba672975a1ad350c6ebd53bf43e0c2148c79ed44085d4b27d74023dea2ce9a1cf35965fc5df043c006f010066696c65732d65787465726e616c2f313720776f726473205b62797465735265662c2076657273696f6e20322c20636172726965722032206172207c203320697066732c2068617368416c6720312c206c656e6774682c207368613235362c206c6f6361746f724c656e6774685d207c7c204153434949206c6f6361746f72a5df68a4b3b21e0076a47d22a9c8150e02800045d3a538f5f9b91f65ed86eaecd251c8212fd76efd198f023ac0880d1f6fbb5cabfe2d4df89de38f04f965f85f0100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+        "0x5b09841e2ac5ed10637ff057913fca1a62a95d3a08fd9e1f8d9e8a891b2e62f9622adaaa6195651538b59407fa939d4498ec4a64acf2b33bfd2810e8bff463651b"
+      ],
+      "runtimeCodehash": "0x8afdb4261a2158d62c5185fba21e2f7e59e3586b91e4ed3bece19691137e67e9",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0x0493b1f51b76c419fff9d44adf488a40a05e7d2438bc8a8fd4fe440f69d4d94c"
+    },
+    {
+      "id": "G11.7",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "directory-alias/1",
+      "address": "0xcA3580e44436527E03FA157D36333DE73dD783fB",
+      "args": [
+        "0x0100030001020101000000000011f39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9c10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667ab2787c7ef30e165525d0ecead0bdee5fdaa14e8870446e1f43eee4d8047e078005d01006469726563746f72792d616c6961732f316162692e656e636f6465287461726765744f626a65637449642c206b696e64293b206b696e64203120612066696c65732d6469726563746f72792f31207265636f72642c2032206120637265617465642066696c65207375626a656374",
+        "0xf3c189090bb5903dcb43aac47d3dc53514870b0e1212589ad7b494d89af626607a4fc7ad169ba0a13764c2684210e62894bc17dd43d3ca983197fb15a52610e81b"
+      ],
+      "runtimeCodehash": "0x937b2fa309ed7eb507c177a199371921da253bef72192246c5d74358113b0b32",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0xc5043a53c50720df24ada1d351277eecf725c62c93c9175a3fb3fc95eaea1294"
+    },
+    {
+      "id": "G11.8",
+      "kind": "CALL",
+      "contract": "DescriptorStore",
+      "to": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
+      "function": "put(bytes,bytes)",
+      "type": "realm-notice/1",
+      "address": "0xde78624d05f61E51eEDE3Df36E4037a23f2284Bc",
+      "args": [
+        "0x010003000102010100000000000ef39fd6e51aad88f6f4ce6ab8827279cfffb92266369a30f2987acf21bc59bc2b96f1e5bf15a8f70763bb4a4a1194f7b678b0ebc9cb1892712722330342839ffbb23127197da1caaf99ac26c34eaabfbcb035ed1bd2cadaf884846a23a9ce8f7540e2ba04ee084492b33d34d6828423aa88fcde4f005b01007265616c6d2d6e6f746963652f316162692e656e636f64652862797465733332206b696e642c2075696e74323536207265766973696f6e2c206279746573206e6f7465293b206b696e642066726f7a656e207c20737563636573736f72207c206d6967726174696f6e",
+        "0xf35d1c62bebae86fd53cc94a072a1abc77bbf7f2e56d146072ab091b9dd995f83da53742341486d37da21eb9e627f2913373bc52af706202f3eea3d5be6e64391c"
+      ],
+      "runtimeCodehash": "0x0922d8d7dc34c39189c3c82b044192467c6c3e6480f7a0bcbdf4e21bbb2e42f5",
+      "postCheck": "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)",
+      "calldataHash": "0x05ceec6ab565343f7a2efffbf92d3c1a751ffb9676d809fbdac1c800a0752452"
+    },
+    {
+      "id": "G12",
+      "kind": "CREATE2",
+      "contract": "FilesFinalValidator",
+      "source": "src/profiles/FilesFinalValidator.sol",
+      "address": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xf9d46954cf23a7c0ee01c8d19c6f0bf431fc32c89d8726c1842ecde05540c498",
+      "initcodeBytes": 2082,
+      "args": [
+        "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+        "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4"
+      ],
+      "runtimeCodehash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+      "runtimeBytes": 1907,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xad8b380deca8ae6bef8c3468555a245ac1da1c0e7be2e9531b6ef64cc56b1140"
+    },
+    {
+      "id": "G13",
+      "kind": "CREATE2",
+      "contract": "LedgerCore",
+      "source": "src/core/LedgerCore.sol",
+      "address": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x92dca8b1b90744089d509557e753646cf1d8237816aa4d2c1b7a35765aa0cfba",
+      "initcodeBytes": 15427,
+      "args": [
+        "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+        "0x80F56Ec471918c3bB379A80a84217B120971876f",
+        "0x5D670386cDee33e5DcBE97BC3CD19Afd6b9e6fEC",
+        "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d"
+      ],
+      "runtimeCodehash": "0xd626158584ff575da104d03c257820941a87aa6250c5419b746f7b735c47b420",
+      "runtimeBytes": 14452,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xb0d61fa3eb22f1c0bf6947ddd127fe6055170c7f6b82021adf311a7559f04854"
+    },
+    {
+      "id": "G14",
+      "kind": "CREATE2",
+      "contract": "TypeRegistry",
+      "source": "src/types/TypeRegistry.sol",
+      "address": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x283341008e8d78387d60ea32b94d27c8980d2cce76bd261fd1e66c6d71a97522",
+      "initcodeBytes": 15805,
+      "args": [
+        "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c"
+      ],
+      "runtimeCodehash": "0xcd95d3b7b5462b1395c4206229afa2559d140b6ccad0f4e1f0a8c68f64e7d819",
+      "runtimeBytes": 15451,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x3a682f82a1d735d31e240f812009163755991ac2e323b2c33822377d2c02e1d1"
+    },
+    {
+      "id": "G15",
+      "kind": "CREATE2",
+      "contract": "RealmGenesis",
+      "source": "src/control/RealmGenesis.sol",
+      "address": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xb94f2965a7fb154066558b0e21125aa7d3f4c10f4e4b076ab3e789fa531a034c",
+      "initcodeBytes": 5979,
+      "args": [
+        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+        "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+        "0x06e8c5a9dec57466cea3796567f852b3ba8df0f97690f58ef472622a65fc710f",
+        1,
+        "0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055",
+        "0x77865D8B084589021D9695865475cBED4fc16c31",
+        "0x0000000000000000000000000000000000000000",
+        "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903",
+        "0x15f15955f465b96e1f2f7f809f9a83d915f53357d806bcc33b0c61535544f1df",
+        "0xca5351612286ac2bd48096bf434523675b8877a83369c98716520f0cf891ad8e"
+      ],
+      "runtimeCodehash": "0x89917f2cb189e10ec672c8764dd47ba0d284cc230267a667d9db6100310b5fd2",
+      "runtimeBytes": 5121,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "nonces": {
+        "controller": 1,
+        "registryProxy": 2,
+        "ledgerProxy": 3
+      },
+      "calldataHash": "0xbb303dceee003f4557932a4d4c1232a9f62f9d751b5cbaeb975eeb7b8642ff9a"
+    },
+    {
+      "id": "G16",
+      "kind": "CREATE2",
+      "contract": "PostingStore",
+      "source": "src/index/PostingStore.sol",
+      "address": "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x750be26d903307a154bf2049ba8050c2d8fe03ae6a84d60477faab38213839d0",
+      "initcodeBytes": 6380,
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x0000000000000000000000000000000000000000",
+        [
+          "0xe4f7cc7ff76622e194a3ef2a8f23d6632b91cfda1f803fa443e9e04e43baa270",
+          "0xd674025fa1091f86834d22a642451cc45057f55537c4b4e65ee1139c390d1b8a",
+          "0xf564f360d1f5b65aacc3b70b5aa8bfd24bfcf28df404557ac647ae8d94954eb4",
+          "0xde538e29eab73663949ae6239c90dea8948cf7297cf44d0c79621ef8bf06e8ab",
+          "0x29d3bea0a01e3e26f8a6ae33a62bc05c74281c8a392b910123320f4dfa13a897",
+          "0x03b682942778e8b9a07a8448019ba6862fac962d963305b6b7b613a80d29f2c4",
+          "0x77b478e9ae9182fa4afb6af49a4b8b55c121d339d14f0df963ed8eb50225beca",
+          "0xef3758cffd687b1665b9ce936cfd31ff25a28a18a4be78504e93a88c8e996bb7",
+          "0x9f7b888d291c8c4c0d464b600e73c3c8f253b30195182648ead7c4c60c25b57d",
+          "0xe84f1b109238a09c1b70a887b65cc922657c600d1e62c2925e843c8c3e189353"
+        ]
+      ],
+      "runtimeCodehash": "0xffb845576fff268762ca2d783b3d77649cfea7501551ec67aa5f21f97978dfd4",
+      "runtimeBytes": 5453,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x3219c0fc09b56c558a133cec8c3072d9929695530b9c9238553df53dd459f286"
+    },
+    {
+      "id": "G17",
+      "kind": "CREATE2",
+      "contract": "BitmapStore",
+      "source": "src/index/BitmapStore.sol",
+      "address": "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xc036b86cae337062ba50437669466ec181c1e9e3ab79540853776ade130b3565",
+      "initcodeBytes": 8670,
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x0000000000000000000000000000000000000000",
+        [
+          "0x1fd035d41e55e585706a270bca0fa36d150e1cc27de3a1b40654d1835f64287e",
+          "0x04369382b4c38d701e16b5522fcf32484a616e6cfe7c310ee73c02c17813b9c8",
+          "0x8433e20c283016a699d95d0a23d083dca2e2e5de9d0718f1de52e6ab42b46700"
+        ]
+      ],
+      "runtimeCodehash": "0x26a1f89f09de1b54ae3231a5d4df2c4b848472cb214eb080de0d2ea3bb18fb33",
+      "runtimeBytes": 7783,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xd4395d6e0ada2a455d0aee85a0847a5a20940450e08078f69c488f8cbb65d396"
+    },
+    {
+      "id": "G18",
+      "kind": "CALL",
+      "contract": "RealmGenesis",
+      "to": "0xF07D0745cfa5C7F9d5e919dB2F3AbC9218FB01e0",
+      "function": "run(Limits,bytes,bytes)",
+      "args": [
+        {
+          "maxActions": 64,
+          "maxBody": 8192,
+          "maxRefs": 8,
+          "maxReadSetPrincipals": 64,
+          "maxReadSetPositions": 4,
+          "maxWitness": 4096,
+          "maxTransitionBlocks": 7200,
+          "inlineWordMax": 256,
+          "witnessRetention": 1,
+          "maxBindsPerPublication": 64,
+          "maxBodyBytesPerPublication": 16384,
+          "maxFreshSlotsPerPublication": 600,
+          "maxReadIds": 64,
+          "maxReadCount": 256,
+          "floorFreshGas": 22100,
+          "floorRewriteGas": 5000,
+          "kernelTail": 20000
+        },
+        "0x15f15955f465b96e1f2f7f809f9a83d915f53357d806bcc33b0c61535544f1df",
+        "0xca5351612286ac2bd48096bf434523675b8877a83369c98716520f0cf891ad8e"
+      ],
+      "creates": [
+        {
+          "label": "RealmController",
+          "address": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+          "nonce": 1,
+          "runtimeCodehash": "0xb9e95350fcbceb83e5d78a887f2ad656a131d3463fd2bba26f6426670da4d88f",
+          "runtimeBytes": 16160
+        },
+        {
+          "label": "TypeRegistryProxy",
+          "address": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+          "nonce": 2,
+          "runtimeCodehash": "0xb64b3c2d8d639a2491cd1332b87341aa7a6fed5e398fea5f31bfae9777003ade",
+          "implementation": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+          "admin": "0xd4D0CC003F8e169b2C7770B988aD0F93A95079B8",
+          "initializer": "0x485cc9550000000000000000000000000c18625727e6ee510b318ee47f225ef4e4c2e9ab0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "label": "LedgerProxy",
+          "address": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+          "nonce": 3,
+          "runtimeCodehash": "0xf17d6c34eed151023a07943e793b5cc8162fbd024237cc3746499bb4bb5ce6cf",
+          "implementation": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+          "admin": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+          "initializer": "0xdfb4a03706e8c5a9dec57466cea3796567f852b3ba8df0f97690f58ef472622a65fc710f000000000000000000000000a20ef4ec27dc1aee2ed35a6b330a4f59f61d30fd000000000000000000000000a4f2b4aa7a20260cd1b54d88695d27fc1562678b00000000000000000000000077865d8b084589021d9695865475cbed4fc16c3100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001c200000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000565400000000000000000000000000000000000000000000000000000000000013880000000000000000000000000000000000000000000000000000000000004e20"
+        },
+        {
+          "label": "RegistryProxyAdmin",
+          "address": "0xd4D0CC003F8e169b2C7770B988aD0F93A95079B8",
+          "creator": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+          "nonce": 1,
+          "runtimeCodehash": "0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2",
+          "owner": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd"
+        },
+        {
+          "label": "LedgerProxyAdmin",
+          "address": "0xBb1ac84f4dF0B780a76A292450Fb5CA4Ae0ce63f",
+          "creator": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+          "nonce": 1,
+          "runtimeCodehash": "0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2",
+          "owner": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd"
+        }
+      ],
+      "postCheck": "genesis.controller/registryProxy/ledgerProxy == predicted; codehashes; ProxyAdmin.owner() == controller; a second run() reverts E_GENESIS(0)",
+      "calldataHash": "0x377abb0446036c42440c7c123b42cf2f124a8a5fba2ff8ea390600fb9cefb586"
+    },
+    {
+      "id": "G19",
+      "kind": "CREATE2",
+      "contract": "RealmIndex",
+      "source": "src/index/RealmIndex.sol",
+      "address": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x0b121ea594586b7b45f3cd95e27c6bb2c77d4d074c7ff508abbffd6e36058a5c",
+      "initcodeBytes": 29682,
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+        "0xb7257b6d99AF8c53675a99c4bF5F67ddAF8cB0e8",
+        "0xCFC6AC6478ABAdC2f51F63F87c9e322763aC3Eb1",
+        "0xDdccF8BFA3571451fAb92AEFB4DA6F7Ad43Bc022",
+        [
+          {
+            "foldHook": "0x0000000000000000000000000000000000000000",
+            "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "finalHook": "0xF6546b00Bb43C16A36cec6655a2d656131CAcC43",
+            "finalCodehash": "0x5943a84e8f43678bfa5583a85d7fa696c019e23a53a71b94905ec58b0efea509",
+            "familyIds": [],
+            "purposeFilter": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+            "hotAbiId": "0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d",
+            "identity": "0xa89c6584560250f4b64dc0d9db67fa27411f198aed2c229b7af78b254adc2e04"
+          }
+        ],
+        [
+          {
+            "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+            "wordIndex": 5,
+            "algorithm": 1
+          },
+          {
+            "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+            "wordIndex": 5,
+            "algorithm": 1
+          }
+        ],
+        {
+          "formulaVersion": 1,
+          "freshPerPublication": 2,
+          "rwPerPublication": 10,
+          "freshPerPublishFresh": 10,
+          "rwPerPublish": 50,
+          "freshPerBindFresh": 30,
+          "rwPerBind": 40,
+          "freshPerRef": 10,
+          "freshPerDigestSpec": 10,
+          "computeBase": 60000,
+          "computePerAction": 25000,
+          "computePerHookEffect": 60000,
+          "finalComputeBase": 60000,
+          "finalComputePerBind": 120000
+        }
+      ],
+      "runtimeCodehash": "0x80bed77b105a991604b002ad263b9c2c504a9084c9347fa5d72c4e228ec6826c",
+      "runtimeBytes": 18932,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "manifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+      "calldataHash": "0xc80d187677e8f9e6c08004cc8822b94e26423755a71ee82708b4ced16397ce9f"
+    },
+    {
+      "id": "G20",
+      "kind": "CALL",
+      "contract": "RealmController",
+      "to": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+      "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "function": "activate(ActivationSet)",
+      "args": [
+        {
+          "revision": 1,
+          "components": {
+            "ledgerImpl": "0x937B310DE6358De7008213F24F3f1278d1B81e10",
+            "ledgerImplCodehash": "0xd626158584ff575da104d03c257820941a87aa6250c5419b746f7b735c47b420",
+            "registryImpl": "0x9C07E853046482CAb10F4C703E22268b21f98ACa",
+            "registryImplCodehash": "0xcd95d3b7b5462b1395c4206229afa2559d140b6ccad0f4e1f0a8c68f64e7d819",
+            "index": "0x9eBD92EF72570986F7637e28573D219b48b26374",
+            "indexCodehash": "0x80bed77b105a991604b002ad263b9c2c504a9084c9347fa5d72c4e228ec6826c",
+            "indexManifestHash": "0xfaa97c15f06b42e6e70d413f1be98e8bd9eb8193b8b84e2953eb468071519dd0",
+            "ingress": "0x42e34aF8f28DdC45d1EEB9204643be4D53CfbA56",
+            "ingressCodehash": "0xe990782d927ad2d9771f3dcd6bca128fc8bbacbd5975cd55b3ef526ab551521d",
+            "applyDelegate": "0x80F56Ec471918c3bB379A80a84217B120971876f",
+            "applyCodehash": "0x67f4704f949fdb41497c556a383ae9c857d940f7da3637f9296fa86b307a19b8",
+            "controller": "0xa20Ef4Ec27dc1AEe2ed35a6B330A4F59f61D30fd",
+            "controllerCodehash": "0xb9e95350fcbceb83e5d78a887f2ad656a131d3463fd2bba26f6426670da4d88f",
+            "controllerOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "steward": "0x0000000000000000000000000000000000000000",
+            "verifierProfilesRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a",
+          "executionProfileId": 1,
+          "capabilities": 0,
+          "acceptedChainId": "31337",
+          "limits": {
+            "maxActions": 64,
+            "maxBody": 8192,
+            "maxRefs": 8,
+            "maxReadSetPrincipals": 64,
+            "maxReadSetPositions": 4,
+            "maxWitness": 4096,
+            "maxTransitionBlocks": 7200,
+            "inlineWordMax": 256,
+            "witnessRetention": 1,
+            "maxBindsPerPublication": 64,
+            "maxBodyBytesPerPublication": 16384,
+            "maxFreshSlotsPerPublication": 600,
+            "maxReadIds": 64,
+            "maxReadCount": 256,
+            "floorFreshGas": 22100,
+            "floorRewriteGas": 5000,
+            "kernelTail": 20000
+          },
+          "expectedExecutionSet": "0x3f9d3371aac7184c21133dd9e13ac77d6f745c9356a8160b4e84ccb62e509482",
+          "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "migrationScope": [],
+          "migration": "0x"
+        }
+      ],
+      "postCheck": "ledger.executionSet() == expectedExecutionSet; revision 1; index installed",
+      "calldataHash": "0x112d6bddd21743e51a12a95cdc5142542878c536d87f17c04011d5f721ce487c"
+    },
+    {
+      "id": "R1",
+      "kind": "CREATE2",
+      "contract": "LensReader",
+      "source": "src/readers/LensReader.sol",
+      "address": "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x27cfd6c6652d1d193b5c3a18603e6e7ba82dd294b5887746cd2b4ac48c0ff7e9",
+      "initcodeBytes": 17711,
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+        "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6"
+      ],
+      "runtimeCodehash": "0xe388462888cea0777d64fa4e09e323a2abfc8d96adb6e11129813372a7c34d7f",
+      "runtimeBytes": 17043,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x5e86a0ee27f413bd4bc9a28d3f873fa6dd60ba45bc2e524ee2246bc0bbbcc797"
+    },
+    {
+      "id": "R2",
+      "kind": "CREATE2",
+      "contract": "FilesPageReader",
+      "source": "src/readers/FilesPageReader.sol",
+      "address": "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x582dec83374e53fa8f52d5ca3447af04fc9a9b16fa6c06699c1820c81feb8c2d",
+      "initcodeBytes": 13438,
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+        "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+        "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+        "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+        "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb"
+      ],
+      "runtimeCodehash": "0x4f4cdb2bb05c8cc766f270391c286e09ff0aecac856dd5f4b91fd286221ad1e8",
+      "runtimeBytes": 12676,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x5e028947b32a66e9c445c9d633054070adea68ac912f487c5aaeff5ab1969067"
+    },
+    {
+      "id": "R3",
+      "kind": "CALL",
+      "contract": "ReaderDirectory",
+      "to": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "function": "list(address,bytes32,address)",
+      "label": "list LensReader under efs2/reader/lens/1",
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x75cd7c9277fd0eefc44867edc4a3e8b3ed3bd2fa85711c9ec7602db542adaeef",
+        "0xB7FF72eFc92a8664fb694Fc1d5881377675fCefC"
+      ],
+      "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
+      "calldataHash": "0x054e097c30fce4ebf49b34132ec81f7636b0540e875d4045d49b391257b71d7d"
+    },
+    {
+      "id": "R4",
+      "kind": "CALL",
+      "contract": "ReaderDirectory",
+      "to": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "function": "list(address,bytes32,address)",
+      "label": "list FilesPageReader under efs2/reader/files-page/1",
+      "args": [
+        "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+        "0x3fa6dca5d3eeb67bd6e6db3a6dc96459ec38dd26e082cb43f904a5bffb05f456",
+        "0x0AAC5E57dE944C35b7B110d7ed6E79c93B794F75"
+      ],
+      "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
+      "calldataHash": "0xad88743109be99580a9821c40028719cc5fe7b9c6420593a6b7b843285594712"
+    },
+    {
+      "id": "G21.0",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-root/1",
+      "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0xf43b8d7042db5810d718be782aee3d8273339cd76cfca9faf419dc913592e8cd"
+    },
+    {
+      "id": "G21.1",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-child/1",
+      "typeId": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0x75cdc2d53a6e6aea9daca6d78baaebab79b60aaf6214c22fa2a9280cf5a1312d"
+    },
+    {
+      "id": "G21.2",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-directory/1",
+      "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0xa0d047e36e38e830b428119ec5543634e7d8a175a4fa25114ae55c69b802459a"
+    },
+    {
+      "id": "G21.3",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-name/2",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0x8b032163195afa81d260f4265c2ef0242248c7fa04eebec829e2c56076edf6b6"
+    },
+    {
+      "id": "G21.4",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-bytes/1",
+      "typeId": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0x2be31266dcde822011f62cd23b9c78e3bd602d7da04f12e9275f1678b0c115f8"
+    },
+    {
+      "id": "G21.5",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-content/1",
+      "typeId": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0x4e7917f8a602557e5ea3427a2b1c981608eefe6a36e387cf208d9b485eec89ea"
+    },
+    {
+      "id": "G21.6",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "files-external/1",
+      "typeId": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0xf3bd3eaadd1a59a936a42dce3a22c290ef8b6a2c3855c50faec99664ef6a7c37"
+    },
+    {
+      "id": "G21.7",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "directory-alias/1",
+      "typeId": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0x12f9221e1e7035305237225add6e5e73f39bd7050b97f114fba2b9371fee0737"
+    },
+    {
+      "id": "G21.8",
+      "kind": "CALL",
+      "contract": "TypeRegistry",
+      "to": "0xa4f2B4aA7a20260CD1b54D88695D27fc1562678B",
+      "function": "registerDescribed(bytes,bytes,address,bytes)",
+      "type": "realm-notice/1",
+      "typeId": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903",
+      "postCheck": "returns typeId; typeInfo(typeId).mandatory == instance",
+      "calldataHash": "0x925b37ad3f9373d412f2b04d2e78d10099b44ad9aea2612cb7c31381c6fd89c4"
+    },
+    {
+      "id": "G22.root",
+      "kind": "EXECUTE",
+      "contract": "LedgerCore",
+      "to": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "seed root (CREATE + PUBLISH files-directory/1)",
+      "actions": [
+        {
+          "kind": 5,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0xd6c66cad06fe14fdb6ce9297d80d32f24d7428996d0045cbf90cc345c677ba16"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+          "bodyHashOrRecordId": "0xdb309c3cd8a140b2f98ba2d136048108ee83b829eb5fe6249c061d6a1e0b4879",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x",
+        "0xbf64fbc93b9cf24114f8bcc65f37a45b95be4369488da9a01bf22b31e8ed2b34"
+      ],
+      "postCheck": "recordHeader(root).typeId == files-directory/1; subjectCreatedAt(rootSubject) != 0"
+    },
+    {
+      "id": "G22.folder",
+      "kind": "EXECUTE",
+      "contract": "LedgerCore",
+      "to": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "seed folder docs/ (CREATE, PUBLISH directory, PUBLISH name, BIND FOLDER)",
+      "actions": [
+        {
+          "kind": 5,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0x6bf9054545420e9e9f4aa4f353a32c7d0d52c11dbcdda56c53be8375cafeebb1"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+          "bodyHashOrRecordId": "0xc7e98cde2eba9b2ad842b9c8636cd18610a34250b04fb8b2603853a6a216757b",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+          "bodyHashOrRecordId": "0x6bf9054545420e9e9f4aa4f353a32c7d0d52c11dbcdda56c53be8375cafeebb1",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+          "subject": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+          "role": "0x6bf9054545420e9e9f4aa4f353a32c7d0d52c11dbcdda56c53be8375cafeebb1",
+          "target": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x",
+        "0xedf5c1d34b036c512819a1a9b92ce9c42063dd97618f3efedecc5821268935ff",
+        "0x646f6373",
+        "0x"
+      ],
+      "postCheck": "head(FOLDER root/docs) BOUND → docs directory"
+    },
+    {
+      "id": "G22.file",
+      "kind": "EXECUTE",
+      "contract": "LedgerCore",
+      "to": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
+      "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "seed file docs/readme.txt (CREATE, PUBLISH root, PUBLISH name, BIND HEAD, BIND FOLDER)",
+      "actions": [
+        {
+          "kind": 5,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0xec9369150df74b211844eb9a9fb08de76d3277f56292f8301a4e7e3ad574adc8"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
+          "bodyHashOrRecordId": "0x94a81e460d23273a343427a3d9115f20aa2c5b84745ea8ac33c079bfe9995681",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+          "bodyHashOrRecordId": "0x31f491635b16d6fb45a7d770fcbcc8cbb6eae32ac98ab622631f4bc4a8c7e9ce",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x07167a05890e9fcaccbdf11abbb65a3aa14bccfe41825ce441803003862ce5df",
+          "subject": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99",
+          "subject": "0xec086e5eccb7bc28fdbf0809a6eb85d52a04f0561bc9f6e021be430e9b8c104a",
+          "role": "0x31f491635b16d6fb45a7d770fcbcc8cbb6eae32ac98ab622631f4bc4a8c7e9ce",
+          "target": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+          "expectedRevision": "0",
+          "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x",
+        "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d14d656574696e672061742031303a30302e0a",
+        "0x726561646d652e747874",
+        "0x",
+        "0x"
+      ],
+      "postCheck": "head(HEAD file) → root record; head(FOLDER docs/readme.txt) → file"
+    }
+  ],
+  "planHash": "0x38e9de2ec3fc613f39a61a39eb7103b81369912e212cb1098333873d42fe891c"
+}
