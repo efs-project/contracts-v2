@@ -22,7 +22,13 @@
     "layout": "node tools/layout.mjs",
     "layout:check": "node tools/layout.mjs --check",
     "abi:snapshot": "node tools/abi-snapshot.mjs",
-    "abi:check": "node tools/abi-snapshot.mjs --check"
+    "abi:check": "node tools/abi-snapshot.mjs --check",
+    "release": "node tools/release.mjs",
+    "plan": "node tools/deploy-plan.mjs",
+    "fixture:up": "node tools/efs-fixture.mjs up",
+    "fixture:verify": "node tools/efs-fixture.mjs verify",
+    "fixture:down": "node tools/efs-fixture.mjs down",
+    "gas:report": "node tools/gas-report.mjs"
   },
   "devDependencies": {
     "viem": "^2.57.7"

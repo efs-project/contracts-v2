@@ -7,7 +7,8 @@ the design was adopted. The design is the specification: do not invent module na
 storage layouts, identity derivations, release schemas or deployment policy that it does not
 state; propose a design revision instead, with the measurement or finding that motivates it.
 
-Use the pins and root-directory commands in [README](README.md). Before committing, run frozen
+Use the pins and root-directory commands in [README](README.md); the release and fixture tools are
+described in [tools/README.md](tools/README.md) and [tools/RELEASE.md](tools/RELEASE.md). Before committing, run frozen
 install, Soldeer install, `pnpm check`, `forge fmt --check`, `forge build --sizes` and
 `FOUNDRY_PROFILE=ci forge test`; a change under `src/core/` also prints its attribution delta
 (`node tools/attrib.mjs out/<File>.sol/<Contract>.json --diff <previous report>`). Run `forge`,

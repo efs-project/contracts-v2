@@ -62,3 +62,16 @@ each struct's member offsets with the ERC-7201 namespace roots, and writes `src/
 codecs and the oracle) and the raw snapshots under `test/snapshots/layout/`. The generated Solidity is
 passed through `forge fmt` so the check mode compares formatted output. A changed `LAYOUT_ID` means a
 one-way door moved; `test/unit/Layout.t.sol` pins the id and proves typed writes and raw reads agree.
+
+## Release tools (`deploy-plan.mjs`, `efs-fixture.mjs`, `release.mjs`, `gas-report.mjs`)
+
+The deployment and release surface the SDK consumes (design §13), documented step by step in
+[RELEASE.md](RELEASE.md). In short: `pnpm release` writes `release/release.json` and `release/errors.json`
+from the identity build; `pnpm plan` computes `deploy/plan.json` offline (every address, initcode hash and
+post-check); `pnpm fixture:up -- --port 8560` starts an anvil on a fresh port, runs the plan, registers the
+nine Files Types and seeds the root, a folder and a file, writing `release/efs-deployment.json` and
+`release/expected.json`; `pnpm fixture:verify` re-derives every address, runtime, `describe()` field,
+execution set, manifest, Type id and seed row from a clean checkout and the chain (exit 1 on any mismatch);
+`pnpm gas:report` writes `gas/report.json` under both gas schedules; `pnpm fixture:down` stops the anvil the
+tool started (by its own pid file only). Run `pnpm release` before `fixture:up`: `verify` re-hashes the
+release manifest against the digest `up` recorded.
