@@ -70,4 +70,4 @@ The contracts engineer (Fable) designs and writes the kernel, the apply and ingr
 | S1b.3 release surface | done (verify re-derives 263 facts; readers and the release hot-ABI id being folded in) | `tools/{deploy-plan,efs-fixture,release,gas-report}.mjs`, `deploy/plan.json`, `release/`, `artifacts/`, `gas/report.json`, `schemas/` |
 | C1 | closed for sizes and the M1 write rows (adoption notes 16 and 21, `docs/GAS-SCHEDULES.md`, `gas/report.json`); open: the two sides of 2^24, per-row slot counts, the 48-bit decision rule |
 
-Open items for James are Q1–Q40 in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.
+Open items for James are Q1–Q45 (Q35 and Q42 closed) in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.

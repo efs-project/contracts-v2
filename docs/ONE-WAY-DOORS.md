@@ -63,6 +63,9 @@ revision row; the transient lock word.
 | Family ids | `keccak("efs2/family/<name>/1")`, thirteen names | `Keys.familyId` |
 | Purposes | `keccak("efs2/purpose/{head,folder,tag}/1")` | `Purpose` (Actions.sol) |
 | Notice kinds | `keccak("efs2/notice/{frozen,successor,migration}/1")`; body `abi.encode(kind, uint256 revision, bytes note)` | `ClosureConstants`; the freeze canary |
+| Files revision form | word after the fixed words of `files-root/1`/`files-child/1`: 0 inline bytes, 1 a content descriptor id | `docs/LARGE-FILES.md` |
+| Span tree | `files-span/1` body `[left, right, length]`; canonical chunking `efs2/chunking/1` (8,160-byte payloads; left subtree = largest power of two below n) is an SDK convention, not enforced | `FilesSpanRule`, `EfsFiles.chunk` |
+| External locator | any RFC 3986 URI, 1..2,048 printable ASCII bytes; no scheme allowlist | `FilesExternalContentRule` |
 | Error catalog | selectors and argument shapes in `test/snapshots/abi/Errors.json`; reason codes in the catalog comments | `abi:check` |
 
 ## Deadlines
