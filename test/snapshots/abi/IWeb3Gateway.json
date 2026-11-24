@@ -1,0 +1,98 @@
+{
+  "name": "IWeb3Gateway",
+  "source": "src/interfaces/IWeb3Gateway.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0x1374c460": "request(string[],(string,string)[])",
+    "0xdd473fae": "resolveMode()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "KeyValue": [
+      {
+        "internalType": "string",
+        "name": "key",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "value",
+        "type": "string"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "request",
+      "inputs": [
+        {
+          "name": "resource",
+          "type": "string[]",
+          "internalType": "string[]"
+        },
+        {
+          "name": "params",
+          "type": "tuple[]",
+          "internalType": "struct KeyValue[]",
+          "components": [
+            {
+              "name": "key",
+              "type": "string",
+              "internalType": "string"
+            },
+            {
+              "name": "value",
+              "type": "string",
+              "internalType": "string"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "statusCode",
+          "type": "uint16",
+          "internalType": "uint16"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "internalType": "string"
+        },
+        {
+          "name": "headers",
+          "type": "tuple[]",
+          "internalType": "struct KeyValue[]",
+          "components": [
+            {
+              "name": "key",
+              "type": "string",
+              "internalType": "string"
+            },
+            {
+              "name": "value",
+              "type": "string",
+              "internalType": "string"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "resolveMode",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    }
+  ]
+}
