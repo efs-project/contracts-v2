@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "3427c6328e6922171e6baf668718237fa499d706",
-    "tree": "8ef39ff575fee9038e8dd03305c1c45558a922e9",
-    "dirty": 28,
+    "commit": "e79cd4e4d018952b732318e0063f395cf0ca74d5",
+    "tree": "3c9c704e0146b5ac3fc7622495f80023a7108940",
+    "dirty": 13,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -41,7 +41,7 @@
     "src/core/layout/Layout.sol": "0x25a047067897de3daa9ff7e68fde6ecb29a8e4ddd13af06f235252ee72dadfd1",
     "src/core/storage/LedgerStorage.sol": "0x1ad729301b471bf54bc4f91bf403367e5fe76c2080750fcef2c481f8a9271c5b",
     "src/interfaces/Actions.sol": "0x5c503f6aacc86841f2f8c900b5d76e2f818016b09fe2e176bd0f1cd1f82307be",
-    "src/interfaces/Errors.sol": "0xf9335d9d7f9ad369ec8f33dec34d1424bcf118669ef60177f7d08d120a89c556",
+    "src/interfaces/Errors.sol": "0x85fc31ed22d638a3ff25aa500c171f246168b911adc05a99eb16ec6bdcbd8285",
     "src/interfaces/IAcceptor.sol": "0x81d1fdcc3e1955e19ea037107032dd510058ece7efb5b0ad39b914a1e8f3980e",
     "src/interfaces/IIndexReads.sol": "0x89c95f309b880e9b32e1a6687e18fd97cdf2aeaf824c4cfe3d528b5627e5c428",
     "src/interfaces/ILedgerCommitments.sol": "0xc68f5f990320187ca0a6d30a417dd250e3c9188022cb938918769b9843120dc4",
@@ -105,7 +105,7 @@
     "src/index/storage/GenerationStorage.sol": "0x199b397b307bc01111eafc03a320ca1675cac26c66efef2868bb12a02fb70ee0",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
     "src/profiles/FilesFinalValidator.sol": "0x5a77be4b1dfebadfd9fe5345cca4a87850c30da0aa3b0db146d8dddc82856bb8",
-    "src/profiles/FilesProfile.sol": "0x7a8a11be8ba697be16e94d8a2aecbf54667695e07e95ee598801cfe46f490c25",
+    "src/profiles/FilesProfile.sol": "0xa5f682cd7f005629f478bedecf6fef1da169aadf7464b8ebfddd28e610ea2607",
     "src/profiles/FilesRootRule.sol": "0x305c3768262771e80efc8191909a377aeede3c48f7ae69592da31d9017817e13",
     "src/profiles/FilesChildRule.sol": "0x3265de9a460f4fc1275c07ddd30937543c564d7fdec4a198c7c3b2f2ad06d3da",
     "src/profiles/FilesDirectoryRule.sol": "0xe44144eaf106f5261e57858310e98b18797af64e6de69dfb3051e4e3f02d4f8a",
@@ -117,7 +117,7 @@
     "src/profiles/RealmNoticeRule.sol": "0x0deaf5e2bacc58d532d2808c3c9d7efa768d23e7404504891a9be9596f99e97c",
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
     "src/readers/LensReader.sol": "0x62a452011875730a2f46245fae5a4dd569773dd74b1ef5a89593029af53e7655",
-    "src/readers/FilesPageReader.sol": "0xd1062a68b340de8a8b0aa9d5b6970c0d4003e12d13549b7ba1b961629852e560",
+    "src/readers/FilesPageReader.sol": "0x72119b082cda9ca0adac25ca38536241bcc95dca1ca640e75adcf83139f7df9c",
     "src/profiles/FilesSpanRule.sol": "0x5f255e216313efa9b4284aaf77d90cded8105d4b4e6c458d6bdfefbfdc2eeb2a",
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
     "src/periphery/KeysView.sol": "0x2e92dd1633d27121c05d1b89fb19588df4e99ec1d01376a8705133b452dc0856"
@@ -1799,6 +1799,113 @@
       ]
     }
   },
+  "constants": {
+    "note": "parsed from the sources in `from` at release time; the ids are keccak256 of the UTF-8 preimage. Value 0 of each enum is reserved and never returned.",
+    "from": [
+      "src/interfaces/Actions.sol",
+      "src/interfaces/Results.sol",
+      "src/lib/EfsFiles.sol",
+      "src/profiles/FilesProfile.sol"
+    ],
+    "actionKinds": {
+      "PUBLISH": 1,
+      "REUSE": 2,
+      "BIND": 3,
+      "UNBIND": 4,
+      "CREATE": 5,
+      "WITHDRAW": 6,
+      "RELEASE": 7,
+      "STAGE_RESERVED": 8,
+      "COMMIT_RESERVED": 9
+    },
+    "capabilities": {
+      "NATIVE_GUARD": 1,
+      "SIGNED_SECP256K1": 2,
+      "ERC1271": 4,
+      "P256_WEBAUTHN": 8,
+      "STATEFUL_RULES": 16,
+      "IMPORT": 32,
+      "CODE_BLOB_BODIES": 64,
+      "ROUTED_CONSENT": 128,
+      "KEL_AUTHORITY": 256,
+      "STAGED_PUBLICATION": 512
+    },
+    "purposes": {
+      "HEAD": {
+        "preimage": "efs2/purpose/head/1",
+        "id": "0x07167a05890e9fcaccbdf11abbb65a3aa14bccfe41825ce441803003862ce5df"
+      },
+      "FOLDER": {
+        "preimage": "efs2/purpose/folder/1",
+        "id": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99"
+      },
+      "TAG": {
+        "preimage": "efs2/purpose/tag/1",
+        "id": "0x073e0a1a729959d841354dbb760bf57802acc034630defb75862e5dda0f72c18"
+      }
+    },
+    "status": {
+      "id": "0x2c1d804a59f88f7d13cc3d939d934bd20956054fba1648021eebb083ffc39f1a",
+      "preimage": "efs2/status-vocabulary/1",
+      "codes": {
+        "0": "UNSET",
+        "1": "UNKNOWN",
+        "2": "PRESENT",
+        "3": "ABSENT_PROVEN",
+        "4": "MASKED",
+        "5": "RELEASED",
+        "6": "CONFLICT",
+        "7": "NOT_ON_PAGE",
+        "8": "NOT_APPLICABLE",
+        "9": "INVALID",
+        "10": "UNSUPPORTED",
+        "11": "BASIS_STALE",
+        "12": "LIMIT_EXCEEDED"
+      }
+    },
+    "coverage": {
+      "codes": {
+        "0": "UNSET",
+        "1": "UNKNOWN",
+        "2": "PARTIAL",
+        "3": "COMPLETE"
+      }
+    },
+    "files": {
+      "form": {
+        "INLINE": 0,
+        "CONTENT": 1
+      },
+      "contentCarrier": {
+        "INLINE": 0,
+        "REMOTE": 1,
+        "SPAN": 2
+      },
+      "externalCarrier": {
+        "LOCATION": 2
+      },
+      "hashAlg": {
+        "SHA256": 1
+      },
+      "alias": {
+        "DIRECTORY": 1,
+        "FILE": 2
+      },
+      "targetKind": {
+        "RECORD": 1,
+        "SUBJECT": 2
+      },
+      "lengthMax": "18446744073709551615",
+      "sha256Empty": "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentVersion": 1,
+      "externalVersion": 2,
+      "chunking": {
+        "id": "efs2/chunking/1",
+        "chunkPayload": 8160,
+        "spec": "docs/LARGE-FILES.md"
+      }
+    }
+  },
   "consumer": {
     "pragmaFloor": "^0.8.27",
     "tested": [
@@ -1824,7 +1931,7 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0x59a22cb3e41ff44153b2bc8550b90534fc54ee48b912a18b324c66e7ec89c04e",
+    "sha256": "0x7e9e9a12542147deff87d4cd36f650d8b1afc7bb76462141f18202f1adfcf792",
     "count": 104
   },
   "abi": {

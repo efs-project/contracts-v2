@@ -1,6 +1,6 @@
 {
   "schema": "efs-deployment/1",
-  "releaseDigest": "0x7d56d0cd35a8a51f3bafb2461ffde153189d423bc46a4b1c471ec28d5e479a88",
+  "releaseDigest": "0x6eb79ecc84c0f9735796cd3b6ac05c10d7030b77527c3bd3ea02e22b7324612f",
   "planHash": "0x0f14f8b6bf3fcff1e9403b522d1fb3a7ccc452a7481d25758822d66fa840f255",
   "chainId": 31337,
   "realmId": "0x77b2f54b3e96e8c816b758c64b9c0508aed9564c015b1efff23e4a9a757f412d",
@@ -23,7 +23,7 @@
     },
     "txHash": "0xa4ff3fd15932a549b1fd5e99d95eb6c50f97c68fff0f21c73f954dd3e2a6f309",
     "blockNumber": 38,
-    "blockHash": "0xd541e7e6cbb21c7af687a9c9c84801c5108f09ae2727bc59133e19bd9fac807f"
+    "blockHash": "0xaa42f8592eaeffa196c7d57cd65d84c2bbd27654ee02cfdf094215cf408dab33"
   },
   "activation": {
     "revision": 1,

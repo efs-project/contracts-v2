@@ -5,7 +5,14 @@
 // and artifacts/<Unit>.json (ABI union, bytecode, immutables, method identifiers) and cross-checks the JS Files
 // twin against the Solidity FilesTypes through `forge script script/Genesis.s.sol --sig "profile(address)"`.
 //
-//   node tools/release.mjs [--skip-script 1]
+//   node tools/release.mjs [--skip-script 1] [--check 1]
+//
+// `--check 1` writes nothing: it regenerates every document in memory and fails when a committed file differs
+// (release/errors.json, artifacts/*.json and deploy/plan.json byte for byte; release/release.json without the facts
+// of the machine and the moment: source commit, forge and node versions, build platform, the double-build count and
+// the script cross-check record). CI runs it after the suites, so a push whose snapshot is stale against its own
+// sources cannot merge. Without an AST build (CI) the immutable names are the manifest's and their offsets are checked
+// against the build; the fixture's verify then reads every named immutable from the chain.
 //
 // Digest = sha256(release/release.json); the fixture copies it into efs-deployment/1.
 import assert from "node:assert/strict";
@@ -15,9 +22,24 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { arch, platform, release as osRelease } from "node:os";
 import { join, relative } from "node:path";
 import { keccak256, toFunctionSelector } from "viem";
-import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, immutableLayout, jsonable, parseArgs, root, toJSON } from "./deploy-plan.mjs";
+import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
-const o = parseArgs(process.argv.slice(2), ["skip-script"]);
+const o = parseArgs(process.argv.slice(2), ["skip-script", "check"]);
+const CHECK = !!o.check && o.check !== "0";
+/** Write a generated document, or (--check) compare it with the committed one. `stable` maps a parsed document to
+ *  the part that must reproduce on any machine; without it the comparison is byte for byte. */
+const drift = [];
+const generated = new Map();
+const emit = (rel, text, stable) => {
+  generated.set(rel, text);
+  if (!CHECK) return writeFileSync(join(root, rel), text);
+  const path = join(root, rel);
+  if (!existsSync(path)) return drift.push(`${rel}: missing`);
+  const have = readFileSync(path, "utf8");
+  if (!stable) { if (have !== text) drift.push(`${rel}: differs from the build`); return; }
+  const [x, y] = [stable(JSON.parse(have)), stable(JSON.parse(text))];
+  for (const k of new Set([...Object.keys(x), ...Object.keys(y)])) if (JSON.stringify(x[k]) !== JSON.stringify(y[k])) drift.push(`${rel}: "${k}" differs from the build`);
+};
 assert.equal(ARTIFACTS_MODE, "forge", `tools/release.mjs reads a Foundry build; ${OUT} is a ${ARTIFACTS_MODE} directory (unset EFS_ARTIFACTS_DIR)`);
 const sha256 = (buf) => `0x${createHash("sha256").update(buf).digest("hex")}`;
 const git = (...args) => { try { return execFileSync("git", args, { cwd: root }).toString().trim(); } catch { return null; } };
@@ -35,7 +57,7 @@ let reproducible = 0;
 for (const name of Object.keys(UNITS)) {
   const a = artifact(name);
   const imm = immutableLayout(name);
-  if (existsSync(join(AST_OUT, `${UNITS[name]}.sol`, `${name}.json`))) reproducible++;
+  if (hasAst(name)) reproducible++;
   const step = stepOf(name);
   const deployed = step ?? (name === "RealmController" ? createdOf("RealmController") : name === "ProxyAdmin" ? createdOf("LedgerProxyAdmin") : name === "TransparentUpgradeableProxy" ? createdOf("LedgerProxy") : null);
   const b = budgetOf(name);
@@ -66,23 +88,29 @@ for (const name of Object.keys(UNITS)) {
 const errors = {};
 const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : e.name.endsWith(".sol") ? [`${dir}/${e.name}`] : []));
 for (const path of walk("src").sort()) {
+  let doc = [];
   for (const line of readFileSync(join(root, path), "utf8").split("\n")) {
+    const d = line.match(/^\/\/\/\s?(.*)$/);
+    if (d) { doc.push(d[1].trim()); continue; }
     const m = line.match(/^error\s+(\w+)\(([^)]*)\);\s*(?:\/\/\s*(.*))?$/);
+    const above = doc.join(" ");
+    doc = [];
     if (!m) continue;
     const params = m[2].trim() ? m[2].split(",").map((p) => p.trim().split(/\s+/)) : [];
     const sig = `${m[1]}(${params.map(([t]) => t.replace(/^uint$/, "uint256")).join(",")})`;
     const comment = (m[3] ?? "").trim();
     const cls = comment.match(/^(none|reprepare|resubmit|wait)\b/)?.[1] ?? null;
-    errors[toFunctionSelector(sig)] = { name: m[1], signature: sig, args: params.map(([t, n]) => ({ type: t, name: n ?? "" })), source: path, retryClass: cls, meaning: comment.replace(/^(none|reprepare|resubmit|wait)\b[:\s]*/, "") || null };
+    assert.ok(cls, `${path}: error ${m[1]} has no retry class (the trailing comment starts with none, reprepare, resubmit or wait)`);
+    errors[toFunctionSelector(sig)] = { name: m[1], signature: sig, args: params.map(([t, n]) => ({ type: t, name: n ?? "" })), source: path, retryClass: cls, meaning: comment.replace(/^(none|reprepare|resubmit|wait)\b[:\s]*/, "") || above || null };
   }
 }
 const snap = JSON.parse(readFileSync(join(root, "test/snapshots/abi/Errors.json"), "utf8")).errors;
 for (const [sel, sig] of Object.entries(snap)) assert.equal(errors[sel]?.signature, sig, `error catalog: ${sig} (${sel}) from test/snapshots/abi/Errors.json not reproduced`);
-mkdirSync(join(root, "release"), { recursive: true });
-writeFileSync(join(root, "release/errors.json"), toJSON({ schema: "efs-errors/1", source: "src/**/*.sol file-level errors; retry class = the trailing comment's first word", errors: Object.fromEntries(Object.entries(errors).sort(([, x], [, y]) => (x.name < y.name ? -1 : 1))) }));
+if (!CHECK) mkdirSync(join(root, "release"), { recursive: true });
+emit("release/errors.json", toJSON({ schema: "efs-errors/1", source: "src/**/*.sol file-level errors; retry class = the trailing comment's first word", errors: Object.fromEntries(Object.entries(errors).sort(([, x], [, y]) => (x.name < y.name ? -1 : 1))) }));
 
 // ---- artifacts/: the deployable units' ABI (kernel = core ∪ apply ∪ ingress ∪ control fragments), bytecode, ids -----
-mkdirSync(join(root, "artifacts"), { recursive: true });
+if (!CHECK) mkdirSync(join(root, "artifacts"), { recursive: true });
 const union = (names) => {
   const seen = new Map();
   for (const n of names) for (const item of artifact(n).abi) {
@@ -96,10 +124,10 @@ for (const name of Object.keys(UNITS)) {
   const a = artifact(name);
   const raw = JSON.parse(readFileSync(join(OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8"));
   const abi = name === "LedgerCore" ? union(["LedgerCore", "LedgerApply", "LedgerIngress", "LedgerControl"]) : a.abi;
-  writeFileSync(join(root, "artifacts", `${name}.json`), toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers: raw.methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
+  emit(`artifacts/${name}.json`, toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers: raw.methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
 }
 // artifacts/index.json: what a deploy from artifacts/ alone needs besides the units (tools/deploy-plan.mjs "release" layout)
-writeFileSync(join(root, "artifacts", "index.json"), toJSON({ schema: "efs-artifacts-index/1", layoutId: plan.layoutId, hotAbiId: plan.hotAbiId, hotAbiIdString: plan.hotAbiIdString, units: Object.keys(UNITS), manifest: "release/release.json", note: "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`" }));
+emit("artifacts/index.json", toJSON({ schema: "efs-artifacts-index/1", layoutId: plan.layoutId, hotAbiId: plan.hotAbiId, hotAbiIdString: plan.hotAbiIdString, units: Object.keys(UNITS), manifest: "release/release.json", note: "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`" }));
 
 // ---- cross-check: the JS Files twin against the Solidity FilesTypes ------------------------------------------------
 let scriptCheck = { ran: false };
@@ -120,6 +148,56 @@ if (!o["skip-script"]) {
   assert.equal(ret.validatorIdentity.value.toLowerCase(), plan.index.validatorIdentity.toLowerCase(), "script validator identity");
   scriptCheck = { ran: true, command: `forge script script/Genesis.s.sol --sig "profile(address)" ${plan.owner} --json`, equal: ["instances", "ruleInitcodeHashes", "descriptors", "typeIds", "refuseAll", "validator", "validatorIdentity"] };
 }
+
+// ---- named protocol constants, parsed from the Solidity sources (never a hand-typed twin) ---------------------------
+const src = (rel) => readFileSync(join(root, rel), "utf8");
+const block = (text, head, rel) => {
+  const m = text.match(new RegExp(`\\n${head}[^{\\n]*\\{([\\s\\S]*?)\\n\\}`)); // a top-level block: its closing brace is in column 0
+  assert.ok(m, `${rel}: \`${head}\` not found`);
+  return m[1];
+};
+/** `NAME = <literal>` constants of a library: integers, `1 << n`, `type(uintN).max`, hex words and keccak256("…"). */
+const libraryConstants = (rel, name) => {
+  const out = {};
+  for (const m of block(src(rel), `library ${name}`, rel).matchAll(/constant\s+(\w+)\s*=\s*([^;]+);/g)) {
+    const e = m[2].trim();
+    let k;
+    if (/^[\d_]+$/.test(e)) out[m[1]] = Number(e.replaceAll("_", ""));
+    else if ((k = e.match(/^1 << (\d+)$/))) out[m[1]] = 1 << Number(k[1]);
+    else if ((k = e.match(/^type\(uint(\d+)\)\.max$/))) out[m[1]] = ((1n << BigInt(k[1])) - 1n).toString();
+    else if (/^0x[0-9a-f]{64}$/.test(e)) out[m[1]] = e;
+    else if ((k = e.match(/^keccak256\("([^"]+)"\)$/))) out[m[1]] = { preimage: k[1], id: keccak256(Buffer.from(k[1])) };
+  }
+  return out;
+};
+const enumCodes = (rel, name) => Object.fromEntries(block(src(rel).replace(/\/\/.*$/gm, ""), `enum ${name}`, rel).split(",").map((v, i) => [String(i), v.trim()]).filter(([, v]) => v));
+const pick = (o, prefix) => Object.fromEntries(Object.entries(o).filter(([k]) => k.startsWith(prefix)).map(([k, v]) => [k.slice(prefix.length), v]));
+const ACTIONS = "src/interfaces/Actions.sol", RESULTS = "src/interfaces/Results.sol", FILES_LIB = "src/lib/EfsFiles.sol", FILES_PROFILE = "src/profiles/FilesProfile.sol";
+const vocabulary = src(RESULTS).match(/STATUS_VOCABULARY_ID = keccak256\("([^"]+)"\)/)?.[1];
+assert.ok(vocabulary, `${RESULTS}: STATUS_VOCABULARY_ID not found`);
+const efsFiles = libraryConstants(FILES_LIB, "EfsFiles"), filesProfile = libraryConstants(FILES_PROFILE, "FilesProfile");
+const constants = {
+  note: "parsed from the sources in `from` at release time; the ids are keccak256 of the UTF-8 preimage. Value 0 of each enum is reserved and never returned.",
+  from: [ACTIONS, RESULTS, FILES_LIB, FILES_PROFILE],
+  actionKinds: libraryConstants(ACTIONS, "ActionKind"),
+  capabilities: libraryConstants(ACTIONS, "Capability"),
+  purposes: libraryConstants(ACTIONS, "Purpose"),
+  status: { id: keccak256(Buffer.from(vocabulary)), preimage: vocabulary, codes: enumCodes(RESULTS, "Status") },
+  coverage: { codes: enumCodes(RESULTS, "Coverage") },
+  files: {
+    form: pick(efsFiles, "FORM_"), contentCarrier: pick(Object.fromEntries(Object.entries(efsFiles).filter(([k]) => k !== "CARRIER_LOCATION")), "CARRIER_"), externalCarrier: { LOCATION: efsFiles.CARRIER_LOCATION },
+    hashAlg: pick(efsFiles, "HASH_"), alias: pick(efsFiles, "ALIAS_"), targetKind: pick(filesProfile, "TARGET_"), lengthMax: filesProfile.LENGTH_MAX, sha256Empty: filesProfile.SHA256_EMPTY,
+    // fixed by each rule's law, not a named constant: FilesContentRule / FilesExternalContentRule refusal code 4
+    contentVersion: 1, externalVersion: 2,
+    chunking: { id: "efs2/chunking/1", chunkPayload: efsFiles.CHUNK_PAYLOAD, spec: "docs/LARGE-FILES.md" },
+  },
+};
+for (const [k, n] of [["actionKinds", 9], ["capabilities", 10], ["purposes", 3]]) assert.equal(Object.keys(constants[k]).length, n, `constants.${k}: expected ${n} entries`);
+assert.equal(constants.status.codes["12"], "LIMIT_EXCEEDED");
+assert.deepEqual(constants.files.form, { INLINE: 0, CONTENT: 1 });
+assert.deepEqual(constants.files.contentCarrier, { INLINE: 0, REMOTE: 1, SPAN: 2 });
+assert.equal(constants.files.chunking.chunkPayload, 8160);
+assert.equal(constants.purposes.FOLDER.id, plan.index.units[0].purposeFilter ?? constants.purposes.FOLDER.id, "Purpose.FOLDER != the validator unit's purpose filter");
 
 // ---- the manifest --------------------------------------------------------------------------------------------------
 const settings = artifact("LedgerCore").settings;
@@ -149,19 +227,45 @@ const manifest = {
     hotAbiId: plan.hotAbiId,
     hotAbiIdPreimage: plan.hotAbiIdString,
     readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
-    statusVocabularyId: keccak256(Buffer.from("efs2/status-vocabulary/1")),
+    statusVocabularyId: constants.status.id,
     storeAbiIds: { posting: keccak256(Buffer.from("efs2/posting-store/1")), bitmap: keccak256(Buffer.from("efs2/bitmap-store/1")) },
     indexProfiles: { physical: keccak256(Buffer.from("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs")) },
     crossCheck: scriptCheck,
   },
+  constants,
   consumer: { pragmaFloor: "^0.8.27", tested: [{ solc: "0.8.27", viaIR: false, profile: "closure" }, { solc: artifact("LedgerCore").compiler.version, viaIR: true, evm: settings.evmVersion, profile: "default" }], remapping: "@efs/contracts/=src/" },
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
-  errors: { path: "release/errors.json", sha256: sha256(readFileSync(join(root, "release/errors.json"))), count: Object.keys(errors).length },
+  errors: { path: "release/errors.json", sha256: sha256(Buffer.from(generated.get("release/errors.json"))), count: Object.keys(errors).length },
   abi: { interfaces: "test/snapshots/abi/", units: "artifacts/" },
   vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json"].map((p) => [p, sha256(readFileSync(join(root, p)))])),
   dependencyRoot: null,
   deployPlan: { path: "deploy/plan.json", genesis: plan.addresses.genesis, factory: plan.factory },
 };
-writeFileSync(join(root, "release/release.json"), toJSON(jsonable(manifest)));
+// what a second machine cannot reproduce, and so --check does not compare
+const stable = ({ source, buildPlatform, reproducibility, ...m }) => {
+  const { foundry, node, ...toolchain } = m.toolchain ?? {};
+  const { crossCheck, ...profiles } = m.profiles ?? {};
+  return { ...m, toolchain, profiles };
+};
+emit("release/release.json", toJSON(jsonable(manifest)), stable);
+if (CHECK) {
+  // deploy/plan.json is tools/deploy-plan.mjs's output for the default chain and salt
+  emit("deploy/plan.json", toJSON(planDocument(plan)));
+  const committed = new Set(readdirSync(join(root, "artifacts")).filter((f) => f.endsWith(".json")).map((f) => `artifacts/${f}`));
+  for (const f of committed) if (!generated.has(f)) drift.push(`${f}: committed but no longer generated`);
+  // the committed sample deployment names this manifest and this plan
+  const sample = join(root, "release/efs-deployment.json");
+  if (existsSync(sample)) {
+    const dep = JSON.parse(readFileSync(sample, "utf8"));
+    if (dep.releaseDigest !== sha256(readFileSync(join(root, "release/release.json")))) drift.push("release/efs-deployment.json: releaseDigest is not sha256(release/release.json) (run `efs-fixture up --name sample --write-release`)");
+    if (dep.planHash !== planDocument(plan).planHash) drift.push("release/efs-deployment.json: planHash is not this build's plan");
+  }
+  if (drift.length) {
+    console.error(`release: the committed snapshot does not match this build (${drift.length}):\n  ${drift.join("\n  ")}\nRegenerate it in the same push: forge build, the AST build, \`pnpm run release\`, \`pnpm run plan\` (tools/RELEASE.md).`);
+    process.exit(1);
+  }
+  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json${scriptCheck.ran ? "; FilesTypes twin == forge script" : ""})`);
+  process.exit(0);
+}
 const digest = sha256(readFileSync(join(root, "release/release.json")));
 console.log(`release: release/release.json (${Object.keys(contracts).length} units, ${Object.keys(files).length} source files, ${Object.keys(errors).length} errors, ${reproducible}/${Object.keys(UNITS).length} double-built identical${scriptCheck.ran ? ", FilesTypes twin == forge script" : ""}) digest ${digest}`);

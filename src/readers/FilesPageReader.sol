@@ -12,13 +12,13 @@ import {BasisCommit, Coverage, Qualified, Status} from "../interfaces/Results.so
 import {Keys} from "../lib/Keys.sol";
 
 /// A dependency (the ledger, a facet, the index or its bitmap store) reverted, ran out of gas or has no code.
-error E_FILES_READ(address source, bytes4 selector);
+error E_FILES_READ(address source, bytes4 selector); // none
 /// A dependency's reply is shorter than its ABI shape, or a word does not fit its declared width.
-error E_FILES_REPLY(uint256 word, uint256 length);
+error E_FILES_REPLY(uint256 word, uint256 length); // none
 /// A dependency's reply contradicts another reply or the kernel's own laws; codes on `FilesPageReader`.
-error E_FILES_INCONSISTENT(uint8 code);
+error E_FILES_INCONSISTENT(uint8 code); // none
 /// A facet answered a per-row read with a status the page cannot carry (LIMIT_EXCEEDED, UNSUPPORTED, UNKNOWN).
-error E_FILES_STATUS(uint8 status);
+error E_FILES_STATUS(uint8 status); // none
 
 // Reading the ABI replies word by word is the point of this reader: every reply is length-checked and every
 // narrow field range-checked before use, so a short, padded or out-of-range reply is a named revert instead of

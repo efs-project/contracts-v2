@@ -71,6 +71,7 @@ export function useArtifacts(dir = DEFAULT_ARTIFACTS) {
   const relPath = join(REPO_ROOT, "release/release.json");
   RELEASE_UNITS = releaseLayout && existsSync(relPath) ? JSON.parse(readFileSync(relPath, "utf8")).contracts : null;
   cache.clear();
+  astSeen.clear();
   astIndex = undefined;
   return artifactSource();
 }
@@ -150,11 +151,15 @@ export const keys = {
 // ---- artifacts -----------------------------------------------------------------------------------------------------
 
 const cache = new Map();
+const astSeen = new Map();
 let astIndex;
-useArtifacts();
+// The default source is selected at import only when it exists: a tree without out/ (a vendored release directory)
+// must still be importable, and `buildPlan({artifacts})` / `--artifacts` select the source before any read.
+if (existsSync(DEFAULT_ARTIFACTS)) useArtifacts();
 /** <dir>/<File>.sol/<Name>.json, refused when stale against the source on disk (the abi-snapshot rule); in the
  *  release layout <dir>/<Name>.json, refused when its bytes differ from release/release.json. */
 export function artifact(name, { file = name, dir = OUT } = {}) {
+  assert.ok(dir, `no artifact directory: ${DEFAULT_ARTIFACTS} does not exist (run \`forge build\`, pass --artifacts DIR or set EFS_ARTIFACTS_DIR)`);
   const base = at(dir);
   const key = `${base}/${file}/${name}`;
   if (cache.has(key)) return cache.get(key);
@@ -214,12 +219,19 @@ function astNames() {
   };
   const scan = (dir) => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.isDirectory()) { if (e.name !== "build-info" && e.name !== "release-ast") scan(join(dir, e.name)); }
+      if (e.isDirectory()) { if (!["build-info", "release-ast", "closure"].includes(e.name)) scan(join(dir, e.name)); }
       else if (e.name.endsWith(".json") && e.name !== SNAPSHOT_FILE) walk(JSON.parse(readFileSync(join(dir, e.name), "utf8")).ast);
     }
   };
   scan(AST_OUT);
   return astIndex;
+}
+
+/** Whether the AST build has this unit with its AST (a build without `--ast` has the artifact but no tree). */
+export function hasAst(name) {
+  const path = join(AST_OUT, `${UNITS[name]}.sol`, `${name}.json`);
+  if (!astSeen.has(path)) astSeen.set(path, existsSync(path) && !!JSON.parse(readFileSync(path, "utf8")).ast);
+  return astSeen.get(path);
 }
 
 /** `[{name, offsets}]` for a unit: from a snapshot's manifest, from the AST build (bytecode-checked against the
@@ -229,7 +241,7 @@ export function immutableLayout(name) {
   if (Object.keys(a.refs).length === 0) return [];
   if (ARTIFACTS_MODE === "release") return a.immutables;
   if (SNAPSHOT?.immutables?.[name]) return SNAPSHOT.immutables[name];
-  if (existsSync(join(AST_OUT, `${UNITS[name]}.sol`, `${name}.json`))) {
+  if (hasAst(name)) {
     const b = artifact(name, { file: UNITS[name], dir: AST_OUT });
     assert.equal(b.runtime, a.runtime, `${name}: the AST build's runtime differs from the identity build's (not reproducible)`);
     assert.equal(b.bytecode, a.bytecode, `${name}: the AST build's creation code differs from the identity build's`);
@@ -246,6 +258,9 @@ export function immutableLayout(name) {
   assert.ok(existsSync(rel), `${name} has immutables: build ${AST_OUT} (see tools/RELEASE.md) or provide release/release.json`);
   const unit = JSON.parse(readFileSync(rel, "utf8")).contracts[name];
   assert.ok(unit?.immutables, `release/release.json has no immutable layout for ${name}`);
+  // the names are the manifest's; the offsets must still be this build's
+  const offsets = (groups) => groups.map((g) => g.join(",")).sort();
+  assert.deepEqual(offsets(unit.immutables.map((i) => i.offsets)), offsets(Object.values(a.refs).map((refs) => refs.map((r) => r.start).sort((x, y) => x - y))), `${name}: release/release.json immutable offsets differ from the build's (run \`pnpm run release\` with the AST build)`);
   return unit.immutables;
 }
 

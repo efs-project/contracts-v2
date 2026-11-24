@@ -9,13 +9,13 @@ import {AcceptContext} from "../interfaces/IAcceptor.sol";
 // nested by the index and the ingress inside `E_INDEX_CALL(inner)`, so `E_FILES_FINAL` is visible to the caller.
 
 /// `ctx.ledger != msg.sender`: a forged context or a lookalike coordinator (design §5.10).
-error E_FILES_CONTEXT(address ledger, address caller);
+error E_FILES_CONTEXT(address ledger, address caller); // none
 /// A rule's law refused the record; `code` is listed in each rule's NatSpec.
-error E_FILES_REFUSED(uint8 code);
+error E_FILES_REFUSED(uint8 code); // none
 /// `FilesFinalValidator` refused the FOLDER bind at publication leaf `leaf`; codes on the validator.
-error E_FILES_FINAL(uint8 code, uint8 leaf);
+error E_FILES_FINAL(uint8 code, uint8 leaf); // reprepare
 /// `RefuseAllPolicy`: the explicit sunset policy refuses every record.
-error E_FILES_SUNSET();
+error E_FILES_SUNSET(); // none
 
 /// @title FilesProfile — constants shared by the Files rules (design §12.1)
 /// @dev Internal only; no storage, no immutables (the profile immutables gate, `tools/checks.mjs`).

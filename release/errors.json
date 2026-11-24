@@ -80,7 +80,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "0 this generation declares no later family; 1 coverage not open 2 through outside [through, liveFrom]"
     },
     "0xda327938": {
@@ -110,7 +110,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 a binding argument on a grade that takes none 3 custom codehash 4 native codehash 5 binding signed by another key 6 existing row under another predicate 7 signature length 8 malleable 9 unrecoverable 10 binding id recomputed by the wrapper differs from the context's"
     },
     "0xf4b203cb": {
@@ -123,7 +123,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x6084d51b": {
@@ -153,7 +153,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "0 this generation declares no later family"
     },
     "0xc41bde55": {
@@ -166,7 +166,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x1b10bf54": {
@@ -221,7 +221,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "codes 1..26 documented on DescribedCodec.parse; the DescriptorStore uses (0, 1) for an oversized blob"
     },
     "0xc3fb7c63": {
@@ -238,7 +238,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 EIP-1167 proxy 6 codehash mismatch"
     },
     "0xa34c143f": {
@@ -251,7 +251,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 controller 2 codehash 3 owner"
     },
     "0x1fdc7a17": {
@@ -277,7 +277,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 already open 2 nothing to retire"
     },
     "0x7b1ececb": {
@@ -294,8 +294,8 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "reprepare",
+      "meaning": "the transition deadline is before the current block or more than maxBlocks past it"
     },
     "0xb13a0b3f": {
       "name": "E_DECLARATION",
@@ -307,7 +307,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 signature length 2 malleable or bad v 3 unrecoverable 4 signed by another key"
     },
     "0x6244bd3d": {
@@ -328,8 +328,8 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "0 already run 1 plan hash 2 store address 3 generation address 4 generation ledger"
     },
     "0x7106dafd": {
       "name": "E_DESIGNATOR",
@@ -341,7 +341,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0xb7096410": {
@@ -392,8 +392,8 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "reprepare",
+      "meaning": "the set names an execution set other than the one the live components hash to"
     },
     "0x9fab7f4a": {
       "name": "E_EXPIRED",
@@ -422,7 +422,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x8f2d09aa": {
@@ -439,8 +439,8 @@
         }
       ],
       "source": "src/profiles/FilesProfile.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "`ctx.ledger != msg.sender`: a forged context or a lookalike coordinator (design §5.10)."
     },
     "0xaf7811e9": {
       "name": "E_FILES_FINAL",
@@ -456,8 +456,8 @@
         }
       ],
       "source": "src/profiles/FilesProfile.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "reprepare",
+      "meaning": "`FilesFinalValidator` refused the FOLDER bind at publication leaf `leaf`; codes on the validator."
     },
     "0x1bea8eb2": {
       "name": "E_FILES_INCONSISTENT",
@@ -469,8 +469,8 @@
         }
       ],
       "source": "src/readers/FilesPageReader.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "A dependency's reply contradicts another reply or the kernel's own laws; codes on `FilesPageReader`."
     },
     "0x0be0840c": {
       "name": "E_FILES_READ",
@@ -486,8 +486,8 @@
         }
       ],
       "source": "src/readers/FilesPageReader.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "A dependency (the ledger, a facet, the index or its bitmap store) reverted, ran out of gas or has no code."
     },
     "0x55efd2e4": {
       "name": "E_FILES_REFUSED",
@@ -499,8 +499,8 @@
         }
       ],
       "source": "src/profiles/FilesProfile.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "A rule's law refused the record; `code` is listed in each rule's NatSpec."
     },
     "0xf00d1903": {
       "name": "E_FILES_REPLY",
@@ -516,8 +516,8 @@
         }
       ],
       "source": "src/readers/FilesPageReader.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "A dependency's reply is shorter than its ABI shape, or a word does not fit its declared width."
     },
     "0xfe0e186e": {
       "name": "E_FILES_STATUS",
@@ -529,16 +529,16 @@
         }
       ],
       "source": "src/readers/FilesPageReader.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "A facet answered a per-row read with a status the page cannot carry (LIMIT_EXCEEDED, UNSUPPORTED, UNKNOWN)."
     },
     "0x389b9514": {
       "name": "E_FILES_SUNSET",
       "signature": "E_FILES_SUNSET()",
       "args": [],
       "source": "src/profiles/FilesProfile.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "`RefuseAllPolicy`: the explicit sunset policy refuses every record."
     },
     "0xea3b2fde": {
       "name": "E_FREEZE_PRECHECK",
@@ -550,7 +550,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0xabdd33df": {
@@ -558,8 +558,8 @@
       "signature": "E_FROZEN()",
       "args": [],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "none",
+      "meaning": "the Realm is frozen"
     },
     "0x6667c3b4": {
       "name": "E_GAS",
@@ -592,7 +592,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "0 already run 1 limits hash 2 controller address 3 registry proxy address 4 ledger proxy address 5..8 post-checks 9 implementation codehash 10 initcode hash 11 creation failed"
     },
     "0x923fa11b": {
@@ -605,7 +605,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x73147128": {
@@ -631,7 +631,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x998dcc3e": {
@@ -648,7 +648,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x625e5082": {
@@ -712,7 +712,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x43e505ed": {
@@ -755,7 +755,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x9b93f111": {
@@ -802,7 +802,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x4ef987bc": {
@@ -810,7 +810,7 @@
       "signature": "E_LEDGER()",
       "args": [],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x6c8ce564": {
@@ -823,7 +823,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0xaeb3d821": {
@@ -882,7 +882,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x72b4bd59": {
@@ -890,8 +890,8 @@
       "signature": "E_NOT_IDLE()",
       "args": [],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "wait",
+      "meaning": "a controller ceremony is in progress"
     },
     "0x22218e10": {
       "name": "E_NOT_LIVE",
@@ -924,7 +924,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x3f22553d": {
@@ -949,7 +949,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x8f1baa30": {
@@ -962,7 +962,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x62c99498": {
@@ -979,7 +979,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin"
     },
     "0x1b4fbe7a": {
@@ -1025,8 +1025,8 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": "1 already listed 2 names another ledger 3 malformed reply 4 list full // 0 already run 1 plan hash 2 store address 3 generation address 4 generation ledger"
+      "retryClass": "none",
+      "meaning": "1 already listed 2 names another ledger 3 malformed reply 4 list full"
     },
     "0x00c749f1": {
       "name": "E_READSET_SHAPE",
@@ -1089,7 +1089,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 activeRevision 2 ledger 3 implementation 4 codehash"
     },
     "0x89a31dca": {
@@ -1136,7 +1136,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 stores not fresh or already live 2 foreign layout at that publication 3 not idle 5 no decoder 6 maxFacts 7 no such publication 8 unreadable row 9 bind row without an ordinal"
     },
     "0x162fbcd4": {
@@ -1153,7 +1153,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "field 32: limits.maxActions outside 1..64 (the replay ceiling); 33: a capability this build does not implement"
     },
     "0x322eb12b": {
@@ -1161,7 +1161,7 @@
       "signature": "E_RETIRED()",
       "args": [],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x3aa851df": {
@@ -1178,15 +1178,15 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "reprepare",
+      "meaning": "a set or a transition must name revision current + 1"
     },
     "0xf80d9781": {
       "name": "E_ROLE_ROWS",
       "signature": "E_ROLE_ROWS()",
       "args": [],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x4d5303a7": {
@@ -1246,7 +1246,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x874a96b4": {
@@ -1276,7 +1276,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 codehash 2 controller field 3 owner 4 admins not moved 5 self 6 retired or frozen 7 another ledger 8 another registry"
     },
     "0xbdc2c981": {
@@ -1348,8 +1348,8 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
-      "meaning": null
+      "retryClass": "wait",
+      "meaning": "no new transition before block `until`"
     },
     "0xa48a998f": {
       "name": "E_TRANSITION_TARGET",
@@ -1361,7 +1361,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x19834aa0": {
@@ -1374,7 +1374,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x2035cbfd": {
@@ -1408,7 +1408,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0x9e223dd5": {
@@ -1446,7 +1446,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     },
     "0xe4c84ba6": {
@@ -1502,7 +1502,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": "1 no wrapper row for the header's version 2 wrapper codehash differs from the header's 3 version 0 4 version already activated 5 not a wrapper (constants unreadable)"
     },
     "0x2d01279b": {
@@ -1515,7 +1515,7 @@
         }
       ],
       "source": "src/interfaces/Errors.sol",
-      "retryClass": null,
+      "retryClass": "none",
       "meaning": null
     }
   }

@@ -64,59 +64,59 @@ error E_INDEX_ACK(uint8 phase); // none: a callback returned without the exact 3
 error E_DELEGATE_ONLY(); // none
 
 // ---- activation, transition, freeze and the controller (design §8) ---------------------------------------
-error E_REVISION(uint32 expected, uint32 have);
-error E_IMPLEMENTATION(address expected, address live);
-error E_LAYOUT(bytes32 expected, bytes32 have);
-error E_REGISTRY(uint8 field); // 1 activeRevision 2 ledger 3 implementation 4 codehash
-error E_PIN(address target, uint8 which); // 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin
-error E_INDEX_NOT_READY(uint8 reason);
-error E_EXPECTED_SET(bytes32 expected, bytes32 live);
-error E_FROZEN();
-error E_NOT_CONTROLLER(address caller);
-error E_DEADLINE_BOUND(uint48 deadline, uint32 maxBlocks);
-error E_TRANSITION_COOLDOWN(uint48 until);
-error E_TRANSITION_TARGET(uint32 target);
-error E_MIGRATION_SCOPE(bytes32 root);
-error E_HOT_ABI(address unit);
-error E_CODE_SHAPE(address target, uint8 reason); // 1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 EIP-1167 proxy 6 codehash mismatch
-error E_CONTROLLER(uint8 field); // 1 controller 2 codehash 3 owner
-error E_FREEZE_PRECHECK(uint8 check);
-error E_RESERVED(uint8 field, uint256 value); // field 32: limits.maxActions outside 1..64 (the replay ceiling); 33: a capability this build does not implement
-error E_UNSUPPORTED_ROW(uint8 row);
+error E_REVISION(uint32 expected, uint32 have); // reprepare: a set or a transition must name revision current + 1
+error E_IMPLEMENTATION(address expected, address live); // none
+error E_LAYOUT(bytes32 expected, bytes32 have); // none
+error E_REGISTRY(uint8 field); // none: 1 activeRevision 2 ledger 3 implementation 4 codehash
+error E_PIN(address target, uint8 which); // none: 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin
+error E_INDEX_NOT_READY(uint8 reason); // none
+error E_EXPECTED_SET(bytes32 expected, bytes32 live); // reprepare: the set names an execution set other than the one the live components hash to
+error E_FROZEN(); // none: the Realm is frozen
+error E_NOT_CONTROLLER(address caller); // none
+error E_DEADLINE_BOUND(uint48 deadline, uint32 maxBlocks); // reprepare: the transition deadline is before the current block or more than maxBlocks past it
+error E_TRANSITION_COOLDOWN(uint48 until); // wait: no new transition before block `until`
+error E_TRANSITION_TARGET(uint32 target); // none
+error E_MIGRATION_SCOPE(bytes32 root); // none
+error E_HOT_ABI(address unit); // none
+error E_CODE_SHAPE(address target, uint8 reason); // none: 1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 EIP-1167 proxy 6 codehash mismatch
+error E_CONTROLLER(uint8 field); // none: 1 controller 2 codehash 3 owner
+error E_FREEZE_PRECHECK(uint8 check); // none
+error E_RESERVED(uint8 field, uint256 value); // none: field 32: limits.maxActions outside 1..64 (the replay ceiling); 33: a capability this build does not implement
+error E_UNSUPPORTED_ROW(uint8 row); // none
 
 // ---- registry (design §9) ----------------------------------------------------------------------------------
-error E_TYPE_EXISTS(bytes32 typeId);
-error E_BINDING(uint8 code); // 1 a binding argument on a grade that takes none 3 custom codehash 4 native codehash 5 binding signed by another key 6 existing row under another predicate 7 signature length 8 malleable 9 unrecoverable 10 binding id recomputed by the wrapper differs from the context's
-error E_DECLARATION(uint8 code); // 1 signature length 2 malleable or bad v 3 unrecoverable 4 signed by another key
-error E_CODEC(uint16 byteOffset, uint8 code); // codes 1..26 documented on DescribedCodec.parse; the DescriptorStore uses (0, 1) for an oversized blob
-error E_DESIGNATOR(address target);
-error E_BLOB(address blob);
-error E_GRADE(uint8 grade);
-error E_INSTANCE(address expected, address have);
-error E_WRAPPER(uint8 code); // 1 no wrapper row for the header's version 2 wrapper codehash differs from the header's 3 version 0 4 version already activated 5 not a wrapper (constants unreadable)
-error E_ROLE_ROWS();
+error E_TYPE_EXISTS(bytes32 typeId); // none
+error E_BINDING(uint8 code); // none: 1 a binding argument on a grade that takes none 3 custom codehash 4 native codehash 5 binding signed by another key 6 existing row under another predicate 7 signature length 8 malleable 9 unrecoverable 10 binding id recomputed by the wrapper differs from the context's
+error E_DECLARATION(uint8 code); // none: 1 signature length 2 malleable or bad v 3 unrecoverable 4 signed by another key
+error E_CODEC(uint16 byteOffset, uint8 code); // none: codes 1..26 documented on DescribedCodec.parse; the DescriptorStore uses (0, 1) for an oversized blob
+error E_DESIGNATOR(address target); // none
+error E_BLOB(address blob); // none
+error E_GRADE(uint8 grade); // none
+error E_INSTANCE(address expected, address have); // none
+error E_WRAPPER(uint8 code); // none: 1 no wrapper row for the header's version 2 wrapper codehash differs from the header's 3 version 0 4 version already activated 5 not a wrapper (constants unreadable)
+error E_ROLE_ROWS(); // none
 
 // ---- index and stores (design §10, §4.6) ----------------------------------------------------------------
-error E_LEDGER();
-error E_WRITER(address caller);
-error E_ORDER(uint64 expected, uint64 have);
-error E_STAGED(uint64 expected, uint64 have);
-error E_FAMILY(bytes32 familyId);
-error E_UNIT(uint8 index);
-error E_REPLAY(uint8 code); // 1 stores not fresh or already live 2 foreign layout at that publication 3 not idle 5 no decoder 6 maxFacts 7 no such publication 8 unreadable row 9 bind row without an ordinal
-error E_BUILD(uint8 code); // 0 this generation declares no later family
-error E_BACKFILL(uint8 code); // 0 this generation declares no later family; 1 coverage not open 2 through outside [through, liveFrom]
-error E_COVERAGE(uint8 code); // 1 already open 2 nothing to retire
+error E_LEDGER(); // none
+error E_WRITER(address caller); // none
+error E_ORDER(uint64 expected, uint64 have); // none
+error E_STAGED(uint64 expected, uint64 have); // none
+error E_FAMILY(bytes32 familyId); // none
+error E_UNIT(uint8 index); // none
+error E_REPLAY(uint8 code); // none: 1 stores not fresh or already live 2 foreign layout at that publication 3 not idle 5 no decoder 6 maxFacts 7 no such publication 8 unreadable row 9 bind row without an ordinal
+error E_BUILD(uint8 code); // none: 0 this generation declares no later family
+error E_BACKFILL(uint8 code); // none: 0 this generation declares no later family; 1 coverage not open 2 through outside [through, liveFrom]
+error E_COVERAGE(uint8 code); // none: 1 already open 2 nothing to retire
 
 // ---- controller (design §5.12) ----------------------------------------------------------------------------
-error E_NOT_OWNER(address caller);
-error E_PENDING(address pending);
-error E_NOT_IDLE();
-error E_SUCCESSOR(uint8 code); // 1 codehash 2 controller field 3 owner 4 admins not moved 5 self 6 retired or frozen 7 another ledger 8 another registry
-error E_RETIRED();
-error E_CANARY(uint8 lane);
-error E_GENESIS(uint8 step); // 0 already run 1 limits hash 2 controller address 3 registry proxy address 4 ledger proxy address 5..8 post-checks 9 implementation codehash 10 initcode hash 11 creation failed
-error E_DEPLOYER(uint8 step);
+error E_NOT_OWNER(address caller); // none
+error E_PENDING(address pending); // none
+error E_NOT_IDLE(); // wait: a controller ceremony is in progress
+error E_SUCCESSOR(uint8 code); // none: 1 codehash 2 controller field 3 owner 4 admins not moved 5 self 6 retired or frozen 7 another ledger 8 another registry
+error E_RETIRED(); // none
+error E_CANARY(uint8 lane); // none
+error E_GENESIS(uint8 step); // none: 0 already run 1 limits hash 2 controller address 3 registry proxy address 4 ledger proxy address 5..8 post-checks 9 implementation codehash 10 initcode hash 11 creation failed
+error E_DEPLOYER(uint8 step); // none: 0 already run 1 plan hash 2 store address 3 generation address 4 generation ledger
 
 // ---- reader directory (design §5.13) ----------------------------------------------------------------------
-error E_READER(address reader, uint8 code); // 1 already listed 2 names another ledger 3 malformed reply 4 list full // 0 already run 1 plan hash 2 store address 3 generation address 4 generation ledger
+error E_READER(address reader, uint8 code); // none: 1 already listed 2 names another ledger 3 malformed reply 4 list full
