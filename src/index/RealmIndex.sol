@@ -504,6 +504,13 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         return _work;
     }
 
+    /// @inheritdoc IIndexReads
+    function digestSpecCount(bytes32 typeId) external view returns (uint256 n) {
+        for (uint256 i; i < _specs.length; ++i) {
+            if (_specs[i].typeId == typeId) ++n;
+        }
+    }
+
     function _familyEntry(bytes32 id) private view returns (bool found, FamilyEntry storage f) {
         for (uint256 i; i < _families.length; ++i) {
             if (_families[i].familyId == id) return (true, _families[i]);

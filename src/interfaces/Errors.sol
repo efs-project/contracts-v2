@@ -68,7 +68,7 @@ error E_REVISION(uint32 expected, uint32 have);
 error E_IMPLEMENTATION(address expected, address live);
 error E_LAYOUT(bytes32 expected, bytes32 have);
 error E_REGISTRY(uint8 field); // 1 activeRevision 2 ledger 3 implementation 4 codehash
-error E_PIN(address target, uint8 which); // 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 (unused) 9 admin slot owner is not the caller (a zero admin slot reports E_PIN(0, 9))
+error E_PIN(address target, uint8 which); // 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin
 error E_INDEX_NOT_READY(uint8 reason);
 error E_EXPECTED_SET(bytes32 expected, bytes32 live);
 error E_FROZEN();
@@ -81,7 +81,7 @@ error E_HOT_ABI(address unit);
 error E_CODE_SHAPE(address target, uint8 reason); // 1 no code 2 designator 3 forbidden opcode 4 trailer malformed 5 EIP-1167 proxy 6 codehash mismatch
 error E_CONTROLLER(uint8 field); // 1 controller 2 codehash 3 owner
 error E_FREEZE_PRECHECK(uint8 check);
-error E_RESERVED(uint8 field, uint256 value); // field 32: limits.maxActions outside 1..64 (the replay ceiling)
+error E_RESERVED(uint8 field, uint256 value); // field 32: limits.maxActions outside 1..64 (the replay ceiling); 33: a capability this build does not implement
 error E_UNSUPPORTED_ROW(uint8 row);
 
 // ---- registry (design §9) ----------------------------------------------------------------------------------

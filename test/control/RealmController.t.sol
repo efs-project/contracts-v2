@@ -30,7 +30,8 @@ import {IRealmController} from "../../src/interfaces/IRealmController.sol";
 import {
     E_CANARY,
     E_CONTROLLER,
-    E_VERIFIER_PROFILE,
+    E_PIN,
+    E_RESERVED,
     E_FREEZE_PRECHECK,
     E_FROZEN,
     E_GENESIS,
@@ -507,23 +508,25 @@ contract RealmControllerTest is Test {
         );
     }
 
-    function testASecpCanaryCannotStandInForTheErc1271Lane() public {
+    function testALaneWithoutAVerifierCannotBeEnabled() public {
         ActivationSet memory set = _set(2, address(controller), address(this));
         set.capabilities = Capability.SIGNED_SECP256K1 | Capability.ERC1271;
         set.expectedExecutionSet = ExecutionSets.executionSet(set, k.proxy);
+        vm.expectRevert(
+            abi.encodeWithSelector(E_RESERVED.selector, uint8(33), uint256(set.capabilities))
+        );
         controller.activate(set);
-        ActivationSet memory finalSet = _final(3, address(controller), address(this));
-        finalSet.capabilities = Capability.SIGNED_SECP256K1 | Capability.ERC1271;
-        finalSet.expectedExecutionSet = ExecutionSets.executionSet(finalSet, k.proxy);
-        bytes[] memory canaries = new bytes[](2);
-        canaries[0] =
-            _signedNotice(finalSet.expectedExecutionSet, _obligations(finalSet), 0, "lane-1");
-        canaries[1] =
-            _signedNotice(finalSet.expectedExecutionSet, _obligations(finalSet), 1, "lane-2");
-        vm.expectRevert(abi.encodeWithSelector(E_CANARY.selector, uint8(2)));
-        controller.freeze(finalSet, canaries);
-        assertFalse(controller.frozen(), "the ceremony reverted whole");
-        assertEq(hot.revision(), 2);
+        assertEq(hot.revision(), 1);
+    }
+
+    function testAdminDriftIsRefusedByTheController() public {
+        (address la,) = controller.admins();
+        // a ProxyAdmin that is no longer this controller's (only reachable by a prank here) blocks activation
+        vm.prank(address(controller));
+        ProxyAdmin(la).transferOwnership(STRANGER);
+        ActivationSet memory set = _set(2, address(controller), address(this));
+        vm.expectRevert(abi.encodeWithSelector(E_PIN.selector, la, uint8(9)));
+        controller.activate(set);
     }
 
     function testTheSecpLaneCanaryProvesTheSecpLane() public {

@@ -25,6 +25,10 @@ interface IIndexReads {
 
     function workModel() external view returns (WorkModel memory);
 
+    /// How many of the manifest's digest specs name `typeId`: the ingress charges `freshPerDigestSpec` for each
+    /// when it quotes a fresh record of that Type (design §10.4).
+    function digestSpecCount(bytes32 typeId) external view returns (uint256);
+
     function coverage(FamilyId family, ScopeKey scope)
         external
         view

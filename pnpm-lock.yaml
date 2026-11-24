@@ -167,7 +167,7 @@ importers:
   .:
     devDependencies:
       viem:
-        specifier: ^2.57.7
+        specifier: 2.57.7
         version: 2.57.7
 
 packages:

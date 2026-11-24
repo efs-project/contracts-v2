@@ -186,6 +186,16 @@ abstract contract IndexDoubleCore is IIndexReads {
         return _work;
     }
 
+    uint256 public digestSpecs;
+
+    function setDigestSpecs(uint256 n) external onlyOwner {
+        digestSpecs = n;
+    }
+
+    function digestSpecCount(bytes32) external view returns (uint256) {
+        return digestSpecs;
+    }
+
     function coverage(FamilyId, ScopeKey) external view returns (Coverage, uint64, uint64, uint8) {
         return _answer();
     }

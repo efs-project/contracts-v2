@@ -21,6 +21,7 @@ import {Coverage, Phase} from "../../src/interfaces/Results.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerControl, ActivationSet} from "../../src/interfaces/ILedgerControl.sol";
+import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
 import {IIndexHook} from "../../src/interfaces/IIndexHook.sol";
@@ -576,5 +577,30 @@ contract RealIndexTest is Test {
         assertEq(uint8(c), uint8(Coverage.COMPLETE));
         assertEq(count, 1, "folded once");
         assertEq(live, 1);
+    }
+
+    /// The index floor charges one fresh slot per manifest digest spec naming a fresh record's Type
+    /// (design §10.4; Codex review P2): TYPE_OK has one spec, a Type without a spec has none.
+    function testFloorQuoteIncludesDigestSpecWork() public {
+        bytes32 plain = keccak256("test/type/plain");
+        TypeInfo memory info = registry.typeInfo(TYPE_OK);
+        registry.setType(plain, info, new bytes32[](0));
+        ILedgerCommitments c = ILedgerCommitments(hot.ingress());
+        Action[] memory withSpec = new Action[](1);
+        withSpec[0] = _publish(TYPE_OK, "a fresh body under the spec'd type, long enough");
+        Action[] memory without = new Action[](1);
+        without[0] = _publish(plain, "a fresh body under the spec'd type, long enough");
+        (uint32 floorA,, uint32 freshA,) = c.indexFloor(k.proxy, withSpec);
+        (uint32 floorB,, uint32 freshB,) = c.indexFloor(k.proxy, without);
+        assertEq(freshA, freshB + 1, "one more fresh slot for the digest posting");
+        assertEq(floorA - floorB, KernelDeploy.s1Limits().floorFreshGas);
+        assertEq(g.index.digestSpecCount(TYPE_OK), 1);
+        assertEq(g.index.digestSpecCount(plain), 0);
+        // an existing record is not fresh: no digest work is quoted for a REUSE
+        _seed();
+        Action[] memory reuse = new Action[](1);
+        reuse[0] = _reuse(TYPE_OK, recordId);
+        (,, uint32 freshC,) = c.indexFloor(k.proxy, reuse);
+        assertLt(freshC, freshB);
     }
 }

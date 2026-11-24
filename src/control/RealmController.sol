@@ -28,6 +28,7 @@ import {
     E_NOT_IDLE,
     E_NOT_OWNER,
     E_PENDING,
+    E_PIN,
     E_RETIRED,
     E_SUCCESSOR
 } from "../interfaces/Errors.sol";
@@ -140,6 +141,9 @@ contract RealmController is IRealmController {
     /// activation (or freeze), and the execution-set agreement.
     function _activate(ActivationSet calldata set, bool freezing) private {
         _requireIdle();
+        // both ProxyAdmins are still this controller's: drift is refused even when no upgrade is needed
+        if (ProxyAdmin(LEDGER_ADMIN).owner() != address(this)) revert E_PIN(LEDGER_ADMIN, 9);
+        if (ProxyAdmin(REGISTRY_ADMIN).owner() != address(this)) revert E_PIN(REGISTRY_ADMIN, 9);
         ComponentSet calldata c = set.components;
         if (_ledgerImplementation() != c.ledgerImpl) {
             ProxyAdmin(LEDGER_ADMIN)

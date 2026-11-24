@@ -62,36 +62,4 @@ interface ILedgerCommitments {
         external
         view
         returns (uint32 prefixFloor, uint32 finalReserve, uint32 freshSlots, uint32 rewrites);
-
-    function recordId(bytes32 typeId, bytes32 bodyHash) external pure returns (bytes32);
-
-    function subjectId(bytes32 principalId, bytes32 salt) external pure returns (bytes32);
-
-    function positionKey(bytes32 purpose, bytes32 subject, bytes32 role)
-        external
-        pure
-        returns (bytes32);
-
-    function bindingKey(bytes32 principalId, bytes32 position) external pure returns (bytes32);
-
-    function scopeKey(bytes32 principalId, bytes32 purpose, bytes32 subject)
-        external
-        pure
-        returns (bytes32);
-
-    function roleScopeKey(bytes32 principalId, bytes32 purpose, bytes32 role)
-        external
-        pure
-        returns (bytes32);
-
-    /// = Keys.posting(typeId, kindOf(family), ordinal, value), kindOf = the §10.2 kind number (FamilyEntry.kind).
-    function postingKey(FamilyId family, TypeId typeId, uint8 ordinal, bytes32 value)
-        external
-        pure
-        returns (PostingKey);
-
-    function typeIdOf(bytes32 shape, bytes32[] calldata refTypes, bytes32 ruleId)
-        external
-        pure
-        returns (bytes32);
 }

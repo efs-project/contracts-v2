@@ -244,12 +244,12 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         principalKind = principalId == Keys.principal(author) ? 1 : 2;
     }
 
+    /// This build verifies profile 1 (secp256k1) only. The ERC-1271 lane (profile 2) arrives with the S2
+    /// ingress build; activation refuses its capability bit until then (`LedgerControl._checkCapabilities`).
     function _checkCapabilityForProfile(uint16 capabilities, uint16 profile) private pure {
-        uint16 bit;
-        if (profile == 1) bit = Capability.SIGNED_SECP256K1;
-        else if (profile == 2) bit = Capability.ERC1271;
-        else revert E_VERIFIER_PROFILE(profile);
-        if (capabilities & bit == 0) revert E_VERIFIER_PROFILE(profile);
+        if (profile != 1 || capabilities & Capability.SIGNED_SECP256K1 == 0) {
+            revert E_VERIFIER_PROFILE(profile);
+        }
     }
 
     /// Decodes and checks a non-empty guard; returns its hash (= the canonical read-set hash).
@@ -289,35 +289,24 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         bytes calldata witness
     ) private view {
         bytes32 digest = signingDigest($.domainSeparator, it, p.actionsHash);
-        if (it.verifierProfile == 1) {
-            if (witness.length != 65) revert E_SIGNATURE(1);
-            bytes32 r = bytes32(witness[0:32]);
-            bytes32 s = bytes32(witness[32:64]);
-            uint8 v = uint8(witness[64]);
-            if (uint256(s) > SECP256K1N_HALF) revert E_SIGNATURE(2);
-            if (v != 27 && v != 28) revert E_SIGNATURE(2);
-            address recovered = ecrecover(digest, v, r, s);
-            if (recovered == address(0) || Keys.principal(recovered) != it.principalId) {
-                revert E_SIGNATURE(3);
-            }
-            if (it.author != address(0) && it.author != recovered) revert E_SIGNATURE(6);
-            p.proofKind = 2;
-            p.author = recovered;
-            p.principalKind = 1;
-            p.witness0 = r;
-            p.witness1 = s;
-            p.v = v;
-        } else {
-            // ERC-1271 (profile 2): the pre-call binding checks of design §6.2, then the S2b wallet call.
-            if (it.author.code.length == 0 || CodePins.isDesignator(it.author)) {
-                revert E_SIGNATURE(5);
-            }
-            if (Keys.contractPrincipal($.realmOrigin, it.author) != it.principalId) {
-                revert E_SIGNATURE(6);
-            }
-            if (witness.length > $.limits.maxWitness) revert E_SIGNATURE(1);
-            revert E_VERIFIER_PROFILE(2); // S2b: the bounded isValidSignature STATICCALL with the 300k floor
+        // profile 1 only: `_checkCapabilityForProfile` refused every other profile before this point
+        if (witness.length != 65) revert E_SIGNATURE(1);
+        bytes32 r = bytes32(witness[0:32]);
+        bytes32 s = bytes32(witness[32:64]);
+        uint8 v = uint8(witness[64]);
+        if (uint256(s) > SECP256K1N_HALF) revert E_SIGNATURE(2);
+        if (v != 27 && v != 28) revert E_SIGNATURE(2);
+        address recovered = ecrecover(digest, v, r, s);
+        if (recovered == address(0) || Keys.principal(recovered) != it.principalId) {
+            revert E_SIGNATURE(3);
         }
+        if (it.author != address(0) && it.author != recovered) revert E_SIGNATURE(6);
+        p.proofKind = 2;
+        p.author = recovered;
+        p.principalKind = 1;
+        p.witness0 = r;
+        p.witness1 = s;
+        p.v = v;
     }
 
     // =============================================================================================
@@ -402,7 +391,12 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
             bytes32 rid = kind == ActionKind.PUBLISH
                 ? Keys.recordFromHash(a.typeId, a.bodyHashOrRecordId)
                 : a.bodyHashOrRecordId;
-            if (!_recordExists(ledger, rid)) q.fresh10 += wm.freshPerPublishFresh;
+            if (!_recordExists(ledger, rid)) {
+                unchecked {
+                    q.fresh10 += wm.freshPerPublishFresh + wm.freshPerDigestSpec
+                    * _digestSpecs(ledger, a.typeId);
+                }
+            }
             q.rw10 += wm.rwPerPublish;
             q.fresh10 += uint256(wm.freshPerRef) * info.refCount;
         } else if (kind == ActionKind.BIND) {
@@ -421,6 +415,18 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
             ++q.binds;
             q.rw10 += wm.rwPerBind;
             q.compute += wm.computePerHookEffect;
+        }
+    }
+
+    /// How many of the index manifest's digest specs name `typeId` (a fresh record of that Type feeds the
+    /// digest family once per spec, design §10.4); zero when the generation does not answer.
+    function _digestSpecs(address ledger, bytes32 typeId) private view returns (uint256 specs) {
+        address index = _indexOf(ledger);
+        assembly ("memory-safe") {
+            mstore(0, 0x56d017e500000000000000000000000000000000000000000000000000000000)
+            mstore(4, typeId)
+            let ok := staticcall(gas(), index, 0, 0x24, 0, 0x20)
+            specs := mul(mload(0), and(ok, eq(returndatasize(), 0x20)))
         }
     }
 
@@ -816,76 +822,5 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
     {
         (, prefixFloor, finalReserve, freshSlots, rewrites) =
             _foldAndQuote(ledger, actions, bytes32(0), false);
-    }
-
-    function recordId(bytes32 typeId, bytes32 bodyHash) external pure returns (bytes32) {
-        return Keys.recordFromHash(typeId, bodyHash);
-    }
-
-    function subjectId(bytes32 principalId, bytes32 salt) external pure returns (bytes32) {
-        return Keys.subject(principalId, salt);
-    }
-
-    function positionKey(bytes32 purpose, bytes32 subject, bytes32 role)
-        external
-        pure
-        returns (bytes32)
-    {
-        return Keys.position(purpose, subject, role);
-    }
-
-    function bindingKey(bytes32 principalId, bytes32 position) external pure returns (bytes32) {
-        return Keys.binding(principalId, position);
-    }
-
-    function scopeKey(bytes32 principalId, bytes32 purpose, bytes32 subject)
-        external
-        pure
-        returns (bytes32)
-    {
-        return Keys.scope(principalId, purpose, subject);
-    }
-
-    function roleScopeKey(bytes32 principalId, bytes32 purpose, bytes32 role)
-        external
-        pure
-        returns (bytes32)
-    {
-        return Keys.roleScope(principalId, purpose, role);
-    }
-
-    function postingKey(FamilyId family, TypeId typeId, uint8 ordinal, bytes32 value)
-        external
-        pure
-        returns (PostingKey)
-    {
-        return PostingKey.wrap(Keys.posting(TypeId.unwrap(typeId), _kindOf(family), ordinal, value));
-    }
-
-    function typeIdOf(bytes32 shape, bytes32[] calldata refTypes, bytes32 ruleId)
-        external
-        pure
-        returns (bytes32)
-    {
-        return Keys.typeId(shape, refTypes, ruleId);
-    }
-
-    /// The §10.2 kind number of a family id: the first eight bytes of each id (test/vectors/ids.json), packed
-    /// in declaration order, and the matching kinds; reverts for an unknown family.
-    bytes private constant FAMILY_PREFIXES =
-        hex"e4f7cc7ff76622e1d674025fa1091f86f564f360d1f5b65ade538e29eab736631fd035d41e55e58529d3bea0a01e3e2603b682942778e8b977b478e9ae9182faef3758cffd687b169f7b888d291c8c4ce84f1b109238a09c04369382b4c38d708433e20c283016a6";
-    bytes private constant FAMILY_KINDS = hex"010405080a0b0c0d0e0f101112";
-
-    function _kindOf(FamilyId family) private pure returns (uint8) {
-        bytes8 head = bytes8(FamilyId.unwrap(family));
-        bytes memory prefixes = FAMILY_PREFIXES;
-        for (uint256 i; i < 13; ++i) {
-            bytes8 candidate;
-            assembly ("memory-safe") {
-                candidate := mload(add(add(prefixes, 32), mul(i, 8)))
-            }
-            if (candidate == head) return uint8(FAMILY_KINDS[i]);
-        }
-        revert E_RESERVED(20, uint256(FamilyId.unwrap(family)));
     }
 }

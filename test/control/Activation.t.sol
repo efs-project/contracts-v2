@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
+import {E_RESERVED} from "../../src/interfaces/Errors.sol";
+import {Capability} from "../../src/interfaces/Actions.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {
@@ -509,34 +511,49 @@ contract ActivationTest is ControlFixture {
         );
     }
 
-    /// DESIGN-DIVERGENCE: src/interfaces/Errors.sol:71 catalogs E_PIN reason 8 "admin slot"; a zero admin
-    /// slot is refused as reason 9 with target 0 (src/core/LedgerControl.sol:312) and 8 is never emitted.
-    function test_zeroed_admin_slot_E_PIN_9() public {
+    /// §8.3 5h: the ERC-1967 admin slot must name the proxy's real ProxyAdmin, which the ledger computes as
+    /// the proxy's first creation (an OZ 5 transparent proxy keeps it as an immutable), never trusting the slot.
+    function test_zeroed_admin_slot_E_PIN_8() public {
         vm.store(k.proxy, ADMIN_SLOT, bytes32(0));
         expectActivateRevert(
-            nextSet(), abi.encodeWithSelector(E_PIN.selector, address(0), uint8(9))
+            nextSet(), abi.encodeWithSelector(E_PIN.selector, address(0), uint8(8))
         );
     }
 
-    /// DESIGN-DIVERGENCE: §8.3 5h requires "ERC-1967 admin slot == the expected ProxyAdmin", and §8.11 lists
-    /// "admin slot vs actual ProxyAdmin" as detected at activation. The ActivationSet carries no expected
-    /// admin, so the control delegate trusts the slot and checks only `owner()` of whatever it names
-    /// (src/core/LedgerControl.sol:307-313). With the slot pointing at a decoy owned by the controller, an
-    /// activation succeeds while the proxy's real (immutable) admin is owned by a stranger who can still
-    /// upgrade. Only the implementation can write that slot, so this needs a hostile implementation; the
-    /// residual is `verify-deployment`'s (§8.11).
-    function test_admin_slot_is_trusted_not_compared_with_the_proxy_admin() public {
+    /// A hostile implementation that rewrote the admin slot to a decoy the controller owns no longer passes:
+    /// the decoy is not the proxy's first creation (reason 8), whoever owns it.
+    function test_decoy_admin_in_the_slot_E_PIN_8() public {
         ProxyAdmin real = proxyAdmin();
         ProxyAdmin decoy = new ProxyAdmin(address(this));
-        real.transferOwnership(stranger);
         vm.store(k.proxy, ADMIN_SLOT, bytes32(uint256(uint160(address(decoy)))));
-        activate(nextSet());
+        expectActivateRevert(
+            nextSet(), abi.encodeWithSelector(E_PIN.selector, address(decoy), uint8(8))
+        );
+        // with the slot restored, the real admin's owner is what is judged
+        vm.store(k.proxy, ADMIN_SLOT, bytes32(uint256(uint160(address(real)))));
+        real.transferOwnership(stranger);
+        expectActivateRevert(
+            nextSet(), abi.encodeWithSelector(E_PIN.selector, address(real), uint8(9))
+        );
+    }
+
+    /// A capability this build does not implement cannot be enabled (the ERC-1271 lane's verifier ships with
+    /// the S2 ingress); enabling it would block the freeze, whose canary must be a real publication per lane.
+    function test_unimplemented_capability_E_RESERVED_33() public {
+        ActivationSet memory set = nextSet();
+        set.capabilities = Capability.SIGNED_SECP256K1 | Capability.ERC1271;
+        expectActivateRevert(
+            seal(set),
+            abi.encodeWithSelector(E_RESERVED.selector, uint8(33), uint256(set.capabilities))
+        );
+        set.capabilities = Capability.STAGED_PUBLICATION;
+        expectActivateRevert(
+            seal(set),
+            abi.encodeWithSelector(E_RESERVED.selector, uint8(33), uint256(set.capabilities))
+        );
+        set.capabilities = Capability.NATIVE_GUARD | Capability.SIGNED_SECP256K1;
+        activate(seal(set));
         assertEq(hot.revision(), 2);
-        // the real admin still governs the proxy
-        address impl2 = deploySecondImplementation();
-        vm.prank(stranger);
-        real.upgradeAndCall(ITransparentUpgradeableProxy(k.proxy), impl2, "");
-        assertEq(liveImplementation(), impl2);
     }
 
     // =============================================================================================

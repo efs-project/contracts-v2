@@ -31,6 +31,6 @@
     "gas:report": "node tools/gas-report.mjs"
   },
   "devDependencies": {
-    "viem": "^2.57.7"
+    "viem": "2.57.7"
   }
 }

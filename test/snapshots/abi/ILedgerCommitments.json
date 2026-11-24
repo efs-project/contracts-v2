@@ -5,22 +5,14 @@
   "methodIdentifiers": {
     "0xd62efcd9": "acceptanceProfileOf(address,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[])",
     "0x85536f78": "actionsHash((uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[])",
-    "0x0d53731b": "bindingKey(bytes32,bytes32)",
     "0x6484e02c": "headSnapshotHash(uint8,uint64,uint64,bytes32)",
     "0xea1ee461": "indexFloor(address,(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[])",
     "0x500dca39": "indexObligationsOf(address)",
     "0x8cd69fc5": "intentDigest((bytes32,bytes32,bytes32,bytes32,address,uint64,uint64,bytes32,bytes32,bytes32,uint16,bytes32,uint64),bytes32)",
     "0x58a6ff84": "nativeIntentDigest(bytes32,bytes32,(uint64,uint64,bytes32,bytes32),bytes32,bytes32)",
-    "0xa69f8e70": "positionKey(bytes32,bytes32,bytes32)",
-    "0xcf2bc3e0": "postingKey(bytes32,bytes32,uint8,bytes32)",
     "0x9175d308": "publicationIdOf(bytes32,bytes32)",
     "0x0466b539": "readSetHash((bytes32[],bytes32[],bytes32[]))",
-    "0x3d5f40fd": "recordId(bytes32,bytes32)",
-    "0x2439bdda": "roleScopeKey(bytes32,bytes32,bytes32)",
-    "0x61390159": "scopeKey(bytes32,bytes32,bytes32)",
-    "0xc3018228": "signingDigest(bytes32,(bytes32,bytes32,bytes32,bytes32,address,uint64,uint64,bytes32,bytes32,bytes32,uint16,bytes32,uint64),bytes32)",
-    "0x4949e36a": "subjectId(bytes32,bytes32)",
-    "0x5926bc07": "typeIdOf(bytes32,bytes32[],bytes32)"
+    "0xc3018228": "signingDigest(bytes32,(bytes32,bytes32,bytes32,bytes32,address,uint64,uint64,bytes32,bytes32,bytes32,uint16,bytes32,uint64),bytes32)"
   },
   "events": {},
   "errors": {},
@@ -306,30 +298,6 @@
               "internalType": "bytes32"
             }
           ]
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "bindingKey",
-      "inputs": [
-        {
-          "name": "principalId",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "position",
-          "type": "bytes32",
-          "internalType": "bytes32"
         }
       ],
       "outputs": [
@@ -634,69 +602,6 @@
     },
     {
       "type": "function",
-      "name": "positionKey",
-      "inputs": [
-        {
-          "name": "purpose",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "subject",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "role",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "postingKey",
-      "inputs": [
-        {
-          "name": "family",
-          "type": "bytes32",
-          "internalType": "FamilyId"
-        },
-        {
-          "name": "typeId",
-          "type": "bytes32",
-          "internalType": "TypeId"
-        },
-        {
-          "name": "ordinal",
-          "type": "uint8",
-          "internalType": "uint8"
-        },
-        {
-          "name": "value",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "PostingKey"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
       "name": "publicationIdOf",
       "inputs": [
         {
@@ -744,88 +649,6 @@
               "internalType": "bytes32[]"
             }
           ]
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "recordId",
-      "inputs": [
-        {
-          "name": "typeId",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "bodyHash",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "roleScopeKey",
-      "inputs": [
-        {
-          "name": "principalId",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "purpose",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "role",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "scopeKey",
-      "inputs": [
-        {
-          "name": "principalId",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "purpose",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "subject",
-          "type": "bytes32",
-          "internalType": "bytes32"
         }
       ],
       "outputs": [
@@ -920,59 +743,6 @@
         },
         {
           "name": "actionsHash",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "subjectId",
-      "inputs": [
-        {
-          "name": "principalId",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "salt",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        }
-      ],
-      "stateMutability": "pure"
-    },
-    {
-      "type": "function",
-      "name": "typeIdOf",
-      "inputs": [
-        {
-          "name": "shape",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "refTypes",
-          "type": "bytes32[]",
-          "internalType": "bytes32[]"
-        },
-        {
-          "name": "ruleId",
           "type": "bytes32",
           "internalType": "bytes32"
         }

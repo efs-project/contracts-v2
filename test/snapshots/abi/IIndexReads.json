@@ -9,6 +9,7 @@
     "0x8e65c490": "coverageOfDigest(uint8)",
     "0x1cfd6871": "coverageOfSpec(bytes32,bytes32,uint8)",
     "0x0ce15e45": "coverageOfType(bytes32,bytes32)",
+    "0x56d017e5": "digestSpecCount(bytes32)",
     "0x56397c35": "ledger()",
     "0xf5baf0d7": "manifest()",
     "0x337f3f32": "manifestHash()",
@@ -386,6 +387,25 @@
           "name": "phase",
           "type": "uint8",
           "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "digestSpecCount",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
         }
       ],
       "stateMutability": "view"

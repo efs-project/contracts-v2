@@ -6,6 +6,7 @@ import {Layout} from "./layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
 import {CodePins} from "../lib/CodePins.sol";
 import {CodeScan} from "../lib/CodeScan.sol";
+import {Capability} from "../interfaces/Actions.sol";
 import {Phase} from "../interfaces/Results.sol";
 import {Limits} from "../interfaces/Limits.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
@@ -154,8 +155,18 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         if (l.maxActions == 0 || l.maxActions > 64) revert E_RESERVED(32, l.maxActions);
     }
 
+    /// A capability is enabled only when this build implements it: the native guard (b0) and the secp256k1
+    /// signed lane (b1). Enabling a lane whose verifier is a stub would block the freeze, whose canary must be
+    /// a real publication on every enabled lane.
+    function _checkCapabilities(uint16 capabilities) private pure {
+        if (capabilities & ~(Capability.NATIVE_GUARD | Capability.SIGNED_SECP256K1) != 0) {
+            revert E_RESERVED(33, capabilities);
+        }
+    }
+
     function _activate(ActivationSet calldata set) private {
         _checkLimits(set.limits);
+        _checkCapabilities(set.capabilities);
         RealmStorage storage $ = _realm();
         uint32 current = $.revision;
         uint16 flags = msg.sig == ILedgerControl.freeze.selector ? REV_FROZEN : 0; // derived, never a literal argument
@@ -312,13 +323,22 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         }
     }
 
-    /// The proxy's admin is a ProxyAdmin owned by the executing controller (S7).
+    /// The proxy's admin is a ProxyAdmin owned by the executing controller (S7). The admin is not taken from
+    /// the ERC-1967 slot alone, which an implementation could rewrite: an OZ 5 transparent proxy creates its
+    /// ProxyAdmin as its first creation and keeps it as an immutable, so the true admin is CREATE(proxy, 1).
+    /// The slot must agree (reason 8) and the controller must own that contract (reason 9).
     function _checkAdmin() private view {
-        address admin;
+        address admin = address(
+            uint160(uint256(keccak256(abi.encodePacked(hex"d694", address(this), hex"01"))))
+        );
+        address slot;
         assembly ("memory-safe") {
-            admin := sload(ADMIN_SLOT)
+            slot := sload(ADMIN_SLOT)
         }
-        if (admin == address(0) || IOwnable(admin).owner() != msg.sender) revert E_PIN(admin, 9);
+        if (slot != admin) revert E_PIN(slot, 8);
+        if (admin.code.length == 0 || IOwnable(admin).owner() != msg.sender) {
+            revert E_PIN(admin, 9);
+        }
     }
 
     function _pinUnit(address hook, bytes32 expected) private view {
