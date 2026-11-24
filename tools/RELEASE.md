@@ -236,7 +236,10 @@ refused.** Measured on anvil 1.8.3: `--hardfork osaka` alone does not enforce it
 `--enable-tx-gas-limit` under prague; both are needed. The contracts are still compiled for prague and the addresses
 do not change. `--hardfork prague` gives the old behaviour (no cap) for a measurement that needs it.
 
-`efs-deployment/1` records the rules as `chain: { hardfork, txGasCap, txGasCapEnforced, blockGasLimit, atBlock }`.
+`efs-deployment/1` records the rules as `chain: { hardfork, feeSchedule, txGasCap, txGasCapEnforced, blockGasLimit,
+atBlock }`. `feeSchedule` is the key of `release.json` `gasModel.schedules` that prices the chain (`prague` for both
+prague and osaka, which did not reprice storage; each schedule also lists its `hardforks`), so a planner never maps a
+hardfork name to a price list by itself.
 It is a **snapshot taken at deployment, not live truth**: a block gas limit moves and a later fork changes what the
 cap counts (after Glamsterdam it counts execution gas only), so a client reads the live block gas limit from the
 chain and treats the document's values as defaults. `verify` compares the snapshot with the chain and proves the

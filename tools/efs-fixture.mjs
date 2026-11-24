@@ -48,7 +48,7 @@ export const DEFAULT_TTL = 900;
 /** The local chain's rules. "osaka" is what mainnet and Sepolia run (Fusaka): anvil then enforces EIP-7825's
  *  per-transaction gas limit cap, but only with --enable-tx-gas-limit (measured on anvil 1.8.3: without the flag, or
  *  under prague with it, a 20M-gas transaction is accepted). The contracts are still compiled for prague. */
-export const HARDFORKS = { osaka: { args: ["--hardfork", "osaka", "--enable-tx-gas-limit"], txGasCap: 16_777_216 }, prague: { args: ["--hardfork", "prague"], txGasCap: null } };
+export const HARDFORKS = { osaka: { args: ["--hardfork", "osaka", "--enable-tx-gas-limit"], txGasCap: 16_777_216, feeSchedule: "prague" }, prague: { args: ["--hardfork", "prague"], txGasCap: null, feeSchedule: "prague" } };
 export const DEFAULT_HARDFORK = "osaka";
 /** anvil's ten default accounts (mnemonic "test test … junk"); index 0 is the fixture key. Public throwaways. */
 export const DEFAULT_ACCOUNTS = [
@@ -349,7 +349,8 @@ function seedIds(plan) {
 async function chainFacts(pub, hardfork) {
   const block = await pub.getBlock({ blockTag: "latest" });
   const cap = HARDFORKS[hardfork].txGasCap;
-  return { hardfork, txGasCap: cap, txGasCapEnforced: cap !== null, txGasCapRule: cap === null ? null : "EIP-7825: a transaction whose gas limit exceeds the cap is rejected", blockGasLimit: Number(block.gasLimit), atBlock: Number(block.number), snapshot: "taken when the instance was deployed; read live values from the chain" };
+  // feeSchedule names the key of release.json gasModel.schedules that prices this chain (osaka did not reprice storage)
+  return { hardfork, feeSchedule: HARDFORKS[hardfork].feeSchedule, txGasCap: cap, txGasCapEnforced: cap !== null, txGasCapRule: cap === null ? null : "EIP-7825: a transaction whose gas limit exceeds the cap is rejected", blockGasLimit: Number(block.gasLimit), atBlock: Number(block.number), snapshot: "taken when the instance was deployed; read live values from the chain" };
 }
 
 function capabilitiesOf(plan, signer, chain) {
@@ -687,6 +688,7 @@ export async function verify(o = {}) {
   const hardfork = lease.hardfork ?? "prague";
   const cap = HARDFORKS[hardfork]?.txGasCap ?? null;
   const latest = await pub.getBlock({ blockTag: "latest" });
+  eq("instance feeSchedule", dep.chain?.feeSchedule, HARDFORKS[hardfork]?.feeSchedule);
   eq("instance chain", [dep.chain?.hardfork, dep.chain?.txGasCap, dep.chain?.txGasCapEnforced, dep.chain?.blockGasLimit], [hardfork, cap, cap !== null, Number(latest.gasLimit)]);
   if (cap !== null) {
     const key = privateKeyToAccount(FIXTURE_KEY);

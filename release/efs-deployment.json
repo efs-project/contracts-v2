@@ -1,6 +1,6 @@
 {
   "schema": "efs-deployment/1",
-  "releaseDigest": "0x95d122b730d76fd54a852c84311869a5396b7298835404a4577eb6ee6c975609",
+  "releaseDigest": "0x478aabd299873a356798d76bd240247df2d45674515a1dcae50149d528df4776",
   "planHash": "0x8a60763b54c94ce569c18dff2320d7debafc31c5b660273bd1f42ba938be8cfc",
   "chainId": 31337,
   "realmId": "0x77b2f54b3e96e8c816b758c64b9c0508aed9564c015b1efff23e4a9a757f412d",
@@ -23,7 +23,7 @@
     },
     "txHash": "0xa4ff3fd15932a549b1fd5e99d95eb6c50f97c68fff0f21c73f954dd3e2a6f309",
     "blockNumber": 38,
-    "blockHash": "0xf62f7ba327c85d31f13f21b1e26f708e484afbd0fe70e5fb57b0996ffb3a4662"
+    "blockHash": "0x26074fe0fded9a8362abe8f4299822303a618439f35a3004196b6c19a0695755"
   },
   "activation": {
     "revision": 1,
@@ -1391,6 +1391,7 @@
   },
   "chain": {
     "hardfork": "osaka",
+    "feeSchedule": "prague",
     "txGasCap": 16777216,
     "txGasCapEnforced": true,
     "txGasCapRule": "EIP-7825: a transaction whose gas limit exceeds the cap is rejected",

@@ -240,8 +240,8 @@ const gasModel = {
   schema: model.schema, path: MODEL, sha256: sha256(readFileSync(join(root, MODEL))),
   note: "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
   schedules: {
-    prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", constants: mp.constants, maxAbsErrorPercent: mp.maxAbsErrorPercent },
-    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", constants: ma.constants, executionGas: ma.split?.executionGas ?? null, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
+    prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", hardforks: ["prague", "osaka"], constants: mp.constants, maxAbsErrorPercent: mp.maxAbsErrorPercent },
+    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
   },
   envelope: {
     what: "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",

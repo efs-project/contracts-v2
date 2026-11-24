@@ -295,6 +295,7 @@
       "description": "What the chain enforced when this deployment was made: a snapshot, not live truth. txGasCap is the EIP-7825 per-transaction gas limit cap, or null where nothing enforces one; blockGasLimit is the latest block's at deployment. A client reads live values and uses these as defaults.",
       "required": [
         "hardfork",
+        "feeSchedule",
         "txGasCap",
         "txGasCapEnforced",
         "blockGasLimit"

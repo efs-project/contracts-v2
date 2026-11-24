@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "7a436f2adf75aa121c9444e581d0e37fa3f0ebc0",
-    "tree": "a98f93a037426f8741c496afaf5c8a155740fd47",
-    "dirty": 1,
+    "commit": "7d46bd84ff08114c462ecb104bd95cdd3cdc6e03",
+    "tree": "65116a9c11199f87bb1a2a28abdcdcd77f79217b",
+    "dirty": 4,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -2051,6 +2051,10 @@
     "schedules": {
       "prague": {
         "status": "mainnet and Sepolia today (Fusaka); the cap counts all gas",
+        "hardforks": [
+          "prague",
+          "osaka"
+        ],
         "constants": {
           "fixed": 335579,
           "perWord": 22729,
@@ -2085,6 +2089,9 @@
       },
       "amsterdam": {
         "status": "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block",
+        "hardforks": [
+          "amsterdam"
+        ],
         "constants": {
           "fixed": 926123,
           "perWord": 110649,
