@@ -1,0 +1,885 @@
+{
+  "name": "IRealmIndex",
+  "source": "src/interfaces/IRealmIndex.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0x847696df": "afterPublication(uint64,(uint8,uint8,uint64,uint64,bytes32,bytes32,bytes32,bytes32,uint64,bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint8,uint8,uint8,uint8,bool,bytes32,bytes32,uint64,bytes32)[],bytes32[])",
+    "0x35424404": "backfill(bytes32,bytes32,uint64,uint16)",
+    "0x83312849": "build(bytes32,uint16)",
+    "0x3d20403d": "onAdmission(uint64,(uint8,uint8,uint64,uint64,bytes32,bytes32,bytes32,bytes32,uint64,bytes32,bytes32,bytes32,bytes32,uint64,uint64,uint8,uint8,uint8,uint8,bool,bytes32,bytes32,uint64,bytes32)[],bytes32[])",
+    "0xebbda789": "replayNextPublication(uint16)",
+    "0x886290ce": "replayReadiness()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {
+    "Effect": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "leaf",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "admission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "publication",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "principalId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "typeId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "recordId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subjectId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "bindingOrdinal",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "position",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "purpose",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "revision",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "prevAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "transitionKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "targetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "oldTargetKind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "refCount",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "freshRecord",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "target",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "oldTarget",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "withdrawnAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "withdrawnPrincipal",
+        "type": "bytes32"
+      }
+    ],
+    "FamilyEntry": [
+      {
+        "internalType": "bytes32",
+        "name": "familyId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "universe",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "shape",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "mandatory",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "liveSemantics",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "recipe",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "fromAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "store",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "storeCodehash",
+        "type": "bytes32"
+      }
+    ],
+    "Readiness": [
+      {
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "ledger",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "layoutId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "hotAbiId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "physicalProfile",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "callbackProfile",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "provenFrom",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "completedAdmission",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "completedPublication",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "phase",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "ready",
+        "type": "bool"
+      },
+      {
+        "internalType": "struct Unit[]",
+        "name": "units",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "struct FamilyEntry[]",
+        "name": "families",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "address",
+        "name": "build",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "buildCodehash",
+        "type": "bytes32"
+      }
+    ],
+    "Unit": [
+      {
+        "internalType": "address",
+        "name": "foldHook",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "foldCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "finalHook",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "finalCodehash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "familyIds",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "purposeFilter",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "hotAbiId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "identity",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "afterPublication",
+      "inputs": [
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "effects",
+          "type": "tuple[]",
+          "internalType": "struct Effect[]",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "publication",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "recordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subjectId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bindingOrdinal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "position",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "prevAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "transitionKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "oldTargetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refCount",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "freshRecord",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "oldTarget",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "withdrawnAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "withdrawnPrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "refs",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "backfill",
+      "inputs": [
+        {
+          "name": "familyId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "expectedThrough",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "maxEntries",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "build",
+      "inputs": [
+        {
+          "name": "familyId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "maxFacts",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "onAdmission",
+      "inputs": [
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "effects",
+          "type": "tuple[]",
+          "internalType": "struct Effect[]",
+          "components": [
+            {
+              "name": "kind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "leaf",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "admission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "publication",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "principalId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "typeId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "recordId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subjectId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "bindingOrdinal",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "position",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "purpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "subject",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "role",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "prevAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "transitionKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "targetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "oldTargetKind",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "refCount",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "freshRecord",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "target",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "oldTarget",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "withdrawnAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "withdrawnPrincipal",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "refs",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "replayNextPublication",
+      "inputs": [
+        {
+          "name": "maxFacts",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "processed",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "replayReadiness",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Readiness",
+          "components": [
+            {
+              "name": "version",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "ledger",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "layoutId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "hotAbiId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "physicalProfile",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "callbackProfile",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "manifestHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "provenFrom",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "completedAdmission",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "completedPublication",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "ready",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "units",
+              "type": "tuple[]",
+              "internalType": "struct Unit[]",
+              "components": [
+                {
+                  "name": "foldHook",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "foldCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "finalHook",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "finalCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "familyIds",
+                  "type": "bytes32[]",
+                  "internalType": "bytes32[]"
+                },
+                {
+                  "name": "purposeFilter",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "hotAbiId",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "identity",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "families",
+              "type": "tuple[]",
+              "internalType": "struct FamilyEntry[]",
+              "components": [
+                {
+                  "name": "familyId",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "kind",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "universe",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "shape",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "mandatory",
+                  "type": "bool",
+                  "internalType": "bool"
+                },
+                {
+                  "name": "liveSemantics",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "recipe",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "fromAdmission",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "store",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "storeCodehash",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "build",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "buildCodehash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

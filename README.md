@@ -1,9 +1,10 @@
 # EFS v2 contracts
 
-Repository foundation for Fable's EFS v2 contract design and implementation.
-The current checkout contains pinned contributor tools, a test-only Foundry smoke fixture,
-locked test dependencies and CI. It contains no EFS contracts, interfaces, deployment or
-consumer release bundle.
+The EFS v2 core contracts: the Ledger kernel, its delegates, the Type registry, the required
+index, the control plane, the read facets and the consumer closure, built from
+[docs/DESIGN.md](docs/DESIGN.md) in the order of [docs/IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md).
+The product choices the design leaves open are in [docs/QUESTIONS-FOR-JAMES.md](docs/QUESTIONS-FOR-JAMES.md).
+Implementation started on 2026-10-20 (stage S0); there is no deployment or release bundle yet.
 
 ## Run the foundation
 
@@ -27,16 +28,27 @@ The Solidity build and tests need Foundry alone. Node/pnpm run the separate cont
 policy check. Smoke tests prove the tooling executes; they do not prove EFS semantics.
 CI runs these commands on PRs and pushes to main.
 
-## Layout and next work
+## Layout
 
-`src/` is reserved for production Solidity; `test/` contains the tooling fixture;
-`tools/` contains Node built-in-only checks; `schemas/` reserves future reviewed formats;
-`docs/` records contributor choices. No sibling checkout is required.
+`src/` holds the production Solidity in the layers the design names and `tools/checks.mjs`
+enforces (`interfaces` ← `lib` ← `core`/`types`/`index`/`control` ← `readers` ← `profiles` ←
+`periphery`); `test/` the suites of design §16 with committed snapshots under `test/snapshots/`;
+`tools/` the Node tooling ([tools/README.md](tools/README.md)); `schemas/` the reviewed release
+formats; `docs/` the design, the plan, the build-identity and gas-schedule policies and the
+one-way doors. No sibling checkout is required to build or test.
 
-Contracts owns future contract artifacts and consumer Solidity interfaces; the SDK will
-consume a pinned, reviewed release. Contract/link architecture, storage, proxies, identity,
-security policy and release formats remain Fable's design work. The scaffold's Prague,
-optimizer and via-IR settings are provisional; see [foundation scope](docs/foundation.md).
+**What exists today (S1).** The kernel (`src/core`: `LedgerCore` behind an OZ transparent proxy with
+its three pinned delegates), the Type registry (`src/types`: `TypeRegistry` behind its proxy,
+`DescriptorStore`, `DescribedCodec`, the `DescribedTypeRule/1` wrapper), the index (`src/index`:
+per-Realm `PostingStore`/`BitmapStore`, the generation-1 `RealmIndex`, `IndexReplayDecoder`), the
+control plane (`src/control`: `RealmController`, `RealmGenesis`, `IndexDeployer`), the read facets
+(`src/readers`), the consumer library (`src/lib/EfsNative.sol`), the Files profile (`src/profiles`),
+the `ReaderDirectory` (`src/periphery`) and an external consumer example (`examples/NativeApp.sol`).
+`docs/IMPLEMENTATION-PLAN.md` carries the slice status; `docs/QUESTIONS-FOR-JAMES.md` the open
+product questions.
+
+The SDK consumes a pinned, reviewed release bundle (design §13); canonical deployed identities
+come from this repository's exact release build ([docs/BUILD-IDENTITY.md](docs/BUILD-IDENTITY.md)).
 
 Original software is MIT-licensed. This license does not license user content stored
 through EFS. Test dependencies keep their own licenses; see [notices](THIRD_PARTY_NOTICES.md).

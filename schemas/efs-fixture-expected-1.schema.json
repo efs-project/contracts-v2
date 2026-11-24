@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "efs-fixture-expected/1",
+  "title": "efs-fixture-expected/1 — the seeded fixture's post-checks (design §8.2 G22, §13 expected.json)",
+  "type": "object",
+  "required": ["schema", "seedVersion", "chainId", "ledger", "executionSet", "revision", "root", "folder", "file", "counts", "typeIds", "catalogCount", "heads", "records"],
+  "properties": {
+    "schema": { "const": "efs-fixture-expected/1" },
+    "root": { "type": "object", "required": ["directoryRecordId", "subjectId", "principalId"] },
+    "counts": { "type": "object", "required": ["admissions", "records", "bindings", "publications"] },
+    "heads": { "type": "array", "items": { "type": "object", "required": ["key", "state", "revision", "target"] } },
+    "records": { "type": "array", "items": { "type": "object", "required": ["id", "typeId"] } }
+  }
+}

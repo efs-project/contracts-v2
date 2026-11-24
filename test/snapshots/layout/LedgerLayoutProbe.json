@@ -1,0 +1,1484 @@
+{
+  "storage": [
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_realm",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_struct(RealmStorage)61_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_counters",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_struct(CountersStorage)82_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_records",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_struct(RecordsStorage)118_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_subjects",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_struct(SubjectsStorage)142_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_admissions",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_struct(AdmissionsStorage)184_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_publications",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_struct(PublicationsStorage)256_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_bindings",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_struct(BindingsStorage)309_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_principals",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_struct(PrincipalsStorage)332_storage"
+    },
+    {
+      "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+      "label": "probe_revisions",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_struct(RevisionsStorage)417_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_bytes32))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => bytes32))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bytes32)"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint48))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => uint48))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint48)"
+    },
+    "t_mapping(t_bytes32,t_struct(HeadRow)285_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct LedgerStorage.HeadRow)",
+      "numberOfBytes": "32",
+      "value": "t_struct(HeadRow)285_storage"
+    },
+    "t_mapping(t_bytes32,t_struct(PositionCell)293_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct LedgerStorage.PositionCell)",
+      "numberOfBytes": "32",
+      "value": "t_struct(PositionCell)293_storage"
+    },
+    "t_mapping(t_bytes32,t_struct(PrincipalRow)325_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct LedgerStorage.PrincipalRow)",
+      "numberOfBytes": "32",
+      "value": "t_struct(PrincipalRow)325_storage"
+    },
+    "t_mapping(t_bytes32,t_struct(RecordCell)105_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct LedgerStorage.RecordCell)",
+      "numberOfBytes": "32",
+      "value": "t_struct(RecordCell)105_storage"
+    },
+    "t_mapping(t_bytes32,t_struct(SubjectCell)135_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct LedgerStorage.SubjectCell)",
+      "numberOfBytes": "32",
+      "value": "t_struct(SubjectCell)135_storage"
+    },
+    "t_mapping(t_uint256,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_uint256,t_struct(AdmissionRow)177_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct LedgerStorage.AdmissionRow)",
+      "numberOfBytes": "32",
+      "value": "t_struct(AdmissionRow)177_storage"
+    },
+    "t_mapping(t_uint256,t_struct(EvidenceCell)243_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct LedgerStorage.EvidenceCell)",
+      "numberOfBytes": "32",
+      "value": "t_struct(EvidenceCell)243_storage"
+    },
+    "t_mapping(t_uint256,t_struct(RevisionRow)410_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct LedgerStorage.RevisionRow)",
+      "numberOfBytes": "32",
+      "value": "t_struct(RevisionRow)410_storage"
+    },
+    "t_mapping(t_uint256,t_uint48)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint48)",
+      "numberOfBytes": "32",
+      "value": "t_uint48"
+    },
+    "t_struct(AdmissionRow)177_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.AdmissionRow",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 156,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "kind",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 158,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "leaf",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 160,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "publication",
+          "offset": 2,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 162,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "bindingOrdinal",
+          "offset": 8,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 164,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "expectedRevision",
+          "offset": 14,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 166,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "prevAdmission",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 168,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "withdrawn",
+          "offset": 26,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 170,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "policyRow",
+          "offset": 27,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 172,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "roleRow",
+          "offset": 29,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 174,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "targetKind",
+          "offset": 31,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 176,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "a",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(AdmissionsStorage)184_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.AdmissionsStorage",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 183,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "rows",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_uint256,t_struct(AdmissionRow)177_storage)"
+        }
+      ]
+    },
+    "t_struct(BindingsStorage)309_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.BindingsStorage",
+      "numberOfBytes": "96",
+      "members": [
+        {
+          "astId": 299,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "heads",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_bytes32,t_struct(HeadRow)285_storage)"
+        },
+        {
+          "astId": 303,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "bindingPosition",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_mapping(t_uint256,t_bytes32)"
+        },
+        {
+          "astId": 308,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "positions",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_mapping(t_bytes32,t_struct(PositionCell)293_storage)"
+        }
+      ]
+    },
+    "t_struct(CountersStorage)82_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.CountersStorage",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 75,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "admissions",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 77,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "records",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 79,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "bindings",
+          "offset": 12,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 81,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "publications",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_uint48"
+        }
+      ]
+    },
+    "t_struct(EvidenceCell)243_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.EvidenceCell",
+      "numberOfBytes": "416",
+      "members": [
+        {
+          "astId": 198,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "author",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 200,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "proofKind",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 202,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "principalKind",
+          "offset": 21,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 204,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "v",
+          "offset": 22,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 206,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "leafCount",
+          "offset": 23,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 208,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "firstAdmission",
+          "offset": 24,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 210,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "flags",
+          "offset": 30,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 212,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "nonce",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 214,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "deadline",
+          "offset": 6,
+          "slot": "1",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 216,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "basisBlock",
+          "offset": 14,
+          "slot": "1",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 218,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "revision",
+          "offset": 20,
+          "slot": "1",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 220,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "verifierProfile",
+          "offset": 24,
+          "slot": "1",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 222,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "principalId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 224,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "intentDigest",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 226,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "actionsHash",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 228,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "acceptanceProfile",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 230,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "indexObligations",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 232,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "readSetHash",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 234,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "witness0",
+          "offset": 0,
+          "slot": "8",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 236,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "witness1",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 238,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "submitter",
+          "offset": 0,
+          "slot": "10",
+          "type": "t_address"
+        },
+        {
+          "astId": 240,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "authorityId",
+          "offset": 0,
+          "slot": "11",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 242,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "authEpoch",
+          "offset": 0,
+          "slot": "12",
+          "type": "t_uint64"
+        }
+      ]
+    },
+    "t_struct(HeadRow)285_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.HeadRow",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 270,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "state",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 272,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "revision",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 274,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "admission",
+          "offset": 7,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 276,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "targetKind",
+          "offset": 13,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 278,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "prevAdmission",
+          "offset": 14,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 280,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "bindingOrdinal",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 282,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "notAfter",
+          "offset": 26,
+          "slot": "0",
+          "type": "t_uint40"
+        },
+        {
+          "astId": 284,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "target",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(Limits)751_storage": {
+      "encoding": "inplace",
+      "label": "struct Limits",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 718,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxActions",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 720,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxBody",
+          "offset": 2,
+          "slot": "0",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 722,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxRefs",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 724,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxReadSetPrincipals",
+          "offset": 7,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 726,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxReadSetPositions",
+          "offset": 9,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 728,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxWitness",
+          "offset": 10,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 730,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxTransitionBlocks",
+          "offset": 12,
+          "slot": "0",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 732,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "inlineWordMax",
+          "offset": 16,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 734,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "witnessRetention",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 736,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxBindsPerPublication",
+          "offset": 19,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 738,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxBodyBytesPerPublication",
+          "offset": 21,
+          "slot": "0",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 740,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxFreshSlotsPerPublication",
+          "offset": 25,
+          "slot": "0",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 742,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxReadIds",
+          "offset": 29,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 744,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "maxReadCount",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 746,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "floorFreshGas",
+          "offset": 2,
+          "slot": "1",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 748,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "floorRewriteGas",
+          "offset": 6,
+          "slot": "1",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 750,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "kernelTail",
+          "offset": 10,
+          "slot": "1",
+          "type": "t_uint32"
+        }
+      ]
+    },
+    "t_struct(PositionCell)293_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.PositionCell",
+      "numberOfBytes": "96",
+      "members": [
+        {
+          "astId": 288,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "purpose",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 290,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "subject",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 292,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "role",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(PrincipalRow)325_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.PrincipalRow",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 322,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "nonce",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 324,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "viewMutationVersion",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint48"
+        }
+      ]
+    },
+    "t_struct(PrincipalsStorage)332_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.PrincipalsStorage",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 331,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "rows",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_bytes32,t_struct(PrincipalRow)325_storage)"
+        }
+      ]
+    },
+    "t_struct(PublicationsStorage)256_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.PublicationsStorage",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 249,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "evidence",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_uint256,t_struct(EvidenceCell)243_storage)"
+        },
+        {
+          "astId": 255,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "publicationAt",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint48))"
+        }
+      ]
+    },
+    "t_struct(RealmStorage)61_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.RealmStorage",
+      "numberOfBytes": "576",
+      "members": [
+        {
+          "astId": 7,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "realmId",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 9,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "realmOrigin",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 11,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "realmSalt",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 13,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "genesisChainId",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 15,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "acceptedChainId",
+          "offset": 8,
+          "slot": "3",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 17,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "revision",
+          "offset": 16,
+          "slot": "3",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 19,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "frozen",
+          "offset": 20,
+          "slot": "3",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 21,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "controller",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_address"
+        },
+        {
+          "astId": 23,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "executionProfileId",
+          "offset": 20,
+          "slot": "4",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 25,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "capabilities",
+          "offset": 22,
+          "slot": "4",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 27,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "genesisExecutionProfileId",
+          "offset": 24,
+          "slot": "4",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 29,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "registry",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_address"
+        },
+        {
+          "astId": 31,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "index",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_address"
+        },
+        {
+          "astId": 33,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "indexGeneration",
+          "offset": 20,
+          "slot": "6",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 35,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "executionSet",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 37,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "layoutId",
+          "offset": 0,
+          "slot": "8",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 39,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "domainSeparator",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 41,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "indexObligations",
+          "offset": 0,
+          "slot": "10",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 43,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "steward",
+          "offset": 0,
+          "slot": "11",
+          "type": "t_address"
+        },
+        {
+          "astId": 45,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "limitsProfileId",
+          "offset": 0,
+          "slot": "12",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 48,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "limits",
+          "offset": 0,
+          "slot": "13",
+          "type": "t_struct(Limits)751_storage"
+        },
+        {
+          "astId": 50,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "transitionTarget",
+          "offset": 0,
+          "slot": "15",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 52,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "transitionDeadline",
+          "offset": 4,
+          "slot": "15",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 54,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "transitionLastTarget",
+          "offset": 10,
+          "slot": "15",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 56,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "transitionCooldownUntil",
+          "offset": 14,
+          "slot": "15",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 58,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "readerDirectory",
+          "offset": 0,
+          "slot": "16",
+          "type": "t_address"
+        },
+        {
+          "astId": 60,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "noticePrincipal",
+          "offset": 0,
+          "slot": "17",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(RecordCell)105_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.RecordCell",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 96,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "typeId",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 98,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "firstAdmission",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 100,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "length",
+          "offset": 6,
+          "slot": "1",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 102,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "occurrences",
+          "offset": 10,
+          "slot": "1",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 104,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "carrierKind",
+          "offset": 16,
+          "slot": "1",
+          "type": "t_uint8"
+        }
+      ]
+    },
+    "t_struct(RecordsStorage)118_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.RecordsStorage",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 111,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "cells",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_bytes32,t_struct(RecordCell)105_storage)"
+        },
+        {
+          "astId": 117,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "bodyWords",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_bytes32))"
+        }
+      ]
+    },
+    "t_struct(RevisionRow)410_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.RevisionRow",
+      "numberOfBytes": "800",
+      "members": [
+        {
+          "astId": 346,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "activationBlock",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 348,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "admissionHigh",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 350,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "publicationHigh",
+          "offset": 12,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 352,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "activationTimestamp",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_uint40"
+        },
+        {
+          "astId": 354,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "flags",
+          "offset": 23,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 356,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "executionProfileId",
+          "offset": 25,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 358,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "capabilities",
+          "offset": 27,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 360,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "executionSet",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 362,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "ledgerImpl",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_address"
+        },
+        {
+          "astId": 364,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "acceptedChainId",
+          "offset": 20,
+          "slot": "2",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 366,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "ledgerImplCodehash",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 368,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "registryImpl",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_address"
+        },
+        {
+          "astId": 370,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "registryImplCodehash",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 372,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "index",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_address"
+        },
+        {
+          "astId": 374,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "indexGeneration",
+          "offset": 20,
+          "slot": "6",
+          "type": "t_uint32"
+        },
+        {
+          "astId": 376,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "indexCodehash",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 378,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "indexManifestHash",
+          "offset": 0,
+          "slot": "8",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 380,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "ingress",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_address"
+        },
+        {
+          "astId": 382,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "ingressCodehash",
+          "offset": 0,
+          "slot": "10",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 384,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "applyDelegate",
+          "offset": 0,
+          "slot": "11",
+          "type": "t_address"
+        },
+        {
+          "astId": 386,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "applyCodehash",
+          "offset": 0,
+          "slot": "12",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 388,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "controller",
+          "offset": 0,
+          "slot": "13",
+          "type": "t_address"
+        },
+        {
+          "astId": 390,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "controllerCodehash",
+          "offset": 0,
+          "slot": "14",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 392,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "controllerOwner",
+          "offset": 0,
+          "slot": "15",
+          "type": "t_address"
+        },
+        {
+          "astId": 394,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "steward",
+          "offset": 0,
+          "slot": "16",
+          "type": "t_address"
+        },
+        {
+          "astId": 396,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "layoutId",
+          "offset": 0,
+          "slot": "17",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 398,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "verifierProfilesRoot",
+          "offset": 0,
+          "slot": "18",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 400,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "migrationHash",
+          "offset": 0,
+          "slot": "19",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 402,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "dependencyRoot",
+          "offset": 0,
+          "slot": "20",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 404,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "limitsProfileId",
+          "offset": 0,
+          "slot": "21",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 407,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "limits",
+          "offset": 0,
+          "slot": "22",
+          "type": "t_struct(Limits)751_storage"
+        },
+        {
+          "astId": 409,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "noticePrincipal",
+          "offset": 0,
+          "slot": "24",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(RevisionsStorage)417_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.RevisionsStorage",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 416,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "rows",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_uint256,t_struct(RevisionRow)410_storage)"
+        }
+      ]
+    },
+    "t_struct(SubjectCell)135_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.SubjectCell",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 132,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "createAdmission",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint48"
+        },
+        {
+          "astId": 134,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "creatorKind",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint8"
+        }
+      ]
+    },
+    "t_struct(SubjectsStorage)142_storage": {
+      "encoding": "inplace",
+      "label": "struct LedgerStorage.SubjectsStorage",
+      "numberOfBytes": "32",
+      "members": [
+        {
+          "astId": 141,
+          "contract": "test/harness/LayoutProbe.sol:LedgerLayoutProbe",
+          "label": "cells",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_bytes32,t_struct(SubjectCell)135_storage)"
+        }
+      ]
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint32": {
+      "encoding": "inplace",
+      "label": "uint32",
+      "numberOfBytes": "4"
+    },
+    "t_uint40": {
+      "encoding": "inplace",
+      "label": "uint40",
+      "numberOfBytes": "5"
+    },
+    "t_uint48": {
+      "encoding": "inplace",
+      "label": "uint48",
+      "numberOfBytes": "6"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

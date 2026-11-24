@@ -1,0 +1,315 @@
+{
+  "name": "IPostingStore",
+  "source": "src/interfaces/IPostingStore.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0xbc6ff0c7": "append(bytes32,bytes32,uint64,uint16)",
+    "0x172b688f": "appendBatch(bytes32[],bytes32[],uint64[])",
+    "0xd9e6b370": "attached()",
+    "0x9c9d3a76": "familyIds()",
+    "0xfe619abf": "initialWriter()",
+    "0x56397c35": "ledger()",
+    "0xdc27e824": "postingAt(bytes32,uint64)",
+    "0x5cdd4bb0": "postingHead(bytes32)",
+    "0x5289f73e": "postingSlice(bytes32,uint64,uint16)",
+    "0x8b046558": "postingWords(bytes32,uint64,uint16)",
+    "0x7063715c": "release(bytes32,bytes32,uint64)",
+    "0xe886b121": "storeAbiId()",
+    "0x8b2f5369": "writers()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "append",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "key",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        },
+        {
+          "name": "ordinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "flagsOr",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "count",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "appendBatch",
+      "inputs": [
+        {
+          "name": "families",
+          "type": "bytes32[]",
+          "internalType": "FamilyId[]"
+        },
+        {
+          "name": "keys",
+          "type": "bytes32[]",
+          "internalType": "PostingKey[]"
+        },
+        {
+          "name": "ordinals",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "attached",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "familyIds",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "initialWriter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ledger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "postingAt",
+      "inputs": [
+        {
+          "name": "key",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        },
+        {
+          "name": "i",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "postingHead",
+      "inputs": [
+        {
+          "name": "key",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "count",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "live",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "last",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "flags",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "postingSlice",
+      "inputs": [
+        {
+          "name": "key",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        },
+        {
+          "name": "from",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "n",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "postingWords",
+      "inputs": [
+        {
+          "name": "key",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        },
+        {
+          "name": "fromWord",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "n",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "release",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "key",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        },
+        {
+          "name": "n",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "live",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "storeAbiId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "writers",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "generations",
+          "type": "address[]",
+          "internalType": "address[]"
+        },
+        {
+          "name": "from",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        },
+        {
+          "name": "to",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

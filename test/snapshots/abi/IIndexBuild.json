@@ -1,0 +1,92 @@
+{
+  "name": "IIndexBuild",
+  "source": "src/interfaces/internal/IIndexBuild.sol",
+  "closure": false,
+  "methodIdentifiers": {
+    "0x35424404": "backfill(bytes32,bytes32,uint64,uint16)",
+    "0x83312849": "build(bytes32,uint16)",
+    "0xebbda789": "replayNextPublication(uint16)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "backfill",
+      "inputs": [
+        {
+          "name": "familyId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "scope",
+          "type": "bytes32",
+          "internalType": "ScopeKey"
+        },
+        {
+          "name": "expectedThrough",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "maxEntries",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "build",
+      "inputs": [
+        {
+          "name": "familyId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "maxFacts",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "through",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "replayNextPublication",
+      "inputs": [
+        {
+          "name": "maxFacts",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "processed",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    }
+  ]
+}

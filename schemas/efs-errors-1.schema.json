@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "efs-errors/1",
+  "title": "efs-errors/1 — the error catalog of design §5.6 (release/errors.json)",
+  "type": "object",
+  "required": ["schema", "source", "errors"],
+  "properties": {
+    "schema": { "const": "efs-errors/1" },
+    "errors": {
+      "type": "object",
+      "description": "selector → entry",
+      "additionalProperties": { "type": "object", "required": ["name", "signature", "args", "source", "retryClass", "meaning"], "properties": { "retryClass": { "enum": ["none", "reprepare", "resubmit", "wait", null] } } }
+    }
+  }
+}

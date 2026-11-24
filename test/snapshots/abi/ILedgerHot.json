@@ -1,0 +1,534 @@
+{
+  "name": "ILedgerHot",
+  "source": "src/interfaces/ILedgerHot.sol",
+  "closure": true,
+  "methodIdentifiers": {
+    "0x20b2d6e8": "applyDelegate()",
+    "0xd8de6587": "control()",
+    "0xf77c4791": "controller()",
+    "0x817cc1ea": "counts()",
+    "0x56c35ac8": "executionSet()",
+    "0x1e2eaeaf": "extsload(bytes32)",
+    "0x6f612700": "extsloadBatch(bytes32[])",
+    "0xf135baaa": "exttload(bytes32)",
+    "0xf339e3b2": "head(bytes32)",
+    "0x858fc874": "hotAbiId()",
+    "0x2986c0e5": "index()",
+    "0x1475580d": "indexGeneration()",
+    "0xa411a59d": "ingress()",
+    "0xca3e077c": "layoutId()",
+    "0x59f3ec16": "nonceOf(bytes32)",
+    "0xd2ac0717": "noticePrincipal()",
+    "0xb1c9fe6e": "phase()",
+    "0x78fb2d97": "publicationAt(bytes32,uint64)",
+    "0x12a3427a": "readerDirectory()",
+    "0x490423a3": "realmId()",
+    "0xd5bfc2c4": "realmOrigin()",
+    "0x488eb5a3": "recordHeader(bytes32)",
+    "0x7b103999": "registry()",
+    "0x7cc96380": "revision()",
+    "0xdc81edda": "subjectCreatedAt(bytes32)",
+    "0x614913e0": "supportedHotAbiIds()"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "applyDelegate",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "control",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "genesisChainId",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "acceptedChainId",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "revision",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "frozen",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "controller",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "counts",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "admissions",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "records",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "bindings",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "publications",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "executionSet",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "extsload",
+      "inputs": [
+        {
+          "name": "slot",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "extsloadBatch",
+      "inputs": [
+        {
+          "name": "slots",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "exttload",
+      "inputs": [
+        {
+          "name": "slot",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "head",
+      "inputs": [
+        {
+          "name": "bindingKey",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "state",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "revision",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "admission",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "targetKind",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "prevAdmission",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "bindingOrdinal",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "target",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "hotAbiId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "index",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "indexGeneration",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ingress",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "layoutId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "nonceOf",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "nonce",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "viewMutationVersion",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "noticePrincipal",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "phase",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "phase",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "stagedPublication",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "admissionFrontier",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "revision",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "publicationAt",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "nonce",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publication",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "intentDigest",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "readerDirectory",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "realmId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "realmOrigin",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "recordHeader",
+      "inputs": [
+        {
+          "name": "recordId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "firstAdmission",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "length",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "occurrences",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "carrierKind",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "registry",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "revision",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "subjectCreatedAt",
+      "inputs": [
+        {
+          "name": "subjectId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "supportedHotAbiIds",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}

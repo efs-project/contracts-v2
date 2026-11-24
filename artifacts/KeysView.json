@@ -1,0 +1,260 @@
+{
+  "schema": "efs-artifact/1",
+  "name": "KeysView",
+  "source": "src/periphery/KeysView.sol",
+  "abi": [
+    {
+      "type": "function",
+      "name": "bindingKey",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "position",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "positionKey",
+      "inputs": [
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "subject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "postingKey",
+      "inputs": [
+        {
+          "name": "family",
+          "type": "bytes32",
+          "internalType": "FamilyId"
+        },
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "TypeId"
+        },
+        {
+          "name": "ordinal",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "value",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "PostingKey"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "recordId",
+      "inputs": [
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "bodyHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "roleScopeKey",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "scopeKey",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "subject",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "subjectId",
+      "inputs": [
+        {
+          "name": "principalId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "typeIdOf",
+      "inputs": [
+        {
+          "name": "shape",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "refTypes",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "ruleId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "error",
+      "name": "E_RESERVED",
+      "inputs": [
+        {
+          "name": "field",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "value",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    }
+  ],
+  "methodIdentifiers": {
+    "bindingKey(bytes32,bytes32)": "0d53731b",
+    "positionKey(bytes32,bytes32,bytes32)": "a69f8e70",
+    "postingKey(bytes32,bytes32,uint8,bytes32)": "cf2bc3e0",
+    "recordId(bytes32,bytes32)": "3d5f40fd",
+    "roleScopeKey(bytes32,bytes32,bytes32)": "2439bdda",
+    "scopeKey(bytes32,bytes32,bytes32)": "61390159",
+    "subjectId(bytes32,bytes32)": "4949e36a",
+    "typeIdOf(bytes32,bytes32[],bytes32)": "5926bc07"
+  },
+  "bytecode": "0x608080604052346015576105eb908161001a8239f35b5f80fdfe6080806040526004361015610012575f80fd5b5f3560e01c9081630d53731b146103e9575080632439bdda146103905780633d5f40fd1461033c5780634949e36a146102e85780635926bc07146101ba5780636139015914610161578063a69f8e70146101085763cf2bc3e014610074575f80fd5b346101045760803660031901126101045760443560ff81168091036101045760209060ff6100a36004356104a2565b169060405190838201927f15362da6306364a58a4c0a713b93f4a9bbdeb993c835d3435f5c97c8d5a0afd2845260243560408401526060830152608082015260643560a082015260a081526100f960c08261046c565b519020604051908152f35b5f80fd5b3461010457602061011836610452565b60405191848301937f8d799c7b7064c52f591ec7dd83328143cf1489beb1af2c305d90cf2cde7407e38552604084015260608301526080820152608081526100f960a08261046c565b3461010457602061017136610452565b60405191848301937f92daa38d3049c86476ecdbfb3e06a74ab958d8ed37d583b3c0d9173128f840f38552604084015260608301526080820152608081526100f960a08261046c565b346101045760603660031901126101045760243567ffffffffffffffff8111610104573660238201121561010457806004013567ffffffffffffffff8111610104578060051b90602482840101903682116101045761021f602060405194018461046c565b82526020820192602401835b8282106102d8575050506040516020810191604082019060208452518091526060820193905f5b8181106102c2575050506102718160209403601f19810183528261046c565b519020604051828101917f44ac7bc1be9e89e7c6fc3842810f6c4a263682285ecc7f254d0a7fe7b2af799e8352600435604083015260608201526044356080820152608081526100f960a08261046c565b8251865260209586019590920191600101610252565b813581526020918201910161022b565b346101045760206102f83661043c565b60405190838201927fc0c0cdafc7b89f00f1f976e698195cb28121446967001f8bd7840204218bcb20845260408301526060820152606081526100f960808261046c565b3461010457602061034c3661043c565b60405190838201927fa9b8140bd3398d14fe72a4e868ca64b6bb119c3ee51354b50457d56da12552e3845260408301526060820152606081526100f960808261046c565b346101045760206103a036610452565b60405191848301937f33d58fd9854148729b71ce64177505f01dc083d37fce775eb9984d8f60dbe4058552604084015260608301526080820152608081526100f960a08261046c565b34610104576020906103fa3661043c565b8383929301927ffbc7067cf7411d9b4b89871c89041dd259dadaba90b115026f41239cbbf53c06845260408301526060820152606081526100f960808261046c565b6040906003190112610104576004359060243590565b606090600319011261010457600435906024359060443590565b90601f8019910116810190811067ffffffffffffffff82111761048e57604052565b634e487b7160e01b5f52604160045260245ffd5b6040519091906001600160c01b031983166104be60a08361046c565b606882527fe4f7cc7ff76622e1d674025fa1091f86f564f360d1f5b65ade538e29eab7366360208301527f1fd035d41e55e58529d3bea0a01e3e2603b682942778e8b977b478e9ae9182fa60408301527fef3758cffd687b169f7b888d291c8c4ce84f1b109238a09c04369382b4c38d706060830152674219f10614180b5360c11b60808301525f5b600d8110610567578463058bef3560e21b5f52601460045260245260445ffd5b600381901b8301602001516001600160c01b031916821461058a57600101610547565b92935050506040519061059e60408361046c565b600d8083526b82028405058606870788088960991b60208401528110156105ca57016020015160f81c90565b634e487b7160e01b5f52603260045260245ffdfea164736f6c6343000825000a",
+  "deployedBytecode": "0x6080806040526004361015610012575f80fd5b5f3560e01c9081630d53731b146103e9575080632439bdda146103905780633d5f40fd1461033c5780634949e36a146102e85780635926bc07146101ba5780636139015914610161578063a69f8e70146101085763cf2bc3e014610074575f80fd5b346101045760803660031901126101045760443560ff81168091036101045760209060ff6100a36004356104a2565b169060405190838201927f15362da6306364a58a4c0a713b93f4a9bbdeb993c835d3435f5c97c8d5a0afd2845260243560408401526060830152608082015260643560a082015260a081526100f960c08261046c565b519020604051908152f35b5f80fd5b3461010457602061011836610452565b60405191848301937f8d799c7b7064c52f591ec7dd83328143cf1489beb1af2c305d90cf2cde7407e38552604084015260608301526080820152608081526100f960a08261046c565b3461010457602061017136610452565b60405191848301937f92daa38d3049c86476ecdbfb3e06a74ab958d8ed37d583b3c0d9173128f840f38552604084015260608301526080820152608081526100f960a08261046c565b346101045760603660031901126101045760243567ffffffffffffffff8111610104573660238201121561010457806004013567ffffffffffffffff8111610104578060051b90602482840101903682116101045761021f602060405194018461046c565b82526020820192602401835b8282106102d8575050506040516020810191604082019060208452518091526060820193905f5b8181106102c2575050506102718160209403601f19810183528261046c565b519020604051828101917f44ac7bc1be9e89e7c6fc3842810f6c4a263682285ecc7f254d0a7fe7b2af799e8352600435604083015260608201526044356080820152608081526100f960a08261046c565b8251865260209586019590920191600101610252565b813581526020918201910161022b565b346101045760206102f83661043c565b60405190838201927fc0c0cdafc7b89f00f1f976e698195cb28121446967001f8bd7840204218bcb20845260408301526060820152606081526100f960808261046c565b3461010457602061034c3661043c565b60405190838201927fa9b8140bd3398d14fe72a4e868ca64b6bb119c3ee51354b50457d56da12552e3845260408301526060820152606081526100f960808261046c565b346101045760206103a036610452565b60405191848301937f33d58fd9854148729b71ce64177505f01dc083d37fce775eb9984d8f60dbe4058552604084015260608301526080820152608081526100f960a08261046c565b34610104576020906103fa3661043c565b8383929301927ffbc7067cf7411d9b4b89871c89041dd259dadaba90b115026f41239cbbf53c06845260408301526060820152606081526100f960808261046c565b6040906003190112610104576004359060243590565b606090600319011261010457600435906024359060443590565b90601f8019910116810190811067ffffffffffffffff82111761048e57604052565b634e487b7160e01b5f52604160045260245ffd5b6040519091906001600160c01b031983166104be60a08361046c565b606882527fe4f7cc7ff76622e1d674025fa1091f86f564f360d1f5b65ade538e29eab7366360208301527f1fd035d41e55e58529d3bea0a01e3e2603b682942778e8b977b478e9ae9182fa60408301527fef3758cffd687b169f7b888d291c8c4ce84f1b109238a09c04369382b4c38d706060830152674219f10614180b5360c11b60808301525f5b600d8110610567578463058bef3560e21b5f52601460045260245260445ffd5b600381901b8301602001516001600160c01b031916821461058a57600101610547565b92935050506040519061059e60408361046c565b600d8083526b82028405058606870788088960991b60208401528110156105ca57016020015160f81c90565b634e487b7160e01b5f52603260045260245ffdfea164736f6c6343000825000a",
+  "immutables": [],
+  "storageLayout": "test/snapshots/layout/",
+  "interfaces": "test/snapshots/abi/"
+}

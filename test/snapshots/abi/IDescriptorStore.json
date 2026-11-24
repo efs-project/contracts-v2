@@ -1,0 +1,62 @@
+{
+  "name": "IDescriptorStore",
+  "source": "src/interfaces/internal/IDescriptorStore.sol",
+  "closure": false,
+  "methodIdentifiers": {
+    "0x3df5b243": "predict(bytes,bytes)",
+    "0x38636e9a": "put(bytes,bytes)"
+  },
+  "events": {},
+  "errors": {},
+  "structs": {},
+  "abi": [
+    {
+      "type": "function",
+      "name": "predict",
+      "inputs": [
+        {
+          "name": "descriptor",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "declarationSig",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "put",
+      "inputs": [
+        {
+          "name": "descriptor",
+          "type": "bytes",
+          "internalType": "bytes"
+        },
+        {
+          "name": "declarationSig",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "blob",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    }
+  ]
+}

@@ -1,0 +1,1358 @@
+{
+  "name": "Errors.sol (file level)",
+  "source": "src/interfaces/Errors.sol",
+  "closure": true,
+  "methodIdentifiers": {},
+  "events": {},
+  "errors": {
+    "0x3ef2d65f": "AlreadyAdmitted(uint64)",
+    "0x6df3b676": "E_ACCEPTANCE_PROFILE(bytes32,bytes32)",
+    "0x8618eca4": "E_ACCEPTOR_CODE(uint8,address)",
+    "0xfdbd110e": "E_ACCEPTOR_GAS(uint8,bytes32,uint32)",
+    "0xb920eaf7": "E_BACKFILL(uint8)",
+    "0xda327938": "E_BATCH_SHAPE(uint16,uint16)",
+    "0xe045a05d": "E_BINDING(uint8)",
+    "0xf4b203cb": "E_BLOB(address)",
+    "0x6084d51b": "E_BODY(uint8,uint8)",
+    "0x8b0ccd86": "E_BUILD(uint8)",
+    "0xc41bde55": "E_CANARY(uint8)",
+    "0x1b10bf54": "E_CAS(bytes32,uint64,uint64)",
+    "0x715f66f2": "E_CHAIN(uint64,uint64)",
+    "0x83575923": "E_CODEC(uint16,uint8)",
+    "0xc3fb7c63": "E_CODE_SHAPE(address,uint8)",
+    "0xa34c143f": "E_CONTROLLER(uint8)",
+    "0x1fdc7a17": "E_COUNTER_SATURATED(uint8)",
+    "0x3797fd0b": "E_COVERAGE(uint8)",
+    "0x7b1ececb": "E_DEADLINE_BOUND(uint48,uint32)",
+    "0xb13a0b3f": "E_DECLARATION(uint8)",
+    "0x6244bd3d": "E_DELEGATE_ONLY()",
+    "0x5d3b73d2": "E_DEPLOYER(uint8)",
+    "0x7106dafd": "E_DESIGNATOR(address)",
+    "0xb7096410": "E_EXECUTION_DRIFT(address,address)",
+    "0xe353574a": "E_EXECUTION_SET(bytes32,bytes32)",
+    "0xd7a0e33a": "E_EXPECTED_SET(bytes32,bytes32)",
+    "0x9fab7f4a": "E_EXPIRED(uint64,uint64)",
+    "0xa24fcaf5": "E_FAMILY(bytes32)",
+    "0xea3b2fde": "E_FREEZE_PRECHECK(uint8)",
+    "0xabdd33df": "E_FROZEN()",
+    "0x6667c3b4": "E_GAS(uint8,uint32,uint32)",
+    "0x1d0b32cf": "E_GENESIS(uint8)",
+    "0x923fa11b": "E_GRADE(uint8)",
+    "0x73147128": "E_HELPER_CODE(address)",
+    "0x61b3a0aa": "E_HOT_ABI(address)",
+    "0x998dcc3e": "E_IMPLEMENTATION(address,address)",
+    "0x625e5082": "E_INDEX_ACK(uint8)",
+    "0x94b0e1fa": "E_INDEX_CALL(bytes)",
+    "0xc0a89461": "E_INDEX_FINAL()",
+    "0x9f4287ca": "E_INDEX_GAS(uint32,uint32)",
+    "0xb4459d23": "E_INDEX_NOT_READY(uint8)",
+    "0x43e505ed": "E_INDEX_RETURNDATA(uint256)",
+    "0x13f51e06": "E_INGRESS(uint256)",
+    "0x480436c2": "E_INSTANCE(address,address)",
+    "0x9b93f111": "E_INTENT(uint8)",
+    "0x63156870": "E_KIND(uint8,uint8)",
+    "0xcb828db2": "E_LAYOUT(bytes32,bytes32)",
+    "0x4ef987bc": "E_LEDGER()",
+    "0x6c8ce564": "E_MIGRATION_SCOPE(bytes32)",
+    "0xaeb3d821": "E_MISSING_RECORD(uint8,bytes32)",
+    "0x5324a637": "E_NATIVE_AMBIGUOUS()",
+    "0x6aefef67": "E_NONCE(bytes32,uint64,uint64)",
+    "0x116ad4cc": "E_NOT_CONTROLLER(address)",
+    "0x72b4bd59": "E_NOT_IDLE()",
+    "0x22218e10": "E_NOT_LIVE(uint8,bytes32,uint8)",
+    "0x519547f3": "E_NOT_OWNER(address)",
+    "0x3f22553d": "E_NO_INDEX()",
+    "0x77d7990b": "E_ORDER(uint64,uint64)",
+    "0x8f1baa30": "E_PENDING(address)",
+    "0x62c99498": "E_PIN(address,uint8)",
+    "0x1b4fbe7a": "E_POLICY_REJECTED(uint8,bytes32,uint16)",
+    "0x90ad6128": "E_PUBLICATION_ACTIVE()",
+    "0x9d11b35a": "E_READER(address,uint8)",
+    "0x00c749f1": "E_READSET_SHAPE(uint8)",
+    "0x381bf267": "E_READSET_STALE(bytes32,bytes32)",
+    "0x3ad0f2e3": "E_REF(uint8,uint8,uint8)",
+    "0x3d0e6093": "E_REGISTRY(uint8)",
+    "0x89a31dca": "E_REGISTRY_DRIFT(uint64,uint64)",
+    "0x1c708df6": "E_REJECTED(uint8,bytes32)",
+    "0x4ab484ee": "E_REPLAY(uint8)",
+    "0x162fbcd4": "E_RESERVED(uint8,uint256)",
+    "0x322eb12b": "E_RETIRED()",
+    "0x3aa851df": "E_REVISION(uint32,uint32)",
+    "0xf80d9781": "E_ROLE_ROWS()",
+    "0x4d5303a7": "E_SALT(uint8)",
+    "0x52cd9a16": "E_SHAPE(uint8,uint8)",
+    "0xd4bd9889": "E_SIGNATURE(uint8)",
+    "0xfffe1554": "E_STAGED(uint64,uint64)",
+    "0x874a96b4": "E_SUBJECT_EXISTS(uint8,bytes32)",
+    "0x958247c0": "E_SUCCESSOR(uint8)",
+    "0xbdc2c981": "E_TARGET_MISSING(uint8,bytes32)",
+    "0xa501b64b": "E_TARGET_TYPE(uint8,bytes32,bytes32,uint16)",
+    "0x7553e4f8": "E_TRANSITION(uint32,uint48)",
+    "0x720a41f2": "E_TRANSITION_COOLDOWN(uint48)",
+    "0xa48a998f": "E_TRANSITION_TARGET(uint32)",
+    "0x19834aa0": "E_TYPE_EXISTS(bytes32)",
+    "0x2035cbfd": "E_TYPE_MISMATCH(uint8,bytes32,bytes32)",
+    "0x0cd2f0b2": "E_UNIT(uint8)",
+    "0x9e223dd5": "E_UNKNOWN_TYPE(uint8,bytes32)",
+    "0x7494b8e1": "E_UNSUPPORTED_GUARD()",
+    "0xbc0d9bb1": "E_UNSUPPORTED_ROW(uint8)",
+    "0xe4c84ba6": "E_VERIFIER_PROFILE(uint16)",
+    "0x570053c9": "E_WALLET_GAS(uint32)",
+    "0xcb944f40": "E_WITHDRAW(uint8,uint8)",
+    "0x047e0083": "E_WRAPPER(uint8)",
+    "0x2d01279b": "E_WRITER(address)"
+  },
+  "structs": {},
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "publication",
+          "type": "uint64"
+        }
+      ],
+      "name": "AlreadyAdmitted",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "live",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_ACCEPTANCE_PROFILE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "acceptor",
+          "type": "address"
+        }
+      ],
+      "name": "E_ACCEPTOR_CODE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "typeId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "forwarded",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_ACCEPTOR_GAS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_BACKFILL",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "actions",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "bodies",
+          "type": "uint16"
+        }
+      ],
+      "name": "E_BATCH_SHAPE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_BINDING",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "blob",
+          "type": "address"
+        }
+      ],
+      "name": "E_BLOB",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_BODY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_BUILD",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "lane",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_CANARY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "bindingKey",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint64",
+          "name": "expected",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "have",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_CAS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "accepted",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "actual",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_CHAIN",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "byteOffset",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_CODEC",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "reason",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_CODE_SHAPE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "field",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_CONTROLLER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "counter",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_COUNTER_SATURATED",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_COVERAGE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint48",
+          "name": "deadline",
+          "type": "uint48"
+        },
+        {
+          "internalType": "uint32",
+          "name": "maxBlocks",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_DEADLINE_BOUND",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_DECLARATION",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_DELEGATE_ONLY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "step",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_DEPLOYER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        }
+      ],
+      "name": "E_DESIGNATOR",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "live",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "activated",
+          "type": "address"
+        }
+      ],
+      "name": "E_EXECUTION_DRIFT",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "live",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_EXECUTION_SET",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "live",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_EXPECTED_SET",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "deadline",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "now",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_EXPIRED",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "familyId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_FAMILY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "check",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_FREEZE_PRECHECK",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_FROZEN",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint32",
+          "name": "needed",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "available",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_GAS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "step",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_GENESIS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "grade",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_GRADE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "helper",
+          "type": "address"
+        }
+      ],
+      "name": "E_HELPER_CODE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "unit",
+          "type": "address"
+        }
+      ],
+      "name": "E_HOT_ABI",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "expected",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "live",
+          "type": "address"
+        }
+      ],
+      "name": "E_IMPLEMENTATION",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "phase",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_INDEX_ACK",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "inner",
+          "type": "bytes"
+        }
+      ],
+      "name": "E_INDEX_CALL",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_INDEX_FINAL",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "quoted",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "available",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_INDEX_GAS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "reason",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_INDEX_NOT_READY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "size",
+          "type": "uint256"
+        }
+      ],
+      "name": "E_INDEX_RETURNDATA",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "replySize",
+          "type": "uint256"
+        }
+      ],
+      "name": "E_INGRESS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "expected",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "have",
+          "type": "address"
+        }
+      ],
+      "name": "E_INSTANCE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "field",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_INTENT",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "kind",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_KIND",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "have",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_LAYOUT",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_LEDGER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "root",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_MIGRATION_SCOPE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "recordId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_MISSING_RECORD",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_NATIVE_AMBIGUOUS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "principalId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint64",
+          "name": "nonce",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "publication",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_NONCE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "E_NOT_CONTROLLER",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_NOT_IDLE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "bindingKey",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_NOT_LIVE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "E_NOT_OWNER",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_NO_INDEX",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "expected",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "have",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_ORDER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "pending",
+          "type": "address"
+        }
+      ],
+      "name": "E_PENDING",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "which",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_PIN",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "typeId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint16",
+          "name": "policyRow",
+          "type": "uint16"
+        }
+      ],
+      "name": "E_POLICY_REJECTED",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_PUBLICATION_ACTIVE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "reader",
+          "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_READER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "reason",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_READSET_SHAPE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "position",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "principalId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_READSET_STALE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "refIndex",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_REF",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "field",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_REGISTRY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "expected",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "have",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_REGISTRY_DRIFT",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "typeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_REJECTED",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_REPLAY",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "field",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "E_RESERVED",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_RETIRED",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "expected",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "have",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_REVISION",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_ROLE_ROWS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_SALT",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_SHAPE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "reason",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_SIGNATURE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "expected",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "have",
+          "type": "uint64"
+        }
+      ],
+      "name": "E_STAGED",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "subjectId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_SUBJECT_EXISTS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_SUCCESSOR",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "target",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_TARGET_MISSING",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "have",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint16",
+          "name": "roleRow",
+          "type": "uint16"
+        }
+      ],
+      "name": "E_TARGET_TYPE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "target",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint48",
+          "name": "deadline",
+          "type": "uint48"
+        }
+      ],
+      "name": "E_TRANSITION",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint48",
+          "name": "until",
+          "type": "uint48"
+        }
+      ],
+      "name": "E_TRANSITION_COOLDOWN",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "target",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_TRANSITION_TARGET",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "typeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_TYPE_EXISTS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "expected",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "have",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_TYPE_MISMATCH",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "index",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_UNIT",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "typeId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "E_UNKNOWN_TYPE",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "E_UNSUPPORTED_GUARD",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "row",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_UNSUPPORTED_ROW",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "profile",
+          "type": "uint16"
+        }
+      ],
+      "name": "E_VERIFIER_PROFILE",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "forwarded",
+          "type": "uint32"
+        }
+      ],
+      "name": "E_WALLET_GAS",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "leaf",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_WITHDRAW",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        }
+      ],
+      "name": "E_WRAPPER",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "E_WRITER",
+      "type": "error"
+    }
+  ]
+}
