@@ -23,6 +23,21 @@ What is wanted: **one approval, then any number of publications with no prompt, 
 (same `principalId`, so every lens that already includes Alice sees them), limited in what they may do, expiring, and
 revocable.
 
+## What is already ruled
+
+James ruled the direction on 2026-09-03 (planning vault, `Designs/efsv2/owner-rulings.md`, "Disposable MVP-C0 and
+wallet-approval direction"): *"Smart/session wallets target zero routine prompts after permission. One initial
+bounded, expiring, and revocable grant may authorize a session key to sign routine in-scope WritePlans."* The same
+file lists session keys and personas on the key-event-log upgrade path. So a session-key grant with zero routine
+prompts is the owner's direction, and this document does not reopen it.
+
+An earlier client design document (2026-07-07, `Designs/clientv2/wallet-and-actions.md`) framed promptless writing
+as personas "without protocol session keys". That framing is superseded by the ruling above; personas remain a
+useful mechanism and are candidate A below.
+
+What the ruling leaves open is **who checks the grant**: the wallet (a smart account, an ERC-7715 permission, an
+ERC-1271 wallet), or the EFS kernel (a protocol session key). That is the question this document is about.
+
 ## What exists that a session can build on
 
 | Piece | State |
@@ -52,9 +67,8 @@ Two facts shape everything below. The `Intent` typehash **freezes at S2** (desig
 
 Notes on each.
 
-**A. Personas.** This was the 2026-07-07 answer ("promptless writes are Kernel-held hot keys or per-app personas; no
-protocol session keys"). It is the only zero-prompt path that needs nothing built, so it is the right bridge for the
-MVP. Its cost is the one the requirement names: authorship is not Alice's. Every reader has to know the personas
+**A. Personas.** The July client design's mechanism (client-held hot keys, one per app). It is the only zero-prompt
+path that needs nothing built, so it is the right bridge for the MVP. Its cost is the one the requirement names: authorship is not Alice's. Every reader has to know the personas
 (a lens is at most 64 principals, and each one costs gas on every read: a head read measured 67k gas with one
 principal and 131k with eight), a rename or delete by a second persona is a different author's fact, and "is this
 persona really Alice's" becomes a rule every client must implement the same way.
@@ -85,8 +99,10 @@ and a passkey lane (a biometric prompt per write is still a prompt).
 2. **S2:** build the protocol session lane (B) as its own verifier profile, with the signed lane it rides on.
 3. **Always:** C keeps working for wallets that grow the feature, D ships at S2b as designed. Neither is depended on.
 
-The reason for B over "personas forever": it is the only path where the hard requirement (few prompts) and the core
-doctrine (the author is the identity lenses key on) both hold for a user with an ordinary wallet.
+The reason for B: the ruled direction is a session-key grant, and B is the only place to check that grant where
+the hard requirement (few prompts) and the core doctrine (the author is the identity lenses key on) both hold for a
+user with an ordinary wallet. Checking it in the wallet (C, D) is cheaper and needs no kernel work, but depends on
+wallet features that do not cover contract calls today.
 
 ## B in detail
 
@@ -214,9 +230,11 @@ background instead of approved one by one.
 
 ## What James has to rule before S2
 
-1. **S-1. Is a protocol session lane wanted at all?** This reverses the 2026-07-07 "no protocol session keys"
-   ruling. *Recommend yes*, because the 0–2 prompt bar and "the author is the user" cannot both hold for ordinary
-   wallets without it. If no, personas are the permanent answer and lens stitching becomes a client law.
+1. **S-1. Who checks the session grant?** The grant itself is ruled (2026-09-03). Either the wallet checks it (a
+   smart account, an ERC-7715 permission, ERC-1271), which needs no kernel work but cannot be depended on today for
+   contract calls and leaves plain-EOA users with personas; or the EFS kernel checks it (a protocol session key),
+   which works with every wallet and keeps the user as the author, at the cost of new authority code in the
+   execution set. *Recommend the kernel, with the wallet paths left working for whoever has them.*
 2. **S-2. The meaning of `authorityId` and `authEpoch`** (the sentence above). *Recommend adopt it*; it costs no
    typehash change and keeps the key-event-log option.
 3. **S-3. Concurrent writers for one principal** (nonce per authority). *Recommend yes*; without it two devices
