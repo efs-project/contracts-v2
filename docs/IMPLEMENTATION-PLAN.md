@@ -72,4 +72,4 @@ The contracts engineer (Fable) designs and writes the kernel, the apply and ingr
 | Snapshot rule (2026-11-24) | done (`pnpm release:check` in CI; every catalog error classified; `constants` in `release.json`) | `tools/release.mjs`, `.github/workflows/check.yml` |
 | C1 | closed for sizes and the M1 write rows (adoption notes 16 and 21, `docs/GAS-SCHEDULES.md`, `gas/report.json`); open: the two sides of 2^24, per-row slot counts, the 48-bit decision rule |
 
-Open items for James are Q1–Q46 (Q35 and Q42 closed) in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.
+Open items for James are Q1–Q47 (Q35 and Q42 closed) in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.
