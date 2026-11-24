@@ -13,11 +13,12 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { arch, platform, release as osRelease } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { keccak256, toFunctionSelector } from "viem";
-import { AST_OUT, OUT, UNITS, artifact, buildPlan, immutableLayout, jsonable, parseArgs, root, toJSON } from "./deploy-plan.mjs";
+import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, immutableLayout, jsonable, parseArgs, root, toJSON } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-script"]);
+assert.equal(ARTIFACTS_MODE, "forge", `tools/release.mjs reads a Foundry build; ${OUT} is a ${ARTIFACTS_MODE} directory (unset EFS_ARTIFACTS_DIR)`);
 const sha256 = (buf) => `0x${createHash("sha256").update(buf).digest("hex")}`;
 const git = (...args) => { try { return execFileSync("git", args, { cwd: root }).toString().trim(); } catch { return null; } };
 
@@ -34,7 +35,7 @@ let reproducible = 0;
 for (const name of Object.keys(UNITS)) {
   const a = artifact(name);
   const imm = immutableLayout(name);
-  if (existsSync(join(root, AST_OUT, `${UNITS[name]}.sol`, `${name}.json`))) reproducible++;
+  if (existsSync(join(AST_OUT, `${UNITS[name]}.sol`, `${name}.json`))) reproducible++;
   const step = stepOf(name);
   const deployed = step ?? (name === "RealmController" ? createdOf("RealmController") : name === "ProxyAdmin" ? createdOf("LedgerProxyAdmin") : name === "TransparentUpgradeableProxy" ? createdOf("LedgerProxy") : null);
   const b = budgetOf(name);
@@ -57,8 +58,8 @@ for (const name of Object.keys(UNITS)) {
 // ---- the files the units were built from ---------------------------------------------------------------------------
 const files = {};
 for (const name of Object.keys(UNITS)) {
-  const meta = JSON.parse(readFileSync(join(root, OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8")).metadata;
-  for (const src of Object.keys(meta.sources)) files[src] ??= sha256(readFileSync(join(root, src)));
+  const meta = JSON.parse(readFileSync(join(OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8")).metadata;
+  for (const src of Object.keys(meta.sources)) files[src] ??= sha256(readFileSync(join(SOURCE_ROOT, src)));
 }
 
 // ---- the error catalog (design §5.6): file-level errors with the retry class in the trailing comment ----------------
@@ -93,10 +94,12 @@ const union = (names) => {
 };
 for (const name of Object.keys(UNITS)) {
   const a = artifact(name);
-  const raw = JSON.parse(readFileSync(join(root, OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8"));
+  const raw = JSON.parse(readFileSync(join(OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8"));
   const abi = name === "LedgerCore" ? union(["LedgerCore", "LedgerApply", "LedgerIngress", "LedgerControl"]) : a.abi;
   writeFileSync(join(root, "artifacts", `${name}.json`), toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers: raw.methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
 }
+// artifacts/index.json: what a deploy from artifacts/ alone needs besides the units (tools/deploy-plan.mjs "release" layout)
+writeFileSync(join(root, "artifacts", "index.json"), toJSON({ schema: "efs-artifacts-index/1", layoutId: plan.layoutId, hotAbiId: plan.hotAbiId, hotAbiIdString: plan.hotAbiIdString, units: Object.keys(UNITS), manifest: "release/release.json", note: "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`" }));
 
 // ---- cross-check: the JS Files twin against the Solidity FilesTypes ------------------------------------------------
 let scriptCheck = { ran: false };
@@ -132,7 +135,7 @@ const manifest = {
     foundry: forgeVersion, node: process.version, viem: JSON.parse(readFileSync(join(root, "node_modules/viem/package.json"), "utf8")).version,
   },
   buildPlatform: { os: platform(), osRelease: osRelease(), arch: arch() },
-  reproducibility: { builds: [OUT, AST_OUT], unitsCompared: reproducible, runtimeAndInitcodeIdentical: reproducible === Object.keys(UNITS).length, note: "the AST build is a second full compile with the identity settings plus AST output; tools/deploy-plan.mjs refuses any unit whose bytes differ" },
+  reproducibility: { builds: [OUT, AST_OUT].map((p) => relative(root, p)), unitsCompared: reproducible, runtimeAndInitcodeIdentical: reproducible === Object.keys(UNITS).length, note: "the AST build is a second full compile with the identity settings plus AST output; tools/deploy-plan.mjs refuses any unit whose bytes differ" },
   files,
   contracts,
   profiles: {
@@ -151,7 +154,7 @@ const manifest = {
     indexProfiles: { physical: keccak256(Buffer.from("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs")) },
     crossCheck: scriptCheck,
   },
-  consumer: { pragmaFloor: "^0.8.27", tested: [{ solc: "0.8.27", viaIR: false, profile: "closure" }, { solc: artifact("LedgerCore").compiler.version, viaIR: true, evm: settings.evmVersion, profile: "default" }], remapping: "@efs/contracts-v2/=src/" },
+  consumer: { pragmaFloor: "^0.8.27", tested: [{ solc: "0.8.27", viaIR: false, profile: "closure" }, { solc: artifact("LedgerCore").compiler.version, viaIR: true, evm: settings.evmVersion, profile: "default" }], remapping: "@efs/contracts/=src/" },
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
   errors: { path: "release/errors.json", sha256: sha256(readFileSync(join(root, "release/errors.json"))), count: Object.keys(errors).length },
   abi: { interfaces: "test/snapshots/abi/", units: "artifacts/" },

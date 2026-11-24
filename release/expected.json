@@ -1,9 +1,9 @@
 {
   "schema": "efs-fixture-expected/1",
-  "seedVersion": "efs-fixture-seed/1",
+  "seedVersion": "efs-fixture-seed/2",
   "chainId": 31337,
-  "ledger": "0x0c18625727e6ee510b318ee47F225ef4e4C2E9ab",
-  "executionSet": "0x3f9d3371aac7184c21133dd9e13ac77d6f745c9356a8160b4e84ccb62e509482",
+  "ledger": "0x984Bf266EA4F907Afe58b5C25E31D3e0BA503373",
+  "executionSet": "0x29dfa39d2daf11e62e1c9c3b46522e8004c4a4167ff9692f8fa178bce06893ca",
   "revision": 1,
   "root": {
     "directoryRecordId": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
@@ -21,31 +21,81 @@
   "file": {
     "name": "readme.txt",
     "subjectId": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
-    "rootRecordId": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
+    "rootRecordId": "0x1957ae776d97986d5d25efb0f5c530df4d85c1b89086dcfd41f484babce8ccd7",
     "nameRecordId": "0x2caced3464a66c078e11adc1f871c10058ad3ecd4683a53bb8132cceb4547e39",
     "headKey": "0x6e6b149b64d17813aa375cef8b3efc5c20a7b6e25d5d7f5da65aef72a1964d6e",
     "bindingKey": "0xeb8dec99e7deaec3332d0e20983c46337290a136de40edbfc84d70f30220d25e",
     "scopeKey": "0x928db50e5df04b44c90f45d67399cc23ea726beff14ddee25532353134b1a075",
-    "body": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d14d656574696e672061742031303a30302e0a"
+    "body": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d100000000000000000000000000000000000000000000000000000000000000004d656574696e672061742031303a30302e0a"
   },
+  "files": [
+    {
+      "name": "readme.txt",
+      "subjectId": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
+      "headRecordId": "0x1957ae776d97986d5d25efb0f5c530df4d85c1b89086dcfd41f484babce8ccd7",
+      "headRevision": 1,
+      "form": 0,
+      "nameRecordId": "0x2caced3464a66c078e11adc1f871c10058ad3ecd4683a53bb8132cceb4547e39",
+      "headKey": "0x6e6b149b64d17813aa375cef8b3efc5c20a7b6e25d5d7f5da65aef72a1964d6e",
+      "bindingKey": "0xeb8dec99e7deaec3332d0e20983c46337290a136de40edbfc84d70f30220d25e",
+      "length": 18,
+      "sha256": "0x0e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6"
+    },
+    {
+      "name": "big.bin",
+      "subjectId": "0x266b7941094cd96560d64d8aabbd700a5bb5f04b72bfa99a0a03a9467f01622e",
+      "headRecordId": "0x26af18f0ea1814f360e16d3d622aa7fd05efa0d9ae0ec3f6cef9e03b0b73c554",
+      "headRevision": 1,
+      "form": 1,
+      "nameRecordId": "0xbdaa9491cb54ae6ae634b3f201fb2198163905fa56c23a8e4236771f9724ec08",
+      "headKey": "0xf43fabfe067f2fdfae71c93dd7c422b3d1405c97b482e21858f64c42a3b1f40d",
+      "bindingKey": "0x82673049f306595ebe5471102b88a72657d9b001a9fff64f8338bf1c220dddb1",
+      "contentRecordId": "0xd41aa651b9584f9815f6160f7718eaa324687ef4fea5734c60bf6ebb6f1d5771",
+      "spanRootId": "0x00a54c17b3713c89e19198f7abe065188f7098184f4d514438ae155cecd0d92e",
+      "length": 20000,
+      "sha256": "0xda46970b5680b20b3e17b1e9745f943c0a908418e1aa8733c70fb6239843efc9",
+      "chunkCount": 3,
+      "spanCount": 2,
+      "chunkPayload": 8160,
+      "payloadSeed": "0x01c626abfa2ab719bf7aed1c7e8e2563ee7447498835abbcb3ec80631b8c9805",
+      "publications": 2
+    },
+    {
+      "name": "remote.txt",
+      "subjectId": "0x10497e88273558e6d1e06f88a1ccb808c0444d9d2e118753c5db8768fe7603cf",
+      "headRecordId": "0x2a39d93932af3c784fa93f845da47b659af219e0aa76146ee4b93ebe0c451c1d",
+      "headRevision": 1,
+      "form": 1,
+      "nameRecordId": "0x951e5b33e41d0fa264e89f7488fd29de967dec2b54a7440b31664a80f7330cf2",
+      "headKey": "0xb3a7bf723d1be3d771a7f38c52a61b2fa78a9ce39768040a9bbc253ee386c777",
+      "bindingKey": "0x4a435cfa30bae524c05d418a4b926320997f008b4ae32a759516450d9df4ada6",
+      "externalRecordId": "0xbebdec82588dd761cb3ea49ddce676515aef574714dec0e202c27e143ebde727",
+      "sentinelRecordId": "0x810e7fcaab74f9cf315a809ecb7274695b1e155ef471ec40501cb3e712f5f6e7",
+      "locator": "web3://0x0000000000000000000000000000000000000000:31337/remote.txt",
+      "length": 51,
+      "sha256": "0xf380db5ea46344a51cadc1c4a23bf27333ce2f315061ed1bcbf2db9d0fe2a9cc",
+      "text": "This file lives at its locator, not on the ledger.\n"
+    }
+  ],
   "counts": {
-    "admissions": 11,
-    "records": 5,
-    "bindings": 3,
-    "publications": 3
+    "admissions": 29,
+    "records": 17,
+    "bindings": 7,
+    "publications": 6
   },
   "typeIds": {
-    "files-root/1": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0",
-    "files-child/1": "0xfcd04b95d14b2fac6e270e42bb659c3a5832ca83c36fad864e482da3c4ca0acb",
+    "files-root/1": "0xd5bc6b65dd10e76dbde4918ff91ef2c2594974aa36a487e2d3a4cd57a62c5150",
+    "files-child/1": "0x8040fbaa0014e553f6c497f4401b565361cc3109b5f6ae842a0367d7fe5fa46c",
     "files-directory/1": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
     "files-name/2": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
-    "files-bytes/1": "0xee39bde7515418a4c1b883f46e4a1be83f3840f2799083f7a771c170869f6563",
-    "files-content/1": "0x900c80b2b42264922c3791ad7b75db4ea6771d8f558591666ec00d605351551a",
-    "files-external/1": "0x406b5d91aa08b19e5809df645c138158e90bc88746616e2d6e10cef24c4b0a7f",
+    "files-bytes/1": "0xe03579c5c713db3e9429a4882c24b494a15e9298750512c33618e6691039f3d2",
+    "files-content/1": "0x63ad9520baa088dab884edb2a56b170e8a6c8fd77ff29605ec251e4d19b4fe42",
+    "files-external/1": "0xfce5a86c4a56b54e32d18a8c40c0d6fc6c4a42f8b81210eef524f1e4e3877980",
     "directory-alias/1": "0x878056a2c276ec3b4bc7cdd3976e788a090adf8ada585baff57e057fe871a017",
-    "realm-notice/1": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903"
+    "realm-notice/1": "0x60da0a5740f1b3690a75d89c392c2c464bad101a6d40ebfc9cd8f42ce8807903",
+    "files-span/1": "0xb2a3caad1cb9e768cf6eb21a4da6a1debcedeba3fd303418db220f59816d5a01"
   },
-  "catalogCount": 9,
+  "catalogCount": 10,
   "heads": [
     {
       "key": "0x5b6a2ecfedaec29782f42b57eb130b3a23ddde29c810309c38de086fa827f33e",
@@ -58,8 +108,8 @@
       "key": "0x6e6b149b64d17813aa375cef8b3efc5c20a7b6e25d5d7f5da65aef72a1964d6e",
       "state": 1,
       "revision": 1,
-      "target": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
-      "what": "HEAD readme → files-root/1 record"
+      "target": "0x1957ae776d97986d5d25efb0f5c530df4d85c1b89086dcfd41f484babce8ccd7",
+      "what": "HEAD readme.txt → files-root/1 record (form 0)"
     },
     {
       "key": "0xeb8dec99e7deaec3332d0e20983c46337290a136de40edbfc84d70f30220d25e",
@@ -67,6 +117,34 @@
       "revision": 1,
       "target": "0x3883f0d8f59245c25a9d04671bc0ed29ab022c51270b224e3921ee5dfb4b40d1",
       "what": "FOLDER docs/readme.txt → file subject"
+    },
+    {
+      "key": "0xf43fabfe067f2fdfae71c93dd7c422b3d1405c97b482e21858f64c42a3b1f40d",
+      "state": 1,
+      "revision": 1,
+      "target": "0x26af18f0ea1814f360e16d3d622aa7fd05efa0d9ae0ec3f6cef9e03b0b73c554",
+      "what": "HEAD big.bin → files-root/1 record (form 1)"
+    },
+    {
+      "key": "0x82673049f306595ebe5471102b88a72657d9b001a9fff64f8338bf1c220dddb1",
+      "state": 1,
+      "revision": 1,
+      "target": "0x266b7941094cd96560d64d8aabbd700a5bb5f04b72bfa99a0a03a9467f01622e",
+      "what": "FOLDER docs/big.bin → file subject"
+    },
+    {
+      "key": "0xb3a7bf723d1be3d771a7f38c52a61b2fa78a9ce39768040a9bbc253ee386c777",
+      "state": 1,
+      "revision": 1,
+      "target": "0x2a39d93932af3c784fa93f845da47b659af219e0aa76146ee4b93ebe0c451c1d",
+      "what": "HEAD remote.txt → files-root/1 record (form 1)"
+    },
+    {
+      "key": "0x4a435cfa30bae524c05d418a4b926320997f008b4ae32a759516450d9df4ada6",
+      "state": 1,
+      "revision": 1,
+      "target": "0x10497e88273558e6d1e06f88a1ccb808c0444d9d2e118753c5db8768fe7603cf",
+      "what": "FOLDER docs/remote.txt → file subject"
     }
   ],
   "records": [
@@ -83,12 +161,44 @@
       "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c"
     },
     {
-      "id": "0xfd8dfd2e60cf3e931106a38265a6962215ce90fc0d6efaaaecf40b1622161ef8",
-      "typeId": "0x6df800b8a17dc03e44c89f5ba6c7d87a2cdb97087d87d8b1bad890a9c67af6e0"
+      "id": "0x1957ae776d97986d5d25efb0f5c530df4d85c1b89086dcfd41f484babce8ccd7",
+      "typeId": "0xd5bc6b65dd10e76dbde4918ff91ef2c2594974aa36a487e2d3a4cd57a62c5150"
     },
     {
       "id": "0x2caced3464a66c078e11adc1f871c10058ad3ecd4683a53bb8132cceb4547e39",
       "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c"
+    },
+    {
+      "id": "0x26af18f0ea1814f360e16d3d622aa7fd05efa0d9ae0ec3f6cef9e03b0b73c554",
+      "typeId": "0xd5bc6b65dd10e76dbde4918ff91ef2c2594974aa36a487e2d3a4cd57a62c5150"
+    },
+    {
+      "id": "0xbdaa9491cb54ae6ae634b3f201fb2198163905fa56c23a8e4236771f9724ec08",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c"
+    },
+    {
+      "id": "0xd41aa651b9584f9815f6160f7718eaa324687ef4fea5734c60bf6ebb6f1d5771",
+      "typeId": "0x63ad9520baa088dab884edb2a56b170e8a6c8fd77ff29605ec251e4d19b4fe42"
+    },
+    {
+      "id": "0x00a54c17b3713c89e19198f7abe065188f7098184f4d514438ae155cecd0d92e",
+      "typeId": "0xb2a3caad1cb9e768cf6eb21a4da6a1debcedeba3fd303418db220f59816d5a01"
+    },
+    {
+      "id": "0x2a39d93932af3c784fa93f845da47b659af219e0aa76146ee4b93ebe0c451c1d",
+      "typeId": "0xd5bc6b65dd10e76dbde4918ff91ef2c2594974aa36a487e2d3a4cd57a62c5150"
+    },
+    {
+      "id": "0x951e5b33e41d0fa264e89f7488fd29de967dec2b54a7440b31664a80f7330cf2",
+      "typeId": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c"
+    },
+    {
+      "id": "0xbebdec82588dd761cb3ea49ddce676515aef574714dec0e202c27e143ebde727",
+      "typeId": "0xfce5a86c4a56b54e32d18a8c40c0d6fc6c4a42f8b81210eef524f1e4e3877980"
+    },
+    {
+      "id": "0x810e7fcaab74f9cf315a809ecb7274695b1e155ef471ec40501cb3e712f5f6e7",
+      "typeId": "0xe03579c5c713db3e9429a4882c24b494a15e9298750512c33618e6691039f3d2"
     }
   ]
 }

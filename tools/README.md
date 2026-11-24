@@ -63,15 +63,22 @@ codecs and the oracle) and the raw snapshots under `test/snapshots/layout/`. The
 passed through `forge fmt` so the check mode compares formatted output. A changed `LAYOUT_ID` means a
 one-way door moved; `test/unit/Layout.t.sol` pins the id and proves typed writes and raw reads agree.
 
-## Release tools (`deploy-plan.mjs`, `efs-fixture.mjs`, `release.mjs`, `gas-report.mjs`)
+## Release tools (`deploy-plan.mjs`, `efs-fixture.mjs`, `fixture-registry.mjs`, `artifacts-snapshot.mjs`, `release.mjs`, `gas-report.mjs`)
 
 The deployment and release surface the SDK consumes (design §13), documented step by step in
-[RELEASE.md](RELEASE.md). In short: `pnpm release` writes `release/release.json` and `release/errors.json`
-from the identity build; `pnpm plan` computes `deploy/plan.json` offline (every address, initcode hash and
-post-check); `pnpm fixture:up -- --port 8560` starts an anvil on a fresh port, runs the plan, registers the
-nine Files Types and seeds the root, a folder and a file, writing `release/efs-deployment.json` and
-`release/expected.json`; `pnpm fixture:verify` re-derives every address, runtime, `describe()` field,
-execution set, manifest, Type id and seed row from a clean checkout and the chain (exit 1 on any mismatch);
-`pnpm gas:report` writes `gas/report.json` under both gas schedules; `pnpm fixture:down` stops the anvil the
-tool started (by its own pid file only). Run `pnpm release` before `fixture:up`: `verify` re-hashes the
-release manifest against the digest `up` recorded.
+[RELEASE.md](RELEASE.md). In short: `pnpm release` writes `release/release.json`, `release/errors.json` and
+`artifacts/` from the identity build; `pnpm plan` computes `deploy/plan.json` offline (every address, initcode hash
+and post-check). `pnpm fixture:up -- --json` starts a **named instance**: it leases a free port in the machine-wide
+registry (`$EFS_FIXTURE_HOME`, else `~/.local/state/efs/fixtures`), starts its own anvil under a TTL watchdog, runs the
+plan with locally signed transactions, registers the ten Files Types, seeds the root, a folder and three files (inline, a chunked large file, an external locator), runs every
+verify check, and prints one JSON object with its name, port, RPC URL, addresses and seed ids. Any number of instances,
+from any number of checkouts, run at once; each keeps its pid, log, journal and documents in its own state directory,
+never in a tracked file. `pnpm fixture:verify -- --name N` re-derives every address, runtime, `describe()` field,
+execution set, manifest, Type id and seed row (exit 1 on any mismatch); `fixture:list`, `fixture:status`,
+`fixture:reset` and `fixture:gc` manage instances; `pnpm fixture:down -- --name N` stops only the anvil that
+instance's lease records, after checking its start time and command line. `--artifacts DIR` deploys from another
+build, a snapshot (`pnpm fixture:snapshot -- --to DIR`) or a committed `artifacts/` directory without a forge build.
+`pnpm gas:report -- --fixture N` writes `gas/report.json` under both gas schedules with that instance's receipts. The
+committed sample `release/efs-deployment.json` / `release/expected.json` is written only by
+`fixture:up -- --write-release` on the default configuration. Exit codes: 0 ok, 1 mismatch, 2 usage, 3 port or lease
+conflict, 4 not found or dead, 5 other failure. `pnpm test:tools` runs the registry and concurrency tests.

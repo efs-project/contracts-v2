@@ -1,5 +1,5 @@
 {
-  "name": "efs-contracts-v2-foundation",
+  "name": "efs-contracts",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -28,7 +28,13 @@
     "fixture:up": "node tools/efs-fixture.mjs up",
     "fixture:verify": "node tools/efs-fixture.mjs verify",
     "fixture:down": "node tools/efs-fixture.mjs down",
-    "gas:report": "node tools/gas-report.mjs"
+    "fixture:status": "node tools/efs-fixture.mjs status",
+    "fixture:list": "node tools/efs-fixture.mjs list",
+    "fixture:reset": "node tools/efs-fixture.mjs reset",
+    "fixture:gc": "node tools/efs-fixture.mjs gc",
+    "fixture:snapshot": "node tools/artifacts-snapshot.mjs",
+    "gas:report": "node tools/gas-report.mjs",
+    "test:tools": "node --test \"tools/test/*.test.mjs\""
   },
   "devDependencies": {
     "viem": "2.57.7"

@@ -4,16 +4,19 @@
 // and the `amsterdam` profile (EIP-8037/8038, its own out/amsterdam + cache/amsterdam so the identity build in out/
 // is never touched) — and reads the suite's `log_named_uint` lines: "<label> gas" (gasleft delta around
 // `execute`, no intrinsic cost), "<label> frame gas" (the callee frame) and, under amsterdam, "<label> frame state
-// gas". It adds the fixture's transaction receipts (prague, intrinsic included) from release/.fixture.json.
+// gas". It adds the fixture's transaction receipts (prague, intrinsic included) from a fixture instance's journal
+// (<state dir>/fixture.json): --fixture <name>, else $EFS_FIXTURE_NAME, else the one chain instance this checkout
+// has leased (tools/fixture-registry.mjs); --fixture-state <path> names the journal file directly.
 //
-//   node tools/gas-report.mjs [--skip-amsterdam 1]
+//   node tools/gas-report.mjs [--skip-amsterdam 1] [--fixture <name> | --fixture-state <path>]
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { parseArgs, root, toJSON } from "./deploy-plan.mjs";
+import { list as leases, lookup } from "./fixture-registry.mjs";
 
-const o = parseArgs(process.argv.slice(2), ["skip-amsterdam"]);
+const o = parseArgs(process.argv.slice(2), ["skip-amsterdam", "fixture", "fixture-state"]);
 const SUITE = "test/integration/FilesRecipes.t.sol";
 const git = (...args) => { try { return execFileSync("git", args, { cwd: root }).toString().trim(); } catch { return null; } };
 
@@ -72,17 +75,29 @@ const supplementary = Object.keys(prague).filter((k) => !covered.has(k)).sort().
 
 // the fixture's receipts (real transactions on anvil --hardfork prague; intrinsic + calldata included)
 let fixture = null;
-const statePath = join(root, "release/.fixture.json");
-if (existsSync(statePath)) {
+function fixtureState() {
+  if (o["fixture-state"]) return resolve(root, o["fixture-state"]);
+  const name = o.fixture ?? process.env.EFS_FIXTURE_NAME;
+  if (name) {
+    const l = lookup(name);
+    assert.ok(l, `no fixture instance named ${name} (node tools/efs-fixture.mjs list)`);
+    return l.journal ?? join(l.stateDir, "fixture.json");
+  }
+  const own = leases({ kind: "chain" }).filter((l) => l.checkout === root);
+  assert.ok(own.length <= 1, `${own.length} fixture instances from this checkout (${own.map((l) => l.name).join(", ")}): pass --fixture <name>`);
+  return own[0] ? own[0].journal ?? join(own[0].stateDir, "fixture.json") : null;
+}
+const statePath = fixtureState();
+if (statePath && existsSync(statePath)) {
   const st = JSON.parse(readFileSync(statePath, "utf8"));
   const by = (p) => st.journal.filter((j) => p(j.id));
   const sum = (xs) => xs.reduce((s, j) => s + j.gasUsed, 0);
   fixture = {
-    hardfork: "prague", chainId: st.chainId, startedAt: st.startedAt,
+    hardfork: "prague", chainId: st.chainId, startedAt: st.startedAt, instance: st.name ?? null,
     rows: [
       { row: "Genesis code deposit (every CREATE2 of G1–G19 + RealmGenesis.run)", gasUsed: sum(by((id) => /^G(1[0-9]?|2c?|[3-9])(\.|$)/.test(id) && !id.startsWith("G11"))), transactions: by((id) => /^G(1[0-9]?|2c?|[3-9])(\.|$)/.test(id) && !id.startsWith("G11")).length },
-      { row: "Descriptor blobs (G11, nine DescriptorStore.put)", gasUsed: sum(by((id) => id.startsWith("G11."))), transactions: 9 },
-      { row: "Readers (R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list)", gasUsed: sum(by((id) => /^R[1-4]$/.test(id))), transactions: by((id) => /^R[1-4]$/.test(id)).length },
+      { row: `Descriptor blobs (G11, ${by((id) => id.startsWith("G11.")).length} DescriptorStore.put)`, gasUsed: sum(by((id) => id.startsWith("G11."))), transactions: by((id) => id.startsWith("G11.")).length },
+      { row: "Readers and views (R0 KeysView, R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list)", gasUsed: sum(by((id) => /^R[0-4]$/.test(id))), transactions: by((id) => /^R[0-4]$/.test(id)).length },
       { row: "Activation (genesis, G20)", gasUsed: sum(by((id) => id === "G20")), design: { prague: "≈ 1.1–1.9M", amsterdam: "≈ 3.5–4.3M" } },
       ...by((id) => id.startsWith("G21.")).map((j) => ({ row: `Described registration, NATIVE (${j.id})`, gasUsed: j.gasUsed, design: { prague: "≈ 0.30M", amsterdam: "≈ 1.55M" } })),
       ...by((id) => id.startsWith("G22.")).map((j) => ({ row: `Seed ${j.label}`, gasUsed: j.gasUsed })),
@@ -110,7 +125,7 @@ const largeRows = Object.entries(large).sort().map(([test, logs]) => {
 });
 const fixtureReads = fixture ? JSON.parse(readFileSync(statePath, "utf8")).reads ?? [] : [];
 const readRows = [
-  ...fixtureReads.map((r) => ({ row: r.row, source: { fixture: "release/.fixture.json reads", to: r.to, function: r.function }, prague: { estimateGas: r.estimateGas, calldataBytes: r.calldataBytes, returndataBytes: r.returndataBytes, rpcCalls: r.rpcCalls }, note: r.note })),
+  ...fixtureReads.map((r) => ({ row: r.row, source: { fixture: "the fixture instance's journal (fixture.json) reads", to: r.to, function: r.function }, prague: { estimateGas: r.estimateGas, calldataBytes: r.calldataBytes, returndataBytes: r.returndataBytes, rpcCalls: r.rpcCalls }, note: r.note })),
   ...largeRows,
 ];
 

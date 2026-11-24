@@ -980,7 +980,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": null,
-      "meaning": "1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 (unused) 9 admin slot owner is not the caller (a zero admin slot reports E_PIN(0, 9))"
+      "meaning": "1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin"
     },
     "0x1b4fbe7a": {
       "name": "E_POLICY_REJECTED",
@@ -1154,7 +1154,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": null,
-      "meaning": "field 32: limits.maxActions outside 1..64 (the replay ceiling)"
+      "meaning": "field 32: limits.maxActions outside 1..64 (the replay ceiling); 33: a capability this build does not implement"
     },
     "0x322eb12b": {
       "name": "E_RETIRED",

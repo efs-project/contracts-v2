@@ -6,3 +6,5 @@ node_modules/
 .DS_Store
 release/.anvil.log
 release/.fixture.json
+/out-fixture-*/
+/.claude/

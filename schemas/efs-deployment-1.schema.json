@@ -278,6 +278,59 @@
         "chainId"
       ]
     },
+    "signerCapable": {
+      "type": "boolean",
+      "description": "true when the node holds unlocked accounts (eth_sendTransaction works without a wallet); false when it was started with no unlocked accounts (efs-fixture up --no-unlocked). Every fixture transaction is signed locally either way."
+    },
+    "signing": {
+      "type": "object",
+      "required": [
+        "transactions",
+        "unlockedAccounts",
+        "unsignedSend"
+      ],
+      "properties": {
+        "transactions": {
+          "type": "string"
+        },
+        "unlockedAccounts": {
+          "type": "integer"
+        },
+        "unsignedSend": {
+          "type": "string"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "What this deployment offers a consumer: the Files seed version, the number of Files Types, the reader kind labels, signerCapable, the unlocked-account count, the hardfork.",
+      "required": [
+        "filesSeed",
+        "filesTypes",
+        "readers",
+        "signerCapable"
+      ],
+      "properties": {
+        "filesSeed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "filesTypes": {
+          "type": "integer"
+        },
+        "readers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "signerCapable": {
+          "type": "boolean"
+        }
+      }
+    },
     "evidenceGrade": {
       "enum": [
         "local-fixture"
