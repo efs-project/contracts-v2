@@ -40,7 +40,7 @@ named immutable from a deployed instance.
 regenerating `release.json` after `up` makes `verify` fail until the next `up`.
 
 pnpm scripts: `release`, `release:check`, `plan`, `fixture:up`, `fixture:verify`, `fixture:status`, `fixture:list`, `fixture:down`,
-`fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report` and `test:tools` (the tooling tests; pass options after
+`fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report`, `gas:model` and `test:tools` (the tooling tests; pass options after
 `--`, e.g. `pnpm fixture:up -- --name mine --json`).
 
 ## The fixture: many instances at once
@@ -440,6 +440,18 @@ five codehashes against `describe()` and the release.
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs2/fixture/realm/1")`) the value is
   `0x863d4eb7487f3255978b9b38bbb4760b2147accc3fe7376610f3d60e4beb9baa`.
+
+## The planning model (`gas/model.json`)
+
+`pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
+rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
++ perByte·n` and one constant per other action kind and purpose, plus a once-per-principal first-write surcharge
+(amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only). It
+is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
+guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
+script predicts five composites it never fits (create file, edit, rename + move, two chunks, the last publication of
+a 40 KB file) and exits 1 if a prague prediction is off by more than 15%. Regenerate and commit it whenever the
+kernel, the index or a Files rule changes.
 
 ## Gas rows written (`gas/report.json`)
 

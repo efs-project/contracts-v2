@@ -35,6 +35,7 @@
     "fixture:gc": "node tools/efs-fixture.mjs gc",
     "fixture:snapshot": "node tools/artifacts-snapshot.mjs",
     "gas:report": "node tools/gas-report.mjs",
+    "gas:model": "node tools/gas-model.mjs",
     "test:tools": "node --test \"tools/test/*.test.mjs\""
   },
   "devDependencies": {

@@ -106,6 +106,7 @@ abstract contract FilesRecipesBase is FilesFixture {
         returns (uint64 publication)
     {
         Native memory c = _ctx(actions);
+        _beforeExecute();
         uint256 before = gasleft();
         (publication,) = r.ledger.execute(actions, bodies, c, "");
         uint256 used = before - gasleft();
@@ -117,6 +118,10 @@ abstract contract FilesRecipesBase is FilesFixture {
             emit log_named_int(string.concat(label, " frame state gas"), frame.gasStateUsed);
         }
     }
+
+    /// Runs after the expectations are read and before the measured `execute` (`GasModel.t.sol` cools the state
+    /// and may prank the caller here; a no-op for the recipe suites).
+    function _beforeExecute() internal virtual {}
 
     function _name(bytes memory n) internal view returns (Action memory a, bytes memory) {
         return _publish(T_NAME, n);
