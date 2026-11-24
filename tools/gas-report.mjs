@@ -93,7 +93,7 @@ if (statePath && existsSync(statePath)) {
   const by = (p) => st.journal.filter((j) => p(j.id));
   const sum = (xs) => xs.reduce((s, j) => s + j.gasUsed, 0);
   fixture = {
-    hardfork: "prague", chainId: st.chainId, startedAt: st.startedAt, instance: st.name ?? null,
+    hardfork: st.hardfork ?? "prague", chainId: st.chainId, startedAt: st.startedAt, instance: st.name ?? null,
     rows: [
       { row: "Genesis code deposit (every CREATE2 of G1–G19 + RealmGenesis.run)", gasUsed: sum(by((id) => /^G(1[0-9]?|2c?|[3-9])(\.|$)/.test(id) && !id.startsWith("G11"))), transactions: by((id) => /^G(1[0-9]?|2c?|[3-9])(\.|$)/.test(id) && !id.startsWith("G11")).length },
       { row: `Descriptor blobs (G11, ${by((id) => id.startsWith("G11.")).length} DescriptorStore.put)`, gasUsed: sum(by((id) => id.startsWith("G11."))), transactions: by((id) => id.startsWith("G11.")).length },

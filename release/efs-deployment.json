@@ -23,7 +23,7 @@
     },
     "txHash": "0xa4ff3fd15932a549b1fd5e99d95eb6c50f97c68fff0f21c73f954dd3e2a6f309",
     "blockNumber": 38,
-    "blockHash": "0xb76a0c062a0a27da6341b0c4f325ed7f77ddd8b9a7bd40375aefdbf85da1af12"
+    "blockHash": "0x950a831989646216b42e9392f518dde1d0e733c30110b4b98a1a613dc2aacbd9"
   },
   "activation": {
     "revision": 1,
@@ -1386,12 +1386,22 @@
     ],
     "signerCapable": true,
     "unlockedAccounts": 10,
-    "hardfork": "prague"
+    "hardfork": "osaka",
+    "txGasCap": 16777216
+  },
+  "chain": {
+    "hardfork": "osaka",
+    "txGasCap": 16777216,
+    "txGasCapEnforced": true,
+    "txGasCapRule": "EIP-7825: a transaction whose gas limit exceeds the cap is rejected",
+    "blockGasLimit": 30000000,
+    "atBlock": 62,
+    "snapshot": "taken when the instance was deployed; read live values from the chain"
   },
   "rpc": {
     "url": "http://127.0.0.1:8600",
     "chainId": 31337,
-    "hardfork": "prague"
+    "hardfork": "osaka"
   },
   "evidenceGrade": "local-fixture"
 }
