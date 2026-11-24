@@ -13,7 +13,7 @@ import {IFilesPageReader} from "../../../src/interfaces/Readers.sol";
 import {ILedgerCommitments} from "../../../src/interfaces/ILedgerCommitments.sol";
 
 /// @notice The `FilesPageReader` suites' fixture: the Files Realm of `FilesFixture` (kernel, real registry proxy,
-///         real generation-1 index with `FilesFinalValidator` pinned, the nine Types registered), the two read
+///         real generation-1 index with `FilesFinalValidator` pinned, the ten Types registered), the two read
 ///         facets, a `FilesPageReader` over them, the Realm root seeded by this contract's principal through
 ///         `EfsFiles.rootSeed`, and native-lane writers for this contract and for EOA authors (both expectations
 ///         bound, the SDK default).
@@ -52,21 +52,26 @@ abstract contract FilesPageHarness is FilesFixture {
             typeIds[T_ROOT],
             typeIds[T_CHILD]
         );
-        t = EfsFiles.Types({
-            root: typeIds[T_ROOT],
-            child: typeIds[T_CHILD],
-            directory: typeIds[T_DIRECTORY],
-            name: typeIds[T_NAME],
-            bytes_: typeIds[T_BYTES],
-            content: typeIds[T_CONTENT],
-            external_: typeIds[T_EXTERNAL],
-            alias_: typeIds[T_ALIAS],
-            notice: typeIds[T_NOTICE]
-        });
+        _bindTypes();
         (Action[] memory a, bytes[] memory b, bytes32 root) =
             EfsFiles.rootSeed(t, p, keccak256("root"));
         rootDir = root;
         _exec(a, b);
+    }
+
+    /// The recipe Type ids, one storage field at a time (a ten-field struct literal here is one stack slot too
+    /// many for via-IR next to the Realm builder).
+    function _bindTypes() internal {
+        t.root = typeIds[T_ROOT];
+        t.child = typeIds[T_CHILD];
+        t.directory = typeIds[T_DIRECTORY];
+        t.name = typeIds[T_NAME];
+        t.bytes_ = typeIds[T_BYTES];
+        t.content = typeIds[T_CONTENT];
+        t.external_ = typeIds[T_EXTERNAL];
+        t.alias_ = typeIds[T_ALIAS];
+        t.notice = typeIds[T_NOTICE];
+        t.span = typeIds[T_SPAN];
     }
 
     // ---- writers -------------------------------------------------------------------------------------------

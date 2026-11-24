@@ -390,6 +390,47 @@ contract FilesPageReaderTest is FilesPageHarness {
         assertEq(ph[0], r.g.index.PHYSICAL_PROFILE());
     }
 
+    // ---- a file at an external location lists unchanged ------------------------------------------------
+
+    /// docs/LARGE-FILES.md: a `files-external/1` record whose locator is a `web3://` URL, named by a form-1
+    /// `files-root/1` revision and bound into a folder, lists like any file (the reader never reads the form).
+    function test_an_external_location_file_lists_unchanged() public {
+        bytes memory payload = "hello over web3";
+        bytes memory locator =
+            "web3://0x5a985f13345e820aa9618826b85f74c3986e1463:11155111/hello.txt";
+        Action[] memory a = new Action[](2);
+        bytes[] memory b = new bytes[](2);
+        b[0] = EfsFiles.bytesBody("");
+        a[0] = EfsFiles.publish(t.bytes_, b[0]);
+        bytes32 sentinel = EfsFiles.recordId(t.bytes_, b[0]);
+        b[1] = EfsFiles.externalBody(sentinel, payload.length, sha256(payload), locator);
+        a[1] = EfsFiles.publish(t.external_, b[1]);
+        bytes32 ext = EfsFiles.recordId(t.external_, b[1]);
+        (Action[] memory fa, bytes[] memory fb, bytes32 file, bytes32 rev) =
+            EfsFiles.createFileRef(t, p, docs, "web3 file", "hello.txt", ext, true);
+        (a, b) = EfsFiles.concat(a, b, fa, fb);
+        _exec(a, b);
+        IFilesPageReader.DirectoryPage memory page = _list(docs, _lens(p), F_ALL);
+        assertEq(page.rows.length, 1);
+        IFilesPageReader.Row memory row = page.rows[0];
+        assertEq(row.name, bytes("hello.txt"));
+        assertEq(row.position, EfsFiles.folderPosition(docs, "hello.txt"));
+        assertEq(row.target, file);
+        assertEq(row.targetKind, 2);
+        assertEq(row.headRecord, rev);
+        assertEq(row.headRevision, 1);
+        assertEq(row.headerWord0, file);
+        assertEq(row.rowKind, ROW_ENTRY);
+        assertEq(uint8(page.listingCoverage), uint8(Coverage.COMPLETE));
+        // the file read after the page: the revision names the descriptor, which carries the locator
+        (Status st,, bytes memory body,) = reads.record(address(r.ledger), row.headRecord);
+        assertEq(uint8(st), uint8(Status.PRESENT));
+        assertEq(body, EfsFiles.rootRefBody(file, ext));
+        (, RecordHeader memory h, bytes memory d,) = reads.record(address(r.ledger), ext);
+        assertEq(h.typeId, typeIds[T_EXTERNAL]);
+        assertEq(d, b[1]);
+    }
+
     // ---- EfsFiles ids agree with Keys ---------------------------------------------------------------------
 
     function test_efs_files_ids_match_keys() public view {
@@ -409,6 +450,16 @@ contract FilesPageReaderTest is FilesPageHarness {
         assertEq(EfsFiles.bytesBody("x"), bytes.concat(sha256("x"), "x"));
         EfsFiles.Content memory c;
         assertEq(EfsFiles.contentBody(c).length, 352);
-        assertEq(EfsFiles.externalBody(0, 2, 1, 0, "ar://x").length, 7 * 32 + 6);
+        assertEq(EfsFiles.externalBody(0, 1, 0, "ar://x").length, 7 * 32 + 6);
+    }
+
+    function test_efs_files_revision_and_span_encoders() public view {
+        assertEq(EfsFiles.contentBody(0, 2, 5, 0, 0).length, 352);
+        assertEq(EfsFiles.rootBody(fileA, "d"), bytes.concat(abi.encode(fileA, uint256(0)), "d"));
+        assertEq(EfsFiles.rootRefBody(fileA, docs), abi.encode(fileA, uint256(1), docs));
+        assertEq(
+            EfsFiles.childRefBody(docs, fileA, docs), abi.encode(docs, fileA, uint256(1), docs)
+        );
+        assertEq(EfsFiles.spanBody(docs, docs, 9), abi.encode(docs, docs, uint256(9)));
     }
 }

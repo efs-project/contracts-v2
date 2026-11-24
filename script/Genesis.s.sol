@@ -9,6 +9,7 @@ import {FilesChildRule} from "../src/profiles/FilesChildRule.sol";
 import {FilesDirectoryRule} from "../src/profiles/FilesDirectoryRule.sol";
 import {FilesNameRule} from "../src/profiles/FilesNameRule.sol";
 import {FilesBytesRule} from "../src/profiles/FilesBytesRule.sol";
+import {FilesSpanRule} from "../src/profiles/FilesSpanRule.sol";
 import {FilesContentRule} from "../src/profiles/FilesContentRule.sol";
 import {FilesExternalContentRule} from "../src/profiles/FilesExternalContentRule.sol";
 import {DirectoryAliasRule} from "../src/profiles/DirectoryAliasRule.sol";
@@ -16,7 +17,7 @@ import {RealmNoticeRule} from "../src/profiles/RealmNoticeRule.sol";
 import {RefuseAllPolicy} from "../src/profiles/RefuseAllPolicy.sol";
 import {FilesFinalValidator} from "../src/profiles/FilesFinalValidator.sol";
 
-/// @notice The Solidity side of the release's profile facts (design §8.2 G10–G12, §13): the nine NATIVE rule
+/// @notice The Solidity side of the release's profile facts (design §8.2 G10–G12, §13): the ten NATIVE rule
 ///         instances at CREATE2(0x4e59…956C, salt 0, initcode), their `FilesTypes` descriptors and Type ids for a
 ///         declaration key, `RefuseAllPolicy` and `FilesFinalValidator` with its manifest identity. Simulation only
 ///         (never broadcast): `tools/release.mjs` runs `forge script script/Genesis.s.sol --sig "profile(address)"
@@ -31,36 +32,60 @@ contract Genesis is Script {
     uint8 internal constant T_EXTERNAL = 6;
     uint8 internal constant T_ALIAS = 7;
     uint8 internal constant T_NOTICE = 8;
+    uint8 internal constant T_SPAN = 9;
 
-    address[9] internal instances;
-    bytes32[9] internal initcodeHashes;
-    bytes[9] internal descriptors;
-    bytes32[9] internal typeIds;
+    address[10] internal instances;
+    bytes32[10] internal initcodeHashes;
+    bytes[10] internal descriptors;
+    bytes32[10] internal typeIds;
 
     function profile(address key)
         external
         returns (
-            address[9] memory,
-            bytes32[9] memory,
-            bytes[9] memory,
-            bytes32[9] memory,
+            address[10] memory,
+            bytes32[10] memory,
+            bytes[10] memory,
+            bytes32[10] memory,
             address refuseAll,
             address validator,
             bytes32 validatorIdentity
         )
     {
+        // dependency order (FilesTypes): bytes, span(bytes), content(bytes, span), external, root(content,
+        // external), child(root, content, external), the three leaves, alias(directory)
         _deploy(key, T_BYTES, type(FilesBytesRule).creationCode);
-        _deploy(key, T_ROOT, type(FilesRootRule).creationCode);
-        _deploy(key, T_DIRECTORY, type(FilesDirectoryRule).creationCode);
-        _deploy(key, T_NAME, type(FilesNameRule).creationCode);
-        _deploy(key, T_NOTICE, type(RealmNoticeRule).creationCode);
-        _deploy(key, T_CONTENT, type(FilesContentRule).creationCode);
+        _deploy(
+            key,
+            T_SPAN,
+            abi.encodePacked(type(FilesSpanRule).creationCode, abi.encode(typeIds[T_BYTES]))
+        );
+        _deploy(
+            key,
+            T_CONTENT,
+            abi.encodePacked(
+                type(FilesContentRule).creationCode, abi.encode(typeIds[T_BYTES], typeIds[T_SPAN])
+            )
+        );
         _deploy(key, T_EXTERNAL, type(FilesExternalContentRule).creationCode);
         _deploy(
             key,
-            T_CHILD,
-            abi.encodePacked(type(FilesChildRule).creationCode, abi.encode(typeIds[T_ROOT]))
+            T_ROOT,
+            abi.encodePacked(
+                type(FilesRootRule).creationCode,
+                abi.encode(typeIds[T_CONTENT], typeIds[T_EXTERNAL])
+            )
         );
+        _deploy(
+            key,
+            T_CHILD,
+            abi.encodePacked(
+                type(FilesChildRule).creationCode,
+                abi.encode(typeIds[T_ROOT], typeIds[T_CONTENT], typeIds[T_EXTERNAL])
+            )
+        );
+        _deploy(key, T_DIRECTORY, type(FilesDirectoryRule).creationCode);
+        _deploy(key, T_NAME, type(FilesNameRule).creationCode);
+        _deploy(key, T_NOTICE, type(RealmNoticeRule).creationCode);
         _deploy(
             key,
             T_ALIAS,
@@ -108,9 +133,10 @@ contract Genesis is Script {
         if (t == T_DIRECTORY) return FilesTypes.filesDirectory(key, instance, h);
         if (t == T_NAME) return FilesTypes.filesName(key, instance, h);
         if (t == T_BYTES) return FilesTypes.filesBytes(key, instance, h);
-        if (t == T_CONTENT) return FilesTypes.filesContent(key, instance, h, typeIds[T_BYTES]);
+        if (t == T_CONTENT) return FilesTypes.filesContent(key, instance, h);
         if (t == T_EXTERNAL) return FilesTypes.filesExternal(key, instance, h, typeIds[T_BYTES]);
         if (t == T_ALIAS) return FilesTypes.directoryAlias(key, instance, h);
+        if (t == T_SPAN) return FilesTypes.filesSpan(key, instance, h);
         return FilesTypes.realmNotice(key, instance, h);
     }
 }

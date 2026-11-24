@@ -51,7 +51,9 @@ Canonical chunking for SDKs (`efs2/chunking/1`, a convention, never enforced): f
 `span(tree(first k), tree(rest))` with `k` the largest power of two below `n`. Children are published before
 their parents; a publication may carry several levels.
 
-What a gigabyte means: 1 GiB is 131,585 chunks and as many span nodes, depth 18. Nothing in an id or a rule
+What a gigabyte means: 1 GiB is 131,587 chunks and 131,586 span nodes, depth 18. Measured under the S1 limits, an
+8 KB chunk costs about 6.1M gas and a span node about 0.32M, so a gigabyte is on the order of 8 × 10^11 gas today:
+the format carries it, the economics of a given chain decide whether anyone pays for it. Nothing in an id or a rule
 limits it: record lengths are 32-bit, content lengths 64-bit, ordinals 48-bit. What limits it today is cost and
 the per-publication byte limit (two 8 KB chunks per publication under the S1 limits). The levers that do not
 change any id are the Realm limits (`maxBody`, `maxBodyBytesPerPublication`) and a cheaper body carrier (code

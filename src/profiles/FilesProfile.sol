@@ -26,10 +26,14 @@ library FilesProfile {
     /// sha256 of the empty string: the `files-bytes/1` sentinel body word of a remote (external) carrier.
     bytes32 internal constant SHA256_EMPTY =
         0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
-    /// The prototype's carrier bounds (`L/test/FilesCarrierProfile.sol`): an inline `files-bytes/1` record holds at
-    /// most 8,192 body bytes (the codec's own cap, never a Realm limit); a described object is at most 1 MiB.
-    uint256 internal constant BYTES_BODY_MAX = 8_192;
-    uint256 internal constant CONTENT_LENGTH_MAX = 1 << 20;
+    /// The bound on every content length (`files-content/1` length and plaintextLength, `files-external/1` length,
+    /// `files-span/1` length): 2^64 − 1 (docs/LARGE-FILES.md). A `files-bytes/1` record has no codec cap: the
+    /// Realm's `limits.maxBody` is its only bound, so a cheaper chain raises the chunk size by activation.
+    uint256 internal constant LENGTH_MAX = type(uint64).max;
+    /// The `form` word of a `files-root/1` / `files-child/1` revision (docs/LARGE-FILES.md): 0 the rest of the body
+    /// is the file's bytes, 1 exactly one more word naming a `files-content/1` or `files-external/1` record.
+    uint256 internal constant FORM_INLINE = 0;
+    uint256 internal constant FORM_CONTENT = 1;
 
     /// Every acceptor must require `ctx.ledger == msg.sender` first (design §5.10).
     function requireLedger(AcceptContext calldata ctx) internal view {

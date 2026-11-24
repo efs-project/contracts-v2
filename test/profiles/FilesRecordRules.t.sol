@@ -10,7 +10,8 @@ import {FilesUnitBase} from "./FilesUnitBase.sol";
 
 /// @notice `files-root/1`, `files-child/1`, `files-directory/1` and `directory-alias/1` against a stub ledger:
 ///         every rule-level case of the prototype's `FilesJoined.t.sol` and `FilesDirectoryProfile.t.sol` that maps
-///         onto a rule (the placement cases belong to `FilesFinalValidator` and the recipes), plus the context check.
+///         onto a rule (the placement cases belong to `FilesFinalValidator` and the recipes), plus the context check
+///         and the revision `form` word of docs/LARGE-FILES.md (0 inline bytes, 1 one word naming a descriptor).
 contract FilesRecordRulesTest is FilesUnitBase {
     FilesRootRule internal root;
     FilesChildRule internal child;
@@ -23,19 +24,33 @@ contract FilesRecordRulesTest is FilesUnitBase {
     bytes32 internal constant FILE = keccak256("file subject");
     bytes32 internal constant OTHER_FILE = keccak256("other file subject");
     bytes32 internal constant PARENT = keccak256("parent record");
+    bytes32 internal constant CONTENT_TYPE = keccak256("test/files/content-type");
+    bytes32 internal constant EXTERNAL_TYPE = keccak256("test/files/external-type");
+    bytes32 internal constant CONTENT_REC = keccak256("a files-content/1 record");
+    bytes32 internal constant EXTERNAL_REC = keccak256("a files-external/1 record");
+    bytes32 internal constant DIR_REC = keccak256("a files-directory/1 record");
 
     function setUp() public override {
         super.setUp();
-        root = new FilesRootRule();
-        child = new FilesChildRule(ROOT_TYPE);
+        root = new FilesRootRule(CONTENT_TYPE, EXTERNAL_TYPE);
+        child = new FilesChildRule(ROOT_TYPE, CONTENT_TYPE, EXTERNAL_TYPE);
         directory = new FilesDirectoryRule();
         alias_ = new DirectoryAliasRule(DIR_TYPE);
         stub.setSubject(FILE, 10);
         stub.setSubject(OTHER_FILE, 11);
+        stub.setRecord(CONTENT_REC, CONTENT_TYPE, 5, 352);
+        stub.setRecord(EXTERNAL_REC, EXTERNAL_TYPE, 6, 240);
+        stub.setRecord(DIR_REC, DIR_TYPE, 6, 32);
     }
 
+    /// Form 0 (INLINE): `[file, 0] ‖ document`.
     function _root(bytes32 file, bytes memory document) internal pure returns (bytes memory) {
-        return bytes.concat(abi.encode(file), document);
+        return bytes.concat(abi.encode(file, uint256(0)), document);
+    }
+
+    /// Form 1 (CONTENT): `[file, 1, descriptor]`.
+    function _rootRef(bytes32 file, bytes32 descriptor) internal pure returns (bytes memory) {
+        return abi.encode(file, uint256(1), descriptor);
     }
 
     function _child(bytes32 parent, bytes32 file, bytes memory document)
@@ -43,15 +58,75 @@ contract FilesRecordRulesTest is FilesUnitBase {
         pure
         returns (bytes memory)
     {
-        return bytes.concat(abi.encode(parent, file), document);
+        return bytes.concat(abi.encode(parent, file, uint256(0)), document);
+    }
+
+    function _childRef(bytes32 parent, bytes32 file, bytes32 descriptor)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encode(parent, file, uint256(1), descriptor);
     }
 
     // ---- files-root/1 -----------------------------------------------------------------------------------------
 
     function test_root_accepts_an_existing_file_with_any_document() public {
         _accepts(root, _ctx(), _root(FILE, "Meeting at 10:00.\n"), _none(), _noHeaders());
-        _accepts(root, _ctx(), abi.encode(FILE), _none(), _noHeaders()); // the empty document
-        _accepts(root, _ctx(), _root(FILE, new bytes(8160)), _none(), _noHeaders()); // the largest body
+        _accepts(root, _ctx(), abi.encode(FILE, uint256(0)), _none(), _noHeaders()); // the empty document
+        _accepts(root, _ctx(), _root(FILE, new bytes(8128)), _none(), _noHeaders()); // an 8,192-byte body
+        // the rule has no upper bound of its own (the Realm's maxBody is the bound)
+        _accepts(root, _ctx(), _root(FILE, new bytes(9000)), _none(), _noHeaders());
+    }
+
+    function test_root_form_1_names_an_admitted_descriptor() public {
+        _accepts(root, _ctx(), _rootRef(FILE, CONTENT_REC), _none(), _noHeaders());
+        _accepts(root, _ctx(), _rootRef(FILE, EXTERNAL_REC), _none(), _noHeaders());
+        // a missing record, a record of another Type, a zero id
+        _refuses(
+            root, _ctx(), _rootRef(FILE, keccak256("no such record")), _none(), _noHeaders(), 7
+        );
+        _refuses(root, _ctx(), _rootRef(FILE, DIR_REC), _none(), _noHeaders(), 7);
+        _refuses(root, _ctx(), _rootRef(FILE, bytes32(0)), _none(), _noHeaders(), 7);
+        // a descriptor Type's header with no admission (never stored) is not admitted
+        bytes32 ghost = keccak256("ghost");
+        stub.setRecord(ghost, CONTENT_TYPE, 0, 352);
+        _refuses(root, _ctx(), _rootRef(FILE, ghost), _none(), _noHeaders(), 7);
+        // form 1 is exactly three words
+        _refuses(root, _ctx(), abi.encode(FILE, uint256(1)), _none(), _noHeaders(), 6);
+        _refuses(
+            root,
+            _ctx(),
+            bytes.concat(_rootRef(FILE, CONTENT_REC), hex"00"),
+            _none(),
+            _noHeaders(),
+            6
+        );
+        _refuses(
+            root,
+            _ctx(),
+            bytes.concat(_rootRef(FILE, CONTENT_REC), abi.encode(EXTERNAL_REC)),
+            _none(),
+            _noHeaders(),
+            6
+        );
+        // form 0 never reads the ledger: a body that looks like a form-1 body with form 0 is just bytes
+        _accepts(
+            root,
+            _ctx(),
+            abi.encode(FILE, uint256(0), keccak256("no such record")),
+            _none(),
+            _noHeaders()
+        );
+    }
+
+    function test_root_unknown_forms_refused() public {
+        _refuses(root, _ctx(), abi.encode(FILE, uint256(2)), _none(), _noHeaders(), 5);
+        _refuses(root, _ctx(), abi.encode(FILE, uint256(2), CONTENT_REC), _none(), _noHeaders(), 5);
+        _refuses(
+            root, _ctx(), abi.encode(FILE, type(uint256).max, CONTENT_REC), _none(), _noHeaders(), 5
+        );
+        _refuses(root, _ctx(), bytes.concat(abi.encode(FILE), hex"01"), _none(), _noHeaders(), 2);
     }
 
     // L FilesJoined test_root_requires_existing_nonzero_file_and_shape
@@ -190,6 +265,14 @@ contract FilesRecordRulesTest is FilesUnitBase {
         _refuses(
             child, _ctx(), abi.encode(PARENT), _one(PARENT), _header(ROOT_TYPE, 32, FILE, 0, 0), 2
         );
+        _refuses(
+            child,
+            _ctx(),
+            abi.encode(PARENT, FILE),
+            _one(PARENT),
+            _header(ROOT_TYPE, 32, FILE, 0, 0),
+            2
+        ); // no form word
         // body word 0 must be the checked reference itself
         _refuses(
             child,
@@ -208,7 +291,7 @@ contract FilesRecordRulesTest is FilesUnitBase {
 
     function test_child_root_type_is_constructor_state() public {
         assertEq(child.rootTypeId(), ROOT_TYPE);
-        FilesChildRule other = new FilesChildRule(OTHER_TYPE);
+        FilesChildRule other = new FilesChildRule(OTHER_TYPE, CONTENT_TYPE, EXTERNAL_TYPE);
         assertEq(
             address(other).codehash, address(child).codehash, "one runtime for every root Type"
         );
@@ -228,6 +311,74 @@ contract FilesRecordRulesTest is FilesUnitBase {
             _header(ROOT_TYPE, 32, FILE, 0, 0),
             7
         );
+    }
+
+    function test_child_form_1_names_an_admitted_descriptor() public {
+        RefHeader[] memory rootParent = _header(ROOT_TYPE, 64, FILE, 0, 0);
+        _accepts(child, _ctx(), _childRef(PARENT, FILE, CONTENT_REC), _one(PARENT), rootParent);
+        _accepts(child, _ctx(), _childRef(PARENT, FILE, EXTERNAL_REC), _one(PARENT), rootParent);
+        // a child parent works alike (the parent law is unchanged)
+        _accepts(
+            child,
+            _ctx(),
+            _childRef(PARENT, FILE, CONTENT_REC),
+            _one(PARENT),
+            _header(SELF_TYPE, 128, keccak256("gp"), FILE, 0)
+        );
+        _refuses(
+            child,
+            _ctx(),
+            _childRef(PARENT, FILE, keccak256("no such record")),
+            _one(PARENT),
+            rootParent,
+            10
+        );
+        _refuses(child, _ctx(), _childRef(PARENT, FILE, DIR_REC), _one(PARENT), rootParent, 10);
+        _refuses(child, _ctx(), _childRef(PARENT, FILE, PARENT), _one(PARENT), rootParent, 10);
+        _refuses(child, _ctx(), abi.encode(PARENT, FILE, uint256(1)), _one(PARENT), rootParent, 9);
+        _refuses(
+            child,
+            _ctx(),
+            bytes.concat(_childRef(PARENT, FILE, CONTENT_REC), hex"00"),
+            _one(PARENT),
+            rootParent,
+            9
+        );
+        // the parent law runs first: a form-1 body with a wrong parent is a parent refusal
+        _refuses(
+            child,
+            _ctx(),
+            _childRef(PARENT, FILE, CONTENT_REC),
+            _one(PARENT),
+            _header(ROOT_TYPE, 64, OTHER_FILE, 0, 0),
+            5
+        );
+    }
+
+    function test_child_unknown_forms_refused() public {
+        RefHeader[] memory rootParent = _header(ROOT_TYPE, 64, FILE, 0, 0);
+        _refuses(child, _ctx(), abi.encode(PARENT, FILE, uint256(2)), _one(PARENT), rootParent, 8);
+        _refuses(
+            child,
+            _ctx(),
+            abi.encode(PARENT, FILE, type(uint256).max, CONTENT_REC),
+            _one(PARENT),
+            rootParent,
+            8
+        );
+        // form 0 with an empty document is the smallest revision
+        _accepts(child, _ctx(), abi.encode(PARENT, FILE, uint256(0)), _one(PARENT), rootParent);
+    }
+
+    function test_form_rules_read_only_the_named_header() public {
+        // the descriptor Type ids are constructor state: another pair rejects the same descriptor
+        FilesRootRule other = new FilesRootRule(keccak256("x"), keccak256("y"));
+        assertEq(address(other).codehash, address(root).codehash, "one runtime for every pair");
+        assertEq(root.contentTypeId(), CONTENT_TYPE);
+        assertEq(root.externalTypeId(), EXTERNAL_TYPE);
+        assertEq(child.contentTypeId(), CONTENT_TYPE);
+        assertEq(child.externalTypeId(), EXTERNAL_TYPE);
+        _refuses(other, _ctx(), _rootRef(FILE, CONTENT_REC), _none(), _noHeaders(), 7);
     }
 
     function test_child_context_is_authenticated() public {

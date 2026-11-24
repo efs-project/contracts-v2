@@ -3,19 +3,30 @@ pragma solidity 0.8.37;
 
 import {Keys} from "../lib/Keys.sol";
 
-/// @title FilesTypes — the codec-1 descriptors and Type ids of the Files profile (design §12.1, §9.2)
-/// @notice One builder per Type of §12.1. Every descriptor is NATIVE (grade 3), `ruleMode` 1 (STATICCALL), namespace
-///         `keccak256("efs2/files/1")`, `ruleCodehash` = the deployed rule instance's codehash, `ruleInitcodeHash` =
-///         keccak of the instance's initcode (its creation code ‖ constructor arguments); the instance is
-///         CREATE2(0x4e59…956C, salt 0, initcode), which the registry checks. The declaration key is a parameter: the
-///         fixture principal signs the declarations at genesis (§8.2 G21), and the nine ids are identical on every
-///         Realm and chain for one key. Fields are only the leading REF32 projections §12.1 names (the bodies are
+/// @title FilesTypes — the codec-1 descriptors and Type ids of the Files profile (design §12.1, §9.2;
+///        docs/LARGE-FILES.md)
+/// @notice One builder per Type of §12.1 and docs/LARGE-FILES.md (ten Types). Every descriptor is NATIVE (grade 3),
+///         `ruleMode` 1 (STATICCALL), namespace `keccak256("efs2/files/1")`, `ruleCodehash` = the deployed rule
+///         instance's codehash, `ruleInitcodeHash` = keccak of the instance's initcode (its creation code ‖
+///         constructor arguments); the instance is CREATE2(0x4e59…956C, salt 0, initcode), which the registry checks. The declaration key is a parameter: the
+///         fixture principal signs the declarations at genesis (§8.2 G21), and the ten ids are identical on every
+///         Realm and chain for one key. Fields are only the leading REF32 projections the rows name (the bodies are
 ///         judged by their native rules, not by the described codec's body law, so no other field rows are declared;
 ///         the layout is in each description): `files-child/1` `[0 = ANY]` with `refHeaderWords` 2, `files-content/1`
-///         `[files-bytes/1]` with 3, `files-external/1` `[files-bytes/1]` with 1; the others have none and the codec
-///         minimum `refHeaderWords` 1. `validationGas` 0 (the closure default 300,000 is ample: the worst name, 255
-///         bytes of CJK, measured 117k). `dependencyClass` is the creator's disclosure: 2 (realm reads) for the rules
-///         that call the ledger, 1 for the rules pure over calldata, `refHeaders` and constructor state.
+///         `[0 = ANY]` with 3 (its rule checks the Type by carrier), `files-external/1` `[files-bytes/1]` with 1,
+///         `files-span/1` `[0 = ANY, 0 = ANY]` with 3; the others have none and the codec minimum `refHeaderWords` 1.
+///         `validationGas` 0 (the closure default 300,000 is ample: the worst name, 255 bytes of CJK, measured 117k).
+///         `dependencyClass` is the creator's disclosure: 2 (realm reads) for the rules that call the ledger, 1 for
+///         the rules pure over calldata, `refHeaders` and constructor state.
+///
+///         Dependency order (a rule's constructor state names sibling Type ids, so the Type it names must be derived
+///         first; the constructor arguments are inside `ruleInitcodeHash`, never in the descriptor bytes):
+///         bytes → span(bytes) → content(bytes, span) → external (its descriptor's ref is the bytes id) →
+///         root(content, external) → child(root, content, external) → directory, name, notice (no siblings) →
+///         alias(directory); `FilesFinalValidator(name, directory)` last. Constructor arguments, in order:
+///         `FilesSpanRule(bytesTypeId)`, `FilesContentRule(bytesTypeId, spanTypeId)`,
+///         `FilesRootRule(contentTypeId, externalTypeId)`, `FilesChildRule(rootTypeId, contentTypeId,
+///         externalTypeId)`, `DirectoryAliasRule(directoryTypeId)`; the other five rules take none.
 /// @dev Internal and pure/view only, so it compiles into its callers; the release generates the ids (design §5.14
 ///      `EfsFiles`: "Type ids come from `profiles/FilesTypes.sol` (generated from the release) or the caller").
 library FilesTypes {
@@ -29,9 +40,12 @@ library FilesTypes {
 
     bytes32 internal constant FIELD_PARENT = keccak256("efs2/files/field/parent/1");
     bytes32 internal constant FIELD_BYTES = keccak256("efs2/files/field/bytes/1");
+    bytes32 internal constant FIELD_LEFT = keccak256("efs2/files/field/left/1");
+    bytes32 internal constant FIELD_RIGHT = keccak256("efs2/files/field/right/1");
     bytes32 internal constant SEMANTIC_REVISION =
         keccak256("efs2/files/semantic/parent-revision/1");
     bytes32 internal constant SEMANTIC_CARRIER = keccak256("efs2/files/semantic/bytes-carrier/1");
+    bytes32 internal constant SEMANTIC_SPAN_CHILD = keccak256("efs2/files/semantic/span-child/1");
 
     struct Spec {
         bytes name;
@@ -43,7 +57,7 @@ library FilesTypes {
     }
 
     // =============================================================================================
-    // The nine descriptors
+    // The ten descriptors
     // =============================================================================================
 
     function filesRoot(address key, address instance, bytes32 initcodeHash)
@@ -86,12 +100,13 @@ library FilesTypes {
         return encode(key, instance.codehash, initcodeHash, bytesSpec());
     }
 
-    function filesContent(address key, address instance, bytes32 initcodeHash, bytes32 bytesTypeId)
+    /// `instance` is `FilesContentRule(bytesTypeId, spanTypeId)`; the reference is `ANY`, so no id is in the bytes.
+    function filesContent(address key, address instance, bytes32 initcodeHash)
         internal
         view
         returns (bytes memory)
     {
-        return encode(key, instance.codehash, initcodeHash, contentSpec(bytesTypeId));
+        return encode(key, instance.codehash, initcodeHash, contentSpec());
     }
 
     function filesExternal(address key, address instance, bytes32 initcodeHash, bytes32 bytesTypeId)
@@ -100,6 +115,15 @@ library FilesTypes {
         returns (bytes memory)
     {
         return encode(key, instance.codehash, initcodeHash, externalSpec(bytesTypeId));
+    }
+
+    /// `instance` is `FilesSpanRule(bytesTypeId)`; both references are `ANY`, so no id is in the bytes.
+    function filesSpan(address key, address instance, bytes32 initcodeHash)
+        internal
+        view
+        returns (bytes memory)
+    {
+        return encode(key, instance.codehash, initcodeHash, spanSpec());
     }
 
     function directoryAlias(address key, address instance, bytes32 initcodeHash)
@@ -125,7 +149,7 @@ library FilesTypes {
     function rootSpec() internal pure returns (Spec memory s) {
         s.name = "files-root/1";
         s.description =
-        "abi.encode(fileSubject) || document; the first revision of a created file subject";
+            "abi.encode(fileSubject, form) || rest; the first revision of a created file subject; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record";
         s.dependencyClass = 2;
         s.refHeaderWords = 1;
     }
@@ -133,8 +157,8 @@ library FilesTypes {
     function childSpec() internal pure returns (Spec memory s) {
         s.name = "files-child/1";
         s.description =
-            "abi.encode(parentRecord, fileSubject) || document; parent is files-root/1 or files-child/1 of the same file";
-        s.dependencyClass = 1;
+            "abi.encode(parentRecord, fileSubject, form) || rest; parent is files-root/1 or files-child/1 of the same file; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record";
+        s.dependencyClass = 2;
         s.refHeaderWords = 2;
         s.fields = refField(FIELD_PARENT, SEMANTIC_REVISION, REF_ANY);
         s.fieldCount = 1;
@@ -158,29 +182,43 @@ library FilesTypes {
 
     function bytesSpec() internal pure returns (Spec memory s) {
         s.name = "files-bytes/1";
-        s.description = "sha256(payload) || payload; payload at most 8160 bytes";
+        s.description =
+            "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
     }
 
-    function contentSpec(bytes32 bytesTypeId) internal pure returns (Spec memory s) {
+    function contentSpec() internal pure returns (Spec memory s) {
         s.name = "files-content/1";
         s.description =
-            "11 words [bytesRef, version, carrier, hashAlg, length, sha256, media, cipher, nonce12, plaintextLength, plaintextSHA256OrZero]";
+            "11 words [bytesRef, version, carrier, hashAlg, length, sha256, media, cipher, nonce12, plaintextLength, plaintextSHA256OrZero]; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64";
         s.dependencyClass = 1;
         s.refHeaderWords = 3;
-        s.fields = refField(FIELD_BYTES, SEMANTIC_CARRIER, bytesTypeId);
+        s.fields = refField(FIELD_BYTES, SEMANTIC_CARRIER, REF_ANY);
         s.fieldCount = 1;
     }
 
     function externalSpec(bytes32 bytesTypeId) internal pure returns (Spec memory s) {
         s.name = "files-external/1";
         s.description =
-            "7 words [bytesRef, version 2, carrier 2 ar | 3 ipfs, hashAlg 1, length, sha256, locatorLength] || ASCII locator";
+            "7 words [bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
         s.fields = refField(FIELD_BYTES, SEMANTIC_CARRIER, bytesTypeId);
         s.fieldCount = 1;
+    }
+
+    function spanSpec() internal pure returns (Spec memory s) {
+        s.name = "files-span/1";
+        s.description =
+            "abi.encode(left, right, length); each child a files-bytes/1 record with a nonempty payload or a files-span/1 record; length is the sum of the children payload lengths, below 2^64";
+        s.dependencyClass = 1;
+        s.refHeaderWords = 3;
+        s.fields = bytes.concat(
+            refField(FIELD_LEFT, SEMANTIC_SPAN_CHILD, REF_ANY),
+            refField(FIELD_RIGHT, SEMANTIC_SPAN_CHILD, REF_ANY)
+        );
+        s.fieldCount = 2;
     }
 
     function aliasSpec() internal pure returns (Spec memory s) {

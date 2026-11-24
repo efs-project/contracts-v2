@@ -6,14 +6,17 @@ import {Keys} from "../../src/lib/Keys.sol";
 import {CodeScan} from "../../src/lib/CodeScan.sol";
 import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
 import {FilesChildRule} from "../../src/profiles/FilesChildRule.sol";
+import {FilesRootRule} from "../../src/profiles/FilesRootRule.sol";
+import {FilesContentRule} from "../../src/profiles/FilesContentRule.sol";
+import {FilesSpanRule} from "../../src/profiles/FilesSpanRule.sol";
 import {Factory} from "../harness/doubles/Factory.sol";
 import {FilesFixture} from "./FilesFixture.sol";
 
-/// @notice The nine descriptors from `FilesTypes`: they parse under codec `efs2/described/1` exactly as the
+/// @notice The ten descriptors from `FilesTypes`: they parse under codec `efs2/described/1` exactly as the
 ///         registry parses them, their headers name the deterministic instances, their REF32 projections are the
 ///         ones design §12.1 lists, `typeIdOf` is the registry's derivation, and every instance is a plain runtime.
 contract FilesTypesTest is FilesFixture {
-    string[9] internal names = [
+    string[10] internal names = [
         "files-root/1",
         "files-child/1",
         "files-directory/1",
@@ -22,10 +25,11 @@ contract FilesTypesTest is FilesFixture {
         "files-content/1",
         "files-external/1",
         "directory-alias/1",
-        "realm-notice/1"
+        "realm-notice/1",
+        "files-span/1"
     ];
-    uint8[9] internal refHeaderWords = [1, 2, 1, 1, 1, 3, 1, 1, 1];
-    uint8[9] internal dependencyClass = [2, 1, 2, 1, 1, 1, 1, 2, 2];
+    uint8[10] internal refHeaderWords = [1, 2, 1, 1, 1, 3, 1, 1, 1, 3];
+    uint8[10] internal dependencyClass = [2, 2, 2, 1, 1, 1, 1, 2, 2, 1];
 
     function setUp() public {
         _deployProfile();
@@ -41,7 +45,7 @@ contract FilesTypesTest is FilesFixture {
     }
 
     function test_descriptors_parse_as_the_registry_parses_them() public view {
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             bytes memory d = descriptors[t];
             (DescribedCodec.Header memory h, bytes32[] memory refs, bytes memory name) =
                 this.parse(d);
@@ -81,7 +85,11 @@ contract FilesTypesTest is FilesFixture {
         assertEq(refs[0], bytes32(0), "files-child/1 refs [0 = ANY]");
         (, refs,) = this.parse(descriptors[T_CONTENT]);
         assertEq(refs.length, 1);
-        assertEq(refs[0], typeIds[T_BYTES], "files-content/1 refs [files-bytes/1]");
+        assertEq(refs[0], bytes32(0), "files-content/1 refs [0 = ANY] (the rule checks by carrier)");
+        (, refs,) = this.parse(descriptors[T_SPAN]);
+        assertEq(refs.length, 2);
+        assertEq(refs[0], bytes32(0), "files-span/1 refs [0 = ANY, 0 = ANY]");
+        assertEq(refs[1], bytes32(0));
         (, refs,) = this.parse(descriptors[T_EXTERNAL]);
         assertEq(refs.length, 1);
         assertEq(refs[0], typeIds[T_BYTES], "files-external/1 refs [files-bytes/1]");
@@ -93,21 +101,22 @@ contract FilesTypesTest is FilesFixture {
     }
 
     function test_ids_are_distinct_and_commit_to_key_rule_and_constructor_state() public {
-        for (uint256 i; i < 9; ++i) {
-            for (uint256 j = i + 1; j < 9; ++j) {
+        for (uint256 i; i < 10; ++i) {
+            for (uint256 j = i + 1; j < 10; ++j) {
                 assertTrue(typeIds[i] != typeIds[j], "distinct Types");
             }
             assertGe(uint256(typeIds[i]), 1 << 16, "never a ref sentinel");
         }
         // another declaration key: every id changes
         address other = vm.addr(0xBEEF);
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             bytes memory d = _descriptor(t, other, instances[t], initcodeHashes[t]);
             assertTrue(FilesTypes.typeIdOf(d) != typeIds[t], "the key is identity-bearing");
         }
         // the child rule pinned to another root Type: same runtime, another instance and another Type id
         bytes memory initcode = abi.encodePacked(
-            type(FilesChildRule).creationCode, abi.encode(keccak256("another root"))
+            type(FilesChildRule).creationCode,
+            abi.encode(keccak256("another root"), typeIds[T_CONTENT], typeIds[T_EXTERNAL])
         );
         address instance = Factory.deploy(initcode);
         assertEq(instance.codehash, instances[T_CHILD].codehash);
@@ -118,12 +127,19 @@ contract FilesTypesTest is FilesFixture {
                 ) != typeIds[T_CHILD]
         );
         assertEq(FilesChildRule(instances[T_CHILD]).rootTypeId(), typeIds[T_ROOT]);
+        assertEq(FilesChildRule(instances[T_CHILD]).contentTypeId(), typeIds[T_CONTENT]);
+        assertEq(FilesChildRule(instances[T_CHILD]).externalTypeId(), typeIds[T_EXTERNAL]);
+        assertEq(FilesRootRule(instances[T_ROOT]).contentTypeId(), typeIds[T_CONTENT]);
+        assertEq(FilesRootRule(instances[T_ROOT]).externalTypeId(), typeIds[T_EXTERNAL]);
+        assertEq(FilesContentRule(instances[T_CONTENT]).bytesTypeId(), typeIds[T_BYTES]);
+        assertEq(FilesContentRule(instances[T_CONTENT]).spanTypeId(), typeIds[T_SPAN]);
+        assertEq(FilesSpanRule(instances[T_SPAN]).bytesTypeId(), typeIds[T_BYTES]);
         assertEq(validator.nameTypeId(), typeIds[T_NAME]);
         assertEq(validator.directoryTypeId(), typeIds[T_DIRECTORY]);
     }
 
     function test_every_profile_runtime_is_plain_and_sized() public {
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             assertEq(CodeScan.scan(instances[t].code), 0, names[t]);
             emit log_named_uint(
                 string.concat(names[t], " rule runtime bytes"), instances[t].code.length
@@ -133,7 +149,7 @@ contract FilesTypesTest is FilesFixture {
         assertEq(CodeScan.scan(address(validator).code), 0);
         emit log_named_uint("RefuseAllPolicy runtime bytes", refuseAll.code.length);
         emit log_named_uint("FilesFinalValidator runtime bytes", address(validator).code.length);
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             emit log_named_uint(string.concat(names[t], " descriptor bytes"), descriptors[t].length);
             emit log_named_bytes32(string.concat(names[t], " type id (test key)"), typeIds[t]);
         }

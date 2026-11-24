@@ -23,6 +23,7 @@ import {FilesChildRule} from "../../src/profiles/FilesChildRule.sol";
 import {FilesDirectoryRule} from "../../src/profiles/FilesDirectoryRule.sol";
 import {FilesNameRule} from "../../src/profiles/FilesNameRule.sol";
 import {FilesBytesRule} from "../../src/profiles/FilesBytesRule.sol";
+import {FilesSpanRule} from "../../src/profiles/FilesSpanRule.sol";
 import {FilesContentRule} from "../../src/profiles/FilesContentRule.sol";
 import {FilesExternalContentRule} from "../../src/profiles/FilesExternalContentRule.sol";
 import {DirectoryAliasRule} from "../../src/profiles/DirectoryAliasRule.sol";
@@ -30,8 +31,8 @@ import {RealmNoticeRule} from "../../src/profiles/RealmNoticeRule.sol";
 import {RefuseAllPolicy} from "../../src/profiles/RefuseAllPolicy.sol";
 import {FilesFinalValidator} from "../../src/profiles/FilesFinalValidator.sol";
 
-/// @notice The Files profile on a real Realm: the nine rule instances, `RefuseAllPolicy` and `FilesFinalValidator`
-///         at their deterministic CREATE2(0x4e59…956C, salt 0, initcode) addresses (design §8.2 G10/G12), the nine
+/// @notice The Files profile on a real Realm: the ten rule instances, `RefuseAllPolicy` and `FilesFinalValidator`
+///         at their deterministic CREATE2(0x4e59…956C, salt 0, initcode) addresses (design §8.2 G10/G12), the ten
 ///         descriptors and Type ids from `FilesTypes` under one declaration key, and a Realm builder: kernel, real
 ///         registry proxy, real generation-1 index with the validator pinned as its one unit (`purposeFilter =
 ///         FOLDER`) and the two Files digest specs (word 5, sha256) in the manifest, then the genesis ceremony.
@@ -48,6 +49,7 @@ abstract contract FilesFixture is Test {
     uint8 internal constant T_EXTERNAL = 6;
     uint8 internal constant T_ALIAS = 7;
     uint8 internal constant T_NOTICE = 8;
+    uint8 internal constant T_SPAN = 9;
 
     struct Realm {
         KernelDeploy.Kernel k;
@@ -62,29 +64,46 @@ abstract contract FilesFixture is Test {
 
     address internal declarationKey;
     /// Rule instances by Type index (T_*), the descriptor bytes, initcode hashes and Type ids.
-    address[9] internal instances;
-    bytes[9] internal initcodes;
-    bytes32[9] internal initcodeHashes;
-    bytes[9] internal descriptors;
-    bytes32[9] internal typeIds;
+    address[10] internal instances;
+    bytes[10] internal initcodes;
+    bytes32[10] internal initcodeHashes;
+    bytes[10] internal descriptors;
+    bytes32[10] internal typeIds;
     address internal refuseAll;
     FilesFinalValidator internal validator;
 
     function _deployProfile() internal {
         declarationKey = vm.addr(DECLARATION_PK);
-        // the leaves first: Types with no sibling dependency
+        // dependency order (FilesTypes): a rule whose constructor state names a sibling Type id is deployed after
+        // that Type's id is derived (the ids are pinned by the initcode hash, design §9.3)
         _deploy(T_BYTES, type(FilesBytesRule).creationCode);
-        _deploy(T_ROOT, type(FilesRootRule).creationCode);
+        _deploy(
+            T_SPAN, abi.encodePacked(type(FilesSpanRule).creationCode, abi.encode(typeIds[T_BYTES]))
+        );
+        _deploy(
+            T_CONTENT,
+            abi.encodePacked(
+                type(FilesContentRule).creationCode, abi.encode(typeIds[T_BYTES], typeIds[T_SPAN])
+            )
+        );
+        _deploy(T_EXTERNAL, type(FilesExternalContentRule).creationCode);
+        _deploy(
+            T_ROOT,
+            abi.encodePacked(
+                type(FilesRootRule).creationCode,
+                abi.encode(typeIds[T_CONTENT], typeIds[T_EXTERNAL])
+            )
+        );
+        _deploy(
+            T_CHILD,
+            abi.encodePacked(
+                type(FilesChildRule).creationCode,
+                abi.encode(typeIds[T_ROOT], typeIds[T_CONTENT], typeIds[T_EXTERNAL])
+            )
+        );
         _deploy(T_DIRECTORY, type(FilesDirectoryRule).creationCode);
         _deploy(T_NAME, type(FilesNameRule).creationCode);
         _deploy(T_NOTICE, type(RealmNoticeRule).creationCode);
-        _deploy(T_CONTENT, type(FilesContentRule).creationCode);
-        _deploy(T_EXTERNAL, type(FilesExternalContentRule).creationCode);
-        // the rules whose constructor state names a sibling Type (pinned by their initcode hash, design §9.3)
-        _deploy(
-            T_CHILD,
-            abi.encodePacked(type(FilesChildRule).creationCode, abi.encode(typeIds[T_ROOT]))
-        );
         _deploy(
             T_ALIAS,
             abi.encodePacked(
@@ -123,9 +142,10 @@ abstract contract FilesFixture is Test {
         if (t == T_DIRECTORY) return FilesTypes.filesDirectory(key, instance, h);
         if (t == T_NAME) return FilesTypes.filesName(key, instance, h);
         if (t == T_BYTES) return FilesTypes.filesBytes(key, instance, h);
-        if (t == T_CONTENT) return FilesTypes.filesContent(key, instance, h, typeIds[T_BYTES]);
+        if (t == T_CONTENT) return FilesTypes.filesContent(key, instance, h);
         if (t == T_EXTERNAL) return FilesTypes.filesExternal(key, instance, h, typeIds[T_BYTES]);
         if (t == T_ALIAS) return FilesTypes.directoryAlias(key, instance, h);
+        if (t == T_SPAN) return FilesTypes.filesSpan(key, instance, h);
         return FilesTypes.realmNotice(key, instance, h);
     }
 
@@ -186,9 +206,9 @@ abstract contract FilesFixture is Test {
         r.principal = Keys.principalFor(address(this), r.hot.realmOrigin());
     }
 
-    /// §8.2 G11 + G21: the nine blobs, then permissionless registration (by a stranger) of the nine Types.
+    /// §8.2 G11 + G21: the ten blobs, then permissionless registration (by a stranger) of the ten Types.
     function _register(Realm memory r) internal {
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             bytes memory sig = _declare(r.registry, typeIds[t]);
             r.store.put(descriptors[t], sig);
             vm.prank(address(0xCAFE));

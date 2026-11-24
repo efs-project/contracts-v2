@@ -88,7 +88,8 @@ contract PopulatedUpgradeTest is FilesFixture {
         a = new Action[](5);
         b = new bytes[](5);
         a[0] = _create(keccak256("readme"));
-        (a[1], b[1]) = _publish(T_ROOT, bytes.concat(abi.encode(file), "Meeting at 10:00.\n"));
+        (a[1], b[1]) =
+            _publish(T_ROOT, bytes.concat(abi.encode(file, uint256(0)), "Meeting at 10:00.\n"));
         rootRec = Keys.record(typeIds[T_ROOT], b[1]);
         (a[2], b[2]) = _publish(T_NAME, "readme.txt");
         readmeName = Keys.record(typeIds[T_NAME], b[2]);
@@ -283,8 +284,9 @@ contract PopulatedUpgradeTest is FilesFixture {
         // a plan bound to the old execution set is refused whole with the nonce intact
         Action[] memory edit = new Action[](2);
         bytes[] memory eb = new bytes[](2);
-        (edit[0], eb[0]) =
-            _publish(T_CHILD, bytes.concat(abi.encode(rootRec, file), "Meeting at 11:00.\n"));
+        (edit[0], eb[0]) = _publish(
+            T_CHILD, bytes.concat(abi.encode(rootRec, file, uint256(0)), "Meeting at 11:00.\n")
+        );
         edit[1] = _bind(Purpose.HEAD, file, 0, Keys.record(typeIds[T_CHILD], eb[0]), 1);
         Native memory bound = _ctx(edit);
         bound.expectedExecutionSet = oldSet;

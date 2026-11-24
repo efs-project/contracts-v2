@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-import {Vm} from "forge-std/Vm.sol";
-import {FilesFixture} from "../profiles/FilesFixture.sol";
+import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {
     Action,
@@ -10,12 +9,9 @@ import {
     FamilyId,
     Native,
     Purpose,
-    ScopeKey,
     TypeId
 } from "../../src/interfaces/Actions.sol";
-import {Coverage} from "../../src/interfaces/Results.sol";
 import {ClosureConstants} from "../../src/interfaces/Limits.sol";
-import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {Readiness} from "../../src/interfaces/Index.sol";
 import {
     E_CAS,
@@ -30,162 +26,11 @@ import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 ///         real registry proxy and the real generation-1 index with `FilesFinalValidator` pinned: root seed, create
 ///         folder, create file, edit (CAS on HEAD), rename + move (atomic), remove, restore, release; the index's
 ///         folder-scope lists and live bits, backlinks and history after each step; the final hook refusing a FOLDER
-///         bind with no name record (nothing lands); a stale CAS refused whole; inline and external content found
-///         by sha256 through the digest family; Type ids identical across Realms and chains. Gas of every step is
-///         logged (gasleft delta around `execute`, and the callee frame).
-contract FilesRecipesTest is FilesFixture {
-    Realm internal r;
-    bytes32 internal p; // address(this) as a contract principal of the Realm
-
-    bytes32 internal F_BACKLINK = Keys.familyId("backlink");
-    bytes32 internal F_HISTORY = Keys.familyId("history");
-    bytes32 internal F_BY_TYPE = Keys.familyId("by-type");
-    bytes32 internal F_DIGEST = Keys.familyId("digest");
-    bytes32 internal F_REFERENCE = Keys.familyId("reference-position");
-
-    bytes32 internal rootSubject;
-    bytes32 internal rootDir;
-
-    function setUp() public {
-        _deployProfile();
-        r = _realm(keccak256("files/realm-a"));
-        _register(r);
-        p = r.principal;
-        // Root (the seed, once per Realm): CREATE(rootSalt), PUBLISH(files-directory/1, rootSubject); no FOLDER bind
-        rootSubject = Keys.subject(p, keccak256("root"));
-        Action[] memory a = new Action[](2);
-        bytes[] memory b = new bytes[](2);
-        a[0] = _create(keccak256("root"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(rootSubject));
-        rootDir = _id(T_DIRECTORY, b[1]);
-        _exec("recipe root seed (CREATE + PUBLISH directory)", a, b);
-    }
-
-    // ---- builders -----------------------------------------------------------------------------------------------
-
-    function _id(uint8 t, bytes memory body) internal view returns (bytes32) {
-        return Keys.record(typeIds[t], body);
-    }
-
-    function _create(bytes32 salt) internal pure returns (Action memory a) {
-        a.kind = ActionKind.CREATE;
-        a.salt = salt;
-    }
-
-    function _publish(uint8 t, bytes memory body)
-        internal
-        view
-        returns (Action memory a, bytes memory)
-    {
-        a.kind = ActionKind.PUBLISH;
-        a.typeId = typeIds[t];
-        a.bodyHashOrRecordId = keccak256(body);
-        return (a, body);
-    }
-
-    function _bindKind(
-        uint8 kind,
-        bytes32 purpose,
-        bytes32 subject,
-        bytes32 role,
-        bytes32 target,
-        uint64 expected
-    ) internal pure returns (Action memory a) {
-        a.kind = kind;
-        a.purpose = purpose;
-        a.subject = subject;
-        a.role = role;
-        a.target = target;
-        a.expectedRevision = expected;
-    }
-
-    function _bind(bytes32 purpose, bytes32 subject, bytes32 role, bytes32 target, uint64 expected)
-        internal
-        pure
-        returns (Action memory)
-    {
-        return _bindKind(ActionKind.BIND, purpose, subject, role, target, expected);
-    }
-
-    /// Both expectations bound (the SDK default, design Q22): the live execution set and the acceptance profile.
-    function _ctx(Action[] memory actions) internal view returns (Native memory c) {
-        (c.nonce,) = r.hot.nonceOf(p);
-        c.expectedExecutionSet = r.hot.executionSet();
-        c.expectedAcceptanceProfile =
-            ILedgerCommitments(r.hot.ingress()).acceptanceProfileOf(address(r.ledger), actions);
-    }
-
-    function _exec(string memory label, Action[] memory actions, bytes[] memory bodies)
-        internal
-        returns (uint64 publication)
-    {
-        Native memory c = _ctx(actions);
-        uint256 before = gasleft();
-        (publication,) = r.ledger.execute(actions, bodies, c, "");
-        uint256 used = before - gasleft();
-        Vm.Gas memory frame = vm.lastFrameGas();
-        emit log_named_uint(string.concat(label, " gas"), used);
-        emit log_named_uint(string.concat(label, " frame gas"), frame.gasTotalUsed);
-        // EIP-8037 state gas: zero under the release schedule (prague), meaningful under `--profile amsterdam`
-        if (frame.gasStateUsed != 0) {
-            emit log_named_int(string.concat(label, " frame state gas"), frame.gasStateUsed);
-        }
-    }
-
-    function _name(bytes memory n) internal view returns (Action memory a, bytes memory) {
-        return _publish(T_NAME, n);
-    }
-
-    function _key(bytes32 purpose, bytes32 subject, bytes32 role) internal view returns (bytes32) {
-        return Keys.binding(p, Keys.position(purpose, subject, role));
-    }
-
-    function _scope(bytes32 dir)
-        internal
-        view
-        returns (uint64 count, uint64 live, uint48 bits, uint64 entry0)
-    {
-        (count, live,, bits,, entry0) =
-            r.g.bitmap.scopeHead(ScopeKey.wrap(Keys.scope(p, Purpose.FOLDER, dir)));
-    }
-
-    function _posting(bytes32 family, bytes32 typeId, bytes32 value)
-        internal
-        view
-        returns (uint64 count, uint64 live)
-    {
-        Coverage c;
-        (c, count, live,,) =
-            r.g.index.postingHeadOf(FamilyId.wrap(family), TypeId.wrap(typeId), 0, value);
-        assertEq(uint8(c), uint8(Coverage.COMPLETE), "honest coverage");
-    }
-
-    function _head(bytes32 key)
-        internal
-        view
-        returns (uint8 state, uint64 revision, bytes32 target)
-    {
-        (state, revision,,,,, target) = r.hot.head(key);
-    }
-
-    function _assertScope(bytes32 dir, uint64 count, uint64 live, uint48 bits) internal view {
-        (uint64 c, uint64 l, uint48 b,) = _scope(dir);
-        assertEq(c, count, "scope entries");
-        assertEq(l, live, "scope live");
-        assertEq(b, bits, "scope live bits");
-    }
-
-    function _assertBacklink(bytes32 target, uint64 count, uint64 live) internal view {
-        (uint64 c, uint64 l) = _posting(F_BACKLINK, 0, target);
-        assertEq(c, count, "backlink entries");
-        assertEq(l, live, "backlink live");
-    }
-
-    function _assertHistory(bytes32 key, uint64 count) internal view {
-        (uint64 c,) = _posting(F_HISTORY, 0, key);
-        assertEq(c, count, "history entries");
-    }
-
+///         bind with no name record (nothing lands); a stale CAS refused whole; Type ids identical across Realms and
+///         chains. Revisions carry the `form` word of docs/LARGE-FILES.md (form 0 here; content by sha256, large
+///         files and external locations are `FilesLargeFiles.t.sol`). Gas of every step is logged (gasleft delta
+///         around `execute`, and the callee frame).
+contract FilesRecipesTest is FilesRecipesBase {
     // ---- the recipes ---------------------------------------------------------------------------------------------
 
     function test_root_seed() public view {
@@ -225,7 +70,8 @@ contract FilesRecipesTest is FilesFixture {
         a = new Action[](5);
         b = new bytes[](5);
         a[0] = _create(keccak256("readme"));
-        (a[1], b[1]) = _publish(T_ROOT, bytes.concat(abi.encode(file), "Meeting at 10:00.\n"));
+        (a[1], b[1]) =
+            _publish(T_ROOT, bytes.concat(abi.encode(file, uint256(0)), "Meeting at 10:00.\n"));
         bytes32 rootRec = _id(T_ROOT, b[1]);
         (a[2], b[2]) = _name("readme.txt");
         a[3] = _bind(Purpose.HEAD, file, 0, rootRec, 0);
@@ -244,8 +90,9 @@ contract FilesRecipesTest is FilesFixture {
         // ---- edit: PUBLISH child, BIND(HEAD, file, 0 → child, exp current)
         a = new Action[](2);
         b = new bytes[](2);
-        (a[0], b[0]) =
-            _publish(T_CHILD, bytes.concat(abi.encode(rootRec, file), "Meeting at 11:00.\n"));
+        (a[0], b[0]) = _publish(
+            T_CHILD, bytes.concat(abi.encode(rootRec, file, uint256(0)), "Meeting at 11:00.\n")
+        );
         bytes32 childRec = _id(T_CHILD, b[0]);
         a[1] = _bind(Purpose.HEAD, file, 0, childRec, 1);
         _exec("recipe edit", a, b);
@@ -339,30 +186,6 @@ contract FilesRecipesTest is FilesFixture {
     }
 
     // ---- refusals land nothing ---------------------------------------------------------------------------------
-
-    struct Snapshot {
-        uint64 admissions;
-        uint64 records;
-        uint64 bindings;
-        uint64 publications;
-        uint64 nonce;
-        uint64 processed;
-        uint64 scopeCount;
-        uint64 scopeLive;
-        uint64 backlinks;
-    }
-
-    function _snapshot(bytes32 dir, bytes32 target) internal view returns (Snapshot memory s) {
-        (s.admissions, s.records, s.bindings, s.publications) = r.hot.counts();
-        (s.nonce,) = r.hot.nonceOf(p);
-        (s.processed,,) = r.g.index.progress();
-        (s.scopeCount, s.scopeLive,,) = _scope(dir);
-        (s.backlinks,) = _posting(F_BACKLINK, 0, target);
-    }
-
-    function _assertSame(Snapshot memory x, Snapshot memory y) internal pure {
-        assertEq(keccak256(abi.encode(x)), keccak256(abi.encode(y)), "nothing landed");
-    }
 
     function test_folder_bind_without_a_name_record_lands_nothing() public {
         bytes32 file = Keys.subject(p, keccak256("nameless"));
@@ -521,14 +344,14 @@ contract FilesRecipesTest is FilesFixture {
         Action[] memory a = new Action[](3);
         bytes[] memory b = new bytes[](3);
         a[0] = _create(keccak256("cas"));
-        (a[1], b[1]) = _publish(T_ROOT, bytes.concat(abi.encode(file), "v1"));
+        (a[1], b[1]) = _publish(T_ROOT, bytes.concat(abi.encode(file, uint256(0)), "v1"));
         bytes32 rootRec = _id(T_ROOT, b[1]);
         a[2] = _bind(Purpose.HEAD, file, 0, rootRec, 0);
         _exec("recipe create file without placement", a, b);
         // a plan prepared against revision 0 after the head moved to 1
         a = new Action[](2);
         b = new bytes[](2);
-        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(rootRec, file), "v2"));
+        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(rootRec, file, uint256(0)), "v2"));
         bytes32 childRec = _id(T_CHILD, b[0]);
         a[1] = _bind(Purpose.HEAD, file, 0, childRec, 0);
         Snapshot memory before = _snapshot(rootDir, rootRec);
@@ -550,14 +373,14 @@ contract FilesRecipesTest is FilesFixture {
         Action[] memory a = new Action[](2);
         bytes[] memory b = new bytes[](2);
         a[0] = _create(keccak256("joined"));
-        (a[1], b[1]) = _publish(T_ROOT, bytes.concat(abi.encode(file), "r0"));
+        (a[1], b[1]) = _publish(T_ROOT, bytes.concat(abi.encode(file, uint256(0)), "r0"));
         bytes32 r0 = _id(T_ROOT, b[1]);
         _exec("recipe create + root (no binds)", a, b);
         a = new Action[](1);
         b = new bytes[](1);
         // a missing parent is the kernel's reference check
         bytes32 missing = keccak256("missing parent");
-        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(missing, file), "x"));
+        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(missing, file, uint256(0)), "x"));
         Native memory c = _ctx(a);
         vm.expectRevert(abi.encodeWithSelector(E_REF.selector, uint8(0), uint8(0), uint8(1)));
         r.ledger.execute(a, b, c, "");
@@ -565,90 +388,18 @@ contract FilesRecipesTest is FilesFixture {
         bytes32 unrelated = _id(T_DIRECTORY, abi.encode(file));
         (a[0], b[0]) = _publish(T_DIRECTORY, abi.encode(file));
         _exec("recipe publish directory", a, b);
-        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(unrelated, file), "x"));
+        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(unrelated, file, uint256(0)), "x"));
         c = _ctx(a);
         vm.expectRevert(abi.encodeWithSelector(E_REJECTED.selector, uint8(0), typeIds[T_CHILD]));
         r.ledger.execute(a, b, c, "");
         // a child of a child, cold large documents (L test_cold_large_root_and_child_headers_accept)
-        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(r0, file), new bytes(8128)));
+        (a[0], b[0]) =
+            _publish(T_CHILD, bytes.concat(abi.encode(r0, file, uint256(0)), new bytes(8096)));
         bytes32 large = _id(T_CHILD, b[0]);
         _exec("recipe publish large child", a, b);
-        (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(large, file), "grandchild"));
+        (a[0], b[0]) =
+            _publish(T_CHILD, bytes.concat(abi.encode(large, file, uint256(0)), "grandchild"));
         _exec("recipe publish grandchild", a, b);
-    }
-
-    // ---- content by sha256 -------------------------------------------------------------------------------------
-
-    function test_inline_and_external_content_found_by_sha256() public {
-        bytes memory payload = "hello, efs files";
-        bytes32 digest = sha256(payload);
-        Action[] memory a = new Action[](4);
-        bytes[] memory b = new bytes[](4);
-        (a[0], b[0]) = _publish(T_BYTES, bytes.concat(abi.encode(digest), payload));
-        bytes32 bytesRec = _id(T_BYTES, b[0]);
-        (a[1], b[1]) = _publish(
-            T_CONTENT,
-            abi.encode(
-                bytesRec,
-                uint256(1),
-                uint256(0),
-                uint256(1),
-                payload.length,
-                digest,
-                uint256(0),
-                uint256(0),
-                bytes32(0),
-                payload.length,
-                digest
-            )
-        );
-        bytes32 inlineRec = _id(T_CONTENT, b[1]);
-        (a[2], b[2]) = _publish(T_BYTES, abi.encode(sha256("")));
-        bytes32 sentinel = _id(T_BYTES, b[2]);
-        bytes memory locator = "ar://AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-        (a[3], b[3]) = _publish(
-            T_EXTERNAL,
-            bytes.concat(
-                abi.encode(
-                    sentinel,
-                    uint256(2),
-                    uint256(2),
-                    uint256(1),
-                    payload.length,
-                    digest,
-                    locator.length
-                ),
-                locator
-            )
-        );
-        bytes32 externalRec = _id(T_EXTERNAL, b[3]);
-        _exec("recipe inline bytes + content + sentinel + external", a, b);
-
-        (Coverage cov,,,) = r.g.index.coverageOfDigest(SHA256);
-        assertEq(uint8(cov), uint8(Coverage.COMPLETE));
-        (cov,,,) =
-            r.g.index.coverageOfSpec(FamilyId.wrap(F_DIGEST), TypeId.wrap(typeIds[T_EXTERNAL]), 1);
-        assertEq(uint8(cov), uint8(Coverage.COMPLETE), "the second gen-1 digest spec");
-        bytes32 value = keccak256(abi.encode(bytes32(uint256(SHA256)), digest));
-        (uint64 count,) = _posting(F_DIGEST, 0, value);
-        assertEq(count, 2, "found by sha256, inline and external");
-        uint64[] memory entries;
-        (, entries,) =
-            r.g.index.postingSliceOf(FamilyId.wrap(F_DIGEST), TypeId.wrap(0), 0, value, 0, 8);
-        (, uint64 inlineAt,,,) = r.hot.recordHeader(inlineRec);
-        (, uint64 externalAt,,,) = r.hot.recordHeader(externalRec);
-        assertEq(entries.length, 2);
-        assertEq(entries[0], inlineAt);
-        assertEq(entries[1], externalAt);
-        (, count,, entries) = r.g.index.occurrencesOf(inlineRec);
-        assertEq(count, 1);
-        assertEq(entries[0], inlineAt);
-        (count,) = _posting(F_REFERENCE, typeIds[T_CONTENT], bytesRec);
-        assertEq(count, 1, "content -> bytes reference");
-        // the external locator is retained byte for byte
-        (bytes32 t,, uint32 length,,) = r.hot.recordHeader(externalRec);
-        assertEq(t, typeIds[T_EXTERNAL]);
-        assertEq(length, 224 + locator.length);
     }
 
     // ---- policy, notice ----------------------------------------------------------------------------------------
@@ -687,18 +438,18 @@ contract FilesRecipesTest is FilesFixture {
     // ---- identity across Realms and chains ---------------------------------------------------------------------
 
     function test_type_ids_are_identical_across_realms_and_chains() public {
-        bytes32[9] memory ids = typeIds;
+        bytes32[10] memory ids = typeIds;
         vm.chainId(11_155_111);
         Realm memory other = _realm(keccak256("files/realm-b"));
         assertTrue(other.hot.realmId() != r.hot.realmId());
         assertTrue(other.hot.realmOrigin() != r.hot.realmOrigin());
         // the rule instances are the same deterministic addresses; the descriptors and ids derive alike
         _deployProfile();
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             assertEq(typeIds[t], ids[t], "the same Type id on another chain and Realm");
         }
         _register(other);
-        for (uint8 t; t < 9; ++t) {
+        for (uint8 t; t < 10; ++t) {
             assertEq(other.registry.typeInfo(ids[t]).mandatory, instances[t]);
             assertEq(r.registry.typeInfo(ids[t]).ruleId, other.registry.typeInfo(ids[t]).ruleId);
         }

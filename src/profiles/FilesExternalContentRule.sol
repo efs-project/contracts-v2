@@ -4,24 +4,41 @@ pragma solidity 0.8.37;
 import {IAcceptor, AcceptContext, RefHeader} from "../interfaces/IAcceptor.sol";
 import {FilesProfile, E_FILES_REFUSED} from "./FilesProfile.sol";
 
-/// @title FilesExternalContentRule — the mandatory rule of `files-external/1` (design §12.1)
-/// @notice §12.1 row: "`files-external/1` | NATIVE | 7 words `[bytesRef, version (= 2), carrier (2 ar | 3 ipfs),
-///         hashAlg (1 sha256), length (≤ 2^24), sha256, locatorLength]` ‖ ASCII locator (`ar://` + 43 base64url
-///         chars; `ipfs://` CIDv0 `Qm…` or CIDv1 base32) | `[files-bytes/1]` (1) | `FilesExternalContentRule`:
-///         `refs[0]` is the empty-sentinel bytes record (`refHeaders[0]`: `length == 32 && word0 == sha256("")`),
-///         locator grammar as the prototype's (`L/test/FilesExternalContentProfile.sol:11-40`), no remote proof at
-///         admission; word 5 feeds the digest family through the second gen-1 `DigestSpec`".
-///         The body is exactly `224 + locatorLength` bytes; the locator is 1..512 bytes (the prototype's 704-byte body
-///         cap less its 192-byte head). Locator grammar (the prototype's, byte for byte): `ar://` + 43 of
-///         `[A-Za-z0-9_-]` (48 bytes); `ipfs://` + CIDv0 (`Qm` + 44 base58btc chars) or CIDv1 (`b` + 20..120 of
-///         `[a-z2-7]`), then optional `/segment`s of `[A-Za-z0-9._~-]`, none empty, `.` or `..`.
-/// @dev Pure over calldata and `refHeaders`. Refusal codes (`E_FILES_REFUSED`): 1 not exactly one ref/header,
-///      2 body shorter than the 7-word head, 3 `bytesRef != refs[0]`, 4 version/carrier/hashAlg/length domain,
-///      5 locatorLength not the body tail or outside 1..512, 6 locator grammar, 7 the ref is not the empty sentinel.
+/// @title FilesExternalContentRule — the mandatory rule of `files-external/1` (design §12.1, revised by
+///        docs/LARGE-FILES.md)
+/// @notice `[bytesRef (the empty sentinel), version = 2, carrier = 2, hashAlg = 1, length, sha256, locatorLength] ‖
+///         locator`, refs `[files-bytes/1]` (the kernel checks the exact Type). The body is exactly
+///         `224 + locatorLength` bytes. The locator is a URI of 1..2,048 bytes, every byte printable ASCII
+///         (0x21..0x7e), beginning with an RFC 3986 scheme (`ALPHA *(ALPHA / DIGIT / "+" / "-" / ".") ":"`) with at
+///         least one byte after the colon. There is NO scheme allowlist: `ar://`, `ipfs://`, `bzz://`, `web3://`,
+///         `https://`, `data:` and schemes that do not exist yet are all admitted. A scheme list on an immutable rule
+///         is not a security boundary (rendering safety lives in the client), is trivially evaded and cannot
+///         anticipate new schemes (the v1 ruling of 2026-06-19, ADR-0056, carried into v2). `length` ≤ 2^64 − 1. No
+///         remote proof is taken at admission; readers verify the sha256 (word 5, which feeds the digest family
+///         through the second gen-1 `DigestSpec`). `refs[0]` is the empty-sentinel bytes record (`refHeaders[0]`:
+///         `length == 32 && word0 == sha256("")`).
+/// @dev Pure over calldata and `refHeaders`. Both checks run a word at a time (lane-parallel byte tests; the tail
+///      word's bytes past the locator read as `!`), so a 2,048-byte locator, or a 2,046-byte scheme, costs a few
+///      thousand gas whatever its shape.
+///      Refusal codes (`E_FILES_REFUSED`): 1 not exactly one ref/header, 2 body shorter than the 7-word head,
+///      3 `bytesRef != refs[0]`, 4 version/carrier/hashAlg/length domain, 5 locatorLength not the body tail or
+///      outside 1..2,048, 6 locator grammar (a byte outside 0x21..0x7e, no scheme, or nothing after the colon),
+///      7 the ref is not the empty sentinel.
 contract FilesExternalContentRule is IAcceptor {
     uint256 private constant HEAD = 224;
-    uint256 private constant LOCATOR_MAX = 512;
-    uint256 private constant LENGTH_MAX = 1 << 24;
+    uint256 private constant LOCATOR_MAX = 2_048;
+    /// The one carrier of this Type: an external location given as a URI.
+    uint256 private constant CARRIER_LOCATION = 2;
+    /// Byte lanes (SWAR over 32-byte words; big-endian, so lane 0 is the most significant byte). Every lane test
+    /// below assumes each byte is below 0x80, which the first test establishes, so no lane carries into the next.
+    uint256 private constant LANES =
+        0x0101010101010101010101010101010101010101010101010101010101010101;
+    uint256 private constant HI = LANES * 0x80;
+    /// `!` in every lane: the bytes of the tail word past the locator read as this printable non-scheme byte.
+    uint256 private constant FILL = LANES * 0x21;
+    uint256 private constant COLONS = LANES * 0x3a;
+    uint256 private constant PLUSES = LANES * 0x2b;
+    uint256 private constant ALPHA = 0x7fffffe07fffffe0000000000000000; // a bitmap over 0..127
 
     function accept(
         AcceptContext calldata ctx,
@@ -33,11 +50,10 @@ contract FilesExternalContentRule is IAcceptor {
         if (refs.length != 1 || refHeaders.length != 1) revert E_FILES_REFUSED(1);
         if (body.length < HEAD) revert E_FILES_REFUSED(2);
         if (bytes32(body[0:32]) != refs[0]) revert E_FILES_REFUSED(3);
-        uint256 carrier = uint256(bytes32(body[64:96]));
         if (
-            uint256(bytes32(body[32:64])) != 2 || (carrier != 2 && carrier != 3)
+            uint256(bytes32(body[32:64])) != 2 || uint256(bytes32(body[64:96])) != CARRIER_LOCATION
                 || uint256(bytes32(body[96:128])) != 1
-                || uint256(bytes32(body[128:160])) > LENGTH_MAX
+                || uint256(bytes32(body[128:160])) > FilesProfile.LENGTH_MAX
         ) revert E_FILES_REFUSED(4);
         uint256 locatorLength = uint256(bytes32(body[192:224]));
         if (
@@ -45,8 +61,7 @@ contract FilesExternalContentRule is IAcceptor {
         ) {
             revert E_FILES_REFUSED(5);
         }
-        bytes calldata uri = body[HEAD:];
-        if (carrier == 2 ? !_arweave(uri) : !_ipfs(uri)) revert E_FILES_REFUSED(6);
+        if (!_locator(body[HEAD:])) revert E_FILES_REFUSED(6);
         RefHeader calldata b = refHeaders[0];
         if (b.firstAdmission == 0 || b.length != 32 || b.word0 != FilesProfile.SHA256_EMPTY) {
             revert E_FILES_REFUSED(7);
@@ -54,59 +69,65 @@ contract FilesExternalContentRule is IAcceptor {
         return IAcceptor.accept.selector;
     }
 
-    function _arweave(bytes calldata uri) private pure returns (bool) {
-        if (uri.length != 48 || bytes5(uri[:5]) != bytes5("ar://")) return false;
-        for (uint256 i = 5; i < 48; ++i) {
-            uint8 c = uint8(uri[i]);
-            if (!_alpha(c) && !_digit(c) && c != 0x2d && c != 0x5f) return false;
+    /// Every byte in 0x21..0x7e, an RFC 3986 scheme, a colon, at least one more byte. `uri` is 1..2,048 bytes.
+    function _locator(bytes calldata uri) private pure returns (bool) {
+        uint256 n = uri.length;
+        uint256 off;
+        assembly ("memory-safe") {
+            off := uri.offset
         }
-        return true;
+        // printable: a byte is in 0x21..0x7e iff its high bit is clear and it is in range
+        for (uint256 i; i < n; i += 32) {
+            uint256 w = _word(off, i, n);
+            if (w & HI != 0 || _range(w, 0x21, 0x7e) != HI) return false;
+        }
+        // the scheme: ALPHA first, then scheme bytes; the first byte that is not a scheme byte must be a colon,
+        // and that colon must not be the last byte
+        if ((ALPHA >> uint8(uri[0])) & 1 == 0) return false;
+        for (uint256 i; i < n; i += 32) {
+            uint256 w = _word(off, i, n);
+            uint256 colon = _equal(w, COLONS);
+            uint256 other = HI & ~(_scheme(w) | colon);
+            if (colon | other == 0) continue;
+            // the two masks are disjoint: the larger holds the earliest lane
+            if (colon < other) return false;
+            // the first colon is the last byte iff it is the only colon of the word and sits in the last lane
+            uint256 last = n - 1 - i;
+            return last >= 32 || colon != uint256(0x80) << (8 * (31 - last));
+        }
+        return false;
     }
 
-    function _ipfs(bytes calldata uri) private pure returns (bool) {
-        if (uri.length < 28 || bytes7(uri[:7]) != bytes7("ipfs://")) return false;
-        uint256 end = 7;
-        while (end < uri.length && uri[end] != 0x2f) ++end;
-        if (uri[7] == 0x51) {
-            // CIDv0: "Qm" + base58btc (no 0, I, O, l)
-            if (end != 53 || uri[8] != 0x6d) return false;
-            for (uint256 i = 9; i < end; ++i) {
-                uint8 c = uint8(uri[i]);
-                if (!(_alpha(c) || (c >= 0x31 && c <= 0x39)) || c == 0x49 || c == 0x4f || c == 0x6c)
-                {
-                    return false;
-                }
-            }
-        } else {
-            // CIDv1: multibase "b" + lowercase RFC 4648 base32
-            if (uri[7] != 0x62 || end < 28 || end > 128) return false;
-            for (uint256 i = 8; i < end; ++i) {
-                uint8 c = uint8(uri[i]);
-                if (!((c >= 0x61 && c <= 0x7a) || (c >= 0x32 && c <= 0x37))) return false;
-            }
+    /// The word at `i` of the locator; the lanes past its end read as `FILL`.
+    function _word(uint256 off, uint256 i, uint256 n) private pure returns (uint256 w) {
+        assembly ("memory-safe") {
+            w := calldataload(add(off, i))
         }
-        while (end < uri.length) {
-            uint256 start = ++end;
-            while (end < uri.length && uri[end] != 0x2f) {
-                uint8 c = uint8(uri[end]);
-                if (!_alpha(c) && !_digit(c) && c != 0x2e && c != 0x5f && c != 0x7e && c != 0x2d) {
-                    return false;
-                }
-                ++end;
-            }
-            if (
-                end == start || (end == start + 1 && uri[start] == 0x2e)
-                    || (end == start + 2 && uri[start] == 0x2e && uri[start + 1] == 0x2e)
-            ) return false;
+        uint256 rest = n - i;
+        if (rest < 32) {
+            uint256 keep = ~(type(uint256).max >> (rest * 8));
+            w = (w & keep) | (FILL & ~keep);
         }
-        return true;
     }
 
-    function _alpha(uint8 c) private pure returns (bool) {
-        return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
+    /// High bit of every lane whose byte is in `lo..hi` (`1 ≤ lo ≤ hi ≤ 0x7f`, every byte below 0x80).
+    function _range(uint256 w, uint256 lo, uint256 hi) private pure returns (uint256) {
+        unchecked {
+            return (w + LANES * (0x80 - lo)) & ~(w + LANES * (0x7f - hi)) & HI;
+        }
     }
 
-    function _digit(uint8 c) private pure returns (bool) {
-        return c >= 0x30 && c <= 0x39;
+    /// High bit of every lane equal to the byte repeated in `k` (every byte below 0x80).
+    function _equal(uint256 w, uint256 k) private pure returns (uint256) {
+        unchecked {
+            uint256 x = w ^ k;
+            return ~((x + LANES * 0x7f) | x) & HI;
+        }
+    }
+
+    /// High bit of every lane holding `ALPHA / DIGIT / "+" / "-" / "."`.
+    function _scheme(uint256 w) private pure returns (uint256) {
+        return _range(w, 0x41, 0x5a) | _range(w, 0x61, 0x7a) | _range(w, 0x30, 0x39)
+            | _range(w, 0x2d, 0x2e) | _equal(w, PLUSES);
     }
 }
