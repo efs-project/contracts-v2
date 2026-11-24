@@ -443,6 +443,16 @@ five codehashes against `describe()` and the release.
 
 ## The planning model (`gas/model.json`)
 
+`release/release.json` carries the model as `gasModel`: the constants **keyed by fee schedule** (`schedules.prague`,
+`schedules.amsterdam`; one schedule's constants must never be applied on a chain running the other), the file's
+sha256, and a **joint envelope**. The Realm limits allow a publication of 64 actions and 16,384 body bytes, which can
+need about 28M gas, more than the 16,777,216 one transaction may carry (EIP-7825). `gasModel.envelope` therefore
+states what one atomic publication realistically holds, as the smallest of the gas budget (the cap less 15% headroom
+for intrinsic gas, calldata and the model's error, less the fixed cost) and the two Realm limits, for six named
+shapes: a small and a 1 KB edit, a small and a 1 KB create, an 8 KB chunk and a span node. It is for user-facing
+messages ("this save is too large to be atomic"); a planner uses the constants and confirms with `eth_estimateGas`.
+Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`.
+
 `pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
 rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
 + perByte·n` and one constant per other action kind and purpose, plus a once-per-principal first-write surcharge

@@ -199,6 +199,62 @@ assert.deepEqual(constants.files.contentCarrier, { INLINE: 0, REMOTE: 1, SPAN: 2
 assert.equal(constants.files.chunking.chunkPayload, 8160);
 assert.equal(constants.purposes.FOLDER.id, plan.index.units[0].purposeFilter ?? constants.purposes.FOLDER.id, "Purpose.FOLDER != the validator unit's purpose filter");
 
+// ---- the planning gas model (gas/model.json, measured by tools/gas-model.mjs) and the joint envelope ----------------
+// The Realm limits (64 actions, 16,384 body bytes) jointly allow a publication of about 28M gas, more than one
+// transaction may carry under EIP-7825. The envelope says what one atomic publication realistically holds: the
+// smallest of the gas budget and the two Realm limits, for a few named shapes, per fee schedule.
+const MODEL = "gas/model.json";
+const model = JSON.parse(src(MODEL));
+assert.equal(model.schema, "efs-gas-model/1", `${MODEL}: run \`pnpm run gas:model\``);
+const TX_GAS_CAP = 16_777_216; // EIP-7825
+const HEADROOM_PERCENT = 15; // intrinsic gas, calldata and the model's own error (under 8% on both schedules)
+const SHAPES = {
+  editSmall: { what: "edit a file: PUBLISH files-child/1 form 0 with 100 bytes of content, rebind HEAD", actions: 2, bodyBytes: 196 },
+  edit1k: { what: "the same with 1,024 bytes of content", actions: 2, bodyBytes: 1120 },
+  createSmall: { what: "create a file: CREATE, PUBLISH files-root/1 form 0 with 100 bytes, PUBLISH a 12-byte name, BIND HEAD, BIND FOLDER", actions: 5, bodyBytes: 176 },
+  create1k: { what: "the same with 1,024 bytes of content", actions: 5, bodyBytes: 1100 },
+  chunk: { what: "PUBLISH one 8,192-byte files-bytes/1 chunk (8,160 file bytes)", actions: 1, bodyBytes: 8192 },
+  spanNode: { what: "PUBLISH one files-span/1 node", actions: 1, bodyBytes: 96 },
+};
+const publishCost = (c, type, bytes) => c.publishNew[type] + c.perWord * Math.ceil(bytes / 32) + c.perByte * bytes;
+const shapeCost = (c) => ({
+  editSmall: publishCost(c, "files-child/1 form 0", 196) + c.bindHeadRebind,
+  edit1k: publishCost(c, "files-child/1 form 0", 1120) + c.bindHeadRebind,
+  createSmall: c.create + publishCost(c, "files-root/1 form 0", 164) + publishCost(c, "files-name/2", 12) + c.bindHeadFresh + c.bindFolderFreshFile,
+  create1k: c.create + publishCost(c, "files-root/1 form 0", 1088) + publishCost(c, "files-name/2", 12) + c.bindHeadFresh + c.bindFolderFreshFile,
+  chunk: publishCost(c, "files-bytes/1", 8192),
+  spanNode: publishCost(c, "files-span/1", 96),
+});
+/** `capped`: the constants the cap applies to (all gas today; execution gas only under EIP-8037). */
+const envelopeOf = (capped, total) => {
+  const budget = Math.floor((TX_GAS_CAP * (100 - HEADROOM_PERCENT)) / 100) - capped.fixed;
+  const [costCapped, costTotal] = [shapeCost(capped), shapeCost(total)];
+  return Object.fromEntries(Object.entries(SHAPES).map(([k, s]) => {
+    const by = { gas: Math.floor(budget / costCapped[k]), maxActions: Math.floor(plan.limits.maxActions / s.actions), maxBodyBytesPerPublication: Math.floor(plan.limits.maxBodyBytesPerPublication / s.bodyBytes) };
+    const count = Math.max(0, Math.min(...Object.values(by)));
+    return [k, { count, boundBy: Object.keys(by).find((b) => by[b] === count), gasEach: Math.round(costTotal[k]), gasOfPublication: Math.round(total.fixed + count * costTotal[k]) }];
+  }));
+};
+const [mp, ma] = [model.profiles.prague, model.profiles.amsterdam];
+const gasModel = {
+  schema: model.schema, path: MODEL, sha256: sha256(readFileSync(join(root, MODEL))),
+  note: "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
+  schedules: {
+    prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", constants: mp.constants, maxAbsErrorPercent: mp.maxAbsErrorPercent },
+    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", constants: ma.constants, executionGas: ma.split?.executionGas ?? null, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
+  },
+  envelope: {
+    what: "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",
+    txGasCap: TX_GAS_CAP, txGasCapRule: "EIP-7825", headroomPercent: HEADROOM_PERCENT,
+    budgetRule: "floor(txGasCap × (100 − headroomPercent) / 100) − fixed, on the gas the cap counts",
+    limits: { maxActions: plan.limits.maxActions, maxBodyBytesPerPublication: plan.limits.maxBodyBytesPerPublication },
+    shapes: SHAPES,
+    prague: envelopeOf(mp.constants, mp.constants),
+    ...(ma?.split?.executionGas ? { amsterdam: envelopeOf(ma.split.executionGas, ma.constants) } : {}),
+  },
+};
+assert.equal(gasModel.envelope.prague.chunk.count, 2, "two 8 KB chunks per publication is the release's stated envelope today");
+
 // ---- the manifest --------------------------------------------------------------------------------------------------
 const settings = artifact("LedgerCore").settings;
 const forgeVersion = (() => { try { return execFileSync("forge", ["--version"]).toString().split("\n")[0].trim(); } catch { return null; } })();
@@ -233,6 +289,7 @@ const manifest = {
     crossCheck: scriptCheck,
   },
   constants,
+  gasModel,
   consumer: { pragmaFloor: "^0.8.27", tested: [{ solc: "0.8.27", viaIR: false, profile: "closure" }, { solc: artifact("LedgerCore").compiler.version, viaIR: true, evm: settings.evmVersion, profile: "default" }], remapping: "@efs/contracts/=src/" },
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
   errors: { path: "release/errors.json", sha256: sha256(Buffer.from(generated.get("release/errors.json"))), count: Object.keys(errors).length },

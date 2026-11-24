@@ -4,7 +4,7 @@
   "title": "efs-contracts-release/1 — the release manifest of design §13",
   "description": "Written by tools/release.mjs from the identity build (out/) and the double build (out/release-ast). Digest = sha256 of the file bytes.",
   "type": "object",
-  "required": ["schema", "version", "status", "source", "toolchain", "buildPlatform", "reproducibility", "files", "contracts", "profiles", "constants", "consumer", "privilegedRoles", "errors", "abi", "vectors", "dependencyRoot", "deployPlan"],
+  "required": ["schema", "version", "status", "source", "toolchain", "buildPlatform", "reproducibility", "files", "contracts", "profiles", "constants", "gasModel", "consumer", "privilegedRoles", "errors", "abi", "vectors", "dependencyRoot", "deployPlan"],
   "properties": {
     "schema": { "const": "efs-contracts-release/1" },
     "toolchain": { "type": "object", "required": ["solc", "evmVersion", "optimizer", "viaIR", "bytecodeHash", "cborMetadata"], "properties": { "bytecodeHash": { "const": "none" }, "evmVersion": { "const": "prague" } } },
@@ -20,6 +20,7 @@
     },
     "profiles": { "type": "object", "required": ["declarationKey", "types", "acceptors", "wrappers", "index", "limits", "layoutId", "hotAbiId", "statusVocabularyId", "storeAbiIds", "indexProfiles", "crossCheck"] },
     "constants": { "type": "object", "required": ["from", "actionKinds", "capabilities", "purposes", "status", "coverage", "files"], "properties": { "purposes": { "type": "object", "required": ["HEAD", "FOLDER", "TAG"] }, "status": { "type": "object", "required": ["id", "preimage", "codes"] }, "files": { "type": "object", "required": ["form", "contentCarrier", "externalCarrier", "hashAlg", "lengthMax", "chunking"] } } },
+    "gasModel": { "type": "object", "required": ["schema", "path", "sha256", "note", "schedules", "envelope"], "properties": { "schedules": { "type": "object", "required": ["prague"] }, "envelope": { "type": "object", "required": ["txGasCap", "headroomPercent", "limits", "shapes", "prague"] } } },
     "errors": { "type": "object", "required": ["path", "sha256", "count"] }
   }
 }
