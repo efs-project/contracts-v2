@@ -76,7 +76,8 @@
     "index": "0x57B3FA1f0716FfF77B2281e16C20eDf201EEBEF2",
     "lensReader": "0x28336bB6a179fd6050B58Acf4A5ce539F7Cd2EBc",
     "filesPageReader": "0xfCC0B4C67212376A9FEb5B99962A2ebb025520e6",
-    "keysView": "0xc50e6A0358F85189e6Eb661eD1a9C73C40f12f30"
+    "keysView": "0xc50e6A0358F85189e6Eb661eD1a9C73C40f12f30",
+    "web3Gateway": "0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81"
   },
   "readers": {
     "lens": {
@@ -91,6 +92,14 @@
       "kindLabel": "efs2/reader/files-page/1",
       "runtimeCodehash": "0x9cd4d2705f1e747ae52c67b6697aab2cbdbc6c43a6ba24f1001ad921c030be86"
     }
+  },
+  "gateway": {
+    "address": "0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81",
+    "runtimeCodehash": "0x5dce809527ba5529f80733b6ba8c8d10d21258104d17aae59bb50c63dde9aa67",
+    "resolveMode": "5219",
+    "rootDirectory": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+    "pager": "0xfCC0B4C67212376A9FEb5B99962A2ebb025520e6",
+    "urlBase": "web3://0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81:31337/"
   },
   "hotAbiIdString": "efs2/ledger-hot/1",
   "realm": {
@@ -1613,6 +1622,37 @@
       "calldataHash": "0xcdc11cce54268607283d1ce752d535e1ce367a8ddf9464de166a90408a75ffa7"
     },
     {
+      "id": "R5",
+      "kind": "CREATE2",
+      "contract": "EfsWeb3Gateway",
+      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "address": "0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xc5c8b3e0d5133339ff253046965c03ba292e00e02cd6ea19cf603d2b6a649607",
+      "initcodeBytes": 19044,
+      "args": [
+        "0x984Bf266EA4F907Afe58b5C25E31D3e0BA503373",
+        "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
+        "0x1e954B7BecbD1837d49A8cc08C29bB2f0A44d19E",
+        "0xfCC0B4C67212376A9FEb5B99962A2ebb025520e6",
+        "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+        {
+          "directory": "0x8fc69710f2ebb5ab3215522610fa4e57cf0067424bfbf568864ab137b4da5db4",
+          "name": "0x1aac55f25880a9ca3c27bb7487da1c634526ea249d7f64cf6f2050554f96ef3c",
+          "root": "0xd5bc6b65dd10e76dbde4918ff91ef2c2594974aa36a487e2d3a4cd57a62c5150",
+          "child": "0x8040fbaa0014e553f6c497f4401b565361cc3109b5f6ae842a0367d7fe5fa46c",
+          "content": "0x63ad9520baa088dab884edb2a56b170e8a6c8fd77ff29605ec251e4d19b4fe42",
+          "external_": "0xfce5a86c4a56b54e32d18a8c40c0d6fc6c4a42f8b81210eef524f1e4e3877980",
+          "bytes_": "0xe03579c5c713db3e9429a4882c24b494a15e9298750512c33618e6691039f3d2",
+          "span": "0xb2a3caad1cb9e768cf6eb21a4da6a1debcedeba3fd303418db220f59816d5a01"
+        }
+      ],
+      "runtimeCodehash": "0x5dce809527ba5529f80733b6ba8c8d10d21258104d17aae59bb50c63dde9aa67",
+      "runtimeBytes": 17570,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xd213fcffc48ca3a2cb90c1da95adc2efcc83009e6ecc914d1336cfa712b5c557"
+    },
+    {
       "id": "G22.root",
       "kind": "EXECUTE",
       "contract": "LedgerCore",
@@ -2057,5 +2097,5 @@
       "postCheck": "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"
     }
   ],
-  "planHash": "0x0f14f8b6bf3fcff1e9403b522d1fb3a7ccc452a7481d25758822d66fa840f255"
+  "planHash": "0x8a60763b54c94ce569c18dff2320d7debafc31c5b660273bd1f42ba938be8cfc"
 }

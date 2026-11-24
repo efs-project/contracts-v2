@@ -11,9 +11,9 @@ import {IWeb3Gateway, KeyValue} from "../interfaces/IWeb3Gateway.sol";
 
 /// The inner frame's answer for anything other than a served response: `request` returns it as
 /// `(status, reason)` with a `text/plain` body. Never escapes `request`.
-error E_WEB3_STATUS(uint16 status, string reason);
+error E_WEB3_STATUS(uint16 status, string reason); // none
 /// Constructor only: 1 a zero ledger or facet, 2 a page reader bound to another ledger.
-error E_WEB3_CONFIG(uint8 code);
+error E_WEB3_CONFIG(uint8 code); // none
 
 // Narrowing casts are record offsets and lengths bounded by the record's own 32-bit length, or ASCII bytes; the
 // gateway reads the ledger row by row, so calls in loops are its purpose, bounded by the path depth, the lens
@@ -373,7 +373,8 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         ) {
             if (page.q.status == Status.UNSUPPORTED) _fail(503, "listing unsupported");
             if (page.q.status != Status.PRESENT) _fail(500, "listing refused");
-            bool complete = page.listingCoverage == Coverage.COMPLETE;
+            // complete only when the pager proves it and offers no continuation: a listing is never silently short
+            bool complete = page.listingCoverage == Coverage.COMPLETE && page.next.length == 0;
             _add(q, "Content-Type", "application/json");
             _add(q, "x-efs-listing", complete ? "complete" : "partial");
             return (200, _json(page.rows, complete), _headers(q));
@@ -453,9 +454,9 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         q.lens = new bytes32[](count);
         q.lens[0] = first;
         q.lensParam = lens;
-        uint256 from;
+        uint256 from = 0;
         uint256 k = 1;
-        for (uint256 i; i <= lens.length && lens.length != 0; ++i) {
+        for (uint256 i = 0; i <= lens.length && lens.length != 0; ++i) {
             if (i == lens.length || lens[i] == ",") {
                 q.lens[k++] = _principal(lens[from:i]);
                 from = i + 1;
@@ -522,7 +523,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             if (!_unreserved(s[i])) n += 2;
         }
         out = new bytes(n);
-        uint256 k;
+        uint256 k = 0;
         for (uint256 i; i < s.length; ++i) {
             bytes1 c = s[i];
             if (_unreserved(c)) {

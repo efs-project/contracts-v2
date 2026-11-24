@@ -68,6 +68,8 @@ The contracts engineer (Fable) designs and writes the kernel, the apply and ingr
 | S1b.1 rules | done (75 tests; the M1 recipes end to end; gas on both schedules in `docs/GAS-SCHEDULES.md`) | `src/profiles/`, `test/profiles/`, `test/integration/FilesRecipes.t.sol` |
 | S1b.2 readers | done (`LensReader/1` 17,043 B, 48 tests; `FilesPageReader/1` 12,676 B, 45 tests; `EfsFiles`) | `src/readers/{LensReader,FilesPageReader}.sol`, `src/lib/EfsFiles.sol`; `test/readers` |
 | S1b.3 release surface | done (verify re-derives 263 facts; readers and the release hot-ABI id being folded in) | `tools/{deploy-plan,efs-fixture,release,gas-report}.mjs`, `deploy/plan.json`, `release/`, `artifacts/`, `gas/report.json`, `schemas/` |
+| Large files and `web3://` (2026-11-24) | done (`docs/LARGE-FILES.md`; ten Files Types; `EfsWeb3Gateway/1` 17,570 B, 39 tests; the fixture reads its seed back through the gateway; verify re-derives 368 facts) | `src/profiles/FilesSpanRule.sol`, `src/periphery/EfsWeb3Gateway.sol`, `src/interfaces/IWeb3Gateway.sol`; `test/periphery/EfsWeb3Gateway*.t.sol`, `test/integration/FilesLargeFiles.t.sol` |
+| Snapshot rule (2026-11-24) | done (`pnpm release:check` in CI; every catalog error classified; `constants` in `release.json`) | `tools/release.mjs`, `.github/workflows/check.yml` |
 | C1 | closed for sizes and the M1 write rows (adoption notes 16 and 21, `docs/GAS-SCHEDULES.md`, `gas/report.json`); open: the two sides of 2^24, per-row slot counts, the 48-bit decision rule |
 
-Open items for James are Q1–Q45 (Q35 and Q42 closed) in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.
+Open items for James are Q1–Q46 (Q35 and Q42 closed) in `QUESTIONS-FOR-JAMES.md`; the engineering notes that fold into the next design revision are the adoption notes in `DESIGN.md`.

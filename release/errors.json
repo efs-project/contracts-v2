@@ -1475,6 +1475,36 @@
       "retryClass": "resubmit",
       "meaning": null
     },
+    "0x2b884791": {
+      "name": "E_WEB3_CONFIG",
+      "signature": "E_WEB3_CONFIG(uint8)",
+      "args": [
+        {
+          "type": "uint8",
+          "name": "code"
+        }
+      ],
+      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "retryClass": "none",
+      "meaning": "Constructor only: 1 a zero ledger or facet, 2 a page reader bound to another ledger."
+    },
+    "0x25058ee6": {
+      "name": "E_WEB3_STATUS",
+      "signature": "E_WEB3_STATUS(uint16,string)",
+      "args": [
+        {
+          "type": "uint16",
+          "name": "status"
+        },
+        {
+          "type": "string",
+          "name": "reason"
+        }
+      ],
+      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "retryClass": "none",
+      "meaning": "The inner frame's answer for anything other than a served response: `request` returns it as `(status, reason)` with a `text/plain` body. Never escapes `request`."
+    },
     "0xcb944f40": {
       "name": "E_WITHDRAW",
       "signature": "E_WITHDRAW(uint8,uint8)",

@@ -203,7 +203,7 @@ export const UNITS = {
   FilesBytesRule: "FilesBytesRule", FilesContentRule: "FilesContentRule", FilesExternalContentRule: "FilesExternalContentRule",
   DirectoryAliasRule: "DirectoryAliasRule", RealmNoticeRule: "RealmNoticeRule", RefuseAllPolicy: "RefuseAllPolicy",
   TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin", LensReader: "LensReader", FilesPageReader: "FilesPageReader",
-  FilesSpanRule: "FilesSpanRule", KeysView: "KeysView",
+  FilesSpanRule: "FilesSpanRule", KeysView: "KeysView", EfsWeb3Gateway: "EfsWeb3Gateway",
 };
 
 // ---- immutables: names → offsets ------------------------------------------------------------------------------------
@@ -562,6 +562,14 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const realmOrigin = keys.realmOrigin(chainId, ledgerProxy, realmSalt);
   const realm = { chainId, realmSalt, realmOrigin, realmId: keys.realmId(realmOrigin, executionProfileId), executionProfileId, domainSeparator: domainSeparator(chainId, ledgerProxy), limitsProfileId: limitsHash, indexObligations: keccak256(enc(["address", "bytes32", "bytes32"], [index.address, index.runtimeCodehash, mHash])) };
   const seed = seedPlan({ ids, principalId: keys.principal(owner) });
+  // R5: the web3:// gateway (ERC-5219 with ERC-7617 chunks; docs/LARGE-FILES.md), bound to the seed's root directory
+  // record and the page reader. A reader outside the execution set and outside the ReaderDirectory (not an IReader).
+  const rootDirectory = seed.expected.root.directoryRecordId;
+  const gatewayTypes = { directory: ids[T.DIRECTORY], name: ids[T.NAME], root: ids[T.ROOT], child: ids[T.CHILD], content: ids[T.CONTENT], external_: ids[T.EXTERNAL], bytes_: ids[T.BYTES], span: ids[T.SPAN] };
+  const gateway = add("R5", "EfsWeb3Gateway", [ledgerProxy, reads.address, views.address, page.address, rootDirectory, gatewayTypes], {
+    LEDGER: ledgerProxy, READS: reads.address, VIEWS: views.address, PAGER: page.address, LAYOUT: layoutId, ROOT_DIRECTORY: rootDirectory,
+    DIRECTORY_TYPE: ids[T.DIRECTORY], NAME_TYPE: ids[T.NAME], ROOT_TYPE: ids[T.ROOT], CHILD_TYPE: ids[T.CHILD], CONTENT_TYPE: ids[T.CONTENT], EXTERNAL_TYPE: ids[T.EXTERNAL], BYTES_TYPE: ids[T.BYTES], SPAN_TYPE: ids[T.SPAN],
+  });
   steps.push(...seed.steps.map((s) => ({ id: s.id, kind: "EXECUTE", contract: "LedgerCore", to: ledgerProxy, from: owner, label: s.label, actions: jsonable(s.actions), bodies: s.bodies, marker: s.marker, postCheck: s.postCheck })));
 
   return {
@@ -569,8 +577,9 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     chainId, realmSalt, owner, fixturePrincipal: owner, declarationKey: owner, factory: FACTORY.address,
     hotAbiId: HOT_ABI_ID, layoutId, executionProfileId, limits: LIMITS, workModel: WORK_MODEL,
     genesis: { address: G, nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } },
-    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address },
+    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address, web3Gateway: gateway.address },
     readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs2/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs2/reader/files-page/1", runtimeCodehash: page.runtimeCodehash } },
+    gateway: { address: gateway.address, runtimeCodehash: gateway.runtimeCodehash, resolveMode: "5219", rootDirectory, pager: page.address, urlBase: `web3://${gateway.address}:${chainId}/` },
     hotAbiIdString: HOT_ABI_ID_STRING,
     realm, activation: set, index: { address: index.address, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
     profile, seed: seed.expected, units, steps,
