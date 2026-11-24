@@ -123,6 +123,38 @@ ready `seedUrl`) and `verify` reads the three seed files back through it, follow
 (the fixture's seed root). What a principal's root is (a shared Realm root, a home per principal) is not ruled; the
 answer changes the gateway's constructor argument or its first path segment, and nothing in the kernel.
 
+## What a size costs on chain (measured 2026-11-24)
+
+Measured in `test/integration/FilesLargeFiles.t.sol` on both schedules (`docs/GAS-SCHEDULES.md`); the totals for
+whole files are computed from those rows. A chunk is 8,160 file bytes in an 8,192-byte record.
+
+| Row | Today (prague) | After Glamsterdam (amsterdam) |
+|---|---:|---:|
+| One more chunk in a publication | 6.09M | 28.88M |
+| Per 1,000 file bytes | 0.75M | 3.54M |
+| One more span node | 0.32M | 1.05M |
+| A publication's fixed part | 0.39M | 1.28M |
+| The finish (descriptor, revision, name, CREATE, two binds) | 1.50M | 5.31M |
+| A two-chunk publication, measured whole | 12.57M | 59.04M |
+
+What bounds one publication: the Realm limits allow 16,384 body bytes (two chunks). Today the 16.78M per-transaction
+gas cap allows the same and no more: a third chunk would need 18.7M. After Glamsterdam the cap counts execution gas
+only (about 3.8M per chunk, derived), so gas no longer binds per transaction; the total (59M for two chunks) then
+has to fit the chain's block limit, which may force one chunk per publication.
+
+| File | Chunks | Publications | Gas today | Gas after Glamsterdam | Wallet prompts, native lane | Prompts with a session |
+|---|---:|---:|---:|---:|---:|---:|
+| 100 KB | 13 | 7 | 87M | 402M | 7 | 1 |
+| 1 MB | 123 | ≈ 64 | 815M | 3.77 billion | ≈ 64 | 1 |
+| 10 MB | 1,226 | ≈ 638 | 8.11 billion | 37.5 billion | ≈ 638 | 1 |
+
+A session (`docs/SESSION-LANE.md`) changes the prompt column only: the publications, the gas and the number of
+transactions stay the same, plus an estimated 0.17M per publication today (0.8M after Glamsterdam). For scale, at a
+60M block gas limit (an assumption, not checked against any chain) a 1 MB file is the gas of about 14 full blocks
+today and a 10 MB file about 135. At a gas price of 1 gwei, 1 MB costs about 0.8 ETH today. Span publications are
+bounded by gas before the 64-action limit (about 50 span nodes per transaction today), so a client must split by the
+gas quote and not only by action and byte counts.
+
 ## What changes in the repository
 
 `src/profiles/` (the four rules above, the new `FilesSpanRule`, `FilesTypes`), `src/lib/EfsFiles.sol` (encoders, the
