@@ -24,6 +24,7 @@
     "abi:snapshot": "node tools/abi-snapshot.mjs",
     "abi:check": "node tools/abi-snapshot.mjs --check",
     "release": "node tools/release.mjs",
+    "release:check": "node tools/release.mjs --check 1",
     "plan": "node tools/deploy-plan.mjs",
     "fixture:up": "node tools/efs-fixture.mjs up",
     "fixture:verify": "node tools/efs-fixture.mjs verify",

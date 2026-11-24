@@ -342,6 +342,7 @@ function capabilitiesOf(plan, signer) {
     largeFiles: plan.seed.files.some((f) => f.contentRecordId),
     externalLocations: plan.seed.files.some((f) => f.externalRecordId),
     keysView: !!plan.addresses.keysView,
+    web3Gateway: !!plan.addresses.web3Gateway,
     readers: [plan.readers.lens.kindLabel, plan.readers.filesPage.kindLabel],
     signerCapable: signer.signerCapable,
     unlockedAccounts: signer.accounts,
@@ -356,8 +357,10 @@ function upResult(lease, plan, { home, releaseWritten }) {
     rpcUrl: lease.url, host: lease.host, port: lease.port, chainId: lease.chainId, realmSalt: lease.realmSalt, realmId: plan.realm.realmId,
     pid: lease.pid, stateDir: lease.stateDir, deployment: lease.deployment, expected: lease.expected, journal: lease.journal, log: lease.log,
     ledger: a.ledgerProxy, registry: a.registryProxy, controller: a.controller,
-    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, lensReader: a.lensReader, filesPageReader: a.filesPageReader, keysView: a.keysView },
+    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, lensReader: a.lensReader, filesPageReader: a.filesPageReader, keysView: a.keysView, web3Gateway: a.web3Gateway },
     keysView: a.keysView,
+    web3Gateway: a.web3Gateway,
+    web3Url: `${plan.gateway.urlBase}${plan.seed.principalId}/`,
     layoutId: plan.layoutId, root: plan.seed.root, seed: seedIds(plan), typeIds: Object.fromEntries(plan.profile.map((p) => [p.type, p.typeId])),
     signerCapable: lease.signerCapable, capabilities: lease.capabilities,
     ttl: lease.ttl, startedAt: lease.startedAt, expiresAt: lease.expiresAt,
@@ -535,6 +538,8 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
       lensReader: { address: a.lensReader, runtimeCodehash: plan.readers.lens.runtimeCodehash, kind: plan.readers.lens.kind, kindLabel: plan.readers.lens.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R1?.txHash ?? null },
       filesPageReader: { address: a.filesPageReader, runtimeCodehash: plan.readers.filesPage.runtimeCodehash, kind: plan.readers.filesPage.kind, kindLabel: plan.readers.filesPage.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, nameType: typeIds["files-name/2"], rootType: typeIds["files-root/1"], childType: typeIds["files-child/1"], txHash: tx.R2?.txHash ?? null },
       listed: await listedReaders(pub, plan),
+      // ERC-5219 over web3:// (docs/LARGE-FILES.md): `${urlBase}<principal>/<name>/…[?lens=<p>,<p>][&offset=<n>]`
+      web3Gateway: { ...plan.gateway, ledger: a.ledgerProxy, reads: a.ledgerReads, views: a.ledgerViews, layoutId: plan.layoutId, seedUrl: `${plan.gateway.urlBase}${plan.seed.principalId}/`, txHash: tx.R5?.txHash ?? null },
     },
     seed: { ...seedIds(plan), transactions: plan.steps.filter((s) => s.kind === "EXECUTE").map((s) => ({ id: s.id, label: s.label, txHash: s.txHash ?? tx[s.id]?.txHash ?? null, publication: s.publication ?? tx[s.id]?.publication ?? null, actions: s.actions, bodies: s.bodies })) },
     root: plan.seed.root,
@@ -865,6 +870,44 @@ export async function verify(o = {}) {
   eq("readers page.listingCoverage", pg.listingCoverage, 3); // COMPLETE
   const rec = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, exp.file.rootRecordId]);
   eq("readers record", [rec[0], rec[1].typeId, rec[1].word0, rec[2]], [2, dep.typeIds["files-root/1"], exp.file.subjectId, exp.file.body]);
+
+  // 9d. the web3:// gateway (ERC-5219 + ERC-7617): its immutables, then the seed read back through `request`
+  const gw = a.web3Gateway;
+  eq("gateway deployment", [dep.readers.web3Gateway?.address, dep.readers.web3Gateway?.rootDirectory], [gw, exp.root.directoryRecordId]);
+  eq("gateway resolveMode", await read(pub, gw, "EfsWeb3Gateway", "resolveMode"), pad(toHex("5219"), { dir: "right", size: 32 }));
+  for (const [fn, value] of [["ledger", a.ledgerProxy], ["READS", a.ledgerReads], ["VIEWS", a.ledgerViews], ["PAGER", pageR], ["layoutId", plan.layoutId], ["ROOT_DIRECTORY", exp.root.directoryRecordId],
+    ["DIRECTORY_TYPE", dep.typeIds["files-directory/1"]], ["NAME_TYPE", dep.typeIds["files-name/2"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]],
+    ["CONTENT_TYPE", dep.typeIds["files-content/1"]], ["EXTERNAL_TYPE", dep.typeIds["files-external/1"]], ["BYTES_TYPE", dep.typeIds["files-bytes/1"]], ["SPAN_TYPE", dep.typeIds["files-span/1"]]]) {
+    eq(`gateway ${fn}`, await read(pub, gw, "EfsWeb3Gateway", fn), value);
+  }
+  // what a web3:// client does with a URL path: split, percent-decode, call request(); the body is bytes, not UTF-8
+  const web3Get = async (path) => {
+    const u = new URL(path, "http://gateway.invalid");
+    const resource = u.pathname.split("/").slice(1).map(decodeURIComponent);
+    const params = [...u.searchParams].map(([key, value]) => ({ key, value }));
+    const { data } = await pub.call({ to: gw, data: encodeFunctionData({ abi: abiOf("EfsWeb3Gateway"), functionName: "request", args: [resource, params] }) });
+    const [status, body, headers] = decodeAbiParameters([{ type: "uint16" }, { type: "bytes" }, { type: "tuple[]", components: [{ name: "key", type: "string" }, { name: "value", type: "string" }] }], data);
+    return { status, body, headers: Object.fromEntries(headers.map((h) => [h.key.toLowerCase(), h.value])) };
+  };
+  const [gwReadme, gwBig, gwRemote] = exp.files;
+  const base = `/${exp.root.principalId}/docs`;
+  const one = await web3Get(`${base}/${gwReadme.name}`);
+  eq("gateway readme", [one.status, sha256(one.body), size(one.body), one.headers["content-type"], one.headers["x-efs-record"]], [200, gwReadme.sha256, gwReadme.length, "text/plain; charset=utf-8", gwReadme.headRecordId]);
+  eq("gateway readme by account", (await web3Get(`/${dep.actors.fixturePrincipal}/docs/${gwReadme.name}`)).body, one.body);
+  const parts = [];
+  for (let url = `${base}/${gwBig.name}`; url; ) {
+    const r = await web3Get(url);
+    eq(`gateway big chunk ${parts.length}`, [r.status, r.headers["content-length"], r.headers["x-efs-sha256"]], [200, String(gwBig.length), gwBig.sha256]);
+    parts.push(r.body);
+    url = r.status === 200 && parts.length <= gwBig.chunkCount ? r.headers["web3-next-chunk"] : undefined;
+  }
+  const whole = concatHex(parts);
+  eq("gateway big", [parts.length, size(whole), sha256(whole)], [gwBig.chunkCount, gwBig.length, gwBig.sha256]);
+  const moved = await web3Get(`${base}/${gwRemote.name}`);
+  eq("gateway remote", [moved.status, moved.headers.location, moved.headers["x-efs-sha256"]], [307, gwRemote.locator, gwRemote.sha256]);
+  const listed = await web3Get(base);
+  eq("gateway listing", [listed.status, listed.headers["x-efs-listing"], JSON.parse(hexToString(listed.body))], [200, "complete", { entries: exp.files.map((f) => ({ name: f.name, kind: "file" })), complete: true }]);
+  eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get("/not-a-principal/docs")).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 400, 416]);
 
   // 10. cold pin (design §12.3): what an SDK with only release.json + efs-deployment.json does on first contact
   rpc.reset();

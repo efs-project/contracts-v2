@@ -87,9 +87,45 @@ Two directions, both in the core design:
    no kernel support: every fact it serves is a hot read or a facet read. Being a reader, it can be added, fixed
    and replaced after a freeze.
 
+### The gateway as built (`EfsWeb3Gateway/1`)
+
+`web3://<gateway>:<chainId>/<principal>[/<name>…][/][?lens=<principal>,<principal>…][&offset=<n>]`
+
+- `<principal>` is 64 hex digits, `0x` + 64 hex digits, or `0x` + 40 hex digits for a key account (an EOA or an
+  EIP-7702 account). A contract account in address form is `400`: its principal depends on the Realm, so name it by
+  id. Hex is case-insensitive.
+- `lens` adds fall-through principals after the path principal (64 in all at most). For each name the first
+  principal with a live binding wins; a mask stops the walk (`404`); unset and released fall through.
+- `offset` (decimal, default 0) is the first byte served. A large file is one chunk per response; the
+  `web3-next-chunk` header carries the URL of the next one, so an ERC-7617 client streams the whole file.
+- At most 32 names of 1..255 bytes. A trailing slash is ignored.
+
+| Status | When |
+|---|---|
+| 200 | a file's bytes or one chunk of them; a directory as JSON `{"entries":[{"name","kind"}…],"complete":bool}` |
+| 307 | the file is a `files-external/1` location; `Location` carries the URI |
+| 400 | malformed principal, lens or offset; an empty name; too many names or principals |
+| 404 | no such name, a removed (masked) name, a file used as a folder, no revision, remote-only content |
+| 416 | `offset` at or past the end (offset 0 of an empty file is `200`) |
+| 500 | a broken Files invariant (wrong Type or length, a missing tree node) or a failed listing |
+| 503 | another ledger layout, or a read the facet refuses |
+
+Headers: `Content-Type` (from the last name's extension), `Content-Length` (the whole file), `x-efs-record` (the
+revision or directory record), `x-efs-sha256` (the descriptor's digest: for a span tree and for an external location
+it is the author's claim, verify after reading), `x-efs-cipher`, `x-efs-listing: complete|partial`. `request` never
+reverts for anything a URL can cause. A directory lists one page of 64 entries; a longer directory is `partial`.
+
+Measured in the suites (cold storage): an inline file 0.13M gas, an 8,160-byte chunk at tree depth 3 about 1.2M, a
+7-entry listing 0.88M. A local fixture deploys the gateway (`readers.web3Gateway` in `efs-deployment.json`, with a
+ready `seedUrl`) and `verify` reads the three seed files back through it, following `web3-next-chunk`.
+
+**Open, with the directory questions:** the gateway is bound to one root `files-directory/1` record at construction
+(the fixture's seed root). What a principal's root is (a shared Realm root, a home per principal) is not ruled; the
+answer changes the gateway's constructor argument or its first path segment, and nothing in the kernel.
+
 ## What changes in the repository
 
 `src/profiles/` (the four rules above, the new `FilesSpanRule`, `FilesTypes`), `src/lib/EfsFiles.sol` (encoders, the
-canonical chunker), the Files suites and fixtures, the genesis plan (ten Files Types), and later
-`src/periphery/EfsWeb3Gateway.sol`. The kernel, the registry, the index, the readers' laws and the final
+canonical chunker), the Files suites and fixtures, the genesis plan (ten Files Types), and
+`src/periphery/EfsWeb3Gateway.sol` with `src/interfaces/IWeb3Gateway.sol`. The kernel, the registry, the index, the readers' laws and the final
 validator are untouched.

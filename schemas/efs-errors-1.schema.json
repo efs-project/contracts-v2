@@ -9,7 +9,7 @@
     "errors": {
       "type": "object",
       "description": "selector → entry",
-      "additionalProperties": { "type": "object", "required": ["name", "signature", "args", "source", "retryClass", "meaning"], "properties": { "retryClass": { "enum": ["none", "reprepare", "resubmit", "wait", null] } } }
+      "additionalProperties": { "type": "object", "required": ["name", "signature", "args", "source", "retryClass", "meaning"], "properties": { "retryClass": { "enum": ["none", "reprepare", "resubmit", "wait"] } } }
     }
   }
 }

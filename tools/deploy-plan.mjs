@@ -71,6 +71,7 @@ export function useArtifacts(dir = DEFAULT_ARTIFACTS) {
   const relPath = join(REPO_ROOT, "release/release.json");
   RELEASE_UNITS = releaseLayout && existsSync(relPath) ? JSON.parse(readFileSync(relPath, "utf8")).contracts : null;
   cache.clear();
+  astSeen.clear();
   astIndex = undefined;
   return artifactSource();
 }
@@ -150,11 +151,15 @@ export const keys = {
 // ---- artifacts -----------------------------------------------------------------------------------------------------
 
 const cache = new Map();
+const astSeen = new Map();
 let astIndex;
-useArtifacts();
+// The default source is selected at import only when it exists: a tree without out/ (a vendored release directory)
+// must still be importable, and `buildPlan({artifacts})` / `--artifacts` select the source before any read.
+if (existsSync(DEFAULT_ARTIFACTS)) useArtifacts();
 /** <dir>/<File>.sol/<Name>.json, refused when stale against the source on disk (the abi-snapshot rule); in the
  *  release layout <dir>/<Name>.json, refused when its bytes differ from release/release.json. */
 export function artifact(name, { file = name, dir = OUT } = {}) {
+  assert.ok(dir, `no artifact directory: ${DEFAULT_ARTIFACTS} does not exist (run \`forge build\`, pass --artifacts DIR or set EFS_ARTIFACTS_DIR)`);
   const base = at(dir);
   const key = `${base}/${file}/${name}`;
   if (cache.has(key)) return cache.get(key);
@@ -198,7 +203,7 @@ export const UNITS = {
   FilesBytesRule: "FilesBytesRule", FilesContentRule: "FilesContentRule", FilesExternalContentRule: "FilesExternalContentRule",
   DirectoryAliasRule: "DirectoryAliasRule", RealmNoticeRule: "RealmNoticeRule", RefuseAllPolicy: "RefuseAllPolicy",
   TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin", LensReader: "LensReader", FilesPageReader: "FilesPageReader",
-  FilesSpanRule: "FilesSpanRule", KeysView: "KeysView",
+  FilesSpanRule: "FilesSpanRule", KeysView: "KeysView", EfsWeb3Gateway: "EfsWeb3Gateway",
 };
 
 // ---- immutables: names → offsets ------------------------------------------------------------------------------------
@@ -214,12 +219,19 @@ function astNames() {
   };
   const scan = (dir) => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.isDirectory()) { if (e.name !== "build-info" && e.name !== "release-ast") scan(join(dir, e.name)); }
+      if (e.isDirectory()) { if (!["build-info", "release-ast", "closure"].includes(e.name)) scan(join(dir, e.name)); }
       else if (e.name.endsWith(".json") && e.name !== SNAPSHOT_FILE) walk(JSON.parse(readFileSync(join(dir, e.name), "utf8")).ast);
     }
   };
   scan(AST_OUT);
   return astIndex;
+}
+
+/** Whether the AST build has this unit with its AST (a build without `--ast` has the artifact but no tree). */
+export function hasAst(name) {
+  const path = join(AST_OUT, `${UNITS[name]}.sol`, `${name}.json`);
+  if (!astSeen.has(path)) astSeen.set(path, existsSync(path) && !!JSON.parse(readFileSync(path, "utf8")).ast);
+  return astSeen.get(path);
 }
 
 /** `[{name, offsets}]` for a unit: from a snapshot's manifest, from the AST build (bytecode-checked against the
@@ -229,7 +241,7 @@ export function immutableLayout(name) {
   if (Object.keys(a.refs).length === 0) return [];
   if (ARTIFACTS_MODE === "release") return a.immutables;
   if (SNAPSHOT?.immutables?.[name]) return SNAPSHOT.immutables[name];
-  if (existsSync(join(AST_OUT, `${UNITS[name]}.sol`, `${name}.json`))) {
+  if (hasAst(name)) {
     const b = artifact(name, { file: UNITS[name], dir: AST_OUT });
     assert.equal(b.runtime, a.runtime, `${name}: the AST build's runtime differs from the identity build's (not reproducible)`);
     assert.equal(b.bytecode, a.bytecode, `${name}: the AST build's creation code differs from the identity build's`);
@@ -246,6 +258,9 @@ export function immutableLayout(name) {
   assert.ok(existsSync(rel), `${name} has immutables: build ${AST_OUT} (see tools/RELEASE.md) or provide release/release.json`);
   const unit = JSON.parse(readFileSync(rel, "utf8")).contracts[name];
   assert.ok(unit?.immutables, `release/release.json has no immutable layout for ${name}`);
+  // the names are the manifest's; the offsets must still be this build's
+  const offsets = (groups) => groups.map((g) => g.join(",")).sort();
+  assert.deepEqual(offsets(unit.immutables.map((i) => i.offsets)), offsets(Object.values(a.refs).map((refs) => refs.map((r) => r.start).sort((x, y) => x - y))), `${name}: release/release.json immutable offsets differ from the build's (run \`pnpm run release\` with the AST build)`);
   return unit.immutables;
 }
 
@@ -547,6 +562,14 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const realmOrigin = keys.realmOrigin(chainId, ledgerProxy, realmSalt);
   const realm = { chainId, realmSalt, realmOrigin, realmId: keys.realmId(realmOrigin, executionProfileId), executionProfileId, domainSeparator: domainSeparator(chainId, ledgerProxy), limitsProfileId: limitsHash, indexObligations: keccak256(enc(["address", "bytes32", "bytes32"], [index.address, index.runtimeCodehash, mHash])) };
   const seed = seedPlan({ ids, principalId: keys.principal(owner) });
+  // R5: the web3:// gateway (ERC-5219 with ERC-7617 chunks; docs/LARGE-FILES.md), bound to the seed's root directory
+  // record and the page reader. A reader outside the execution set and outside the ReaderDirectory (not an IReader).
+  const rootDirectory = seed.expected.root.directoryRecordId;
+  const gatewayTypes = { directory: ids[T.DIRECTORY], name: ids[T.NAME], root: ids[T.ROOT], child: ids[T.CHILD], content: ids[T.CONTENT], external_: ids[T.EXTERNAL], bytes_: ids[T.BYTES], span: ids[T.SPAN] };
+  const gateway = add("R5", "EfsWeb3Gateway", [ledgerProxy, reads.address, views.address, page.address, rootDirectory, gatewayTypes], {
+    LEDGER: ledgerProxy, READS: reads.address, VIEWS: views.address, PAGER: page.address, LAYOUT: layoutId, ROOT_DIRECTORY: rootDirectory,
+    DIRECTORY_TYPE: ids[T.DIRECTORY], NAME_TYPE: ids[T.NAME], ROOT_TYPE: ids[T.ROOT], CHILD_TYPE: ids[T.CHILD], CONTENT_TYPE: ids[T.CONTENT], EXTERNAL_TYPE: ids[T.EXTERNAL], BYTES_TYPE: ids[T.BYTES], SPAN_TYPE: ids[T.SPAN],
+  });
   steps.push(...seed.steps.map((s) => ({ id: s.id, kind: "EXECUTE", contract: "LedgerCore", to: ledgerProxy, from: owner, label: s.label, actions: jsonable(s.actions), bodies: s.bodies, marker: s.marker, postCheck: s.postCheck })));
 
   return {
@@ -554,8 +577,9 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     chainId, realmSalt, owner, fixturePrincipal: owner, declarationKey: owner, factory: FACTORY.address,
     hotAbiId: HOT_ABI_ID, layoutId, executionProfileId, limits: LIMITS, workModel: WORK_MODEL,
     genesis: { address: G, nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } },
-    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address },
+    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address, web3Gateway: gateway.address },
     readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs2/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs2/reader/files-page/1", runtimeCodehash: page.runtimeCodehash } },
+    gateway: { address: gateway.address, runtimeCodehash: gateway.runtimeCodehash, resolveMode: "5219", rootDirectory, pager: page.address, urlBase: `web3://${gateway.address}:${chainId}/` },
     hotAbiIdString: HOT_ABI_ID_STRING,
     realm, activation: set, index: { address: index.address, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
     profile, seed: seed.expected, units, steps,

@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "3427c6328e6922171e6baf668718237fa499d706",
-    "tree": "8ef39ff575fee9038e8dd03305c1c45558a922e9",
-    "dirty": 28,
+    "commit": "af56443a6faa3b787adbc02e7e7a7b81d1cb6110",
+    "tree": "10bea3c40493682c440f9c691a23db17c9b4b3f3",
+    "dirty": 17,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -32,7 +32,7 @@
       "out",
       "out/release-ast"
     ],
-    "unitsCompared": 32,
+    "unitsCompared": 33,
     "runtimeAndInitcodeIdentical": true,
     "note": "the AST build is a second full compile with the identity settings plus AST output; tools/deploy-plan.mjs refuses any unit whose bytes differ"
   },
@@ -41,7 +41,7 @@
     "src/core/layout/Layout.sol": "0x25a047067897de3daa9ff7e68fde6ecb29a8e4ddd13af06f235252ee72dadfd1",
     "src/core/storage/LedgerStorage.sol": "0x1ad729301b471bf54bc4f91bf403367e5fe76c2080750fcef2c481f8a9271c5b",
     "src/interfaces/Actions.sol": "0x5c503f6aacc86841f2f8c900b5d76e2f818016b09fe2e176bd0f1cd1f82307be",
-    "src/interfaces/Errors.sol": "0xf9335d9d7f9ad369ec8f33dec34d1424bcf118669ef60177f7d08d120a89c556",
+    "src/interfaces/Errors.sol": "0x85fc31ed22d638a3ff25aa500c171f246168b911adc05a99eb16ec6bdcbd8285",
     "src/interfaces/IAcceptor.sol": "0x81d1fdcc3e1955e19ea037107032dd510058ece7efb5b0ad39b914a1e8f3980e",
     "src/interfaces/IIndexReads.sol": "0x89c95f309b880e9b32e1a6687e18fd97cdf2aeaf824c4cfe3d528b5627e5c428",
     "src/interfaces/ILedgerCommitments.sol": "0xc68f5f990320187ca0a6d30a417dd250e3c9188022cb938918769b9843120dc4",
@@ -105,7 +105,7 @@
     "src/index/storage/GenerationStorage.sol": "0x199b397b307bc01111eafc03a320ca1675cac26c66efef2868bb12a02fb70ee0",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
     "src/profiles/FilesFinalValidator.sol": "0x5a77be4b1dfebadfd9fe5345cca4a87850c30da0aa3b0db146d8dddc82856bb8",
-    "src/profiles/FilesProfile.sol": "0x7a8a11be8ba697be16e94d8a2aecbf54667695e07e95ee598801cfe46f490c25",
+    "src/profiles/FilesProfile.sol": "0xa5f682cd7f005629f478bedecf6fef1da169aadf7464b8ebfddd28e610ea2607",
     "src/profiles/FilesRootRule.sol": "0x305c3768262771e80efc8191909a377aeede3c48f7ae69592da31d9017817e13",
     "src/profiles/FilesChildRule.sol": "0x3265de9a460f4fc1275c07ddd30937543c564d7fdec4a198c7c3b2f2ad06d3da",
     "src/profiles/FilesDirectoryRule.sol": "0xe44144eaf106f5261e57858310e98b18797af64e6de69dfb3051e4e3f02d4f8a",
@@ -117,10 +117,12 @@
     "src/profiles/RealmNoticeRule.sol": "0x0deaf5e2bacc58d532d2808c3c9d7efa768d23e7404504891a9be9596f99e97c",
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
     "src/readers/LensReader.sol": "0x62a452011875730a2f46245fae5a4dd569773dd74b1ef5a89593029af53e7655",
-    "src/readers/FilesPageReader.sol": "0xd1062a68b340de8a8b0aa9d5b6970c0d4003e12d13549b7ba1b961629852e560",
+    "src/readers/FilesPageReader.sol": "0x72119b082cda9ca0adac25ca38536241bcc95dca1ca640e75adcf83139f7df9c",
     "src/profiles/FilesSpanRule.sol": "0x5f255e216313efa9b4284aaf77d90cded8105d4b4e6c458d6bdfefbfdc2eeb2a",
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
-    "src/periphery/KeysView.sol": "0x2e92dd1633d27121c05d1b89fb19588df4e99ec1d01376a8705133b452dc0856"
+    "src/periphery/KeysView.sol": "0x2e92dd1633d27121c05d1b89fb19588df4e99ec1d01376a8705133b452dc0856",
+    "src/interfaces/IWeb3Gateway.sol": "0x7fdbf781f32df3fa09aaa04f6790c3623e01eba96a26ab35388857dcff0f22ce",
+    "src/periphery/EfsWeb3Gateway.sol": "0xf5b118c8ef72edf3ea209316ef597d589971d2e35f33c18efdeb446dd488a5e1"
   },
   "contracts": {
     "LedgerIngress": {
@@ -1337,6 +1339,133 @@
         "initcodeWithArgs": 1541
       },
       "budget": null
+    },
+    "EfsWeb3Gateway": {
+      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "runtimeHash": "0xcd346c976b9db182f786872c899205804033ec9a10ef330121df16fadc034859",
+      "deployedBytecodeHash": "0x5dce809527ba5529f80733b6ba8c8d10d21258104d17aae59bb50c63dde9aa67",
+      "initcodeHash": "0xecfc25c8e903aba93229baa6ec745327e0068e0336add5f8b5d9bbece2415399",
+      "initcodeWithArgsHash": "0xc5c8b3e0d5133339ff253046965c03ba292e00e02cd6ea19cf603d2b6a649607",
+      "address": "0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81",
+      "realmSpecific": true,
+      "planStep": "R5",
+      "immutables": [
+        {
+          "name": "BYTES_TYPE",
+          "offsets": [
+            876,
+            15887,
+            16866
+          ]
+        },
+        {
+          "name": "CHILD_TYPE",
+          "offsets": [
+            678,
+            7450
+          ]
+        },
+        {
+          "name": "CONTENT_TYPE",
+          "offsets": [
+            736,
+            13449
+          ]
+        },
+        {
+          "name": "DIRECTORY_TYPE",
+          "offsets": [
+            934,
+            4107
+          ]
+        },
+        {
+          "name": "EXTERNAL_TYPE",
+          "offsets": [
+            1018,
+            13410
+          ]
+        },
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            411,
+            4064
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            1227,
+            3992,
+            6011,
+            6733,
+            11063,
+            11338,
+            13335,
+            15848,
+            16796
+          ]
+        },
+        {
+          "name": "NAME_TYPE",
+          "offsets": [
+            1144
+          ]
+        },
+        {
+          "name": "PAGER",
+          "offsets": [
+            1074,
+            7765
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            467,
+            11140,
+            11417,
+            13542,
+            15778,
+            17002
+          ]
+        },
+        {
+          "name": "ROOT_DIRECTORY",
+          "offsets": [
+            537,
+            4142
+          ]
+        },
+        {
+          "name": "ROOT_TYPE",
+          "offsets": [
+            1297,
+            6794
+          ]
+        },
+        {
+          "name": "SPAN_TYPE",
+          "offsets": [
+            315,
+            15814,
+            16905
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1385
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 17570,
+        "initcode": 18628,
+        "initcodeWithArgs": 19044
+      },
+      "budget": null
     }
   },
   "profiles": {
@@ -1770,6 +1899,14 @@
         "kindLabel": "efs2/reader/files-page/1",
         "runtimeCodehash": "0x9cd4d2705f1e747ae52c67b6697aab2cbdbc6c43a6ba24f1001ad921c030be86"
       },
+      "web3Gateway": {
+        "address": "0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81",
+        "runtimeCodehash": "0x5dce809527ba5529f80733b6ba8c8d10d21258104d17aae59bb50c63dde9aa67",
+        "resolveMode": "5219",
+        "rootDirectory": "0x4bca9efefd32919538010dfd19bd1074478cc3ed8b4c180af99c1497023536ce",
+        "pager": "0xfCC0B4C67212376A9FEb5B99962A2ebb025520e6",
+        "urlBase": "web3://0xd658EAcb6520528bbc06fDa32eB847a3c2CEea81:31337/"
+      },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
         "ledgerReads": "0xed083c7DB2df5CE40AD0a057F044B413B085DeB6",
@@ -1799,6 +1936,113 @@
       ]
     }
   },
+  "constants": {
+    "note": "parsed from the sources in `from` at release time; the ids are keccak256 of the UTF-8 preimage. Value 0 of each enum is reserved and never returned.",
+    "from": [
+      "src/interfaces/Actions.sol",
+      "src/interfaces/Results.sol",
+      "src/lib/EfsFiles.sol",
+      "src/profiles/FilesProfile.sol"
+    ],
+    "actionKinds": {
+      "PUBLISH": 1,
+      "REUSE": 2,
+      "BIND": 3,
+      "UNBIND": 4,
+      "CREATE": 5,
+      "WITHDRAW": 6,
+      "RELEASE": 7,
+      "STAGE_RESERVED": 8,
+      "COMMIT_RESERVED": 9
+    },
+    "capabilities": {
+      "NATIVE_GUARD": 1,
+      "SIGNED_SECP256K1": 2,
+      "ERC1271": 4,
+      "P256_WEBAUTHN": 8,
+      "STATEFUL_RULES": 16,
+      "IMPORT": 32,
+      "CODE_BLOB_BODIES": 64,
+      "ROUTED_CONSENT": 128,
+      "KEL_AUTHORITY": 256,
+      "STAGED_PUBLICATION": 512
+    },
+    "purposes": {
+      "HEAD": {
+        "preimage": "efs2/purpose/head/1",
+        "id": "0x07167a05890e9fcaccbdf11abbb65a3aa14bccfe41825ce441803003862ce5df"
+      },
+      "FOLDER": {
+        "preimage": "efs2/purpose/folder/1",
+        "id": "0x58de23804076d1b785b7479ab38fe6ada246e62164776702f51a1c48ef98cf99"
+      },
+      "TAG": {
+        "preimage": "efs2/purpose/tag/1",
+        "id": "0x073e0a1a729959d841354dbb760bf57802acc034630defb75862e5dda0f72c18"
+      }
+    },
+    "status": {
+      "id": "0x2c1d804a59f88f7d13cc3d939d934bd20956054fba1648021eebb083ffc39f1a",
+      "preimage": "efs2/status-vocabulary/1",
+      "codes": {
+        "0": "UNSET",
+        "1": "UNKNOWN",
+        "2": "PRESENT",
+        "3": "ABSENT_PROVEN",
+        "4": "MASKED",
+        "5": "RELEASED",
+        "6": "CONFLICT",
+        "7": "NOT_ON_PAGE",
+        "8": "NOT_APPLICABLE",
+        "9": "INVALID",
+        "10": "UNSUPPORTED",
+        "11": "BASIS_STALE",
+        "12": "LIMIT_EXCEEDED"
+      }
+    },
+    "coverage": {
+      "codes": {
+        "0": "UNSET",
+        "1": "UNKNOWN",
+        "2": "PARTIAL",
+        "3": "COMPLETE"
+      }
+    },
+    "files": {
+      "form": {
+        "INLINE": 0,
+        "CONTENT": 1
+      },
+      "contentCarrier": {
+        "INLINE": 0,
+        "REMOTE": 1,
+        "SPAN": 2
+      },
+      "externalCarrier": {
+        "LOCATION": 2
+      },
+      "hashAlg": {
+        "SHA256": 1
+      },
+      "alias": {
+        "DIRECTORY": 1,
+        "FILE": 2
+      },
+      "targetKind": {
+        "RECORD": 1,
+        "SUBJECT": 2
+      },
+      "lengthMax": "18446744073709551615",
+      "sha256Empty": "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentVersion": 1,
+      "externalVersion": 2,
+      "chunking": {
+        "id": "efs2/chunking/1",
+        "chunkPayload": 8160,
+        "spec": "docs/LARGE-FILES.md"
+      }
+    }
+  },
   "consumer": {
     "pragmaFloor": "^0.8.27",
     "tested": [
@@ -1824,8 +2068,8 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0x59a22cb3e41ff44153b2bc8550b90534fc54ee48b912a18b324c66e7ec89c04e",
-    "count": 104
+    "sha256": "0x02442a6c31eacdaa39d3e33432785dfdb56c0b8b7ecf733db9ad06c160b842c0",
+    "count": 106
   },
   "abi": {
     "interfaces": "test/snapshots/abi/",

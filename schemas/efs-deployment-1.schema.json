@@ -194,9 +194,27 @@
         "readerDirectory",
         "lensReader",
         "filesPageReader",
+        "web3Gateway",
         "listed"
       ],
       "properties": {
+        "web3Gateway": {
+          "type": "object",
+          "required": [
+            "address",
+            "runtimeCodehash",
+            "resolveMode",
+            "rootDirectory",
+            "urlBase",
+            "seedUrl",
+            "ledger"
+          ],
+          "properties": {
+            "resolveMode": {
+              "const": "5219"
+            }
+          }
+        },
         "lensReader": {
           "type": "object",
           "required": [
