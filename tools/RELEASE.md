@@ -110,7 +110,7 @@ With `--json`, a failure prints `{"ok": false, "command": "...", "error": {"code
 actual `port` and `rpcUrl` (also when the port was allocated from the range) and `verified: {skipped: false, ok, checks,
 failures, ms, coldPin}`. If a check fails, `up` tears the instance down (its own anvil, its lease) and exits 1 with an
 error object listing the failures; with `--keep-on-fail` the instance stays leased in state `failed`. Measured cost of
-the in-`up` verify: about 0.8 s for 370 checks (the big file is re-assembled node by node); a whole `up` takes about
+the in-`up` verify: about 0.8 s for 371 checks (the big file is re-assembled node by node); a whole `up` takes about
 4–5 s. `--no-verify` skips it (`verified: {skipped: true}`). Both failure paths were exercised by hand against a stale
 `deploy/plan.json` (one mismatch): the default tore the instance down and removed its lease; `--keep-on-fail` left it
 leased in state `failed`.
@@ -146,7 +146,7 @@ leased in state `failed`.
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
   "planHash": "0x8a60…8cfc", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
-  "verified": { "skipped": false, "ok": true, "checks": 370, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
+  "verified": { "skipped": false, "ok": true, "checks": 371, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
 ```
 
@@ -369,7 +369,7 @@ equal; see HARNESS-BUG below).
 
 ## What `verify` reproduces
 
-370 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
+371 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
 build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested and fails.
 
 1. **Documents.** `planHash` (recomputed, and equal to `deploy/plan.json`), the ledger address, the execution set, the
