@@ -5,10 +5,10 @@ import {Web3GatewayHarness} from "../harness/doubles/Web3GatewayHarness.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 
 /// @notice The first path segment decides the kind of a gateway path (docs/LARGE-FILES.md "`web3://`"): `0x<40 hex>`
-///         a home, `~efs/o/<folder id>` any folder by its record id with its creator as the default lens (the id of an
-///         existing object that is not a folder 501, never 404; only an id naming nothing 404), `~efs/v/…` a revision
-///         link that is not served (501), any other `~` segment refused, anything else a topic path that this gateway
-///         does not serve, so a folder name is never served as a topic.
+///         a home, `~efs/o/<id>` an object link (a folder by its record id with its creator as the default lens, a
+///         file by its subject id; the id of any other existing object 501, never 404; only an id naming nothing
+///         404), `~efs/v/<record>` a revision link (`EfsWeb3GatewayLinks.t.sol`), any other `~` segment refused,
+///         anything else a topic path that this gateway does not serve, so a folder name is never served as a topic.
 contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
     function setUp() public {
         _setUpGateway();
@@ -71,16 +71,17 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
     }
 
     function test_an_existing_objects_id_is_501_never_404() public view {
-        // a file's subject id (a created subject: files are not served by id yet), with or without names after it
+        // a file's subject id is served (EfsWeb3GatewayLinks.t.sol); a name after it is a file used as a folder
         bytes32 file = r.hot.bodyWord(helloRoot, 0);
         assertTrue(r.hot.subjectCreatedAt(file) != 0, "hello.txt's subject exists");
-        assertEq(_status(_byId(file, ""), 501).body, "object not served");
-        assertEq(_status(_byId(file, "/x"), 501).body, "object not served");
+        assertEq(_status(_byId(file, ""), 200).body, "hello, web3");
+        assertEq(_status(_byId(file, "/x"), 404).body, "not found: file used as a folder");
         // a file revision record (a root, a child, a span-tree root) and a descriptor
         assertEq(_status(_byId(helloRoot, ""), 501).body, "object not served");
         assertEq(_status(_byId(notesChild, "/"), 501).body, "object not served");
         assertEq(_status(_byId(bigRoot, ""), 501).body, "object not served");
         assertEq(_status(_byId(extDescriptor, ""), 501).body, "object not served");
+        assertEq(_status(_byId(helloRoot, "/x"), 501).body, "object not served");
         // a record of another Type: hello.txt's files-name/2 record
         bytes32 name = Keys.recordFromHash(t.name, keccak256("hello.txt"));
         (bytes32 typeId,,,,) = r.hot.recordHeader(name);
@@ -100,18 +101,12 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
         assertEq(_status(string.concat("/~efs/o/", P, "/hello.txt"), 400).body, "malformed id");
     }
 
-    function test_a_revision_link_is_501_never_400_or_404() public view {
-        string[6] memory paths = [
-            string.concat("/~efs/v/", vm.toString(helloRoot)),
-            string.concat("/~efs/v/", vm.toString(keccak256("no such record")), "/x?offset=3"),
-            "/~efs/v/anything",
-            "/~efs/v/",
-            "/~efs/v",
-            "/~efs/v/0x1234"
-        ];
-        for (uint256 i; i < paths.length; ++i) {
-            assertEq(_status(paths[i], 501).body, "object not served");
-        }
+    function test_a_revision_link_is_a_system_path_of_its_own() public view {
+        // served (EfsWeb3GatewayLinks.t.sol), never an unknown system path
+        assertEq(
+            _status(string.concat("/~efs/v/", vm.toString(helloRoot)), 200).body, "hello, web3"
+        );
+        assertEq(_status("/~efs/v", 400).body, "malformed revision link");
     }
 
     function test_unknown_system_paths_are_400() public view {

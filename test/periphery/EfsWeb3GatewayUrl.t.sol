@@ -2,7 +2,9 @@
 pragma solidity 0.8.37;
 
 import {Web3GatewayHarness} from "../harness/doubles/Web3GatewayHarness.sol";
-import {EfsWeb3Gateway, E_WEB3_CONFIG, E_WEB3_STATUS} from "../../src/periphery/EfsWeb3Gateway.sol";
+import {EfsWeb3Gateway} from "../../src/periphery/EfsWeb3Gateway.sol";
+import {EfsWeb3Content, E_WEB3_CONFIG, E_WEB3_STATUS} from "../../src/periphery/EfsWeb3Content.sol";
+import {IWeb3Content} from "../../src/interfaces/IWeb3Content.sol";
 import {KeyValue} from "../../src/interfaces/IWeb3Gateway.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../../src/interfaces/ILedgerReads.sol";
@@ -287,17 +289,36 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
     }
 
     function test_constructor_configuration() public {
-        EfsWeb3Gateway.Types memory g = _gt();
+        address c = address(content);
         vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(1)));
-        new EfsWeb3Gateway(address(0), address(reads), address(views), address(0), rootDir, g);
+        new EfsWeb3Gateway(
+            address(0), address(reads), address(views), address(0), c, rootDir, typeIds[T_DIRECTORY]
+        );
         vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(1)));
-        new EfsWeb3Gateway(address(r.ledger), address(0), address(views), address(0), rootDir, g);
+        new EfsWeb3Gateway(
+            address(r.ledger),
+            address(0),
+            address(views),
+            address(0),
+            c,
+            rootDir,
+            typeIds[T_DIRECTORY]
+        );
+        vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(1)));
+        _gateway(address(0), address(0));
+        vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(1)));
+        new EfsWeb3Content(address(0), address(reads), _ct());
+        vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(1)));
+        new EfsWeb3Content(address(r.ledger), address(0), _ct());
+        // a content server bound to another ledger
+        vm.mockCall(c, abi.encodeWithSelector(IWeb3Content.ledger.selector), abi.encode(address(1)));
+        vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(3)));
+        _gateway(address(0), c);
+        vm.clearMockedCalls();
         vm.mockCall(
             address(reader), abi.encodeWithSelector(IReader.ledger.selector), abi.encode(address(1))
         );
         vm.expectRevert(abi.encodeWithSelector(E_WEB3_CONFIG.selector, uint8(2)));
-        new EfsWeb3Gateway(
-            address(r.ledger), address(reads), address(views), address(reader), rootDir, g
-        );
+        _gateway(address(reader), c);
     }
 }
