@@ -12,7 +12,9 @@ permissions:
 jobs:
   foundation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # The build is about 8 minutes and the ci-profile test run compiles again; 15 minutes stopped being enough once
+    # the tag suites landed (the run for c6a1627 was cancelled mid-test, not failed).
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
