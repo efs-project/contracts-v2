@@ -307,7 +307,7 @@ contract TagListsMeasureTest is TopicListsBase {
         emit log_named_uint(string.concat("tl ", row, " per level"), slope);
         uint256 n = c17 >= CAP ? 1 : 17 + (CAP - c17) / slope;
         require(n + 8 <= DEEP_MAX, "beyond the measured chain");
-        uint256 len = n + n / 8 + 16;
+        uint256 len = n + 12; // room for the bisection to step past the prediction
         bytes32[] memory t =
             _deepChain(string.concat("c", _n(c), deny ? "d" : "t", execOnly ? "x" : "a"), len);
         _prefillDeep(c, t[len - 1]);
