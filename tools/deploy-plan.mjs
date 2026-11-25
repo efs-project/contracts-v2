@@ -117,13 +117,13 @@ export const LIMITS = {
   maxBodyBytesPerPublication: 16384, maxFreshSlotsPerPublication: 600, maxReadIds: 64, maxReadCount: 256,
   floorFreshGas: 22100, floorRewriteGas: 5000, kernelTail: 20000,
 };
-/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): the design's slot counts (×10) with compute
- *  terms measured at step 3a (test/integration/IndexFloor.t.sol, both schedules) plus a margin; no release work model
- *  exists in src/. */
+/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): slot counts (×10) and compute
+ *  terms measured with the step-3b lists on both schedules plus a margin (docs/TAG-NUMBERS.md "The floor"); no release
+ *  work model exists in src/. */
 export const WORK_MODEL = {
-  formulaVersion: 1, freshPerPublication: 2, rwPerPublication: 10, freshPerPublishFresh: 10, rwPerPublish: 50,
-  freshPerBindFresh: 30, rwPerBind: 40, freshPerRef: 10, freshPerDigestSpec: 10, computeBase: 150000,
-  computePerAction: 10000, computePerHookEffect: 30000, finalComputeBase: 220000, finalComputePerBind: 10000,
+  formulaVersion: 1, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, rwPerPublish: 46,
+  freshPerBindFresh: 55, rwPerBind: 40, freshPerRef: 30, freshPerDigestSpec: 10, computeBase: 54000,
+  computePerAction: 8000, computePerHookEffect: 34000, finalComputeBase: 20000, finalComputePerBind: 7400,
 };
 /** The floor prices a Realm on a Glamsterdam (EIP-8037/8038) chain activates: execution-gas prices only, because the GAS
  *  opcode never sees the state-gas reservoir (design §10.4): the regular 12,100 of a fresh slot, never the all-in
@@ -420,7 +420,7 @@ const FAMILY_TABLE = [
   ["digest", 15, 5, 1, 1, "posting", 1n], ["role-scope", 16, 3, 1, 1, "posting", 1n], ["roster", 17, 3, 2, 2, "bitmap", 2n ** 64n - 1n],
   ["live-scope", 18, 3, 2, 2, "bitmap", 1n],
   // the first-statement lists (design §10.2); the two topic roll-ups are maintained because the Topics Types are in the release
-  ["place", 6, 3, 1, 1, "posting", 1n], ["place-below", 7, 3, 1, 1, "posting", 1n], ["scope-below", 19, 3, 1, 1, "posting", 1n],
+  ["place", 6, 3, 1, 4, "posting", 1n], ["place-below", 7, 3, 1, 4, "posting", 1n], ["scope-below", 19, 3, 1, 1, "posting", 1n],
   ["position-authors", 20, 3, 1, 3, "posting", 1n], ["role-places", 21, 4, 1, 1, "posting", 1n],
 ];
 

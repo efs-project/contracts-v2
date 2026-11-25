@@ -28,6 +28,7 @@ import { keccak256, toFunctionSelector } from "viem";
 import { mediaVectors } from "./media-vectors.mjs";
 import { numberVectors } from "./number-vectors.mjs";
 import { topicVectors } from "./topic-vectors.mjs";
+import { planVectors } from "./gas-plan.mjs";
 import { ABI_IDS, idFromSnapshot } from "./abi-id.mjs";
 import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
@@ -244,8 +245,17 @@ assert.equal(constants.purposes.FOLDER.id, plan.index.units[0].purposeFilter ?? 
 const MODEL = "gas/model.json";
 const model = JSON.parse(src(MODEL));
 assert.equal(model.schema, "efs-gas-model/1", `${MODEL}: run \`pnpm run gas:model\``);
-const TX_GAS_CAP = 16_777_216; // EIP-7825
-const HEADROOM_PERCENT = 15; // intrinsic gas, calldata and the model's own error (under 8% on both schedules)
+// the cap and the headroom are the planning rule's (gas/model.json `planning`), so the envelope and the rule agree
+assert.equal(model.planning?.txGasCap, 16_777_216, `${MODEL}: planning.txGasCap (EIP-7825); run \`pnpm run gas:model\``);
+const TX_GAS_CAP = model.planning.txGasCap;
+const HEADROOM_PERCENT = model.planning.headroomPercent; // intrinsic gas, calldata and the model's own error
+// the floor inputs the model publishes are the ones this release's Realm activates (a stale model plans a wrong floor)
+assert.deepEqual(model.profiles.prague.floor.workModel, plan.workModel, `${MODEL}: floor.workModel differs from the plan's work model; run \`pnpm run gas:model\``);
+for (const k of ["floorFreshGas", "floorRewriteGas", "kernelTail"]) assert.equal(model.profiles.prague.floor.limits[k], plan.limits[k], `${MODEL}: prague floor.limits.${k} differs from the plan's limits`);
+for (const k of ["maxActions", "maxBindsPerPublication", "maxBodyBytesPerPublication"]) assert.equal(model.planning.limits[k], plan.limits[k], `${MODEL}: planning.limits.${k} differs from the plan's limits`);
+if (model.profiles.amsterdam) assert.deepEqual(model.profiles.amsterdam.floor.workModel, plan.workModel, `${MODEL}: amsterdam floor.workModel differs from the plan's work model`);
+// ---- test/vectors/floor-plan.json: the planning rule's largest publication per shape (tools/gas-plan.mjs) ----------
+emit("test/vectors/floor-plan.json", toJSON(planVectors(model)));
 const SHAPES = {
   editSmall: { what: "edit a file: PUBLISH files-child/1 form 0 with 100 bytes of content, rebind HEAD", actions: 2, bodyBytes: 196 },
   edit1k: { what: "the same with 1,024 bytes of content", actions: 2, bodyBytes: 1120 },
@@ -278,9 +288,11 @@ const gasModel = {
   schema: model.schema, path: MODEL, sha256: sha256(readFileSync(join(root, MODEL))),
   note: "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
   schedules: {
-    prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", hardforks: ["prague", "osaka"], constants: mp.constants, maxAbsErrorPercent: mp.maxAbsErrorPercent },
-    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
+    prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", hardforks: ["prague", "osaka"], constants: mp.constants, floor: mp.floor, maxAbsErrorPercent: mp.maxAbsErrorPercent },
+    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, floor: ma.floor, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
   },
+  planning: model.planning,
+  tagLists: model.tagLists,
   envelope: {
     what: "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",
     txGasCap: TX_GAS_CAP, txGasCapRule: "EIP-7825", headroomPercent: HEADROOM_PERCENT,
@@ -335,7 +347,7 @@ const manifest = {
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
   errors: { path: "release/errors.json", sha256: sha256(Buffer.from(generated.get("release/errors.json"))), count: Object.keys(errors).length },
   abi: { interfaces: "test/snapshots/abi/", units: "artifacts/" },
-  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json", "test/vectors/numbers.json", "test/vectors/topics.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
+  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json", "test/vectors/numbers.json", "test/vectors/topics.json", "test/vectors/floor-plan.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
   dependencyRoot: null,
   deployPlan: { path: "deploy/plan.json", genesis: plan.addresses.genesis, factory: plan.factory },
 };

@@ -42,29 +42,30 @@ import {MockCaller, MockRegistry, MockUnsupported} from "./MockRegistry.sol";
 bytes32 constant CALLBACK_PROFILE_4 =
     keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
-/// The generation-1 work model of design §10.4, slot counts ×10 as the design stores them. The slot counts are the
-/// design's; the compute terms are the index's measured execution gas with a margin (step 3a,
-/// `test/integration/IndexFloor.t.sol`, both schedules): a callback spends ≈ 67–97k on the first effect of a
-/// publication (cold stores and ledger), ≈ 99–109k (prague) / 75–77k (amsterdam) per bind and ≈ 41k / 36k per
-/// fresh publish including its slot writes; the final phase ≈ 20k + 2.5k per effect + 5k per bind. The prefix quote
-/// is 1.06–1.6× the callbacks' measured spend on both schedules, the final reserve 1.26–5× the final phase's (its
-/// formula has no per-publish term, so the base carries 64 publishes).
+/// The generation-1 work model of design §10.4, slot counts ×10 as the design stores them, measured with the step-3b
+/// first-statement lists in place on both schedules (`test/integration/IndexFloor.t.sol` and the gas model's kernel
+/// share; design §10.4 has the figures): slot counts are the index's fresh slots and rewrites per action, the compute
+/// terms its remaining execution gas, with a margin of about 5-12% on the bulk shapes (first statements on fresh
+/// positions, word pages, create-file recipes). The per-bind terms are set from first statements, so a later statement
+/// (≈ 91-109k) is quoted at about 0.6× its spend; the final reserve is set from TAG statements (≈ 5-7k per bind), so the
+/// Files validator's first masks about records and subjects (11-15k) and publishes (≈ 2.6k) are under-reserved. Both
+/// errors are on the safe side for planning (design §10.4).
 library IndexDoubleDefaults {
     function workModel() internal pure returns (WorkModel memory w) {
         w.formulaVersion = 1;
-        w.freshPerPublication = 2; // 0.2 (progress)
-        w.rwPerPublication = 10; // 1
-        w.freshPerPublishFresh = 10; // 1
-        w.rwPerPublish = 50; // 5
-        w.freshPerBindFresh = 30; // 3
-        w.rwPerBind = 40; // 4
-        w.freshPerRef = 10; // 1
-        w.freshPerDigestSpec = 10; // 1
-        w.computeBase = 150_000;
-        w.computePerAction = 10_000;
-        w.computePerHookEffect = 30_000; // charged per bind-kind action
-        w.finalComputeBase = 220_000;
-        w.finalComputePerBind = 10_000;
+        w.freshPerPublication = 30;
+        w.rwPerPublication = 10;
+        w.freshPerPublishFresh = 6;
+        w.rwPerPublish = 46;
+        w.freshPerBindFresh = 55;
+        w.rwPerBind = 40;
+        w.freshPerRef = 30;
+        w.freshPerDigestSpec = 10;
+        w.computeBase = 54_000;
+        w.computePerAction = 8000;
+        w.computePerHookEffect = 34_000; // charged per bind-kind action
+        w.finalComputeBase = 20_000;
+        w.finalComputePerBind = 7400;
     }
 }
 

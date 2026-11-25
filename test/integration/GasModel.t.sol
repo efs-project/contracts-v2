@@ -7,6 +7,7 @@ import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.sol";
+import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 
 /// @notice The measurements behind `gas/model.json` (`tools/gas-model.mjs`): a per-action gas model for the SDK's
 ///         write planner. Every measured publication runs on the native lane through `FilesRecipesBase._exec`
@@ -17,6 +18,13 @@ import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.
 ///         measurement. A marginal cost is `k2 − k1` of two publications of the same shape with distinct bodies;
 ///         `2·k1 − k2` is the fixed cost the shape implies. The `validate` publications are composites the script
 ///         predicts and never fits.
+///
+///         Every measured publication is also run once, from the same state and cooled the same way, with the index's
+///         two callbacks answered by `vm.mockCall` (the acknowledgement word, no work): `<label> kernel frame gas` is
+///         then the kernel's own execution gas with the callbacks removed (it still pays each callback's dispatch,
+///         encoding and CALL, so it errs high by about 2k per action). It feeds `floor.<schedule>.kernel` in
+///         `gas/model.json`, the kernel share the planning rule adds to the floor (design §10.4). The state is
+///         reverted after that run, so the measured publication starts from the same state.
 contract GasModelTest is FilesRecipesBase {
     uint256 internal constant N_SUBJECTS = 40;
     uint256 internal constant N_CHUNKS = 40;
@@ -83,6 +91,34 @@ contract GasModelTest is FilesRecipesBase {
             vm.cool(cold[i]);
         }
         if (sender != address(0)) vm.prank(sender, sender); // an EOA caller is its own origin
+    }
+
+    /// The kernel's own share of the publication about to be measured (see the contract NatSpec).
+    function _beforeMeasure(
+        string memory label,
+        Action[] memory a,
+        bytes[] memory b,
+        Native memory c
+    ) internal override {
+        uint256 snap = vm.snapshotState();
+        address index = address(r.g.index);
+        vm.mockCall(
+            index,
+            abi.encodeWithSelector(IRealmIndex.onAdmission.selector),
+            abi.encode(IRealmIndex.onAdmission.selector)
+        );
+        vm.mockCall(
+            index,
+            abi.encodeWithSelector(IRealmIndex.afterPublication.selector),
+            abi.encode(IRealmIndex.afterPublication.selector)
+        );
+        _beforeExecute();
+        r.ledger.execute(a, b, c, "");
+        emit log_named_uint(
+            string.concat(label, " kernel frame gas"), vm.lastFrameGas().gasTotalUsed
+        );
+        vm.clearMockedCalls();
+        vm.revertToStateAndDelete(snap);
     }
 
     /// Unmeasured publication of `p`.
@@ -760,6 +796,74 @@ contract GasModelTest is FilesRecipesBase {
             x[i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, s[30 + i], 4);
         }
         _actionPair("unbind tag lone", x);
+    }
+
+    /// A mask of an asserted tag: UNBIND from BOUND at a TAG position (transition MASK).
+    function test_model_unbind_tag() public {
+        _tagged();
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.unbind(Purpose.TAG, TOPIC, s[35 + i], 1);
+        }
+        _actionPair("unbind tag", x);
+    }
+
+    /// A release of an asserted tag: RELEASE from BOUND at a TAG position.
+    function test_model_release_tag() public {
+        _tagged();
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.release(Purpose.TAG, TOPIC, s[35 + i], 1);
+        }
+        _actionPair("release tag", x);
+    }
+
+    /// A restore at a TAG position: BIND from MASKED to the kept target (transition RESTORE); the masks are written
+    /// unmeasured first.
+    function test_model_restore_tag() public {
+        _tagged();
+        Action[] memory m = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = EfsFiles.unbind(Purpose.TAG, TOPIC, s[35 + i], 1);
+        }
+        _do(m, new bytes[](3));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 2);
+        }
+        _actionPair("restore tag", x);
+    }
+
+    /// The per-Type inputs of the floor quote (design §10.4) for every Type the model prices: how many leading body
+    /// words are references (`freshPerRef` each, on every publish) and how many digest specs name the Type
+    /// (`freshPerDigestSpec` each, on a fresh record). `tools/gas-model.mjs` copies them into `floor.types`.
+    function test_model_floor_types() public {
+        _rememberTopics();
+        string[13] memory names = [
+            "files-root/1",
+            "files-child/1",
+            "files-directory/1",
+            "files-name/2",
+            "files-bytes/1",
+            "files-content/1",
+            "files-external/1",
+            "directory-alias/1",
+            "realm-notice/1",
+            "files-span/1",
+            "topic-word/1",
+            "topic/1",
+            "text/1"
+        ];
+        for (uint8 t; t < 13; ++t) {
+            emit log_named_uint(
+                string.concat("model type ", names[t], " refs"),
+                r.registry.typeInfo(typeIds[t]).refCount
+            );
+            emit log_named_uint(
+                string.concat("model type ", names[t], " specs"),
+                r.g.index.digestSpecCount(typeIds[t])
+            );
+        }
     }
 
     function test_model_withdraw() public {

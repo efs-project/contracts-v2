@@ -476,8 +476,8 @@ five codehashes against `describe()` and the release.
 `schedules.amsterdam`; one schedule's constants must never be applied on a chain running the other), the file's
 sha256, and a **joint envelope**. The Realm limits allow a publication of 64 actions and 16,384 body bytes, which can
 need about 28M gas, more than the 16,777,216 one transaction may carry (EIP-7825). `gasModel.envelope` therefore
-states what one atomic publication realistically holds, as the smallest of the gas budget (the cap less 15% headroom
-for intrinsic gas, calldata and the model's error, less the fixed cost) and the two Realm limits, for six named
+states what one atomic publication realistically holds, as the smallest of the gas budget (the cap less
+`planning.headroomPercent` (15%) for intrinsic gas, calldata and the model's error, less the fixed cost) and the two Realm limits, for six named
 shapes: a small and a 1 KB edit, a small and a 1 KB create, an 8 KB chunk and a span node. It is for user-facing
 messages ("this save is too large to be atomic"); a planner uses the constants and confirms with `eth_estimateGas`.
 Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`. Media
@@ -502,11 +502,43 @@ first no there), plus, for each of the topic's `n − 1` proper ancestors, `tagL
 `tagLevel.mineExisting` (the author's `scope-below` list at that ancestor is empty or not) and, at every filing (a
 fresh position of either sign, or a later author's first yes; a later author's first no files nothing),
 `tagLevel.sharedNew` or `tagLevel.sharedExisting` (the `place-below` list at that ancestor). The SDK reads those list heads (`postingHeadOf`) when it plans; a list holding
-exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new (it costs one slot rewrite more than a new list, inside the model's headroom; not separately measured). The terms are measured
+exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new (`tagLists.priceAsNew`; it costs one slot rewrite more than a new list, inside the model's headroom; not separately measured). The terms are measured
 by four `tag level` rows (`(k2 − k1) / 4` of a first statement on a 2-word and on a 6-word topic from the same state,
 so each is one level: "all" rows a first tag at a fresh position, "mine" rows a first no at an existing position), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
 these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
+
+**The floor and the planning rule (design §10.4).** Before each index callback the kernel requires a floor of
+execution gas to be visible (`gasleft()`), and on Glamsterdam only execution gas is visible and capped. So that a
+planner never sizes a publication the floor refuses, `gas/model.json` carries, per schedule, `profiles.<schedule>.floor`:
+the kernel's quote inputs exactly (`workModel`, the Realm's floor prices and kernel tail in `limits`, per-Type `refs`
+and digest `specs` in `types`, `callGasRetained` = 63/64, `dispatchOverhead`), `kernel` (the kernel's own execution
+gas: every `GasModel.t.sol` publication is also run from the same state with the index's two callbacks answered by
+`vm.mockCall`, logged as `kernel frame gas`, and fitted like the constants) and `formula`, the plain statement:
+
+- quote: `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new record ? freshPerPublishFresh +
+  freshPerDigestSpec·specs : 0)) + Σ_bind-kind(head UNSET ? freshPerBindFresh : 0)`, `rw10 = rwPerPublication +
+  Σ_publish/reuse rwPerPublish + Σ_bind-kind rwPerBind`; `P = computeBase + n·computePerAction + binds·computePerHookEffect
+  + ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase +
+  binds·finalComputePerBind`;
+- requirement: `V = max(K + ⌈(⌈P·64/63⌉ + dispatchOverhead)·64/63⌉, E) + ⌈F·64/63⌉ + kernelTail`, E the execution
+  estimate (prague `constants`, amsterdam `split.executionGas`) and K from `floor.kernel` with the same composition.
+
+The rule (`planning`): a publication is planned when it is inside `planning.limits` (64 actions, 64 bind-kind actions,
+16,384 body bytes) and `max(E, V) ≤ ⌊txGasCap × (100 − headroomPercent) / 100⌋` (2^24 and 15%: intrinsic gas, calldata
+and the model's error); anything larger is split before it is signed. A roll-up list's next append is priced as new
+when it holds a number of entries in `tagLists.priceAsNew.entries` (`[1]`) or a multiple of
+`tagLists.priceAsNew.entriesMultipleOf` (5, zero included); the prose rule above is that field. `tools/gas-plan.mjs` is
+the reference implementation (it imports nothing and reads only the model it is given; `tools/test/gas-plan.test.mjs`);
+`pnpm run release` writes its verdict for eleven shapes to `test/vectors/floor-plan.json` (the largest planned count per
+schedule with E, K, V, P and F, and the refusal of one unit more), and `test/integration/FloorPlan.t.sol` builds each
+shape at that count, checks the kernel's own `prepare` quote equals the rule's P and F (read from the `E_INDEX_GAS` the
+first callback reverts with on just enough gas; `ILedgerCommitments.indexFloor` prices every bind as a first statement,
+so it is only an upper bound), and proves it admitted: on prague by running it with exactly 2^24 − 21,000 − calldata,
+and on both schedules by `E ≤` and `V ≤` that, with E and K measured from the same cooled state (Foundry's amsterdam
+profile has no reservoir and no cap, so there this is arithmetic on the measurement). The shapes: lone negatives on a
+one-word topic; first tags at depth 8 and 64, everything new and everything existing; a second author's first tags at
+depth 8; masks, releases and restores of tags; a registration chunk of word pages; create-file recipes.
 
 `pnpm gas:model:check` (`node tools/gas-model.mjs --check 1 --skip-amsterdam 1`) writes nothing: it re-measures the
 prague profile, refits, and exits 1 when a validation composite is off by more than 15% or when any fitted constant
@@ -610,7 +642,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    passes the real G7 decoder; the suites pass `address(0)`. `efs-deployment.json` records `index.runtimeCodehash` and
    `index.reads {address, runtimeCodehash}`; `verify` checks both codehashes on chain and `readsContract()`.
 9. **Work model.** `src/` has no release work model, so the index uses
-   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (re-measured at step 3a, design §10.4).
+   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4; the
+   constants are measured with the step-3b lists in place; `gas/model.json` `floor.workModel` must equal it, which
+   `pnpm release` asserts).
    Limits come from `KernelDeploy.s1Limits()` (the §4.2 values; under `FOUNDRY_PROFILE=amsterdam` the fresh-slot floor
    price is the Glamsterdam execution-gas 12,100, `GLAMSTERDAM_FLOOR` in `tools/deploy-plan.mjs`).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;

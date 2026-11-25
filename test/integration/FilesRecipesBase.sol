@@ -108,6 +108,7 @@ abstract contract FilesRecipesBase is FilesFixture {
         returns (uint64 publication)
     {
         Native memory c = _ctx(actions);
+        _beforeMeasure(label, actions, bodies, c);
         _beforeExecute();
         uint256 before = gasleft();
         (publication,) = r.ledger.execute(actions, bodies, c, "");
@@ -139,6 +140,15 @@ abstract contract FilesRecipesBase is FilesFixture {
     /// Runs after the expectations are read and before the measured `execute` (`GasModel.t.sol` cools the state
     /// and may prank the caller here; a no-op for the recipe suites).
     function _beforeExecute() internal virtual {}
+
+    /// Runs before the measured publication with its exact inputs, and must leave the state as it found it
+    /// (`GasModel.t.sol` measures the kernel's own share here; a no-op for the recipe suites).
+    function _beforeMeasure(
+        string memory label,
+        Action[] memory actions,
+        bytes[] memory bodies,
+        Native memory c
+    ) internal virtual {}
 
     function _name(bytes memory n) internal view returns (Action memory a, bytes memory) {
         return _publish(T_NAME, n);

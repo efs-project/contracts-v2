@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "17326e0eff03e2fd41840b953aa27e3a540989c7",
-    "tree": "5b91dc3e22fbe4b5d2bb01e73318e90061541237",
-    "dirty": 9,
+    "commit": "ad659faa6852c2844093053c6ede7aab5d613f2d",
+    "tree": "4ad43a23b375e4d493382d9aedc1bcfb5ad384e6",
+    "dirty": 23,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -48,7 +48,7 @@
     "src/interfaces/ILedgerHot.sol": "0x1b70d70b5656436f46ff9f388895376515aef3bb533d1bf8f3b79e29881b53b5",
     "src/interfaces/IRealmIndex.sol": "0xa1d09a5cbdc988b1bfc8208b22cd936ce95cd36297d07ddfb529234230a367b4",
     "src/interfaces/ITypeRegistry.sol": "0x0f7323f9c6f9982c1e2d37fefb2792ee04dd5bb5e7853f7928986709d594eb1c",
-    "src/interfaces/Index.sol": "0xe95d407db3b21fc156e9adb5ecbcbf9e26e0a985b09d5b845194a6c9e81297ba",
+    "src/interfaces/Index.sol": "0x89c58dd8c023feb4ead3a270f95decf49add27019ba6fb696e4a5f246fe62b80",
     "src/interfaces/Limits.sol": "0xb66538ac9546f5baf085c8e86a5a7033400240ece9ad4208e4ae054332af9d52",
     "src/interfaces/Results.sol": "0x7c2d00946fb9f082ef07e5c23cd9284060f51ae151fdddb742c9f840c364bf5e",
     "src/interfaces/internal/ILedgerIngress.sol": "0x025a4991d3a1f220bd162e7f5a8801109a628d5bde61426a508e5edb8d7e3a75",
@@ -102,7 +102,7 @@
     "src/index/BitmapStore.sol": "0x765958c34bb53539483032453ebae707a4f944f3953827158f676c982ef44e33",
     "src/interfaces/IBitmapStore.sol": "0x166385a251b94eac434cfa571fdf8a1cb2151f987bc3d9ff0ea00e3ee769d83b",
     "src/index/IndexProfiles.sol": "0x491e06a7f71a825f9a8614810b36bcde559f05a3a18de7060f5ab86fedc2d7fd",
-    "src/index/IndexReads.sol": "0x5675045121da62c9ebacd4499f46868308816376d6b6589b8d9b237ab1ce27d8",
+    "src/index/IndexReads.sol": "0x3214c325c4b30d874a151a582bec1b727eaf7a1035b6ef6309e5657417dc8d4c",
     "src/index/RealmIndex.sol": "0x3a3deb87768aa01cdc21801b66f80de059d15cb14de5f1a31c5e1b1b81ff03c8",
     "src/index/storage/GenerationStorage.sol": "0x41f833ac25103535f0a09c1206fc1c8bc2dc2516016b7175f13c3ec5724578ff",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
@@ -896,9 +896,9 @@
       "source": "src/index/IndexReads.sol",
       "runtimeHash": "0xf1e616d9a93614ddbb6b6d92fd9ed9e9710a806b15021f1e64e8e8b445851d4b",
       "deployedBytecodeHash": "0x008a0b250a7eef0e57591cd456be94e3f725ad82f2c12c1c0f9e98be8639b1d4",
-      "initcodeHash": "0x143f5f2c17996a66acf8fb59fb154687b8995916a33a71eea9460bcf0991ce64",
-      "initcodeWithArgsHash": "0x32f798f553385bd08b9d2c20b1805f83af29f2e7c96f2dbca93205cecd98a8f5",
-      "address": "0x8fcE83250bdccDc5aB7fA2F5418B92359e566FC3",
+      "initcodeHash": "0xe6afc1ac4e7342d12f4d45fc0b5c76d3cd74abbac2f98875afc0f410a12a4f09",
+      "initcodeWithArgsHash": "0x6bd59109bc4339e54544d8a47575ac794b837e49cde746e04415bc56ea3635a5",
+      "address": "0x277A7F53fC89E77dda8Fae97EE429Ed871CEC7C5",
       "realmSpecific": true,
       "planStep": "G19a",
       "immutables": [
@@ -977,10 +977,10 @@
     "RealmIndex": {
       "source": "src/index/RealmIndex.sol",
       "runtimeHash": "0xaee84c94e3da34f9a88f562e9732449897e925125db885896d204a0da01bf994",
-      "deployedBytecodeHash": "0x44b528dc1c3aca92472bbb4feb7f1e7b52695d23c2c4710f260451a27269b137",
+      "deployedBytecodeHash": "0x438fe7584d53bb64ed3e7e73f0d2f35bdefe462dbb4f356d60496fd5cbf44d91",
       "initcodeHash": "0x00992a7d8eeccb8ffd15382110893ade358cf34fc769bc4f0511904a1b978f4d",
-      "initcodeWithArgsHash": "0x468a94033242dd29e4501376fe5f8bfd4bb3dbf089d27218d0eb573bbaded30c",
-      "address": "0xcF55be43CCe241c4cE2e78cb96ae7F58FE4204b7",
+      "initcodeWithArgsHash": "0x5adfc44224aefc3ada23ec91b2b3a09d957ecd84844aa0348bb9732e07190ea0",
+      "address": "0x465eC78b638aeED58482D232f61030c128dDb697",
       "realmSpecific": true,
       "planStep": "G19",
       "immutables": [
@@ -2011,13 +2011,13 @@
     "wrappers": [],
     "index": {
       "generation": 1,
-      "address": "0xcF55be43CCe241c4cE2e78cb96ae7F58FE4204b7",
-      "runtimeCodehash": "0x44b528dc1c3aca92472bbb4feb7f1e7b52695d23c2c4710f260451a27269b137",
+      "address": "0x465eC78b638aeED58482D232f61030c128dDb697",
+      "runtimeCodehash": "0x438fe7584d53bb64ed3e7e73f0d2f35bdefe462dbb4f356d60496fd5cbf44d91",
       "reads": {
-        "address": "0x8fcE83250bdccDc5aB7fA2F5418B92359e566FC3",
+        "address": "0x277A7F53fC89E77dda8Fae97EE429Ed871CEC7C5",
         "runtimeCodehash": "0x008a0b250a7eef0e57591cd456be94e3f725ad82f2c12c1c0f9e98be8639b1d4"
       },
-      "manifestHash": "0x555eef1b30bfb847d746f8324c8d8e95567994c8b8cb90b37794f5efa86c4e5f",
+      "manifestHash": "0xb0ab6b6d05bd8cadecf20e129e621508080f3d56b7d107ca501cf42391c704c2",
       "families": [
         {
           "familyId": "0x6e9951606fbc96e12b5da9d5c55cec8c09a145840b260cb897a2b8f4be21fca4",
@@ -2181,7 +2181,7 @@
           "universe": 3,
           "shape": 1,
           "mandatory": true,
-          "liveSemantics": 1,
+          "liveSemantics": 4,
           "recipe": "0xa3b65da14a9d82391a20a14abc14e9735931e40c4c88aec366ca2bc3914f8b46",
           "fromAdmission": "1",
           "store": "0x133564c45839f91Ba0BA1b86fdaC36e7B449BEF1",
@@ -2193,7 +2193,7 @@
           "universe": 3,
           "shape": 1,
           "mandatory": true,
-          "liveSemantics": 1,
+          "liveSemantics": 4,
           "recipe": "0xc77204476e166e2a79feaeb667e5269be5307ed9cad39f336648391c6d69e500",
           "fromAdmission": "1",
           "store": "0x133564c45839f91Ba0BA1b86fdaC36e7B449BEF1",
@@ -2262,19 +2262,19 @@
       ],
       "workModel": {
         "formulaVersion": 1,
-        "freshPerPublication": 2,
+        "freshPerPublication": 30,
         "rwPerPublication": 10,
-        "freshPerPublishFresh": 10,
-        "rwPerPublish": 50,
-        "freshPerBindFresh": 30,
+        "freshPerPublishFresh": 6,
+        "rwPerPublish": 46,
+        "freshPerBindFresh": 55,
         "rwPerBind": 40,
-        "freshPerRef": 10,
+        "freshPerRef": 30,
         "freshPerDigestSpec": 10,
-        "computeBase": 150000,
-        "computePerAction": 10000,
-        "computePerHookEffect": 30000,
-        "finalComputeBase": 220000,
-        "finalComputePerBind": 10000
+        "computeBase": 54000,
+        "computePerAction": 8000,
+        "computePerHookEffect": 34000,
+        "finalComputeBase": 20000,
+        "finalComputePerBind": 7400
       },
       "stores": {
         "posting": "0x133564c45839f91Ba0BA1b86fdaC36e7B449BEF1",
@@ -2498,7 +2498,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x0b35e3c2d49dbbe29468ab96d96c438c912ca5d83ed3e86288baa98b0c21a173",
+    "sha256": "0xaebf09357b6c0d479e2349305494f0bf7ca681e7f0a4eaa73740d2f4dc449734",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2508,7 +2508,7 @@
           "osaka"
         ],
         "constants": {
-          "fixed": 322401,
+          "fixed": 315184,
           "perWord": 22729,
           "perByte": 11.8,
           "publishNew": {
@@ -2516,32 +2516,35 @@
             "files-span/1": 290407,
             "files-content/1 carrier 0": 173856,
             "files-content/1 carrier 2": 193463,
-            "files-external/1": 220770,
+            "files-external/1": 220782,
             "files-directory/1": 165151,
-            "files-name/2": 152192,
+            "files-name/2": 152216,
             "files-root/1 form 0": 148683,
             "files-root/1 form 1": 174776,
             "files-child/1 form 0": 228342,
             "files-child/1 form 1": 254551,
-            "topic-word/1": 181818,
+            "topic-word/1": 181830,
             "topic/1": 211724,
-            "text/1": 182292
+            "text/1": 182304
           },
-          "publishExisting": 176439,
-          "reuse": 179886,
+          "publishExisting": 176405,
+          "reuse": 179852,
           "create": 98448,
           "bindHeadFresh": 331330,
           "bindHeadRebind": 204277,
           "bindFolderFreshFile": 409187,
-          "bindFolderFreshDirectory": 408957,
+          "bindFolderFreshDirectory": 408945,
           "bindFolderRebind": 206441,
           "unbindFolder": 159570,
           "releaseFolder": 156539,
-          "bindTagFresh": 414271,
+          "bindTagFresh": 414283,
           "bindTagSecondAuthor": 312871,
           "bindTagNumberChange": 153704,
           "unbindTagLone": 355235,
-          "withdraw": 151802,
+          "unbindTag": 155848,
+          "releaseTag": 154650,
+          "restoreTag": 186631,
+          "withdraw": 151768,
           "firstWriteSurcharge": 11786,
           "tagLevel": {
             "mineNew": 34627,
@@ -2550,7 +2553,137 @@
             "sharedExisting": 15354
           }
         },
-        "maxAbsErrorPercent": 5.36
+        "floor": {
+          "formula": "The kernel's quote (LedgerIngress._foldAndQuote) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new) + Σ over BIND/UNBIND/RELEASE whose author's head at the position is UNSET (freshPerBindFresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + rwPerBind per BIND/UNBIND/RELEASE; freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10); prefixFloor P = computeBase + n·computePerAction + binds·computePerHookEffect + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas (binds = the BIND/UNBIND/RELEASE count); finalReserve F = finalComputeBase + binds·finalComputePerBind. The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail. Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T. A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K.",
+          "quantity": "execution gas visible to the GAS opcode (on amsterdam the EIP-8037 state-gas reservoir is not visible and the cap counts execution gas only)",
+          "workModel": {
+            "formulaVersion": 1,
+            "freshPerPublication": 30,
+            "rwPerPublication": 10,
+            "freshPerPublishFresh": 6,
+            "rwPerPublish": 46,
+            "freshPerBindFresh": 55,
+            "rwPerBind": 40,
+            "freshPerRef": 30,
+            "freshPerDigestSpec": 10,
+            "computeBase": 54000,
+            "computePerAction": 8000,
+            "computePerHookEffect": 34000,
+            "finalComputeBase": 20000,
+            "finalComputePerBind": 7400
+          },
+          "limits": {
+            "floorFreshGas": 22100,
+            "floorRewriteGas": 5000,
+            "kernelTail": 20000
+          },
+          "callGasRetained": {
+            "numerator": 63,
+            "denominator": 64
+          },
+          "dispatchOverhead": 2000,
+          "types": {
+            "directory-alias/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-bytes/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-child/1": {
+              "refs": 1,
+              "specs": 0
+            },
+            "files-content/1": {
+              "refs": 1,
+              "specs": 1
+            },
+            "files-directory/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-external/1": {
+              "refs": 1,
+              "specs": 1
+            },
+            "files-name/2": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-root/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-span/1": {
+              "refs": 2,
+              "specs": 0
+            },
+            "realm-notice/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "text/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "topic-word/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "topic/1": {
+              "refs": 2,
+              "specs": 0
+            }
+          },
+          "kernel": {
+            "fixed": 265790,
+            "perWord": 22729,
+            "perByte": 11.8,
+            "publishNew": {
+              "files-bytes/1": 133380,
+              "files-span/1": 164172,
+              "files-content/1 carrier 0": 88750,
+              "files-content/1 carrier 2": 108357,
+              "files-external/1": 141141,
+              "files-directory/1": 133562,
+              "files-name/2": 154827,
+              "files-root/1 form 0": 117094,
+              "files-root/1 form 1": 143187,
+              "files-child/1 form 0": 127529,
+              "files-child/1 form 1": 153738,
+              "topic-word/1": 139637,
+              "topic/1": 151854,
+              "text/1": 140111
+            },
+            "publishExisting": 95692,
+            "reuse": 99116,
+            "create": 89249,
+            "bindHeadFresh": 193448,
+            "bindHeadRebind": 92283,
+            "bindFolderFreshFile": 220187,
+            "bindFolderFreshDirectory": 217955,
+            "bindFolderRebind": 96875,
+            "unbindFolder": 62203,
+            "releaseFolder": 60982,
+            "bindTagFresh": 220187,
+            "bindTagSecondAuthor": 155884,
+            "bindTagNumberChange": 93970,
+            "unbindTagLone": 166406,
+            "unbindTag": 62203,
+            "releaseTag": 60982,
+            "restoreTag": 93607,
+            "withdraw": 81776,
+            "firstWriteSurcharge": 17088,
+            "tagLevel": {
+              "mineNew": -3,
+              "mineExisting": 3,
+              "sharedNew": 3,
+              "sharedExisting": -3
+            }
+          }
+        },
+        "maxAbsErrorPercent": 5.8
       },
       "amsterdam": {
         "status": "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block",
@@ -2558,7 +2691,7 @@
           "amsterdam"
         ],
         "constants": {
-          "fixed": 912921,
+          "fixed": 898487,
           "perWord": 110649,
           "perByte": 11.8,
           "publishNew": {
@@ -2567,7 +2700,7 @@
             "files-content/1 carrier 0": 437918,
             "files-content/1 carrier 2": 545557,
             "files-external/1": 682148,
-            "files-directory/1": 517219,
+            "files-directory/1": 517231,
             "files-name/2": 342678,
             "files-root/1 form 0": 412743,
             "files-root/1 form 1": 526868,
@@ -2583,16 +2716,19 @@
           "bindHeadFresh": 1299292,
           "bindHeadRebind": 592323,
           "bindFolderFreshFile": 1633933,
-          "bindFolderFreshDirectory": 1633703,
+          "bindFolderFreshDirectory": 1633691,
           "bindFolderRebind": 587287,
-          "unbindFolder": 364410,
-          "releaseFolder": 361379,
+          "unbindFolder": 364376,
+          "releaseFolder": 361345,
           "bindTagFresh": 1646217,
-          "bindTagSecondAuthor": 1119117,
-          "bindTagNumberChange": 432130,
+          "bindTagSecondAuthor": 1119129,
+          "bindTagNumberChange": 432176,
           "unbindTagLone": 1323221,
+          "unbindTag": 360654,
+          "releaseTag": 359456,
+          "restoreTag": 486669,
           "withdraw": 430128,
-          "firstWriteSurcharge": 85540,
+          "firstWriteSurcharge": 85506,
           "tagLevel": {
             "mineNew": 122659,
             "mineExisting": 37268,
@@ -2601,7 +2737,7 @@
           }
         },
         "executionGas": {
-          "fixed": 298923,
+          "fixed": 292617,
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
@@ -2610,7 +2746,7 @@
             "files-content/1 carrier 0": 144158,
             "files-content/1 carrier 2": 153877,
             "files-external/1": 192548,
-            "files-directory/1": 125539,
+            "files-directory/1": 125551,
             "files-name/2": 146838,
             "files-root/1 form 0": 118983,
             "files-root/1 form 1": 135188,
@@ -2626,16 +2762,19 @@
           "bindHeadFresh": 222172,
           "bindHeadRebind": 200643,
           "bindFolderFreshFile": 263053,
-          "bindFolderFreshDirectory": 262823,
+          "bindFolderFreshDirectory": 262811,
           "bindFolderRebind": 195607,
-          "unbindFolder": 168570,
-          "releaseFolder": 165539,
+          "unbindFolder": 168536,
+          "releaseFolder": 165505,
           "bindTagFresh": 275337,
-          "bindTagSecondAuthor": 237837,
-          "bindTagNumberChange": 138370,
+          "bindTagSecondAuthor": 237849,
+          "bindTagNumberChange": 138416,
           "unbindTagLone": 246101,
+          "unbindTag": 164814,
+          "releaseTag": 163616,
+          "restoreTag": 192909,
           "withdraw": 136368,
-          "firstWriteSurcharge": -12380,
+          "firstWriteSurcharge": -12414,
           "tagLevel": {
             "mineNew": 24739,
             "mineExisting": 37268,
@@ -2643,8 +2782,159 @@
             "sharedExisting": 29765
           }
         },
-        "maxAbsErrorPercent": 8.14
+        "floor": {
+          "formula": "The kernel's quote (LedgerIngress._foldAndQuote) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new) + Σ over BIND/UNBIND/RELEASE whose author's head at the position is UNSET (freshPerBindFresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + rwPerBind per BIND/UNBIND/RELEASE; freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10); prefixFloor P = computeBase + n·computePerAction + binds·computePerHookEffect + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas (binds = the BIND/UNBIND/RELEASE count); finalReserve F = finalComputeBase + binds·finalComputePerBind. The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail. Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T. A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K.",
+          "quantity": "execution gas visible to the GAS opcode (on amsterdam the EIP-8037 state-gas reservoir is not visible and the cap counts execution gas only)",
+          "workModel": {
+            "formulaVersion": 1,
+            "freshPerPublication": 30,
+            "rwPerPublication": 10,
+            "freshPerPublishFresh": 6,
+            "rwPerPublish": 46,
+            "freshPerBindFresh": 55,
+            "rwPerBind": 40,
+            "freshPerRef": 30,
+            "freshPerDigestSpec": 10,
+            "computeBase": 54000,
+            "computePerAction": 8000,
+            "computePerHookEffect": 34000,
+            "finalComputeBase": 20000,
+            "finalComputePerBind": 7400
+          },
+          "limits": {
+            "floorFreshGas": 12100,
+            "floorRewriteGas": 5000,
+            "kernelTail": 20000
+          },
+          "callGasRetained": {
+            "numerator": 63,
+            "denominator": 64
+          },
+          "dispatchOverhead": 2000,
+          "types": {
+            "directory-alias/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-bytes/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-child/1": {
+              "refs": 1,
+              "specs": 0
+            },
+            "files-content/1": {
+              "refs": 1,
+              "specs": 1
+            },
+            "files-directory/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-external/1": {
+              "refs": 1,
+              "specs": 1
+            },
+            "files-name/2": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-root/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "files-span/1": {
+              "refs": 2,
+              "specs": 0
+            },
+            "realm-notice/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "text/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "topic-word/1": {
+              "refs": 0,
+              "specs": 0
+            },
+            "topic/1": {
+              "refs": 2,
+              "specs": 0
+            }
+          },
+          "kernel": {
+            "fixed": 217590,
+            "perWord": 12729,
+            "perByte": 11.8,
+            "publishNew": {
+              "files-bytes/1": 93680,
+              "files-span/1": 124484,
+              "files-content/1 carrier 0": 78786,
+              "files-content/1 carrier 2": 88505,
+              "files-external/1": 101441,
+              "files-directory/1": 93862,
+              "files-name/2": 115115,
+              "files-root/1 form 0": 87294,
+              "files-root/1 form 1": 103499,
+              "files-child/1 form 0": 97741,
+              "files-child/1 form 1": 114002,
+              "topic-word/1": 99925,
+              "topic/1": 112154,
+              "text/1": 100399
+            },
+            "publishExisting": 82992,
+            "reuse": 86416,
+            "create": 59449,
+            "bindHeadFresh": 123824,
+            "bindHeadRebind": 86783,
+            "bindFolderFreshFile": 140587,
+            "bindFolderFreshDirectory": 138355,
+            "bindFolderRebind": 91375,
+            "unbindFolder": 59403,
+            "releaseFolder": 58182,
+            "bindTagFresh": 140575,
+            "bindTagSecondAuthor": 106196,
+            "bindTagNumberChange": 81282,
+            "unbindTagLone": 106606,
+            "unbindTag": 59403,
+            "releaseTag": 58182,
+            "restoreTag": 80919,
+            "withdraw": 76276,
+            "firstWriteSurcharge": -12,
+            "tagLevel": {
+              "mineNew": 0,
+              "mineExisting": 0,
+              "sharedNew": 0,
+              "sharedExisting": 0
+            }
+          }
+        },
+        "maxAbsErrorPercent": 7.57
       }
+    },
+    "planning": {
+      "rule": "A publication is planned when it is inside limits (1 ≤ actions ≤ maxActions, bind-kind actions ≤ maxBindsPerPublication, PUBLISH body bytes ≤ maxBodyBytesPerPublication) and max(E, V) ≤ floor(txGasCap × (100 − headroomPercent) / 100), on the schedule of the chain: E the model's execution estimate (prague: constants; amsterdam: split.executionGas), V the floor's visible-gas requirement (profiles.<schedule>.floor.formula). A shape that does not fit is split into publications before it is signed, never shortened; eth_estimateGas on the exact call stays the authority before sending, and the gas limit comes from the estimate, never from V.",
+      "txGasCap": 16777216,
+      "txGasCapRule": "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
+      "headroomPercent": 15,
+      "headroomCovers": "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error (under 9% on both schedules, maxAbsErrorPercent)",
+      "limits": {
+        "maxActions": 64,
+        "maxBindsPerPublication": 64,
+        "maxBodyBytesPerPublication": 16384
+      }
+    },
+    "tagLists": {
+      "priceAsNew": {
+        "entries": [
+          1
+        ],
+        "entriesMultipleOf": 5
+      },
+      "note": "A per-author (scope-below) or shared (place-below) roll-up list holding exactly one entry, or a multiple of five entries (zero included: an empty list), takes a fresh word on its next append, so price that append as new (tagLevel.mineNew or sharedNew); otherwise as existing. The fresh word costs one slot rewrite more than a new list, inside the headroom; not separately measured."
     },
     "envelope": {
       "what": "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",
@@ -2693,37 +2983,37 @@
           "count": 23,
           "boundBy": "gas",
           "gasEach": 594035,
-          "gasOfPublication": 13985201
+          "gasOfPublication": 13977984
         },
         "edit1k": {
           "count": 11,
           "boundBy": "gas",
           "gasEach": 1241350,
-          "gasOfPublication": 13977251
+          "gasOfPublication": 13970034
         },
         "createSmall": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 1301020,
-          "gasOfPublication": 13332599
+          "gasEach": 1301044,
+          "gasOfPublication": 13325622
         },
         "create1k": {
           "count": 7,
           "boundBy": "gas",
-          "gasEach": 1948335,
-          "gasOfPublication": 13960746
+          "gasEach": 1948359,
+          "gasOfPublication": 13953697
         },
         "chunk": {
           "count": 2,
           "boundBy": "gas",
           "gasEach": 6080259,
-          "gasOfPublication": 12482918
+          "gasOfPublication": 12475701
         },
         "spanNode": {
           "count": 38,
           "boundBy": "gas",
           "gasEach": 359727,
-          "gasOfPublication": 13992019
+          "gasOfPublication": 13984802
         }
       },
       "amsterdam": {
@@ -2731,37 +3021,37 @@
           "count": 30,
           "boundBy": "gas",
           "gasEach": 2125653,
-          "gasOfPublication": 64682505
+          "gasOfPublication": 64668071
         },
         "edit1k": {
           "count": 14,
           "boundBy": "maxBodyBytesPerPublication",
           "gasEach": 5234728,
-          "gasOfPublication": 74199113
+          "gasOfPublication": 74184679
         },
         "createSmall": {
           "count": 12,
           "boundBy": "maxActions",
           "gasEach": 4827674,
-          "gasOfPublication": 58845007
+          "gasOfPublication": 58830573
         },
         "create1k": {
           "count": 10,
           "boundBy": "gas",
           "gasEach": 7936749,
-          "gasOfPublication": 80280411
+          "gasOfPublication": 80265977
         },
         "chunk": {
           "count": 2,
           "boundBy": "maxBodyBytesPerPublication",
           "gasEach": 28939859,
-          "gasOfPublication": 58792638
+          "gasOfPublication": 58778204
         },
         "spanNode": {
           "count": 55,
           "boundBy": "gas",
           "gasEach": 1327625,
-          "gasOfPublication": 73932285
+          "gasOfPublication": 73917851
         }
       }
     }
@@ -2803,7 +3093,8 @@
     "test/vectors/ids.json": "0xac54d538551b4ab207bff63ce0be068a156c6eb723965a2d536ebae77595c501",
     "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206",
     "test/vectors/numbers.json": "0x32239292bbf0733f1ef315d2407c9a772ebd6485803835269da5a82d81d67ccf",
-    "test/vectors/topics.json": "0xfd758e3b4f99b47c7bd8bb0b4be50da2203b071b88c0b03ae28c2f44da673ca0"
+    "test/vectors/topics.json": "0xfd758e3b4f99b47c7bd8bb0b4be50da2203b071b88c0b03ae28c2f44da673ca0",
+    "test/vectors/floor-plan.json": "0x7197b6d7a2979562bc193399e51a7975eb5d05430ddf6d4aa740599ee5a73b13"
   },
   "dependencyRoot": null,
   "deployPlan": {
