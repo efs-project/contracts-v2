@@ -1407,6 +1407,61 @@ abstract contract FacetSuite is FacetFixture {
         (st,) = views.publication(k.proxy, p1, 1);
         _st(st, Status.UNKNOWN, "code-less registry");
     }
+
+    // =============================================================================================
+    // Hand-encoded returns
+    // =============================================================================================
+
+    /// `describe`, `revisionAt`, `evidence`, `head` and `admission` end the call with the memory image of their
+    /// struct instead of the ABI encoder (LedgerReads, "returns"): every reply must be the canonical encoding
+    /// of what it decodes to, at the encoder's exact length, on PRESENT rows, absent rows and every gate.
+    function testHandEncodedReturnsAreCanonical() public {
+        address[3] memory ledgers = [k.proxy, makeAddr("no-ledger"), address(registry)];
+        for (uint256 i; i < ledgers.length; ++i) {
+            address l = ledgers[i];
+            bytes memory ret;
+            if (l == k.proxy) {
+                ret = _ok(abi.encodeCall(LedgerReads.describe, (l)));
+                assertEq(ret, abi.encode(abi.decode(ret, (Description))), "describe");
+            }
+            for (uint32 n; n < 3; ++n) {
+                ret = _ok(abi.encodeCall(LedgerReads.revisionAt, (l, n)));
+                {
+                    (Status st, Revision memory r) = abi.decode(ret, (Status, Revision));
+                    assertEq(ret, abi.encode(st, r), "revisionAt");
+                }
+            }
+            for (uint64 n; n < 10; ++n) {
+                ret = _ok(abi.encodeCall(LedgerReads.evidence, (l, n)));
+                {
+                    (Status st, Evidence memory e) = abi.decode(ret, (Status, Evidence));
+                    assertEq(ret, abi.encode(st, e), "evidence");
+                }
+                ret = _ok(abi.encodeCall(LedgerReads.admission, (l, n)));
+                {
+                    (Status st, AdmissionRow memory r) = abi.decode(ret, (Status, AdmissionRow));
+                    assertEq(ret, abi.encode(st, r), "admission");
+                }
+            }
+            for (uint256 j; j < headCaptures.length; ++j) {
+                ret = _ok(abi.encodeCall(LedgerReads.head, (l, headCaptures[j].key)));
+                _headCanonical(ret);
+            }
+            ret = _ok(abi.encodeCall(LedgerReads.head, (l, keccak256("efs/test/readers/no-head"))));
+            _headCanonical(ret);
+        }
+    }
+
+    function _headCanonical(bytes memory ret) private pure {
+        (Status st, Head memory h) = abi.decode(ret, (Status, Head));
+        assertEq(ret, abi.encode(st, h), "head");
+    }
+
+    function _ok(bytes memory data) private view returns (bytes memory ret) {
+        bool ok;
+        (ok, ret) = address(reads).staticcall(data);
+        assertTrue(ok, "the view answers");
+    }
 }
 
 /// @notice The suite against the kernel exactly as `test/integration/Kernel.t.sol` deploys it.
