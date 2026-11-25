@@ -20,7 +20,8 @@
 //   { kind: "create" } | { kind: "withdraw" }
 //   { kind: "bind", cost, first, levels }     any BIND, UNBIND or RELEASE: cost = a constants key ("bindTagFresh",
 //                                             "unbindTagLone", "releaseTag", ...), first = the author's head at the
-//                                             position is UNSET (a first statement of either sign), levels = the
+//                                             position is UNSET (a first statement of either sign; false for every
+//                                             later statement, a RELEASE always), levels = the
 //                                             tagLevel counts of a first TAG statement ({ mineNew, mineExisting,
 //                                             sharedNew, sharedExisting }; see tagLists.priceAsNew)
 import assert from "node:assert/strict";
@@ -67,16 +68,22 @@ export function planner(model, schedule) {
     let rw10 = wm.rwPerPublication;
     let compute = wm.computeBase + wm.computePerAction * actions.length;
     let binds = 0;
+    let publishes = 0;
     for (const a of actions) {
       if (a.kind === "publish" || a.kind === "reuse") {
         const t = floor.types[a.kind === "publish" ? typeOf(a.shape) : a.type];
         assert.ok(t, `floor.types has no ${a.shape ?? a.type}`);
+        // a REUSE always names an existing record
         if (a.kind === "publish" && a.fresh) fresh10 += wm.freshPerPublishFresh + wm.freshPerDigestSpec * t.specs;
+        else fresh10 += wm.freshPerPublishExisting;
         rw10 += wm.rwPerPublish;
         fresh10 += wm.freshPerRef * t.refs;
+        ++publishes;
       } else if (a.kind === "bind") {
         ++binds;
+        // first: the author's head at the position is UNSET (never for a RELEASE); every other one is a later statement
         if (a.first) fresh10 += wm.freshPerBindFresh;
+        else rw10 += wm.rwPerBindLater;
         rw10 += wm.rwPerBind;
         compute += wm.computePerHookEffect;
       }
@@ -84,8 +91,8 @@ export function planner(model, schedule) {
     const freshSlots = ceilDiv(fresh10, 10);
     const rewrites = ceilDiv(rw10, 10);
     const prefixFloor = compute + freshSlots * limits.floorFreshGas + rewrites * limits.floorRewriteGas;
-    const finalReserve = wm.finalComputeBase + wm.finalComputePerBind * binds;
-    return { prefixFloor, finalReserve, freshSlots, rewrites, binds };
+    const finalReserve = wm.finalComputeBase + wm.finalComputePerBind * binds + wm.finalComputePerPublish * publishes;
+    return { prefixFloor, finalReserve, freshSlots, rewrites, binds, publishes };
   }
 
   const { numerator: num, denominator: den } = floor.callGasRetained;
@@ -158,6 +165,9 @@ export const CREATE_FILE_NAME_BYTES = 10;
 /** FloorPlan.t.sol's registration chunk: one PUBLISH of a fresh 12-byte topic-word/1 page per unit. */
 export const WORD_PAGE_BYTES = 12;
 
+/** FloorPlan.t.sol's name records: a 10-byte files-name/2 (`np-xyz.md0`-style, distinct per unit). */
+export const NAME_BYTES = 10;
+
 export function shapes(model) {
   return {
     loneNegatives: { what: "lone negatives (first masks) on a one-word topic", units: 1, of: repeat({ kind: "bind", cost: "unbindTagLone", first: true }) },
@@ -169,6 +179,18 @@ export function shapes(model) {
     tagMasks: { what: "masks of asserted tags on a one-word topic (UNBIND from BOUND)", units: 1, of: repeat({ kind: "bind", cost: "unbindTag", first: false }) },
     tagReleases: { what: "releases of asserted tags on a one-word topic", units: 1, of: repeat({ kind: "bind", cost: "releaseTag", first: false }) },
     tagRestores: { what: "restores of masked tags on a one-word topic (BIND from MASKED)", units: 1, of: repeat({ kind: "bind", cost: "restoreTag", first: false }) },
+    tagNumberChanges: { what: "number changes on asserted tags on a one-word topic (a REBIND to the same target with a new number)", units: 1, of: repeat({ kind: "bind", cost: "bindTagNumberChange", first: false }) },
+    masksOfMasks: { what: "masks of masks on a one-word topic (UNBIND from MASKED with a new number; priced as masks of asserted tags, an upper bound)", units: 1, of: repeat({ kind: "bind", cost: "unbindTag", first: false }) },
+    folderRebinds: { what: "re-binds of root-folder entries to another file", units: 1, of: repeat({ kind: "bind", cost: "bindFolderRebind", first: false }) },
+    repeatPublishes: { what: "repeat PUBLISHes of existing 10-byte files-name/2 records", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: false }) },
+    nameRecords: { what: "fresh 10-byte files-name/2 records (publish-heavy)", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true }) },
+    publishesAndTags: {
+      what: "a fresh 10-byte name record and a first tag on a one-word topic per unit (2 actions each)", units: 2,
+      of: (k) => range(k).flatMap(() => [
+        { kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true },
+        { kind: "bind", cost: "bindTagFresh", first: true, levels: {} },
+      ]),
+    },
     registrationChunk: { what: "a registration chunk: fresh 12-byte topic-word/1 pages", units: 1, of: repeat({ kind: "publish", shape: "topic-word/1", bytes: WORD_PAGE_BYTES, fresh: true }) },
     createFiles: {
       what: "create-file recipes into the root folder (5 actions each)", units: 5,

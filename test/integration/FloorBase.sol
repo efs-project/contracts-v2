@@ -3,7 +3,7 @@ pragma solidity 0.8.37;
 
 import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
-import {Action, Native} from "../../src/interfaces/Actions.sol";
+import {Action, ActionKind, Native} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 import {E_INDEX_GAS} from "../../src/interfaces/Errors.sol";
@@ -107,12 +107,29 @@ abstract contract FloorBase is FilesRecipesBase {
         Native memory c,
         address sender
     ) internal returns (uint32 quoted) {
-        for (uint256 g = 50_000; g < 40_000_000; g += 50_000) {
+        // In steps of 50k, and of 1k from the last refusal when a step jumps straight to admission. A publication
+        // with no BIND or UNBIND may have no window at all: each PUBLISH and REUSE first requires its acceptor's
+        // validation gas (300k by default) to be available, which can cover the floor's check before the callback
+        // runs; its quote does not depend on heads, so `indexFloor` is then exact and is what the kernel quoted.
+        uint256 step = 50_000;
+        for (uint256 g = 50_000; g < 40_000_000; g += step) {
             uint256 snap = vm.snapshotState();
             _coolRealm();
             if (sender != address(0)) vm.prank(sender, sender);
             try r.ledger.execute{gas: g}(a, b, c, "") {
-                revert("admitted while probing the prefix floor");
+                vm.revertToStateAndDelete(snap);
+                if (step == 1000) {
+                    for (uint256 i; i < a.length; ++i) {
+                        if (a[i].kind == ActionKind.BIND || a[i].kind == ActionKind.UNBIND) {
+                            revert("admitted while probing the prefix floor");
+                        }
+                    }
+                    (quoted,,,) =
+                        ILedgerCommitments(r.hot.ingress()).indexFloor(address(r.ledger), a);
+                    return quoted;
+                }
+                g -= step;
+                step = 1000;
             } catch (bytes memory err) {
                 vm.revertToStateAndDelete(snap);
                 if (err.length == 68 && bytes4(err) == E_INDEX_GAS.selector) {

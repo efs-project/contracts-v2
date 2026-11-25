@@ -537,11 +537,12 @@ and digest `specs` in `types`, `callGasRetained` = 63/64, `dispatchOverhead`), `
 gas: every `GasModel.t.sol` publication is also run from the same state with the index's two callbacks answered by
 `vm.mockCall`, logged as `kernel frame gas`, and fitted like the constants) and `formula`, the plain statement:
 
-- quote: `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new record ? freshPerPublishFresh +
-  freshPerDigestSpec·specs : 0)) + Σ_bind-kind(head UNSET ? freshPerBindFresh : 0)`, `rw10 = rwPerPublication +
-  Σ_publish/reuse rwPerPublish + Σ_bind-kind rwPerBind`; `P = computeBase + n·computePerAction + binds·computePerHookEffect
-  + ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase +
-  binds·finalComputePerBind`;
+- quote (work-model formula 2): `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new record ?
+  freshPerPublishFresh + freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_bind-kind(head UNSET ?
+  freshPerBindFresh : 0)`, `rw10 = rwPerPublication + Σ_publish/reuse rwPerPublish + Σ_bind-kind(rwPerBind + (head
+  UNSET ? 0 : rwPerBindLater))` (a RELEASE is always a later statement, a REUSE always an existing record); `P =
+  computeBase + n·computePerAction + binds·computePerHookEffect + ⌈fresh10/10⌉·floorFreshGas +
+  ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish`;
 - requirement: `V = max(K + ⌈(⌈P·64/63⌉ + dispatchOverhead)·64/63⌉, E) + ⌈F·64/63⌉ + kernelTail`, E the execution
   estimate (prague `constants`, amsterdam `split.executionGas`) and K from `floor.kernel` with the same composition.
 
@@ -551,15 +552,25 @@ and the model's error); anything larger is split before it is signed. A roll-up 
 when it holds a number of entries in `tagLists.priceAsNew.entries` (`[1]`) or a multiple of
 `tagLists.priceAsNew.entriesMultipleOf` (5, zero included); the prose rule above is that field. `tools/gas-plan.mjs` is
 the reference implementation (it imports nothing and reads only the model it is given; `tools/test/gas-plan.test.mjs`);
-`pnpm run release` writes its verdict for eleven shapes to `test/vectors/floor-plan.json` (the largest planned count per
+`pnpm run release` writes its verdict for seventeen shapes to `test/vectors/floor-plan.json` (the largest planned count per
 schedule with E, K, V, P and F, and the refusal of one unit more), and `test/integration/FloorPlan.t.sol` builds each
 shape at that count, checks the kernel's own `prepare` quote equals the rule's P and F (read from the `E_INDEX_GAS` the
-first callback reverts with on just enough gas; `ILedgerCommitments.indexFloor` prices every bind as a first statement,
-so it is only an upper bound), and proves it admitted: on prague by running it with exactly 2^24 − 21,000 − calldata,
+first callback reverts with on just enough gas, or `indexFloor` for a publication with no BIND or UNBIND, whose quote
+does not depend on heads), and proves it admitted: on prague by running it with exactly 2^24 − 21,000 − calldata,
 and on both schedules by `E ≤` and `V ≤` that, with E and K measured from the same cooled state (Foundry's amsterdam
 profile has no reservoir and no cap, so there this is arithmetic on the measurement). The shapes: lone negatives on a
 one-word topic; first tags at depth 8 and 64, everything new and everything existing; a second author's first tags at
-depth 8; masks, releases and restores of tags; a registration chunk of word pages; create-file recipes.
+depth 8; masks, releases and restores of tags; number changes of asserted tags; masks of masks; re-binds of
+root-folder entries to another file; repeat PUBLISHes of existing name records; fresh name records; a mix of fresh
+name records and first tags (one of each per unit); a registration chunk of word pages; create-file recipes. For each
+the suite also logs the callbacks' prefix spend (E − K − the final phase) and the final phase against P and F, and
+for every shape but the first tags (whose depth the floor does not know) and the folder re-binds' final phase it
+asserts the quote covers them.
+
+**`ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal, so every BIND and UNBIND
+reads an UNSET head and is priced as a first statement (`freshPerBindFresh`, which is above `rwPerBindLater` on both
+schedules); it is exact only when every bind-kind action is one. A consumer plans from the gas model's rule
+(`planning`, `floor`), never from `indexFloor`.
 
 **Read terms (`reads`, step 4).** Every run also measures the topic readers (`tools/gas-reads.mjs` over
 `test/integration/TopicReadMeasure.t.sol`, one cold view call per row, on both schedules) and writes `reads`, a
@@ -673,9 +684,13 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    passes the real G7 decoder; the suites pass `address(0)`. `efs-deployment.json` records `index.runtimeCodehash` and
    `index.reads {address, runtimeCodehash}`; `verify` checks both codehashes on chain and `readsContract()`.
 9. **Work model.** `src/` has no release work model, so the index uses
-   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4; the
-   constants are measured with the step-3b lists in place; `gas/model.json` `floor.workModel` must equal it, which
-   `pnpm release` asserts).
+   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4, formula 2; the
+   constants are measured with the step-3b lists in place, the later-statement, existing-record and per-publish final
+   terms by `test/integration/IndexFloor.t.sol`'s `later`/`publish`/`reuse` rows; `gas/model.json` `floor.workModel`
+   must equal it, which `pnpm release` asserts). `WorkModel` is returned inline by `IIndexReads.manifest()`, so a
+   field added to it moves the two profile words after it; `LensReader` finds them from the struct's encoded size
+   (the other readers ask `PHYSICAL_PROFILE()`/`CALLBACK_PROFILE()`), and `test/index/IndexReadsSplit.t.sol` asserts
+   the reply's head keeps that shape.
    Limits come from `KernelDeploy.s1Limits()` (the §4.2 values; under `FOUNDRY_PROFILE=amsterdam` the fresh-slot floor
    price is the Glamsterdam execution-gas 12,100, `GLAMSTERDAM_FLOOR` in `tools/deploy-plan.mjs`).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;

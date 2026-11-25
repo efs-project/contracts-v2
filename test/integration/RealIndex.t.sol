@@ -25,7 +25,7 @@ import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
 import {IIndexHook} from "../../src/interfaces/IIndexHook.sol";
-import {DigestSpec, Effect, Readiness, Unit} from "../../src/interfaces/Index.sol";
+import {DigestSpec, Effect, Readiness, Unit, WorkModel} from "../../src/interfaces/Index.sol";
 import {E_LEDGER, E_WRITER} from "../../src/interfaces/Errors.sol";
 
 /// A final hook that never acknowledges: the index must refuse the publication and the kernel must roll back.
@@ -204,7 +204,7 @@ contract RealIndexTest is Test {
         assertEq(through, 0);
         assertEq(phase, Phase.IDLE);
         assertFalse(g.posting.attached(), "nothing has been written yet");
-        assertEq(g.index.workModel().formulaVersion, 1);
+        assertEq(g.index.workModel().formulaVersion, 2);
         assertEq(g.index.postingStore(), address(g.posting));
         assertEq(g.index.bitmapStore(), address(g.bitmap));
         assertEq(g.index.buildDelegate(), address(0));
@@ -596,11 +596,14 @@ contract RealIndexTest is Test {
         assertEq(floorA - floorB, KernelDeploy.s1Limits().floorFreshGas);
         assertEq(g.index.digestSpecCount(TYPE_OK), 1);
         assertEq(g.index.digestSpecCount(plain), 0);
-        // an existing record is not fresh: no digest work is quoted for a REUSE
+        // an existing record is not fresh: no digest work is quoted for a REUSE, only the existing-record term
         _seed();
         Action[] memory reuse = new Action[](1);
         reuse[0] = _reuse(TYPE_OK, recordId);
         (,, uint32 freshC,) = c.indexFloor(k.proxy, reuse);
-        assertLt(freshC, freshB);
+        WorkModel memory w = g.index.workModel();
+        uint256 fresh10 = uint256(w.freshPerPublication) + w.freshPerPublishExisting
+            + uint256(w.freshPerRef) * registry.typeInfo(TYPE_OK).refCount;
+        assertEq(freshC, (fresh10 + 9) / 10, "freshPerPublishExisting, no digest spec");
     }
 }

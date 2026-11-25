@@ -227,16 +227,19 @@
                     "freshPerPublication",
                     "rwPerPublication",
                     "freshPerPublishFresh",
+                    "freshPerPublishExisting",
                     "rwPerPublish",
                     "freshPerBindFresh",
                     "rwPerBind",
+                    "rwPerBindLater",
                     "freshPerRef",
                     "freshPerDigestSpec",
                     "computeBase",
                     "computePerAction",
                     "computePerHookEffect",
                     "finalComputeBase",
-                    "finalComputePerBind"
+                    "finalComputePerBind",
+                    "finalComputePerPublish"
                   ],
                   "additionalProperties": {
                     "type": "integer"
@@ -379,16 +382,19 @@
                     "freshPerPublication",
                     "rwPerPublication",
                     "freshPerPublishFresh",
+                    "freshPerPublishExisting",
                     "rwPerPublish",
                     "freshPerBindFresh",
                     "rwPerBind",
+                    "rwPerBindLater",
                     "freshPerRef",
                     "freshPerDigestSpec",
                     "computeBase",
                     "computePerAction",
                     "computePerHookEffect",
                     "finalComputeBase",
-                    "finalComputePerBind"
+                    "finalComputePerBind",
+                    "finalComputePerPublish"
                   ],
                   "additionalProperties": {
                     "type": "integer"

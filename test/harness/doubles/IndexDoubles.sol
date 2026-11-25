@@ -42,23 +42,27 @@ import {MockCaller, MockRegistry, MockUnsupported} from "./MockRegistry.sol";
 bytes32 constant CALLBACK_PROFILE_4 =
     keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
-/// The generation-1 work model of design §10.4, slot counts ×10 as the design stores them, measured with the step-3b
-/// first-statement lists in place on both schedules (`test/integration/IndexFloor.t.sol` and the gas model's kernel
-/// share; design §10.4 has the figures): slot counts are the index's fresh slots and rewrites per action, the compute
-/// terms its remaining execution gas, with a margin of about 5-12% on the bulk shapes (first statements on fresh
-/// positions, word pages, create-file recipes). The per-bind terms are set from first statements, so a later statement
-/// (≈ 91-109k) is quoted at about 0.6× its spend; the final reserve is set from TAG statements (≈ 5-7k per bind), so the
-/// Files validator's first masks about records and subjects (11-15k) and publishes (≈ 2.6k) are under-reserved. Both
-/// errors are on the safe side for planning (design §10.4).
+/// The generation-1 work model of design §10.4 (formula 2), slot counts ×10 as the design stores them, measured with the
+/// step-3b first-statement lists in place on both schedules (`test/integration/IndexFloor.t.sol` and the gas model's
+/// kernel share; design §10.4 has the figures): slot counts are the index's fresh slots and rewrites per action, the
+/// compute terms its remaining execution gas, each set with a margin of about 5-10% over the measured need of the shape
+/// it is set from: first statements on fresh positions, word pages and create-file recipes for the first-statement
+/// terms; the dearest later statement (a restore of a masked tag on amsterdam, ≈ 116k) for `rwPerBindLater`; a repeat
+/// PUBLISH or REUSE (≈ 87k / 63k) for `freshPerPublishExisting`; name records (≈ 2.6k in the final phase) for
+/// `finalComputePerPublish`. The final per-bind reserve is set from first tags on distinct topics, so the Files
+/// validator's first masks about records and subjects and its folder and HEAD re-binds (11-15k) are under-reserved;
+/// that is safe (design §10.4: the final call receives all remaining gas and the planning rule's V includes E).
 library IndexDoubleDefaults {
     function workModel() internal pure returns (WorkModel memory w) {
-        w.formulaVersion = 1;
+        w.formulaVersion = 2;
         w.freshPerPublication = 30;
         w.rwPerPublication = 10;
         w.freshPerPublishFresh = 6;
+        w.freshPerPublishExisting = 29; // an existing record filed again
         w.rwPerPublish = 46;
         w.freshPerBindFresh = 55;
         w.rwPerBind = 40;
+        w.rwPerBindLater = 120; // on top of rwPerBind for every later statement
         w.freshPerRef = 30;
         w.freshPerDigestSpec = 10;
         w.computeBase = 54_000;
@@ -66,6 +70,7 @@ library IndexDoubleDefaults {
         w.computePerHookEffect = 34_000; // charged per bind-kind action
         w.finalComputeBase = 20_000;
         w.finalComputePerBind = 7400;
+        w.finalComputePerPublish = 2800; // per PUBLISH/REUSE
     }
 }
 

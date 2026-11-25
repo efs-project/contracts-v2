@@ -121,9 +121,10 @@ export const LIMITS = {
  *  terms measured with the step-3b lists on both schedules plus a margin (docs/TAG-NUMBERS.md "The floor"); no release
  *  work model exists in src/. */
 export const WORK_MODEL = {
-  formulaVersion: 1, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, rwPerPublish: 46,
-  freshPerBindFresh: 55, rwPerBind: 40, freshPerRef: 30, freshPerDigestSpec: 10, computeBase: 54000,
-  computePerAction: 8000, computePerHookEffect: 34000, finalComputeBase: 20000, finalComputePerBind: 7400,
+  formulaVersion: 2, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, freshPerPublishExisting: 29,
+  rwPerPublish: 46, freshPerBindFresh: 55, rwPerBind: 40, rwPerBindLater: 120, freshPerRef: 30, freshPerDigestSpec: 10,
+  computeBase: 54000, computePerAction: 8000, computePerHookEffect: 34000, finalComputeBase: 20000,
+  finalComputePerBind: 7400, finalComputePerPublish: 2800,
 };
 /** The floor prices a Realm on a Glamsterdam (EIP-8037/8038) chain activates: execution-gas prices only, because the GAS
  *  opcode never sees the state-gas reservoir (design §10.4): the regular 12,100 of a fresh slot, never the all-in

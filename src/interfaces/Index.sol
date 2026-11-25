@@ -39,15 +39,32 @@ struct Effect {
     bytes32 withdrawnPrincipal;
 }
 
-/// Slot counts and compute; converted with limits.floor* at quote time.
+/// Slot counts (×10) and compute; converted with limits.floor* at quote time (design §10.4). Formula 2, over a
+/// publication of n actions, `binds` of them BIND/UNBIND/RELEASE and `publishes` PUBLISH/REUSE:
+///   fresh10 = freshPerPublication + Σ_publishes (freshPerRef·refs + (new record ? freshPerPublishFresh +
+///             freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_binds (first statement ? freshPerBindFresh : 0)
+///   rw10    = rwPerPublication + publishes·rwPerPublish + Σ_binds (rwPerBind + (first statement ? 0 : rwPerBindLater))
+///   prefixFloor  = computeBase + n·computePerAction + binds·computePerHookEffect + ceil(fresh10/10)·floorFreshGas
+///                  + ceil(rw10/10)·floorRewriteGas
+///   finalReserve = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish
+/// A first statement is a BIND or UNBIND on an UNSET author head (it allocates the binding); every other bind-kind
+/// action, a RELEASE always, is a later statement. A record is new when no earlier admission wrote its header (a
+/// REUSE always names an existing one).
 struct WorkModel {
     uint8 formulaVersion;
     uint16 freshPerPublication;
     uint16 rwPerPublication;
     uint16 freshPerPublishFresh;
+    /// Charged instead of `freshPerPublishFresh` for a PUBLISH of an existing record or a REUSE: filing a record
+    /// again writes more fresh index slots than its first admission (measured ≈ 2.4 per action against 0.6).
+    uint16 freshPerPublishExisting;
     uint16 rwPerPublish;
     uint16 freshPerBindFresh;
     uint16 rwPerBind;
+    /// Charged on a later statement (a re-bind, a number change, a mask, a release, a restore) on top of `rwPerBind`:
+    /// it moves the lists and counts a first statement only appends to, so the per-bind terms, set from first
+    /// statements, under-quote it.
+    uint16 rwPerBindLater;
     uint16 freshPerRef;
     uint16 freshPerDigestSpec;
     uint32 computeBase;
@@ -55,13 +72,15 @@ struct WorkModel {
     uint32 computePerHookEffect;
     uint32 finalComputeBase;
     uint32 finalComputePerBind;
+    /// The final phase's compute per PUBLISH or REUSE: the final units see every effect, not only the bind-kind ones.
+    uint32 finalComputePerPublish;
 }
 
 // `WorkModel`'s ABI size in words: a static struct, one word per field, returned inline by `IIndexReads.manifest()`
 // between the three array offsets and the two profiles, so a reader that checks the profiles from the raw reply finds
 // them at words 4 + WORK_MODEL_WORDS and 5 + WORK_MODEL_WORDS. It must change with the struct;
 // `test/index/IndexReadsSplit.t.sol` fails when the two drift.
-uint256 constant WORK_MODEL_WORDS = 14;
+uint256 constant WORK_MODEL_WORDS = 17;
 
 /// Constructor-fixed; the core folds family 15 from body word `wordIndex` (one cold SLOAD, priced).
 struct DigestSpec {
