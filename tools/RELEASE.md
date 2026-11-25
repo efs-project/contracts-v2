@@ -501,7 +501,7 @@ has stated anything at its position, `bindTagSecondAuthor` when the position exi
 `n − 1` proper ancestors, `tagLevel.mineNew` or `tagLevel.mineExisting` (the author's `scope-below` list at that
 ancestor is empty or not) and, on a fresh position only, `tagLevel.sharedNew` or `tagLevel.sharedExisting` (the
 `place-below` list at that ancestor). The SDK reads those list heads (`postingHeadOf`) when it plans; a list holding
-exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new. The terms are measured
+exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new (it costs one slot rewrite more than a new list, inside the model's headroom; not separately measured). The terms are measured
 by four `tag level` rows (`(k2 − k1) / 4` of a tag on a 2-word and on a 6-word topic from the same state, so each is
 one level), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
 these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
