@@ -17,10 +17,10 @@ import {Action, Purpose} from "../../../src/interfaces/Actions.sol";
 ///           /big.bin                40,000 bytes, 8,160-byte chunks (5 chunks, depth 3), files-content/1 carrier 2
 ///           /deep tree.bin          5,000 bytes, 64-byte chunks (79 chunks, depth 7)
 ///           /ext.bin                files-external/1 ar://… (307), media type application/octet-stream
-///           /gone.txt               removed by p (MASKED); alice binds her own gone.txt
+///           /gone.txt               hidden by p (MASKED, `EfsFiles.hide`); alice binds her own gone.txt
 ///           /docs/sub/              nested folder, /docs/sub/leaf.txt
 ///           /docs/guide.html        inline
-///           alice: /alice.txt, /gone.txt, /docs/alice-doc.txt, /shared.txt (removed by alice; p binds shared.txt)
+///           alice: /alice.txt, /gone.txt, /docs/alice-doc.txt, /shared.txt (hidden by alice; p binds shared.txt)
 ///
 ///         URL helpers parse a `/path?query` string the way an ERC-6860 client does (split on `/`, percent-decode,
 ///         split the query on `&` and `=`) and follow `web3-next-chunk`.
@@ -73,7 +73,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         _store(address(this), rootDir, "deep tree.bin", deepPayload, 64);
         _external("ext.bin", EXT_MEDIA);
         _file(address(this), rootDir, "gone.txt", "p's gone", true);
-        (a, b) = EfsFiles.remove(rootDir, "gone.txt", 1);
+        (a, b) = EfsFiles.hide(rootDir, "gone.txt", 1);
         _exec(a, b);
         docs = _folder(rootDir, "docs");
         sub = _folder(docs, "sub");
@@ -84,7 +84,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         _file(alice, rootDir, "gone.txt", "alice's gone", false);
         _file(alice, docs, "alice-doc.txt", "alice's doc", true);
         _file(alice, rootDir, "shared.txt", "alice's shared", true);
-        (a, b) = EfsFiles.remove(rootDir, "shared.txt", 1);
+        (a, b) = EfsFiles.hide(rootDir, "shared.txt", 1);
         _execAs(alice, a, b);
         _file(address(this), rootDir, "shared.txt", "p's shared", false);
     }

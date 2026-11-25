@@ -5,7 +5,8 @@ import {FilesPageHarness} from "../harness/doubles/FilesPageHarness.sol";
 import {FilesPageReader} from "../../src/readers/FilesPageReader.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, Purpose} from "../../src/interfaces/Actions.sol";
+import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
+import {E_CAS} from "../../src/interfaces/Errors.sol";
 import {BasisCommit, Coverage, Qualified, Status} from "../../src/interfaces/Results.sol";
 import {IFilesPageReader} from "../../src/interfaces/Readers.sol";
 import {ILedgerReads} from "../../src/interfaces/ILedgerReads.sol";
@@ -152,7 +153,7 @@ contract FilesPageReaderTest is FilesPageHarness {
     function test_a_higher_principal_mask_is_reported_masked_not_listed_as_the_lower() public {
         _file(alice, rootDir, "a.txt", "alice's a", false);
         _file(bob, rootDir, "a.txt", "bob's a", false);
-        (Action[] memory a, bytes[] memory b) = EfsFiles.remove(rootDir, "a.txt", 1);
+        (Action[] memory a, bytes[] memory b) = EfsFiles.hide(rootDir, "a.txt", 1);
         _execAs(alice, a, b);
         IFilesPageReader.DirectoryPage memory page = _list(rootDir, _lens(pa, pb, p), F_ALL);
         // docs, b.txt, notes.txt and one whiteout (reported by bob, the first lower principal BOUND there)
@@ -173,13 +174,117 @@ contract FilesPageReaderTest is FilesPageHarness {
             reader.lookupName(rootDir, keccak256("a.txt"), _lens(pa, p), _unbound());
         assertEq(uint8(q.status), uint8(Status.MASKED));
         assertEq(row.rowKind, ROW_WHITEOUT);
-        // RELEASE falls through: the lower principal's entry is listed again
-        (a, b) = EfsFiles.releaseEntry(rootDir, "a.txt", 2);
+        // removing (RELEASE) the hidden entry falls through: the lower principal's entry is listed again
+        (a, b) = EfsFiles.remove(rootDir, "a.txt", 2);
         _execAs(alice, a, b);
         (q, row) = reader.lookupName(rootDir, keccak256("a.txt"), _lens(pa, p), _unbound());
         assertEq(uint8(q.status), uint8(Status.PRESENT));
         assertEq(row.target, fileA);
         assertEq(row.headRecord, aRoot);
+    }
+
+    // ---- remove releases, hide masks, move is atomic ----------------------------------------------------------
+
+    /// Alice and Bob each place their own `pet.jpg` at the same place; a reader ranks Alice first.
+    function _pets() internal returns (bytes32 aliceFile, bytes32 bobFile, bytes32 bobRoot) {
+        (aliceFile,) = _file(alice, rootDir, "pet.jpg", "alice's pet", true);
+        (bobFile, bobRoot) = _file(bob, rootDir, "pet.jpg", "bob's pet", false);
+        (Qualified memory q, IFilesPageReader.Row memory row) =
+            reader.lookupName(rootDir, keccak256("pet.jpg"), _lens(pa, pb), _unbound());
+        assertEq(uint8(q.status), uint8(Status.PRESENT));
+        assertEq(row.target, aliceFile, "alice ranks first");
+    }
+
+    function _petRows(bytes32[] memory lens)
+        internal
+        view
+        returns (uint256 n, IFilesPageReader.Row memory pet)
+    {
+        IFilesPageReader.DirectoryPage memory page = _list(rootDir, lens, F_ALL);
+        for (uint256 i; i < page.rows.length; ++i) {
+            if (keccak256(page.rows[i].name) == keccak256("pet.jpg")) {
+                ++n;
+                pet = page.rows[i];
+            }
+        }
+    }
+
+    /// `EfsFiles.remove` RELEASEs: Alice's claim stops and Bob's same-named entry shows through for a reader that
+    /// ranks Alice first. Removing my `pet.jpg` never hides anyone else's.
+    function test_remove_releases_and_a_lower_authors_entry_shows_through() public {
+        (, bytes32 bobFile, bytes32 bobRoot) = _pets();
+        (Action[] memory a, bytes[] memory b) = EfsFiles.remove(rootDir, "pet.jpg", 1);
+        assertEq(a[0].kind, ActionKind.RELEASE);
+        _execAs(alice, a, b);
+        (uint8 state,,,,,,) =
+            r.hot.head(Keys.binding(pa, EfsFiles.folderPosition(rootDir, "pet.jpg")));
+        assertEq(state, 3, "alice's head is RELEASED");
+        (Qualified memory q, IFilesPageReader.Row memory row) =
+            reader.lookupName(rootDir, keccak256("pet.jpg"), _lens(pa, pb), _unbound());
+        assertEq(uint8(q.status), uint8(Status.PRESENT));
+        assertEq(row.target, bobFile, "bob's entry shows through");
+        assertEq(row.headRecord, bobRoot);
+        (uint256 n, IFilesPageReader.Row memory pet) = _petRows(_lens(pa, pb));
+        assertEq(n, 1, "listed once");
+        assertEq(pet.rowKind, ROW_ENTRY);
+        assertEq(pet.target, bobFile);
+    }
+
+    /// `EfsFiles.hide` UNBINDs: Alice's head is MASKED, which stops the lens search, so Bob's entry is not shown to
+    /// a reader that ranks Alice first (a whiteout row), and is shown to a reader that ranks Bob first.
+    function test_hide_masks_and_a_lower_authors_entry_does_not_show() public {
+        (, bytes32 bobFile,) = _pets();
+        (Action[] memory a, bytes[] memory b) = EfsFiles.hide(rootDir, "pet.jpg", 1);
+        assertEq(a[0].kind, ActionKind.UNBIND);
+        _execAs(alice, a, b);
+        (Qualified memory q, IFilesPageReader.Row memory row) =
+            reader.lookupName(rootDir, keccak256("pet.jpg"), _lens(pa, pb), _unbound());
+        assertEq(uint8(q.status), uint8(Status.MASKED));
+        assertEq(row.rowKind, ROW_WHITEOUT);
+        (uint256 n, IFilesPageReader.Row memory pet) = _petRows(_lens(pa, pb));
+        assertEq(n, 1);
+        assertEq(pet.rowKind, ROW_WHITEOUT, "bob's entry does not show");
+        assertEq(pet.target, 0);
+        (n, pet) = _petRows(_lens(pb, pa));
+        assertEq(pet.target, bobFile, "a reader ranking bob first still sees his");
+    }
+
+    /// `EfsFiles.move` is RELEASE(from) + BIND(to) in one publication: the source falls through to Bob's entry and
+    /// the file appears at its new name; a move whose BIND is refused lands nothing (the RELEASE rolls back with it).
+    function test_move_releases_the_source_atomically() public {
+        (bytes32 aliceFile, bytes32 bobFile,) = _pets();
+        bytes32 key = Keys.binding(pa, EfsFiles.folderPosition(rootDir, "pet.jpg"));
+        // a stale CAS on the destination: refused whole, the source is still bound
+        (Action[] memory a, bytes[] memory b) =
+            EfsFiles.move(t, aliceFile, rootDir, "pet.jpg", 1, docs, "cat.jpg", 5, true);
+        assertEq(a[1].kind, ActionKind.RELEASE);
+        bytes32 dest = Keys.binding(pa, EfsFiles.folderPosition(docs, "cat.jpg"));
+        vm.expectRevert(abi.encodeWithSelector(E_CAS.selector, dest, uint64(5), uint64(0)));
+        this.execAsExternal(alice, a, b);
+        (uint8 state, uint64 rev,,,,, bytes32 target) = r.hot.head(key);
+        assertEq(state, 1, "the RELEASE rolled back with the refused BIND");
+        assertEq(rev, 1);
+        assertEq(target, aliceFile);
+        (bytes32 nameType,,,,) =
+            r.hot.recordHeader(EfsFiles.nameRecord(t.name, keccak256("cat.jpg")));
+        assertEq(nameType, 0, "the name did not leak");
+        // the move lands
+        (a, b) = EfsFiles.move(t, aliceFile, rootDir, "pet.jpg", 1, docs, "cat.jpg", 0, true);
+        _execAs(alice, a, b);
+        (state,,,,,,) = r.hot.head(key);
+        assertEq(state, 3, "the source is RELEASED, not masked");
+        (Qualified memory q, IFilesPageReader.Row memory row) =
+            reader.lookupName(rootDir, keccak256("pet.jpg"), _lens(pa, pb), _unbound());
+        assertEq(uint8(q.status), uint8(Status.PRESENT));
+        assertEq(row.target, bobFile, "bob's pet.jpg shows through at the old place");
+        (q, row) = reader.lookupName(docs, keccak256("cat.jpg"), _lens(pa, pb), _unbound());
+        assertEq(uint8(q.status), uint8(Status.PRESENT));
+        assertEq(row.target, aliceFile, "alice's file at its new place");
+    }
+
+    /// `_execAs` through an external call, so `vm.expectRevert` sees the ledger's revert at this depth.
+    function execAsExternal(address author, Action[] memory a, bytes[] memory b) external {
+        _execAs(author, a, b);
     }
 
     // ---- INVALID heads (the reader-side §12.1 HEAD law) -------------------------------------------------------
@@ -379,7 +484,8 @@ contract FilesPageReaderTest is FilesPageHarness {
         assertEq(row.headRecord, readmeChild);
         assertEq(row.targetKind, 2);
         (q, row) = reader.lookupName(rootDir, keccak256("c.txt"), _lens(p), _unbound());
-        assertEq(uint8(q.status), uint8(Status.MASKED), "removed");
+        // removed (RELEASED) and nobody else's entry: the place is empty, proven
+        assertEq(uint8(q.status), uint8(Status.ABSENT_PROVEN), "removed");
         (q, row) = reader.lookupName(rootDir, keccak256("zzz"), _lens(p), _unbound());
         assertEq(uint8(q.status), uint8(Status.ABSENT_PROVEN));
         assertEq(row.position, EfsFiles.folderPosition(rootDir, "zzz"));
@@ -446,7 +552,12 @@ contract FilesPageReaderTest is FilesPageHarness {
         );
         assertEq(EfsFiles.headPosition(fileA), Keys.position(Purpose.HEAD, fileA, 0));
         assertEq(EfsFiles.folderScope(p, rootDir), Keys.scope(p, Purpose.FOLDER, rootDir));
-        assertEq(EfsFiles.directoryRecord(t.directory, Keys.subject(p, keccak256("docs"))), docs);
+        assertEq(EfsFiles.directoryRecord(t.directory, p, keccak256("docs")), docs);
+        assertEq(
+            EfsFiles.directoryRecord(t.directory, p, keccak256("docs")),
+            Keys.record(t.directory, abi.encode(p, keccak256("docs")))
+        );
+        assertEq(EfsFiles.directoryBody(p, keccak256("docs")), abi.encode(p, keccak256("docs")));
         assertEq(EfsFiles.bytesBody("x"), bytes.concat(sha256("x"), "x"));
         EfsFiles.Content memory c;
         assertEq(EfsFiles.contentBody(c).length, 320);

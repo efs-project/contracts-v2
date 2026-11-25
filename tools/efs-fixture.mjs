@@ -332,7 +332,7 @@ function seedIds(plan) {
   return {
     version: s.version,
     root: s.root,
-    folder: { name: s.folder.name, directoryRecordId: s.folder.directoryRecordId, subjectId: s.folder.subjectId },
+    folder: { name: s.folder.name, directoryRecordId: s.folder.directoryRecordId },
     file: { name: s.file.name, subjectId: s.file.subjectId, headRecordId: s.file.rootRecordId, headRevision: 1 },
     files: s.files.map((f) => {
       const base = { name: f.name, subjectId: f.subjectId, headRecordId: f.headRecordId, headRevision: f.headRevision, form: f.form, length: f.length, sha256: f.sha256 };
@@ -829,9 +829,15 @@ export async function verify(o = {}) {
     const got = await read(pub, a.ledgerProxy, "LedgerCore", "head", [hd.key]);
     eq(`seed head ${hd.what}`, [got[0], got[1], got[6]], [hd.state, BigInt(hd.revision), hd.target]);
   }
-  for (const s of [exp.root.subjectId, exp.folder.subjectId, ...exp.files.map((f) => f.subjectId)]) {
+  for (const s of exp.files.map((f) => f.subjectId)) {
     const createdAt = await read(pub, a.ledgerProxy, "LedgerCore", "subjectCreatedAt", [s]);
     eq(`seed subject ${s.slice(0, 10)} created`, createdAt !== 0n, true);
+  }
+  // a folder is a files-directory/1 record abi.encode(creator, salt) published by its creator, never a subject
+  for (const [what, id] of [["root", exp.root.directoryRecordId], ["docs", exp.folder.directoryRecordId]]) {
+    eq(`seed folder ${what} is not a subject`, await read(pub, a.ledgerProxy, "LedgerCore", "subjectCreatedAt", [id]), 0n);
+    const [st, hd, body] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, id]);
+    eq(`seed folder ${what} creator`, [st, hd.typeId, size(body), hd.word0], [2, dep.typeIds["files-directory/1"], 64, exp.root.principalId]);
   }
   eq("seed nonce", (await read(pub, a.ledgerProxy, "LedgerCore", "nonceOf", [exp.root.principalId]))[0], BigInt(exp.counts.publications));
   const scope = await read(pub, a.bitmapStore, "BitmapStore", "scopeHead", [exp.folder.scopeKey]);

@@ -170,7 +170,7 @@ Two directions, both in the core design:
 | 200 | a file's bytes or one chunk of them; a directory as JSON `{"entries":[{"name","kind"}…],"complete":bool}` |
 | 307 | the file is a `files-external/1` location; `Location` carries the URI, `x-efs-media-type` its declared media type |
 | 400 | malformed principal, lens or offset; an empty name; too many names or principals |
-| 404 | no such name, a removed (masked) name, a file used as a folder, no revision, remote-only content |
+| 404 | no such name, a hidden (masked) name, a file used as a folder, no revision, remote-only content |
 | 416 | `offset` at or past the end (offset 0 of an empty file is `200`) |
 | 500 | a broken Files invariant (wrong Type or length, a missing tree node) or a failed listing |
 | 503 | another ledger layout, or a read the facet refuses |

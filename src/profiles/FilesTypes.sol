@@ -166,8 +166,8 @@ library FilesTypes {
     function directorySpec() internal pure returns (Spec memory s) {
         s.name = "files-directory/1";
         s.description =
-        "abi.encode(seedSubject); a directory is this record, seeded by a created subject";
-        s.dependencyClass = 2;
+            "abi.encode(bytes32 creatorPrincipal, bytes32 salt); a folder is this record, admitted only when the publishing principal is the creator word and the salt is nonzero";
+        s.dependencyClass = 1;
         s.refHeaderWords = 1;
     }
 

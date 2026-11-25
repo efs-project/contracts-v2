@@ -45,9 +45,7 @@ contract PopulatedUpgradeTest is FilesFixture {
     bytes32 internal p;
     LedgerReads internal reads;
     LedgerViews internal views;
-    bytes32 internal rootSubject;
     bytes32 internal rootDir;
-    bytes32 internal docsSubject;
     bytes32 internal docsDir;
     bytes32 internal docsName;
     bytes32 internal file;
@@ -65,23 +63,15 @@ contract PopulatedUpgradeTest is FilesFixture {
         p = r.principal;
         reads = new LedgerReads();
         views = new LedgerViews();
-        rootSubject = Keys.subject(p, keccak256("root"));
-        Action[] memory a = new Action[](2);
-        bytes[] memory b = new bytes[](2);
-        a[0] = _create(keccak256("root"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(rootSubject));
-        rootDir = Keys.record(typeIds[T_DIRECTORY], b[1]);
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        (a[0], b[0]) = _publish(T_DIRECTORY, abi.encode(p, keccak256("root")));
+        rootDir = Keys.record(typeIds[T_DIRECTORY], b[0]);
         _exec(a, b);
         // create folder
-        docsSubject = Keys.subject(p, keccak256("docs"));
-        a = new Action[](4);
-        b = new bytes[](4);
-        a[0] = _create(keccak256("docs"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(docsSubject));
-        docsDir = Keys.record(typeIds[T_DIRECTORY], b[1]);
-        (a[2], b[2]) = _publish(T_NAME, "docs");
-        docsName = Keys.record(typeIds[T_NAME], b[2]);
-        a[3] = _bind(Purpose.FOLDER, rootDir, keccak256("docs"), docsDir, 0);
+        docsDir = Keys.record(typeIds[T_DIRECTORY], abi.encode(p, keccak256("docs")));
+        docsName = Keys.record(typeIds[T_NAME], "docs");
+        (a, b) = _folderActions();
         (folderNonce, folderSet, folderProfile) = _execKeep(a, b);
         // create file
         file = Keys.subject(p, keccak256("readme"));
@@ -153,12 +143,11 @@ contract PopulatedUpgradeTest is FilesFixture {
     }
 
     function _folderActions() internal view returns (Action[] memory a, bytes[] memory b) {
-        a = new Action[](4);
-        b = new bytes[](4);
-        a[0] = _create(keccak256("docs"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(docsSubject));
-        (a[2], b[2]) = _publish(T_NAME, "docs");
-        a[3] = _bind(Purpose.FOLDER, rootDir, keccak256("docs"), docsDir, 0);
+        a = new Action[](3);
+        b = new bytes[](3);
+        (a[0], b[0]) = _publish(T_DIRECTORY, abi.encode(p, keccak256("docs")));
+        (a[1], b[1]) = _publish(T_NAME, "docs");
+        a[2] = _bind(Purpose.FOLDER, rootDir, keccak256("docs"), docsDir, 0);
     }
 
     function _key(bytes32 purpose, bytes32 subject, bytes32 role) internal view returns (bytes32) {
@@ -172,10 +161,8 @@ contract PopulatedUpgradeTest is FilesFixture {
         k.recordIds[2] = docsName;
         k.recordIds[3] = rootRec;
         k.recordIds[4] = readmeName;
-        k.subjectIds = new bytes32[](3);
-        k.subjectIds[0] = rootSubject;
-        k.subjectIds[1] = docsSubject;
-        k.subjectIds[2] = file;
+        k.subjectIds = new bytes32[](1);
+        k.subjectIds[0] = file;
         (uint64 admissions,, uint64 bindings, uint64 publications) = r.hot.counts();
         k.admissionsThrough = admissions;
         k.publicationsThrough = publications;

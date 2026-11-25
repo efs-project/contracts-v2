@@ -132,10 +132,10 @@ leased in state `failed`.
   "ledger": "0x870a…0c1c", "registry": "0x…", "controller": "0x…", "keysView": "0x50dE…757F",
   "web3Gateway": "0x38Bd…bC4a", "web3Url": "web3://0x38Bd…bC4a:31337/0x0000…f39f…2266/",
   "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x38Bd…bC4a" },
-  "root": { "directoryRecordId": "0xde49…a430", "subjectId": "0x2494…4951", "principalId": "0x…f39f…2266" },
+  "root": { "directoryRecordId": "0xf754…c037", "principalId": "0x…f39f…2266" },
   "seed": {
-    "version": "efs-fixture-seed/3", "root": { "…": "as above" },
-    "folder": { "name": "docs", "directoryRecordId": "0x6be2…f06e", "subjectId": "0x7ba4…1c20" },
+    "version": "efs-fixture-seed/4", "root": { "…": "as above" },
+    "folder": { "name": "docs", "directoryRecordId": "0xbc58…0443" },
     "file": { "name": "readme.txt", "subjectId": "0xb77c…4065", "headRecordId": "0xbd3d…9e8d", "headRevision": 1 },
     "files": [
       { "name": "readme.txt", "subjectId": "0xb77c…4065", "headRecordId": "0xbd3d…9e8d", "headRevision": 1, "form": 0, "length": 18, "sha256": "0x0e7b…6df6" },
@@ -147,7 +147,7 @@ leased in state `failed`.
   },
   "typeIds": { "files-root/1": "0x…", "…": "one per Files Type" },
   "signerCapable": true,
-  "capabilities": { "filesSeed": "efs-fixture-seed/3", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
+  "capabilities": { "filesSeed": "efs-fixture-seed/4", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
   "planHash": "0xdacd…38db", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
@@ -366,8 +366,8 @@ equal; see HARNESS-BUG below).
 | `test/vectors/media.json` | `efs/vectors/media/1`, written by `tools/release.mjs` (or alone by `node tools/media-vectors.mjs`) and compared byte for byte by `release:check`: `files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty media strings with the grammar's code and each rule's refusal code (`docs/LARGE-FILES.md` "Media types"). `test/profiles/FilesMediaType.t.sol` asserts it against the rules, `EfsFiles`, `Keys` and `script/Genesis.s.sol`'s Type ids. |
 | `release/errors.json` | `efs-errors/1`: 106 file-level errors from `src/`, each with selector, signature, args, source, retry class (the first word of the trailing comment; required, the generator refuses an error without one) and meaning (the rest of that comment, else the `///` lines above the error). Every selector in `test/snapshots/abi/Errors.json` is reproduced. |
 | `artifacts/<Unit>.json` | `efs-artifact/1` per deployable unit: ABI, method identifiers, creation and runtime bytecode, named immutable offsets. `LedgerCore.json`'s ABI is the union of the kernel ABI with the events and errors of `LedgerApply`, `LedgerIngress` and `LedgerControl`. Interface ABIs are not copied: `abi.interfaces` points at `test/snapshots/abi/` (tools/abi-snapshot.mjs), and storage layouts at `test/snapshots/layout/`. |
-| `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids, plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, subjectId, principalId}`; `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
-| `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, the three files with their ids, lengths, sha256 and, for big.bin and remote.txt, the descriptor, span-root and sentinel ids; counts 29 admissions / 17 records / 7 bindings / 6 publications; seven heads; thirteen records; catalog count 10). |
+| `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids, plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, principalId}` (a folder is a record, never a subject); `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
+| `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, the three files with their ids, lengths, sha256 and, for big.bin and remote.txt, the descriptor, span-root and sentinel ids; counts 27 admissions / 17 records / 7 bindings / 6 publications; seven heads; thirteen records; catalog count 10). |
 | `<home>/instances/<name>/` | One instance's runtime state (never tracked): `anvil.pid`, `anvil.log`, `fixture.json` (rpc, pid, ttl, factory method, signing, RPC method counts, the journal of all 61 transactions with hash, block and gasUsed, and the two read estimates), its own `efs-deployment.json` and `expected.json`, and `up.json`. `release/efs-deployment.json` and `release/expected.json` are the committed sample, written only by `up --write-release`. |
 | `artifacts/index.json` | `efs-artifacts-index/1`: `layoutId`, `hotAbiId`, the unit list; lets `artifacts/` deploy alone. |
 | `gas/report.json` | `efs-gas-report/1` (below). |
@@ -395,13 +395,14 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
    row's `ComponentSet` (`LedgerReads.revisionAt`) equals it too. `domainSeparator` and `limitsProfileId` equal
    `describe()`.
 7. **The index.** `manifestHash()` equals the offline manifest hash; `replayReadiness()` is ready, with families and
-   units equal to the plan; `progress().lastProcessed` equals 29; `digestSpecCount` is 1 for `files-content/1` and for
+   units equal to the plan; `progress().lastProcessed` equals 27; `digestSpecCount` is 1 for `files-content/1` and for
    `files-external/1`.
 8. **The ten Types.** The catalog equals the offline id set. For each Type, `typeInfo` mandatory, ruleId, shape and
    blob; `descriptorBytes` equals the JS descriptor; `refTypes`; `declaration` (key and installed); and the published
    id.
-9. **The seed.** Thirteen record headers, seven heads (state, revision, target), five subjects created, the fixture
-   principal's nonce of 6 (one per publication), the root scope (1 entry, 1 live) and the `docs/` scope (3, 3).
+9. **The seed.** Thirteen record headers, seven heads (state, revision, target), the three file subjects created,
+   each folder (the root and `docs/`) a 64-byte `files-directory/1` record whose word 0 is the fixture principal and
+   which is not a subject, the fixture principal's nonce of 6 (one per publication), the root scope (1 entry, 1 live) and the `docs/` scope (3, 3).
    For each file, from its HEAD revision through `LedgerReads.record`: `readme.txt` (form 0) has the expected length
    and sha256; `big.bin` (form 1) names its `files-content/1` record (carrier 2, the span root, length, sha256, the
    media length word and the media bytes), and
@@ -495,25 +496,25 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (CREATE + PUBLISH directory) | 770,658 | 2,711,499 (2,154,240) |
-| Native 1-leaf PUBLISH (32 B directory body, steady author) | 579,592 | 1,771,418 (1,272,960) |
-| M1 create folder (first placement in root, fresh scope) | 1,394,655 | 4,867,667 (3,818,880) |
-| M1 create file (5 leaves, fresh folder) | 1,676,803 | 5,860,841 (4,602,240) |
-| Edit | 894,800 | 2,805,374 (2,056,320) |
-| Rename / move | 1,081,797 | 3,380,264 (2,448,000) |
-| Remove | 445,782 | 1,197,809 (783,360) |
-| Restore (masked → same target) | 487,136 | 1,253,697 (783,360) |
-| RELEASE from mask | 409,360 | 1,073,500 (685,440) |
-| RELEASE from BOUND (not a §14 row) | 428,947 | 1,100,288 (685,440) |
-| Restore a released placement (Move-back analog) | 501,990 | 1,349,249 (881,280) |
-| WITHDRAW | 457,508 | 1,297,166 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 694,242 | 2,459,042 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 598,670 | 1,878,417 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,317,857 | 4,614,817 (3,623,040) |
+| M1 create file (5 leaves, fresh folder) | 1,676,801 | 5,860,838 (4,602,240) |
+| Edit | 894,810 | 2,805,384 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,081,999 | 3,380,453 (2,448,000) |
+| Remove (RELEASE from BOUND) | 445,984 | 1,198,011 (783,360) |
+| Restore (released → same target) | 487,148 | 1,253,708 (783,360) |
+| RELEASE from mask | 409,372 | 1,073,512 (685,440) |
+| Hide (UNBIND from BOUND) | 428,767 | 1,100,109 (685,440) |
+| Restore a released placement (Move-back analog) | 502,014 | 1,349,249 (881,280) |
+| WITHDRAW | 457,530 | 1,297,177 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
 
 - `FilesPageReader.listDirectory`, one page of `docs/` (now three rows; limit 32, one principal, unbound basis,
-  F_NAME | F_HEADER | F_KIND): 573,832 gas, 548 B calldata, 1,856 B returndata.
-- `LedgerReads.record` of `readme.txt`'s root record: 90,994 gas, 68 B calldata, 576 B returndata.
+  F_NAME | F_HEADER | F_KIND): 580,788 gas, 548 B calldata, 1,856 B returndata.
+- `LedgerReads.record` of `readme.txt`'s root record: 91,502 gas, 68 B calldata, 576 B returndata.
 
 The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, whose `console2.log` lines `forge test
 --json -vv` exposes in `decoded_logs`. Each run lists all 1,000 live rows; per-page detail is in the report:

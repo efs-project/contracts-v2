@@ -269,9 +269,9 @@
     },
     "root": {
       "type": "object",
+      "description": "The Realm root folder: its files-directory/1 record id (abi.encode(principalId, rootSalt) under the directory Type) and the principal that published it. A folder is a record, never a subject, so there is no subject id.",
       "required": [
         "directoryRecordId",
-        "subjectId",
         "principalId"
       ]
     },

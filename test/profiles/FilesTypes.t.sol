@@ -29,7 +29,7 @@ contract FilesTypesTest is FilesFixture {
         "files-span/1"
     ];
     uint8[10] internal refHeaderWords = [1, 2, 1, 1, 1, 3, 1, 1, 1, 3];
-    uint8[10] internal dependencyClass = [2, 2, 2, 1, 1, 1, 1, 2, 2, 1];
+    uint8[10] internal dependencyClass = [2, 2, 1, 1, 1, 1, 1, 2, 2, 1];
 
     function setUp() public {
         _deployProfile();

@@ -1,22 +1,20 @@
 {
   "schema": "efs-fixture-expected/1",
-  "seedVersion": "efs-fixture-seed/3",
+  "seedVersion": "efs-fixture-seed/4",
   "chainId": 31337,
   "ledger": "0x870aa1d6873256e38F82E348c23F707B7E890c1c",
-  "executionSet": "0x9c4692dc8db33e573d80dc6e90bb1cc50e17cacd6a9355556a69ae7f3c8d53a0",
+  "executionSet": "0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9",
   "revision": 1,
   "root": {
-    "directoryRecordId": "0xde495817996636283ef72987b0106da2254b949815c75546879defcac169a430",
-    "subjectId": "0x24940483026663678bc88eda1130eb445455aad967266a60d66daa39c7f34951",
+    "directoryRecordId": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
     "principalId": "0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266"
   },
   "folder": {
     "name": "docs",
-    "directoryRecordId": "0x6be2bba940bc78e07f788625cea290b7f2e0d22dcf32f489be76b0072923f06e",
-    "subjectId": "0x7ba496e2df2a761cb636b167e989cc3c398e73a35507033017d4a49c15981c20",
+    "directoryRecordId": "0xbc585abf66f2338a3ff8654e00874fac3ff3903adfdf0d9c198de470d8da0443",
     "nameRecordId": "0xa8d0ebb180444add1bc813897abb1c177c07b7fc93d22fdbcaf45179ba9e2431",
-    "bindingKey": "0x210d90e5803197abd66214236673b5d8a116415ff211a66e6c9bbaba5b7f8da9",
-    "scopeKey": "0x31842bee819353fddcde6ce466b6ee2331ebf0bc43eec2ca8f907c3fc0db82b0"
+    "bindingKey": "0xe4862101230a1818156ae6f9bedcf545bd95681a8e5813af50a04d6e639d455d",
+    "scopeKey": "0xf7adfcbf10185cf9acd22bef43887d0e436a5d02ff89ee29d2707570f40dd71e"
   },
   "file": {
     "name": "readme.txt",
@@ -24,8 +22,8 @@
     "rootRecordId": "0x6ccd600cf21585ebd6a965bdee5352727c39843c09ef410016e8cdc1a48e1eb6",
     "nameRecordId": "0x7091b842b9fa71df0f32554a5241daeab3215ccead4904af948fba528e7761f5",
     "headKey": "0xb52733c80e5d7662a2020fca9b9fe53a541fbaf9c9eae0ff95aedc05937b5915",
-    "bindingKey": "0x2e8cc87bcf5d7e505b9d08fd45bf5cf31a34e47aea38ae418ef8459fc4ab7dd9",
-    "scopeKey": "0x2cd1689dd1f31b3ab8ec1a9c4258c89ede2fd101c71173750aaace9cc3b39b11",
+    "bindingKey": "0x7ddcd07e837fba815245e0de5486ad46ba7bf71619f893d876b244c6008a0a77",
+    "scopeKey": "0x9178eb1fa51be0bdd37a4b797f46e70c8d2315ae1a407d19b1e557704c7b6583",
     "body": "0xb77c10b50e2745da91a49ed0e29b8d99d985c611eace13656fb442bde9b9406500000000000000000000000000000000000000000000000000000000000000004d656574696e672061742031303a30302e0a"
   },
   "files": [
@@ -37,7 +35,7 @@
       "form": 0,
       "nameRecordId": "0x7091b842b9fa71df0f32554a5241daeab3215ccead4904af948fba528e7761f5",
       "headKey": "0xb52733c80e5d7662a2020fca9b9fe53a541fbaf9c9eae0ff95aedc05937b5915",
-      "bindingKey": "0x2e8cc87bcf5d7e505b9d08fd45bf5cf31a34e47aea38ae418ef8459fc4ab7dd9",
+      "bindingKey": "0x7ddcd07e837fba815245e0de5486ad46ba7bf71619f893d876b244c6008a0a77",
       "length": 18,
       "sha256": "0x0e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6"
     },
@@ -49,7 +47,7 @@
       "form": 1,
       "nameRecordId": "0xdbeda4850c1f49022efd4e44a1f322c84485376055f3548f965acdbb9e9334c0",
       "headKey": "0xf5dc624b68436f2b9b0c6e40cdfafb76dee54e5567171a2c08165d7ea49cf74c",
-      "bindingKey": "0x778dfd0972824abefd5ba6478de1452a86cfaa796d76ab503cefcd5b9b3ce10a",
+      "bindingKey": "0xbe5e48c0ae31bbeb5ae6f03ace6589b41df22ae3343fc0c5048ae2fe6bca15c7",
       "contentRecordId": "0xa2cc542f1827ddadba36b744fbf373a4e3b7d97d8430671de87a506958b52204",
       "media": "application/octet-stream",
       "spanRootId": "0x26e15fbb27d2a62b1e66b1dc6a2abf8d4b77c7b9610bea404134fd4d80f7bc67",
@@ -69,7 +67,7 @@
       "form": 1,
       "nameRecordId": "0xa30b422904fcab3da26240e90f0dd5567bce0cc519710f41eb9a3554ed36f805",
       "headKey": "0xc2985e61e824f8c05efcbabbe239665dacfdaaf0aae53f4d51f5e98cddac4ca8",
-      "bindingKey": "0x396226b5e58d20612873cb3afd71095f3fa72712c9e9075f41783c090878dee2",
+      "bindingKey": "0x54bd9cab3672a5aaf4235e3747d77634e21a73563e048b33cdd6f1371d230bea",
       "externalRecordId": "0x92b89d01f6f0623c3287498a9d0d418597e9b39bd5d3fe08352b30d103443034",
       "sentinelRecordId": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb52",
       "locator": "web3://0x0000000000000000000000000000000000000000:31337/remote.txt",
@@ -80,7 +78,7 @@
     }
   ],
   "counts": {
-    "admissions": 29,
+    "admissions": 27,
     "records": 17,
     "bindings": 7,
     "publications": 6
@@ -88,22 +86,22 @@
   "typeIds": {
     "files-root/1": "0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c",
     "files-child/1": "0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120",
-    "files-directory/1": "0xb7b36550599c1a9539cb84a0a49699e4f6abbb23eb9d5d09daff65d1c3a83758",
+    "files-directory/1": "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba",
     "files-name/2": "0x13a1949ef993df66ef17cdc87042b773ee0185f5dd16ea95eab0b500974521f8",
     "files-bytes/1": "0x9e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0",
     "files-content/1": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
     "files-external/1": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
-    "directory-alias/1": "0x6947b445673970c1013b9a2432a51ecf4e392565e2038cf33dac76775fcef1ad",
+    "directory-alias/1": "0x0c48b987487897968c6b3688da60e3c6db8e645aac2b481b3a1cc36789aecb61",
     "realm-notice/1": "0xc9efe343865f6f02915f75a1793e2a303b257cbe4bbd4a128ab936cc18cf5c24",
     "files-span/1": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd"
   },
   "catalogCount": 10,
   "heads": [
     {
-      "key": "0x210d90e5803197abd66214236673b5d8a116415ff211a66e6c9bbaba5b7f8da9",
+      "key": "0xe4862101230a1818156ae6f9bedcf545bd95681a8e5813af50a04d6e639d455d",
       "state": 1,
       "revision": 1,
-      "target": "0x6be2bba940bc78e07f788625cea290b7f2e0d22dcf32f489be76b0072923f06e",
+      "target": "0xbc585abf66f2338a3ff8654e00874fac3ff3903adfdf0d9c198de470d8da0443",
       "what": "FOLDER root/docs → docs directory"
     },
     {
@@ -114,7 +112,7 @@
       "what": "HEAD readme.txt → files-root/1 record (form 0)"
     },
     {
-      "key": "0x2e8cc87bcf5d7e505b9d08fd45bf5cf31a34e47aea38ae418ef8459fc4ab7dd9",
+      "key": "0x7ddcd07e837fba815245e0de5486ad46ba7bf71619f893d876b244c6008a0a77",
       "state": 1,
       "revision": 1,
       "target": "0xb77c10b50e2745da91a49ed0e29b8d99d985c611eace13656fb442bde9b94065",
@@ -128,7 +126,7 @@
       "what": "HEAD big.bin → files-root/1 record (form 1)"
     },
     {
-      "key": "0x778dfd0972824abefd5ba6478de1452a86cfaa796d76ab503cefcd5b9b3ce10a",
+      "key": "0xbe5e48c0ae31bbeb5ae6f03ace6589b41df22ae3343fc0c5048ae2fe6bca15c7",
       "state": 1,
       "revision": 1,
       "target": "0xe160669d4003ff28eb89269245d4f43af8047579e0acf409c35130523007c12e",
@@ -142,7 +140,7 @@
       "what": "HEAD remote.txt → files-root/1 record (form 1)"
     },
     {
-      "key": "0x396226b5e58d20612873cb3afd71095f3fa72712c9e9075f41783c090878dee2",
+      "key": "0x54bd9cab3672a5aaf4235e3747d77634e21a73563e048b33cdd6f1371d230bea",
       "state": 1,
       "revision": 1,
       "target": "0xf9ad02bbc5ce96d4893b1357b259e0321d7ae7b0418a38f43ec323106dc88385",
@@ -151,12 +149,12 @@
   ],
   "records": [
     {
-      "id": "0xde495817996636283ef72987b0106da2254b949815c75546879defcac169a430",
-      "typeId": "0xb7b36550599c1a9539cb84a0a49699e4f6abbb23eb9d5d09daff65d1c3a83758"
+      "id": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
+      "typeId": "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba"
     },
     {
-      "id": "0x6be2bba940bc78e07f788625cea290b7f2e0d22dcf32f489be76b0072923f06e",
-      "typeId": "0xb7b36550599c1a9539cb84a0a49699e4f6abbb23eb9d5d09daff65d1c3a83758"
+      "id": "0xbc585abf66f2338a3ff8654e00874fac3ff3903adfdf0d9c198de470d8da0443",
+      "typeId": "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba"
     },
     {
       "id": "0xa8d0ebb180444add1bc813897abb1c177c07b7fc93d22fdbcaf45179ba9e2431",

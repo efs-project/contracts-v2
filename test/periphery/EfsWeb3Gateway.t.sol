@@ -313,13 +313,13 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         _status(_u(P, string.concat("/gone.txt?lens=", A)), 404);
         assertEq(_status(_u(A, "/gone.txt"), 200).body, "alice's gone");
         assertEq(_status(_u(A, string.concat("/gone.txt?lens=", P)), 200).body, "alice's gone");
-        // alice removed shared.txt, p bound it afterwards: alice first hides p's entry
+        // alice hid shared.txt, p bound it afterwards: alice first hides p's entry
         _status(_u(A, string.concat("/shared.txt?lens=", P)), 404);
         assertEq(_status(_u(P, string.concat("/shared.txt?lens=", A)), 200).body, "p's shared");
     }
 
     function test_a_release_falls_through_again() public {
-        (Action[] memory a, bytes[] memory b) = EfsFiles.releaseEntry(rootDir, "shared.txt", 2);
+        (Action[] memory a, bytes[] memory b) = EfsFiles.remove(rootDir, "shared.txt", 2);
         _execAs(alice, a, b);
         assertEq(_status(_u(A, string.concat("/shared.txt?lens=", P)), 200).body, "p's shared");
     }

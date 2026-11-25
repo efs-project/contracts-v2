@@ -41,8 +41,8 @@
     "log": { "type": "string" },
     "planHash": { "type": "string" },
     "seedVersion": { "type": "string" },
-    "root": { "type": "object", "required": ["directoryRecordId", "subjectId", "principalId"] },
-    "seed": { "type": "object", "required": ["version", "root", "folder", "file"], "description": "folder {name, directoryRecordId, subjectId}; file {name, subjectId, headRecordId, headRevision}" },
+    "root": { "type": "object", "required": ["directoryRecordId", "principalId"] },
+    "seed": { "type": "object", "required": ["version", "root", "folder", "file"], "description": "folder {name, directoryRecordId}; file {name, subjectId, headRecordId, headRevision}" },
     "capabilities": { "type": "object" },
     "readyAt": { "type": "string" },
     "verified": { "type": "object", "required": ["skipped"], "description": "the in-up verify: {skipped} or {skipped false, ok, checks, failures, ms, coldPin}" }

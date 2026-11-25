@@ -5,7 +5,7 @@ import {Action, ActionKind, Purpose} from "../interfaces/Actions.sol";
 
 /// @title EfsFiles — the Files recipes of design §12.2 as `Action[]`/`bytes[]` builders (design §5.14)
 /// @notice Pure builders for the measured recipes — root seed, create folder, create file, edit, rename/move,
-///         remove, restore, release — plus the body encoders of the ten Files Types (§12.1 and docs/LARGE-FILES.md),
+///         remove, hide, restore — plus the body encoders of the ten Files Types (§12.1 and docs/LARGE-FILES.md),
 ///         the canonical chunker of a large file (`efs/chunking/1`, `chunk`), a publication splitter (`split`,
 ///         `slice`) and the ids a client needs (subject, record, name record, position, FOLDER scope). Every builder
 ///         returns the `actions` and the aligned `bodies` the ledger's `execute` takes; hand them to
@@ -16,6 +16,12 @@ import {Action, ActionKind, Purpose} from "../interfaces/Actions.sol";
 ///         Recipe shapes (design §12.2): a FOLDER bind is `BIND(FOLDER, parentDirectoryRecord, keccak(name) →
 ///         target)` — the subject is the parent's `files-directory/1` record id, the role the name's body hash, the
 ///         target a file subject or a directory record; a HEAD bind is `BIND(HEAD, fileSubject, 0 → record)`.
+///         A file is a created subject (`subjectId`, domain `efs/subject/1`) and a folder is a `files-directory/1`
+///         record (`directoryRecord`, domain `efs/record/1`) whose body names its creator and a salt; the two
+///         domains differ, so no id is both and the kind of a target is a property of its id.
+///         Removing an entry RELEASEs it (my claim stops and a lower-ranked author's entry at the same place shows
+///         through); hiding UNBINDs it (a MASK, which stops a lens search, so it hides every lower-ranked author's
+///         entry at that place too, for readers who rank me first).
 ///         `FilesFinalValidator` requires a `files-name/2` record for the role at or before the publication's
 ///         terminal admission, so the `withName` flags publish it in the same publication; pass false when the name
 ///         record already exists (a second PUBLISH of an existing record is a new occurrence, which costs gas but
@@ -102,13 +108,13 @@ library EfsFiles {
         return keccak256(abi.encode(DOM_RECORD, nameType, role_));
     }
 
-    /// The `files-directory/1` record of a directory seeded by `seedSubject`.
-    function directoryRecord(bytes32 directoryType, bytes32 seedSubject)
+    /// The `files-directory/1` record id of the folder `creator` made with `salt` (`directoryBody`).
+    function directoryRecord(bytes32 directoryType, bytes32 creator, bytes32 salt)
         internal
         pure
         returns (bytes32)
     {
-        return recordId(directoryType, directoryBody(seedSubject));
+        return recordId(directoryType, directoryBody(creator, salt));
     }
 
     /// `Keys.position`.
@@ -168,9 +174,10 @@ library EfsFiles {
         return abi.encode(parent, file, FORM_CONTENT, descriptor);
     }
 
-    /// `files-directory/1`: `abi.encode(seedSubject)`.
-    function directoryBody(bytes32 seedSubject) internal pure returns (bytes memory) {
-        return abi.encode(seedSubject);
+    /// `files-directory/1`: `abi.encode(creatorPrincipal, salt)` (64 bytes). `FilesDirectoryRule` admits it only
+    /// when the publishing principal is `creator` and `salt` is nonzero.
+    function directoryBody(bytes32 creator, bytes32 salt) internal pure returns (bytes memory) {
+        return abi.encode(creator, salt);
     }
 
     /// `files-name/2`: the raw UTF-8 name (its rule judges well-formedness; this encoder is the identity).
@@ -325,22 +332,22 @@ library EfsFiles {
     // Recipes (design §12.2)
     // =============================================================================================
 
-    /// Root (the seed, once per Realm): `CREATE(rootSalt)`, `PUBLISH(files-directory/1, rootSubject)`; no FOLDER
-    /// bind. Returns the root directory record id.
+    /// Root (the seed, once per Realm): `PUBLISH(files-directory/1, (principal, rootSalt))` by `principal`; no
+    /// CREATE and no FOLDER bind. Returns the root directory record id.
     function rootSeed(Types memory t, bytes32 principal, bytes32 rootSalt)
         internal
         pure
         returns (Action[] memory a, bytes[] memory b, bytes32 rootDirectory)
     {
-        (a, b) = _alloc(2);
-        a[0] = create(rootSalt);
-        b[1] = directoryBody(subjectId(principal, rootSalt));
-        a[1] = publish(t.directory, b[1]);
-        rootDirectory = recordId(t.directory, b[1]);
+        (a, b) = _alloc(1);
+        b[0] = directoryBody(principal, rootSalt);
+        a[0] = publish(t.directory, b[0]);
+        rootDirectory = recordId(t.directory, b[0]);
     }
 
-    /// Create folder: `CREATE(salt)`, `PUBLISH(files-directory/1)`, `PUBLISH(files-name/2, name)` when
-    /// `withName`, `BIND(FOLDER, parent, keccak(name) → directoryRecord, exp 0)`.
+    /// Create folder: `PUBLISH(files-directory/1, (principal, salt))`, `PUBLISH(files-name/2, name)` when
+    /// `withName`, `BIND(FOLDER, parent, keccak(name) → directoryRecord, exp 0)`; no CREATE. `principal` must be the
+    /// publishing principal (`FilesDirectoryRule` refuses any other).
     function createFolder(
         Types memory t,
         bytes32 principal,
@@ -349,12 +356,11 @@ library EfsFiles {
         bytes memory name,
         bool withName
     ) internal pure returns (Action[] memory a, bytes[] memory b, bytes32 directory) {
-        (a, b) = _alloc(withName ? 4 : 3);
-        a[0] = create(salt);
-        b[1] = directoryBody(subjectId(principal, salt));
-        a[1] = publish(t.directory, b[1]);
-        directory = recordId(t.directory, b[1]);
-        uint256 k = 2;
+        (a, b) = _alloc(withName ? 3 : 2);
+        b[0] = directoryBody(principal, salt);
+        a[0] = publish(t.directory, b[0]);
+        directory = recordId(t.directory, b[0]);
+        uint256 k = 1;
         if (withName) k = _name(t, a, b, k, name);
         a[k] = bind(Purpose.FOLDER, parent, keccak256(name), directory, 0);
     }
@@ -462,9 +468,10 @@ library EfsFiles {
     }
 
     /// Rename / move (atomic by the rollback law): `PUBLISH(files-name/2, newName)` when `withName`,
-    /// `UNBIND(FOLDER, from, keccak(oldName), exp)`, `BIND(FOLDER, to, keccak(newName) → target, exp)`. `target` is
-    /// the file subject or directory record being moved; `expectedNew` is the new position's revision (0 when
-    /// fresh, the masked or released head's revision for a restore over it).
+    /// `RELEASE(FOLDER, from, keccak(oldName), exp)`, `BIND(FOLDER, to, keccak(newName) → target, exp)`, in one
+    /// publication. The source is RELEASED, not masked, so a lower-ranked author's entry of the old name shows
+    /// through. `target` is the file subject or directory record being moved; `expectedNew` is the new position's
+    /// revision (0 when fresh, the masked or released head's revision for a restore over it).
     function move(
         Types memory t,
         bytes32 target,
@@ -479,12 +486,26 @@ library EfsFiles {
         (a, b) = _alloc(withName ? 3 : 2);
         uint256 k = 0;
         if (withName) k = _name(t, a, b, k, newName);
-        a[k] = unbind(Purpose.FOLDER, from, keccak256(oldName), expectedOld);
+        a[k] = release(Purpose.FOLDER, from, keccak256(oldName), expectedOld);
         a[k + 1] = bind(Purpose.FOLDER, to, keccak256(newName), target, expectedNew);
     }
 
-    /// Remove: `UNBIND(FOLDER, folder, keccak(name), exp)` (the head is MASKED: it beats fall-through).
+    /// Remove (stop claiming): `RELEASE(FOLDER, folder, keccak(name), exp)`. My head is RELEASED and falls through:
+    /// a reader that ranks me first sees the next principal's entry of that name, if any. `exp` is my head's
+    /// current revision; a MASKED (hidden) head can be released too.
     function remove(bytes32 folder, bytes memory name, uint64 expected)
+        internal
+        pure
+        returns (Action[] memory a, bytes[] memory b)
+    {
+        (a, b) = _alloc(1);
+        a[0] = release(Purpose.FOLDER, folder, keccak256(name), expected);
+    }
+
+    /// Hide: `UNBIND(FOLDER, folder, keccak(name), exp)`. My head is MASKED, and a mask stops a lens search: for a
+    /// reader that ranks me first the name is absent, whatever any lower-ranked principal binds there. Use it only to
+    /// hide the place; to delete my own entry use `remove`.
+    function hide(bytes32 folder, bytes memory name, uint64 expected)
         internal
         pure
         returns (Action[] memory a, bytes[] memory b)
@@ -501,16 +522,6 @@ library EfsFiles {
     {
         (a, b) = _alloc(1);
         a[0] = bind(Purpose.FOLDER, folder, keccak256(name), target, expected);
-    }
-
-    /// Stop claiming: `RELEASE(FOLDER, folder, keccak(name), exp)` (the head falls through to lower principals).
-    function releaseEntry(bytes32 folder, bytes memory name, uint64 expected)
-        internal
-        pure
-        returns (Action[] memory a, bytes[] memory b)
-    {
-        (a, b) = _alloc(1);
-        a[0] = release(Purpose.FOLDER, folder, keccak256(name), expected);
     }
 
     /// `x ‖ y` for both arrays: several recipes in one publication (a staged save; at most `limits.maxActions`).
