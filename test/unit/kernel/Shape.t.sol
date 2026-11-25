@@ -183,8 +183,12 @@ contract ShapeTest is KernelFixture {
         _refuse(cas, "", abi.encodeWithSelector(E_CAS.selector, key, uint64(5), uint64(0)));
         Action memory mask = _base(ActionKind.UNBIND);
         mask.role = 0;
+        mask.expectedRevision = 3; // SPIKE (T-4): a mask of an UNSET head is admitted, so fail it at the CAS
         bytes32 roleless0 = _key(principal, FOLDER, SUBJ, 0);
-        _refuse(mask, "", abi.encodeWithSelector(E_NOT_LIVE.selector, _leaf(), roleless0, 0));
+        _refuse(mask, "", abi.encodeWithSelector(E_CAS.selector, roleless0, uint64(3), uint64(0)));
+        Action memory release = _base(ActionKind.RELEASE);
+        release.role = 0;
+        _refuse(release, "", abi.encodeWithSelector(E_NOT_LIVE.selector, _leaf(), roleless0, 0));
     }
 
     // ---- reserved and unknown kinds ------------------------------------------------------------------------

@@ -136,20 +136,14 @@ contract TagPathMeasureTest is FilesRecipesBase {
         );
     }
 
-    /// A denial of something this author never asserted: the kernel masks only a BOUND head, so it is refused
-    /// alone and costs an assertion plus a mask (measured in one publication if the kernel takes both, else two).
+    /// A denial of something this author never asserted. On main the kernel masks only a BOUND head, so it is
+    /// refused alone and costs an assertion plus a mask (measured in one publication if the kernel takes both, else
+    /// two). SPIKE (T-4): it is accepted alone; the assert + mask row is kept for comparison.
     function test_deny_without_a_prior_assertion() public {
-        Action[] memory a = _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, 0));
-        bytes[] memory b = new bytes[](1);
-        try r.ledger.execute(a, b, _ctx(a), "") {
-            emit log_named_uint("tag deny from silent: accepted alone", 1);
-        } catch {
-            emit log_named_uint("tag deny from silent: accepted alone", 0);
-        }
-        a = new Action[](2);
+        Action[] memory a = new Action[](2);
         a[0] = _bind(Purpose.TAG, X, s[5], s[5], 0);
         a[1] = _bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, 1);
-        b = new bytes[](2);
+        bytes[] memory b = new bytes[](2);
         try this.both(a, b) {
             emit log_named_uint("tag deny from silent: one publication of two actions", 1);
         } catch {
@@ -161,6 +155,201 @@ contract TagPathMeasureTest is FilesRecipesBase {
                 _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, rev))
             );
         }
+    }
+
+    /// SPIKE (T-4): the same denial, one action, is accepted alone.
+    function test_deny_alone_is_accepted() public {
+        Action[] memory a = _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, 0));
+        bytes[] memory b = new bytes[](1);
+        try r.ledger.execute(a, b, _ctx(a), "") {
+            emit log_named_uint("tag deny from silent: accepted alone", 1);
+        } catch {
+            emit log_named_uint("tag deny from silent: accepted alone", 0);
+        }
+    }
+
+    // ---- SPIKE (T-4): a denial that stands on its own -------------------------------------------------------
+
+    function _denies(bytes32 concept, uint256 from, uint256 n)
+        internal
+        view
+        returns (Action[] memory a)
+    {
+        a = new Action[](n);
+        for (uint256 i; i < n; ++i) {
+            a[i] = _bindKind(ActionKind.UNBIND, Purpose.TAG, concept, s[from + i], 0, 0);
+        }
+    }
+
+    function _concept(uint256 i) internal pure returns (bytes32) {
+        return keccak256(abi.encode("measure/concept/fresh", i));
+    }
+
+    /// Fresh (zero → non-zero) storage words one publication writes, from a state diff on a snapshot that is
+    /// then reverted (so the measured run that follows is unaffected).
+    function _freshWords(string memory key, Action[] memory a) internal {
+        uint256 snap = vm.snapshotState();
+        vm.startStateDiffRecording();
+        r.ledger.execute(a, new bytes[](a.length), _ctx(a), "");
+        Vm.AccountAccess[] memory acc = vm.stopAndReturnStateDiff();
+        uint256 n;
+        bytes32[] memory seen = new bytes32[](512);
+        for (uint256 i; i < acc.length; ++i) {
+            if (acc[i].reverted) continue;
+            for (uint256 j; j < acc[i].storageAccesses.length; ++j) {
+                Vm.StorageAccess memory x = acc[i].storageAccesses[j];
+                if (!x.isWrite || x.reverted || x.previousValue != 0 || x.newValue == 0) continue;
+                bytes32 id = keccak256(abi.encode(x.account, x.slot));
+                bool dup;
+                for (uint256 m; m < n; ++m) {
+                    if (seen[m] == id) dup = true;
+                }
+                if (!dup) seen[n++] = id;
+            }
+        }
+        emit log_named_uint(string.concat("tag ", key, " fresh words"), n);
+        vm.revertToState(snap);
+    }
+
+    /// Deny from UNSET: one action. Alone, then 2 and 10 in one publication as later members of concept X (the
+    /// same order as `test_assert`), then 2 and 10 as the first members of fresh concepts; the matching assert rows
+    /// for fresh concepts are measured in `test_assert_first_members`.
+    function test_deny_from_unset() public {
+        _freshWords("deny-unset k1", _denies(X, 0, 1));
+        _run("deny-unset k1", _denies(X, 0, 1));
+        _freshWords("deny-unset later k1", _denies(X, 1, 1));
+        _run("deny-unset k2", _denies(X, 1, 2));
+        _run("deny-unset k10", _denies(X, 3, 10));
+        Action[] memory a = _denies(_concept(1), 13, 2);
+        a[1].subject = _concept(2);
+        _run("deny-unset k2 first members", a);
+        a = _denies(_concept(3), 15, 10);
+        for (uint256 i; i < 10; ++i) {
+            a[i].subject = _concept(10 + i);
+        }
+        _run("deny-unset k10 first members", a);
+    }
+
+    function test_assert_first_members() public {
+        _freshWords("assert k1", _tags(X, 0, 1));
+        Action[] memory a = _tags(_concept(1), 13, 2);
+        a[1].subject = _concept(2);
+        _run("assert k2 first members", a);
+        a = _tags(_concept(3), 15, 10);
+        for (uint256 i; i < 10; ++i) {
+            a[i].subject = _concept(10 + i);
+        }
+        _run("assert k10 first members", a);
+        _silent(_tags(X, 0, 1));
+        _freshWords("assert later k1", _tags(X, 1, 1));
+    }
+
+    /// Deny from RELEASED (assert, then back to silent, then deny alone); restore over a first mask; release a
+    /// first mask.
+    function test_deny_lifecycle() public {
+        _silent(_tags(X, 0, 3));
+        bytes32 key = Keys.binding(p, Keys.position(Purpose.TAG, X, s[0]));
+        _silent(_one(_bindKind(ActionKind.RELEASE, Purpose.TAG, X, s[0], 0, 1)));
+        _freshWords(
+            "deny-released k1", _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[0], 0, 2))
+        );
+        _run("deny-released k1", _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[0], 0, 2)));
+        (uint8 state,,,,,,) = r.hot.head(key);
+        assertEq(state, 2);
+        _silent(_denies(X, 5, 2));
+        _run("assert over a first mask (restore)", _one(_bind(Purpose.TAG, X, s[5], s[5], 1)));
+        _run(
+            "release a first mask", _one(_bindKind(ActionKind.RELEASE, Purpose.TAG, X, s[6], 0, 1))
+        );
+        (state,,,,,,) = r.hot.head(Keys.binding(p, Keys.position(Purpose.TAG, X, s[5])));
+        assertEq(state, 1);
+        (state,,,,,,) = r.hot.head(Keys.binding(p, Keys.position(Purpose.TAG, X, s[6])));
+        assertEq(state, 3);
+    }
+
+    /// The member page of `test_read_members_of_a_concept` (53 entries, 3 denied), with the 3 denials written as
+    /// first masks instead of assert + mask: they must not appear and should cost what masked entries cost.
+    function test_read_members_with_first_masks() public {
+        Action[] memory a = new Action[](53);
+        for (uint256 i; i < 53; ++i) {
+            a[i] = i % 7 == 0 && i < 21
+                ? _bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[i], 0, 0)
+                : _bind(Purpose.TAG, X, s[i], s[i], 0);
+        }
+        Action[] memory part = new Action[](20);
+        for (uint256 from; from < 53; from += 20) {
+            uint256 n = from + 20 > 53 ? 53 - from : 20;
+            if (n != part.length) part = new Action[](n);
+            for (uint256 i; i < n; ++i) {
+                part[i] = a[from + i];
+            }
+            _silent(part);
+        }
+        (uint256 g, uint256 rows, uint8 scan) = _members(10);
+        emit log_named_uint("tag read members (first masks): page of 10, gas", g);
+        emit log_named_uint("tag read members (first masks): page of 10, rows", rows);
+        (g, rows, scan) = _members(50);
+        emit log_named_uint("tag read members (first masks): page of 50, gas", g);
+        emit log_named_uint("tag read members (first masks): page of 50, rows", rows);
+        emit log_named_uint("tag read members (first masks): page of 50, scan status", scan);
+    }
+
+    /// The role-scope list of a target with 8 concepts, 3 of them denials written as first masks: the list
+    /// finds all 8, and the head read tells the 3 denials apart.
+    function test_read_concepts_on_a_target_with_first_masks() public {
+        bytes32 target = s[0];
+        Action[] memory a = new Action[](8);
+        for (uint256 i; i < 8; ++i) {
+            bytes32 c = keccak256(abi.encode("concept", i));
+            a[i] = i % 3 == 1
+                ? _bindKind(ActionKind.UNBIND, Purpose.TAG, c, target, 0, 0)
+                : _bind(Purpose.TAG, c, target, target, 0);
+        }
+        _silent(a);
+        _cool();
+        uint256 before = gasleft();
+        (, uint64[] memory entries,) = r.g.index
+            .postingSliceOf(
+                FamilyId.wrap(Keys.familyId("role-scope")),
+                TypeId.wrap(0),
+                0,
+                Keys.roleScope(p, Purpose.TAG, target),
+                0,
+                16
+            );
+        uint256 listGas = before - gasleft();
+        assertEq(entries.length, 8);
+        emit log_named_uint(
+            "tag read concepts on a target (first masks): role-scope entries", entries.length
+        );
+        emit log_named_uint("tag read concepts on a target (first masks): list gas", listGas);
+        before = gasleft();
+        uint256 denied;
+        for (uint256 i; i < 8; ++i) {
+            bytes32 key = Keys.binding(
+                p, Keys.position(Purpose.TAG, keccak256(abi.encode("concept", i)), target)
+            );
+            (uint8 state,,,,,,) = r.hot.head(key);
+            if (state == 2) ++denied;
+        }
+        emit log_named_uint(
+            "tag read concepts on a target (first masks): 8 head reads gas", before - gasleft()
+        );
+        assertEq(denied, 3);
+    }
+
+    /// Entry 48 is the first scope entry whose live bit lives outside the scope head, in a fresh bitmap word: a first
+    /// mask there sets the bit and clears it again in one transaction (0 -> 1 -> 0 on a fresh word).
+    function test_deny_and_assert_at_entry_48() public {
+        _silent(_tags(X, 0, 20));
+        _silent(_tags(X, 20, 20));
+        _silent(_tags(X, 40, 8));
+        _freshWords("deny-unset at entry 48", _denies(X, 48, 1));
+        _freshWords("assert at entry 48", _tags(X, 48, 1));
+        uint256 snap = vm.snapshotState();
+        _run("deny-unset at entry 48", _denies(X, 48, 1));
+        vm.revertToState(snap);
+        _run("assert at entry 48", _tags(X, 48, 1));
     }
 
     function both(Action[] calldata a, bytes[] calldata b) external {

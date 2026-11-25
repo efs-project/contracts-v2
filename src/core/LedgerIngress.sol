@@ -399,20 +399,23 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
             }
             q.rw10 += wm.rwPerPublish;
             q.fresh10 += uint256(wm.freshPerRef) * info.refCount;
-        } else if (kind == ActionKind.BIND) {
+        } else if (
+            kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
+        ) {
             ++q.binds;
-            (bytes32 expectedType, uint16 row) = registry.roleExpectation(a.purpose, a.role);
-            if (wantProfile) {
-                q.h = keccak256(abi.encode(q.h, a.purpose, a.role, row, expectedType));
+            if (kind == ActionKind.BIND) {
+                (bytes32 expectedType, uint16 row) = registry.roleExpectation(a.purpose, a.role);
+                if (wantProfile) {
+                    q.h = keccak256(abi.encode(q.h, a.purpose, a.role, row, expectedType));
+                }
             }
-            (uint8 state,,,) = _headState(
-                ledger, Keys.binding(principalId, Keys.position(a.purpose, a.subject, a.role))
-            );
-            if (state == 0) q.fresh10 += wm.freshPerBindFresh;
-            q.rw10 += wm.rwPerBind;
-            q.compute += wm.computePerHookEffect;
-        } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
-            ++q.binds;
+            // SPIKE (T-4): a first mask (UNBIND from UNSET) allocates the position like a first BIND
+            if (kind != ActionKind.RELEASE) {
+                (uint8 state,,,) = _headState(
+                    ledger, Keys.binding(principalId, Keys.position(a.purpose, a.subject, a.role))
+                );
+                if (state == 0) q.fresh10 += wm.freshPerBindFresh;
+            }
             q.rw10 += wm.rwPerBind;
             q.compute += wm.computePerHookEffect;
         }
