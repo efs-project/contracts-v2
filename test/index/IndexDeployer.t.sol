@@ -57,14 +57,14 @@ contract IndexDeployerTest is Test {
         assertEq(bs.initialWriter(), gen);
         assertEq(ps.ledger(), address(ledger));
         assertFalse(ps.attached());
-        assertEq(ps.familyIds().length, 14); // SPIKE (tags-index): + families 6, 7, 9, 2
+        assertEq(ps.familyIds().length, 15); // SPIKE (tags-index2): + families 6, 7, 19, 20, 21
         assertEq(bs.familyIds().length, 3);
         RealmIndex ix = RealmIndex(gen);
         assertEq(ix.postingStore(), address(ps));
         assertEq(ix.bitmapStore(), address(bs));
         assertEq(ix.ledger(), address(ledger));
         assertEq(ix.HOT_ABI_ID(), HOT);
-        assertEq(ix.replayReadiness().families.length, 17); // SPIKE (tags-index): + 6, 7, 9, 2
+        assertEq(ix.replayReadiness().families.length, 18); // SPIKE (tags-index2): + 6, 7, 19, 20, 21
         vm.expectRevert(abi.encodeWithSelector(E_DEPLOYER.selector, uint8(0)));
         d.run(plan);
     }

@@ -130,9 +130,9 @@ export const DOM = {
 export const PURPOSE = { HEAD: h("efs/purpose/head/1"), FOLDER: h("efs/purpose/folder/1"), TAG: h("efs/purpose/tag/1") };
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
 export const familyId = (name) => h(`efs/family/${name}/1`);
-export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "open-scope", "open-scope-below", "scope-below", "position-authors"];
-/** SPIKE (tags-index): the index's all-authors switches (OpenScopeConfig): family 6 on, every topic family off. */
-export const OPEN_SCOPE = { wordTypeId: ZERO, pathTypeId: ZERO, scopeBelow: false, allAuthors: [PURPOSE.TAG, PURPOSE.FOLDER], allBelow: false, trustRegistered: false };
+export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "open-scope", "open-scope-below", "scope-below", "position-authors", "role-places"];
+/** SPIKE (tags-index): the index's all-authors switches (OpenScopeConfig): families 6, 20 and 21 on, every topic family off. */
+export const OPEN_SCOPE = { wordTypeId: ZERO, pathTypeId: ZERO, scopeBelow: false, allAuthors: [PURPOSE.TAG, PURPOSE.FOLDER], allBelow: false, trustRegistered: false, rolePlaces: 2 };
 export const BITMAP_FAMILIES = ["scope", "roster", "live-scope"];
 export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 export const ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
@@ -391,6 +391,7 @@ const FAMILY_TABLE = [
   // SPIKE (tags-index2): OPEN_SCOPE keeps families 6 and 20 (TAG, FOLDER) and leaves the topic families unmaintained
   ["open-scope", 6, 3, 1, 1, "posting", 1n], ["open-scope-below", 7, 3, 1, 1, "posting", 2n ** 64n - 1n],
   ["scope-below", 19, 3, 1, 1, "posting", 2n ** 64n - 1n], ["position-authors", 20, 3, 1, 1, "posting", 1n],
+  ["role-places", 21, 3, 1, 1, "posting", 1n],
 ];
 
 // ---- the plan ------------------------------------------------------------------------------------------------------

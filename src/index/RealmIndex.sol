@@ -88,6 +88,8 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     bytes32 private immutable F_OPEN_SCOPE_BELOW;
     bytes32 private immutable F_SCOPE_BELOW;
     bytes32 private immutable F_POSITION_AUTHORS;
+    bytes32 private immutable F_ROLE_PLACES;
+    uint8 private immutable OS_ROLE_PLACES;
     bytes32 private immutable WORD_T;
     bytes32 private immutable PATH_T;
     bool private immutable OS_MINE;
@@ -156,6 +158,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         }
         bool paths = os.pathTypeId != 0 && os.wordTypeId != 0;
         if (os.allBelow && !tagAll) revert E_BUILD(7);
+        if (os.rolePlaces > 2 || (os.rolePlaces == 1 && !tagAll)) revert E_BUILD(8);
         AP0 = na > 0 ? os.allAuthors[0] : bytes32(0);
         AP1 = na > 1 ? os.allAuthors[1] : bytes32(0);
         AP2 = na > 2 ? os.allAuthors[2] : bytes32(0);
@@ -169,6 +172,8 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         F_OPEN_SCOPE_BELOW = Keys.familyId("open-scope-below");
         F_SCOPE_BELOW = Keys.familyId("scope-below");
         F_POSITION_AUTHORS = Keys.familyId("position-authors");
+        F_ROLE_PLACES = Keys.familyId("role-places");
+        OS_ROLE_PLACES = na != 0 ? os.rolePlaces : 0;
         uint64 all = na != 0 ? 1 : NOT_MAINTAINED;
         _declare(F_OPEN_SCOPE, 6, 3, SHAPE_APPEND, 1, posting, all);
         _declare(
@@ -176,6 +181,9 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         );
         _declare(F_SCOPE_BELOW, 19, 3, SHAPE_APPEND, 1, posting, OS_MINE ? 1 : NOT_MAINTAINED);
         _declare(F_POSITION_AUTHORS, 20, 3, SHAPE_APPEND, 1, posting, all);
+        _declare(
+            F_ROLE_PLACES, 21, 3, SHAPE_APPEND, 1, posting, OS_ROLE_PLACES != 0 ? 1 : NOT_MAINTAINED
+        );
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }
@@ -500,6 +508,10 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     ///   - family 20 position-authors (purpose in `allAuthors`): key = position; entry = this admission ordinal.
     ///   - family 6 place (same purposes; only when the position is fresh, i.e. family 20 was empty): key =
     ///     (purpose, subject); entry = this binding ordinal. One entry per distinct position.
+    ///   - family 21 role-places (`rolePlaces`: TAG only, or every purpose above; same fresh condition, same entry;
+    ///     never for a zero role): key = (purpose, role). For a tag the role is the thing, so every statement,
+    ///     whatever its sign (a lone negative carries no target, so the backlink list never shows it), is reachable
+    ///     from its thing: role-places -> position -> position-authors.
     ///   - family 19 per-author roll-up (TAG): key = (author, TAG, ancestor) per PROPER ancestor of the subject
     ///     (the subject itself is the exact `scope` list, family 10); entry = this binding ordinal.
     ///   - family 7 all-authors roll-up (TAG; only when the position is fresh): key = (TAG, ancestor) per proper
@@ -523,6 +535,17 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                     _pk(0, 6, 0, Keys.openScope(purpose, e.subject)),
                     e.bindingOrdinal
                 );
+                uint8 rp = OS_ROLE_PLACES;
+                if (
+                    e.role != 0 && (rp == 2 || (rp == 1 && purpose == Purpose.TAG))
+                ) {
+                    _push(
+                        buf,
+                        F_ROLE_PLACES,
+                        _pk(0, 21, 0, Keys.rolePlaces(purpose, e.role)),
+                        e.bindingOrdinal
+                    );
+                }
             }
         }
         bool all = fresh && OS_ALL_BELOW;

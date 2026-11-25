@@ -41,6 +41,10 @@ library Keys {
     // SPIKE (tags-index2): per-author roll-up key: keccak256(abi.encode(DOM_SCOPE_BELOW, principal, purpose, ancestor))
     // — the value key of family 19 (scope-below): one list per (author, purpose, proper ancestor of the topic)
     bytes32 internal constant DOM_SCOPE_BELOW = keccak256("efs/vk/scope-below/1");
+    // SPIKE (tags-index2): role-places key: keccak256(abi.encode(DOM_ROLE_PLACES, purpose, role)) — the value key of
+    // family 21 (role-places): one entry per distinct position of `(purpose, role)` whatever its subject; for a tag
+    // the role is the thing, so the list is every topic position anyone ever made a statement at about that thing
+    bytes32 internal constant DOM_ROLE_PLACES = keccak256("efs/vk/role-places/1");
     // Realm origin: keccak256(abi.encode(DOM_REALM_ORIGIN, genesisChainId, coreAddress, realmSalt)) — the one
     // identity input that names a chain and an address; it qualifies contract principals (design §1.2 row 12)
     bytes32 internal constant DOM_REALM_ORIGIN = keccak256("efs/realm-origin/1");
@@ -63,14 +67,15 @@ library Keys {
     // revisionOrdinal, executionProfileId, capabilities, acceptedChainId, limitsProfileId))
     bytes32 internal constant DOM_EXECUTION_SET = keccak256("efs/execution-set/1");
 
-    // Posting-list kinds. 3 is reserved (never minted). SPIKE (tags-index2): 6, 7, 19, 20 are minted by the spike's
-    // open-scope (place), open-scope-below (all-authors roll-up), scope-below (per-author roll-up) and
-    // position-authors families; round one's 2 (word-directory) and 9 (open-scope-word) are no longer built.
+    // Posting-list kinds. 3 is reserved (never minted). SPIKE (tags-index2): 6, 7, 19, 20, 21 are minted by the
+    // spike's open-scope (place), open-scope-below (all-authors roll-up), scope-below (per-author roll-up),
+    // position-authors and role-places families; round one's 2 (word-directory) and 9 (open-scope-word) are no longer built.
     uint8 internal constant KIND_BY_TYPE = 1;
     uint8 internal constant KIND_OPEN_SCOPE = 6;
     uint8 internal constant KIND_OPEN_SCOPE_BELOW = 7;
     uint8 internal constant KIND_SCOPE_BELOW = 19;
     uint8 internal constant KIND_POSITION_AUTHORS = 20;
+    uint8 internal constant KIND_ROLE_PLACES = 21;
     uint8 internal constant KIND_BY_AUTHOR = 4;
     uint8 internal constant KIND_BACKLINK = 5;
     uint8 internal constant KIND_HISTORY = 8;
@@ -129,6 +134,11 @@ library Keys {
         returns (bytes32)
     {
         return keccak256(abi.encode(DOM_SCOPE_BELOW, principalId, purpose, ancestor));
+    }
+
+    /// SPIKE (tags-index2): the role-places value key of family 21.
+    function rolePlaces(bytes32 purpose, bytes32 role) internal pure returns (bytes32) {
+        return keccak256(abi.encode(DOM_ROLE_PLACES, purpose, role));
     }
 
     /// Realm origin: fixed at genesis; the only id that names a chain and an address.

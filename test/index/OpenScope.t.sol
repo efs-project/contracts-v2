@@ -69,6 +69,7 @@ contract OpenScopeIndexTest is Test {
         os.allAuthors[1] = Purpose.FOLDER;
         os.allBelow = true;
         os.trustRegistered = _trust();
+        os.rolePlaces = 2;
     }
 
     function setUp() public {

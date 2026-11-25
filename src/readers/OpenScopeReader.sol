@@ -25,6 +25,7 @@ import {Keys} from "../lib/Keys.sol";
 ///           the thing, the topic it was filed under, the author count (one family-20 head), the newest author and
 ///           that author's state and number; hidden when any lens author has a negative stance there (`raw` skips).
 ///         - `byName`: the newest page of the authors of ONE position (family 20), each with state and number.
+///         - `about`: every position about one thing (family 21, role-places), rendered like `everyone`.
 contract OpenScopeReader {
     uint256 private constant MASK48 = (1 << 48) - 1;
     uint8 private constant BOUND = 1;
@@ -134,10 +135,33 @@ contract OpenScopeReader {
         view
         returns (uint64 length, uint64 next, PlaceRow[] memory rows)
     {
+        return _page(
+            ledger,
+            q,
+            q.below
+                ? _pk(7, Keys.openScope(Purpose.TAG, q.topic))
+                : _pk(6, Keys.openScope(q.purpose, q.topic))
+        );
+    }
+
+    /// Every position anyone ever made a statement at about `thing` (`q.topic` is the THING, the positions' role),
+    /// newest first: family 21 (role-places). Each row: the position's topic (its subject), the author count (one
+    /// family-20 head), the newest author and that author's state and number; `byName` on a row's position pages
+    /// all its authors, lone negatives included. `q.below` is ignored; `q.lens`/`q.raw` hide as in `everyone`.
+    function about(address ledger, EveryoneQuery calldata q)
+        external
+        view
+        returns (uint64 length, uint64 next, PlaceRow[] memory rows)
+    {
+        return _page(ledger, q, _pk(21, Keys.rolePlaces(q.purpose, q.topic)));
+    }
+
+    function _page(address ledger, EveryoneQuery calldata q, PostingKey pk)
+        private
+        view
+        returns (uint64 length, uint64 next, PlaceRow[] memory rows)
+    {
         IPostingStore store = _posting(ledger);
-        PostingKey pk = q.below
-            ? _pk(7, Keys.openScope(Purpose.TAG, q.topic))
-            : _pk(6, Keys.openScope(q.purpose, q.topic));
         uint64 last;
         (length,, last,) = store.postingHead(pk);
         rows = new PlaceRow[](q.count);
@@ -392,7 +416,7 @@ contract OpenScopeReader {
     /// The head's state and number through the generated Layout decoder: number = strength when BOUND,
     /// -1 - strength when MASKED; `has` (a stance) is BOUND or MASKED.
     function _stance(bytes32 w0) private pure returns (uint8 state, int256 number, bool has) {
-        uint8 strength;
+        uint16 strength;
         (state,,,,,,, strength) = Layout.unpackHeadRowWord0(w0);
         if (state == BOUND) return (state, int256(uint256(strength)), true);
         if (state == MASKED) return (state, -1 - int256(uint256(strength)), true);

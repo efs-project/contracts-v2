@@ -20,7 +20,7 @@ library IndexDeploy {
     }
 
     function postingFamilies() internal pure returns (bytes32[] memory f) {
-        f = new bytes32[](14);
+        f = new bytes32[](15);
         f[0] = Keys.familyId("by-type");
         f[1] = Keys.familyId("by-author");
         f[2] = Keys.familyId("backlink");
@@ -36,6 +36,7 @@ library IndexDeploy {
         f[11] = Keys.familyId("open-scope-below");
         f[12] = Keys.familyId("scope-below");
         f[13] = Keys.familyId("position-authors");
+        f[14] = Keys.familyId("role-places");
     }
 
     function bitmapFamilies() internal pure returns (bytes32[] memory f) {
@@ -45,12 +46,29 @@ library IndexDeploy {
         f[2] = Keys.familyId("live-scope");
     }
 
-    /// SPIKE (tags-index2): the harness default: the two all-authors levels (families 6 and 20) for TAG and FOLDER,
-    /// no topic Types (families 7 and 19 unmaintained).
+    /// SPIKE (tags-index2): the harness default: the two all-authors levels (families 6 and 20) and role-places
+    /// (family 21) for TAG and FOLDER, no topic Types (families 7 and 19 unmaintained).
     function defaultOpenScope() internal pure returns (OpenScopeConfig memory os) {
         os.allAuthors = new bytes32[](2);
         os.allAuthors[0] = Purpose.TAG;
         os.allAuthors[1] = Purpose.FOLDER;
+        os.rolePlaces = 2;
+    }
+
+    /// SPIKE (tags integration): every topic list on, over the given word-page and path Types. `trustRegistered` is
+    /// on: in a Files Realm `FilesFinalValidator` (code 7) admits a first tag only on a topic first admitted
+    /// strictly before it, which is exactly the check the index would otherwise repeat.
+    function fullOpenScope(bytes32 wordTypeId, bytes32 pathTypeId, bool trusted)
+        internal
+        pure
+        returns (OpenScopeConfig memory os)
+    {
+        os = defaultOpenScope();
+        os.wordTypeId = wordTypeId;
+        os.pathTypeId = pathTypeId;
+        os.scopeBelow = true;
+        os.allBelow = true;
+        os.trustRegistered = trusted;
     }
 
     function deploy(

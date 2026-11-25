@@ -121,7 +121,9 @@ struct Readiness {
 /// `allBelow` maintains family 7 (all-authors roll-up: one entry per distinct TAG position per proper ancestor); it
 /// needs TAG in `allAuthors` (the fresh-position test reads family 20). `trustRegistered` skips the replay-safety
 /// check (the tagged topic record first admitted at or before the statement) because an admission validator
-/// guarantees it.
+/// guarantees it. `rolePlaces` maintains family 21 (role-places: one entry per distinct position of
+/// `(purpose, role)`, appended with the place entry when the position is fresh; never for a zero role): 0 off, 1 TAG
+/// only (needs TAG in `allAuthors`), 2 every purpose in `allAuthors`.
 struct OpenScopeConfig {
     bytes32 wordTypeId;
     bytes32 pathTypeId;
@@ -129,4 +131,5 @@ struct OpenScopeConfig {
     bytes32[] allAuthors;
     bool allBelow;
     bool trustRegistered;
+    uint8 rolePlaces;
 }
