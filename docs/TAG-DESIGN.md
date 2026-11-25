@@ -74,8 +74,11 @@ control byte, no ASCII space, no ASCII `A`–`Z`; not `.` or `..`; not starting 
 digits. The last two apply to every word, not only the first in a path, because every word has a root-level page.
 An address belongs in a tag as its target: tag the USDC contract's address under `/tokens/usdc`, never
 `/tokens/0xa0b8…`. The check costs 121 to 208 gas per byte. Everything else about folding (Unicode case, look-alike
-letters, normalisation) stays in the SDK; the chain cannot check it. The rule does not yet refuse C1 controls, bidi
-controls or invisible characters, which `files-name/2` does refuse; the proper version should.
+letters, normalisation) stays in the SDK; the chain cannot check it. The spike's rule does not yet refuse C1
+controls, bidi controls or invisible separators, which `files-name/2` does refuse; the proper version refuses them,
+at least as strictly as names. Joiners and variation selectors (ZWJ, ZWNJ, VS1–16) are refused too, from a list kept
+as one constant that can still change until the fold rule is confirmed, because a folded word never contains them.
+The refused list is shared with the SDK's vectors.
 
 **Cost.** A word page is 0.53M alone and 0.20M as an extra action in a batch (1.64M / 0.69M on Glamsterdam). A path
 record is 0.64M alone and 0.27M in a batch (2.10M / 0.95M).
@@ -96,8 +99,11 @@ in TAG-OPTIONS.
   field that is always zero for binds. Eight bits would give up nothing; 24 bits would shrink the expiry field to 194
   days, which makes it useless. Sixteen is the widest clean width.
 - **A first statement may be negative.** UNBIND is admitted from every state: never said, asserted, denied and
-  released. This applies to every purpose, with no gate. A gate would have to live in the kernel, which knows no
-  purposes, or in a validator, which may never refuse a mask.
+  released. This applies to every purpose, with no gate in the kernel, which knows no purposes.
+- **What a validator may refuse, in exact words.** An author can always mask or release a binding of theirs that
+  already exists; no validator may refuse that. A validator may refuse an action that asserts something (any BIND,
+  including a re-bind of an existing folder entry to a bad target) and an action that creates a new position for its
+  author (a first statement of either sign, such as a first negative on an unregistered topic).
 - **Changing only the number keeps history.** A positive to another positive is a BIND to the same target; a negative
   to another negative is another UNBIND. Each is one action under the usual revision check, and each adds a history
   entry.
@@ -106,8 +112,9 @@ in TAG-OPTIONS.
   before the tag, in an earlier action; the spike first accepted "anywhere in the same publication", and that tag
   would have silently missed its roll-up lists. Other apps that want tag-like links on their own ids use their own
   purpose.
-- **What can be tagged.** A file (a subject), a folder (a directory record), a topic, a specific revision of a file
-  (a record), and an address.
+- **What can be tagged.** Any record or subject that exists, of any Type, including a Type this repository has never
+  seen (a chess app's move records are tagged the same way): a file, a folder, a topic, a specific revision of a
+  file. And an address. The proper version tests this with a third-party Type.
 
 | Operation on an existing tag | Today | Glamsterdam |
 |---|---:|---:|
@@ -164,6 +171,13 @@ or duplicate their entry (tested, including remove-and-add-back).
   target. Hiding still uses only lens authors' denials, read directly.
 - **Not kept:** all-authors lists on HEAD (a storage slot per file, and nothing reads it), per-word lists of items,
   and "where a name is used" for FOLDER (pure cost: +25,575 gas per created file).
+- **Can the HEAD list be added later? Yes, by design, with one condition.** Every list here is derived from the
+  kernel's permanent record of statements, so a later index generation can add a list and build it from history
+  into a fresh store, in order, before it is switched on (DESIGN §10.6). The result is exact, and whoever runs the
+  build pays the same storage slot per file then. The condition: that build step is specified but not yet written
+  (generation 1's `build` refuses), and adding a generation is an act of the Realm's controller, possible until the
+  Realm is frozen. So leaving the list out now is a deferral that stays free only if the build step is written
+  before the freeze.
 - **Rebuild equals live.** A test drives a mixed history through the live index, replays it into a fresh index, and
   compares every list. The index reads only records that can never change, and the validator guarantees they predate
   the tag.
@@ -262,6 +276,12 @@ shipped reader to do; the proper version goes through the read facets.
   next page; the client removes it across pages.
 - **Denials.** The spike hides a row when a lens author is negative at the position the entry was filed under. The
   spec also hides it when a lens author is negative at the place being viewed; the proper reader adds that check.
+- **A public row never depends on finding a positive.** In Everyone and Raw a row exists because a statement
+  exists. It shows the stances found among the authors read for that page (for example "3 say yes, 2 say no") and
+  says so when the scan did not cover every author. Only a lens author's negative hides a row. A stranger's
+  statements of either sign never remove one, so posting negatives on (topic, thing) before the first real tag
+  hides nothing. The spike's reader already lists a position whatever its authors' signs; the proper reader adds
+  the tally and the "scan incomplete" mark, with a test for the pre-emptive-negatives case.
 - **Counts** are list lengths. They count every statement ever made, including removed and negative ones.
 
 ## 7. Spam and what stays true
@@ -284,12 +304,18 @@ is one bind and costs what a tag does.
 
 | Purpose | Position | Target | Holds |
 |---|---|---|---|
-| `property` | (topic, key) | a value record or a file | one value per author per key: a label per language, the definition, "moved to" |
+| `property` | (any subject, key) | a value record or a file | one value per author per key: a label per language, the definition, "moved to" |
 | `same` | (topic, other topic) | the other topic | "same as", at word level between word pages and at path level between paths |
 | `broader` | (topic, parent topic) | the parent | the optional booru-style parent |
 
 - Single-valued facts share one purpose and differ by key (`label:en`, `definition`, `moved-to`), so a new kind of
-  fact needs no new purpose. Many-valued relations get their own purpose so each has its own list.
+  fact needs no new purpose. `property` is general: its subject may be a topic, a home, a file or a folder, so a
+  display name for an address, a file's description and later inherited settings all live there.
+- Many-valued relations get their own purpose so each has its own list. **A new relation later (`related`,
+  `part of`) needs no release.** A purpose is only a constant: the kernel accepts any purpose, the per-author lists
+  and "what points at this" exist for every purpose, and the validator judges only the purposes it names. A release
+  is needed only if a relation wants all-authors lists or a rule of its own. So no generic `relation` purpose is
+  proposed; `same` and `broader` are named now because readers use them constantly.
 - "What points at this" already exists across authors, so synonyms are found from either side.
 - A label needs a small text Type (`files-name/2` refuses `/`, so it cannot hold "AC/DC").
 - Curating a topic's children uses TAG itself, as the spec says: tag the child into the parent with a number.
@@ -336,8 +362,10 @@ Assigned to an indexer (The Graph) or the client on purpose:
    the SDK: it always plans from the words, so it knows the depth, the number of new words, and (from two reads)
    whether the author's and the shared lists exist. The release publishes the per-level terms in the gas model (a
    new list, an existing list, per author and shared, on both schedules) so the SDK's gas limit and the kernel's
-   floor are computed from the same figures. Storing the depth in the path record, so the kernel can quote it too,
-   is optional. The floor fix of finding 2 ships with it.
+   floor are computed from the same figures. The depth is not stored in the path record: if it were, the rule would
+   have to enforce depth = parent's depth + 1, or two records could exist for one sequence of words. Quoting walks
+   the path instead. The floor fix of finding 2 ships with it. Under the "all gas counts" reading the SDK reports
+   a too-deep first tag as too large for one transaction; it never shortens the path.
 4. **A design document error.** DESIGN §4.3 lists 11 reserved bits in the admission row; the real layout has none.
    The proper version corrects the text and re-versions the layout identities.
 5. **No reader returns the number yet.** It must be added to the head and admission views, which changes those ABIs
