@@ -12,6 +12,10 @@ direction between `src/` layers. The script calls `forge --version` and `forge c
 compiles. A failure is an `AssertionError` that names the file or setting; success prints two `checks:`
 lines with the versions and counts it verified.
 
+Its artifact checks (the two opcode lints and the rule that profile rules carry no immutables) need a build. Before
+one they are only reported as pending, so the source checks can run first. `pnpm check --built` fails when any of
+them did not run; CI runs the plain form before the build and `--built` after it.
+
 ## vectors.mjs
 
 Writes the golden identity vectors for `src/lib/Keys.sol` to `test/vectors/ids.json`. Run it with

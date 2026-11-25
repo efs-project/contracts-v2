@@ -154,6 +154,13 @@ for (const path of profileArtifacts) {
   assert.deepEqual(refs, {}, `${path}: a profile rule must have no immutable references`);
 }
 
+// `--built` is for a run AFTER the build (CI's second invocation): the artifact checks above must actually have run.
+// Without it a missing artifact is only reported as pending, so the source checks can run before anything is built.
+if (process.argv.includes("--built")) {
+  assert.equal(pendingLints.length, 0, `--built: opcode lints did not run for ${pendingLints.join(", ")} (build first)`);
+  assert.ok(profilesChecked > 0, "--built: no profile artifact was checked for immutables (build first)");
+}
+
 const sources = files("src").filter((p) => p.endsWith(".sol")).length;
 console.log(`checks: Node ${process.versions.node}; ${forgeVersion}; solc ${config.solc}; EVM ${config.evm_version}; bytecode_hash ${config.bytecode_hash}`);
 console.log(`checks: ${sources} production Solidity sources; ${original.length} original sources with MIT headers; pins ${Object.entries(pins).map(([n, v]) => `${n}@${v}`).join(", ")}`);

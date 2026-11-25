@@ -41,6 +41,9 @@ jobs:
       - run: forge build --sizes
         env:
           FOUNDRY_PROFILE: ci
+      # `pnpm check` above ran before anything was built, so its artifact checks (the two opcode lints and the
+      # profile rules' no-immutables rule) were only reported as pending. Run them for real now that out/ exists.
+      - run: pnpm check --built
       - run: pnpm layout:check
       - run: pnpm abi:check
       - run: forge test
