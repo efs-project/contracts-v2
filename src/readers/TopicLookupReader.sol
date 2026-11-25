@@ -35,9 +35,10 @@ import {E_TOPIC_INCONSISTENT, E_TOPIC_STATUS, TopicReaderBase} from "./TopicRead
 ///
 ///         `about(thing)`: every place anyone filed `thing` under at TAG, either sign (`Keys.rolePlacesList(TAG,
 ///         thing)`, family 21: one entry per position), newest first, each with the row of
-///         `TopicPageReader.everyone` (`statements`, `yes`, the optional sample); rows nobody says yes to are
-///         returned, so a lone negative is found from its thing. No lens. Calls per page: one slice, one
-///         `bindingCells`, then one author-list head per row (and the sample's slice and `authorHeads`).
+///         `TopicEveryoneReader.everyone` (`statements`, `yes`, the optional sample); rows nobody says yes to are
+///         returned, so a lone negative is found from its thing. No lens: every row's `decider` is 255. Calls per
+///         page: one slice, one `bindingCells`, then one author-list head per row (and the sample's slice and
+///         `authorHeads`).
 ///
 ///         `byName(position)`: the authors of ONE position (TAG or FOLDER: "anyone's `pet.jpg` at this address" is
 ///         `byName(Keys.position(FOLDER, home, keccak256("pet.jpg")))`), newest first-stated first. One head read of
@@ -61,7 +62,6 @@ import {E_TOPIC_INCONSISTENT, E_TOPIC_STATUS, TopicReaderBase} from "./TopicRead
 ///         Type; UNKNOWN when the index keeps no topic roll-ups (the below counts are then unknown).
 contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-lookup/query/1");
-    /// The most rows of one `byName`, `wordPage` or `children` page (the facets' batch bound).
     /// The most rows of one `byName`, `wordPage` or `children` page (the facets' batch bound).
     uint256 internal constant BY_NAME_MAX = 64;
     uint8 internal constant VIEW_BY_NAME = 1;
@@ -165,6 +165,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
                 row.topic = c.subject;
                 row.thing = thing;
                 row.bindingOrdinal = e[k];
+                row.decider = uint8(SELECTED_NONE); // no lens
                 row.statements = a.count;
                 row.yes = a.live;
                 if (sample != 0 && cov != Coverage.UNKNOWN) {

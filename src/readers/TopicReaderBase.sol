@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-import {Coordinate, FamilyId, TypeId} from "../interfaces/Actions.sol";
+import {Coordinate, FamilyId, Purpose, TypeId} from "../interfaces/Actions.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../interfaces/ILedgerReads.sol";
@@ -9,6 +9,7 @@ import {ILedgerViews} from "../interfaces/ILedgerViews.sol";
 import {IReader, PlaceRow, TopicPageInfo} from "../interfaces/Readers.sol";
 import {BasisCommit, Coverage, Status} from "../interfaces/Results.sol";
 import {Head} from "../interfaces/Views.sol";
+import {Keys} from "../lib/Keys.sol";
 
 /// A dependency (the ledger, a facet, the index or a store) reverted, ran out of gas or has no code.
 error E_TOPIC_READ(address source, bytes4 selector); // none
@@ -25,7 +26,7 @@ error E_TOPIC_STATUS(uint8 status); // none
 // forge-lint: disable-start(calls-loop)
 // forge-lint: disable-start(require-revert-in-loop)
 
-/// @title TopicReaderBase — what the two topic readers share (design §5.13, §11)
+/// @title TopicReaderBase — what the three topic readers share (design §5.13, §11)
 /// @notice Immutable and stateless. The ledger and its two read facets are constructor immutables; the live index
 ///         is resolved per call from `ILedgerHot(ledger).index()` and never cached. Every list is read through the
 ///         index's own reads (`IIndexReads.postingHeadOf`/`postingSliceOf`, which carry the list's coverage) or the
@@ -48,6 +49,7 @@ abstract contract TopicReaderBase is IReader {
     uint8 internal constant SCAN_EXHAUSTED = 1;
     uint8 internal constant SCAN_LIMIT = 2;
     uint8 internal constant SCAN_GAS = 3;
+    uint8 internal constant SCAN_ROWS = 4;
     uint256 internal constant MAX_PRINCIPALS = 64;
     /// The facets' batch bound (`limits.maxReadIds` of the release profile is 64): windows never exceed it.
     uint256 internal constant WINDOW = 16;
@@ -102,6 +104,7 @@ abstract contract TopicReaderBase is IReader {
         Coordinate[] cells;
         uint8[] decider;
         uint8[] decided;
+        uint16[] strength;
         Head[] own;
     }
 
@@ -272,12 +275,37 @@ abstract contract TopicReaderBase is IReader {
         return Coverage.COMPLETE;
     }
 
-    /// The rows a page can hold: `limit` (0 = no row limit), the entries left and what the call can pay for.
-    function _capacity(uint256 limit, uint256 left) internal view returns (uint256 n) {
+    /// The rows a page can hold: the entries left, `limit` and `maxRows` (0 = no bound) and what the call can pay
+    /// for, but at least one while entries remain, so the first entry read can always be a row.
+    function _capacity(uint256 limit, uint256 maxRows, uint256 left)
+        internal
+        view
+        returns (uint256 n)
+    {
         n = left;
         if (limit != 0 && limit < n) n = limit;
+        if (maxRows != 0 && maxRows < n) n = maxRows;
         uint256 g = gasleft() / ROW_GAS_FLOOR;
-        if (g < n) n = g;
+        if (g < n) n = g == 0 ? 1 : g;
+        if (left == 0) n = 0;
+    }
+
+    /// The stop before the next entry or batch, given that `scanned` entries were read on this page (0: none, and
+    /// then nothing stops, so every page that is not refused reads at least one entry): 2 LIMIT (`limit` entries
+    /// read), 4 ROWS (`maxRows` rows returned), 3 GAS (the reserve, or the row array full); 0 to go on.
+    function _stop(
+        uint256 scanned,
+        uint256 got,
+        uint256 room,
+        uint32 limit,
+        uint32 maxRows,
+        uint256 gasReserve
+    ) internal view returns (uint8) {
+        if (scanned == 0) return 0;
+        if (limit != 0 && scanned >= limit) return SCAN_LIMIT;
+        if (maxRows != 0 && got >= maxRows) return SCAN_ROWS;
+        if (got == room || gasleft() < gasReserve) return SCAN_GAS;
+        return 0;
     }
 
     // =============================================================================================
@@ -399,18 +427,20 @@ abstract contract TopicReaderBase is IReader {
         uint8[] memory authors
     ) internal view returns (Lensed memory x) {
         bytes memory ret = _sc(
-            VIEWS, abi.encodeCall(ILedgerViews.lensRule, (LEDGER, lens, ordinals, authors)), 384
+            VIEWS, abi.encodeCall(ILedgerViews.lensRule, (LEDGER, lens, ordinals, authors)), 416
         );
         Status[] memory st;
         BasisCommit memory b;
-        (st, x.positions, x.cells, x.decider, x.decided, x.own, b) = abi.decode(
-            ret, (Status[], bytes32[], Coordinate[], uint8[], uint8[], Head[], BasisCommit)
+        (st, x.positions, x.cells, x.decider, x.decided, x.strength, x.own, b) = abi.decode(
+            ret,
+            (Status[], bytes32[], Coordinate[], uint8[], uint8[], uint16[], Head[], BasisCommit)
         );
         _echo(r, b);
         uint256 n = ordinals.length;
         if (
             st.length != n || x.positions.length != n || x.cells.length != n
-                || x.decider.length != n || x.decided.length != n || x.own.length != n
+                || x.decider.length != n || x.decided.length != n || x.strength.length != n
+                || x.own.length != n
         ) revert E_TOPIC_INCONSISTENT(3);
         for (uint256 i; i < n; ++i) {
             _rowStatus(st[i], Status.ABSENT_PROVEN, 3);
@@ -425,7 +455,8 @@ abstract contract TopicReaderBase is IReader {
                     || (h.state == 0) != (h.admission == 0)
                     || h.admission > r.observed.admissionHighWater || (!none && d > authors[i])
                     || none != (ds == 0) || (!none && ds != 1 && ds != 2) || (none && stance)
-                    || (d == authors[i] && ds != h.state)
+                    || (none && x.strength[i] != 0)
+                    || (d == authors[i] && (ds != h.state || x.strength[i] != h.strength))
             ) revert E_TOPIC_INCONSISTENT(4);
         }
     }
@@ -478,14 +509,51 @@ abstract contract TopicReaderBase is IReader {
         }
     }
 
-    /// The lens rule over `hs[from .. from + n)`: the index of the first head with a stance (BOUND or MASKED),
-    /// or SELECTED_NONE.
-    function _decide(Head[] memory hs, uint256 from, uint256 n) internal pure returns (uint256) {
-        for (uint256 k; k < n; ++k) {
-            uint8 st = hs[from + k].state;
-            if (st == 1 || st == 2) return k;
+    /// The viewed-place half of the combined lens walk (design §11): for each candidate i, the index of the first
+    /// of `lens[0 .. ask[i])` whose head at `(TAG, place, things[i])` is MASKED (a "not this" at the place being
+    /// viewed), or SELECTED_NONE; `ask[i] == 0` asks nobody. The heads are read in `heads` rounds of at most
+    /// MAX_KEYS keys.
+    function _maskedAt(
+        Run memory r,
+        bytes32[] memory lens,
+        bytes32 place,
+        bytes32[] memory things,
+        uint256[] memory ask
+    ) internal view returns (uint256[] memory kv) {
+        uint256 n = things.length;
+        uint256 total;
+        for (uint256 i; i < n; ++i) {
+            total += ask[i];
         }
-        return SELECTED_NONE;
+        kv = new uint256[](n);
+        bytes32[] memory keys = new bytes32[](total);
+        uint256 t;
+        for (uint256 i; i < n; ++i) {
+            kv[i] = SELECTED_NONE;
+            bytes32 viewed = Keys.position(Purpose.TAG, place, things[i]);
+            for (uint256 a; a < ask[i]; ++a) {
+                keys[t++] = Keys.binding(lens[a], viewed);
+            }
+        }
+        Head[] memory hs = new Head[](total);
+        for (uint256 from; from < total; from += MAX_KEYS) {
+            uint256 m = total - from < MAX_KEYS ? total - from : MAX_KEYS;
+            bytes32[] memory chunk = new bytes32[](m);
+            for (uint256 a; a < m; ++a) {
+                chunk[a] = keys[from + a];
+            }
+            Head[] memory got = _heads(r, chunk);
+            for (uint256 a; a < m; ++a) {
+                hs[from + a] = got[a];
+            }
+        }
+        t = 0;
+        for (uint256 i; i < n; ++i) {
+            for (uint256 a; a < ask[i]; ++a) {
+                if (kv[i] == SELECTED_NONE && hs[t + a].state == 2) kv[i] = a;
+            }
+            t += ask[i];
+        }
     }
 
     /// A head in the state its status names (PRESENT 1, MASKED 2, RELEASED 3), a canonical target and an

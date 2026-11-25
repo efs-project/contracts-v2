@@ -10,8 +10,9 @@ import {RecordHeader} from "./Views.sol";
 // they list in `supportedProfiles()` and return UNSUPPORTED otherwise; they pin layoutId through
 // `BasisCommit.executionSet` and return BASIS_STALE/UNSUPPORTED as data. Listing-coverage law: a paged reader's
 // coverage is the listing's, COMPLETE only when `completeFromOrigin`; a page produced from a continuation is at
-// most PARTIAL. `scanStatus` (both page structs): 1 EXHAUSTED (the scope list ended) 2 LIMIT (row limit reached)
-// 3 GAS (gasReserve early stop); 0 and 4..255 reserved.
+// most PARTIAL. `scanStatus` (both page structs, and `TopicPageInfo`): 1 EXHAUSTED (the scope list ended) 2 LIMIT (row
+// limit reached; for the topic views, entry limit) 3 GAS (gasReserve early stop) 4 ROWS (the topic views' `maxRows`
+// reached); 0 and 5..255 reserved.
 
 /// A Lens listing continuation. lensHash = keccak(abi.encode(principals)); never msg.sender.
 struct Cursor {
@@ -210,10 +211,16 @@ interface IReaderDirectory {
 
 /// The page laws of every topic view: `q.status` PRESENT for a served page, UNKNOWN when a list the view needs has
 /// coverage UNKNOWN (no rows: an UNKNOWN is never empty), BASIS_STALE / UNSUPPORTED / LIMIT_EXCEEDED / INVALID as
-/// refusals with no rows. A page's work is bounded by the list entries it reads (`limit`, 0 = only the gas reserve),
-/// never by the rows it returns: repeats, hidden and unaffirmed entries return nothing, so a page may hold fewer rows
-/// than `limit`, or none, while entries remain. The list is finished only when `scanStatus` is 1 EXHAUSTED (and `next`
-/// is empty); 2 LIMIT (`limit` entries read) and 3 GAS (`gasReserve` stop) always carry `next`, the place to resume.
+/// refusals with no rows. A page's work is bounded by the list entries it reads (`limit`, 0 = only the gas reserve);
+/// the paged views `mine` and `everyone` also take `maxRows` (0 = no cap), and stop at whichever bound comes first.
+/// Repeats, hidden and unaffirmed entries return nothing, so a page may hold fewer rows than `limit`, or none, while
+/// entries remain. The list is finished only when `scanStatus` is 1 EXHAUSTED (and `next` is empty); 2 LIMIT (`limit`
+/// entries read), 3 GAS (`gasReserve` stop) and 4 ROWS (`maxRows` rows returned) always carry `next`, the place to
+/// resume. A page that is not refused reads at least one entry whatever its bounds and reserve, so a caller always
+/// makes progress. `next` holds one resume index per merged list, counted from the START of that list (entries
+/// `[0, index)` are still unread): a list only grows at its end, so entries appended between pages never shift it,
+/// and a later page continues exactly where the previous one stopped (the appended entries are newer than the
+/// listing's origin and are not part of it).
 /// `listingCoverage` COMPLETE only when `completeFromOrigin` (origin-started, exhausted, every list COMPLETE); a page
 /// from a continuation is at most PARTIAL. `scanned`: list entries read on this page; `rawTotal`: the entries
 /// (filings) of every list at this page's read; `positionsEver`: for the place-list views (`everyone`, `about`), the
@@ -256,15 +263,19 @@ struct MineRow {
 }
 
 /// One row of `everyone` (or `raw`) and of `about`: a position (`thing` filed under `topic`), the list entry
-/// (`bindingOrdinal`), its statements (`statements`: authors who ever stated anything there) and how many say yes
-/// now (`yes`), both exact from one head read; then a sample of the newest `sampled` authors: `sampleYes` say >= 0,
-/// `sampleNo` say < 0, and `incomplete` when the sample did not cover every author. The sample is detail, never the
-/// basis for showing a row.
+/// (`bindingOrdinal`), who decided the row (`decider`: the lens index of the first lens author with a stance at the
+/// position, and `number` that author's signed number; 255 and 0 when no lens author has one and the public tier,
+/// someone's yes, decided; always 255 in `raw` and `about`, which read no lens), its statements (`statements`:
+/// authors who ever stated anything there) and how many say yes now (`yes`), both exact from one head read; then a
+/// sample of the newest `sampled` authors: `sampleYes` say >= 0, `sampleNo` say < 0, and `incomplete` when the sample
+/// did not cover every author. The sample is detail, never the basis for showing a row.
 struct PlaceRow {
     bytes32 position;
     bytes32 topic;
     bytes32 thing;
     uint64 bindingOrdinal;
+    uint8 decider;
+    int32 number;
     uint64 statements;
     uint64 yes;
     uint16 sampled;
@@ -301,8 +312,24 @@ struct PlaceCount {
     uint64 filingsBelow;
 }
 
-/// @title ITopicPageReader — the lens and public views of a place (design §5.13, §11; docs/TAG-DESIGN.md §6)
-interface ITopicPageReader is IReader {
+/// @title ITopicMineReader — the lens view of a place (design §5.13, §11; docs/TAG-DESIGN.md §6)
+interface ITopicMineReader is IReader {
+    /// The lens's own entries at `place` (exact), or with `below` the place and everything below it, newest first;
+    /// `limit` list entries read and `maxRows` rows returned (0 = no bound), whichever comes first.
+    function mine(
+        bytes32[] calldata lens,
+        bytes32 place,
+        bool below,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint32 limit,
+        uint32 maxRows,
+        uint256 gasReserve
+    ) external view returns (TopicPageInfo memory, MineRow[] memory);
+}
+
+/// @title ITopicEveryoneReader — the public views of a place (design §5.13, §11; docs/TAG-DESIGN.md §6)
+interface ITopicEveryoneReader is IReader {
     /// `everyone` / `raw` query: the place list at `purpose` (TAG or FOLDER), or with `below` (TAG only) the
     /// roll-up; `raw` skips the lens; `sample` newest authors are sampled per row (0: none).
     struct PlaceQuery {
@@ -313,25 +340,15 @@ interface ITopicPageReader is IReader {
         uint16 sample;
     }
 
-    /// The lens's own entries at `place` (exact), or with `below` the place and everything below it, newest first.
-    function mine(
-        bytes32[] calldata lens,
-        bytes32 place,
-        bool below,
-        BasisCommit calldata expected,
-        bytes calldata continuation,
-        uint32 limit,
-        uint256 gasReserve
-    ) external view returns (TopicPageInfo memory, MineRow[] memory);
-
     /// Every author's positions at a place (and below it), newest first: rows someone says yes to, minus what the
-    /// lens hides; with `raw`, every row.
+    /// lens hides; with `raw`, every row. `limit` list entries read and `maxRows` rows returned (0 = no bound).
     function everyone(
         PlaceQuery calldata query,
         bytes32[] calldata lens,
         BasisCommit calldata expected,
         bytes calldata continuation,
         uint32 limit,
+        uint32 maxRows,
         uint256 gasReserve
     ) external view returns (TopicPageInfo memory, PlaceRow[] memory);
 }
