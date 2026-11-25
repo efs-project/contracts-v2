@@ -4,7 +4,8 @@ pragma solidity 0.8.37;
 import {TopicListsBase} from "../integration/TopicListsBase.sol";
 import {LedgerReads} from "../../src/readers/LedgerReads.sol";
 import {LedgerViews} from "../../src/readers/LedgerViews.sol";
-import {TopicPageReader} from "../../src/readers/TopicPageReader.sol";
+import {TopicMineReader} from "../../src/readers/TopicMineReader.sol";
+import {TopicEveryoneReader} from "../../src/readers/TopicEveryoneReader.sol";
 import {TopicLookupReader} from "../../src/readers/TopicLookupReader.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
@@ -13,7 +14,7 @@ import {Action} from "../../src/interfaces/Actions.sol";
 import {BasisCommit, Status} from "../../src/interfaces/Results.sol";
 import {
     AuthorRow,
-    ITopicPageReader,
+    ITopicEveryoneReader,
     MineRow,
     PlaceCount,
     PlaceRow,
@@ -30,7 +31,8 @@ abstract contract TopicReadersBase is TopicListsBase {
 
     LedgerReads internal reads;
     LedgerViews internal views;
-    TopicPageReader internal pager;
+    TopicMineReader internal miner;
+    TopicEveryoneReader internal pager;
     TopicLookupReader internal lookup;
     EfsFiles.Types internal ft;
 
@@ -38,7 +40,8 @@ abstract contract TopicReadersBase is TopicListsBase {
         super.setUp();
         reads = new LedgerReads();
         views = new LedgerViews();
-        pager = new TopicPageReader(address(r.ledger), address(views), address(reads));
+        miner = new TopicMineReader(address(r.ledger), address(views), address(reads));
+        pager = new TopicEveryoneReader(address(r.ledger), address(views), address(reads));
         lookup = new TopicLookupReader(
             address(r.ledger),
             address(views),
@@ -144,7 +147,7 @@ abstract contract TopicReadersBase is TopicListsBase {
         bytes memory cont,
         uint32 limit
     ) internal view returns (TopicPageInfo memory, MineRow[] memory) {
-        return pager.mine(lens, place, below, _unbound(), cont, limit, 0);
+        return miner.mine(lens, place, below, _unbound(), cont, limit, 0, 0);
     }
 
     function _everyone(
@@ -157,11 +160,12 @@ abstract contract TopicReadersBase is TopicListsBase {
         uint32 limit
     ) internal view returns (TopicPageInfo memory, PlaceRow[] memory) {
         return pager.everyone(
-            ITopicPageReader.PlaceQuery(Purpose_TAG, place, below, raw, sample),
+            ITopicEveryoneReader.PlaceQuery(Purpose_TAG, place, below, raw, sample),
             lens,
             _unbound(),
             cont,
             limit,
+            0,
             0
         );
     }
@@ -181,6 +185,7 @@ abstract contract TopicReadersBase is TopicListsBase {
         vm.cool(address(r.registry));
         vm.cool(address(reads));
         vm.cool(address(views));
+        vm.cool(address(miner));
         vm.cool(address(pager));
         vm.cool(address(lookup));
     }

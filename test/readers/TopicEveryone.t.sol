@@ -6,9 +6,9 @@ import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Purpose} from "../../src/interfaces/Actions.sol";
 import {Coverage, Status} from "../../src/interfaces/Results.sol";
-import {ITopicPageReader, PlaceRow, TopicPageInfo} from "../../src/interfaces/Readers.sol";
+import {ITopicEveryoneReader, PlaceRow, TopicPageInfo} from "../../src/interfaces/Readers.sol";
 
-/// @notice `TopicPageReader.everyone`, `raw` and `about` (docs/TAG-DESIGN.md §6; spec §3.2): a row is shown when
+/// @notice `TopicEveryoneReader.everyone`, `raw` and `about` (docs/TAG-DESIGN.md §6; spec §3.2): a row is shown when
 ///         someone says yes now (the position's author head `live`), hidden only by a lens author's negative at the
 ///         filed position or at the viewed place, never by a stranger; `raw` and `about` return rows nobody says yes
 ///         to; repeats of a position (a later author's first yes) are removed within a page.
@@ -249,10 +249,11 @@ contract TopicEveryoneTest is TopicReadersBase {
         assertEq(seen, 9);
         assertGe(pages, 3);
         (TopicPageInfo memory g, PlaceRow[] memory gr) = pager.everyone{gas: 1_500_000}(
-            ITopicPageReader.PlaceQuery(Purpose.TAG, cars[0], true, false, 0),
+            ITopicEveryoneReader.PlaceQuery(Purpose.TAG, cars[0], true, false, 0),
             new bytes32[](0),
             _unbound(),
             "",
+            0,
             0,
             1_200_000
         );
@@ -294,10 +295,11 @@ contract TopicEveryoneTest is TopicReadersBase {
         _attach(bob, home, "pet.jpg");
         _attach(carol, home, "notes.txt");
         (TopicPageInfo memory info, PlaceRow[] memory rows) = pager.everyone(
-            ITopicPageReader.PlaceQuery(Purpose.FOLDER, home, false, false, 0),
+            ITopicEveryoneReader.PlaceQuery(Purpose.FOLDER, home, false, false, 0),
             new bytes32[](0),
             _unbound(),
             "",
+            0,
             0,
             0
         );
@@ -308,10 +310,11 @@ contract TopicEveryoneTest is TopicReadersBase {
         assertEq(rows[1].statements, 2);
         // FOLDER has no roll-up
         (info,) = pager.everyone(
-            ITopicPageReader.PlaceQuery(Purpose.FOLDER, home, true, false, 0),
+            ITopicEveryoneReader.PlaceQuery(Purpose.FOLDER, home, true, false, 0),
             new bytes32[](0),
             _unbound(),
             "",
+            0,
             0,
             0
         );

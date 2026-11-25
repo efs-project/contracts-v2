@@ -7,7 +7,7 @@ import {Purpose} from "../../src/interfaces/Actions.sol";
 import {BasisCommit, Coverage, Status} from "../../src/interfaces/Results.sol";
 import {MineRow, TopicPageInfo} from "../../src/interfaces/Readers.sol";
 
-/// @notice `TopicPageReader.mine` (docs/TAG-DESIGN.md §6; spec §3.1): the lens rule, roll-up, one row per
+/// @notice `TopicMineReader.mine` (docs/TAG-DESIGN.md §6; spec §3.1): the lens rule, roll-up, one row per
 ///         (topic filed under, thing), newest-first paging, the basis and the gas-reserve stop.
 contract TopicMineTest is TopicReadersBase {
     bytes32[] internal cars; // /m-0 /m-0/m-1
@@ -223,11 +223,11 @@ contract TopicMineTest is TopicReadersBase {
         // an expected basis that differs from the live one
         BasisCommit memory b = reads.basis(address(r.ledger));
         b.executionSet = keccak256("other");
-        (other,) = pager.mine(_lens1(alice), cars[0], false, b, "", 0, 0);
+        (other,) = miner.mine(_lens1(alice), cars[0], false, b, "", 0, 0, 0);
         assertEq(uint8(other.q.status), uint8(Status.BASIS_STALE));
         // the live basis, bound: served
         b = reads.basis(address(r.ledger));
-        (other,) = pager.mine(_lens1(alice), cars[0], false, b, cont, 2, 0);
+        (other,) = miner.mine(_lens1(alice), cars[0], false, b, cont, 2, 0, 0);
         _ok(other);
         // a later admission does not disturb a continuation: lists are append-only
         _tag(alice, cars[0], things[9]);
@@ -252,8 +252,9 @@ contract TopicMineTest is TopicReadersBase {
     function test_gas_reserve_stops_early_with_a_continuation() public {
         bytes32[] memory xs = _things(40);
         _tagMany(alice, cars[0], xs);
-        (TopicPageInfo memory info, MineRow[] memory rows) =
-            pager.mine{gas: 2_000_000}(_lens1(alice), cars[0], false, _unbound(), "", 0, 1_500_000);
+        (TopicPageInfo memory info, MineRow[] memory rows) = miner.mine{gas: 2_000_000}(
+            _lens1(alice), cars[0], false, _unbound(), "", 0, 0, 1_500_000
+        );
         _ok(info);
         assertEq(info.scanStatus, SCAN_GAS);
         assertGt(info.next.length, 0);

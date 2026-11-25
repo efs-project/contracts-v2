@@ -30,15 +30,16 @@ import {
     ILensReader,
     IReader,
     IReaderDirectory,
+    ITopicEveryoneReader,
     ITopicLookupReader,
-    ITopicPageReader
+    ITopicMineReader
 } from "../../src/interfaces/Readers.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 
 /// @notice Trivial by design: it exists so the closure profile has a test root that pulls in every closure file.
 contract ClosureTest {
     function testClosureCompilesAtPragmaFloor() public pure {
-        bytes4[21] memory ids = [
+        bytes4[22] memory ids = [
             type(ILedger).interfaceId,
             type(ILedgerHot).interfaceId,
             type(ILedgerControl).interfaceId,
@@ -57,7 +58,8 @@ contract ClosureTest {
             type(ILensReader).interfaceId,
             type(IFilesPageReader).interfaceId,
             type(IReaderDirectory).interfaceId,
-            type(ITopicPageReader).interfaceId,
+            type(ITopicMineReader).interfaceId,
+            type(ITopicEveryoneReader).interfaceId,
             type(ITopicLookupReader).interfaceId,
             E_RESERVED.selector
         ];

@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {TopicReadersBase} from "./TopicReadersBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Coordinate, FamilyId, Purpose, TypeId} from "../../src/interfaces/Actions.sol";
 import {ILedgerViews} from "../../src/interfaces/ILedgerViews.sol";
 import {BasisCommit, Status} from "../../src/interfaces/Results.sol";
@@ -19,7 +20,7 @@ contract FacetsListsTest is TopicReadersBase {
         super.setUp();
         topic = _regPath("fl", 1)[0];
         _tagN(alice, topic, things[0], 9);
-        _deny(bob, topic, things[0]);
+        _act(bob, EfsTopics.deny(topic, things[0], 0, 4)); // a no of strength 4: number -5
         _tag(carol, topic, things[1]);
     }
 
@@ -105,6 +106,7 @@ contract FacetsListsTest is TopicReadersBase {
             Coordinate[] memory c,
             uint8[] memory d,
             uint8[] memory ds,
+            uint16[] memory sg,
             Head[] memory own,
         ) = views.lensRule(address(r.ledger), lens, o, who);
         assertEq(uint8(st[0]), uint8(Status.PRESENT));
@@ -112,15 +114,18 @@ contract FacetsListsTest is TopicReadersBase {
         assertEq(c[0].role, things[0]);
         assertEq(d[0], 1);
         assertEq(ds[0], 2, "MASKED");
+        assertEq(sg[0], 4, "the decider's strength, from its state word");
         assertEq(own[0].strength, 9, "alice's own head");
         assertEq(d[1], 255);
         assertEq(ds[1], 0);
+        assertEq(sg[1], 0, "no decider, no strength");
         assertEq(own[1].state, 0, "carol never stated anything at things[0]");
         assertEq(d[2], 0);
         assertEq(ds[2], 1);
+        assertEq(sg[2], 0, "carol's yes of strength 0");
         // an author index past the lens: every entry INVALID
         who[2] = 3;
-        (st,,,,,,) = views.lensRule(address(r.ledger), lens, o, who);
+        (st,,,,,,,) = views.lensRule(address(r.ledger), lens, o, who);
         assertEq(uint8(st[0]), uint8(Status.INVALID));
     }
 

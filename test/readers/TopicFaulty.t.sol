@@ -3,7 +3,8 @@ pragma solidity 0.8.37;
 
 import {TopicReadersBase} from "./TopicReadersBase.sol";
 import {FaultyReads} from "../harness/doubles/FaultyReads.sol";
-import {TopicPageReader} from "../../src/readers/TopicPageReader.sol";
+import {TopicMineReader} from "../../src/readers/TopicMineReader.sol";
+import {TopicEveryoneReader} from "../../src/readers/TopicEveryoneReader.sol";
 import {TopicLookupReader} from "../../src/readers/TopicLookupReader.sol";
 import {
     E_TOPIC_INCONSISTENT,
@@ -16,7 +17,7 @@ import {Purpose} from "../../src/interfaces/Actions.sol";
 import {Coverage, Status} from "../../src/interfaces/Results.sol";
 import {
     AuthorRow,
-    ITopicPageReader,
+    ITopicEveryoneReader,
     MineRow,
     PlaceCount,
     PlaceRow,
@@ -51,7 +52,8 @@ contract TopicFaultyTest is TopicReadersBase {
     FaultyReads internal fr;
     FaultyReads internal fi;
     FaultyReads internal fs;
-    TopicPageReader internal fp;
+    TopicMineReader internal fp;
+    TopicEveryoneReader internal fe;
     TopicLookupReader internal fk;
     bytes32[] internal t;
     bytes32 internal pos;
@@ -79,7 +81,8 @@ contract TopicFaultyTest is TopicReadersBase {
         fs.setBasis(address(r.ledger));
         _set(fl, ILedgerHot.index.selector, M_SET_WORD, 0, uint160(address(fi)));
         _set(fi, IIndexReads.bitmapStore.selector, M_SET_WORD, 0, uint160(address(fs)));
-        fp = new TopicPageReader(address(fl), address(fv), address(fr));
+        fp = new TopicMineReader(address(fl), address(fv), address(fr));
+        fe = new TopicEveryoneReader(address(fl), address(fv), address(fr));
         fk = new TopicLookupReader(
             address(fl), address(fv), address(fr), typeIds[T_TOPIC], typeIds[T_TOPIC_WORD]
         );
@@ -90,12 +93,12 @@ contract TopicFaultyTest is TopicReadersBase {
     }
 
     function _mineF(bool below) internal view returns (TopicPageInfo memory, MineRow[] memory) {
-        return fp.mine(_lens2(alice, bob), t[0], below, _unbound(), "", 0, 0);
+        return fp.mine(_lens2(alice, bob), t[0], below, _unbound(), "", 0, 0, 0);
     }
 
     /// A page of one row: one batch of one candidate (bob's newest exact entry: the heads of alice and bob).
     function _mine1() internal view returns (TopicPageInfo memory, MineRow[] memory) {
-        return fp.mine(_lens2(alice, bob), t[0], false, _unbound(), "", 1, 0);
+        return fp.mine(_lens2(alice, bob), t[0], false, _unbound(), "", 1, 0, 0);
     }
 
     function _byNameF() internal view returns (TopicPageInfo memory, AuthorRow[] memory) {
@@ -112,7 +115,7 @@ contract TopicFaultyTest is TopicReadersBase {
     function test_the_wrappers_are_faithful_without_a_fault() public view {
         (TopicPageInfo memory a, MineRow[] memory x) = _mineF(true);
         (TopicPageInfo memory b, MineRow[] memory y) =
-            pager.mine(_lens2(alice, bob), t[0], true, _unbound(), "", 0, 0);
+            miner.mine(_lens2(alice, bob), t[0], true, _unbound(), "", 0, 0, 0);
         assertEq(x.length, 3);
         assertEq(keccak256(abi.encode(x)), keccak256(abi.encode(y)));
         assertEq(uint8(a.listingCoverage), uint8(Coverage.COMPLETE));
@@ -216,73 +219,80 @@ contract TopicFaultyTest is TopicReadersBase {
 
     // ---- facet rows ------------------------------------------------------------------------------------------
 
-    // `lensRule` reply of `_mine1` (one entry): offsets [0..5], BasisCommit [6..11], st [12 len, 13], positions
-    // [14, 15], cells [16, 17 purpose, 18 subject, 19 role], decider [20, 21], decided [22, 23], own [24 len,
-    // 25 state, 26 revision, 27 admission, 28 targetKind, 29 prevAdmission, 30 bindingOrdinal, 31 notAfter,
-    // 32 target, 33 strength]. The entry is bob's; alice (lens index 0) decides with a yes.
+    // `lensRule` reply of `_mine1` (one entry): offsets [0..6], BasisCommit [7..12], st [13 len, 14], positions
+    // [15, 16], cells [17, 18 purpose, 19 subject, 20 role], decider [21, 22], decided [23, 24], strength [25, 26],
+    // own [27 len, 28 state, 29 revision, 30 admission, 31 targetKind, 32 prevAdmission, 33 bindingOrdinal,
+    // 34 notAfter, 35 target, 36 strength]. The entry is bob's; alice (lens index 0) decides with a yes.
 
     function test_a_binding_cell_of_another_place() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 18, uint256(keccak256("x")));
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 19, uint256(keccak256("x")));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 3));
         _mine1();
     }
 
     function test_an_absent_entry_is_inconsistent_and_unknown_a_status_fault() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, uint8(Status.ABSENT_PROVEN));
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 14, uint8(Status.ABSENT_PROVEN));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 3));
         _mine1();
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, uint8(Status.UNKNOWN));
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 14, uint8(Status.UNKNOWN));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_STATUS.selector, uint8(Status.UNKNOWN)));
         _mine1();
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, uint8(Status.UNSUPPORTED));
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 14, uint8(Status.UNSUPPORTED));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_STATUS.selector, uint8(Status.UNSUPPORTED)));
         _mine1();
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, 0);
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 14, 0);
         vm.expectPartialRevert(E_TOPIC_REPLY.selector);
         _mine1();
     }
 
     function test_an_own_head_reported_unset_is_never_a_silence() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 25, 0);
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 28, 0);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
     }
 
     function test_a_reserved_or_contradictory_own_head_is_inconsistent() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 25, 7);
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 28, 7);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 25, 2); // MASKED with a target
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 28, 2); // MASKED with a target
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
     }
 
     function test_a_decision_that_contradicts_the_own_head() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 21, 255); // nobody decides, but bob is BOUND
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 22, 255); // nobody decides, but bob is BOUND
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 23, 0); // a decider without a state
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 24, 0); // a decider without a state
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 21, 2); // a decider past the author
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 22, 2); // a decider past the author
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
     }
 
+    function test_a_deciders_strength_that_contradicts_its_head() public {
+        // bob alone in the lens, bob's own entry: the decider is the author, so its strength must be the head's
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 26, 7);
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        fp.mine(_lens1(bob), t[0], false, _unbound(), "", 1, 0, 0);
+    }
+
     function test_an_own_head_of_another_binding_is_inconsistent() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_ADD_WORD, 30, 1);
+        _set(fv, ILedgerViews.lensRule.selector, M_ADD_WORD, 33, 1);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
     }
 
     function test_a_lens_rule_echoing_another_basis() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 6, uint256(keccak256("e")));
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 7, uint256(keccak256("e")));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 5));
         _mine1();
     }
 
     function test_an_own_head_admitted_in_the_future() public {
-        _set(fv, ILedgerViews.lensRule.selector, M_FUTURE_ADMISSION, 27, 1);
+        _set(fv, ILedgerViews.lensRule.selector, M_FUTURE_ADMISSION, 30, 1);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
         _mine1();
     }
@@ -316,11 +326,12 @@ contract TopicFaultyTest is TopicReadersBase {
     // ---- everyone: the author head decides "someone says yes"; UNKNOWN is never a no -------------------------
 
     function _everyoneF() internal view returns (TopicPageInfo memory, PlaceRow[] memory) {
-        return fp.everyone(
-            ITopicPageReader.PlaceQuery(Purpose.TAG, t[0], false, false, 0),
+        return fe.everyone(
+            ITopicEveryoneReader.PlaceQuery(Purpose.TAG, t[0], false, false, 0),
             _lens1(alice),
             _unbound(),
             "",
+            0,
             0,
             0
         );

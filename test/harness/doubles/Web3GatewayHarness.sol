@@ -22,6 +22,7 @@ import {Action, Purpose} from "../../../src/interfaces/Actions.sol";
 ///           /docs/guide.html        inline
 ///           alice: /alice.txt, /gone.txt, /docs/alice-doc.txt, /shared.txt (hidden by alice; p binds shared.txt)
 ///
+///         The tree is reached by the root's id, `/~efs/o/<rootDir>/…` (`R`).
 ///         URL helpers parse a `/path?query` string the way an ERC-6860 client does (split on `/`, percent-decode,
 ///         split the query on `&` and `=`) and follow `web3-next-chunk`.
 abstract contract Web3GatewayHarness is FilesPageHarness {
@@ -38,6 +39,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
     bytes32 internal pa;
     string internal P; // p as 64 hex digits
     string internal A; // alice as 64 hex digits
+    string internal R; // the root folder by id, `/~efs/o/<rootDir>` (its default lens is its creator, p)
 
     bytes32 internal docs;
     bytes32 internal sub;
@@ -55,6 +57,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         pa = Keys.principal(alice);
         P = _hex64(p);
         A = _hex64(pa);
+        R = string.concat("/~efs/o/", vm.toString(rootDir));
         gw = new EfsWeb3Gateway(
             address(r.ledger), address(reads), address(views), address(reader), rootDir, _gt()
         );

@@ -6,7 +6,7 @@ import {Keys} from "../../src/lib/Keys.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Action} from "../../src/interfaces/Actions.sol";
 
-/// @notice The gateway's home start (`/~home/0x<40 hex>/…`, docs/LARGE-FILES.md "`web3://`"): names resolve from an
+/// @notice The gateway's home form (`/0x<40 hex>/…`, docs/LARGE-FILES.md "`web3://`"): names resolve from an
 ///         address's place; the default lens is the address's own principal; another author's entry is served only
 ///         when the lens names that author; a missing name is 404, a malformed address 400; the home directory is
 ///         named by `x-efs-home`, never `x-efs-record`.
@@ -19,7 +19,7 @@ contract EfsWeb3GatewayHomeTest is Web3GatewayHarness {
     function setUp() public {
         _setUpGateway();
         home = bytes32(uint256(uint160(owner)));
-        H = string.concat("/~home/", vm.toString(owner));
+        H = string.concat("/", vm.toString(owner));
         bytes32 docsAtHome = _folder2(owner, home, "docs");
         _file(owner, docsAtHome, "a.txt", "owner's a", true);
         _file(owner, home, "readme.txt", "owner's readme", true);
@@ -43,7 +43,7 @@ contract EfsWeb3GatewayHomeTest is Web3GatewayHarness {
         assertEq(res.body, "owner's a");
         assertEq(_status(string.concat(H, "/readme.txt"), 200).body, "owner's readme");
         // the address in any case
-        string memory upper = string.concat("/~home/0x", _upper(_cutStr(vm.toString(owner), 2)));
+        string memory upper = string.concat("/0x", _upper(_cutStr(vm.toString(owner), 2)));
         assertEq(_status(string.concat(upper, "/readme.txt"), 200).body, "owner's readme");
     }
 
@@ -62,11 +62,21 @@ contract EfsWeb3GatewayHomeTest is Web3GatewayHarness {
     function test_missing_names_are_404_and_malformed_addresses_400() public view {
         _status(string.concat(H, "/nope.txt"), 404);
         _status(string.concat(H, "/docs/nope.txt"), 404);
-        _status("/~home/0x1234/readme.txt", 400);
-        _status("/~home/zz00000000000000000000000000000000000000/readme.txt", 400);
-        _status("/~home/0xg000000000000000000000000000000000000000/readme.txt", 400);
-        _status("/~home", 400);
-        _status(string.concat("/~home/", _hex64(home), "/readme.txt"), 400); // 64 digits is not an address
+        assertEq(_status("/0x1234/readme.txt", 400).body, "malformed id");
+        assertEq(
+            _status("/0xg000000000000000000000000000000000000000/readme.txt", 400).body,
+            "malformed id"
+        );
+        assertEq(
+            _status(string.concat("/", vm.toString(home), "/readme.txt"), 400).body, "malformed id"
+        ); // 64
+        // `~home` is gone: an unknown system path
+        assertEq(
+            _status(string.concat("/~home", H, "/readme.txt"), 400).body, "unknown system path"
+        );
+        // 40 or 64 hex digits without `0x` are words: a topic path, not served
+        _status("/ab00000000000000000000000000000000000000/readme.txt", 501);
+        _status(string.concat("/", _hex64(home), "/readme.txt"), 501);
     }
 
     function test_the_home_directory_is_named_as_an_address() public view {

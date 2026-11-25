@@ -8,7 +8,7 @@ import {Action, Purpose} from "../../src/interfaces/Actions.sol";
 import {Status} from "../../src/interfaces/Results.sol";
 import {
     AuthorRow,
-    ITopicPageReader,
+    ITopicEveryoneReader,
     MineRow,
     PlaceCount,
     PlaceRow,
@@ -35,7 +35,7 @@ contract TopicReadMeasureTest is TopicReadersBase {
     {
         _cool();
         (TopicPageInfo memory info, MineRow[] memory rows) =
-            pager.mine(lens, place, true, _unbound(), "", limit, 0);
+            miner.mine(lens, place, true, _unbound(), "", limit, 0, 0);
         g = vm.lastCallGas().gasTotalUsed;
         assertEq(uint8(info.q.status), uint8(Status.PRESENT));
         assertEq(rows.length, limit, "a full page");
@@ -113,11 +113,12 @@ contract TopicReadMeasureTest is TopicReadersBase {
     {
         _cool();
         (TopicPageInfo memory info, PlaceRow[] memory rows) = pager.everyone(
-            ITopicPageReader.PlaceQuery(Purpose.TAG, place, below, raw, 0),
+            ITopicEveryoneReader.PlaceQuery(Purpose.TAG, place, below, raw, 0),
             lens,
             _unbound(),
             "",
             limit,
+            0,
             0
         );
         g = vm.lastCallGas().gasTotalUsed;
@@ -145,6 +146,69 @@ contract TopicReadMeasureTest is TopicReadersBase {
             _log(string.concat("raw exact", k), _everyoneGas(kid, false, new bytes32[](0), true, n));
             _log(string.concat("raw below", k), _everyoneGas(top, true, new bytes32[](0), true, n));
         }
+    }
+
+    // ---- a padded stretch: entries nobody says yes to -----------------------------------------------------------
+
+    /// A page that reads `limit` entries of which none is a row (`rows.length == 0`).
+    function _skipGas(bytes32 place, bool below, bytes32[] memory lens, uint32 limit)
+        internal
+        returns (uint256 g)
+    {
+        _cool();
+        (TopicPageInfo memory info, PlaceRow[] memory rows) = pager.everyone(
+            ITopicEveryoneReader.PlaceQuery(Purpose.TAG, place, below, false, 0),
+            lens,
+            _unbound(),
+            "",
+            limit,
+            0,
+            0
+        );
+        g = vm.lastCallGas().gasTotalUsed;
+        assertEq(uint8(info.q.status), uint8(Status.PRESENT));
+        assertEq(info.scanned, limit, "every entry read");
+        assertEq(rows.length, 0, "no row: every entry is skipped");
+    }
+
+    /// 60 lone negatives by one stranger at a place's child (the place list of the child, the roll-up of the
+    /// place): `everyone` reads them all and shows nothing. A lens of L silent authors; the cost of one skipped
+    /// entry is the page-60 minus page-20 difference over 40 entries.
+    function _paddedCase(uint256 lensSize) internal {
+        vm.pauseGasMetering();
+        string memory k = string.concat("pad", vm.toString(lensSize));
+        bytes32 top = _regPath(k, 1)[0];
+        bytes32 kid = _child(top, "kid", true);
+        bytes32[] memory xs = _things(60);
+        address stranger = makeAddr(string.concat(k, "-stranger"));
+        Action[] memory a = new Action[](60);
+        for (uint256 i; i < 60; ++i) {
+            a[i] = EfsTopics.deny(kid, xs[i], 0, 0);
+        }
+        _execAs(stranger, a, new bytes[](60));
+        bytes32[] memory lens = _lensOf(_authorsN(string.concat(k, "-lens"), lensSize));
+        vm.resumeGasMetering();
+        string memory n = string.concat(" lens=", vm.toString(lensSize));
+        uint256 e20 = _skipGas(kid, false, lens, 20);
+        uint256 e60 = _skipGas(kid, false, lens, 60);
+        _log(string.concat("skip exact", n, " page=60"), e60);
+        _log(string.concat("skip exact", n, " per entry"), (e60 - e20) / 40);
+        uint256 b20 = _skipGas(top, true, lens, 20);
+        uint256 b60 = _skipGas(top, true, lens, 60);
+        _log(string.concat("skip below", n, " page=60"), b60);
+        _log(string.concat("skip below", n, " per entry"), (b60 - b20) / 40);
+    }
+
+    function test_padded_lens1() public {
+        _paddedCase(1);
+    }
+
+    function test_padded_lens8() public {
+        _paddedCase(8);
+    }
+
+    function test_padded_lens64() public {
+        _paddedCase(64);
     }
 
     function test_about() public {
