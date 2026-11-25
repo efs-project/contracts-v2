@@ -232,7 +232,8 @@ contract FilesRecipesTest is FilesRecipesBase {
         bytes32 nameRec = _id(T_NAME, "entry");
         a = new Action[](1);
         b = new bytes[](1);
-        bytes32[5] memory parents = [bytes32(uint256(999)), file, nameRec, rootDir, rootDir];
+        // 999 << 160: not a record and not address-shaped (a small word would be a home, design §12.5)
+        bytes32[5] memory parents = [bytes32(uint256(999) << 160), file, nameRec, rootDir, rootDir];
         bytes32[5] memory targets = [file, file, file, nameRec, rootDir];
         uint8[5] memory codes = [2, 2, 2, 5, 3];
         for (uint256 i; i < 5; ++i) {
@@ -256,9 +257,9 @@ contract FilesRecipesTest is FilesRecipesBase {
         Action[] memory a = new Action[](3);
         bytes[] memory b = new bytes[](3);
         a[0] = _create(keccak256("late"));
-        a[1] = _bind(Purpose.FOLDER, bytes32(uint256(999)), keccak256("late-name"), file, 0);
+        a[1] = _bind(Purpose.FOLDER, bytes32(uint256(999) << 160), keccak256("late-name"), file, 0);
         (a[2], b[2]) = _name("late-name");
-        Snapshot memory before = _snapshot(bytes32(uint256(999)), file);
+        Snapshot memory before = _snapshot(bytes32(uint256(999) << 160), file);
         Native memory c = _ctx(a);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -267,18 +268,19 @@ contract FilesRecipesTest is FilesRecipesBase {
             )
         );
         r.ledger.execute(a, b, c, "");
-        _assertSame(before, _snapshot(bytes32(uint256(999)), file));
+        _assertSame(before, _snapshot(bytes32(uint256(999) << 160), file));
         (bytes32 t,,,,) = r.hot.recordHeader(_id(T_NAME, "late-name"));
         assertEq(t, 0, "the name did not leak");
         assertEq(r.hot.subjectCreatedAt(file), 0, "the subject did not leak");
-        (uint8 state,,) = _head(_key(Purpose.FOLDER, bytes32(uint256(999)), keccak256("late-name")));
+        (uint8 state,,) =
+            _head(_key(Purpose.FOLDER, bytes32(uint256(999) << 160), keccak256("late-name")));
         assertEq(state, 0, "the head did not leak");
         (, uint64 count,,,) = r.g.index
             .postingHeadOf(
                 FamilyId.wrap(F_HISTORY),
                 TypeId.wrap(0),
                 0,
-                _key(Purpose.FOLDER, bytes32(uint256(999)), keccak256("late-name"))
+                _key(Purpose.FOLDER, bytes32(uint256(999) << 160), keccak256("late-name"))
             );
         assertEq(count, 0, "no history posting");
     }
@@ -442,18 +444,18 @@ contract FilesRecipesTest is FilesRecipesBase {
     // ---- identity across Realms and chains ---------------------------------------------------------------------
 
     function test_type_ids_are_identical_across_realms_and_chains() public {
-        bytes32[10] memory ids = typeIds;
+        bytes32[13] memory ids = typeIds;
         vm.chainId(11_155_111);
         Realm memory other = _realm(keccak256("files/realm-b"));
         assertTrue(other.hot.realmId() != r.hot.realmId());
         assertTrue(other.hot.realmOrigin() != r.hot.realmOrigin());
         // the rule instances are the same deterministic addresses; the descriptors and ids derive alike
         _deployProfile();
-        for (uint8 t; t < 10; ++t) {
+        for (uint8 t; t < TYPE_COUNT; ++t) {
             assertEq(typeIds[t], ids[t], "the same Type id on another chain and Realm");
         }
         _register(other);
-        for (uint8 t; t < 10; ++t) {
+        for (uint8 t; t < TYPE_COUNT; ++t) {
             assertEq(other.registry.typeInfo(ids[t]).mandatory, instances[t]);
             assertEq(r.registry.typeInfo(ids[t]).ruleId, other.registry.typeInfo(ids[t]).ruleId);
         }

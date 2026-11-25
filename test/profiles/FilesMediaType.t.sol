@@ -416,7 +416,7 @@ contract FilesMediaTypeTest is FilesUnitBase {
         }
         string memory json = vm.readFile("test/vectors/media.json");
         address key = vm.parseJsonAddress(json, ".declarationKey");
-        (,,, bytes32[10] memory typeIds,,,) = new Genesis().profile(key);
+        (,,, bytes32[13] memory typeIds,,,) = new Genesis().profile(key);
         assertEq(typeIds[4], vm.parseJsonBytes32(json, '.typeIds["files-bytes/1"]'));
         assertEq(typeIds[5], vm.parseJsonBytes32(json, '.typeIds["files-content/1"]'));
         assertEq(typeIds[6], vm.parseJsonBytes32(json, '.typeIds["files-external/1"]'));

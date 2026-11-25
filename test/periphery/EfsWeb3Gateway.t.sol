@@ -385,37 +385,6 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         assertEq(_count(res.body, '"kind":"file"'), 64, "one page of LISTING_LIMIT rows");
     }
 
-    // ---- the reader-side HEAD law -------------------------------------------------------------------------------
-
-    /// CREATE, PUBLISH name, BIND(HEAD → `headTarget`, or the file subject itself when 0) unless `!withHead`,
-    /// BIND(FOLDER, root, name → file): the gen-1 validator judges FOLDER binds only, so any HEAD target lands.
-    function _placeWithHead(string memory name, bytes32 headTarget, bool withHead) internal {
-        bytes32 salt = keccak256(bytes(name));
-        bytes32 file = EfsFiles.subjectId(p, salt);
-        uint256 n = withHead ? 4 : 3;
-        Action[] memory a = new Action[](n);
-        bytes[] memory b = new bytes[](n);
-        a[0] = EfsFiles.create(salt);
-        b[1] = bytes(name);
-        a[1] = EfsFiles.publish(t.name, b[1]);
-        if (withHead) {
-            a[2] = EfsFiles.bind(Purpose.HEAD, file, 0, headTarget == 0 ? file : headTarget, 0);
-        }
-        a[n - 1] = EfsFiles.bind(Purpose.FOLDER, rootDir, keccak256(bytes(name)), file, 0);
-        _exec(a, b);
-    }
-
-    function test_head_law_violations_are_500() public {
-        _placeWithHead("bad.txt", Keys.recordFromHash(t.name, keccak256("bad.txt")), true);
-        _placeWithHead("wrong.txt", helloRoot, true);
-        _placeWithHead("self.txt", 0, true);
-        _placeWithHead("none.txt", 0, false);
-        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law: target is not a revision");
-        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law: revision of another file");
-        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law: target is not a record");
-        assertEq(_status(_u(P, "/none.txt"), 404).body, "not found: no revision");
-    }
-
     // ---- gas ----------------------------------------------------------------------------------------------------
 
     function test_gas_inline_and_chunk_reads_at_depth_3_and_7() public {
@@ -456,5 +425,50 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
             }
             if (hit) ++n;
         }
+    }
+}
+
+/// @notice The gateway's HEAD law on a Realm WITHOUT `FilesFinalValidator`: since design §12.5 the validator refuses a
+///         bad HEAD at admission (code 8, `FilesPageReaderTest.test_invalid_heads_are_refused_at_admission`), so a
+///         bad HEAD can only be on chain where nothing judged it, and the gateway still answers 500 (defence in depth).
+contract EfsWeb3GatewayInvalidHeadsTest is Web3GatewayHarness {
+    function setUp() public {
+        withoutValidator = true;
+        _setUpGateway();
+    }
+
+    function _u(string memory principal, string memory rest) internal pure returns (string memory) {
+        return string.concat("/", principal, rest);
+    }
+
+    // ---- the reader-side HEAD law -------------------------------------------------------------------------------
+
+    /// CREATE, PUBLISH name, BIND(HEAD → `headTarget`, or the file subject itself when 0) unless `!withHead`,
+    /// BIND(FOLDER, root, name → file): no unit judges the binds of this Realm, so any HEAD target lands.
+    function _placeWithHead(string memory name, bytes32 headTarget, bool withHead) internal {
+        bytes32 salt = keccak256(bytes(name));
+        bytes32 file = EfsFiles.subjectId(p, salt);
+        uint256 n = withHead ? 4 : 3;
+        Action[] memory a = new Action[](n);
+        bytes[] memory b = new bytes[](n);
+        a[0] = EfsFiles.create(salt);
+        b[1] = bytes(name);
+        a[1] = EfsFiles.publish(t.name, b[1]);
+        if (withHead) {
+            a[2] = EfsFiles.bind(Purpose.HEAD, file, 0, headTarget == 0 ? file : headTarget, 0);
+        }
+        a[n - 1] = EfsFiles.bind(Purpose.FOLDER, rootDir, keccak256(bytes(name)), file, 0);
+        _exec(a, b);
+    }
+
+    function test_head_law_violations_are_500() public {
+        _placeWithHead("bad.txt", Keys.recordFromHash(t.name, keccak256("bad.txt")), true);
+        _placeWithHead("wrong.txt", helloRoot, true);
+        _placeWithHead("self.txt", 0, true);
+        _placeWithHead("none.txt", 0, false);
+        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law: target is not a revision");
+        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law: revision of another file");
+        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law: target is not a record");
+        assertEq(_status(_u(P, "/none.txt"), 404).body, "not found: no revision");
     }
 }

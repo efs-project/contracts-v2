@@ -4,6 +4,7 @@ pragma solidity 0.8.37;
 import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
 
@@ -20,7 +21,7 @@ contract GasModelTest is FilesRecipesBase {
     uint256 internal constant N_SUBJECTS = 40;
     uint256 internal constant N_CHUNKS = 40;
     uint256 internal constant N_NAMES = 15;
-    bytes32 internal constant TOPIC = keccak256("efs/test/gas-model/topic"); // a plain TAG subject
+    bytes32 internal TOPIC; // the word page "gas-model", registered by `_tagged` (a first tag needs a topic)
 
     address[] internal cold; // every account setUp touched (cooled before each measured execute)
     address internal sender; // the caller of the next measured execute (address(this) when zero)
@@ -478,14 +479,89 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("release folder", x);
     }
 
-    /// TAG binds of s[35..38) under TOPIC: the number-change targets and the lone negatives' scope. Run inside the
-    /// row's own test, not `setUp`, whose amsterdam execution gas is at the EIP-7825 per-transaction cap.
+    /// The Topics rule instances join the cooled set inside the rows that publish topics (`setUp` has no headroom
+    /// for more state under the amsterdam cap, and the k1 row would otherwise warm them for k2).
+    function _rememberTopics() internal {
+        _remember(instances[T_TOPIC_WORD]);
+        _remember(instances[T_TOPIC]);
+        _remember(instances[T_TEXT]);
+    }
+
+    /// Registers TOPIC (the word page "gas-model"), then TAG binds of s[35..38) under it: the number-change targets
+    /// and the lone negatives' scope. Run inside the row's own test, not `setUp`, whose amsterdam execution gas is
+    /// at the EIP-7825 per-transaction cap.
     function _tagged() internal {
-        Action[] memory a = new Action[](3);
+        _rememberTopics();
+        (Action[] memory ra, bytes[] memory rb, bytes32 page) =
+            EfsTopics.registerWord(_topicTypes(), "gas-model");
+        TOPIC = page;
+        Action[] memory a = new Action[](4);
+        bytes[] memory b = new bytes[](4);
+        (a[0], b[0]) = (ra[0], rb[0]);
         for (uint256 i; i < 3; ++i) {
-            a[i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
+            a[1 + i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
         }
-        _do(a, new bytes[](3));
+        _do(a, b);
+    }
+
+    /// A first tag on a registered topic (FIRST_BIND; the validator reads the topic's header).
+    function test_model_bind_tag_fresh() public {
+        _tagged();
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.TAG, TOPIC, s[30 + i], s[30 + i], 0);
+        }
+        _actionPair("bind tag fresh", x);
+    }
+
+    // ---- the Topics Types ----------------------------------------------------------------------------------------
+
+    /// A valid `topic-word/1` word of exactly `len` bytes, distinct per `i` (`_nm`'s lowercase letters).
+    function _topicWordPair(uint256 len) internal {
+        _rememberTopics();
+        bytes[3] memory bodies;
+        for (uint256 i; i < 3; ++i) {
+            bodies[i] = _nm(2000 + i, len);
+        }
+        _publishPair(string.concat("pub topic word ", vm.toString(len)), T_TOPIC_WORD, bodies);
+    }
+
+    function test_model_publish_topic_word_12() public {
+        _topicWordPair(12);
+    }
+
+    function test_model_publish_topic_word_40() public {
+        _topicWordPair(40);
+    }
+
+    /// Three `topic/1` records under one word page, each naming its own new word page (published unmeasured).
+    function test_model_publish_topic() public {
+        _rememberTopics();
+        EfsTopics.Types memory t = _topicTypes();
+        Action[] memory a = new Action[](4);
+        bytes[] memory b = new bytes[](4);
+        bytes[3] memory bodies;
+        for (uint256 i; i < 4; ++i) {
+            b[i] = _nm(3000 + i, 12);
+            (Action[] memory ra,,) = EfsTopics.registerWord(t, b[i]);
+            a[i] = ra[0];
+        }
+        bytes32 parent = EfsTopics.wordPageId(t.word, b[0]);
+        _do(a, b);
+        for (uint256 i; i < 3; ++i) {
+            bodies[i] = EfsTopics.pathBody(parent, EfsTopics.wordPageId(t.word, b[1 + i]));
+        }
+        _publishPair("pub topic", T_TOPIC, bodies);
+    }
+
+    function test_model_publish_text() public {
+        _rememberTopics();
+        bytes[3] memory bodies;
+        for (uint256 i; i < 3; ++i) {
+            bodies[i] = abi.encodePacked("Label ", _nm(4000 + i, 18));
+            assertEq(bodies[i].length, 24);
+        }
+        _publishPair("pub text 24", T_TEXT, bodies);
     }
 
     /// A number change on an asserted tag: BIND to the same target with a new strength (0 -> 75), a REBIND.

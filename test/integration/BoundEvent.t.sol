@@ -5,6 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
 import {ClosureConstants} from "../../src/interfaces/Limits.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
@@ -16,9 +17,9 @@ import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
 ///         that first admits a record of a Type whose descriptor sets `TYPE_FLAG_EMITS_BODY` (byte 133 bit 0) and
 ///         whose body is at most `ClosureConstants.BODY_EVENT_MAX` bytes emits `Body` (record id, Type id, body);
 ///         an unflagged Type never does, at any size, and neither does a repeat publish, a REUSE or a larger body.
-///         Topics are plain ids: no validator checks a TAG subject here.
+///         The topic is a word page registered in `setUp`.
 contract BoundEventTest is FilesRecipesBase {
-    bytes32 internal constant TOPIC = keccak256("bound-event/topic");
+    bytes32 internal TOPIC;
     bytes32 internal thing;
 
     function setUp() public override {
@@ -27,6 +28,9 @@ contract BoundEventTest is FilesRecipesBase {
         a[0] = _create(keccak256("thing"));
         _execAs(address(this), a, new bytes[](1));
         thing = Keys.subject(p, keccak256("thing"));
+        bytes[] memory b;
+        (a, b, TOPIC) = EfsTopics.registerWord(_topicTypes(), "bound-event");
+        _execAs(address(this), a, b);
     }
 
     function _one(Action memory x) internal pure returns (Action[] memory a) {
@@ -112,8 +116,10 @@ contract BoundEventTest is FilesRecipesBase {
     /// The two filter recipes: (purpose TAG, role = the thing) finds every statement about the thing across
     /// topics, the lone negative included; (purpose, subject) finds everything under one topic.
     function test_filter_by_role_and_by_subject() public {
-        bytes32 other = keccak256("bound-event/topic/other");
-        Action[] memory a = new Action[](3);
+        (Action[] memory a, bytes[] memory b, bytes32 other) =
+            EfsTopics.registerWord(_topicTypes(), "bound-event-other");
+        _execAs(address(this), a, b);
+        a = new Action[](3);
         a[0] = EfsFiles.bindWithStrength(Purpose.TAG, TOPIC, thing, thing, 0, 3);
         a[1] = EfsFiles.loneNegative(Purpose.TAG, other, thing, 9);
         a[2] = _bind(Purpose.TAG, TOPIC, keccak256("bound-event/role/2"), thing, 0);
