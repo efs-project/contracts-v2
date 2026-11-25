@@ -274,3 +274,136 @@ Per registered topic, added at registration (≈ one new list head, priced as ta
   lone negative (336,123 against 350,410 on prague; on amsterdam 1,190,931 against 1,273,824 all, 256,101 against
   244,134 execution); the `place` list's `live` (distinct positions) does not move, so a reader that counts positions
   is not misled, and readers remove the duplicate rows by position.
+
+## Reads (step 4, amended) *(measured)*
+
+The topic readers of design §5.13 and §11 (`TopicMineReader`, `TopicEveryoneReader`, `TopicLookupReader`) on the
+real Realm of the reader suites (the step-3c lists, `FilesFinalValidator`, the Topics Types), after the step-4
+amendment: the combined lens walk (with the viewed-place check in `mine` below), the yes-count read before any lens
+read in `everyone`, and the decider's number. Measured on the amendment's readers merged with `main` cd6537b,
+Foundry 1.8.3, solc 0.8.37 via-IR; the same rows are `gas/model.json` `reads` (`pnpm run gas:model` writes them,
+`pnpm run gas:model:check` compares them exactly). Every figure is one cold `view` call: every account the call can
+touch is cooled first (`vm.cool`), and the figure is the call frame's gas (`vm.lastCallGas().gasTotalUsed`; no
+intrinsic 21,000, no calldata). Setups run with gas metering paused. Reads are not repriced on amsterdam: every row is
+within 0.1% of prague (about +4k, the cold accounts), and the per-row terms are the same. `page` is `limit`, the list
+entries read; in these setups every entry read is a row, except the padded stretch.
+
+```sh
+FOUNDRY_GAS_LIMIT=100000000000 perl -e 'alarm 5400; exec @ARGV' \
+  forge test --match-path test/integration/TopicReadMeasure.t.sol -vv | grep ' tr '
+FOUNDRY_GAS_LIMIT=100000000000 FOUNDRY_PROFILE=amsterdam FOUNDRY_OUT=out/amsterdam FOUNDRY_CACHE_PATH=cache/amsterdam \
+  perl -e 'alarm 9000; exec @ARGV' forge test --match-path test/integration/TopicReadMeasure.t.sol -vv | grep ' tr '
+```
+
+**`mine`, exact plus below.** 50 things filed by the lens round-robin (thing i by lens author i mod L, so the newest
+rows come from the highest lens indices that have entries), at depth 1 (the place itself) or under the deepest topic
+of an 8- or 64-word path, read from its first word. Depth 8 and 64 cost the same to the gas: a read never walks a path.
+At depth 8 and 64 every row is a roll-up row and now reads the viewed-place heads of lens[0..j] (ruling R3).
+
+| lens | depth | page 10, prague | page 10, amsterdam | page 50, prague | page 50, amsterdam |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 583,111 | 587,311 | 2,400,616 | 2,405,416 |
+| 1 | 8 | 706,363 | 710,563 | 3,152,520 | 3,157,320 |
+| 1 | 64 | 706,363 | 710,563 | 3,152,520 | 3,157,320 |
+| 8 | 1 | 1,048,408 | 1,052,608 | 3,615,223 | 3,620,023 |
+| 8 | 8 | 1,576,465 | 1,580,665 | 6,603,077 | 6,607,877 |
+| 8 | 64 | 1,576,465 | 1,580,665 | 6,603,077 | 6,607,877 |
+| 32 | 1 | 2,500,836 | 2,505,036 | 7,578,985 | 7,583,785 |
+| 32 | 8 | 4,007,395 | 4,011,595 | 17,713,161 | 17,717,961 |
+| 32 | 64 | 4,007,395 | 4,011,595 | 17,713,161 | 17,717,961 |
+| 64 | 1 | 5,270,251 | 5,274,451 | 12,307,334 | 12,312,134 |
+| 64 | 8 | 11,007,154 | 11,011,354 | 32,658,239 | 32,663,039 |
+| 64 | 64 | 11,007,154 | 11,011,354 | 32,658,239 | 32,663,039 |
+
+**The viewed-place check, before and after** (lens 64, depth 8, prague / amsterdam): a page of 10 went from 4,686,038 /
+4,690,238 to 11,007,154 / 11,011,354, and a page of 50 from 11,544,029 / 11,548,829 to 32,658,239 / 32,663,039. A
+roll-up row of lens author j now reads 2·(j + 1) more head words cold (the `heads` facet reads a head's two words):
+about 24.5k per lens index against 6.6k before. The check was not cut (the ruling); a state-word-only batch read in
+`LedgerViews` (as `lensRule` does for earlier authors) would roughly halve it, and is not built (`LedgerViews` has
+1,337 B of headroom). At depth 1 (exact rows) only the decider's strength is new (+0.7% at lens 64 to +5% at lens 1, page 10).
+
+**`everyone` and `raw`.** 60 things filed by one author at a one-word place's child; the exact view reads the child,
+the below view the parent (the place list and the roll-up merged). The lens is 8 authors none of whom said anything,
+so every lens head is read (and, below, the viewed-place heads of all 8); `raw` reads no lens.
+
+| view | page 10, prague | page 10, amsterdam | page 50, prague | page 50, amsterdam |
+|---|---:|---:|---:|---:|
+| everyone, exact, lens of 8 | 1,096,193 | 1,100,193 | 5,247,023 | 5,252,223 |
+| everyone, below, lens of 8 | 2,162,189 | 2,166,189 | 10,961,183 | 10,966,383 |
+| raw, exact | 537,945 | 541,745 | 2,446,182 | 2,450,582 |
+| raw, below | 618,742 | 622,542 | 2,669,814 | 2,674,214 |
+
+Before the amendment the same pages were 942,999 / 1,979,494 / 660,150 / 741,316 (page 10, prague) and 4,350,544 /
+9,459,056 / 2,931,255 / 3,156,327 (page 50): a shown row now pays a separate `bindingCells` and author-head read before
+the lens (about +18k exact, +37k below at lens 8), and `raw` is cheaper (no lens call at all; about −9k a row).
+
+**A padded stretch** (ruling R8): 60 lone negatives by one stranger at a place's child (the place list of the child;
+below, the roll-up of the place), so no entry is a row; a lens of L silent authors. Gas per SKIPPED entry, the page-60
+minus page-20 difference over 40 entries, before (the lens read first) and after (the yes-count read first):
+
+| lens | exact, before | exact, after (prague / amsterdam) | below, before | below, after (prague / amsterdam) |
+|---:|---:|---:|---:|---:|
+| 1 | 49,072 / 49,082 | 35,936 / 35,946 | 62,058 / 62,068 | 36,102 / 36,112 |
+| 8 | 77,271 / 77,281 | 35,938 / 35,948 | 178,104 / 178,129 | 36,103 / 36,113 |
+| 64 | 356,951 / 356,961 | 35,947 / 35,957 | 1,555,563 / 1,555,763 | 36,113 / 36,123 |
+
+A skipped entry now costs its cell and one author-list head whatever the lens: about 36k at every lens size, on both
+schedules. `test/readers/TopicLensOrder.t.sol` asserts it: at a lens of 64 a skipped entry costs at most 1,000 gas more
+than at a lens of 1, and at most 45,000 in all (the bound stated in the test; measured there with `gasleft()` about
+36.4k at both). The SDK sizes its entry limit from this number.
+
+**Point reads and directories.**
+
+| read | prague | amsterdam |
+|---|---:|---:|
+| `byName`, 300 authors at one FOLDER position of a home, page of 10 | 363,416 | 367,216 |
+| `byName`, the same, page of 50 | 1,273,400 | 1,277,200 |
+| `about`, a thing filed under 20 places, page of 10 | 472,966 | 476,766 |
+| `about`, page of 20 | 801,085 | 804,885 |
+| `about`, page of 10 with a sample of 4 authors per row | 1,165,183 | 1,170,983 |
+| `placeCount`, a place of 2,000 positions | 84,897 | 88,097 |
+| `authorCount`, a position of 300 authors | 84,920 | 88,120 |
+| `entryCount`, an author's 2,000 exact entries | 82,917 | 86,117 |
+| `wordPage`, 1 place (the root place) | 151,512 | 154,812 |
+| `wordPage`, 5 places | 355,125 | 358,825 |
+| `wordPage`, 20 places (one page) | 1,066,420 | 1,071,620 |
+| `children`, 16 child topics | 894,812 | 899,712 |
+| `children`, a page of 1 | 185,687 | 189,087 |
+
+**Bounded whatever the spam** (`test/readers/TopicLookup.t.sol`): `byName` page 1 at a position of 300 authors costs
+within 0.5% of the same page at 3 authors (the larger ordinals' calldata), and `placeCount` and `byName` in a place of
+2,000 positions cost the same to the gas as in a place of 3. A place padded with lone negatives around one real tag is
+read in pages of 4 entries, each page `LIMIT` with a continuation, until the tag (`test/readers/TopicEveryone.t.sol`).
+
+**Per row** *(fitted; `gas/model.json` `reads.schedules.<schedule>.terms`)*:
+
+- `mine`, exact rows: an opening of about 193k + 27.8k per lens author, then per row about 36k + 6.7k·(j + 1), j the
+  row's deciding lens index (least squares over the four lens sizes and both pages; within 11.5%).
+- `mine`, roll-up rows (below): an opening of about 386k, then per row about 22k + 24.5k·(j + 1) (the filed-position
+  heads of lens[0..j] and the viewed-place heads of lens[0..j]; within 21%, the fit's opening absorbs the round-robin's
+  uneven j). The worst case is every row decided by the last lens author: about 22k + 24.5k·L per row.
+- `everyone`, exact: about 61k to open, 48k per shown row without a lens (`raw`) and 7.0k more per lens author;
+  below: about 106k to open, 51k per shown row and 21.1k more per lens author (the viewed-place heads, all L when no
+  lens author has a stance); every skipped entry about 36k at any lens.
+- `byName` about 23k per row after an opening of about 136k; `about` about 33k per row (69k more with a sample of 4);
+  `wordPage` and `children` about 47k per place after about 120k–140k.
+
+**Call size** *(computed; `reads.schedules.<schedule>.bounds` and `recommended`)*. At a 10M cap less a 10% margin, the
+most worst-case rows one call holds, by lens size:
+
+| lens | `mine` exact | `mine` below | `everyone` exact | `everyone` below |
+|---:|---:|---:|---:|---:|
+| 1 | 204 | 183 | 163 | 122 |
+| 8 | 95 | 39 | 86 | 40 |
+| 16 | 58 | 20 | 55 | 22 |
+| 32 | 31 | 10 | 32 | 12 |
+| 64 | 15 | 5 | 18 | 6 |
+
+and at most 246 skipped entries in one `everyone` call at any lens (248 exact). **Keep page × lens at or below about
+760 for `mine` exact, 310 for `mine` below, 690 for `everyone` exact and 320 for `everyone` below** (the published
+`pageTimesLens`, the smallest over lenses 8 to 64), `maxRows` at most 150, and `limit` (entries) at most 246; a page that
+mixes rows and skipped entries stays under the cap while opening + rows·row(L) + skipped·36k ≤ 9M. Before the
+amendment the single rule was page × lens ≤ 800 with pages of at most 150 entries; the below views are now about 2.5
+times tighter because of the viewed-place check. A consumer splits a read by these terms (`limit`, `maxRows`, and a
+`gasReserve` that covers one batch of 16 rows) so that no lens fails as one call too big; a page cut by a bound is a
+`LIMIT`, `ROWS` or `GAS` page with a continuation, never an empty or `UNKNOWN` one.

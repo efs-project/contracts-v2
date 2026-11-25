@@ -144,8 +144,9 @@ Two directions, both in the core design:
 2. **EFS content served over `web3://`** is a reader, `EfsWeb3Gateway`: an immutable periphery contract outside
    the execution set that implements the ERC-5219 resource request mode (`resolveMode() = "5219"`,
    `request(string[] resource, KeyValue[] params) → (statusCode, body, headers)`) with ERC-7617 chunked bodies.
-   `web3://<gateway>:<chainId>/<principal>/<name>/<name>/…` walks FOLDER bindings from the Realm root by name for
-   that principal (`?lens=<principal>,<principal>` adds fall-through authors under the Lens law), reads the file's
+   `web3://<gateway>:<chainId>/0x<address>/<name>/…` (a home) or `…/~efs/o/<folder id>/<name>/…` (any folder,
+   the Realm root included, by its record id) walks FOLDER bindings by name under a lens (the address's own
+   principal, or the folder's creator; `?lens=<principal>,<principal>` names it instead), reads the file's
    HEAD revision, and answers: inline bytes as the body; a `files-content/1` descriptor's bytes, one chunk per
    response with a `web3-next-chunk` header walking the span tree in order; a `files-external/1` descriptor as a
    `307` with `Location: <locator>`; a directory as a listing. It needs no index (names resolve by point reads) and
@@ -154,25 +155,51 @@ Two directions, both in the core design:
 
 ### The gateway as built (`EfsWeb3Gateway/1`)
 
-`web3://<gateway>:<chainId>/<principal>[/<name>…][/][?lens=<principal>,<principal>…][&offset=<n>]`
+One grammar, the shared link grammar of the tag spec (§5): the FIRST path segment decides the kind of path.
 
-- `<principal>` is 64 hex digits, `0x` + 64 hex digits, or `0x` + 40 hex digits for a key account (an EOA or an
-  EIP-7702 account). A contract account in address form is `400`: its principal depends on the Realm, so name it by
-  id. Hex is case-insensitive.
-- `lens` adds fall-through principals after the path principal (64 in all at most). For each name the first
-  principal with a live binding wins; a mask stops the walk (`404`); unset and released fall through.
-- `offset` (decimal, default 0) is the first byte served. A large file is one chunk per response; the
-  `web3-next-chunk` header carries the URL of the next one, so an ERC-7617 client streams the whole file.
-- At most 32 names of 1..255 bytes. A trailing slash is ignored.
+| First segment | Path | Meaning | Default lens |
+|---|---|---|---|
+| `0x` + 40 hex | `/0x<address>[/<name>…][/]` | that address's **home** (its place, `bytes32(uint256(uint160(address)))`, design §12.5) | the address's own author identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's contract principal of a contract (a Safe's home shows the Safe's own entries) |
+| `~efs` | `/~efs/o/<folder id>[/<name>…][/]` | any **folder by its object id** (`0x` + 64 hex, a `files-directory/1` record id), the Realm root included, then the names below it | the folder's creator (the directory record's body word 0, `abi.encode(creator, salt)`) |
+| `~efs` | `/~efs/v[/…]` | a **revision link**: a defined form this gateway does not serve yet, `501 object not served` whatever follows | |
+| any other `~…` | | the system's: `400 unknown system path` (also every other `~efs/…` form) | |
+| anything else | `/<word>/…` | a **topic** path: `501 topic paths are not served` (this gateway serves none yet); a folder is never served there, so a topic link can never mean a folder | |
+
+Query: `?lens=<principal>,<principal>…` replaces the default lens with exactly the listed principals (64 at most), so
+another author's entry is served only when the lens names that author (`?lens=<them>,<owner>` puts them first). A
+principal is 64 hex digits, `0x` + 64 hex digits, or `0x` + 40 hex digits for a key account (an EOA or an EIP-7702
+account); a contract account in address form is `400` (its principal depends on the Realm, so name it by id). Hex is
+case-insensitive. `&offset=<n>` (decimal, default 0) is the first byte served. A large file is one chunk per
+response; the `web3-next-chunk` header carries the URL of the next one (the request's own path, `?offset=` and the
+`lens` given), so an ERC-7617 client streams the whole file. At most 32 names of 1..255 bytes. A trailing slash is
+ignored. For each name the first principal of the lens with a live binding wins; a mask stops the walk (`404`); unset
+and released fall through.
+
+An id that is not a `files-directory/1` record but names something that exists (a record of any other Type, such as
+a file revision or a name; a created subject, which is what a file is) is `501 object not served`: object links are
+the default way to share, so an existing thing's id is never answered as absent. Only an id that is neither a record
+nor a created subject is `404 not found`; neither is ever an empty listing. Files are not served by id yet
+(folder-by-id is the requirement; file-by-id did not fit the gateway's size budget and is not built), and neither are
+revision links (`/~efs/v/…`, `501`). A malformed address or id is `400 malformed id`.
+A home itself carries `x-efs-home: 0x<40 hex>` (lowercase) instead of `x-efs-record`: a home is an address, never a
+record; a folder (by id or below a home) carries `x-efs-record`. A bare `/~efs/o/<folder id>` answers the directory
+itself, as a home's own path does. The Realm root's sample URL is `web3://<gateway>:<chainId>/~efs/o/<root
+directoryRecordId>/` (`readers.web3Gateway.seedUrl` in `efs-deployment.json`); `ROOT_DIRECTORY` stays the gateway's
+configuration (the root's id), never a default. Until step 4 the first segment was a principal (`/<principal>/…`, the
+Realm root through that principal's lens) and `/~home/0x<40 hex>/…` was the home; both are gone. Measured in
+`test/periphery/EfsWeb3GatewayForms.t.sol`, `EfsWeb3GatewayHome.t.sol` and `EfsWeb3GatewayUrl.t.sol`; the gateway
+runtime is 19,628 B of the 19,660 B budget (32 B of headroom; the 501 answers were paid for by merging the four
+reader-side HEAD law 500 bodies into one, `HEAD law broken`, and `listing refused` into `listing failed`).
 
 | Status | When |
 |---|---|
 | 200 | a file's bytes or one chunk of them; a directory as JSON `{"entries":[{"name","kind"}…],"complete":bool}` |
 | 307 | the file is a `files-external/1` location; `Location` carries the URI, `x-efs-media-type` its declared media type |
-| 400 | malformed principal, lens or offset; an empty name; too many names or principals |
-| 404 | no such name, a hidden (masked) name, a file used as a folder, no revision, remote-only content |
+| 400 | malformed address, id, lens principal or offset; an unknown system path; an empty name; too many names or principals |
+| 404 | no such name, a hidden (masked) name, a file used as a folder, an id that names nothing, no revision, remote-only content |
 | 416 | `offset` at or past the end (offset 0 of an empty file is `200`) |
 | 500 | a broken Files invariant (wrong Type or length, a missing tree node) or a failed listing |
+| 501 | a link form not served by this gateway yet: a topic path (a plain-word first segment), a revision link `/~efs/v/…`, or the id of an existing object that is not a folder (a file, a revision, any other record) — never `404` |
 | 503 | another ledger layout, or a read the facet refuses |
 
 Headers: `Content-Type` (a `files-content/1` descriptor's declared media type when it has one, else from the last
@@ -187,11 +214,13 @@ reverts for anything a URL can cause. A directory lists one page of 64 entries; 
 
 Measured in the suites (cold storage): an inline file 0.13M gas, an 8,160-byte chunk at tree depth 3 about 1.2M, a
 7-entry listing 0.88M. A local fixture deploys the gateway (`readers.web3Gateway` in `efs-deployment.json`, with a
-ready `seedUrl`) and `verify` reads the three seed files back through it, following `web3-next-chunk`.
+ready `seedUrl`, the seed root by id) and `verify` reads the three seed files back through it, following
+`web3-next-chunk`, and checks the forms (a topic path 501, `~home` 400, a principal id first segment 400, the sample
+file's subject id, its revision record's id and a revision link 501, an id that names nothing 404, the fixture
+account's own empty home).
 
-**Open, with the directory questions:** the gateway is bound to one root `files-directory/1` record at construction
-(the fixture's seed root). What a principal's root is (a shared Realm root, a home per principal) is not ruled; the
-answer changes the gateway's constructor argument or its first path segment, and nothing in the kernel.
+The shared root has no named path: it is a folder like any other, reached by its id (ruled 2026-11-25 with the link
+grammar). Topic paths are reserved and not served until a reader for them exists.
 
 ## What a size costs on chain (measured 2026-11-24)
 

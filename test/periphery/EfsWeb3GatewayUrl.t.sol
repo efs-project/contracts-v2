@@ -11,8 +11,9 @@ import {Status} from "../../src/interfaces/Results.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Purpose} from "../../src/interfaces/Actions.sol";
 
-/// @notice `EfsWeb3Gateway`'s URL grammar and its infrastructure statuses: the three principal forms (64 hex, `0x`
-///         + 64 hex, a key account's `0x` + 40 hex) and the refused ones, `lens` and `offset` syntax, the segment
+/// @notice `EfsWeb3Gateway`'s URL grammar and its infrastructure statuses (paths through the root folder by id): the
+///         three principal forms of `lens` (64 hex, `0x` + 64 hex, a key account's `0x` + 40 hex) and the refused
+///         ones, `lens` and `offset` syntax, the segment
 ///         and name bounds (400), trailing slashes, content types by extension, and the faults a URL cannot cause:
 ///         a foreign layout, a facet refusal, a reserved head state (503), a broken tree, a reverting dependency
 ///         (500); the constructor's configuration checks.
@@ -21,8 +22,9 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
         _setUpGateway();
     }
 
+    /// The root folder by id (its default lens: its creator p).
     function _p(string memory rest) internal view returns (string memory) {
-        return string.concat("/", P, rest);
+        return string.concat(R, rest);
     }
 
     function _req(string[] memory resource, KeyValue[] memory params)
@@ -33,50 +35,47 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
         (status, body,) = gw.request(resource, params);
     }
 
-    // ---- principal forms ----------------------------------------------------------------------------------------
+    // ---- principal forms (in `lens`) ------------------------------------------------------------------------
 
     function test_an_address_principal_equals_its_id_form() public view {
-        Res memory byId = _status(string.concat("/", A, "/alice.txt"), 200);
+        Res memory byId = _status(_p(string.concat("/alice.txt?lens=", A)), 200);
         assertEq(byId.body, "alice's own");
         string memory checksummed = vm.toString(alice); // EIP-55 mixed case
-        Res memory byAddress = _status(string.concat("/", checksummed, "/alice.txt"), 200);
-        assertEq(keccak256(abi.encode(byAddress)), keccak256(abi.encode(byId)), "same response");
-        string memory lower = vm.toLowercase(checksummed);
-        assertEq(_status(string.concat("/", lower, "/alice.txt"), 200).body, "alice's own");
+        Res memory byAddress = _status(_p(string.concat("/alice.txt?lens=", checksummed)), 200);
         assertEq(
-            _status(string.concat("/", vm.toUppercase(A), "/alice.txt"), 200).body,
+            keccak256(abi.encode(byAddress.body)), keccak256(abi.encode(byId.body)), "same body"
+        );
+        string memory lower = vm.toLowercase(checksummed);
+        assertEq(_status(_p(string.concat("/alice.txt?lens=", lower)), 200).body, "alice's own");
+        assertEq(
+            _status(_p(string.concat("/alice.txt?lens=", vm.toUppercase(A))), 200).body,
             "alice's own",
             "hex is case-insensitive"
         );
         assertEq(
-            _status(string.concat("/", vm.toString(pa), "/alice.txt"), 200).body, "alice's own"
-        );
-        // in a lens too
-        assertEq(
-            _status(_p(string.concat("/alice.txt?lens=", checksummed)), 200).body, "alice's own"
+            _status(_p(string.concat("/alice.txt?lens=", vm.toString(pa))), 200).body, "alice's own"
         );
     }
 
     function test_a_contract_account_is_refused_in_address_form() public view {
         // address(this) is a contract principal of the Realm (Keys.principalFor): name it by its id
-        Res memory res = _status(string.concat("/", vm.toString(address(this)), "/hello.txt"), 400);
-        assertEq(res.body, "contract account: use its principal id");
+        Res memory res =
+            _status(_p(string.concat("/hello.txt?lens=", vm.toString(address(this)))), 400);
+        assertEq(res.body, "contract account: use its id");
         assertEq(_status(_p("/hello.txt"), 200).body, "hello, web3");
-        _status(_p(string.concat("/hello.txt?lens=", vm.toString(address(this)))), 400);
+        assertEq(_status(_p(string.concat("/hello.txt?lens=", P)), 200).body, "hello, web3");
     }
 
     function test_an_eip7702_delegated_key_is_still_a_key_principal() public {
+        string memory url = _p(string.concat("/alice.txt?lens=", vm.toString(alice)));
         vm.etch(alice, abi.encodePacked(hex"ef0100", address(0xBEEF)));
-        assertEq(
-            _status(string.concat("/", vm.toString(alice), "/alice.txt"), 200).body, "alice's own"
-        );
+        assertEq(_status(url, 200).body, "alice's own");
         vm.etch(alice, hex"00");
-        _status(string.concat("/", vm.toString(alice), "/alice.txt"), 400);
+        _status(url, 400);
     }
 
     function test_malformed_principals_are_400() public view {
-        string[9] memory bad = [
-            "",
+        string[8] memory bad = [
             "xyz",
             "0x",
             "0x1234",
@@ -87,8 +86,12 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
             string.concat("0x", string(_cut(bytes(A), 0, 39)))
         ];
         for (uint256 i; i < bad.length; ++i) {
-            Res memory res = _status(string.concat("/", bad[i], "/hello.txt"), 400);
-            assertEq(res.body, "malformed principal");
+            Res memory res = _status(_p(string.concat("/hello.txt?lens=", bad[i])), 400);
+            assertTrue(
+                keccak256(res.body) == keccak256("malformed principal")
+                    || keccak256(res.body) == keccak256("malformed id"),
+                string(res.body)
+            );
         }
         _status(_p("/hello.txt?lens=zz"), 400);
         _status(_p(string.concat("/hello.txt?lens=", A, ",")), 400); // an empty item
@@ -97,10 +100,10 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
 
     function test_at_most_64_principals() public view {
         string memory lens = A;
-        for (uint256 i; i < 62; ++i) {
+        for (uint256 i; i < 63; ++i) {
             lens = string.concat(lens, ",", A);
         }
-        _status(_p(string.concat("/alice.txt?lens=", lens)), 200); // 1 + 63
+        _status(_p(string.concat("/alice.txt?lens=", lens)), 200); // 64
         Res memory res = _status(_p(string.concat("/alice.txt?lens=", lens, ",", A)), 400);
         assertEq(res.body, "too many principals");
     }
@@ -146,8 +149,8 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
         assertEq(_status(_p("/docs//guide.html"), 400).body, "empty segment");
     }
 
-    function test_missing_principal_and_trailing_slashes() public view {
-        assertEq(_status("/", 400).body, "missing principal"); // resource = []
+    function test_empty_paths_and_trailing_slashes() public view {
+        assertEq(_status("/", 400).body, "empty segment"); // resource = []
         string[] memory one = new string[](1); // resource = [""]
         (uint16 status,) = _req(one, new KeyValue[](0));
         assertEq(status, 400);

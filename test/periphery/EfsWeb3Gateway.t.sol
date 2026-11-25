@@ -19,8 +19,21 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         _setUpGateway();
     }
 
-    function _u(string memory principal, string memory rest) internal pure returns (string memory) {
-        return string.concat("/", principal, rest);
+    /// The root folder by id with `principal` first in the lens (what `/<principal>/…` meant before the link
+    /// grammar): `rest` is `/<names>[?query]`; an existing `lens=` gets `principal,` in front.
+    function _u(string memory principal, string memory rest) internal view returns (string memory) {
+        bytes memory s = bytes(rest);
+        for (uint256 i; i + 5 <= s.length; ++i) {
+            if (keccak256(_cut(s, i, i + 5)) == keccak256("lens=")) {
+                return string.concat(
+                    R, string(_cut(s, 0, i + 5)), principal, ",", string(_cut(s, i + 5, s.length))
+                );
+            }
+        }
+        for (uint256 i; i < s.length; ++i) {
+            if (s[i] == "?") return string.concat(R, rest, "&lens=", principal);
+        }
+        return string.concat(R, rest, "?lens=", principal);
     }
 
     // ---- surface ------------------------------------------------------------------------------------------------
@@ -329,7 +342,7 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         _status(_u(P, "/docs/nope"), 404);
         _status(_u(P, "/docs/sub/leaf.txt/more"), 404);
         Res memory res = _status(_u(P, "/hello.txt/x"), 404);
-        assertEq(res.body, "not found: a file is not a folder");
+        assertEq(res.body, "not found: file used as a folder");
         _status(_u(P, "/Hello.txt"), 404); // byte-exact, case-sensitive
     }
 
@@ -407,10 +420,10 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
 
     function _u(string memory principal, string memory rest, string memory more)
         internal
-        pure
+        view
         returns (string memory)
     {
-        return string.concat("/", principal, rest, more);
+        return _u(principal, string.concat(rest, more));
     }
 
     function _slice(bytes memory s, uint256 from, uint256 to) internal pure returns (bytes memory) {
@@ -437,8 +450,21 @@ contract EfsWeb3GatewayInvalidHeadsTest is Web3GatewayHarness {
         _setUpGateway();
     }
 
-    function _u(string memory principal, string memory rest) internal pure returns (string memory) {
-        return string.concat("/", principal, rest);
+    /// The root folder by id with `principal` first in the lens (what `/<principal>/…` meant before the link
+    /// grammar): `rest` is `/<names>[?query]`; an existing `lens=` gets `principal,` in front.
+    function _u(string memory principal, string memory rest) internal view returns (string memory) {
+        bytes memory s = bytes(rest);
+        for (uint256 i; i + 5 <= s.length; ++i) {
+            if (keccak256(_cut(s, i, i + 5)) == keccak256("lens=")) {
+                return string.concat(
+                    R, string(_cut(s, 0, i + 5)), principal, ",", string(_cut(s, i + 5, s.length))
+                );
+            }
+        }
+        for (uint256 i; i < s.length; ++i) {
+            if (s[i] == "?") return string.concat(R, rest, "&lens=", principal);
+        }
+        return string.concat(R, rest, "?lens=", principal);
     }
 
     // ---- the reader-side HEAD law -------------------------------------------------------------------------------
@@ -466,9 +492,10 @@ contract EfsWeb3GatewayInvalidHeadsTest is Web3GatewayHarness {
         _placeWithHead("wrong.txt", helloRoot, true);
         _placeWithHead("self.txt", 0, true);
         _placeWithHead("none.txt", 0, false);
-        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law: target is not a revision");
-        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law: revision of another file");
-        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law: target is not a record");
+        // one body for every reader-side HEAD law breach (merged to fit the size budget)
+        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law broken");
+        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law broken");
+        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law broken");
         assertEq(_status(_u(P, "/none.txt"), 404).body, "not found: no revision");
     }
 }

@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "ad659faa6852c2844093053c6ede7aab5d613f2d",
-    "tree": "4ad43a23b375e4d493382d9aedc1bcfb5ad384e6",
-    "dirty": 23,
+    "commit": "9e4d52557593904cbdf8cf71233f8d9895559fc8",
+    "tree": "877ae2d0d51ab8e44baef9e409422879844965e8",
+    "dirty": 2,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -32,7 +32,7 @@
       "out",
       "out/release-ast"
     ],
-    "unitsCompared": 37,
+    "unitsCompared": 40,
     "runtimeAndInitcodeIdentical": true,
     "note": "the AST build is a second full compile with the identity settings plus AST output; tools/deploy-plan.mjs refuses any unit whose bytes differ"
   },
@@ -68,13 +68,13 @@
     "src/interfaces/ILedgerReads.sol": "0x87689135a2344dd389b91612d44e8e19a3e0f03190f7d54514c2e30cccfeeb29",
     "src/interfaces/Views.sol": "0x7a51777b0972c3814e7a2d00f275a5b8a1c7de472956b4270cbc6301bae2dab2",
     "src/readers/LedgerReads.sol": "0xd67b64caae8e903d25ccf43a0df8f3d76b3fdd53aefbc42d7408c5f5f872c0d9",
-    "src/interfaces/ILedgerViews.sol": "0x04acf582915ec566cd4bc5fa9bc2f9f278e2feae06f9fdb02ff5136ba40874cb",
-    "src/readers/LedgerViews.sol": "0x8e84d4c17d3ce89575cd4b85f18474e4ab28953d32b38455d189e495a1d28750",
+    "src/interfaces/ILedgerViews.sol": "0x6bc9ab4780bfcebc5d9b602fb9bd0a1e4d1f9065999da0597405407271b07a65",
+    "src/readers/LedgerViews.sol": "0x5da9810d51916bed876f3c70b7b815bdbdbf5886fe130a2faa53229ae10e933a",
     "src/interfaces/internal/IDescriptorStore.sol": "0xfac9904c8cb6f5598b9355cfe0b92991c1364df99f6deb8c74a2a01d8aa8a7bd",
     "src/types/DescriptorStore.sol": "0x92b8fc770ff2e862400e68e0594d7093b3e853dfde5301efb4359fb6f6aa2007",
     "src/index/IndexReplayDecoder.sol": "0xd8bdd97a966ee330a9805fa6857f11e457e8a1f9178a250586e34ac89703ec6b",
     "src/interfaces/internal/IIndexReplayDecoder.sol": "0x08790824d4d2146e734c9082f86e589bab52cf8b8fa22ba5355384e1dcb831cd",
-    "src/interfaces/Readers.sol": "0xde07a26229c666323e254f4750a95fa6d80fe11bee403c8deb4615390dc40b82",
+    "src/interfaces/Readers.sol": "0xd0e41cab8cf058d27880571209b6cc0747e2b8dbc94cd6e6a113ef88df0390ea",
     "src/periphery/ReaderDirectory.sol": "0xd7e3b95d454e2b8b055fdc4c78aca7f0fae274ad34a1b704249ae15ddd54db26",
     "src/interfaces/internal/IDescribedWrapper.sol": "0x861881859804802e1fca45354ac21e74dc4e457c1d3d25b4e38a48b7581ae8ee",
     "src/types/DescribedCodec.sol": "0xb4078c3eab2b76bcebf55d4ff4919f54bd56384c1791af932d5da0d84491396b",
@@ -120,11 +120,15 @@
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
     "src/readers/LensReader.sol": "0xb2fb9c050baa63706e420c6c3ae96252c1756e158feddbb651014e098db17dfe",
     "src/readers/FilesPageReader.sol": "0x3aa5bc336008139030d622493bb72e98561241c201168b71b830b2fe0e6b04a4",
+    "src/readers/TopicMineReader.sol": "0xed825531ad2101691ac74f1759a1bb477b6680bceacbcaa67fe489ef986526d5",
+    "src/readers/TopicReaderBase.sol": "0xa848411f7ac32f99b13d2b12a67d63eb037c16206b536af55843fe87e7aab74a",
+    "src/readers/TopicEveryoneReader.sol": "0xaef8ad2f90f0701d512bc0ed9dbff0559bccf038000058ce74c7725513089b8e",
+    "src/readers/TopicLookupReader.sol": "0x1630d0fe8d6df6df6c74f1eb5d54eb3123d5d5e816e7701cc02829bc58812c72",
     "src/profiles/FilesSpanRule.sol": "0x5f255e216313efa9b4284aaf77d90cded8105d4b4e6c458d6bdfefbfdc2eeb2a",
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
     "src/periphery/KeysView.sol": "0xdd6cdae729a297ac6859171a801c89b21af429bbf085a89970aac2a1825a48f7",
     "src/interfaces/IWeb3Gateway.sol": "0x7fdbf781f32df3fa09aaa04f6790c3623e01eba96a26ab35388857dcff0f22ce",
-    "src/periphery/EfsWeb3Gateway.sol": "0x78502c3b31361c792e7c95ffcbddef4b589c9a4f29cc58cfdf5f8a65ba760aba",
+    "src/periphery/EfsWeb3Gateway.sol": "0x5cfaec5f7e18b982d84fd81a829818b00405006b8a5005ada49dc37e1c99bcf0",
     "src/profiles/TopicProfile.sol": "0xee515a8a7d7ea4ff9fcceab44b9e45f72654671326dfb87317e8ada855b59e42",
     "src/profiles/TopicWordRule.sol": "0xbac191bfd610fe172765e39c86694dd6dd4b28154e5663314a46d73f2d4116e1",
     "src/profiles/TopicRule.sol": "0xc9c538e054c8e4d6a2fc8cf9165e70590fa454d4ea148732ff2d411915759eb0",
@@ -360,18 +364,18 @@
     },
     "LedgerViews": {
       "source": "src/readers/LedgerViews.sol",
-      "runtimeHash": "0x7aef29e447255dc6e0e2c69e1df483f46ec15bcdbfa6b678aa17618aebd61873",
-      "deployedBytecodeHash": "0x7aef29e447255dc6e0e2c69e1df483f46ec15bcdbfa6b678aa17618aebd61873",
-      "initcodeHash": "0xcaadbd435339debc87dd5a0ff19ecf58bff98d79804153d5e16fff34318b4ec5",
-      "initcodeWithArgsHash": "0xcaadbd435339debc87dd5a0ff19ecf58bff98d79804153d5e16fff34318b4ec5",
-      "address": "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
+      "runtimeHash": "0x6b083fc23ce879b74c547607a01c6555a6650826ba97ae5ebe4c822aaafdb3bf",
+      "deployedBytecodeHash": "0x6b083fc23ce879b74c547607a01c6555a6650826ba97ae5ebe4c822aaafdb3bf",
+      "initcodeHash": "0x524cbec9cca38d3ba93177b079501c2e8c67eaa52d9d699d28a7ffdf127be143",
+      "initcodeWithArgsHash": "0x524cbec9cca38d3ba93177b079501c2e8c67eaa52d9d699d28a7ffdf127be143",
+      "address": "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
       "realmSpecific": false,
       "planStep": "G4",
       "immutables": [],
       "sizes": {
-        "runtime": 14621,
-        "initcode": 14647,
-        "initcodeWithArgs": 14647
+        "runtime": 18323,
+        "initcode": 18349,
+        "initcodeWithArgs": 18349
       },
       "budget": {
         "runtime": 19660,
@@ -1410,10 +1414,10 @@
     "LensReader": {
       "source": "src/readers/LensReader.sol",
       "runtimeHash": "0xe4d0f807130ed2f7f6b353735b2ab01496a159448f06e2f6287ab786e386e1a1",
-      "deployedBytecodeHash": "0xe01b3511e55d7a944c60581247bb18e4f5ee90d70a986fd73b23621a0b0d2443",
+      "deployedBytecodeHash": "0x4dedf8b27d453ec32f8715b1a9d8a870424252add58ccb9e6253441c1d232823",
       "initcodeHash": "0xa28437508e7ea8133bbc6c397370a6809f64d085cb725beb85688886f604754b",
-      "initcodeWithArgsHash": "0xdb1a826254e176602cd869a4bee93d30b1bb555b1042bfc66b6cecb6bd0620df",
-      "address": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
+      "initcodeWithArgsHash": "0xd6cdc3b34f04e7ab5367aaea89e8245d16e798e47e6bba2fdebe5efdb6f383e7",
+      "address": "0xfFeA8909E6abCe517f2dfB6BFf2943Fc805C6cac",
       "realmSpecific": true,
       "planStep": "R1",
       "immutables": [
@@ -1476,10 +1480,10 @@
     "FilesPageReader": {
       "source": "src/readers/FilesPageReader.sol",
       "runtimeHash": "0x6bd68e20de3bdc14aee42e505361ee41e3ffe35c64dc58cb522ab01aac47741e",
-      "deployedBytecodeHash": "0x2ffbbcbb22442a292389f3a2c619c7bb21774ad118331f82ac29b5d70739ebe9",
+      "deployedBytecodeHash": "0xb6c0c1825a25c3bbdf5a041497b6da37c8edbb308f37724dec2f979c40507680",
       "initcodeHash": "0x5304361e4b79e3bc91a62343a42316f9fe511396d46322ad127f942a25f61d6c",
-      "initcodeWithArgsHash": "0xe40292d26aaa2af2f5e0d151a5ca87ee625b1fcd8fbf346586224c9f4fd70dfc",
-      "address": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+      "initcodeWithArgsHash": "0xb1e28955c49642cb95b5af96927821d400546a0debb06636e93b9f8a05ce98b5",
+      "address": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
       "realmSpecific": true,
       "planStep": "R2",
       "immutables": [
@@ -1550,6 +1554,186 @@
         "initcode": 36864
       }
     },
+    "TopicMineReader": {
+      "source": "src/readers/TopicMineReader.sol",
+      "runtimeHash": "0xf85058275ba2b962bbc918fec38985cf476bf635a7b846dae5bbf8de1fa0165d",
+      "deployedBytecodeHash": "0x6b2a53decc681a550b658c9181f158c65197110bc3f103f11677c0f969ecd959",
+      "initcodeHash": "0x3b31a013ed246bd06049ef69b84b6187578800d2a5a74cfe8cb1231366775e4c",
+      "initcodeWithArgsHash": "0x06ce7f6a4bc4b437062873ff9955581b8a3f15263cd07289105874ff68f73e8e",
+      "address": "0x38aFFa6d46F71b399B79315b7C29d85B2e08217b",
+      "realmSpecific": true,
+      "planStep": "R6",
+      "immutables": [
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            1392,
+            12007
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            1271,
+            2022,
+            2203,
+            6239,
+            8257,
+            11288
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            143,
+            2271
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1203,
+            6384,
+            8373,
+            8879
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 15356,
+        "initcode": 15832,
+        "initcodeWithArgs": 15928
+      },
+      "budget": null
+    },
+    "TopicEveryoneReader": {
+      "source": "src/readers/TopicEveryoneReader.sol",
+      "runtimeHash": "0xa97b700b61e47f8588d31c78e17867e6b86a08e160040e57c14a76a4e5b00ace",
+      "deployedBytecodeHash": "0x677ff409398084cf35ae29201b172f2832760bd0fdd1a0c41359dd71d9a64b76",
+      "initcodeHash": "0xc5a1ccf2bf2810527654d5edc2dc42599ec1375b8fe64c386e97077a5d0fbb52",
+      "initcodeWithArgsHash": "0xbc507b9069268c4d57cf348b7bcfed44f0e815404463e0a593b0e59d413fc6c7",
+      "address": "0x413cc58a5FBfD5E429f66B61738333babe4b558e",
+      "realmSpecific": true,
+      "planStep": "R7",
+      "immutables": [
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            1869,
+            9069
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            442,
+            1748,
+            2836,
+            6529,
+            8321,
+            9868,
+            10468,
+            11703
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            1414,
+            2774
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1680,
+            6609,
+            10604,
+            11800,
+            12245
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 16301,
+        "initcode": 16799,
+        "initcodeWithArgs": 16895
+      },
+      "budget": null
+    },
+    "TopicLookupReader": {
+      "source": "src/readers/TopicLookupReader.sol",
+      "runtimeHash": "0x3a90ff1b09e24b0453b7d8cb2f60ab4d607d623416f6354cc0da5e3b679fd2cf",
+      "deployedBytecodeHash": "0xcba05c8656048e89ff95173c7db7ff3b558a8cb7799e0c7ddd2e77ce564dc1b4",
+      "initcodeHash": "0x20a84fb1f51593d0fe347ee57cc2694714ac6f0219ecdae004585ce6a7b09fb3",
+      "initcodeWithArgsHash": "0xb394994f91ed9f9b1dab06d1e6bf9c1a025d695a679ee3aff94c67e572785e61",
+      "address": "0xa19606F95275E28967AA74dd177E4CC3d04b16b5",
+      "realmSpecific": true,
+      "planStep": "R8",
+      "immutables": [
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            2880,
+            15949
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            2610,
+            3598,
+            5911,
+            7837,
+            10270,
+            11462,
+            12721,
+            13774,
+            14464,
+            15217
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            723,
+            7905,
+            11964,
+            13161,
+            14405
+          ]
+        },
+        {
+          "name": "TOPIC_TYPE",
+          "offsets": [
+            372,
+            11586,
+            12838,
+            14852
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1985,
+            4298
+          ]
+        },
+        {
+          "name": "WORD_TYPE",
+          "offsets": [
+            314,
+            14746
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 16546,
+        "initcode": 17128,
+        "initcodeWithArgs": 17288
+      },
+      "budget": null
+    },
     "FilesSpanRule": {
       "source": "src/profiles/FilesSpanRule.sol",
       "runtimeHash": "0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6",
@@ -1586,11 +1770,11 @@
     },
     "EfsWeb3Gateway": {
       "source": "src/periphery/EfsWeb3Gateway.sol",
-      "runtimeHash": "0x45782d9c54c1adfd743c4afec75c2b67ade2fd12e7227ac7c17309f79f12731a",
-      "deployedBytecodeHash": "0x3edbbc53763fd0f0a2a70915e5412336eb935a6d20afcd0057204943d5b2c1d0",
-      "initcodeHash": "0x4f384bd33956b0ba7570acfa8f85631cd5677ced4d204b2c3f22a20a05b96858",
-      "initcodeWithArgsHash": "0xb7d63834e99aeb6a9075a45af8ffde17a261e914a8cf95d35ae96fe75a908629",
-      "address": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA",
+      "runtimeHash": "0xb763c05aae544d51a0353f201af4a1c4ac12f4d6aa3b2aa24b69751665cad811",
+      "deployedBytecodeHash": "0x748bc42406d51f752f0303f4ae229ac517ad3aabff741022d38b9443975a0430",
+      "initcodeHash": "0x75d6406ca0fc4e27d0038cd7923e8118ab473cff53110a9f314369c9aa6bffc9",
+      "initcodeWithArgsHash": "0x14383642a96b856f80062105447da199ec4b28477e68b823af233ba80ddf3955",
+      "address": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD",
       "realmSpecific": true,
       "planStep": "R5",
       "immutables": [
@@ -1598,58 +1782,60 @@
           "name": "BYTES_TYPE",
           "offsets": [
             876,
-            16342,
-            17321
+            17945,
+            18924
           ]
         },
         {
           "name": "CHILD_TYPE",
           "offsets": [
             678,
-            7468
+            8857
           ]
         },
         {
           "name": "CONTENT_TYPE",
           "offsets": [
             736,
-            13639
+            15560
           ]
         },
         {
           "name": "DIRECTORY_TYPE",
           "offsets": [
             934,
-            4106
+            4813,
+            5144
           ]
         },
         {
           "name": "EXTERNAL_TYPE",
           "offsets": [
             1018,
-            13600
+            15521
           ]
         },
         {
           "name": "LAYOUT",
           "offsets": [
             411,
-            4063
+            4437
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
             1227,
-            3991,
-            6010,
-            6751,
-            11081,
-            11355,
-            11524,
-            13532,
-            16303,
-            17251
+            4357,
+            6861,
+            7551,
+            8337,
+            13015,
+            13276,
+            13445,
+            15453,
+            17906,
+            18854
           ]
         },
         {
@@ -1662,41 +1848,41 @@
           "name": "PAGER",
           "offsets": [
             1074,
-            7783
+            9304
           ]
         },
         {
           "name": "READS",
           "offsets": [
             467,
-            11158,
-            11433,
-            11603,
-            13732,
-            16233,
-            17457
+            5245,
+            13092,
+            13354,
+            13524,
+            15653,
+            17836,
+            19060
           ]
         },
         {
           "name": "ROOT_DIRECTORY",
           "offsets": [
-            537,
-            4141
+            537
           ]
         },
         {
           "name": "ROOT_TYPE",
           "offsets": [
             1297,
-            6812
+            8398
           ]
         },
         {
           "name": "SPAN_TYPE",
           "offsets": [
             315,
-            16269,
-            17360
+            17872,
+            18963
           ]
         },
         {
@@ -1707,9 +1893,9 @@
         }
       ],
       "sizes": {
-        "runtime": 18025,
-        "initcode": 19097,
-        "initcodeWithArgs": 19513
+        "runtime": 19628,
+        "initcode": 20714,
+        "initcodeWithArgs": 21130
       },
       "budget": null
     },
@@ -2305,29 +2491,47 @@
     "hotAbiIdName": "efs/ledger-hot/2",
     "readers": {
       "lens": {
-        "address": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
+        "address": "0xfFeA8909E6abCe517f2dfB6BFf2943Fc805C6cac",
         "kind": "0x88b206ade76a1d3cb58bcd2afda4651746fc0a87ff0ca1b68af3eb90d7a061df",
         "kindLabel": "efs/reader/lens/1",
-        "runtimeCodehash": "0xe01b3511e55d7a944c60581247bb18e4f5ee90d70a986fd73b23621a0b0d2443"
+        "runtimeCodehash": "0x4dedf8b27d453ec32f8715b1a9d8a870424252add58ccb9e6253441c1d232823"
       },
       "filesPage": {
-        "address": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+        "address": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
         "kind": "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
         "kindLabel": "efs/reader/files-page/1",
-        "runtimeCodehash": "0x2ffbbcbb22442a292389f3a2c619c7bb21774ad118331f82ac29b5d70739ebe9"
+        "runtimeCodehash": "0xb6c0c1825a25c3bbdf5a041497b6da37c8edbb308f37724dec2f979c40507680"
+      },
+      "topicMine": {
+        "address": "0x38aFFa6d46F71b399B79315b7C29d85B2e08217b",
+        "kind": "0x3439e3188028f62d9f43b2a2d841a095228b686ef5a40c481fa627709f5063ff",
+        "kindLabel": "efs/reader/topic-mine/1",
+        "runtimeCodehash": "0x6b2a53decc681a550b658c9181f158c65197110bc3f103f11677c0f969ecd959"
+      },
+      "topicEveryone": {
+        "address": "0x413cc58a5FBfD5E429f66B61738333babe4b558e",
+        "kind": "0x68aaa9609069121630b7359eb69e483bfd5d3b3f0e5d64f89738946befda2e80",
+        "kindLabel": "efs/reader/topic-everyone/1",
+        "runtimeCodehash": "0x677ff409398084cf35ae29201b172f2832760bd0fdd1a0c41359dd71d9a64b76"
+      },
+      "topicLookup": {
+        "address": "0xa19606F95275E28967AA74dd177E4CC3d04b16b5",
+        "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
+        "kindLabel": "efs/reader/topic-lookup/1",
+        "runtimeCodehash": "0xcba05c8656048e89ff95173c7db7ff3b558a8cb7799e0c7ddd2e77ce564dc1b4"
       },
       "web3Gateway": {
-        "address": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA",
-        "runtimeCodehash": "0x3edbbc53763fd0f0a2a70915e5412336eb935a6d20afcd0057204943d5b2c1d0",
+        "address": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD",
+        "runtimeCodehash": "0x748bc42406d51f752f0303f4ae229ac517ad3aabff741022d38b9443975a0430",
         "resolveMode": "5219",
         "rootDirectory": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
-        "pager": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
-        "urlBase": "web3://0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA:31337/"
+        "pager": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
+        "urlBase": "web3://0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD:31337/"
       },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
         "ledgerReads": "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
-        "ledgerViews": "0xfBf65CEC12562526d21afDcBe79837AA80e48291"
+        "ledgerViews": "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94"
       }
     },
     "statusVocabularyId": "0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87",
@@ -2498,7 +2702,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0xaebf09357b6c0d479e2349305494f0bf7ca681e7f0a4eaa73740d2f4dc449734",
+    "sha256": "0x82cbe1dae7c873e60aafad8c9768b788052b997bc535391d78ba451f4c2bc631",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2936,6 +3140,32 @@
       },
       "note": "A per-author (scope-below) or shared (place-below) roll-up list holding exactly one entry, or a multiple of five entries (zero included: an empty list), takes a fresh word on its next append, so price that append as new (tagLevel.mineNew or sharedNew); otherwise as existing. The fresh word costs one slot rewrite more than a new list, inside the headroom; not separately measured."
     },
+    "reads": {
+      "callGasCap": 10000000,
+      "marginPercent": 10,
+      "recommended": {
+        "prague": {
+          "pageTimesLens": {
+            "mineExact": 760,
+            "mineBelow": 312,
+            "everyoneExact": 688,
+            "everyoneBelow": 320
+          },
+          "maxRows": 150,
+          "limitEntries": 246
+        },
+        "amsterdam": {
+          "pageTimesLens": {
+            "mineExact": 760,
+            "mineBelow": 312,
+            "everyoneExact": 688,
+            "everyoneBelow": 320
+          },
+          "maxRows": 150,
+          "limitEntries": 246
+        }
+      }
+    },
     "envelope": {
       "what": "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",
       "txGasCap": 16777216,
@@ -3081,8 +3311,8 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0x66b7f44e2ee0e3655c51636339e97313f0757883f86664568991645f8185e963",
-    "count": 107
+    "sha256": "0xee84a97fbda17ed29549dad9aa86698f6442cb4c9e6e3181effdb189f9457829",
+    "count": 111
   },
   "abi": {
     "interfaces": "test/snapshots/abi/",

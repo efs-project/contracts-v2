@@ -459,6 +459,149 @@
         "date"
       ]
     },
+    "reads": {
+      "type": "object",
+      "description": "The topic readers' read terms and call bounds (tools/gas-reads.mjs from test/integration/TopicReadMeasure.t.sol; docs/TAG-NUMBERS.md \"Reads\"). Written by every run of tools/gas-model.mjs; its own top-level section beside the publication model.",
+      "required": [
+        "note",
+        "suite",
+        "callGasCap",
+        "marginPercent",
+        "method",
+        "schedules"
+      ],
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "suite": {
+          "type": "string"
+        },
+        "callGasCap": {
+          "type": "integer"
+        },
+        "marginPercent": {
+          "type": "integer"
+        },
+        "method": {
+          "type": "object",
+          "required": [
+            "measurement",
+            "mine",
+            "everyone",
+            "bounds",
+            "recommended"
+          ]
+        },
+        "schedules": {
+          "type": "object",
+          "required": [
+            "prague"
+          ],
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "rows",
+              "terms",
+              "bounds",
+              "recommended"
+            ],
+            "properties": {
+              "rows": {
+                "type": "object",
+                "description": "every measured \"tr <key>\" row of the suite: one cold view call, gas",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              },
+              "terms": {
+                "type": "object",
+                "required": [
+                  "mineExact",
+                  "mineBelow",
+                  "everyoneExact",
+                  "everyoneBelow",
+                  "rawExact",
+                  "rawBelow",
+                  "byName",
+                  "about",
+                  "wordPage",
+                  "children"
+                ],
+                "properties": {
+                  "mineExact": {
+                    "type": "object",
+                    "required": [
+                      "opening",
+                      "openingPerLensAuthor",
+                      "perRow",
+                      "perLensIndex",
+                      "maxAbsErrorPercent"
+                    ]
+                  },
+                  "mineBelow": {
+                    "type": "object",
+                    "required": [
+                      "opening",
+                      "openingPerLensAuthor",
+                      "perRow",
+                      "perLensIndex",
+                      "maxAbsErrorPercent"
+                    ]
+                  },
+                  "everyoneExact": {
+                    "type": "object",
+                    "required": [
+                      "opening",
+                      "perRow",
+                      "perLensAuthor",
+                      "perSkippedEntryByLens"
+                    ]
+                  },
+                  "everyoneBelow": {
+                    "type": "object",
+                    "required": [
+                      "opening",
+                      "perRow",
+                      "perLensAuthor",
+                      "perSkippedEntryByLens"
+                    ]
+                  }
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "opening",
+                    "perRow"
+                  ]
+                }
+              },
+              "bounds": {
+                "type": "object",
+                "description": "per lens size: the most rows (worst case) and skipped entries one call reads under the budget",
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "mineExact",
+                    "mineBelow",
+                    "everyoneExact",
+                    "everyoneBelow"
+                  ]
+                }
+              },
+              "recommended": {
+                "type": "object",
+                "required": [
+                  "pageTimesLens",
+                  "maxRows",
+                  "limitEntries"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "planning": {
       "type": "object",
       "description": "The planning rule (tools/gas-plan.mjs is its reference implementation, reading only this file).",

@@ -319,9 +319,18 @@ const model = {
   profiles: { prague, ...(amsterdam ? { amsterdam } : {}) },
   source: { test: SUITE, commit: git("rev-parse", "HEAD"), dirtyFiles: (git("status", "--porcelain") || "").split("\n").filter(Boolean).length, date: new Date().toISOString(), foundry: execFileSync("forge", ["--version"]).toString().split("\n")[0].trim() },
 };
+// the topic readers' read terms and call bounds (tools/gas-reads.mjs; a section of its own beside the profiles)
+const { measureReads, checkReads } = await import("./gas-reads.mjs");
+model.reads = measureReads({ amsterdam: !o["skip-amsterdam"] });
 const errs = validate(JSON.parse(toJSON(model)), "efs-gas-model-1.schema.json");
 assert.deepEqual(errs, [], `gas/model.json does not match its schema:\n${errs.join("\n")}`);
-if (CHECK) process.exit(check(JSON.parse(readFileSync(join(root, "gas/model.json"), "utf8"))));
+if (CHECK) {
+  const committed = JSON.parse(readFileSync(join(root, "gas/model.json"), "utf8"));
+  const stale = checkReads(committed.reads, JSON.parse(toJSON(model.reads)));
+  for (const d of stale.slice(0, 8)) console.error(`gas-model --check: ${d}`);
+  if (!stale.length) console.log(`gas-model --check: OK, the committed reads rows equal the measurement (${Object.keys(model.reads.schedules).join(" + ")})`);
+  process.exit(check(committed) | (stale.length ? 1 : 0));
+}
 mkdirSync(join(root, "gas"), { recursive: true });
 writeFileSync(join(root, "gas/model.json"), toJSON(model));
 
