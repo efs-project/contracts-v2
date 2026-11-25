@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-import {DigestSpec, Unit, WorkModel} from "../interfaces/Index.sol";
+import {DigestSpec, OpenScopeConfig, Unit, WorkModel} from "../interfaces/Index.sol";
 import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
 import {E_DEPLOYER} from "../interfaces/Errors.sol";
 
@@ -29,6 +29,8 @@ contract IndexDeployer {
         Unit[] units;
         DigestSpec[] specs;
         WorkModel work;
+        /// SPIKE (tags-index): the generation's all-authors family switches.
+        OpenScopeConfig os;
     }
 
     address public immutable LEDGER;
@@ -90,7 +92,8 @@ contract IndexDeployer {
                     bitmap,
                     plan.units,
                     plan.specs,
-                    plan.work
+                    plan.work,
+                    plan.os
                 )
             )
         );

@@ -130,7 +130,9 @@ export const DOM = {
 export const PURPOSE = { HEAD: h("efs/purpose/head/1"), FOLDER: h("efs/purpose/folder/1"), TAG: h("efs/purpose/tag/1") };
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
 export const familyId = (name) => h(`efs/family/${name}/1`);
-export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope"];
+export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "open-scope", "open-scope-below", "open-scope-word", "word-directory"];
+/** SPIKE (tags-index): the index's all-authors switches (OpenScopeConfig): family 6 on, every topic family off. */
+export const OPEN_SCOPE = { exact: true, skipPurpose: ZERO, topicTypeId: ZERO, depthCap: 0, paths: false, words: false, directory: false };
 export const BITMAP_FAMILIES = ["scope", "roster", "live-scope"];
 export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 export const ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
@@ -366,13 +368,13 @@ export function executionSet(set, ledger) {
   ));
 }
 /** RealmIndex's MANIFEST_HASH: keccak(abi.encode(MANIFEST_HEADER, families, units, specs, work, PHYSICAL, CALLBACK)). */
-export function manifestHash(families, units, specs, work) {
+export function manifestHash(families, units, specs, work, os = OPEN_SCOPE) {
   const ri = artifact("RealmIndex").abi;
   const readiness = ri.find((i) => i.name === "replayReadiness").outputs[0];
   const ctor = ctorInputs(ri);
   return keccak256(encodeAbiParameters(
-    [{ type: "bytes32" }, component(readiness.components, "families"), component(ctor, "units"), component(ctor, "specs"), component(ctor, "work"), { type: "bytes32" }, { type: "bytes32" }],
-    [h("efs/index-manifest/1"), families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback],
+    [{ type: "bytes32" }, component(readiness.components, "families"), component(ctor, "units"), component(ctor, "specs"), component(ctor, "work"), { type: "bytes32" }, { type: "bytes32" }, component(ctor, "os")],
+    [h("efs/index-manifest/1"), families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback, os],
   ));
 }
 export const MANIFEST_PROFILES = {
@@ -386,6 +388,9 @@ const FAMILY_TABLE = [
   ["by-record", 12, 5, 1, 2, "posting", 1n], ["unique-by-type", 13, 1, 1, 1, "posting", 1n], ["scalar", 14, 1, 1, 1, "posting", 1n],
   ["digest", 15, 5, 1, 1, "posting", 1n], ["role-scope", 16, 3, 1, 1, "posting", 1n], ["roster", 17, 3, 2, 2, "bitmap", 2n ** 64n - 1n],
   ["live-scope", 18, 3, 2, 2, "bitmap", 1n],
+  // SPIKE (tags-index): OPEN_SCOPE keeps family 6 and leaves the topic families unmaintained
+  ["open-scope", 6, 3, 1, 1, "posting", 1n], ["open-scope-below", 7, 3, 1, 1, "posting", 2n ** 64n - 1n],
+  ["open-scope-word", 9, 3, 1, 1, "posting", 2n ** 64n - 1n], ["word-directory", 2, 1, 1, 1, "posting", 2n ** 64n - 1n],
 ];
 
 // ---- the plan ------------------------------------------------------------------------------------------------------
@@ -531,7 +536,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const F = Object.fromEntries(FAMILY_TABLE.map(([n]) => [`F_${n.toUpperCase().replace(/-/g, "_")}`, familyId(n)]));
   const indexImm = { LEDGER: ledgerProxy, LAYOUT_ID: layoutId, HOT_ABI_ID, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, MANIFEST_HASH: mHash, ...F };
   const referenced = new Set(immutableLayout("RealmIndex").map((l) => l.name));
-  const index = add("G19", "RealmIndex", [ledgerProxy, HOT_ABI_ID, decoder.address, posting.address, bitmap.address, unitsList, specs, WORK_MODEL], Object.fromEntries(Object.entries(indexImm).filter(([k]) => referenced.has(k))), { manifestHash: mHash });
+  const index = add("G19", "RealmIndex", [ledgerProxy, HOT_ABI_ID, decoder.address, posting.address, bitmap.address, unitsList, specs, WORK_MODEL, OPEN_SCOPE], Object.fromEntries(Object.entries(indexImm).filter(([k]) => referenced.has(k))), { manifestHash: mHash });
 
   // G20: the genesis activation through the controller
   const components = {

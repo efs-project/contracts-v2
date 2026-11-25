@@ -5,7 +5,7 @@ import {PostingStore} from "../../src/index/PostingStore.sol";
 import {BitmapStore} from "../../src/index/BitmapStore.sol";
 import {RealmIndex} from "../../src/index/RealmIndex.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {DigestSpec, Unit, WorkModel} from "../../src/interfaces/Index.sol";
+import {DigestSpec, OpenScopeConfig, Unit, WorkModel} from "../../src/interfaces/Index.sol";
 import {IndexDoubleDefaults} from "./doubles/IndexDoubles.sol";
 
 /// @notice Deploys a generation-1 index with its two stores for a ledger: the posting families of design
@@ -19,7 +19,7 @@ library IndexDeploy {
     }
 
     function postingFamilies() internal pure returns (bytes32[] memory f) {
-        f = new bytes32[](10);
+        f = new bytes32[](14);
         f[0] = Keys.familyId("by-type");
         f[1] = Keys.familyId("by-author");
         f[2] = Keys.familyId("backlink");
@@ -30,6 +30,11 @@ library IndexDeploy {
         f[7] = Keys.familyId("scalar");
         f[8] = Keys.familyId("digest");
         f[9] = Keys.familyId("role-scope");
+        // SPIKE (tags-index): after the generation-1 families, so their own membership scans are unchanged
+        f[10] = Keys.familyId("open-scope");
+        f[11] = Keys.familyId("open-scope-below");
+        f[12] = Keys.familyId("open-scope-word");
+        f[13] = Keys.familyId("word-directory");
     }
 
     function bitmapFamilies() internal pure returns (bytes32[] memory f) {
@@ -39,11 +44,26 @@ library IndexDeploy {
         f[2] = Keys.familyId("live-scope");
     }
 
+    /// SPIKE (tags-index): the harness default: family 6 on for every purpose, every topic family off.
+    function defaultOpenScope() internal pure returns (OpenScopeConfig memory os) {
+        os.exact = true;
+    }
+
     function deploy(
         address ledger,
         bytes32 hotAbiId,
         Unit[] memory units,
         DigestSpec[] memory specs
+    ) internal returns (Gen1 memory g) {
+        return deploy(ledger, hotAbiId, units, specs, defaultOpenScope());
+    }
+
+    function deploy(
+        address ledger,
+        bytes32 hotAbiId,
+        Unit[] memory units,
+        DigestSpec[] memory specs,
+        OpenScopeConfig memory os
     ) internal returns (Gen1 memory g) {
         g.posting = new PostingStore(ledger, address(0), postingFamilies());
         g.bitmap = new BitmapStore(ledger, address(0), bitmapFamilies());
@@ -55,7 +75,8 @@ library IndexDeploy {
             address(g.bitmap),
             units,
             specs,
-            IndexDoubleDefaults.workModel()
+            IndexDoubleDefaults.workModel(),
+            os
         );
     }
 

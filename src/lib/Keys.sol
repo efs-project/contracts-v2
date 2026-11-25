@@ -35,6 +35,9 @@ library Keys {
     bytes32 internal constant DOM_TYPE = keccak256("efs/type/1");
     // Role-scope key: keccak256(abi.encode(DOM_ROLE_SCOPE, principal, purpose, role)) — the index family 16 key
     bytes32 internal constant DOM_ROLE_SCOPE = keccak256("efs/vk/role-scope/1");
+    // SPIKE (tags-index): open-scope key: keccak256(abi.encode(DOM_OPEN_SCOPE, purpose, subjectOrWord)) — the value
+    // key of the all-authors families 6 (exact), 7 (below) and 9 (word); no principal in the key
+    bytes32 internal constant DOM_OPEN_SCOPE = keccak256("efs/vk/open-scope/1");
     // Realm origin: keccak256(abi.encode(DOM_REALM_ORIGIN, genesisChainId, coreAddress, realmSalt)) — the one
     // identity input that names a chain and an address; it qualifies contract principals (design §1.2 row 12)
     bytes32 internal constant DOM_REALM_ORIGIN = keccak256("efs/realm-origin/1");
@@ -57,8 +60,13 @@ library Keys {
     // revisionOrdinal, executionProfileId, capabilities, acceptedChainId, limitsProfileId))
     bytes32 internal constant DOM_EXECUTION_SET = keccak256("efs/execution-set/1");
 
-    // Posting-list kinds. 2, 3, 6, 7, 9 are reserved (never minted).
+    // Posting-list kinds. 3 is reserved (never minted). SPIKE (tags-index): 2, 6, 7, 9 are minted by the spike's
+    // word-directory, open-scope, open-scope-below and open-scope-word families.
     uint8 internal constant KIND_BY_TYPE = 1;
+    uint8 internal constant KIND_WORD_DIRECTORY = 2;
+    uint8 internal constant KIND_OPEN_SCOPE = 6;
+    uint8 internal constant KIND_OPEN_SCOPE_BELOW = 7;
+    uint8 internal constant KIND_OPEN_SCOPE_WORD = 9;
     uint8 internal constant KIND_BY_AUTHOR = 4;
     uint8 internal constant KIND_BACKLINK = 5;
     uint8 internal constant KIND_HISTORY = 8;
@@ -103,6 +111,11 @@ library Keys {
         returns (bytes32)
     {
         return keccak256(abi.encode(DOM_ROLE_SCOPE, principalId, purpose, role));
+    }
+
+    /// SPIKE (tags-index): the all-authors value key of families 6, 7 and 9.
+    function openScope(bytes32 purpose, bytes32 subjectOrWord) internal pure returns (bytes32) {
+        return keccak256(abi.encode(DOM_OPEN_SCOPE, purpose, subjectOrWord));
     }
 
     /// Realm origin: fixed at genesis; the only id that names a chain and an address.
