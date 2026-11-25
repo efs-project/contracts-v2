@@ -267,7 +267,7 @@ contract RealIndexTest is Test {
         (, count,, last,) = _head(F_HISTORY, 0, 0, bindingKey);
         assertEq(count, 1);
         assertEq(last, 3);
-        (, count, live, last,) = _head(F_BACKLINK, 0, 0, recordId);
+        (, count, live, last,) = _head(F_BACKLINK, FOLDER, 0, recordId);
         assertEq(count, 1);
         assertEq(live, 1);
         assertEq(last, 3);
@@ -332,7 +332,7 @@ contract RealIndexTest is Test {
         assertEq(sl, 0);
         assertEq(stamp, 4);
         assertEq(bits, 0);
-        (, uint64 count, uint64 live, uint64 last,) = _head(F_BACKLINK, 0, 0, recordId);
+        (, uint64 count, uint64 live, uint64 last,) = _head(F_BACKLINK, FOLDER, 0, recordId);
         assertEq(count, 1);
         assertEq(live, 0, "the masked target is released");
         assertEq(last, 3);
@@ -346,7 +346,7 @@ contract RealIndexTest is Test {
         assertEq(sl, 1);
         assertEq(stamp, 5);
         assertEq(bits, 1);
-        (, count, live, last,) = _head(F_BACKLINK, 0, 0, recordId);
+        (, count, live, last,) = _head(F_BACKLINK, FOLDER, 0, recordId);
         assertEq(count, 2);
         assertEq(live, 1);
         assertEq(last, 5);
@@ -367,10 +367,10 @@ contract RealIndexTest is Test {
         bytes[] memory bodies = new bytes[](2);
         bodies[0] = other;
         ledger.execute(actions, bodies, _native(1), "");
-        (, uint64 count, uint64 live,,) = _head(F_BACKLINK, 0, 0, recordId);
+        (, uint64 count, uint64 live,,) = _head(F_BACKLINK, FOLDER, 0, recordId);
         assertEq(count, 1);
         assertEq(live, 0, "the old target lost its head");
-        (, count, live,,) = _head(F_BACKLINK, 0, 0, otherId);
+        (, count, live,,) = _head(F_BACKLINK, FOLDER, 0, otherId);
         assertEq(count, 1);
         assertEq(live, 1);
         (uint64 sc, uint64 sl, uint64 stamp, uint48 bits,,) =
@@ -397,7 +397,7 @@ contract RealIndexTest is Test {
         assertEq(bits, 3);
         assertEq(entry0, 1);
         assertEq(g.bitmap.scopeEntry(ScopeKey.wrap(scopeKey), 1), 2);
-        (, uint64 count, uint64 live,,) = _head(F_BACKLINK, 0, 0, recordId);
+        (, uint64 count, uint64 live,,) = _head(F_BACKLINK, FOLDER, 0, recordId);
         assertEq(count, 2);
         assertEq(live, 2);
         // masking the second entry clears bit 1 only (bisection over binding ordinals)

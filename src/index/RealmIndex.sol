@@ -311,7 +311,9 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         bytes32 bindingKey = Keys.binding(e.principalId, e.position);
         Appends memory b = _appends(3);
         _add(b, F_HISTORY, _pk(0, 8, 0, bindingKey), admission);
-        if (e.oldTarget != 0) ps.release(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.oldTarget), 1);
+        if (e.oldTarget != 0) {
+            ps.release(FamilyId.wrap(F_BACKLINK), _pk(e.purpose, 5, 0, e.oldTarget), 1);
+        }
         uint8 tk = e.transitionKind;
         if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
             // a first statement of either sign appends the scope entry and the role-scope entry; the store
@@ -350,7 +352,9 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 admission
             );
         }
-        if (e.kind == ActionKind.BIND) _add(b, F_BACKLINK, _pk(0, 5, 0, e.target), admission);
+        if (e.kind == ActionKind.BIND) {
+            _add(b, F_BACKLINK, _pk(e.purpose, 5, 0, e.target), admission);
+        }
         _flush(b);
     }
 

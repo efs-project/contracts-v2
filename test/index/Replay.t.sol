@@ -226,8 +226,8 @@ contract ReplayTest is Test {
         keys[2] = PostingKey.wrap(Keys.uniqueByTypeList(TYPE_OK));
         keys[3] = PostingKey.wrap(Keys.byRecordList(recordId));
         keys[4] = PostingKey.wrap(Keys.historyList(bindingKey));
-        keys[5] = PostingKey.wrap(Keys.backlinkList(recordId));
-        keys[6] = PostingKey.wrap(Keys.backlinkList(otherId));
+        keys[5] = PostingKey.wrap(Keys.backlinkList(FOLDER, recordId));
+        keys[6] = PostingKey.wrap(Keys.backlinkList(FOLDER, otherId));
         keys[7] = PostingKey.wrap(Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, NAME)));
         keys[8] = PostingKey.wrap(
             Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, keccak256("second")))
@@ -458,7 +458,7 @@ contract ReplayTest is Test {
         keys[2] = PostingKey.wrap(
             Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, second)))
         );
-        keys[3] = PostingKey.wrap(Keys.backlinkList(recordId));
+        keys[3] = PostingKey.wrap(Keys.backlinkList(FOLDER, recordId));
         keys[4] = PostingKey.wrap(Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, second)));
         for (uint256 i; i < keys.length; ++i) {
             (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(keys[i]);
@@ -500,7 +500,7 @@ contract ReplayTest is Test {
         (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(_replayAll(ix), 10);
         PostingKey[] memory keys = new PostingKey[](2);
-        keys[0] = PostingKey.wrap(Keys.backlinkList(addr));
+        keys[0] = PostingKey.wrap(Keys.backlinkList(FOLDER, addr));
         keys[1] = PostingKey.wrap(
             Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, role)))
         );
@@ -611,9 +611,9 @@ contract ReplayTest is Test {
                 Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, roles[i]))
             );
         }
-        keys[10] = PostingKey.wrap(Keys.backlinkList(addr));
-        keys[11] = PostingKey.wrap(Keys.backlinkList(recordId));
-        keys[12] = PostingKey.wrap(Keys.backlinkList(otherId));
+        keys[10] = PostingKey.wrap(Keys.backlinkList(FOLDER, addr));
+        keys[11] = PostingKey.wrap(Keys.backlinkList(FOLDER, recordId));
+        keys[12] = PostingKey.wrap(Keys.backlinkList(FOLDER, otherId));
         for (uint256 i; i < keys.length; ++i) {
             (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(keys[i]);
             (uint64 c2, uint64 l2, uint64 last2, uint16 f2) = p2.postingHead(keys[i]);

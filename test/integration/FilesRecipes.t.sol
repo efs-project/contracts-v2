@@ -59,7 +59,7 @@ contract FilesRecipesTest is FilesRecipesBase {
         _exec("recipe create folder", a, b);
         bytes32 docsKey = _key(Purpose.FOLDER, rootDir, keccak256("docs"));
         _assertScope(rootDir, 1, 1, 1);
-        _assertBacklink(docsDir, 1, 1);
+        _assertBacklink(Purpose.FOLDER, docsDir, 1, 1);
         _assertHistory(docsKey, 1);
         (uint8 state, uint64 rev, bytes32 target) = _head(docsKey);
         assertEq(state, 1);
@@ -82,8 +82,8 @@ contract FilesRecipesTest is FilesRecipesBase {
         bytes32 headKey = _key(Purpose.HEAD, file, 0);
         bytes32 readmeKey = _key(Purpose.FOLDER, docsDir, keccak256("readme.txt"));
         _assertScope(docsDir, 1, 1, 1);
-        _assertBacklink(file, 1, 1);
-        _assertBacklink(rootRec, 1, 1);
+        _assertBacklink(Purpose.FOLDER, file, 1, 1);
+        _assertBacklink(Purpose.HEAD, rootRec, 1, 1);
         _assertHistory(readmeKey, 1);
         (, rev, target) = _head(headKey);
         assertEq(rev, 1);
@@ -101,8 +101,8 @@ contract FilesRecipesTest is FilesRecipesBase {
         (, rev, target) = _head(headKey);
         assertEq(rev, 2);
         assertEq(target, childRec);
-        _assertBacklink(rootRec, 1, 0); // released by the REBIND
-        _assertBacklink(childRec, 1, 1);
+        _assertBacklink(Purpose.HEAD, rootRec, 1, 0); // released by the REBIND
+        _assertBacklink(Purpose.HEAD, childRec, 1, 1);
         _assertHistory(headKey, 2);
         (uint64 parents,) = _posting(F_REFERENCE, typeIds[T_CHILD], rootRec);
         assertEq(parents, 1, "the child's parent reference");
@@ -117,7 +117,7 @@ contract FilesRecipesTest is FilesRecipesBase {
         bytes32 notesKey = _key(Purpose.FOLDER, rootDir, keccak256("notes.txt"));
         _assertScope(docsDir, 1, 0, 0);
         _assertScope(rootDir, 2, 2, 3);
-        _assertBacklink(file, 2, 1);
+        _assertBacklink(Purpose.FOLDER, file, 2, 1);
         _assertHistory(readmeKey, 2);
         _assertHistory(notesKey, 1);
         (state,,) = _head(readmeKey);
@@ -131,13 +131,13 @@ contract FilesRecipesTest is FilesRecipesBase {
         (state,,) = _head(notesKey);
         assertEq(state, 3, "released");
         _assertScope(rootDir, 2, 1, 1);
-        _assertBacklink(file, 2, 0);
+        _assertBacklink(Purpose.FOLDER, file, 2, 0);
 
         // ---- restore: BIND (the kept target word makes a same-target restore a rewrite)
         a[0] = _bind(Purpose.FOLDER, rootDir, keccak256("notes.txt"), file, 2);
         _exec("recipe restore", a, b);
         _assertScope(rootDir, 2, 2, 3);
-        _assertBacklink(file, 3, 1);
+        _assertBacklink(Purpose.FOLDER, file, 3, 1);
         (state, rev, target) = _head(notesKey);
         assertEq(state, 1);
         assertEq(rev, 3);
@@ -150,7 +150,7 @@ contract FilesRecipesTest is FilesRecipesBase {
         assertEq(state, 2, "masked");
         assertEq(rev, 4);
         _assertScope(rootDir, 2, 1, 1);
-        _assertBacklink(file, 3, 0);
+        _assertBacklink(Purpose.FOLDER, file, 3, 0);
         _assertHistory(notesKey, 4);
         // and the moved file still has its HEAD; the folder entry for docs is untouched
         (, rev, target) = _head(headKey);
@@ -180,12 +180,12 @@ contract FilesRecipesTest is FilesRecipesBase {
         assertEq(state, 3);
         assertEq(rev, 3);
         _assertScope(rootDir, 1, 0, 0);
-        _assertBacklink(file, 1, 0);
+        _assertBacklink(Purpose.FOLDER, file, 1, 0);
         // BIND from RELEASED is a restore, judged by the final hook like any FOLDER bind
         a[0] = _bind(Purpose.FOLDER, rootDir, keccak256("cycle.txt"), file, 3);
         _exec("recipe restore a released placement", a, b);
         _assertScope(rootDir, 1, 1, 1);
-        _assertBacklink(file, 2, 1);
+        _assertBacklink(Purpose.FOLDER, file, 2, 1);
         _assertHistory(key, 4);
     }
 
@@ -309,7 +309,7 @@ contract FilesRecipesTest is FilesRecipesBase {
         assertTrue(first != 0, "the directory is not erased");
         _assertScope(childDir, 1, 1, 1);
         _assertScope(rootDir, 2, 1, 2);
-        _assertBacklink(childDir, 2, 1);
+        _assertBacklink(Purpose.FOLDER, childDir, 2, 1);
     }
 
     // L FilesDirectory test_withdrawn_descriptor_remains_valid_and_bind_before_name_parent_publish_is_atomic

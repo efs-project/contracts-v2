@@ -87,7 +87,7 @@ contract KeysTest is Test {
         uint8 scalarKind = uint8(vm.parseJsonUint(json, ".inputs.scalarKind"));
         assertEq(Keys.byTypeList(typeId), b32(".outputs.byTypeList"));
         assertEq(Keys.byAuthorList(eoaPrincipal), b32(".outputs.byAuthorList"));
-        assertEq(Keys.backlinkList(recordId), b32(".outputs.backlinkList"));
+        assertEq(Keys.backlinkList(b32(".inputs.purpose"), recordId), b32(".outputs.backlinkList"));
         assertEq(Keys.historyList(bindingKey), b32(".outputs.historyList"));
         assertEq(Keys.scopeList(scopeKey), b32(".outputs.scopeList"));
         assertEq(Keys.referenceList(typeId, ordinal, recordId), b32(".outputs.referenceList"));
