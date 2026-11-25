@@ -86,6 +86,11 @@ contract TopicFaultyTest is TopicReadersBase {
         return fp.mine(_lens2(alice, bob), t[0], below, _unbound(), "", 0, 0);
     }
 
+    /// A page of one row: one batch of one candidate (bob's newest exact entry: the heads of alice and bob).
+    function _mine1() internal view returns (TopicPageInfo memory, MineRow[] memory) {
+        return fp.mine(_lens2(alice, bob), t[0], false, _unbound(), "", 1, 0);
+    }
+
     function _byNameF() internal view returns (TopicPageInfo memory, AuthorRow[] memory) {
         return fk.byName(pos, _unbound(), "", 0);
     }
@@ -204,50 +209,81 @@ contract TopicFaultyTest is TopicReadersBase {
 
     // ---- facet rows ------------------------------------------------------------------------------------------
 
+    // `lensRule` reply of `_mine1` (one entry): offsets [0..5], BasisCommit [6..11], st [12 len, 13], positions
+    // [14, 15], cells [16, 17 purpose, 18 subject, 19 role], decider [20, 21], decided [22, 23], own [24 len,
+    // 25 state, 26 revision, 27 admission, 28 targetKind, 29 prevAdmission, 30 bindingOrdinal, 31 notAfter,
+    // 32 target, 33 strength]. The entry is bob's; alice (lens index 0) decides with a yes.
+
     function test_a_binding_cell_of_another_place() public {
-        // (st[], positions[], cells[], basis): one ordinal; cells[0].subject is word 15
-        _set(fv, ILedgerViews.bindingCells.selector, M_SET_WORD, 15, uint256(keccak256("x")));
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 18, uint256(keccak256("x")));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 3));
-        _mineF(false);
+        _mine1();
     }
 
-    function test_an_absent_binding_cell_is_inconsistent_and_unknown_a_status_fault() public {
-        _set(fv, ILedgerViews.bindingCells.selector, M_SET_WORD, 10, uint8(Status.ABSENT_PROVEN));
+    function test_an_absent_entry_is_inconsistent_and_unknown_a_status_fault() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, uint8(Status.ABSENT_PROVEN));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 3));
-        _mineF(false);
-        _set(fv, ILedgerViews.bindingCells.selector, M_SET_WORD, 10, uint8(Status.UNKNOWN));
+        _mine1();
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, uint8(Status.UNKNOWN));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_STATUS.selector, uint8(Status.UNKNOWN)));
-        _mineF(false);
+        _mine1();
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, uint8(Status.UNSUPPORTED));
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_STATUS.selector, uint8(Status.UNSUPPORTED)));
+        _mine1();
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 13, 0);
+        vm.expectPartialRevert(E_TOPIC_REPLY.selector);
+        _mine1();
     }
 
-    function test_heads_at_unknown_is_never_a_silence() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 0, uint8(Status.UNKNOWN));
-        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_STATUS.selector, uint8(Status.UNKNOWN)));
-        _mineF(false);
-    }
-
-    function test_heads_at_status_contradicts_its_state() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 0, uint8(Status.MASKED));
+    function test_an_own_head_reported_unset_is_never_a_silence() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 25, 0);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
-        _mineF(false);
+        _mine1();
     }
 
-    function test_heads_at_selects_nobody() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 10, 255);
+    function test_a_reserved_or_contradictory_own_head_is_inconsistent() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 25, 7);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
-        _mineF(false);
+        _mine1();
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 25, 2); // MASKED with a target
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        _mine1();
     }
 
-    function test_heads_at_echoes_another_basis() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 12, uint256(keccak256("e")));
+    function test_a_decision_that_contradicts_the_own_head() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 21, 255); // nobody decides, but bob is BOUND
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        _mine1();
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 23, 0); // a decider without a state
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        _mine1();
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 21, 2); // a decider past the author
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        _mine1();
+    }
+
+    function test_an_own_head_of_another_binding_is_inconsistent() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_ADD_WORD, 30, 1);
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        _mine1();
+    }
+
+    function test_a_lens_rule_echoing_another_basis() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_SET_WORD, 6, uint256(keccak256("e")));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 5));
-        _mineF(false);
+        _mine1();
     }
 
-    function test_a_head_admitted_in_the_future() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_FUTURE_ADMISSION, 3, 1);
+    function test_an_own_head_admitted_in_the_future() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_FUTURE_ADMISSION, 27, 1);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
-        _mineF(false);
+        _mine1();
+    }
+
+    function test_a_short_lens_rule_reply_reverts() public {
+        _set(fv, ILedgerViews.lensRule.selector, M_SHORT, 0, 500);
+        vm.expectRevert();
+        _mine1();
     }
 
     function test_author_heads_unknown_and_absent() public {
@@ -296,14 +332,13 @@ contract TopicFaultyTest is TopicReadersBase {
         vm.expectPartialRevert(E_TOPIC_READ.selector);
         _byNameF();
         fr.clear(ILedgerReads.basis.selector);
-        fv.setMode(ILedgerViews.headsAt.selector, M_EXHAUST);
+        fv.setMode(ILedgerViews.lensRule.selector, M_EXHAUST);
         vm.expectPartialRevert(E_TOPIC_READ.selector);
         _mineF(false);
-        fv.clear(ILedgerViews.headsAt.selector);
-        fv.setMode(ILedgerViews.bindingCells.selector, M_EMPTY);
+        fv.setMode(ILedgerViews.lensRule.selector, M_EMPTY);
         vm.expectPartialRevert(E_TOPIC_REPLY.selector);
         _mineF(false);
-        fv.clear(ILedgerViews.bindingCells.selector);
+        fv.clear(ILedgerViews.lensRule.selector);
         fi.setMode(IIndexReads.bitmapStore.selector, M_EMPTY);
         vm.expectPartialRevert(E_TOPIC_REPLY.selector);
         _mineF(false);
@@ -311,20 +346,22 @@ contract TopicFaultyTest is TopicReadersBase {
 
     function test_extra_trailing_bytes_are_tolerated() public {
         (, MineRow[] memory want) = _mineF(true);
-        _set(fv, ILedgerViews.headsAt.selector, M_EXTRA, 0, 64);
+        _set(fv, ILedgerViews.lensRule.selector, M_EXTRA, 0, 64);
         _set(fi, IIndexReads.postingSliceOf.selector, M_EXTRA, 0, 96);
         _set(fs, IBitmapStore.liveWords.selector, M_EXTRA, 0, 32);
         (, MineRow[] memory got) = _mineF(true);
         assertEq(keccak256(abi.encode(got)), keccak256(abi.encode(want)));
     }
 
-    function test_a_stale_heads_at_is_inconsistent() public {
-        bytes32 p0 = Keys.position(Purpose.TAG, t[0], things[3]);
-        bytes32[] memory one = _lens1(alice);
-        fv.capture(abi.encodeCall(ILedgerViews.headsAt, (address(fl), one, p0)));
-        _tag(carol, t[0], things[5]); // a later admission
-        fv.setMode(ILedgerViews.headsAt.selector, M_STALE);
+    function test_a_stale_lens_rule_reply_is_inconsistent() public {
+        uint64[] memory o = new uint64[](1);
+        o[0] = _ordinal(bob, Purpose.TAG, t[0], things[0]);
+        uint8[] memory who = new uint8[](1);
+        who[0] = 1;
+        fv.capture(abi.encodeCall(ILedgerViews.lensRule, (address(fl), _lens2(alice, bob), o, who)));
+        _tag(carol, t[1], things[5]); // a later admission
+        fv.setMode(ILedgerViews.lensRule.selector, M_STALE);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 5));
-        fp.mine(one, t[0], false, _unbound(), "", 1, 0);
+        _mine1();
     }
 }

@@ -41,6 +41,8 @@ import {E_TOPIC_INCONSISTENT, E_TOPIC_STATUS, TopicReaderBase} from "./TopicRead
 ///         Type; UNKNOWN when the index keeps no topic roll-ups (the below counts are then unknown).
 contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-lookup/query/1");
+    /// The most rows of one `byName`, `wordPage` or `children` page (the facets' batch bound).
+    /// The most rows of one `byName`, `wordPage` or `children` page (the facets' batch bound).
     uint256 internal constant BY_NAME_MAX = 64;
     uint8 internal constant VIEW_BY_NAME = 1;
     uint8 internal constant VIEW_WORD = 2;
@@ -74,7 +76,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     ) external view returns (TopicPageInfo memory info, AuthorRow[] memory rows) {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_BY_NAME, position));
-        List memory l = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0);
+        List memory l = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0, 0);
         Coverage cov;
         Status st;
         (st, cov) = _openList(r, expected, continuation, l, info);
@@ -115,8 +117,8 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     {
         List memory
             l = below
-                ? List(F_PLACE_BELOW, purpose, 0, place, 0, 0, 0)
-                : List(F_PLACE, purpose, 0, place, 0, 0, 0);
+                ? List(F_PLACE_BELOW, purpose, 0, place, 0, 0, 0, 0)
+                : List(F_PLACE, purpose, 0, place, 0, 0, 0, 0);
         Run memory r;
         (q, c) = _count(r, expected, l);
         if (below && purpose != Purpose.TAG && q.status == Status.PRESENT) {
@@ -131,7 +133,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         view
         returns (Qualified memory q, Coverage c, uint64 statements, uint64 yes)
     {
-        List memory l = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0);
+        List memory l = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0, 0);
         Run memory r;
         (q, c) = _count(r, expected, l);
         if (q.status == Status.PRESENT) (statements, yes) = (l.count, l.live);
@@ -148,7 +150,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         Run memory r;
         if (below) {
             List memory l =
-                List(F_SCOPE_BELOW, 0, 0, Keys.scopeBelow(principalId, purpose, place), 0, 0, 0);
+                List(F_SCOPE_BELOW, 0, 0, Keys.scopeBelow(principalId, purpose, place), 0, 0, 0, 0);
             (q, c) = _count(r, expected, l);
             if (purpose != Purpose.TAG && q.status == Status.PRESENT) q.status = Status.INVALID;
             if (q.status == Status.PRESENT) count = l.count;
@@ -230,7 +232,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     ) private view returns (TopicPageInfo memory info, PlaceCount[] memory rows) {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, view_, id));
-        List memory l = List(F_REFERENCE, TOPIC_TYPE, view_ == VIEW_WORD ? 1 : 0, id, 0, 0, 0);
+        List memory l = List(F_REFERENCE, TOPIC_TYPE, view_ == VIEW_WORD ? 1 : 0, id, 0, 0, 0, 0);
         (Status st, Coverage cov) = _openList(r, expected, continuation, l, info);
         uint64 firstAdmission;
         if (st == Status.PRESENT) (st, firstAdmission) = _place(r, view_, id);
@@ -239,7 +241,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
             return (info, rows);
         }
         bool root = view_ == VIEW_WORD && info.startsAtOrigin;
-        uint64 n = limit == 0 || limit > WINDOW ? uint64(WINDOW) : limit;
+        uint64 n = limit == 0 || limit > BY_NAME_MAX ? uint64(BY_NAME_MAX) : limit;
         uint64 entries = n;
         if (root) --entries;
         if (entries > l.hi) entries = l.hi;
@@ -302,8 +304,8 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         view
         returns (Coverage c)
     {
-        List memory e = List(F_PLACE, Purpose.TAG, 0, place, 0, 0, 0);
-        List memory b = List(F_PLACE_BELOW, Purpose.TAG, 0, place, 0, 0, 0);
+        List memory e = List(F_PLACE, Purpose.TAG, 0, place, 0, 0, 0, 0);
+        List memory b = List(F_PLACE_BELOW, Purpose.TAG, 0, place, 0, 0, 0, 0);
         c = _join(_listHead(r, e), _listHead(r, b));
         row.place = place;
         row.admission = admission;

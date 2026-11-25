@@ -51,6 +51,8 @@ abstract contract TopicReaderBase is IReader {
     uint256 internal constant MAX_PRINCIPALS = 64;
     /// The facets' batch bound (`limits.maxReadIds` of the release profile is 64): windows never exceed it.
     uint256 internal constant WINDOW = 16;
+    /// The keys of one `LedgerViews.heads` call (the release profile's `limits.maxReadIds`).
+    uint256 internal constant MAX_KEYS = 64;
     uint256 internal constant SELECTED_NONE = 255;
     /// A lower bound on one returned row's gas, so a row array is sized by what the call can pay for.
     uint256 internal constant ROW_GAS_FLOOR = 15_000;
@@ -91,6 +93,16 @@ abstract contract TopicReaderBase is IReader {
         uint64 count;
         uint64 live;
         uint64 hi;
+        uint64 last;
+    }
+
+    /// A checked `LedgerViews.lensRule` reply.
+    struct Lensed {
+        bytes32[] positions;
+        Coordinate[] cells;
+        uint8[] decider;
+        uint8[] decided;
+        Head[] own;
     }
 
     constructor(address ledger_, address views_, address reads_) {
@@ -282,8 +294,8 @@ abstract contract TopicReaderBase is IReader {
             ),
             160
         );
-        uint64 last;
-        (c, l.count, l.live, last,) = abi.decode(ret, (Coverage, uint64, uint64, uint64, bool));
+        (c, l.count, l.live, l.last,) = abi.decode(ret, (Coverage, uint64, uint64, uint64, bool));
+        uint64 last = l.last;
         if (c == Coverage.UNSET) revert E_TOPIC_REPLY(IIndexReads.postingHeadOf.selector, 0);
         uint64 hw = r.observed.admissionHighWater;
         if (l.live > l.count || l.count > hw || last > hw || (l.count == 0) != (last == 0)) {
@@ -334,26 +346,43 @@ abstract contract TopicReaderBase is IReader {
     // Facet reads
     // =============================================================================================
 
-    /// Binding ordinal → position and cell, every entry PRESENT.
-    function _cells(Run memory r, uint64[] memory ordinals)
-        internal
-        view
-        returns (bytes32[] memory positions, Coordinate[] memory cells)
-    {
-        bytes memory ret =
-            _sc(VIEWS, abi.encodeCall(ILedgerViews.bindingCells, (LEDGER, ordinals)), 288);
+    /// The lens rule over list entries (`LedgerViews.lensRule`), checked: every entry PRESENT, a decider at or
+    /// before its author with a stance (or none), and the author's own head in a state that agrees with it.
+    function _lensRule(
+        Run memory r,
+        bytes32[] memory lens,
+        uint64[] memory ordinals,
+        uint8[] memory authors
+    ) internal view returns (Lensed memory x) {
+        bytes memory ret = _sc(
+            VIEWS, abi.encodeCall(ILedgerViews.lensRule, (LEDGER, lens, ordinals, authors)), 384
+        );
         Status[] memory st;
         BasisCommit memory b;
-        (st, positions, cells, b) =
-            abi.decode(ret, (Status[], bytes32[], Coordinate[], BasisCommit));
+        (st, x.positions, x.cells, x.decider, x.decided, x.own, b) = abi.decode(
+            ret, (Status[], bytes32[], Coordinate[], uint8[], uint8[], Head[], BasisCommit)
+        );
         _echo(r, b);
         uint256 n = ordinals.length;
-        if (st.length != n || positions.length != n || cells.length != n) {
-            revert E_TOPIC_INCONSISTENT(3);
-        }
+        if (
+            st.length != n || x.positions.length != n || x.cells.length != n
+                || x.decider.length != n || x.decided.length != n || x.own.length != n
+        ) revert E_TOPIC_INCONSISTENT(3);
         for (uint256 i; i < n; ++i) {
             _rowStatus(st[i], Status.ABSENT_PROVEN, 3);
             if (st[i] != Status.PRESENT) revert E_TOPIC_STATUS(uint8(st[i]));
+            Head memory h = x.own[i];
+            uint8 d = x.decider[i];
+            uint8 ds = x.decided[i];
+            bool stance = h.state == 1 || h.state == 2;
+            bool none = d == SELECTED_NONE;
+            if (
+                h.state > 3 || (h.state != 1 && h.target != 0)
+                    || (h.state == 0) != (h.admission == 0)
+                    || h.admission > r.observed.admissionHighWater || (!none && d > authors[i])
+                    || none != (ds == 0) || (!none && ds != 1 && ds != 2) || (none && stance)
+                    || (d == authors[i] && ds != h.state)
+            ) revert E_TOPIC_INCONSISTENT(4);
         }
     }
 
@@ -385,43 +414,41 @@ abstract contract TopicReaderBase is IReader {
         }
     }
 
-    /// The ordered first touch over `lens` at `position` (`LedgerViews.headsAt`), checked against itself: the
-    /// status, the selected index (255 when nobody has a stance) and every head of the lens.
-    function _headsAt(Run memory r, bytes32[] calldata lens, bytes32 position)
-        internal
-        view
-        returns (Status st, uint256 selected, Head[] memory all)
-    {
-        bytes memory ret =
-            _sc(VIEWS, abi.encodeCall(ILedgerViews.headsAt, (LEDGER, lens, position)), 576);
-        Head memory sel;
-        BasisCommit memory b;
-        uint8 index;
-        (st, sel, index, all, b) = abi.decode(ret, (Status, Head, uint8, Head[], BasisCommit));
-        _echo(r, b);
-        _rowStatus(st, Status.UNSET, 4);
-        if (st != Status.PRESENT && st != Status.MASKED && st != Status.ABSENT_PROVEN) {
-            revert E_TOPIC_STATUS(uint8(st));
-        }
-        selected = index;
-        bool none = selected == SELECTED_NONE;
-        if (all.length != lens.length || none != (st == Status.ABSENT_PROVEN)) {
-            revert E_TOPIC_INCONSISTENT(4);
-        }
-        uint256 end = none ? all.length : selected;
-        for (uint256 k; k < end; ++k) {
-            uint8 s = all[k].state;
-            if (s == 1 || s == 2 || s > 3) revert E_TOPIC_INCONSISTENT(4); // not the first touch
-        }
-        if (!none) {
-            if (
-                selected >= all.length
-                    || keccak256(abi.encode(all[selected])) != keccak256(abi.encode(sel))
-            ) {
-                revert E_TOPIC_INCONSISTENT(4);
+    /// Raw heads of `keys` (`LedgerViews.heads`), in calls of at most `MAX_KEYS`: each in a defined state (a
+    /// reserved state is UNSUPPORTED), a canonical target and an admission the page has observed.
+    function _heads(Run memory r, bytes32[] memory keys) internal view returns (Head[] memory hs) {
+        uint256 n = keys.length;
+        hs = new Head[](n);
+        for (uint256 from; from < n; from += MAX_KEYS) {
+            uint256 m = n - from < MAX_KEYS ? n - from : MAX_KEYS;
+            bytes32[] memory part = new bytes32[](m);
+            for (uint256 i; i < m; ++i) {
+                part[i] = keys[from + i];
             }
-            _headState(r, st, sel);
+            bytes memory ret = _sc(VIEWS, abi.encodeCall(ILedgerViews.heads, (LEDGER, part)), 256);
+            (Head[] memory got, BasisCommit memory b) = abi.decode(ret, (Head[], BasisCommit));
+            _echo(r, b);
+            if (got.length != m) revert E_TOPIC_INCONSISTENT(4);
+            for (uint256 i; i < m; ++i) {
+                Head memory h = got[i];
+                if (h.state > 3) revert E_TOPIC_STATUS(uint8(Status.UNSUPPORTED));
+                if (
+                    (h.state != 1 && h.target != 0) || (h.state == 0) != (h.admission == 0)
+                        || h.admission > r.observed.admissionHighWater
+                ) revert E_TOPIC_INCONSISTENT(4);
+                hs[from + i] = h;
+            }
         }
+    }
+
+    /// The lens rule over `hs[from .. from + n)`: the index of the first head with a stance (BOUND or MASKED),
+    /// or SELECTED_NONE.
+    function _decide(Head[] memory hs, uint256 from, uint256 n) internal pure returns (uint256) {
+        for (uint256 k; k < n; ++k) {
+            uint8 st = hs[from + k].state;
+            if (st == 1 || st == 2) return k;
+        }
+        return SELECTED_NONE;
     }
 
     /// A head in the state its status names (PRESENT 1, MASKED 2, RELEASED 3), a canonical target and an

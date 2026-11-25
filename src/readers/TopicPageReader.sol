@@ -77,6 +77,7 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         uint8 view_;
         bytes32 purpose;
         bytes32 place;
+        bool below;
         bool raw;
         uint16 sample;
         bytes32[] seen;
@@ -148,9 +149,11 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
     ) private view returns (Status, Src[] memory s, Coverage cov, uint256 left) {
         uint256 len = lens.length;
         s = new Src[](below ? 2 * len : len);
-        cov = Coverage.COMPLETE;
         address store =
             abi.decode(_sc(r.index, abi.encodeCall(IIndexReads.bitmapStore, ()), 32), (address));
+        // live-scope is a genesis family of the served physical profile: its coverage is the family's, the same for
+        // every scope (design §10.5), so it is read once
+        cov = _scopeCoverage(r, Keys.scope(lens[0], Purpose.TAG, place));
         for (uint256 i; i < s.length; ++i) {
             Src memory x = s[i];
             bytes32 author = lens[i % len];
@@ -158,10 +161,12 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
             if (i < len) {
                 x.exact = true;
                 x.key = Keys.scope(author, Purpose.TAG, place);
-                c = _scope(r, store, x);
+                _scope(r, store, x);
+                c = Coverage.COMPLETE;
             } else {
-                x.l =
-                    List(F_SCOPE_BELOW, 0, 0, Keys.scopeBelow(author, Purpose.TAG, place), 0, 0, 0);
+                x.l = List(
+                    F_SCOPE_BELOW, 0, 0, Keys.scopeBelow(author, Purpose.TAG, place), 0, 0, 0, 0
+                );
                 c = _listHead(r, x.l);
             }
             cov = _join(cov, c);
@@ -171,14 +176,20 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
                 x.l.hi = cursor[i];
             }
             x.lo = x.l.hi; // no window yet
+            if (!x.exact && x.l.hi != 0 && x.l.hi == x.l.count) {
+                // a roll-up's newest entry is its head's `last`: the first window costs no slice
+                x.win = new uint64[](1);
+                x.win[0] = x.l.last;
+                x.lo = x.l.hi - 1;
+            }
             left += x.l.hi;
         }
         if (cov == Coverage.UNKNOWN) return (Status.UNKNOWN, s, cov, 0);
         return (Status.PRESENT, s, cov, left);
     }
 
-    /// An exact scope list's head and its live-scope coverage.
-    function _scope(Run memory r, address store, Src memory x) private view returns (Coverage c) {
+    /// An exact scope list's head.
+    function _scope(Run memory r, address store, Src memory x) private view {
         bytes memory ret =
             _sc(store, abi.encodeCall(IBitmapStore.scopeHead, (ScopeKey.wrap(x.key))), 192);
         (uint64 count, uint64 live, uint64 lastMutation,,,) =
@@ -191,11 +202,13 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         x.l.count = count;
         x.l.live = live;
         x.l.hi = count;
-        ret = _sc(
+    }
+
+    /// The live-scope coverage at `key`.
+    function _scopeCoverage(Run memory r, bytes32 key) private view returns (Coverage c) {
+        bytes memory ret = _sc(
             r.index,
-            abi.encodeCall(
-                IIndexReads.coverage, (FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(x.key))
-            ),
+            abi.encodeCall(IIndexReads.coverage, (FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(key))),
             128
         );
         uint64 through;
@@ -211,7 +224,8 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         ) revert E_TOPIC_INCONSISTENT(6);
     }
 
-    /// The newest-first merge of every lens list; leaves each list's `hi` at its first unexamined entry.
+    /// The newest-first merge of every lens list, resolved in batches of up to WINDOW candidates (one
+    /// `bindingCells` and one `heads` round per batch); leaves each list's `hi` at its first unexamined entry.
     function _merge(
         Run memory r,
         Src[] memory s,
@@ -222,48 +236,114 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         uint256 gasReserve,
         TopicPageInfo memory info
     ) private view returns (uint8, uint256 got) {
-        MineRow memory row; // reused by candidates that produce no row
+        uint64[] memory ord = new uint64[](WINDOW);
+        uint256[] memory src = new uint256[](WINDOW);
         for (;;) {
-            uint256 best = type(uint256).max;
-            uint64 bestOrd;
-            for (uint256 i; i < s.length; ++i) {
-                Src memory x = s[i];
-                if (x.l.hi == 0) continue;
-                if (x.l.hi == x.lo) _refill(r, x);
-                uint64 o = x.win[x.l.hi - 1 - x.lo];
-                if (o > bestOrd) {
-                    bestOrd = o;
-                    best = i;
-                }
-            }
+            (uint256 best,) = _front(r, s, limit);
             if (best == type(uint256).max) return (SCAN_EXHAUSTED, got);
             // a stop leaves the cursor at this candidate (a refill reads, it never consumes)
             if (limit != 0 && got == limit) return (SCAN_LIMIT, got);
             if (got == rows.length || gasleft() < gasReserve) return (SCAN_GAS, got);
-            Src memory b = s[best];
-            uint64 idx = --b.l.hi;
-            ++info.scanned;
-            bool live = !b.exact || (b.bits >> (idx % 256)) & 1 == 1;
-            if (!live) continue; // a masked or released own entry is never shown
-            if (_candidate(r, lens, best % lens.length, b.exact, place, bestOrd, row)) {
-                rows[got] = row;
-                ++got;
-                ++r.selected;
-                row = _freshMine();
+            uint256 room = rows.length - got;
+            if (limit != 0 && limit - got < room) room = limit - got;
+            if (room > WINDOW) room = WINDOW;
+            uint256 n;
+            while (n < room) {
+                uint64 o;
+                (best, o) = _front(r, s, limit);
+                if (best == type(uint256).max) break;
+                Src memory b = s[best];
+                uint64 idx = --b.l.hi;
+                ++info.scanned;
+                // a masked or released own entry is never shown and costs no head read
+                if (b.exact && (b.bits >> (idx % 256)) & 1 == 0) continue;
+                ord[n] = o;
+                src[n] = best;
+                ++n;
             }
+            if (n != 0) got = _resolve(r, s, lens, place, ord, src, n, rows, got);
         }
         return (SCAN_EXHAUSTED, got); // unreachable: the loop returns
     }
 
-    function _freshMine() private pure returns (MineRow memory row) {}
+    /// The list whose front entry is the newest (binding ordinals are unique), refilling empty windows.
+    function _front(Run memory r, Src[] memory s, uint32 limit)
+        private
+        view
+        returns (uint256 best, uint64 bestOrd)
+    {
+        best = type(uint256).max;
+        for (uint256 i; i < s.length; ++i) {
+            Src memory x = s[i];
+            if (x.l.hi == 0) continue;
+            if (x.l.hi == x.lo) _refill(r, x, limit);
+            uint64 o = x.win[x.l.hi - 1 - x.lo];
+            if (o > bestOrd) {
+                bestOrd = o;
+                best = i;
+            }
+        }
+    }
+
+    /// One batch of candidates through `LedgerViews.lensRule` (cells, the first of lens[0..j] with a stance, the
+    /// author's own head): a row only where the candidate's own author decides with a yes.
+    function _resolve(
+        Run memory r,
+        Src[] memory s,
+        bytes32[] calldata lens,
+        bytes32 place,
+        uint64[] memory ord,
+        uint256[] memory src,
+        uint256 n,
+        MineRow[] memory rows,
+        uint256 got
+    ) private view returns (uint256) {
+        uint64[] memory o = new uint64[](n);
+        uint8[] memory who = new uint8[](n);
+        for (uint256 i; i < n; ++i) {
+            o[i] = ord[i];
+            who[i] = uint8(src[i] % lens.length);
+        }
+        Lensed memory x = _lensRule(r, lens, o, who);
+        for (uint256 i; i < n; ++i) {
+            uint256 j = who[i];
+            bool exact = s[src[i]].exact;
+            Coordinate memory c = x.cells[i];
+            // an exact entry is filed at the place; a roll-up entry under a proper descendant of it
+            if (c.purpose != Purpose.TAG || (c.subject == place) != exact) {
+                revert E_TOPIC_INCONSISTENT(3);
+            }
+            Head memory h = x.own[i];
+            if (h.state == 0 || h.bindingOrdinal != o[i] || (exact && h.state != 1)) {
+                revert E_TOPIC_INCONSISTENT(4); // the entry is the author's binding; a live bit means BOUND
+            }
+            if (x.decider[i] != j || h.state != 1) continue; // decided by a higher author, hidden, or released
+            (, int32 number) = BindingNumber.numberOf(h.state, h.strength);
+            rows[got++] = MineRow({
+                position: x.positions[i],
+                topic: c.subject,
+                thing: c.role,
+                targetKind: h.targetKind,
+                decider: uint8(j),
+                principalId: lens[j],
+                number: number,
+                revision: h.revision,
+                admission: h.admission,
+                bindingOrdinal: o[i]
+            });
+            ++r.selected;
+        }
+        return got;
+    }
 
     function _freshPlace() private pure returns (PlaceRow memory row) {}
 
     /// The window just below `hi`: up to WINDOW entries (an exact list's window stays inside one bitmap word, whose
     /// live bits are read with it). Entries must strictly decrease from the previous window.
-    function _refill(Run memory r, Src memory x) private view {
+    function _refill(Run memory r, Src memory x, uint32 limit) private view {
         uint64 hi = x.l.hi;
-        uint64 lo = hi > WINDOW ? hi - uint64(WINDOW) : 0;
+        uint64 w = limit != 0 && limit < WINDOW ? limit : uint64(WINDOW);
+        uint64 lo = hi > w ? hi - w : 0;
         uint64 prev = x.win.length != 0 ? x.win[0] : type(uint64).max;
         if (x.exact) {
             uint64 word = (hi - 1) / 256;
@@ -296,44 +376,6 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         x.lo = lo;
     }
 
-    /// One candidate of lens author `j` (entry `ordinal`): its cell, then the lens rule over lens[0..j].
-    function _candidate(
-        Run memory r,
-        bytes32[] calldata lens,
-        uint256 j,
-        bool exact,
-        bytes32 place,
-        uint64 ordinal,
-        MineRow memory row
-    ) private view returns (bool) {
-        uint64[] memory one = new uint64[](1);
-        one[0] = ordinal;
-        (bytes32[] memory positions, Coordinate[] memory cells) = _cells(r, one);
-        Coordinate memory c = cells[0];
-        // an exact entry is filed at the place; a roll-up entry under a proper descendant of it
-        if (c.purpose != Purpose.TAG || (c.subject == place) != exact) {
-            revert E_TOPIC_INCONSISTENT(3);
-        }
-        (Status st, uint256 sel, Head[] memory all) = _headsAt(r, lens[:j + 1], positions[0]);
-        Head memory own = all[j];
-        if (own.state == 0 || own.bindingOrdinal != ordinal || (exact && own.state != 1)) {
-            revert E_TOPIC_INCONSISTENT(4); // the entry is the author's binding; a live bit means BOUND
-        }
-        if (st != Status.PRESENT || sel != j) return false; // decided by a higher author, hidden, or released
-        (, int32 number) = BindingNumber.numberOf(own.state, own.strength);
-        row.position = positions[0];
-        row.topic = c.subject;
-        row.thing = c.role;
-        row.targetKind = own.targetKind;
-        row.decider = uint8(j);
-        row.principalId = lens[j];
-        row.number = number;
-        row.revision = own.revision;
-        row.admission = own.admission;
-        row.bindingOrdinal = ordinal;
-        return true;
-    }
-
     // =============================================================================================
     // everyone, raw, about
     // =============================================================================================
@@ -350,11 +392,18 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_EVERYONE, query, lens));
         Place memory p = Place(
-            VIEW_EVERYONE, query.purpose, query.place, query.raw, query.sample, new bytes32[](0), 0
+            VIEW_EVERYONE,
+            query.purpose,
+            query.place,
+            query.below,
+            query.raw,
+            query.sample,
+            new bytes32[](0),
+            0
         );
         List memory l = query.below
-            ? List(F_PLACE_BELOW, Purpose.TAG, 0, query.place, 0, 0, 0)
-            : List(F_PLACE, query.purpose, 0, query.place, 0, 0, 0);
+            ? List(F_PLACE_BELOW, Purpose.TAG, 0, query.place, 0, 0, 0, 0)
+            : List(F_PLACE, query.purpose, 0, query.place, 0, 0, 0, 0);
         bool ok = query.purpose == Purpose.TAG || (query.purpose == Purpose.FOLDER && !query.below);
         return _placePage(r, p, l, lens, expected, continuation, limit, gasReserve, ok);
     }
@@ -372,8 +421,9 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
     ) external view returns (TopicPageInfo memory info, PlaceRow[] memory rows) {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_ABOUT, thing, lens, raw, sample));
-        Place memory p = Place(VIEW_ABOUT, Purpose.TAG, thing, raw, sample, new bytes32[](0), 0);
-        List memory l = List(F_ROLE_PLACES, Purpose.TAG, 0, thing, 0, 0, 0);
+        Place memory p =
+            Place(VIEW_ABOUT, Purpose.TAG, thing, false, raw, sample, new bytes32[](0), 0);
+        List memory l = List(F_ROLE_PLACES, Purpose.TAG, 0, thing, 0, 0, 0, 0);
         return _placePage(r, p, l, lens, expected, continuation, limit, gasReserve, true);
     }
 
@@ -437,7 +487,9 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         _finish(r, info, scan, cov, cursor);
     }
 
-    /// Reads windows of the list newest first until a stop; leaves `l.hi` at the first unexamined entry.
+    /// Reads windows of the list newest first until a stop; leaves `l.hi` at the first unexamined entry. Per
+    /// window: one slice, one `bindingCells`, and (when the lens applies) one `heads` round over the lens at every
+    /// entry's position and, below, at the same thing in the viewed place.
     function _scanPlace(
         Run memory r,
         Place memory p,
@@ -450,10 +502,22 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         Coverage cov
     ) private view returns (uint8, uint256 got, Coverage) {
         PlaceRow memory row; // reused by entries that produce no row
+        bool deny = !p.raw && lens.length != 0;
+        // the lens decides at each entry's own position; without one the facet is asked about nobody
+        bytes32[] memory pr = deny ? lens : new bytes32[](1);
         while (l.hi != 0) {
+            if (limit != 0 && got == limit) return (SCAN_LIMIT, got, cov);
+            if (got == rows.length || gasleft() < gasReserve) return (SCAN_GAS, got, cov);
             uint64 m = l.hi > WINDOW ? uint64(WINDOW) : l.hi;
+            if (limit != 0 && limit - got < m) m = uint64(limit - got);
             uint64[] memory e = _below(r, l, l.hi, m);
-            (bytes32[] memory positions, Coordinate[] memory cells) = _cells(r, e);
+            uint8[] memory au = new uint8[](m);
+            for (uint256 k; k < m; ++k) {
+                au[k] = uint8(pr.length - 1);
+            }
+            Lensed memory x = _lensRule(r, pr, e, au);
+            Head[] memory hs;
+            if (deny && p.below) hs = _viewedHeads(r, p, lens, x.cells);
             for (uint256 k = m; k != 0; --k) {
                 if (limit != 0 && got == limit) return (SCAN_LIMIT, got, cov);
                 if (got == rows.length || p.seenCount == p.seen.length || gasleft() < gasReserve) {
@@ -461,16 +525,23 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
                 }
                 --l.hi;
                 ++info.scanned;
-                bytes32 position = positions[k - 1];
-                Coordinate memory c = cells[k - 1];
+                bytes32 position = x.positions[k - 1];
+                Coordinate memory c = x.cells[k - 1];
                 _checkCell(p, c);
                 if (_seen(p, position)) {
                     ++info.repeatsSkipped;
                     continue;
                 }
+                if (deny && x.decided[k - 1] == 2) continue; // a lens author's no at the filed position
+                if (hs.length != 0) {
+                    // below: a lens author's no for the same thing at the viewed place hides it here too
+                    uint256 o = (k - 1) * lens.length;
+                    uint256 sel = _decide(hs, o, lens.length);
+                    if (sel != SELECTED_NONE && hs[o + sel].state == 2) continue;
+                }
                 Coverage rc;
                 bool shown;
-                (shown, rc) = _placeRow(r, p, lens, position, c, e[k - 1], row);
+                (shown, rc) = _placeRow(r, p, position, c, e[k - 1], row);
                 cov = _join(cov, rc);
                 if (shown) {
                     rows[got] = row;
@@ -483,11 +554,30 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         return (SCAN_EXHAUSTED, got, cov);
     }
 
-    /// An entry of the list is a statement at the list's own purpose and place (or thing, for `about`).
+    /// The lens heads at the viewed place's position `(TAG, place, thing)` of each entry of a below window.
+    function _viewedHeads(
+        Run memory r,
+        Place memory p,
+        bytes32[] calldata lens,
+        Coordinate[] memory cells
+    ) private view returns (Head[] memory) {
+        uint256 len = lens.length;
+        bytes32[] memory keys = new bytes32[](cells.length * len);
+        for (uint256 k; k < cells.length; ++k) {
+            bytes32 viewed = Keys.position(Purpose.TAG, p.place, cells[k].role);
+            for (uint256 a; a < len; ++a) {
+                keys[k * len + a] = Keys.binding(lens[a], viewed);
+            }
+        }
+        return _heads(r, keys);
+    }
+
+    /// An entry of the list is a statement at the list's own purpose and place (or thing, for `about`): exact at
+    /// the place, below under a proper descendant of it.
     function _checkCell(Place memory p, Coordinate memory c) private pure {
         bool bad = c.purpose != p.purpose;
         if (p.view_ == VIEW_ABOUT) bad = bad || c.role != p.place;
-        else if (p.purpose == Purpose.FOLDER) bad = bad || c.subject != p.place;
+        else bad = bad || (c.subject == p.place) == p.below;
         if (bad) revert E_TOPIC_INCONSISTENT(3);
     }
 
@@ -500,30 +590,20 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         return false;
     }
 
-    /// The row of one position: the author head, the yes rule (`everyone` only), the lens denial, the sample.
+    /// The row of one position: the author head (statements and yes), the yes rule (`everyone` only), the sample.
     function _placeRow(
         Run memory r,
         Place memory p,
-        bytes32[] calldata lens,
         bytes32 position,
         Coordinate memory c,
         uint64 entry,
         PlaceRow memory row
     ) private view returns (bool, Coverage cov) {
-        List memory a = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0);
+        List memory a = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0, 0);
         cov = _listHead(r, a);
         if (cov == Coverage.UNKNOWN) return (false, cov);
         if (a.count == 0) revert E_TOPIC_INCONSISTENT(3); // a listed position has a first statement
         if (p.view_ == VIEW_EVERYONE && !p.raw && a.live == 0) return (false, cov); // nobody says yes
-        if (!p.raw && lens.length != 0) {
-            if (_denied(r, lens, position)) return (false, cov);
-            if (p.view_ == VIEW_EVERYONE && c.subject != p.place) {
-                // below: a lens denial of the same thing at the viewed place hides it here too
-                if (_denied(r, lens, Keys.position(Purpose.TAG, p.place, c.role))) {
-                    return (false, cov);
-                }
-            }
-        }
         row.position = position;
         row.topic = c.subject;
         row.thing = c.role;
@@ -532,16 +612,6 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         row.yes = a.live;
         if (p.sample != 0) _sample(r, p, a, position, row);
         return (true, cov);
-    }
-
-    /// The lens rule at `position` decides a negative.
-    function _denied(Run memory r, bytes32[] calldata lens, bytes32 position)
-        private
-        view
-        returns (bool)
-    {
-        (Status st,,) = _headsAt(r, lens, position);
-        return st == Status.MASKED;
     }
 
     /// The newest `p.sample` authors (at most 64) of the position: who says >= 0, who says < 0.

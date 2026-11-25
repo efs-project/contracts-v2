@@ -244,22 +244,21 @@ contract TopicMineTest is TopicReadersBase {
     }
 
     function test_gas_reserve_stops_early_with_a_continuation() public {
-        for (uint256 i; i < 10; ++i) {
-            _tag(alice, cars[0], things[i]);
-        }
+        bytes32[] memory xs = _things(40);
+        _tagMany(alice, cars[0], xs);
         (TopicPageInfo memory info, MineRow[] memory rows) =
-            pager.mine{gas: 1_500_000}(_lens1(alice), cars[0], false, _unbound(), "", 0, 1_300_000);
+            pager.mine{gas: 2_000_000}(_lens1(alice), cars[0], false, _unbound(), "", 0, 1_500_000);
         _ok(info);
         assertEq(info.scanStatus, SCAN_GAS);
         assertGt(info.next.length, 0);
-        assertLt(rows.length, 10);
+        assertLt(rows.length, 40);
         assertEq(uint8(info.listingCoverage), uint8(Coverage.PARTIAL));
         uint256 got = rows.length;
         while (info.next.length != 0) {
             (info, rows) = _mine(_lens1(alice), cars[0], false, info.next, 0);
             got += rows.length;
         }
-        assertEq(got, 10, "the continuation finishes the listing");
+        assertEq(got, 40, "the continuation finishes the listing");
     }
 }
 
