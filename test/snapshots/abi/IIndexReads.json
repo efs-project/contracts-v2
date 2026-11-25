@@ -19,6 +19,7 @@
     "0xc922db2b": "postingStore()",
     "0x577bd336": "progress()",
     "0xd32b1e46": "provenFrom()",
+    "0xa77f90e1": "readsContract()",
     "0x82b564f2": "workModel()"
   },
   "events": {},
@@ -849,6 +850,24 @@
           "name": "",
           "type": "uint64",
           "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "readsContract",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "reads",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "codehash",
+          "type": "bytes32",
+          "internalType": "bytes32"
         }
       ],
       "stateMutability": "view"
