@@ -56,6 +56,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
     uint8 private constant T_FIRST_MASK = 6;
+    /// The store's UNCOUNTED tag (`IPostingStore.append`): an entry appended without raising `live`.
+    uint64 private constant UNCOUNTED = uint64(1) << 63;
 
     bytes32 private immutable F_BY_TYPE;
     bytes32 private immutable F_BY_AUTHOR;
@@ -377,6 +379,10 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 true,
                 admission
             );
+            // a head returns to BOUND: one more author says yes at the position
+            if (_authorsKept(e.purpose)) {
+                ps.retain(FamilyId.wrap(F_POSITION_AUTHORS), _pk(0, 20, 0, e.position), 1);
+            }
         } else {
             // MASK (from BOUND, MASKED or RELEASED) or RELEASE; clearing a clear bit changes no count
             bs.setBit(
@@ -386,6 +392,12 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 false,
                 admission
             );
+            // a head leaves BOUND (the kernel sets `oldTarget` only from a BOUND head, and a BIND's target is never
+            // zero): one fewer author says yes at the position; a mask or release of a masked or released head
+            // changes nothing
+            if (e.oldTarget != 0 && _authorsKept(e.purpose)) {
+                ps.release(FamilyId.wrap(F_POSITION_AUTHORS), _pk(0, 20, 0, e.position), 1);
+            }
         }
         if (e.kind == ActionKind.BIND && !sameTarget) {
             _add(b, F_BACKLINK, _pk(e.purpose, 5, 0, e.target), admission);
@@ -393,21 +405,31 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         _flush(b);
     }
 
+    /// Whether the purpose keeps the first-statement lists (TAG and FOLDER).
+    function _authorsKept(bytes32 purpose) private pure returns (bool) {
+        return purpose == Purpose.TAG || purpose == Purpose.FOLDER;
+    }
+
     /// The five first-statement lists (design §10.2 kinds 6, 7, 19, 20, 21), appended only at an author's FIRST
-    /// statement on a position (FIRST_BIND or FIRST_MASK, either sign). A binding's ordinal is allocated once and a
-    /// head never returns to UNSET, so no later re-bind, mask, release or restore of the author's appends to them:
-    /// "newest first" in each means most recently first-stated, and no later action of the author's moves or
-    /// duplicates their entry. Readers take the state and the number from the head.
-    ///   - `position-authors` (TAG, FOLDER): key = the position; entry = this admission ordinal. Its head, read
-    ///     before the append, says whether the position is fresh (no author has stated anything there).
-    ///   - `place` (TAG, FOLDER; fresh positions only): key = (purpose, subject); entry = this binding ordinal.
+    /// statement on a position (FIRST_BIND or FIRST_MASK). A binding's ordinal is allocated once and a head never
+    /// returns to UNSET, so no later re-bind, mask, release or restore of the author's appends to them, and no author
+    /// adds more than one entry per position to any of them. Readers take the state and the number from the head.
+    ///   - `position-authors` (TAG, FOLDER): key = the position; entry = this admission ordinal, for either sign.
+    ///     Its head, read before the append, says whether the position is fresh (no author has stated anything
+    ///     there). `count` = the authors who ever made a statement there; `live` = the authors whose head there is
+    ///     BOUND now: a first yes raises it, a first no is appended UNCOUNTED, and `_foldBind` lowers it when a BOUND
+    ///     head is masked or released and raises it on a restore (a counter, never an entry).
+    ///   - `place` (TAG, FOLDER): key = (purpose, subject); entry = this binding ordinal, when the position is fresh
+    ///     (either sign) or the statement is a first yes. In order of filing, so a position may appear more than once
+    ///     (readers remove duplicates by position); `count` = filings, `live` = distinct positions ever stated at the
+    ///     place (an "about" count: raised only by the fresh append, so it includes positions nobody says yes to now).
     ///   - `role-places` (TAG; fresh positions with a nonzero role): key = (TAG, role); entry = this binding
     ///     ordinal. The role of a tag is the thing tagged, so every statement of either sign is reachable from its
     ///     thing (`role-places` → position → `position-authors`), a lone negative included.
     ///   - `scope-below` (TAG, topic lists kept): key = (author, TAG, ancestor) for every PROPER ancestor of the
     ///     subject (the subject itself is the exact scope list, family 10); entry = this binding ordinal.
-    ///   - `place-below` (TAG, topic lists kept; fresh positions only): key = (TAG, ancestor) per proper ancestor;
-    ///     entry = this binding ordinal.
+    ///   - `place-below` (TAG, topic lists kept): key = (TAG, ancestor) per proper ancestor; entry = this binding
+    ///     ordinal, under the rule of `place`, with the same `count` and `live`.
     /// A publication has one principal, who makes at most one first statement per position, and every earlier effect
     /// of the publication is flushed before this one folds, so the head read sees every earlier statement.
     function _firstStatementLists(Effect calldata e, Appends memory b) private {
@@ -417,14 +439,15 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         PostingKey authors = _pk(0, 20, 0, e.position);
         (uint64 count,,,) = IPostingStore(POSTING).postingHead(authors);
         bool fresh = count == 0;
-        _add(b, F_POSITION_AUTHORS, authors, e.admission);
-        if (fresh) {
-            _add(b, F_PLACE, _pk(purpose, 6, 0, e.subject), e.bindingOrdinal);
-            if (tag && e.role != 0) {
-                _add(b, F_ROLE_PLACES, _pk(purpose, 21, 0, e.role), e.bindingOrdinal);
-            }
+        bool yes = e.transitionKind == T_FIRST_BIND;
+        _add(b, F_POSITION_AUTHORS, authors, yes ? e.admission : e.admission | UNCOUNTED);
+        // a filing: the position's first statement (counted: a new distinct position) or a later author's first yes
+        uint64 filing = fresh ? e.bindingOrdinal : e.bindingOrdinal | UNCOUNTED;
+        if (fresh || yes) _add(b, F_PLACE, _pk(purpose, 6, 0, e.subject), filing);
+        if (fresh && tag && e.role != 0) {
+            _add(b, F_ROLE_PLACES, _pk(purpose, 21, 0, e.role), e.bindingOrdinal);
         }
-        if (tag && TOPIC_T != 0) _walk(e, b, fresh);
+        if (tag && TOPIC_T != 0) _walk(e, b, fresh || yes ? filing : 0);
     }
 
     /// Walks the proper ancestors of a tag's subject: a `topic/1` record's parent is its body word 0, a `topic-word/1`
@@ -433,7 +456,9 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// Nothing checks that the subject was registered before this statement: the unit list holds the final hook that
     /// refuses any other first tag (`FilesFinalValidator` code 9, strictly before), which the constructor requires
     /// (`IndexProfiles.requireTopicUnit`); every record read is write-once, so a replay walks what the live fold did.
-    function _walk(Effect calldata e, Appends memory b, bool fresh) private {
+    /// `filing` is the `place-below` entry (the binding ordinal, tagged UNCOUNTED unless the position is fresh), or 0
+    /// when the statement files nothing there (a later author's first no).
+    function _walk(Effect calldata e, Appends memory b, uint64 filing) private {
         ILedgerHot hot = ILedgerHot(LEDGER);
         bytes32[] memory slots = new bytes32[](2);
         bytes32 cur = e.subject;
@@ -450,7 +475,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                     _pk(0, 19, 0, Keys.scopeBelow(e.principalId, Purpose.TAG, cur)),
                     e.bindingOrdinal
                 );
-                if (fresh) _add(b, F_PLACE_BELOW, _pk(Purpose.TAG, 7, 0, cur), e.bindingOrdinal);
+                if (filing != 0) _add(b, F_PLACE_BELOW, _pk(Purpose.TAG, 7, 0, cur), filing);
             }
             if (w[0] != TOPIC_T) return; // a root word, a home, or (unreachable) anything else
             cur = w[1];

@@ -128,6 +128,17 @@ contract TopicListsReplayTest is TopicListsBase {
         );
         _releaseAs(bob, Purpose.FOLDER, home, role);
         _say(address(this), _bind(Purpose.FOLDER, rootDir, role, things[8], 0));
+        // the yes-count of a FOLDER position: a restore from released, a mask of an asserted head, a lone hide of
+        // another author's entry and its release
+        _say(
+            bob, _bind(Purpose.FOLDER, home, role, things[6], _rev(bob, Purpose.FOLDER, home, role))
+        );
+        _say(
+            carol,
+            EfsFiles.unbind(Purpose.FOLDER, home, role, _rev(carol, Purpose.FOLDER, home, role))
+        );
+        _say(alice, EfsFiles.unbind(Purpose.FOLDER, rootDir, role, 0));
+        _releaseAs(alice, Purpose.FOLDER, rootDir, role);
         // same, broader and property statements (no new lists; their exact lists still compare)
         _say(alice, EfsTopics.same(a[0], b[0], 0));
         _say(bob, EfsTopics.broader(b[1], a[1], 0));
@@ -212,6 +223,30 @@ contract TopicListsReplayTest is TopicListsBase {
             PostingKey.wrap(Keys.positionAuthorsList(Keys.position(Purpose.TAG, deep, thing)))
         );
         assertEq(authorsAt, 3, "three authors at the shared position");
+        // both counters were exercised: a place with more filings than positions, a position whose yes-count is
+        // below its author count
+        (uint64 c, uint64 l,,) =
+            live.postingHead(PostingKey.wrap(Keys.placeList(Purpose.TAG, deep)));
+        assertGt(c, l, "a later first yes was filed at the place");
+        (c, l,,) = live.postingHead(PostingKey.wrap(Keys.placeBelowList(Purpose.TAG, topicIds[0])));
+        assertGt(c, l, "and below it");
+        (c, l,,) = live.postingHead(
+            PostingKey.wrap(Keys.positionAuthorsList(Keys.position(Purpose.TAG, deep, thing)))
+        );
+        assertEq(
+            abi.encode(c, l), abi.encode(uint64(3), uint64(2)), "alice and bob say yes, carol no"
+        );
+        bytes32 home = bytes32(uint256(uint160(alice)));
+        (c, l,,) = live.postingHead(
+            PostingKey.wrap(
+                Keys.positionAuthorsList(
+                    Keys.position(Purpose.FOLDER, home, keccak256("shared.txt"))
+                )
+            )
+        );
+        assertEq(
+            abi.encode(c, l), abi.encode(uint64(3), uint64(2)), "alice and bob say yes at the home"
+        );
         assertGt(nonEmpty, 60, "many non-empty lists compared");
         assertGt(entries, 100, "many entries compared");
     }

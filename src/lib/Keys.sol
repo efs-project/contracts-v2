@@ -266,13 +266,17 @@ library Keys {
     }
 
     /// Family 6 (`place`), keyed by (purpose, subject), the purpose in the key's first word as in family 5: one
-    /// entry per distinct position of the place, by anyone (design §10.2).
+    /// entry per filing, by anyone — the first statement at a fresh position (either sign) and every later author's
+    /// first yes — in order of filing, so a position may appear more than once (design §10.2). `count` = filings;
+    /// `live` = distinct positions ever stated at the place, an "about" count that includes positions nobody says
+    /// yes to now (not the number of rows an Everyone view returns).
     function placeList(bytes32 purpose, bytes32 subjectKey) internal pure returns (bytes32) {
         return posting(purpose, KIND_PLACE, 0, subjectKey);
     }
 
-    /// Family 7 (`place-below`), keyed by (purpose, ancestor): one entry per distinct position of every topic below
-    /// `ancestor`, by anyone (generation 1 writes it for TAG only).
+    /// Family 7 (`place-below`), keyed by (purpose, ancestor): one entry per filing (as family 6) at any topic below
+    /// `ancestor`, by anyone (generation 1 writes it for TAG only); `count` = filings, `live` = distinct positions
+    /// ever stated below it (the same "about" count as family 6).
     function placeBelowList(bytes32 purpose, bytes32 ancestor) internal pure returns (bytes32) {
         return posting(purpose, KIND_PLACE_BELOW, 0, ancestor);
     }
@@ -287,7 +291,9 @@ library Keys {
         return posting(bytes32(0), KIND_SCOPE_BELOW, 0, scopeBelow(principalId, purpose, ancestor));
     }
 
-    /// Family 20 (`position-authors`), keyed by the position id: one entry per author's first statement there.
+    /// Family 20 (`position-authors`), keyed by the position id: one entry per author's first statement there
+    /// (either sign). `count` = the authors who ever stated there; `live` = the authors whose head there is BOUND now
+    /// (a counter the index moves on a first yes, a mask or release of a BOUND head and a restore; design §10.2).
     function positionAuthorsList(bytes32 positionKey) internal pure returns (bytes32) {
         return posting(bytes32(0), KIND_POSITION_AUTHORS, 0, positionKey);
     }
