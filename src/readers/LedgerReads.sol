@@ -49,15 +49,43 @@ library LedgerRows {
 
     // ---- layout, raw loads and the basis ------------------------------------------------------------------
 
-    /// The facet-layout rule (design §5.7): the facet decodes only the layout it was generated for.
-    function layoutOk(address ledger) internal view returns (bool) {
-        return ILedgerHot(ledger).layoutId() == Layout.LAYOUT_ID;
+    /// The facet-layout gate (design §5.7), three-way so that absence is never a fault: UNKNOWN when `ledger`
+    /// has no code at this block (no ledger there yet: a read below its genesis); UNSUPPORTED when it has code
+    /// that is not this layout (`layoutId()` reverts, replies short or names another layout); PRESENT when the
+    /// facet decodes it. `hot` is true when `layoutId()` answered (every ledger layout serves the Etched getters).
+    function probe(address ledger) internal view returns (Status st, bool hot) {
+        if (ledger.code.length == 0) return (Status.UNKNOWN, hot); // `hot` is still false
+        bytes32 have;
+        (hot, have) = word(ledger, ILedgerHot.layoutId.selector);
+        st = hot && have == Layout.LAYOUT_ID ? Status.PRESENT : Status.UNSUPPORTED;
     }
 
-    /// The facet-layout rule for views whose return carries no `Status`: refuse instead of guessing.
+    /// The gate alone (see `probe`).
+    function gate(address ledger) internal view returns (Status st) {
+        (st,) = probe(ledger);
+    }
+
+    /// The gate and the basis a view echoes with it: the basis is read whenever `layoutId()` answered (under
+    /// any layout, as before), and stays zero when there is no ledger or the code is not one.
+    function gateBasis(address ledger) internal view returns (Status st, BasisCommit memory b) {
+        bool hot;
+        (st, hot) = probe(ledger);
+        if (hot) b = basis(ledger);
+    }
+
+    /// The facet-layout rule for views whose return carries no `Status`: refuse instead of guessing, with
+    /// `E_LAYOUT(expected, have)`; `have` is 0 when there is no code or `layoutId()` does not answer a word.
     function requireLayout(address ledger) internal view {
-        bytes32 have = ILedgerHot(ledger).layoutId();
+        (, bytes32 have) = word(ledger, ILedgerHot.layoutId.selector);
         if (have != Layout.LAYOUT_ID) revert E_LAYOUT(Layout.LAYOUT_ID, have);
+    }
+
+    /// `basis` for the status-less `basis()` view: served under every layout, `E_LAYOUT(expected, 0)` when
+    /// `layoutId()` does not answer (no code, or code that is not a ledger).
+    function requireHot(address ledger) internal view returns (BasisCommit memory) {
+        (bool hot,) = word(ledger, ILedgerHot.layoutId.selector);
+        if (!hot) revert E_LAYOUT(Layout.LAYOUT_ID, bytes32(0));
+        return basis(ledger);
     }
 
     function load(address ledger, uint256 slot) internal view returns (bytes32) {
@@ -331,10 +359,12 @@ library LedgerRows {
 /// @notice Immutable and stateless; every function takes `address ledger` and reads it through the Etched
 ///         `ILedgerHot` getters and `extsload`/`extsloadBatch` with keys and unpackers from `Layout`. Rows come
 ///         with a `Status` (UNSET is never returned): PRESENT / ABSENT_PROVEN for rows, MASKED / RELEASED for
-///         heads in those states, LIMIT_EXCEEDED past `limits.maxReadCount` / `limits.maxBody`, UNSUPPORTED on a
-///         layout this facet was not generated for (the facet-layout rule) or a reserved row value it cannot
-///         interpret. Views whose return carries no `Status` (`describe`, `admissions`, `principalsOf`) revert
-///         `E_LAYOUT` instead; `basis` and `publicationAt` use only Etched getters and serve every layout.
+///         heads in those states, LIMIT_EXCEEDED past `limits.maxReadCount` / `limits.maxBody`, UNKNOWN with
+///         every value zero when there is no code at `ledger` (no ledger at this block), UNSUPPORTED on code that
+///         is not the layout this facet was generated for (the facet-layout rule, `LedgerRows.probe`) or a
+///         reserved row value it cannot interpret. Views whose return carries no `Status` (`describe`,
+///         `admissions`, `principalsOf`) revert `E_LAYOUT` instead (`have` 0 without a ledger); `basis` and
+///         `publicationAt` use only Etched getters and serve every layout.
 contract LedgerReads is ILedgerReads {
     uint256 private constant REALM = LedgerRows.REALM;
 
@@ -427,9 +457,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, Revision memory r)
     {
-        if (!LedgerRows.layoutOk(ledger)) {
-            return (Status.UNSUPPORTED, r);
-        }
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, r);
         bytes32[] memory s = new bytes32[](26);
         uint256 row = Layout.revisionsRowsSlot(n);
         for (uint256 i; i < 25; ++i) {
@@ -446,7 +475,7 @@ contract LedgerReads is ILedgerReads {
 
     /// @inheritdoc ILedgerReads
     function basis(address ledger) external view returns (BasisCommit memory) {
-        return LedgerRows.basis(ledger);
+        return LedgerRows.requireHot(ledger);
     }
 
     /// @inheritdoc ILedgerReads
@@ -457,8 +486,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status st, RecordHeader memory h, bytes memory body, BasisCommit memory b)
     {
-        b = LedgerRows.basis(ledger);
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, h, body, b);
+        (st, b) = LedgerRows.gateBasis(ledger);
+        if (st != Status.PRESENT) return (st, h, body, b);
         uint32 maxBody;
         (st, h,, maxBody) = _header(ledger, id);
         if (st != Status.PRESENT) return (st, h, body, b);
@@ -473,7 +502,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status st, RecordHeader memory h)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, h);
+        st = LedgerRows.gate(ledger);
+        if (st != Status.PRESENT) return (st, h);
         (st, h,,) = _header(ledger, id);
     }
 
@@ -485,7 +515,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status st, bytes32[] memory words)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, words);
+        st = LedgerRows.gate(ledger);
+        if (st != Status.PRESENT) return (st, words);
         RecordHeader memory h;
         uint16 maxReadCount;
         (st, h, maxReadCount,) = _header(ledger, id);
@@ -505,7 +536,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status st, bytes memory out)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, out);
+        st = LedgerRows.gate(ledger);
+        if (st != Status.PRESENT) return (st, out);
         RecordHeader memory h;
         uint32 maxBody;
         (st, h,, maxBody) = _header(ledger, id);
@@ -576,7 +608,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, uint64 createdAt, bytes32 creatorPrincipal)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, 0, 0);
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, 0, 0);
         (createdAt,) =
             Layout.unpackSubjectCell(LedgerRows.load(ledger, Layout.subjectsCellsSlot(subjectId)));
         if (createdAt == 0) return (Status.ABSENT_PROVEN, 0, 0);
@@ -593,9 +626,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, Head memory h)
     {
-        if (!LedgerRows.layoutOk(ledger)) {
-            return (Status.UNSUPPORTED, h);
-        }
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, h);
         bytes32[] memory w = ILedgerHot(ledger)
             .extsloadBatch(LedgerRows.run(Layout.bindingsHeadsSlot(bindingKey), 2));
         h = LedgerRows.head(w[0], w[1]);
@@ -608,7 +640,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, bytes32 purpose, bytes32 subject, bytes32 role)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, 0, 0, 0);
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, 0, 0, 0);
         bytes32[] memory w = ILedgerHot(ledger)
             .extsloadBatch(LedgerRows.run(Layout.bindingsPositionsSlot(position), 3));
         if (w[0] == 0) return (Status.ABSENT_PROVEN, 0, 0, 0); // purpose is nonzero in every written cell
@@ -621,7 +654,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, bytes32 position)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, 0);
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, 0);
         position = LedgerRows.load(ledger, Layout.bindingsBindingPositionSlot(bindingOrdinal));
         return (position == 0 ? Status.ABSENT_PROVEN : Status.PRESENT, position);
     }
@@ -632,7 +666,8 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, AdmissionRow memory r)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, r);
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, r);
         bytes32[] memory w =
             ILedgerHot(ledger).extsloadBatch(LedgerRows.run(Layout.admissionsRowsSlot(ordinal), 2));
         r = LedgerRows.admission(w[0], w[1]);
@@ -674,19 +709,21 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, Evidence memory e)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, e);
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, e);
         bool present;
         (present, e) = LedgerRows.evidence(ledger, publication);
         return (present ? Status.PRESENT : Status.ABSENT_PROVEN, e);
     }
 
     /// @inheritdoc ILedgerReads
-    /// @dev The Etched getter's answer with a status; served under every layout.
+    /// @dev The Etched getter's answer with a status; served under every layout (UNKNOWN without a ledger).
     function publicationAt(address ledger, bytes32 principalId, uint64 nonce)
         external
         view
         returns (Status, uint64 publication, bytes32 intentDigest)
     {
+        if (ledger.code.length == 0) return (Status.UNKNOWN, 0, 0);
         (publication, intentDigest) = ILedgerHot(ledger).publicationAt(principalId, nonce);
         return (publication == 0 ? Status.ABSENT_PROVEN : Status.PRESENT, publication, intentDigest);
     }

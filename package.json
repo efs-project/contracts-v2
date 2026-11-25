@@ -36,6 +36,7 @@
     "fixture:snapshot": "node tools/artifacts-snapshot.mjs",
     "gas:report": "node tools/gas-report.mjs",
     "gas:model": "node tools/gas-model.mjs",
+    "gas:model:check": "node tools/gas-model.mjs --check 1 --skip-amsterdam 1",
     "test:tools": "node --test \"tools/test/*.test.mjs\""
   },
   "devDependencies": {

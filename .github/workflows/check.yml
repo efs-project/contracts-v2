@@ -38,5 +38,7 @@ jobs:
           FOUNDRY_PROFILE: ci
       # The committed snapshot (release/, artifacts/, deploy/plan.json) must be the one this commit's sources build.
       - run: pnpm release:check
+      # The planning model (gas/model.json) must be what this commit's prague bytes measure (amsterdam stays local).
+      - run: pnpm gas:model:check
       # Fixture tooling: named instances side by side, each deployed from out/ and verified against the chain.
       - run: pnpm test:tools
