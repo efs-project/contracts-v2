@@ -362,7 +362,7 @@ function capabilitiesOf(plan, signer, chain) {
     externalLocations: plan.seed.files.some((f) => f.externalRecordId),
     keysView: !!plan.addresses.keysView,
     web3Gateway: !!plan.addresses.web3Gateway,
-    readers: [plan.readers.lens.kindLabel, plan.readers.filesPage.kindLabel, plan.readers.topicPage.kindLabel, plan.readers.topicLookup.kindLabel],
+    readers: [plan.readers.lens.kindLabel, plan.readers.filesPage.kindLabel, plan.readers.topicMine.kindLabel, plan.readers.topicEveryone.kindLabel, plan.readers.topicLookup.kindLabel],
     signerCapable: signer.signerCapable,
     unlockedAccounts: signer.accounts,
     hardfork: chain.hardfork,
@@ -377,10 +377,10 @@ function upResult(lease, plan, { home, releaseWritten }) {
     rpcUrl: lease.url, host: lease.host, port: lease.port, chainId: lease.chainId, realmSalt: lease.realmSalt, realmId: plan.realm.realmId,
     pid: lease.pid, stateDir: lease.stateDir, deployment: lease.deployment, expected: lease.expected, journal: lease.journal, log: lease.log,
     ledger: a.ledgerProxy, registry: a.registryProxy, controller: a.controller,
-    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, lensReader: a.lensReader, filesPageReader: a.filesPageReader, topicPageReader: a.topicPageReader, topicLookupReader: a.topicLookupReader, keysView: a.keysView, web3Gateway: a.web3Gateway },
+    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, lensReader: a.lensReader, filesPageReader: a.filesPageReader, topicMineReader: a.topicMineReader, topicEveryoneReader: a.topicEveryoneReader, topicLookupReader: a.topicLookupReader, keysView: a.keysView, web3Gateway: a.web3Gateway },
     keysView: a.keysView,
     web3Gateway: a.web3Gateway,
-    web3Url: `${plan.gateway.urlBase}${plan.seed.principalId}/`,
+    web3Url: `${plan.gateway.urlBase}~efs/o/${plan.gateway.rootDirectory}/`,
     layoutId: plan.layoutId, root: plan.seed.root, seed: seedIds(plan), typeIds: Object.fromEntries(plan.profile.map((p) => [p.type, p.typeId])),
     signerCapable: lease.signerCapable, capabilities: lease.capabilities,
     ttl: lease.ttl, startedAt: lease.startedAt, expiresAt: lease.expiresAt,
@@ -430,7 +430,7 @@ async function deploy({ plan, rpc, pub, wallet, log }) {
     } else if (step.id === "G20") {
       if ((await read(pub, ledger, "LedgerCore", "revision")) === 0) await send(step, step.to, step.data);
       assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.activation.expectedExecutionSet, "G20 executionSet");
-    } else if (["R3", "R4", "R8", "R9"].includes(step.id)) {
+    } else if (["R3", "R4", "R9", "R10", "R11"].includes(step.id)) {
       const [l, kind, reader] = step.args;
       const listed = await read(pub, step.to, "ReaderDirectory", "readers", [l, kind, 0, 16]);
       if (!listed[0].some((x) => x.toLowerCase() === reader.toLowerCase())) await send(step, step.to, step.data);
@@ -557,11 +557,13 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
       ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, keysView: a.keysView,
       lensReader: { address: a.lensReader, runtimeCodehash: plan.readers.lens.runtimeCodehash, kind: plan.readers.lens.kind, kindLabel: plan.readers.lens.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R1?.txHash ?? null },
       filesPageReader: { address: a.filesPageReader, runtimeCodehash: plan.readers.filesPage.runtimeCodehash, kind: plan.readers.filesPage.kind, kindLabel: plan.readers.filesPage.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, nameType: typeIds["files-name/2"], rootType: typeIds["files-root/1"], childType: typeIds["files-child/1"], txHash: tx.R2?.txHash ?? null },
-      topicPageReader: { address: a.topicPageReader, runtimeCodehash: plan.readers.topicPage.runtimeCodehash, kind: plan.readers.topicPage.kind, kindLabel: plan.readers.topicPage.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R6?.txHash ?? null },
-      topicLookupReader: { address: a.topicLookupReader, runtimeCodehash: plan.readers.topicLookup.runtimeCodehash, kind: plan.readers.topicLookup.kind, kindLabel: plan.readers.topicLookup.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, topicType: typeIds["topic/1"], wordType: typeIds["topic-word/1"], txHash: tx.R7?.txHash ?? null },
+      topicMineReader: { address: a.topicMineReader, runtimeCodehash: plan.readers.topicMine.runtimeCodehash, kind: plan.readers.topicMine.kind, kindLabel: plan.readers.topicMine.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R6?.txHash ?? null },
+      topicEveryoneReader: { address: a.topicEveryoneReader, runtimeCodehash: plan.readers.topicEveryone.runtimeCodehash, kind: plan.readers.topicEveryone.kind, kindLabel: plan.readers.topicEveryone.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R7?.txHash ?? null },
+      topicLookupReader: { address: a.topicLookupReader, runtimeCodehash: plan.readers.topicLookup.runtimeCodehash, kind: plan.readers.topicLookup.kind, kindLabel: plan.readers.topicLookup.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, topicType: typeIds["topic/1"], wordType: typeIds["topic-word/1"], txHash: tx.R8?.txHash ?? null },
       listed: await listedReaders(pub, plan),
-      // ERC-5219 over web3:// (docs/LARGE-FILES.md): `${urlBase}<principal>/<name>/…[?lens=<p>,<p>][&offset=<n>]`
-      web3Gateway: { ...plan.gateway, ledger: a.ledgerProxy, reads: a.ledgerReads, views: a.ledgerViews, layoutId: plan.layoutId, seedUrl: `${plan.gateway.urlBase}${plan.seed.principalId}/`, txHash: tx.R5?.txHash ?? null },
+      // ERC-5219 over web3:// (docs/LARGE-FILES.md): `${urlBase}0x<address>/<name>/…` (a home) or
+      // `${urlBase}~efs/o/<folder id>/<name>/…` (a folder by id; the seed's root: its creator is the default lens)
+      web3Gateway: { ...plan.gateway, ledger: a.ledgerProxy, reads: a.ledgerReads, views: a.ledgerViews, layoutId: plan.layoutId, seedUrl: `${plan.gateway.urlBase}~efs/o/${plan.gateway.rootDirectory}/`, txHash: tx.R5?.txHash ?? null },
     },
     seed: { ...seedIds(plan), transactions: plan.steps.filter((s) => s.kind === "EXECUTE").map((s) => ({ id: s.id, label: s.label, txHash: s.txHash ?? tx[s.id]?.txHash ?? null, publication: s.publication ?? tx[s.id]?.publication ?? null, actions: s.actions, bodies: s.bodies })) },
     root: plan.seed.root,
@@ -579,7 +581,7 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
 async function listedReaders(pub, plan) {
   const { read } = bind(plan);
   const out = [];
-  for (const r of [plan.readers.lens, plan.readers.filesPage, plan.readers.topicPage, plan.readers.topicLookup]) {
+  for (const r of [plan.readers.lens, plan.readers.filesPage, plan.readers.topicMine, plan.readers.topicEveryone, plan.readers.topicLookup]) {
     const [readers, codehashes, layoutIds, physical] = await read(pub, plan.addresses.readerDirectory, "ReaderDirectory", "readers", [plan.addresses.ledgerProxy, r.kind, 0, 16]);
     readers.forEach((x, i) => out.push({ kind: r.kind, kindLabel: r.kindLabel, ordinal: i, reader: x, codehash: codehashes[i], layoutId: layoutIds[i], physicalProfile: physical[i] }));
   }
@@ -906,13 +908,13 @@ export async function verify(o = {}) {
   for (const [fn, value] of [["LEDGER", a.ledgerProxy], ["VIEWS", a.ledgerViews], ["READS", a.ledgerReads], ["LAYOUT", plan.layoutId], ["NAME_TYPE", dep.typeIds["files-name/2"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]]]) {
     eq(`readers page.${fn}`, await read(pub, pageR, "FilesPageReader", fn), value);
   }
-  for (const [r, name, extra] of [[a.topicPageReader, "TopicPageReader", []], [a.topicLookupReader, "TopicLookupReader", [["TOPIC_TYPE", dep.typeIds["topic/1"]], ["WORD_TYPE", dep.typeIds["topic-word/1"]]]]]) {
+  for (const [r, name, extra] of [[a.topicMineReader, "TopicMineReader", []], [a.topicEveryoneReader, "TopicEveryoneReader", []], [a.topicLookupReader, "TopicLookupReader", [["TOPIC_TYPE", dep.typeIds["topic/1"]], ["WORD_TYPE", dep.typeIds["topic-word/1"]]]]]) {
     for (const [fn, value] of [["LEDGER", a.ledgerProxy], ["VIEWS", a.ledgerViews], ["READS", a.ledgerReads], ["LAYOUT", plan.layoutId], ...extra]) {
       eq(`readers ${name}.${fn}`, await read(pub, r, name, fn), value);
     }
   }
   const physical = keccak256(toHex("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"));
-  for (const r of [plan.readers.lens, plan.readers.filesPage, plan.readers.topicPage, plan.readers.topicLookup]) {
+  for (const r of [plan.readers.lens, plan.readers.filesPage, plan.readers.topicMine, plan.readers.topicEveryone, plan.readers.topicLookup]) {
     const [readers, codehashes, layoutIds, profiles] = await read(pub, a.readerDirectory, "ReaderDirectory", "readers", [a.ledgerProxy, r.kind, 0, 16]);
     eq(`readers directory ${r.kindLabel}`, [readers, codehashes, layoutIds, profiles], [[r.address], [r.runtimeCodehash], [plan.layoutId], [physical]]);
     eq(`readers deployment ${r.kindLabel}`, dep.readers.listed.find((x) => x.kind === r.kind)?.reader, r.address);
@@ -944,11 +946,12 @@ export async function verify(o = {}) {
     return { status, body, headers: Object.fromEntries(headers.map((h) => [h.key.toLowerCase(), h.value])) };
   };
   const [gwReadme, gwBig, gwRemote] = exp.files;
-  const base = `/${exp.root.principalId}/docs`;
+  // the seed's root by its folder id; its default lens is its creator, the fixture principal
+  const base = `/~efs/o/${exp.root.directoryRecordId}/docs`;
   const one = await web3Get(`${base}/${gwReadme.name}`);
   // readme.txt is inline (no descriptor, no media type): Content-Type from the extension, no nosniff
   eq("gateway readme", [one.status, sha256(one.body), size(one.body), one.headers["content-type"], one.headers["x-efs-record"], one.headers["x-content-type-options"] ?? null], [200, gwReadme.sha256, gwReadme.length, "text/plain; charset=utf-8", gwReadme.headRecordId, null]);
-  eq("gateway readme by account", (await web3Get(`/${dep.actors.fixturePrincipal}/docs/${gwReadme.name}`)).body, one.body);
+  eq("gateway readme by lens", (await web3Get(`${base}/${gwReadme.name}?lens=${dep.actors.fixturePrincipal}`)).body, one.body);
   const parts = [];
   for (let url = `${base}/${gwBig.name}`; url; ) {
     const r = await web3Get(url);
@@ -963,7 +966,12 @@ export async function verify(o = {}) {
   eq("gateway remote", [moved.status, moved.headers.location, moved.headers["x-efs-sha256"], moved.headers["x-efs-media-type"] ?? null], [307, gwRemote.locator, gwRemote.sha256, gwRemote.media]);
   const listed = await web3Get(base);
   eq("gateway listing", [listed.status, listed.headers["x-efs-listing"], JSON.parse(hexToString(listed.body))], [200, "complete", { entries: exp.files.map((f) => ({ name: f.name, kind: "file" })), complete: true }]);
-  eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get("/not-a-principal/docs")).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 400, 416]);
+  eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 416]);
+  // the first segment decides the kind: a plain word is a topic (not served, so `docs` is never a folder there),
+  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing)
+  eq("gateway forms", [(await web3Get(`/docs/${gwReadme.name}`)).status, (await web3Get(`/~home/${dep.actors.fixturePrincipal}/docs`)).status, (await web3Get(`/${exp.root.principalId}/docs`)).status, (await web3Get(`/~efs/o/${exp.file.rootRecordId}/`)).status], [501, 400, 400, 404]);
+  const homeDir = await web3Get(`/${dep.actors.fixturePrincipal}/`);
+  eq("gateway home", [homeDir.status, homeDir.headers["x-efs-home"], homeDir.headers["x-efs-listing"]], [200, dep.actors.fixturePrincipal.toLowerCase(), "complete"]);
 
   // 10. cold pin (design §12.3): what an SDK with only release.json + efs-deployment.json does on first contact
   rpc.reset();

@@ -109,7 +109,7 @@ export const HOT_ABI_ID_STRING = "efs/ledger-hot/2";
  *  committed test/snapshots/abi/ILedgerHot.json; `pnpm abi:check` fails when this pin differs from the snapshot. */
 export const HOT_ABI_ID = "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856";
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
-export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1"), topicPage: h("efs/reader/topic-page/1"), topicLookup: h("efs/reader/topic-lookup/1") };
+export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1"), topicMine: h("efs/reader/topic-mine/1"), topicEveryone: h("efs/reader/topic-everyone/1"), topicLookup: h("efs/reader/topic-lookup/1") };
 /** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values. */
 export const LIMITS = {
   maxActions: 64, maxBody: 8192, maxRefs: 8, maxReadSetPrincipals: 64, maxReadSetPositions: 4, maxWitness: 4096,
@@ -214,7 +214,7 @@ export const UNITS = {
   FilesRootRule: "FilesRootRule", FilesChildRule: "FilesChildRule", FilesDirectoryRule: "FilesDirectoryRule", FilesNameRule: "FilesNameRule",
   FilesBytesRule: "FilesBytesRule", FilesContentRule: "FilesContentRule", FilesExternalContentRule: "FilesExternalContentRule",
   DirectoryAliasRule: "DirectoryAliasRule", RealmNoticeRule: "RealmNoticeRule", RefuseAllPolicy: "RefuseAllPolicy",
-  TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin", LensReader: "LensReader", FilesPageReader: "FilesPageReader", TopicPageReader: "TopicPageReader", TopicLookupReader: "TopicLookupReader",
+  TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin", LensReader: "LensReader", FilesPageReader: "FilesPageReader", TopicMineReader: "TopicMineReader", TopicEveryoneReader: "TopicEveryoneReader", TopicLookupReader: "TopicLookupReader",
   FilesSpanRule: "FilesSpanRule", KeysView: "KeysView", EfsWeb3Gateway: "EfsWeb3Gateway",
   TopicWordRule: "TopicWordRule", TopicRule: "TopicRule", TextRule: "TextRule",
 };
@@ -612,11 +612,14 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     LEDGER: ledgerProxy, READS: reads.address, VIEWS: views.address, PAGER: page.address, LAYOUT: layoutId, ROOT_DIRECTORY: rootDirectory,
     DIRECTORY_TYPE: ids[T.DIRECTORY], NAME_TYPE: ids[T.NAME], ROOT_TYPE: ids[T.ROOT], CHILD_TYPE: ids[T.CHILD], CONTENT_TYPE: ids[T.CONTENT], EXTERNAL_TYPE: ids[T.EXTERNAL], BYTES_TYPE: ids[T.BYTES], SPAN_TYPE: ids[T.SPAN],
   });
-  // R6–R9: the two topic readers (docs/TAG-DESIGN.md §6) and their ReaderDirectory listings
-  const topicPage = add("R6", "TopicPageReader", [ledgerProxy, views.address, reads.address], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId });
-  const topicLookup = add("R7", "TopicLookupReader", [ledgerProxy, views.address, reads.address, ids[T.TOPIC], ids[T.TOPIC_WORD]], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId, TOPIC_TYPE: ids[T.TOPIC], WORD_TYPE: ids[T.TOPIC_WORD] });
-  listing("R8", READER_KINDS.topicPage, topicPage.address, "list TopicPageReader under efs/reader/topic-page/1");
-  listing("R9", READER_KINDS.topicLookup, topicLookup.address, "list TopicLookupReader under efs/reader/topic-lookup/1");
+  // R6–R11: the three topic readers (docs/TAG-DESIGN.md §6; the lens view, the public views, the lookups) and their
+  // ReaderDirectory listings
+  const topicMine = add("R6", "TopicMineReader", [ledgerProxy, views.address, reads.address], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId });
+  const topicEveryone = add("R7", "TopicEveryoneReader", [ledgerProxy, views.address, reads.address], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId });
+  const topicLookup = add("R8", "TopicLookupReader", [ledgerProxy, views.address, reads.address, ids[T.TOPIC], ids[T.TOPIC_WORD]], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId, TOPIC_TYPE: ids[T.TOPIC], WORD_TYPE: ids[T.TOPIC_WORD] });
+  listing("R9", READER_KINDS.topicMine, topicMine.address, "list TopicMineReader under efs/reader/topic-mine/1");
+  listing("R10", READER_KINDS.topicEveryone, topicEveryone.address, "list TopicEveryoneReader under efs/reader/topic-everyone/1");
+  listing("R11", READER_KINDS.topicLookup, topicLookup.address, "list TopicLookupReader under efs/reader/topic-lookup/1");
   steps.push(...seed.steps.map((s) => ({ id: s.id, kind: "EXECUTE", contract: "LedgerCore", to: ledgerProxy, from: owner, label: s.label, actions: jsonable(s.actions), bodies: s.bodies, marker: s.marker, postCheck: s.postCheck })));
 
   return {
@@ -624,8 +627,8 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     chainId, realmSalt, owner, fixturePrincipal: owner, declarationKey: owner, factory: FACTORY.address,
     hotAbiId: HOT_ABI_ID, layoutId, executionProfileId, limits: LIMITS, workModel: WORK_MODEL,
     genesis: { address: G, nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } },
-    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, indexReads: indexReads.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, topicPageReader: topicPage.address, topicLookupReader: topicLookup.address, keysView: keysView.address, web3Gateway: gateway.address },
-    readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs/reader/files-page/1", runtimeCodehash: page.runtimeCodehash }, topicPage: { address: topicPage.address, kind: READER_KINDS.topicPage, kindLabel: "efs/reader/topic-page/1", runtimeCodehash: topicPage.runtimeCodehash }, topicLookup: { address: topicLookup.address, kind: READER_KINDS.topicLookup, kindLabel: "efs/reader/topic-lookup/1", runtimeCodehash: topicLookup.runtimeCodehash } },
+    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, indexReads: indexReads.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, topicMineReader: topicMine.address, topicEveryoneReader: topicEveryone.address, topicLookupReader: topicLookup.address, keysView: keysView.address, web3Gateway: gateway.address },
+    readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs/reader/files-page/1", runtimeCodehash: page.runtimeCodehash }, topicMine: { address: topicMine.address, kind: READER_KINDS.topicMine, kindLabel: "efs/reader/topic-mine/1", runtimeCodehash: topicMine.runtimeCodehash }, topicEveryone: { address: topicEveryone.address, kind: READER_KINDS.topicEveryone, kindLabel: "efs/reader/topic-everyone/1", runtimeCodehash: topicEveryone.runtimeCodehash }, topicLookup: { address: topicLookup.address, kind: READER_KINDS.topicLookup, kindLabel: "efs/reader/topic-lookup/1", runtimeCodehash: topicLookup.runtimeCodehash } },
     gateway: { address: gateway.address, runtimeCodehash: gateway.runtimeCodehash, resolveMode: "5219", rootDirectory, pager: page.address, urlBase: `web3://${gateway.address}:${chainId}/` },
     hotAbiIdString: HOT_ABI_ID_STRING,
     realm, activation: set, index: { address: index.address, runtimeCodehash: index.runtimeCodehash, reads: { address: indexReads.address, runtimeCodehash: indexReads.runtimeCodehash }, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
