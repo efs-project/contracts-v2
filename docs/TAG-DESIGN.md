@@ -174,11 +174,13 @@ or duplicate their entry (tested, including remove-and-add-back).
   authors who say yes now (a counter moved by masks, releases and restores; no entry is ever added after an
   author's first statement). A first "not this" must name something that exists (validator code 15 for TAG; the
   name and parent laws for FOLDER).
-- **Two levels for all authors.** One list of a place's distinct items, and one list per item of who said it. A
-  lookup of one name or item reads one short list whatever the size of the place. One photo tagged by a hundred
-  people appears once. A place's count is "distinct items" and an item's count is "how many people said this", each
-  one read. Buckets by name hash were considered and rejected: a spammer picks names that fall in the victim's
-  bucket, so a targeted attack is not bounded.
+- **Two levels for all authors.** One list of a place's filings, and one list per item of who said it. A lookup of
+  one name or item reads one short list whatever the size of the place. As built (step 3c), a place's list holds
+  an item once for its first statement and once more for each later author's first yes, so a photo tagged by a
+  hundred people appears up to a hundred times and a reader removes the repeats. The list's head gives filings and
+  an "about" count of distinct items; an item's head gives how many people ever made a statement about it and
+  exactly how many say yes now. Each is one read. Buckets by name hash were considered and rejected: a spammer
+  picks names that fall in the victim's bucket, so a targeted attack is not bounded.
 - **Every statement is reachable from its target, whatever its sign.** A lone "not nsfw" carries no target, so the
   existing "what points at this" list never shows it. The last list in the table fixes that for every kind of
   target. Hiding still uses only lens authors' denials, read directly.
@@ -289,13 +291,22 @@ shipped reader to do; the proper version goes through the read facets.
   next page; the client removes it across pages.
 - **Denials.** The spike hides a row when a lens author is negative at the position the entry was filed under. The
   spec also hides it when a lens author is negative at the place being viewed; the proper reader adds that check.
-- **A public row never depends on finding a positive.** In Everyone and Raw a row exists because a statement
-  exists. It shows the stances found among the authors read for that page (for example "3 say yes, 2 say no") and
-  says so when the scan did not cover every author. Only a lens author's negative hides a row. A stranger's
-  statements of either sign never remove one, so posting negatives on (topic, thing) before the first real tag
-  hides nothing. The spike's reader already lists a position whatever its authors' signs; the proper reader adds
-  the tally and the "scan incomplete" mark, with a test for the pre-emptive-negatives case.
-- **Counts** are list lengths. They count every statement ever made, including removed and negative ones.
+- **Which rows a public view shows** (corrected 2026-11-25; an earlier version of this bullet was wrong). Raw shows
+  every row. Everyone shows a row only when its item's yes-count is above zero, that is, when somebody currently
+  says yes; the count is exact and is one read, so no scan of authors decides it and a row is never dropped because
+  a scan stopped early. Only a lens author's negative hides a row that somebody affirms: a negative at the place the
+  entry was filed under, or at the place being viewed for the same thing. A stranger's negative never hides one,
+  and posting negatives before the first real tag neither hides the item nor keeps it out of "new", because every
+  author's first yes is its own entry.
+- **Reading a roll-up.** One thing can be filed at two child topics. A reader checks the yes-count before treating a
+  thing as seen: if the newer filing has no yes and the older one has, the thing still shows through the older.
+  Repeats are removed by thing within a page; the SDK removes them across pages.
+- **A short page is not the end.** With repeats and unaffirmed rows skipped, a page can return fewer rows than asked
+  for, or none, while more remain. Every paged read says whether the list is finished and where to resume, and
+  bounds its work by entries read.
+- **Counts.** A place's list length is its filings, and it also keeps an "about" count of distinct items ever
+  stated, including ones nobody says yes to now. An item's counts are the authors who ever made a statement and,
+  exactly, the authors who say yes now.
 
 ## 7. Spam and what stays true
 
@@ -354,7 +365,8 @@ Assigned to an indexer (The Graph) or the client on purpose:
 - Following large synonym webs. The spec's limits (4 hops, 16 lists per view) are reader limits.
 - Roll-up through anything other than the path. "A Model Y is also electric" needs a second tag.
 - "Recently active". An entry never moves after it is written.
-- An exact count of tags that currently apply. Counts include removed and negative statements.
+- An exact count, per place, of the items that currently apply. The chain keeps it exactly per item (how many
+  people say yes now) but not summed over a place.
 - Removing duplicates across pages, and hiding junk children by default.
 - Unicode folding, look-alike detection, and ENS names. The chain sees only bytes and addresses.
 - Listing every author's versions of one file (no all-authors list is kept on HEAD).
