@@ -31,7 +31,10 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         to (`yes == 0`) is skipped there, before any lens read: no author says yes, lens authors included, so it
 ///         cannot show whatever the lens says (`raw` keeps it). Then, only for the entries left, the combined lens
 ///         walk of design §11: one `LedgerViews.lensRule` over the whole lens at the filed positions and, below, the
-///         viewed-place heads in `heads` rounds of at most 64 keys. Walking the lens in order, each author is asked
+///         viewed-place check: one head read of the viewed position's `position-authors` list (an empty list of
+///         COMPLETE coverage: nobody stated anything there, nobody is asked) and otherwise the asked lens authors'
+///         head states (`LedgerViews.headStates`, one word per head) in rounds of at most 64 keys
+///         (`TopicReaderBase._maskedAt`). Walking the lens in order, each author is asked
 ///         first whether its head for the thing at the VIEWED place `(TAG, place, thing)` is MASKED ("not this"
 ///         here) and then what it says where the entry was FILED; the first answer decides. Let iT be the first lens
 ///         author with a stance at the filed position and kV the first whose head at the viewed place is MASKED
@@ -82,7 +85,7 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
     }
 
     /// @param ledger_ the ledger proxy this reader serves (its layout is pinned here: `layoutId()`)
-    /// @param views_ the `LedgerViews` facet (`bindingCells`, `lensRule`, `heads`, `authorHeads`)
+    /// @param views_ the `LedgerViews` facet (`bindingCells`, `lensRule`, `headStates`, `authorHeads`)
     /// @param reads_ the `LedgerReads` facet (`basis`)
     constructor(address ledger_, address views_, address reads_)
         TopicReaderBase(ledger_, views_, reads_)

@@ -7,6 +7,7 @@
     "0xad4e25d6": "authorHeads(address,bytes32,uint64[])",
     "0xec314939": "bindingCells(address,uint64[])",
     "0x237a5ae2": "headSnapshots(address,bytes32[],bytes32[])",
+    "0x66c4b5e8": "headStates(address,bytes32[])",
     "0x0e1d817c": "heads(address,bytes32[])",
     "0x4d9b1142": "headsAt(address,bytes32[],bytes32)",
     "0x345c53ba": "historyAt(address,bytes32,uint64,uint16)",
@@ -747,6 +748,67 @@
           "name": "",
           "type": "bytes32[]",
           "internalType": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "headStates",
+      "inputs": [
+        {
+          "name": "ledger",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "keys",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "states",
+          "type": "uint8[]",
+          "internalType": "uint8[]"
+        },
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct BasisCommit",
+          "components": [
+            {
+              "name": "executionSet",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "indexGeneration",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "registryMutations",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "admissionHighWater",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "uint8"
+            }
+          ]
         }
       ],
       "stateMutability": "view"

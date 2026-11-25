@@ -357,10 +357,11 @@ its immutables name the ledger proxy.
 **Reader features are size-bound.** Every reader and facet is held to the 19,660 B runtime budget (`forge build
 --sizes`; budgets are never edited to fit), so a reader feature costs bytes another feature cannot have: the step-4
 amendment split the old `TopicPageReader` (465 B of headroom) into the lens and the public view. Headroom at this
-release: `TopicMineReader` 4,304 B (15,356 B), `TopicEveryoneReader` 3,359 B (16,301 B), `TopicLookupReader` 3,114 B (16,546 B),
-`LedgerViews` 1,337 B (18,323 B), `EfsWeb3Gateway` 4,269 B (15,391 B) and `EfsWeb3Content` 10,699 B (8,961 B) (the gateway was one
-19,628 B contract with 32 B of headroom; it was split so the `web3://` entry point keeps parsing, names, lens and
-listings and a pinned content server serves revisions, docs/LARGE-FILES.md "Two contracts, one address").
+release: `TopicMineReader` 4,176 B (15,484 B), `TopicEveryoneReader` 3,052 B (16,608 B), `TopicLookupReader` 3,102 B (16,558 B),
+`LedgerViews` 1,085 B (18,575 B; `headStates`, the viewed-place check's one-word read, took 252 B), `EfsWeb3Gateway` 4,269 B (15,391 B)
+and `EfsWeb3Content` 10,699 B (8,961 B) (the gateway was one 19,628 B contract with 32 B of headroom; it was split so the `web3://`
+entry point keeps parsing, names, lens and listings and a pinned content server serves revisions, docs/LARGE-FILES.md "Two
+contracts, one address").
 
 ### The fixture key
 
@@ -576,7 +577,9 @@ depth 8; masks, releases and restores of tags; a registration chunk of word page
 top-level section of its own: per schedule the measured `rows`, the fitted `terms` (`mine` exact and below: an opening,
 a per-lens-author opening term, a per-row base and a per-row term per lens index up to the decider; `everyone` exact
 and below: an opening, a per-row base, a per-lens-author term and the cost of a skipped entry at lenses of 1, 8 and
-64; `raw`, `byName`, `about`, `wordPage`, `children`: an opening and a per-row cost), the `bounds` per lens size (the
+64; the below views are fitted on their worst cases, where the viewed-place check reads a head state for every lens
+author asked, and `mineBelowQuiet` / `everyoneBelowQuiet` give the same terms where nothing is stated at the viewed
+place; `raw`, `byName`, `about`, `wordPage`, `children`: an opening and a per-row cost), the `bounds` per lens size (the
 most worst-case rows, and skipped entries, one call reads under `callGasCap` less `marginPercent`) and
 `recommended` (`pageTimesLens` per view, `maxRows`, `limitEntries`). The SDK sizes `limit` and `maxRows` from them;
 `--check 1` compares the measured rows exactly, like the publication rows.
