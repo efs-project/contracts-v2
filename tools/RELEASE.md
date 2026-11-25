@@ -453,7 +453,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0x8f30fccd17076cc91f5e2c220f2e829826161b80de725aded56cce55bb43fa99`.
+  `0x8bcbf0b47ee0977369c474cd39d6fde82d30148e15ed125a75417356da0a1718`.
 
 ## The planning model (`gas/model.json`)
 
@@ -497,18 +497,18 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 695,315 | 2,460,127 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,698 | 1,879,457 (1,370,880) |
+| Root seed (PUBLISH directory, no CREATE) | 695,327 | 2,460,129 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,710 | 1,879,457 (1,370,880) |
 | M1 create folder (no CREATE; first placement in root, fresh scope) | 1,327,370 | 4,624,342 (3,623,040) |
 | M1 create file (5 leaves, fresh folder) | 1,699,759 | 5,883,796 (4,602,240) |
-| Edit | 909,960 | 2,820,522 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,094,883 | 3,393,362 (2,448,000) |
-| Remove (RELEASE from BOUND) | 450,458 | 1,202,484 (783,360) |
-| Restore (released → same target) | 492,153 | 1,258,714 (783,360) |
-| RELEASE from mask | 413,716 | 1,077,856 (685,440) |
-| Hide (UNBIND from BOUND) | 434,603 | 1,105,945 (685,440) |
+| Edit | 909,960 | 2,820,534 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,094,895 | 3,393,362 (2,448,000) |
+| Remove (RELEASE from BOUND) | 450,446 | 1,202,484 (783,360) |
+| Restore (released → same target) | 492,141 | 1,258,714 (783,360) |
+| RELEASE from mask | 413,704 | 1,077,856 (685,440) |
+| Hide (UNBIND from BOUND) | 434,591 | 1,105,945 (685,440) |
 | Restore a released placement (Move-back analog) | 507,019 | 1,354,266 (881,280) |
-| WITHDRAW | 458,042 | 1,297,689 (881,280) |
+| WITHDRAW | 458,030 | 1,297,689 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
@@ -535,7 +535,7 @@ only and include intrinsic cost:
 - Genesis code deposit: 45.8M over 30 transactions (the thirteen rules included).
 - Readers and views (R0–R5): 11.35M (`KeysView` 0.38M, `LensReader` 3.76M, `FilesPageReader` 2.81M, each listing 0.16M, `EfsWeb3Gateway` 3.88M).
 - The thirteen descriptor blobs: 2.10M.
-- **Genesis activation: 3.01M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). It was 4.21M before the
+- **Genesis activation: 3.02M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). It was 4.21M before the
   protocol-string rename, which changed only constants: when `CodeScan`'s fast walk meets a byte that reads as a
   forbidden opcode before the trailer (such as a byte of the 32-byte constants via-IR places after the final
   `INVALID`), it walks the unit again from pc 0, so the constants' bytes decide which units pay a second walk
