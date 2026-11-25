@@ -57,6 +57,12 @@ struct WorkModel {
     uint32 finalComputePerBind;
 }
 
+// `WorkModel`'s ABI size in words: a static struct, one word per field, returned inline by `IIndexReads.manifest()`
+// between the three array offsets and the two profiles, so a reader that checks the profiles from the raw reply finds
+// them at words 4 + WORK_MODEL_WORDS and 5 + WORK_MODEL_WORDS. It must change with the struct;
+// `test/index/IndexReadsSplit.t.sol` fails when the two drift.
+uint256 constant WORK_MODEL_WORDS = 14;
+
 /// Constructor-fixed; the core folds family 15 from body word `wordIndex` (one cold SLOAD, priced).
 struct DigestSpec {
     bytes32 typeId;
