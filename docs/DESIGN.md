@@ -1392,7 +1392,9 @@ Signed lanes and guards (S2); ERC-1271 (S2b); the tag lists, tag readers and a `
 
 Three NATIVE Types registered at genesis after the ten Files Types (§8.2 G10–G12, G21), declared by the same key under
 namespace `efs/topics/1` (`profiles/TopicTypes.sol`, `profiles/TopicProfile.sol`). Each descriptor carries its header
-byte 133 (`flags`) in one place per Type; all three are zero in this release.
+byte 133 (`flags`) in one place per Type; all three set `TYPE_FLAG_EMITS_BODY` (bit 0, §5.5), so a fresh word page,
+path record or text record (at most 255 bytes, under `BODY_EVENT_MAX`) is logged in `Body` and an indexer follows
+words, paths and labels from events alone. The flag is inside the descriptor, so it is part of each Type id.
 
 | Type | Body | Refs | Rule and refusal codes (`E_TOPIC_REFUSED(code)`) |
 |---|---|---|---|

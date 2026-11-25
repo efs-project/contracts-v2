@@ -322,11 +322,11 @@ const SPECS = [
   { description: "abi.encode(bytes32 kind, uint256 revision, bytes note); kind frozen | successor | migration", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(left, right, length); each child a files-bytes/1 record with a nonempty payload or a files-span/1 record; length is the sum of the children payload lengths, below 2^64", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_LEFT, SEMANTIC_SPAN_CHILD, () => REF_ANY], [FIELD_RIGHT, SEMANTIC_SPAN_CHILD, () => REF_ANY]] },
   { description: "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, no /, no ASCII control, space or A-Z, no C1, bidi, invisible, joiner or variation selector code point, not . or .., not starting with ~, not 0x and 40 lowercase hex", dependencyClass: 1, refHeaderWords: 1, fields: [], namespace: TOPICS_NAMESPACE,
-    flags: 0 }, // flags: EMITS_BODY once the base has it
+    flags: 1 }, // TYPE_FLAG_EMITS_BODY
   { description: "abi.encode(parent, wordPage); a path of two or more words; parent is a topic/1 or topic-word/1 record, wordPage a topic-word/1 record", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_TOPIC_PARENT, SEMANTIC_PARENT_TOPIC, () => REF_ANY], [FIELD_TOPIC_WORD, SEMANTIC_WORD_PAGE, (ids) => ids[T.TOPIC_WORD]]], namespace: TOPICS_NAMESPACE,
-    flags: 0 }, // flags: EMITS_BODY once the base has it
+    flags: 1 }, // TYPE_FLAG_EMITS_BODY
   { description: "a short display string: 1-255 bytes of well-formed UTF-8, no control character (C0, DEL, C1), no bidi control or invisible code point; /, spaces and uppercase allowed", dependencyClass: 1, refHeaderWords: 1, fields: [], namespace: TOPICS_NAMESPACE,
-    flags: 0 }, // flags: EMITS_BODY once the base has it
+    flags: 1 }, // TYPE_FLAG_EMITS_BODY
 ];
 /** The rules' constructor arguments (sibling Type ids) and the dependency order they force (FilesTypes). */
 const RULE_ARGS = {

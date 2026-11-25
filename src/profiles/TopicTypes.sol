@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {EfsTopics} from "../lib/EfsTopics.sol";
 import {FilesTypes} from "./FilesTypes.sol";
+import {ClosureConstants} from "../interfaces/Limits.sol";
 
 /// @title TopicTypes — the codec-1 descriptors and Type ids of the Topics Types (design §12.5, §9.2)
 /// @notice Three NATIVE Types in the exact style of `FilesTypes` (same header bytes, same REF32 field rows,
@@ -15,7 +16,9 @@ import {FilesTypes} from "./FilesTypes.sol";
 ///         topic rule's constructor state name its id); text is independent. All three are pure over calldata and
 ///         `refHeaders` (`dependencyClass` 1).
 ///         The descriptor's header byte 133 is the Type's `flags` byte, set in one place per Type below (`flags`
-///         in each spec). These three are the Types an indexer follows from events (words, paths, labels).
+///         in each spec). All three set `ClosureConstants.TYPE_FLAG_EMITS_BODY`, so a fresh word page, path record
+///         or text record (each at most 255 bytes, below `BODY_EVENT_MAX`) is logged in `Body` and an indexer
+///         follows words, paths and labels from events alone.
 /// @dev Internal and pure/view only, so it compiles into its callers. Ids depend on neither author, Realm nor
 ///      chain (`Keys.record(typeId, body)`), so `EfsTopics.pathId` computes any topic's id offline from its words.
 library TopicTypes {
@@ -60,7 +63,7 @@ library TopicTypes {
             "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, no /, no ASCII control, space or A-Z, no C1, bidi, invisible, joiner or variation selector code point, not . or .., not starting with ~, not 0x and 40 lowercase hex";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
-        s.flags = 0; // flags: EMITS_BODY once the base has it
+        s.flags = ClosureConstants.TYPE_FLAG_EMITS_BODY; // a fresh word page is logged in `Body`
     }
 
     function topicSpec(bytes32 wordTypeId) internal pure returns (FilesTypes.Spec memory s) {
@@ -74,7 +77,7 @@ library TopicTypes {
             FilesTypes.refField(FIELD_WORD, SEMANTIC_WORD, wordTypeId)
         );
         s.fieldCount = 2;
-        s.flags = 0; // flags: EMITS_BODY once the base has it
+        s.flags = ClosureConstants.TYPE_FLAG_EMITS_BODY; // a fresh path record is logged in `Body`
     }
 
     function textSpec() internal pure returns (FilesTypes.Spec memory s) {
@@ -83,7 +86,7 @@ library TopicTypes {
             "a short display string: 1-255 bytes of well-formed UTF-8, no control character (C0, DEL, C1), no bidi control or invisible code point; /, spaces and uppercase allowed";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
-        s.flags = 0; // flags: EMITS_BODY once the base has it
+        s.flags = ClosureConstants.TYPE_FLAG_EMITS_BODY; // a fresh text record is logged in `Body`
     }
 
     /// `FilesTypes.encode` with this profile's namespace (bytes 34..65).

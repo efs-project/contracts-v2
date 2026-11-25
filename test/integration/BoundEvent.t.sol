@@ -219,6 +219,34 @@ contract BoundEventTest is FilesRecipesBase {
         assertEq(logs.length, 0, "a repeat publish is not fresh");
     }
 
+    /// The three Topics Types set the flag: a fresh word page (multi-byte UTF-8 included), a fresh `topic/1` path
+    /// record and a fresh `text/1` record are each logged with their record id, Type id and exact bytes; publishing
+    /// any of them again logs nothing.
+    function test_body_on_fresh_topics_records_not_on_a_repeat() public {
+        EfsTopics.Types memory t = _topicTypes();
+        assertEq(r.registry.typeInfo(t.word).flags, 1);
+        assertEq(r.registry.typeInfo(t.topic).flags, 1);
+        assertEq(r.registry.typeInfo(t.text).flags, 1);
+        _bodyOnceAs(t.word, bytes("caf\u00e9"));
+        bytes memory page = bytes("\u9ce5");
+        _bodyOnceAs(t.word, page);
+        _bodyOnceAs(t.topic, EfsTopics.pathBody(TOPIC, EfsTopics.wordPageId(t.word, page)));
+        _bodyOnceAs(t.text, bytes("Birds of Prey / Raptors"));
+    }
+
+    /// A fresh `body` of `typeId` logs exactly one `Body(Keys.record(typeId, body), typeId, body)`; a repeat none.
+    function _bodyOnceAs(bytes32 typeId, bytes memory body) internal {
+        bytes32 id = Keys.record(typeId, body);
+        vm.expectEmit(true, true, false, true, address(r.ledger));
+        emit ILedger.Body(id, typeId, body);
+        Vm.Log[] memory logs = _publishLogsAs(typeId, body);
+        assertEq(logs.length, 1);
+        assertEq(logs[0].topics[1], id);
+        assertEq(logs[0].topics[2], typeId);
+        assertEq(abi.decode(logs[0].data, (bytes)), body);
+        assertEq(_publishLogsAs(typeId, body).length, 0, "a repeat publish is not fresh");
+    }
+
     /// A REUSE of a flagged record is never fresh.
     function test_no_body_on_a_reuse() public {
         bytes memory name = "reused.txt";

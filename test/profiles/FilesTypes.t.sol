@@ -34,8 +34,8 @@ contract FilesTypesTest is FilesFixture {
     ];
     uint8[13] internal refHeaderWords = [1, 2, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1];
     uint8[13] internal dependencyClass = [2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1];
-    /// Header byte 133: `TYPE_FLAG_EMITS_BODY` for files-name/2 only.
-    uint8[13] internal flags = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    /// Header byte 133: `TYPE_FLAG_EMITS_BODY` for files-name/2, topic-word/1, topic/1 and text/1 only.
+    uint8[13] internal flags = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1];
 
     function setUp() public {
         _deployProfile();
