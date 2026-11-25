@@ -20,7 +20,7 @@ error E_TOPIC_REFUSED(uint8 code); // none
 ///      calldata: one byte at a time on the ASCII path (one bitmap test), one calldata word per multi-byte scalar
 ///      (`FilesName.scalar`, the strict decoder `files-name/2` already ships: no overlong form, no surrogate, nothing
 ///      above U+10FFFF, no stray continuation byte, no truncated sequence), and for each such scalar a scan of
-///      `REFUSED` that stops at the first entry starting above it (sorted, so an ASCII-adjacent scalar stops at once).
+///      `REFUSED` (a binary search: the table is sorted and disjoint).
 library TopicProfile {
     /// The longest word and the longest text, in bytes.
     uint256 internal constant WORD_MAX = 255;
@@ -200,18 +200,23 @@ library TopicProfile {
         return 0;
     }
 
-    /// The class of `s` in `table` (`REFUSED` in memory): the first entry whose `lo` is above `s` ends the scan.
+    /// The class of `s` in `table` (`REFUSED` in memory): a binary search for the last entry whose `lo` is at or
+    /// below `s` (six probes over the table), then one range test.
     function _class(bytes memory table, uint256 s) private pure returns (uint256 c) {
         assembly ("memory-safe") {
-            let p := add(table, 32)
-            let end := add(p, mload(table))
-            for {} lt(p, end) { p := add(p, 7) } {
-                let e := shr(200, mload(p))
-                if lt(s, shr(32, e)) { break }
-                if iszero(gt(s, and(shr(8, e), 0xffffff))) {
-                    c := and(e, 0xff)
-                    break
-                }
+            let base := add(table, 32)
+            let lo := 0
+            let hi := div(mload(table), 7)
+            // the first entry whose lo is above s
+            for {} lt(lo, hi) {} {
+                let mid := shr(1, add(lo, hi))
+                switch gt(shr(32, shr(200, mload(add(base, mul(mid, 7))))), s)
+                case 1 { hi := mid }
+                default { lo := add(mid, 1) }
+            }
+            if lo {
+                let e := shr(200, mload(add(base, mul(sub(lo, 1), 7))))
+                if iszero(gt(s, and(shr(8, e), 0xffffff))) { c := and(e, 0xff) }
             }
         }
     }
