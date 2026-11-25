@@ -59,48 +59,48 @@ contract TopicVectorsTest is Test {
     }
 
     function test_words() public {
-        uint256 n;
-        for (uint256 i; _has("words", i); ++i) {
-            bytes memory w = vm.parseJsonBytes(json, _at("words", i, ".hex"));
-            uint256 code = vm.parseJsonUint(json, _at("words", i, ".code"));
-            assertEq(
-                probe.wordRefusal(w), code, vm.parseJsonString(json, _at("words", i, ".label"))
-            );
+        // one parse per field: the file is large, and a parse per row costs its whole length in memory
+        bytes[] memory words = vm.parseJsonBytesArray(json, ".flat.words.hex");
+        uint256[] memory codes = vm.parseJsonUintArray(json, ".flat.words.code");
+        bytes32[] memory pages = vm.parseJsonBytes32Array(json, ".flat.words.pageId");
+        assertEq(codes.length, words.length);
+        uint256 k;
+        for (uint256 i; i < words.length; ++i) {
+            bytes memory w = words[i];
+            uint256 code = codes[i];
+            assertEq(probe.wordRefusal(w), code, vm.toString(i));
             if (code == 0) {
                 assertEq(this.wordRuleCall(w), IAcceptor.accept.selector);
-                assertEq(
-                    vm.parseJsonBytes32(json, _at("words", i, ".pageId")), Keys.record(tt.word, w)
-                );
+                assertEq(pages[k++], Keys.record(tt.word, w));
                 assertEq(EfsTopics.wordPageId(tt.word, w), Keys.record(tt.word, w));
             } else {
                 vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(code)));
                 this.wordRuleCall(w);
             }
-            ++n;
         }
-        assertGt(n, 100);
+        assertEq(k, pages.length, "a page id for every admitted word");
+        assertGt(words.length, 100);
     }
 
     function test_texts() public {
-        uint256 n;
-        for (uint256 i; _has("texts", i); ++i) {
-            bytes memory x = vm.parseJsonBytes(json, _at("texts", i, ".hex"));
-            uint256 code = vm.parseJsonUint(json, _at("texts", i, ".code"));
-            assertEq(
-                probe.textRefusal(x), code, vm.parseJsonString(json, _at("texts", i, ".label"))
-            );
+        bytes[] memory texts = vm.parseJsonBytesArray(json, ".flat.texts.hex");
+        uint256[] memory codes = vm.parseJsonUintArray(json, ".flat.texts.code");
+        bytes32[] memory records = vm.parseJsonBytes32Array(json, ".flat.texts.recordId");
+        uint256 k;
+        for (uint256 i; i < texts.length; ++i) {
+            bytes memory x = texts[i];
+            uint256 code = codes[i];
+            assertEq(probe.textRefusal(x), code, vm.toString(i));
             if (code == 0) {
                 assertEq(this.textRuleCall(x), IAcceptor.accept.selector);
-                assertEq(
-                    vm.parseJsonBytes32(json, _at("texts", i, ".recordId")), Keys.record(tt.text, x)
-                );
+                assertEq(records[k++], Keys.record(tt.text, x));
             } else {
                 vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(code)));
                 this.textRuleCall(x);
             }
-            ++n;
         }
-        assertGt(n, 20);
+        assertEq(k, records.length);
+        assertGt(texts.length, 20);
     }
 
     function test_the_refused_table_is_the_contracts() public view {

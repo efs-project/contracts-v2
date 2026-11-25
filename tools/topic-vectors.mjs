@@ -308,7 +308,7 @@ export function topicVectors(plan) {
     const row = { label, hex, length: (hex.length - 2) / 2, code: wordRefusal(hex) };
     if (typeof w === "string") row.word = w;
     if (note) row.note = note;
-    if (row.code === 0) row.pageId = topics.wordPageId(t, hex);
+    if (row.code === 0) row.pageId = keys.record(t.word, hex);
     return row;
   });
   for (let c = 1; c <= 7; c++) if (!words.some((w) => w.code === c)) throw new Error(`topic vectors: no word with code ${c}`);
@@ -388,6 +388,11 @@ export function topicVectors(plan) {
     purposes: PURPOSES,
     words,
     texts,
+    // the same verdicts as flat arrays (one parse each for a Solidity reader; pageId / recordId for the admitted rows)
+    flat: {
+      words: { hex: words.map((w) => w.hex), code: words.map((w) => w.code), pageId: words.filter((w) => w.code === 0).map((w) => w.pageId) },
+      texts: { hex: texts.map((x) => x.hex), code: texts.map((x) => x.code), recordId: texts.filter((x) => x.code === 0).map((x) => x.recordId) },
+    },
     paths,
     propertyKeys,
     inputs: { thing, home },
