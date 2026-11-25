@@ -1516,9 +1516,12 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
   §10.4 and `gas/model.json`, and the measured costs in `docs/TAG-NUMBERS.md`. The index keeps the topic roll-ups only
   beside this validator (built for the same two topic Types), so it never has to check that a topic was registered.
 - **Reading (step 4).** The topic readers, the denial rule, repeats and call sizes are §11; their interfaces §5.13; the
-  gateway's link forms (a home `/0x<40 hex>/…`, any folder by id `/~efs/o/<folder id>/…`, a plain word a topic path it
-  does not serve; a revision link `/~efs/v/…` and the id of any existing object that is not a folder are also `501`
-  not served, never `404`, which is kept for an id that names nothing) are docs/LARGE-FILES.md "`web3://`".
+  gateway's link forms (a home `/0x<40 hex>/…`, any folder by id `/~efs/o/<folder id>/…`, a file by id
+  `/~efs/o/<file subject id>` under its creator's lens, a revision link `/~efs/v/<revision record id>` with no lens,
+  a plain word a topic path it does not serve; the id of any other existing object is `501` not served, never `404`,
+  which is kept for an id that names nothing) are docs/LARGE-FILES.md "`web3://`". The gateway is two immutable
+  contracts behind one `web3://` address: `EfsWeb3Gateway` (URL, names, lens, HEAD selection, listings) and
+  `EfsWeb3Content` (the revision served), reached by `STATICCALL` at an immutable address with a recorded codehash.
 - **Adoption.** A Realm deployed before this release has no Topics Types and a validator that judges neither HEAD nor
   TAG subjects: tags written there on arbitrary subjects stay readable by position but are not topics, and a bad HEAD
   already on chain is still reported `INVALID` by the readers. Moving to these laws is a new generation with this
