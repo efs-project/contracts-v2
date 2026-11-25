@@ -20,6 +20,7 @@ contract GasModelTest is FilesRecipesBase {
     uint256 internal constant N_SUBJECTS = 40;
     uint256 internal constant N_CHUNKS = 40;
     uint256 internal constant N_NAMES = 15;
+    bytes32 internal constant TOPIC = keccak256("efs/test/gas-model/topic"); // a plain TAG subject
 
     address[] internal cold; // every account setUp touched (cooled before each measured execute)
     address internal sender; // the caller of the next measured execute (address(this) when zero)
@@ -173,9 +174,9 @@ contract GasModelTest is FilesRecipesBase {
         }
         _do(a, b);
         // P5: HEAD of s[8..11) + their children; FOLDER binds in d1 for rebind (names 6..9), unbind (9..12) and
-        //     release (12..15), targets s[29..32)
-        a = new Action[](15);
-        b = new bytes[](15);
+        //     release (12..15), targets s[29..32); TAG binds of s[35..38) under TOPIC (number-change targets)
+        a = new Action[](18);
+        b = new bytes[](18);
         for (uint256 i; i < 3; ++i) {
             a[i] = _bind(Purpose.HEAD, s[8 + i], 0, roots[8 + i], 0);
             (a[3 + i], b[3 + i]) =
@@ -184,6 +185,9 @@ contract GasModelTest is FilesRecipesBase {
         }
         for (uint256 i; i < 9; ++i) {
             a[6 + i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(6 + i)), s[29 + i % 3], 0);
+        }
+        for (uint256 i; i < 3; ++i) {
+            a[15 + i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
         }
         _do(a, b);
     }
@@ -475,6 +479,24 @@ contract GasModelTest is FilesRecipesBase {
             );
         }
         _actionPair("release folder", x);
+    }
+
+    /// A number change on an asserted tag: BIND to the same target with a new strength (0 -> 75), a REBIND.
+    function test_model_bind_tag_number_change() public {
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.bindWithStrength(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 1, 75);
+        }
+        _actionPair("bind tag number change", x);
+    }
+
+    /// A lone negative: UNBIND at a fresh position of an existing scope (FIRST_MASK), strength 4 (-5).
+    function test_model_unbind_tag_lone() public {
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, keccak256(abi.encode("lone", i)), 4);
+        }
+        _actionPair("unbind tag lone", x);
     }
 
     function test_model_withdraw() public {
