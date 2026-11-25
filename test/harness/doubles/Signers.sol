@@ -17,7 +17,7 @@ bytes4 constant ERC1271_REFUSAL = 0xffffffff;
 function createCalldata(bytes32 salt, uint64 nonce) pure returns (bytes memory) {
     Action[] memory actions = new Action[](1);
     actions[0].kind = ActionKind.CREATE;
-    actions[0].salt = salt;
+    actions[0].saltOrStrength = salt;
     Native memory ctx;
     ctx.nonce = nonce;
     return abi.encodeCall(ILedger.execute, (actions, new bytes[](1), ctx, ""));

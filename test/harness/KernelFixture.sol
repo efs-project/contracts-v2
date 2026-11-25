@@ -197,7 +197,7 @@ abstract contract KernelFixture is Test {
 
     function _create(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function _withdraw(uint64 admission) internal pure returns (Action memory a) {
@@ -378,7 +378,7 @@ abstract contract KernelFixture is Test {
                 _push(trackedPositions, 2, pos);
                 _push(trackedBindingKeys, 3, Keys.binding(p, pos));
             } else if (kind == ActionKind.CREATE) {
-                _push(trackedSubjects, 4, Keys.subject(p, a[i].salt));
+                _push(trackedSubjects, 4, Keys.subject(p, a[i].saltOrStrength));
             }
         }
     }

@@ -36,6 +36,11 @@ library ClosureConstants {
     uint32 internal constant DESCRIPTOR_MAX = 4_096;
     /// The ERC-1271 `isValidSignature` call is forwarded at least this much (design §6.2).
     uint32 internal constant WALLET_GAS_FLOOR = 300_000;
+    /// The largest record body the kernel logs in a `Body` event on its first admission (design §5.5). 256 bytes
+    /// covers every name and word (both capped at 255 bytes) and the small fixed-shape records (a folder's 64-byte
+    /// body, a span, a topic path's two references) and excludes content descriptors (at least 320 bytes) and file
+    /// bytes in any real quantity (a chunk is up to 8,192 bytes), so the log never grows with a file's size.
+    uint32 internal constant BODY_EVENT_MAX = 256;
     /// The saturation threshold of every 48-bit counter and ordinal (design §4.1).
     uint64 internal constant SATURATION = (uint64(1) << 48) - 64;
     /// realm-notice/1 kinds (design §12.1, §8.10): the freeze canary, the successor notice, the migration notice.

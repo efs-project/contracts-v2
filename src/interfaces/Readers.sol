@@ -24,7 +24,8 @@ struct Cursor {
     bytes32 queryHash;
 }
 
-/// One resolved coordinate under a lens.
+/// One resolved coordinate under a lens. `strength` is the selected head's (with `status`, its signed number:
+/// `BindingNumber.numberOf`); 0 when nothing is selected.
 struct Selection {
     Status status;
     bytes32 target;
@@ -33,6 +34,7 @@ struct Selection {
     bytes32 principalId;
     uint64 admission;
     uint8 selectedIndex;
+    uint16 strength;
 }
 
 /// One listed position.

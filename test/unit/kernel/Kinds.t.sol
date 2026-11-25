@@ -51,6 +51,7 @@ contract KindsTest is KernelFixture {
         uint64 prev;
         uint64 ordinal;
         bytes32 target;
+        uint16 strength;
     }
 
     function _row(uint256 o) internal view returns (Row memory r) {
@@ -71,7 +72,7 @@ contract KindsTest is KernelFixture {
     }
 
     function _head(bytes32 key) internal view returns (Head memory h) {
-        (h.state, h.revision, h.admission, h.targetKind, h.prev, h.ordinal, h.target) =
+        (h.state, h.revision, h.admission, h.targetKind, h.prev, h.ordinal, h.target, h.strength) =
             hot.head(key);
     }
 
@@ -261,7 +262,7 @@ contract KindsTest is KernelFixture {
         Effect[] memory e =
             _logged(_acts(_bind(FOLDER, SA, ROLE, r, 0), _bind(FOLDER, SB, 0, r, 0)), _bodies(2));
         Head memory a = _head(_key(principal, FOLDER, SA, ROLE));
-        assertEq(abi.encode(a), abi.encode(Head(1, 1, 2, 1, 0, 1, r)));
+        assertEq(abi.encode(a), abi.encode(Head(1, 1, 2, 1, 0, 1, r, 0)));
         assertEq(_head(_key(principal, FOLDER, SB, 0)).ordinal, 2);
         (,, uint64 bindings,) = _counts();
         assertEq(bindings, 2);
@@ -285,7 +286,7 @@ contract KindsTest is KernelFixture {
         vm.startStateDiffRecording();
         Effect[] memory e = _logged(_acts(_bind(FOLDER, SA, ROLE, r, 1)), _bodies(1));
         assertEq(_targetWrites(vm.stopAndReturnStateDiff(), key), 0, "same target is not rewritten");
-        assertEq(abi.encode(_head(key)), abi.encode(Head(1, 2, 3, 1, 2, 1, r)));
+        assertEq(abi.encode(_head(key)), abi.encode(Head(1, 2, 3, 1, 2, 1, r, 0)));
         assertEq(
             abi.encode(e[0].transitionKind, e[0].oldTarget, e[0].oldTargetKind), abi.encode(2, r, 1)
         );
@@ -314,7 +315,7 @@ contract KindsTest is KernelFixture {
         vm.startStateDiffRecording();
         Effect[] memory e = _logged(_acts(_bind(FOLDER, SA, ROLE, r, 2)), _bodies(1));
         assertEq(_targetWrites(vm.stopAndReturnStateDiff(), key), 0, "RESTORE reuses the kept word");
-        assertEq(abi.encode(_head(key)), abi.encode(Head(1, 3, 4, 1, 3, 1, r)));
+        assertEq(abi.encode(_head(key)), abi.encode(Head(1, 3, 4, 1, 3, 1, r, 0)));
         assertEq(
             abi.encode(e[0].transitionKind, e[0].oldTarget, e[0].prevAdmission), abi.encode(5, 0, 3)
         );
@@ -420,7 +421,7 @@ contract KindsTest is KernelFixture {
         Effect[] memory e = _logged(_acts(_unbind(FOLDER, SA, ROLE, 1)), _bodies(1));
         assertEq(_targetWrites(vm.stopAndReturnStateDiff(), key), 0);
         assertEq(_raw(hs + 1), r, "the raw target word is kept");
-        assertEq(abi.encode(_head(key)), abi.encode(Head(2, 2, 3, 1, 2, 1, bytes32(0))));
+        assertEq(abi.encode(_head(key)), abi.encode(Head(2, 2, 3, 1, 2, 1, bytes32(0), 0)));
         assertEq(
             abi.encode(e[0].transitionKind, e[0].oldTarget, e[0].oldTargetKind, e[0].target),
             abi.encode(3, r, 1, 0)
@@ -429,14 +430,14 @@ contract KindsTest is KernelFixture {
         assertEq(abi.encode(row.kind, row.a, row.prevAdmission), abi.encode(4, 0, 2));
     }
 
+    /// RELEASE stands only on BOUND or MASKED (E_NOT_LIVE from UNSET and RELEASED); UNBIND is admitted from every
+    /// state (design §6.4: a first statement may be negative, a negative number changes by another UNBIND), so the
+    /// only refusal it meets on a live head is the CAS. test/unit/kernel/Strength.t.sol covers the new transitions.
     function test_unbind_and_release_refusals() public {
         bytes32 r = _land("kinds/mask/refusals");
         bytes32 key = _key(principal, FOLDER, SA, ROLE);
-        for (uint8 kind = ActionKind.UNBIND; kind <= ActionKind.RELEASE; kind += 3) {
-            Action memory m = _unbind(FOLDER, SA, ROLE, 0);
-            m.kind = kind;
-            _refuse2(m, "", abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(1), key, uint8(0)));
-        }
+        Action memory m = _release(FOLDER, SA, ROLE, 0);
+        _refuse2(m, "", abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(1), key, uint8(0)));
         _exec(_acts(_bind(FOLDER, SA, ROLE, r, 0)), _bodies(1));
         _refuse1(
             _unbind(FOLDER, SA, ROLE, 5),
@@ -445,16 +446,18 @@ contract KindsTest is KernelFixture {
         );
         _exec(_acts(_unbind(FOLDER, SA, ROLE, 1)), _bodies(1));
         _refuse1(
-            _unbind(FOLDER, SA, ROLE, 2),
+            _unbind(FOLDER, SA, ROLE, 1),
             "",
-            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(2))
+            abi.encodeWithSelector(E_CAS.selector, key, uint64(1), uint64(2))
         );
         _exec(_acts(_release(FOLDER, SA, ROLE, 2)), _bodies(1));
-        for (uint8 kind = ActionKind.UNBIND; kind <= ActionKind.RELEASE; kind += 3) {
-            Action memory m = _unbind(FOLDER, SA, ROLE, 3);
-            m.kind = kind;
-            _refuse1(m, "", abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(3)));
-        }
+        _refuse1(
+            _release(FOLDER, SA, ROLE, 3),
+            "",
+            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(3))
+        );
+        _exec(_acts(_unbind(FOLDER, SA, ROLE, 3)), _bodies(1)); // UNBIND from RELEASED
+        assertEq(_head(key).state, 2);
     }
 
     function test_release_from_bound_and_from_masked() public {
@@ -462,7 +465,7 @@ contract KindsTest is KernelFixture {
         bytes32 key = _key(principal, FOLDER, SA, ROLE);
         _exec(_acts(_bind(FOLDER, SA, ROLE, r, 0)), _bodies(1));
         Effect[] memory e = _logged(_acts(_release(FOLDER, SA, ROLE, 1)), _bodies(1));
-        assertEq(abi.encode(_head(key)), abi.encode(Head(3, 2, 3, 1, 2, 1, bytes32(0))));
+        assertEq(abi.encode(_head(key)), abi.encode(Head(3, 2, 3, 1, 2, 1, bytes32(0), 0)));
         assertEq(_raw(Layout.bindingsHeadsSlot(key) + 1), r, "RELEASE keeps the target word");
         assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(4, r));
         bytes32 key2 = _key(principal, FOLDER, SB, ROLE);

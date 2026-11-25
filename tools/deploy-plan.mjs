@@ -102,9 +102,9 @@ export const FACTORY = {
 /** anvil's first default key: a public throwaway, the fixture's owner, declaration key and seed principal. */
 export const FIXTURE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 export const DEFAULTS = { chainId: 31337, realmSalt: h("efs/fixture/realm/1"), executionProfileId: 1 };
-/** The release hot-ABI id: keccak256("efs/ledger-hot/1") (the suites keep "efs/ledger-hot/1:test"). It is
+/** The release hot-ABI id: keccak256("efs/ledger-hot/2") (the suites keep "efs/ledger-hot/2:test"). It is
  *  LedgerCore's HOT_ABI_ID immutable, RealmIndex's HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
-export const HOT_ABI_ID_STRING = "efs/ledger-hot/1";
+export const HOT_ABI_ID_STRING = "efs/ledger-hot/2";
 export const HOT_ABI_ID = h(HOT_ABI_ID_STRING);
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
 export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1") };
@@ -377,7 +377,7 @@ export function manifestHash(families, units, specs, work) {
 }
 export const MANIFEST_PROFILES = {
   physical: h("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"),
-  callback: h("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs"),
+  callback: h("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs"),
 };
 /** RealmIndex's constructor `_declare` table: (name, kind, universe, shape, liveSemantics, store, fromAdmission). */
 const FAMILY_TABLE = [
@@ -702,8 +702,8 @@ export const REMOTE_FILE = { name: "remote.txt", text: "This file lives at its l
  * files-external/1 record with a web3:// locator and the empty files-bytes/1 sentinel).
  */
 export function seedPlan({ ids, principalId, limits = LIMITS }) {
-  const action = (o) => ({ kind: 0, typeId: ZERO, bodyHashOrRecordId: ZERO, purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, salt: ZERO, ...o });
-  const create = (salt) => ({ a: action({ kind: ACTION.CREATE, salt }), b: "0x" });
+  const action = (o) => ({ kind: 0, typeId: ZERO, bodyHashOrRecordId: ZERO, purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, saltOrStrength: ZERO, ...o });
+  const create = (salt) => ({ a: action({ kind: ACTION.CREATE, saltOrStrength: salt }), b: "0x" });
   const publish = (typeId, body) => ({ a: action({ kind: ACTION.PUBLISH, typeId, bodyHashOrRecordId: keccak256(body) }), b: body });
   const bind = (purpose, subject, role, target, expectedRevision = 0n) => ({ a: action({ kind: ACTION.BIND, purpose, subject, role, target, expectedRevision }), b: "0x" });
   const step = (id, label, list, marker, postCheck) => ({ id, label, actions: list.map((x) => x.a), bodies: list.map((x) => x.b), marker, postCheck });

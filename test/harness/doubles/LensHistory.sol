@@ -114,7 +114,7 @@ abstract contract LensFixture is Test {
         Action[] memory a = new Action[](9);
         bytes[] memory b = new bytes[](9);
         a[0].kind = ActionKind.CREATE;
-        a[0].salt = SALT_S;
+        a[0].saltOrStrength = SALT_S;
         (a[1], b[1]) = (_publish(rootBody), rootBody);
         (a[2], b[2]) = (_publish(a2Body), a2Body);
         (a[3], b[3]) = (_publish(tinyBody), tinyBody);
@@ -166,7 +166,7 @@ abstract contract LensFixture is Test {
     function _unrelated(bytes32 salt) internal {
         Action memory a;
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
         _one(address(this), a);
     }
 

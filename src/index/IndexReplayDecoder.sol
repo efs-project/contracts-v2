@@ -26,6 +26,7 @@ contract IndexReplayDecoder is IIndexReplayDecoder {
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
     uint256 private constant REVISION_LAYOUT_WORD = 17;
 
     constructor() {
@@ -160,7 +161,9 @@ contract IndexReplayDecoder is IIndexReplayDecoder {
                     ? T_FIRST_BIND
                     : prevKind == ActionKind.BIND ? T_REBIND : T_RESTORE;
             } else {
-                f.transitionKind = kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
+                // an UNBIND whose previous row is row 0 (never written) stood on an UNSET head: a first mask
+                f.transitionKind =
+                    kind == ActionKind.RELEASE ? T_RELEASE : prevKind == 0 ? T_FIRST_MASK : T_MASK;
             }
             if (prevKind == ActionKind.BIND) {
                 f.oldTarget = w[2];

@@ -360,7 +360,7 @@ abstract contract FacetFixture is Test {
 
     function _create(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function _publish(bytes32 typeId, bytes memory body) internal pure returns (Action memory a) {
@@ -464,6 +464,7 @@ abstract contract FacetFixture is Test {
         assertEq(a.prevAdmission, b.prevAdmission, string.concat(m, ": prevAdmission"));
         assertEq(a.bindingOrdinal, b.bindingOrdinal, string.concat(m, ": bindingOrdinal"));
         assertEq(a.notAfter, b.notAfter, string.concat(m, ": notAfter"));
+        assertEq(a.strength, b.strength, string.concat(m, ": strength"));
         assertEq(a.target, b.target, string.concat(m, ": target"));
     }
 
@@ -475,7 +476,8 @@ abstract contract FacetFixture is Test {
             h.targetKind,
             h.prevAdmission,
             h.bindingOrdinal,
-            h.target
+            h.target,
+            h.strength
         ) = hot.head(key);
     }
 
@@ -695,10 +697,11 @@ abstract contract FacetSuite is FacetFixture {
             _assertHead(h, _hotHead(keys[i]), "head() vs hot.head");
             _assertHead(hs[i], h, "heads() vs head()");
             uint256 slot = Layout.bindingsHeadsSlot(keys[i]);
-            (uint8 state,,,,,, uint40 notAfter) =
+            (uint8 state,,,,,, uint32 notAfter, uint16 strength) =
                 Layout.unpackHeadRowWord0(vm.load(k.proxy, bytes32(slot)));
             assertEq(h.state, state, "raw state");
             assertEq(h.notAfter, notAfter, "raw notAfter");
+            assertEq(h.strength, strength, "raw strength");
             bytes32 rawTarget = vm.load(k.proxy, bytes32(slot + 1));
             assertEq(h.target, state == 1 ? rawTarget : bytes32(0), "canonical target");
         }
@@ -776,8 +779,25 @@ abstract contract FacetSuite is FacetFixture {
                 uint8 tk,
                 uint48 pub
             ) = _rawRowMeta(o);
+            // the stored policyRowOrStrength is served as policyRow on record rows, strength on bind rows
+            bool bindRow = kind == 3 || kind == 4 || kind == 7;
             assertEq(
-                keccak256(abi.encode(kind, r.leaf, pub, bo, er, pa, wd != 0, pr, rr, tk, r.a)),
+                keccak256(
+                    abi.encode(
+                        kind,
+                        r.leaf,
+                        pub,
+                        bo,
+                        er,
+                        pa,
+                        wd != 0,
+                        bindRow ? 0 : pr,
+                        rr,
+                        tk,
+                        r.a,
+                        bindRow ? pr : 0
+                    )
+                ),
                 keccak256(abi.encode(r)),
                 "raw meta"
             );
@@ -1441,6 +1461,7 @@ abstract contract FacetSuite is FacetFixture {
                 {
                     (Status st, AdmissionRow memory r) = abi.decode(ret, (Status, AdmissionRow));
                     assertEq(ret, abi.encode(st, r), "admission");
+                    assertEq(ret.length, 13 * 32, "admission: status + twelve words");
                 }
             }
             for (uint256 j; j < headCaptures.length; ++j) {
@@ -1455,6 +1476,7 @@ abstract contract FacetSuite is FacetFixture {
     function _headCanonical(bytes memory ret) private pure {
         (Status st, Head memory h) = abi.decode(ret, (Status, Head));
         assertEq(ret, abi.encode(st, h), "head");
+        assertEq(ret.length, 10 * 32, "head: status + nine words");
     }
 
     function _ok(bytes memory data) private view returns (bytes memory ret) {

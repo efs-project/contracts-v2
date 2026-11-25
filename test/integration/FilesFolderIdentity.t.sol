@@ -219,8 +219,8 @@ contract FilesFolderIdentityTest is FilesRecipesBase {
         a[5] = _bind(Purpose.FOLDER, rootDir, keccak256("kfile"), file, 0);
         _exec("recipe a folder and a file of one salt", a, b);
         assertTrue(folder != file);
-        (,,, uint8 kd,,,) = r.hot.head(_key(Purpose.FOLDER, rootDir, keccak256("kdir")));
-        (,,, uint8 kf,,,) = r.hot.head(_key(Purpose.FOLDER, rootDir, keccak256("kfile")));
+        (,,, uint8 kd,,,,) = r.hot.head(_key(Purpose.FOLDER, rootDir, keccak256("kdir")));
+        (,,, uint8 kf,,,,) = r.hot.head(_key(Purpose.FOLDER, rootDir, keccak256("kfile")));
         assertEq(kd, 1, "TARGET_RECORD");
         assertEq(kf, 2, "TARGET_SUBJECT");
         assertEq(r.hot.subjectCreatedAt(folder), 0);

@@ -30,6 +30,28 @@ interface ILedger {
         bytes32 id,
         bytes32 principalId
     );
+    /// One per BIND, UNBIND or RELEASE admission, right after its `Admitted`, so an indexer follows every binding
+    /// (a tag: purpose TAG, subject the topic, role the thing) with no storage read. `kind` is the action kind
+    /// (3 BIND, 4 UNBIND, 7 RELEASE) and `strength` its `saltOrStrength`: the number is `strength` after a BIND,
+    /// `-1 - strength` after an UNBIND, none after a RELEASE (strength 0). `target` is the bound target (0 for
+    /// UNBIND and RELEASE), `targetKind` 1 RECORD 2 SUBJECT 3 ADDRESS (0 for UNBIND and RELEASE), `transitionKind`
+    /// that of `Effect/3` (1 FIRST_BIND 2 REBIND 3 MASK 4 RELEASE 5 RESTORE 6 FIRST_MASK). The author is the
+    /// `principalId` of the `Admitted` event with the same `admission`.
+    event Bound(
+        uint64 indexed admission,
+        bytes32 indexed purpose,
+        bytes32 indexed subject,
+        bytes32 role,
+        bytes32 target,
+        uint8 kind,
+        uint16 strength,
+        uint8 transitionKind,
+        uint8 targetKind
+    );
+    /// The body of a fresh record of at most `ClosureConstants.BODY_EVENT_MAX` bytes, right after the `Admitted`
+    /// of the PUBLISH that first admitted it (never for a repeat publish or a REUSE), so an indexer can follow
+    /// names, words, folders and topic records from events alone. A larger body stays in state only.
+    event Body(bytes32 indexed recordId, bytes32 indexed typeId, bytes body);
     /// Guarded publications: the preimage lives only here under the default retention profile.
     event ReadSetChecked(uint64 indexed publication, bytes32 indexed readSetHash, bytes readSet);
     /// ERC-1271 bytes under the log-only retention profile (w9.store == 0).

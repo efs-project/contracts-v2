@@ -111,7 +111,7 @@ contract FilesPageReader is IFilesPageReader {
     bytes32 internal constant PHYSICAL_PROFILE =
         keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
     bytes32 internal constant CALLBACK_PROFILE =
-        keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+        keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
     address public immutable LEDGER;
     address public immutable VIEWS;
@@ -675,16 +675,17 @@ contract FilesPageReader is IFilesPageReader {
         s.admission = uint64(_n(ret, 3, 64));
         s.targetKind = uint8(_n(ret, 4, 8));
         s.target = bytes32(_w(ret, 8));
-        s.index = _n(ret, 9, 8);
+        // (status, Head selected [9 words], selectedIndex, offset of all, BasisCommit [6], Head[] all)
+        s.index = _n(ret, 10, 8);
         if (
-            bytes32(_w(ret, 11)) != r.observed.executionSet
-                || _w(ret, 15) != r.observed.admissionHighWater
+            bytes32(_w(ret, 12)) != r.observed.executionSet
+                || _w(ret, 16) != r.observed.admissionHighWater
         ) revert E_FILES_INCONSISTENT(6);
         if (
             s.status != uint8(Status.PRESENT) && s.status != uint8(Status.MASKED)
                 && s.status != uint8(Status.ABSENT_PROVEN)
         ) revert E_FILES_STATUS(s.status);
-        (, uint256 len) = _array(ret, 10);
+        (, uint256 len) = _array(ret, 11);
         bool none = s.index == SELECTED_NONE;
         if (
             len != principals.length || (none != (s.status == uint8(Status.ABSENT_PROVEN)))
@@ -698,9 +699,9 @@ contract FilesPageReader is IFilesPageReader {
 
     /// The state of head `k` of a `headsAt` reply's `all` array.
     function _allState(Sel memory s, uint256 k) private pure returns (uint256) {
-        (uint256 base, uint256 len) = _array(s.ret, 10);
+        (uint256 base, uint256 len) = _array(s.ret, 11);
         if (k >= len) revert E_FILES_INCONSISTENT(5);
-        return _n(s.ret, base + k * 8, 8);
+        return _n(s.ret, base + k * 9, 8);
     }
 
     function _scopeHead(Run memory r, bytes32 key)

@@ -20,9 +20,11 @@ error E_FILES_SUNSET(); // none
 /// @title FilesProfile — constants shared by the Files rules (design §12.1)
 /// @dev Internal only; no storage, no immutables (the profile immutables gate, `tools/checks.mjs`).
 library FilesProfile {
-    /// The ledger's head target kinds (`Effect.targetKind`, `ILedgerHot.head`): a record id, a created subject.
+    /// The ledger's head target kinds (`Effect.targetKind`, `ILedgerHot.head`): a record id, a created subject, an
+    /// address-shaped word that is neither.
     uint8 internal constant TARGET_RECORD = 1;
     uint8 internal constant TARGET_SUBJECT = 2;
+    uint8 internal constant TARGET_ADDRESS = 3;
     /// sha256 of the empty string: the `files-bytes/1` sentinel body word of a remote (external) carrier.
     bytes32 internal constant SHA256_EMPTY =
         0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;

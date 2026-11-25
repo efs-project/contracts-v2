@@ -40,6 +40,7 @@ contract LedgerViews is ILedgerViews {
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
 
     /// The facet ABI revision.
     function facetVersion() external pure returns (uint16) {
@@ -145,7 +146,8 @@ contract LedgerViews is ILedgerViews {
     }
 
     /// BIND / UNBIND / RELEASE. The previous state of the binding is the kind of the row at `prevAdmission`
-    /// (BIND → BOUND, UNBIND → MASKED, RELEASE → RELEASED; row 0 is never written → UNSET).
+    /// (BIND → BOUND, UNBIND → MASKED, RELEASE → RELEASED; row 0 is never written → UNSET, so an UNBIND from it is
+    /// a FIRST_MASK).
     function _bindEffect(address ledger, AdmissionRow memory r, Effect memory f)
         private
         view
@@ -174,7 +176,8 @@ contract LedgerViews is ILedgerViews {
             f.transitionKind =
                 prevKind == 0 ? T_FIRST_BIND : prevKind == ActionKind.BIND ? T_REBIND : T_RESTORE;
         } else {
-            f.transitionKind = r.kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
+            f.transitionKind =
+                r.kind == ActionKind.RELEASE ? T_RELEASE : prevKind == 0 ? T_FIRST_MASK : T_MASK;
         }
         if (prevKind == ActionKind.BIND) {
             f.oldTarget = w[2];
@@ -404,8 +407,8 @@ contract LedgerViews is ILedgerViews {
     /// @inheritdoc ILedgerViews
     /// @dev Walks the `prevAdmission` chain from the live head: FOUND with the head as it stood after the
     ///      last transition at or before `asOf` (state from that row's kind, revision counted back from the
-    ///      live revision, the target kind a masked or released head kept from its last BIND, canonical
-    ///      target), NONE when the binding did not exist yet at `asOf` (or never), UNKNOWN when more than
+    ///      live revision, the target kind a masked or released head kept from its last BIND (0 when it was
+    ///      never bound), the strength that row recorded, canonical target), NONE when the binding did not exist yet at `asOf` (or never), UNKNOWN when more than
     ///      `maxHops` admission rows would be read, without a ledger, on a foreign layout or on a reserved head
     ///      state.
     function historyAt(address ledger, bytes32 bindingKey, uint64 asOf, uint16 maxHops)
@@ -444,6 +447,7 @@ contract LedgerViews is ILedgerViews {
         h.admission = cursor;
         h.prevAdmission = r.prevAdmission;
         h.bindingOrdinal = live.bindingOrdinal;
+        h.strength = r.strength; // the row's strength is the head's after that transition (0 for RELEASE)
         if (h.state == 1) {
             h.targetKind = r.targetKind;
             h.target = r.a;

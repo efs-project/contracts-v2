@@ -100,7 +100,9 @@ struct RecordHeader {
     bytes32 word0;
 }
 
-/// A binding head. `target` is canonical: 0 unless BOUND.
+/// A binding head (nine words). `target` is canonical: 0 unless BOUND. `targetKind` 0 NONE (a head that was never
+/// bound) 1 RECORD 2 SUBJECT 3 ADDRESS. `notAfter` is reserved and always 0. `strength` is the last BIND's or
+/// UNBIND's (0 after a RELEASE); the signed number is `BindingNumber.numberOf(state, strength)`.
 struct Head {
     uint8 state;
     uint64 revision;
@@ -108,11 +110,14 @@ struct Head {
     uint8 targetKind;
     uint64 prevAdmission;
     uint64 bindingOrdinal;
-    uint40 notAfter;
+    uint32 notAfter;
     bytes32 target;
+    uint16 strength;
 }
 
-/// One admission row.
+/// One admission row (twelve words). The stored row keeps one 16-bit field for two uses; the view splits it by
+/// kind: `policyRow` is the policy row of a PUBLISH/REUSE row (0 otherwise) and `strength` the strength of a
+/// BIND/UNBIND/RELEASE row (0 otherwise). `withdrawn` is only ever set on a PUBLISH/REUSE row.
 struct AdmissionRow {
     uint8 kind;
     uint8 leaf;
@@ -125,6 +130,7 @@ struct AdmissionRow {
     uint16 roleRow;
     uint8 targetKind;
     bytes32 a;
+    uint16 strength;
 }
 
 /// One publication's evidence row. `retention` is LOG_ONLY for rows whose read-set preimage or ERC-1271

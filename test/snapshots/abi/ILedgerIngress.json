@@ -56,7 +56,7 @@
       },
       {
         "internalType": "bytes32",
-        "name": "salt",
+        "name": "saltOrStrength",
         "type": "bytes32"
       }
     ],
@@ -377,7 +377,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -659,7 +659,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -865,7 +865,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }

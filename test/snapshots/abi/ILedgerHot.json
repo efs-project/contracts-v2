@@ -231,6 +231,11 @@
           "name": "target",
           "type": "bytes32",
           "internalType": "bytes32"
+        },
+        {
+          "name": "strength",
+          "type": "uint16",
+          "internalType": "uint16"
         }
       ],
       "stateMutability": "view"

@@ -140,7 +140,7 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         returns (uint8 state, uint48 revision, uint48 admission, bytes32 target)
     {
         uint256 s = Layout.bindingsHeadsSlot(key);
-        (state, revision, admission,,,,) = Layout.unpackHeadRowWord0(_load(ledger, s));
+        (state, revision, admission,,,,,) = Layout.unpackHeadRowWord0(_load(ledger, s));
         if (state == 1) target = _load(ledger, s + 1);
     }
 
@@ -399,20 +399,24 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
             }
             q.rw10 += wm.rwPerPublish;
             q.fresh10 += uint256(wm.freshPerRef) * info.refCount;
-        } else if (kind == ActionKind.BIND) {
+        } else if (
+            kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
+        ) {
             ++q.binds;
-            (bytes32 expectedType, uint16 row) = registry.roleExpectation(a.purpose, a.role);
-            if (wantProfile) {
-                q.h = keccak256(abi.encode(q.h, a.purpose, a.role, row, expectedType));
+            if (kind == ActionKind.BIND) {
+                (bytes32 expectedType, uint16 row) = registry.roleExpectation(a.purpose, a.role);
+                if (wantProfile) {
+                    q.h = keccak256(abi.encode(q.h, a.purpose, a.role, row, expectedType));
+                }
             }
-            (uint8 state,,,) = _headState(
-                ledger, Keys.binding(principalId, Keys.position(a.purpose, a.subject, a.role))
-            );
-            if (state == 0) q.fresh10 += wm.freshPerBindFresh;
-            q.rw10 += wm.rwPerBind;
-            q.compute += wm.computePerHookEffect;
-        } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
-            ++q.binds;
+            // a first statement of either sign (BIND or UNBIND on an UNSET head) allocates the binding and
+            // its position, so a first mask is priced like a first bind; RELEASE never stands on an UNSET head
+            if (kind != ActionKind.RELEASE) {
+                (uint8 state,,,) = _headState(
+                    ledger, Keys.binding(principalId, Keys.position(a.purpose, a.subject, a.role))
+                );
+                if (state == 0) q.fresh10 += wm.freshPerBindFresh;
+            }
             q.rw10 += wm.rwPerBind;
             q.compute += wm.computePerHookEffect;
         }

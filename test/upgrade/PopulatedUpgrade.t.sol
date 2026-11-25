@@ -92,7 +92,7 @@ contract PopulatedUpgradeTest is FilesFixture {
 
     function _create(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function _publish(uint8 t, bytes memory body)

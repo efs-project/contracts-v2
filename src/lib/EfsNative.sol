@@ -118,7 +118,7 @@ library EfsNative {
 
     function createAction(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function publishAction(bytes32 typeId, bytes memory body)
@@ -166,6 +166,37 @@ library EfsNative {
     {
         a = bindAction(c, 0, expectedRevision);
         a.kind = ActionKind.RELEASE;
+    }
+
+    /// A BIND stating the number `strength` (0..65,535; `bindAction` states 0).
+    function bindActionWithStrength(
+        Coordinate memory c,
+        bytes32 target,
+        uint64 expectedRevision,
+        uint16 strength
+    ) internal pure returns (Action memory a) {
+        a = bindAction(c, target, expectedRevision);
+        a.saltOrStrength = bytes32(uint256(strength));
+    }
+
+    /// An UNBIND stating the number `-1 - strength` (`unbindAction` states -1); admitted from every state.
+    function unbindActionWithStrength(Coordinate memory c, uint64 expectedRevision, uint16 strength)
+        internal
+        pure
+        returns (Action memory a)
+    {
+        a = unbindAction(c, expectedRevision);
+        a.saltOrStrength = bytes32(uint256(strength));
+    }
+
+    /// A lone negative: an UNBIND at a position this principal never stated anything at (expected revision 0),
+    /// stating `-1 - strength`.
+    function loneNegativeAction(Coordinate memory c, uint16 strength)
+        internal
+        pure
+        returns (Action memory)
+    {
+        return unbindActionWithStrength(c, 0, strength);
     }
 
     /// WITHDRAW names the admission ordinal in `target`.

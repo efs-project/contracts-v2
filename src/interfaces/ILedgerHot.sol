@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 /// @title ILedgerHot — the Etched kernel reads (design §5.3)
-/// @notice One SLOAD each, no stipends, no struct encoders. `HOT_ABI_ID = keccak("efs/ledger-hot/1" ‖ sorted
+/// @notice One SLOAD each, no stipends, no struct encoders. `HOT_ABI_ID = keccak("efs/ledger-hot/2" ‖ sorted
 ///         selectors ‖ return layouts)` is an implementation immutable exposed by `hotAbiId()` and snapshot-tested
 ///         across releases. A kernel upgrade may add selectors (a new `HOT_ABI_ID`) and never changes or removes
 ///         one; acceptors and units may call these getters on `ctx.ledger`/`LEDGER` forever. `extsload*` are the
@@ -73,7 +73,9 @@ interface ILedgerHot {
 
     function subjectCreatedAt(bytes32 subjectId) external view returns (uint64);
 
-    /// `target` is the canonical target: loaded only when BOUND, else 0.
+    /// `target` is the canonical target: loaded only when BOUND, else 0. `targetKind` 0 NONE 1 RECORD 2 SUBJECT
+    /// 3 ADDRESS. `strength` is the last BIND's or UNBIND's (0 after a RELEASE and on an UNSET head); the signed
+    /// number is `BindingNumber.numberOf(state, strength)`: `strength` when BOUND, `-1 - strength` when MASKED.
     function head(bytes32 bindingKey)
         external
         view
@@ -84,7 +86,8 @@ interface ILedgerHot {
             uint8 targetKind,
             uint64 prevAdmission,
             uint64 bindingOrdinal,
-            bytes32 target
+            bytes32 target,
+            uint16 strength
         );
 
     function recordHeader(bytes32 recordId)

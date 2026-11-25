@@ -38,7 +38,7 @@ function records(typeId, count, seed) {
   for (let i = 0; i < count; i++) {
     const payload = toHex(new Uint8Array(224).map((_, j) => (seed * 31 + i * 7 + j) & 0xff));
     const body = concat([sha256(payload), payload]);
-    actions.push({ kind: ACTION.PUBLISH, typeId, bodyHashOrRecordId: keccak256(body), purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, salt: ZERO });
+    actions.push({ kind: ACTION.PUBLISH, typeId, bodyHashOrRecordId: keccak256(body), purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, saltOrStrength: ZERO });
     bodies.push(body);
   }
   return { actions, bodies };

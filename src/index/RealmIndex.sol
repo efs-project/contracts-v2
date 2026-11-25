@@ -43,7 +43,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     bytes32 public constant PHYSICAL_PROFILE =
         keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
     bytes32 public constant CALLBACK_PROFILE =
-        keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+        keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
     bytes32 public constant MANIFEST_HEADER = keccak256("efs/index-manifest/1");
     uint64 private constant NOT_MAINTAINED = type(uint64).max;
     uint8 private constant SHAPE_APPEND = 1;
@@ -53,6 +53,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
 
     bytes32 private immutable F_BY_TYPE;
     bytes32 private immutable F_BY_AUTHOR;
@@ -293,10 +294,17 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         ps.append(FamilyId.wrap(F_HISTORY), _pk(0, 8, 0, bindingKey), admission, 0);
         if (e.oldTarget != 0) ps.release(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.oldTarget), 1);
         uint8 tk = e.transitionKind;
-        if (tk == T_FIRST_BIND) {
-            bs.appendScopeEntry(
+        if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
+            // a first statement of either sign appends the scope entry and the role-scope entry; the store
+            // appends live entries, so a first mask clears the entry's live bit at once
+            uint64 entry = bs.appendScopeEntry(
                 FamilyId.wrap(F_SCOPE), ScopeKey.wrap(scope), e.bindingOrdinal, admission
             );
+            if (tk == T_FIRST_MASK) {
+                bs.setBit(
+                    FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(scope), entry, false, admission
+                );
+            }
             ps.append(
                 FamilyId.wrap(F_ROLE_SCOPE),
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),
@@ -314,7 +322,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                 admission
             );
         } else {
-            // MASK or RELEASE
+            // MASK (from BOUND, MASKED or RELEASED) or RELEASE; clearing a clear bit changes no count
             bs.setBit(
                 FamilyId.wrap(F_LIVE_SCOPE),
                 ScopeKey.wrap(scope),

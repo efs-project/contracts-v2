@@ -157,11 +157,11 @@ contract NativeAppTest is ConsumerFixture {
         (,,,, address requestedBy) = app.entries(1);
         assertEq(requestedBy, BOB, "app-level bookkeeping only");
         // the head exists under the app's principal and under neither EOA's
-        (uint8 state,,,,,,) = hot.head(_headKey(appPrincipal, subject, ROLE));
+        (uint8 state,,,,,,,) = hot.head(_headKey(appPrincipal, subject, ROLE));
         assertEq(state, 1);
-        (state,,,,,,) = hot.head(_headKey(Keys.principal(ALICE), subject, ROLE));
+        (state,,,,,,,) = hot.head(_headKey(Keys.principal(ALICE), subject, ROLE));
         assertEq(state, 0);
-        (state,,,,,,) = hot.head(_headKey(Keys.principal(BOB), subject, ROLE));
+        (state,,,,,,,) = hot.head(_headKey(Keys.principal(BOB), subject, ROLE));
         assertEq(state, 0);
         assertEq(_nonce(Keys.principal(ALICE)), 0);
         assertEq(_nonce(Keys.principal(BOB)), 0);

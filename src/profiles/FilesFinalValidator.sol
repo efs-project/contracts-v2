@@ -33,7 +33,10 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      Refusal codes (`E_FILES_FINAL(code, leaf)`): 1 no `files-name/2` record for the role at or before the
 ///      terminal admission, 2 the parent is not a directory record admitted by then, 3 self-link (target ==
 ///      parent), 4 a subject target not created by then, 5 a record target that is not a directory record admitted
-///      by then, 6 an unknown target kind.
+///      by then, 6 an unknown target kind (an ADDRESS target among them: a folder entry cannot name an address),
+///      7 a BIND of any other purpose than TAG or FOLDER whose target kind is 3 (ADDRESS): an address is a target
+///      for tags only, because a HEAD (or any other purpose this profile's readers serve) pointing at an address
+///      would confirm and never be readable. UNBIND and RELEASE carry no target and are never refused here.
 contract FilesFinalValidator is IIndexHook {
     /// The exact `files-name/2` Type id of the profile (constructor state, never rewritten).
     bytes32 public nameTypeId;
@@ -71,7 +74,13 @@ contract FilesFinalValidator is IIndexHook {
         bytes32 directoryType;
         for (uint256 i; i < n; ++i) {
             Effect calldata e = effects[i];
-            if (e.kind != ActionKind.BIND || e.purpose != Purpose.FOLDER) continue;
+            if (e.kind != ActionKind.BIND) continue;
+            if (e.purpose != Purpose.FOLDER) {
+                if (e.targetKind == FilesProfile.TARGET_ADDRESS && e.purpose != Purpose.TAG) {
+                    revert E_FILES_FINAL(7, e.leaf);
+                }
+                continue;
+            }
             if (address(hot) == address(0)) {
                 hot = ILedgerHot(IIndexReads(msg.sender).ledger());
                 nameType = nameTypeId;

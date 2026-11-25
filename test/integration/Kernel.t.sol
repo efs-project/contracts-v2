@@ -95,7 +95,7 @@ contract KernelTest is Test {
 
     function _create(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function _publish(bytes32 typeId, bytes memory body) internal pure returns (Action memory a) {
@@ -192,7 +192,7 @@ contract KernelTest is Test {
             uint64 admission,
             uint8 targetKind,,
             uint64 ordinal,
-            bytes32 target
+            bytes32 target,
         ) = hot.head(key);
         assertEq(state, 1);
         assertEq(revision, 1);

@@ -236,7 +236,7 @@ contract AttributionTest is ConsumerFixture {
         ledger.unbind(3, unbound, c, 1);
         ledger.bind(4, unbound, c, rid, 2);
         ledger.release(5, unbound, c, 3);
-        (uint8 state,,,,,,) = hot.head(_headKey(me, subject, ROLE));
+        (uint8 state,,,,,,,) = hot.head(_headKey(me, subject, ROLE));
         assertEq(state, 3, "RELEASED");
         (uint64 admissions,,,) = hot.counts();
         ledger.withdraw(6, unbound, 2); // the PUBLISH admission

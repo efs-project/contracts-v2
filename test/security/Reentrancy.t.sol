@@ -332,7 +332,7 @@ contract ReentrancyTest is Test, IRelay {
         bytes32 es = hot.executionSet();
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("efs/test/security/reentrancy/outer");
+        actions[0].saltOrStrength = keccak256("efs/test/security/reentrancy/outer");
         Native memory ctx;
         (uint64 publication,) = ledger.execute(actions, new bytes[](1), ctx, "");
         assertEq(publication, 1, "the outer publication landed");
