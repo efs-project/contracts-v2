@@ -21,6 +21,10 @@ contract FilesFinalValidatorTest is Test {
 
     bytes32 internal constant NAME_TYPE = keccak256("test/files/name-type");
     bytes32 internal constant DIR_TYPE = keccak256("test/files/directory-type");
+    bytes32 internal constant TOPIC_TYPE = keccak256("test/topics/topic-type");
+    bytes32 internal constant WORD_TYPE = keccak256("test/topics/word-type");
+    bytes32 internal constant TOPIC = keccak256("a topic/1 record");
+    bytes32 internal constant WORD = keccak256("a topic-word/1 record");
     bytes32 internal constant OTHER_TYPE = keccak256("test/files/binary-type");
     bytes32 internal constant PARENT = keccak256("parent directory record");
     bytes32 internal constant CHILD_DIR = keccak256("child directory record");
@@ -31,7 +35,9 @@ contract FilesFinalValidatorTest is Test {
     function setUp() public {
         ledger = new FilesLedgerStub();
         index = new FilesIndexStub(address(ledger));
-        v = new FilesFinalValidator(NAME_TYPE, DIR_TYPE);
+        v = new FilesFinalValidator(NAME_TYPE, DIR_TYPE, TOPIC_TYPE, WORD_TYPE);
+        ledger.setRecord(TOPIC, TOPIC_TYPE, 6, 64);
+        ledger.setRecord(WORD, WORD_TYPE, 7, 5);
         ledger.setRecord(Keys.recordFromHash(NAME_TYPE, ROLE), NAME_TYPE, 3, 10);
         ledger.setRecord(PARENT, DIR_TYPE, 1, 32);
         ledger.setRecord(CHILD_DIR, DIR_TYPE, 2, 32);
@@ -179,6 +185,50 @@ contract FilesFinalValidatorTest is Test {
         _ok(l);
     }
 
+    // ---- SPIKE (tags/topics): a first tag stands on a registered topic or a home ---------------------------------
+
+    function _tag(uint8 leaf, bytes32 subject, uint8 transition)
+        internal
+        pure
+        returns (Effect memory e)
+    {
+        e = _bind(leaf, subject, FILE, FILE, 2);
+        e.purpose = Purpose.TAG;
+        e.transitionKind = transition;
+        if (transition == 6 || transition == 3 || transition == 4) {
+            e.kind = transition == 4 ? ActionKind.RELEASE : ActionKind.UNBIND;
+            e.target = 0;
+            e.targetKind = 0;
+        }
+    }
+
+    function test_first_tag_subjects() public {
+        bytes32 home = bytes32(uint256(uint160(address(0xA11CE))));
+        for (uint8 k = 1; k <= 6; k += 5) {
+            _ok(_list(_tag(0, TOPIC, k)));
+            _ok(_list(_tag(0, WORD, k)));
+            _ok(_list(_tag(0, home, k)));
+            _bad(_list(_tag(0, keccak256("unregistered"), k)), 7, 0);
+            _bad(_list(_tag(0, PARENT, k)), 7, 0); // a directory record is not a topic
+            _bad(_list(_tag(0, FILE, k)), 7, 0); // a subject is not a record
+            _bad(_list(_tag(0, bytes32(uint256(1) << 160), k)), 7, 0); // the lowest non-address word
+        }
+    }
+
+    function test_later_tag_transitions_are_never_judged() public {
+        bytes32 bogus = keccak256("unregistered");
+        for (uint8 k = 2; k <= 5; ++k) {
+            _ok(_list(_tag(0, bogus, k)));
+        }
+    }
+
+    function test_topic_registered_after_the_terminal_admission_is_refused() public {
+        ledger.setRecord(TOPIC, TOPIC_TYPE, TERMINAL + 1, 64);
+        _bad(_list(_tag(0, TOPIC, 1)), 7, 0);
+        ledger.setRecord(TOPIC, TOPIC_TYPE, TERMINAL, 64);
+        _ok(_list(_tag(0, TOPIC, 1)));
+    }
+
     // ---- shape -----------------------------------------------------------------------------------------------------
 
     function test_configuration_identity_and_fold() public view {
@@ -186,7 +236,11 @@ contract FilesFinalValidatorTest is Test {
         assertEq(v.directoryTypeId(), DIR_TYPE);
         assertEq(
             v.identity(),
-            keccak256(abi.encode(keccak256("efs/unit/files-final/1"), NAME_TYPE, DIR_TYPE))
+            keccak256(
+                abi.encode(
+                    keccak256("efs/unit/files-final/1"), NAME_TYPE, DIR_TYPE, TOPIC_TYPE, WORD_TYPE
+                )
+            )
         );
         Effect memory e;
         assertEq(v.fold(e, new bytes32[](0), 1), IIndexHook.fold.selector);

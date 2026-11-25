@@ -97,7 +97,9 @@ contract Genesis is Script {
         validator = Factory.deploy(
             abi.encodePacked(
                 type(FilesFinalValidator).creationCode,
-                abi.encode(typeIds[T_NAME], typeIds[T_DIRECTORY])
+                // SPIKE (tags/topics): the release plan does not deploy the Topics Types yet, so the two topic
+                // Type ids are zero here (every first tag on a non-home subject is then refused, code 7)
+                abi.encode(typeIds[T_NAME], typeIds[T_DIRECTORY], bytes32(0), bytes32(0))
             )
         );
         validatorIdentity = FilesFinalValidator(validator).identity();

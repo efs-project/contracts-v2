@@ -17,7 +17,8 @@ import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.
 ///         Logs: `num <row> gas` (and `frame state gas` under the amsterdam profile).
 contract TagNumberMeasureTest is FilesRecipesBase {
     uint256 internal constant N = 60;
-    bytes32 internal constant X = keccak256("measure/number/concept/x");
+    // SPIKE (tags/topics): the concept is a registered topic (a `topic-word/1` page, registered in `setUp`)
+    bytes32 internal X;
 
     address[] internal cold;
     bytes32[N] internal s;
@@ -47,6 +48,12 @@ contract TagNumberMeasureTest is FilesRecipesBase {
             }
             r.ledger.execute(a, new bytes[](20), _ctx(a), "");
         }
+        (Action memory wp, bytes memory wb) = _wordPage("measure-number-x");
+        Action[] memory reg = new Action[](1);
+        bytes[] memory regb = new bytes[](1);
+        (reg[0], regb[0]) = (wp, wb);
+        r.ledger.execute(reg, regb, _ctx(reg), "");
+        X = _wordId("measure-number-x");
         // the concept's first member, so every measured row is a later member
         _silent(_acts(ActionKind.BIND, N - 1, 1, 0, 0));
         t.root = typeIds[T_ROOT];

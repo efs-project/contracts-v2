@@ -4,7 +4,16 @@ pragma solidity 0.8.37;
 import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, ActionKind, FamilyId, Purpose, TypeId} from "../../src/interfaces/Actions.sol";
+import {
+    Action,
+    ActionKind,
+    FamilyId,
+    Native,
+    Purpose,
+    TypeId
+} from "../../src/interfaces/Actions.sol";
+import {E_INDEX_CALL} from "../../src/interfaces/Errors.sol";
+import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 import {BasisCommit, Status} from "../../src/interfaces/Results.sol";
 import {Cursor, Page} from "../../src/interfaces/Readers.sol";
 import {LedgerReads} from "../../src/readers/LedgerReads.sol";
@@ -20,8 +29,10 @@ import {LensReader} from "../../src/readers/LensReader.sol";
 ///         Logs: `tag <key> gas` (and `frame state gas` under the amsterdam profile).
 contract TagPathMeasureTest is FilesRecipesBase {
     uint256 internal constant N = 60;
-    bytes32 internal constant X = keccak256("measure/concept/x");
-    bytes32 internal constant Y = keccak256("measure/concept/y");
+    // SPIKE (tags/topics): every concept is a registered topic (a `topic-word/1` page), registered in `setUp`, so
+    // the first-tag check of `FilesFinalValidator` admits it
+    bytes32 internal X;
+    bytes32 internal Y;
 
     address[] internal cold;
     bytes32[N] internal s; // CREATE subjects of p: the tagged things
@@ -54,6 +65,26 @@ contract TagPathMeasureTest is FilesRecipesBase {
             }
             r.ledger.execute(a, new bytes[](20), _ctx(a), "");
         }
+        X = _registerWords("measure-x", 1);
+        Y = _registerWords("measure-y", 1);
+        _registerWords("fresh-", 32);
+        _registerWords("concept-", 8);
+    }
+
+    /// Publishes the word pages `prefix` (n == 1) or `prefix0..prefix{n-1}`; returns the first page's id.
+    function _registerWords(string memory prefix, uint256 n) internal returns (bytes32 first) {
+        Action[] memory a = new Action[](n);
+        bytes[] memory b = new bytes[](n);
+        for (uint256 i; i < n; ++i) {
+            bytes memory w = n == 1 ? bytes(prefix) : abi.encodePacked(prefix, vm.toString(i));
+            (a[i], b[i]) = _wordPage(w);
+        }
+        r.ledger.execute(a, b, _ctx(a), "");
+        first = Keys.record(a[0].typeId, b[0]);
+    }
+
+    function _c8(uint256 i) internal view returns (bytes32) {
+        return _wordId(abi.encodePacked("concept-", vm.toString(i)));
     }
 
     function _remember(address a) internal {
@@ -106,14 +137,27 @@ contract TagPathMeasureTest is FilesRecipesBase {
     }
 
     /// The other key order: position (TAG, target, role = concept). Same kernel work, other lists.
+    /// SPIKE (tags/topics): a first tag's subject must be a registered topic or a home, so this key order is now
+    /// refused (`E_FILES_FINAL(7, leaf)`) when the target is a created subject; the rows assert the refusal.
     function test_assert_keyed_by_target() public {
         Action[] memory a = new Action[](1);
         a[0] = _bind(Purpose.TAG, s[0], X, s[0], 0);
-        _run("assert by-target k1", a);
+        _refuse7(a, 0);
         a = new Action[](2);
         a[0] = _bind(Purpose.TAG, s[1], X, s[1], 0);
         a[1] = _bind(Purpose.TAG, s[2], X, s[2], 0);
-        _run("assert by-target k2", a);
+        _refuse7(a, 0);
+    }
+
+    function _refuse7(Action[] memory a, uint8 leaf) internal {
+        Native memory c = _ctx(a);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                E_INDEX_CALL.selector,
+                abi.encodeWithSelector(E_FILES_FINAL.selector, uint8(7), leaf)
+            )
+        );
+        r.ledger.execute(a, new bytes[](a.length), c, "");
     }
 
     /// Deny after an assertion (UNBIND = mask), assert again, deny, then back to silent (RELEASE).
@@ -181,8 +225,8 @@ contract TagPathMeasureTest is FilesRecipesBase {
         }
     }
 
-    function _concept(uint256 i) internal pure returns (bytes32) {
-        return keccak256(abi.encode("measure/concept/fresh", i));
+    function _concept(uint256 i) internal view returns (bytes32) {
+        return _wordId(abi.encodePacked("fresh-", vm.toString(i)));
     }
 
     /// Fresh (zero → non-zero) storage words one publication writes, from a state diff on a snapshot that is
@@ -300,7 +344,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         bytes32 target = s[0];
         Action[] memory a = new Action[](8);
         for (uint256 i; i < 8; ++i) {
-            bytes32 c = keccak256(abi.encode("concept", i));
+            bytes32 c = _c8(i);
             a[i] = i % 3 == 1
                 ? _bindKind(ActionKind.UNBIND, Purpose.TAG, c, target, 0, 0)
                 : _bind(Purpose.TAG, c, target, target, 0);
@@ -326,9 +370,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         before = gasleft();
         uint256 denied;
         for (uint256 i; i < 8; ++i) {
-            bytes32 key = Keys.binding(
-                p, Keys.position(Purpose.TAG, keccak256(abi.encode("concept", i)), target)
-            );
+            bytes32 key = Keys.binding(p, Keys.position(Purpose.TAG, _c8(i), target));
             (uint8 state,,,,,,) = r.hot.head(key);
             if (state == 2) ++denied;
         }
@@ -398,7 +440,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         bytes32 target = s[0];
         Action[] memory a = new Action[](8);
         for (uint256 i; i < 8; ++i) {
-            a[i] = _bind(Purpose.TAG, keccak256(abi.encode("concept", i)), target, target, 0);
+            a[i] = _bind(Purpose.TAG, _c8(i), target, target, 0);
         }
         _silent(a);
         _cool();
@@ -417,9 +459,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         emit log_named_uint("tag read concepts on a target: list gas", listGas);
         before = gasleft();
         for (uint256 i; i < 8; ++i) {
-            bytes32 key = Keys.binding(
-                p, Keys.position(Purpose.TAG, keccak256(abi.encode("concept", i)), target)
-            );
+            bytes32 key = Keys.binding(p, Keys.position(Purpose.TAG, _c8(i), target));
             (uint8 state,,,,,,) = r.hot.head(key);
             assertEq(state, 1);
         }

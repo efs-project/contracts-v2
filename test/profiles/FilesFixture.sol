@@ -129,7 +129,12 @@ abstract contract FilesFixture is Test {
             Factory.deploy(
                 abi.encodePacked(
                     type(FilesFinalValidator).creationCode,
-                    abi.encode(typeIds[T_NAME], typeIds[T_DIRECTORY])
+                    abi.encode(
+                        typeIds[T_NAME],
+                        typeIds[T_DIRECTORY],
+                        topicTypeIds[TT_PATH],
+                        topicTypeIds[TT_WORD]
+                    )
                 )
             )
         );
