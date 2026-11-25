@@ -19,47 +19,47 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 // forge-lint: disable-start(divide-before-multiply)
 
 /// @title TopicPageReader/1 — the lens and public views of a place (design §5.13, §11; docs/TAG-DESIGN.md §6)
-/// @notice A place is a topic or a home. Three views, every list newest first (most recently first-stated):
+/// @notice A place is a topic or a home; "below" is the place and everything filed under its descendant topics.
+///         Two views, every list newest first (most recently first-stated); `about` is on `TopicLookupReader`.
 ///
 ///         `mine(lens, place, below)`: lens = ordered principals (1..64). Merges, newest first by binding ordinal,
 ///         each lens author's exact scope list `Keys.scope(author, TAG, place)` (family 10, in the bitmap store; an
 ///         entry whose live bit is clear is never shown and costs no head read) and, with `below`, the author's
 ///         roll-up `Keys.scopeBelowList(author, TAG, place)` (family 19). The lens rule decides each candidate: the
 ///         first lens author with a stance at the position decides; a number >= 0 shows the row with that number,
-///         a negative hides it. A candidate from author j reads only the heads of lens[0..j] (one `headsAt`): a
-///         row is produced only by the deciding author's own entry, so each (topic filed under, thing) appears once
-///         in a listing read at one block, and none is shown twice within a page. Heads are read at each page's
-///         own block, so a stance changed between pages can move a row: a caller removes repeats across pages by
-///         `position` (`dedupWithinPageOnly`). Calls per row: one `bindingCells`, one `headsAt` of j + 1 heads.
+///         a negative hides it. A candidate of lens author j needs only the heads of lens[0..j]: candidates are
+///         resolved in batches of up to 16 by one `LedgerViews.lensRule` call, which reads the state word of each
+///         earlier author's head and the whole head of the candidate's author. A row is produced only by the
+///         deciding author's own entry, so each (topic filed under, thing) appears once in a listing read at one
+///         block and never twice within a page; heads are read at each page's own block, so a stance changed
+///         between pages can move a row, and a caller removes repeats across pages by `position`
+///         (`dedupWithinPageOnly`).
 ///
-///         `everyone(query, lens)`: the place list `Keys.placeList(purpose, place)` (family 6; TAG or FOLDER) or,
-///         with `below` (TAG), the roll-up `Keys.placeBelowList(TAG, place)` (family 7). A position can be listed
-///         more than once (the first statement at a fresh position and every later author's first yes): the newest
-///         occurrence is kept and later ones on the page are skipped (`repeatsSkipped`); a caller removes repeats
-///         across pages (`dedupWithinPageOnly`). Per row one head read of the position's authors
-///         (`Keys.positionAuthorsList`, family 20): `statements` = its count, `yes` = its live count (the authors
-///         who say yes now). A row nobody says yes to (`yes == 0`) is left out; `raw` returns it. A row is hidden
-///         only by a lens author: when the lens rule (`headsAt`, the first lens author with a stance) decides a
-///         negative at the position the entry was filed under or, below, at the same thing in the viewed place
-///         (`(TAG, place, thing)`); a denial does not travel down to child topics, and a denial of a child topic
-///         says nothing about the place. A stranger's statements never hide a row, and no row is hidden or dropped
-///         because a scan stopped early: no scan decides a row. `raw` skips the lens. With `sample` > 0 the newest
-///         `sample` authors (at most 64) are read through `LedgerViews.authorHeads` as detail: how many say >= 0,
-///         how many < 0, and `incomplete` when they are not every author.
-///
-///         `about(thing, lens)`: every place anyone filed `thing` under at TAG, either sign (`Keys.rolePlacesList`,
-///         family 21), newest first, with the row of `everyone`; rows nobody says yes to are returned; the lens
-///         hides at the filed position (nothing with `raw`).
+///         `everyone(query, lens)`: the place list `Keys.placeList(purpose, place)` (family 6; TAG or FOLDER) and,
+///         with `below` (TAG), the roll-up `Keys.placeBelowList(TAG, place)` (family 7), merged newest first. A
+///         position can be listed more than once (the first statement at a fresh position and every later author's
+///         first yes): the newest occurrence is kept and later ones on the page are skipped (`repeatsSkipped`); a
+///         caller removes repeats across pages (`dedupWithinPageOnly`). Per row one head read of the position's
+///         authors (`Keys.positionAuthorsList`, family 20): `statements` = its count, `yes` = its live count (the
+///         authors who say yes now). A row nobody says yes to (`yes == 0`) is left out; `raw` returns it. A row is
+///         hidden only by a lens author: when the lens rule (the first lens author with a stance, from the window's
+///         `lensRule` call) decides a negative at the position the entry was filed under or, below, at the same
+///         thing in the viewed place (`(TAG, place, thing)`, one `heads` round per window); a denial does not travel
+///         down to child topics, and a denial of a child topic says nothing about the place. A stranger's statements
+///         never hide a row, and no row is hidden or dropped because a scan stopped early: no scan decides a row.
+///         `raw` skips the lens. With `sample` > 0 the newest `sample` authors (at most 64) are read through
+///         `LedgerViews.authorHeads` as detail: how many say >= 0, how many < 0, and `incomplete` when they are not
+///         every author.
 ///
 ///         Page laws as `TopicPageInfo` states them: a Realm whose index keeps no topic roll-ups (families 7 and 19
 ///         `NOT_MAINTAINED`) answers a below view UNKNOWN with no rows, never empty; any list or author head of
 ///         UNKNOWN coverage makes the page UNKNOWN. `limit` 0 means no row limit; `gasReserve` is checked before
-///         each list entry and must cover one row and the return encoding (scan status 3 GAS, with a continuation).
+///         each batch (`mine`) or list entry (`everyone`) and must cover one batch of 16 rows and the return encoding
+///         (scan status 3 GAS, with a continuation).
 contract TopicPageReader is TopicReaderBase, ITopicPageReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-page/query/1");
     uint8 internal constant VIEW_MINE = 1;
     uint8 internal constant VIEW_EVERYONE = 2;
-    uint8 internal constant VIEW_ABOUT = 3;
 
     /// One lens author's list in `mine`: its exact scope list (bitmap store) or its roll-up (posting list), and a
     /// window of entries `[lo, lo + win.length)` read ascending; entries below `l.hi` are unread.
@@ -401,36 +401,18 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
             new bytes32[](0),
             0
         );
-        List memory l = query.below
-            ? List(F_PLACE_BELOW, Purpose.TAG, 0, query.place, 0, 0, 0, 0)
-            : List(F_PLACE, query.purpose, 0, query.place, 0, 0, 0, 0);
+        // below = the place itself (family 6) and every topic under it (family 7), merged newest first
+        List[] memory ls = new List[](query.below ? 2 : 1);
+        ls[0] = List(F_PLACE, query.purpose, 0, query.place, 0, 0, 0, 0);
+        if (query.below) ls[1] = List(F_PLACE_BELOW, Purpose.TAG, 0, query.place, 0, 0, 0, 0);
         bool ok = query.purpose == Purpose.TAG || (query.purpose == Purpose.FOLDER && !query.below);
-        return _placePage(r, p, l, lens, expected, continuation, limit, gasReserve, ok);
-    }
-
-    /// @inheritdoc ITopicPageReader
-    function about(
-        bytes32 thing,
-        bytes32[] calldata lens,
-        bool raw,
-        uint16 sample,
-        BasisCommit calldata expected,
-        bytes calldata continuation,
-        uint32 limit,
-        uint256 gasReserve
-    ) external view returns (TopicPageInfo memory info, PlaceRow[] memory rows) {
-        Run memory r;
-        r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_ABOUT, thing, lens, raw, sample));
-        Place memory p =
-            Place(VIEW_ABOUT, Purpose.TAG, thing, false, raw, sample, new bytes32[](0), 0);
-        List memory l = List(F_ROLE_PLACES, Purpose.TAG, 0, thing, 0, 0, 0, 0);
-        return _placePage(r, p, l, lens, expected, continuation, limit, gasReserve, true);
+        return _placePage(r, p, ls, lens, expected, continuation, limit, gasReserve, ok);
     }
 
     function _placePage(
         Run memory r,
         Place memory p,
-        List memory l,
+        List[] memory ls,
         bytes32[] calldata lens,
         BasisCommit calldata expected,
         bytes calldata continuation,
@@ -439,36 +421,38 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         bool ok
     ) private view returns (TopicPageInfo memory info, PlaceRow[] memory rows) {
         (Status st, uint64[] memory cursor) =
-            _open(r, expected, lens.length, false, continuation, 1, info);
+            _open(r, expected, lens.length, false, continuation, ls.length, info);
         info.dedupWithinPageOnly = true;
         if (st == Status.PRESENT && !ok) st = Status.INVALID;
-        Coverage cov;
-        if (st == Status.PRESENT) {
-            cov = _listHead(r, l);
-            info.rawTotal = l.count;
+        Coverage cov = Coverage.COMPLETE;
+        uint256 left;
+        for (uint256 i; i < ls.length && st == Status.PRESENT; ++i) {
+            List memory l = ls[i];
+            cov = _join(cov, _listHead(r, l));
+            info.rawTotal += l.count;
             if (r.resumed) {
-                if (cursor[0] > l.count) st = Status.INVALID;
-                else l.hi = cursor[0];
+                if (cursor[i] > l.count) st = Status.INVALID;
+                else l.hi = cursor[i];
             }
-            if (cov == Coverage.UNKNOWN) st = Status.UNKNOWN;
+            left += l.hi;
         }
+        if (st == Status.PRESENT && cov == Coverage.UNKNOWN) st = Status.UNKNOWN;
         if (st != Status.PRESENT) {
             info.q.status = st;
             return (info, rows);
         }
-        uint256 cap = _capacity(limit, l.hi);
+        uint256 cap = _capacity(limit, left);
         assembly ("memory-safe") {
             rows := mload(0x40)
             mstore(rows, cap)
             mstore(0x40, add(rows, mul(add(cap, 1), 32)))
         }
         // the positions met on this page (kept or not), bounded by what the page can read
-        uint256 seenCap = l.hi;
-        if (gasleft() / 5_000 < seenCap) seenCap = gasleft() / 5_000;
-        p.seen = new bytes32[](seenCap);
+        if (gasleft() / 5_000 < left) left = gasleft() / 5_000;
+        p.seen = new bytes32[](left);
         uint8 scan;
         uint256 got;
-        (scan, got, cov) = _scanPlace(r, p, l, lens, rows, limit, gasReserve, info, cov);
+        (scan, got, cov) = _scanPlace(r, p, ls, lens, rows, limit, gasReserve, info, cov);
         if (cov == Coverage.UNKNOWN) {
             info.q.status = Status.UNKNOWN;
             info.listingCoverage = Coverage.UNKNOWN;
@@ -482,18 +466,20 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         assembly ("memory-safe") {
             mstore(rows, got)
         }
-        cursor = new uint64[](1);
-        cursor[0] = l.hi;
+        cursor = new uint64[](ls.length);
+        for (uint256 i; i < ls.length; ++i) {
+            cursor[i] = ls[i].hi;
+        }
         _finish(r, info, scan, cov, cursor);
     }
 
-    /// Reads windows of the list newest first until a stop; leaves `l.hi` at the first unexamined entry. Per
-    /// window: one slice, one `bindingCells`, and (when the lens applies) one `heads` round over the lens at every
-    /// entry's position and, below, at the same thing in the viewed place.
+    /// Reads windows of the lists merged newest first until a stop; leaves each list's `hi` at its first
+    /// unexamined entry. Per window: one slice per list, one `lensRule` (the cells, and the lens's decision at each
+    /// entry's own position) and, below, one `heads` round over the lens at the same thing in the viewed place.
     function _scanPlace(
         Run memory r,
         Place memory p,
-        List memory l,
+        List[] memory ls,
         bytes32[] calldata lens,
         PlaceRow[] memory rows,
         uint32 limit,
@@ -505,43 +491,45 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         bool deny = !p.raw && lens.length != 0;
         // the lens decides at each entry's own position; without one the facet is asked about nobody
         bytes32[] memory pr = deny ? lens : new bytes32[](1);
-        while (l.hi != 0) {
+        for (;;) {
+            uint256 m = limit == 0 || limit - got > WINDOW ? WINDOW : limit - got;
+            // a below window's viewed-place heads are one `heads` call: at most MAX_KEYS of them
+            if (deny && p.below && m * lens.length > MAX_KEYS) m = MAX_KEYS / lens.length;
+            (uint64[] memory e, uint8[] memory src) = _window(r, ls, m == 0 ? 1 : m);
+            if (e.length == 0) return (SCAN_EXHAUSTED, got, cov);
             if (limit != 0 && got == limit) return (SCAN_LIMIT, got, cov);
             if (got == rows.length || gasleft() < gasReserve) return (SCAN_GAS, got, cov);
-            uint64 m = l.hi > WINDOW ? uint64(WINDOW) : l.hi;
-            if (limit != 0 && limit - got < m) m = uint64(limit - got);
-            uint64[] memory e = _below(r, l, l.hi, m);
-            uint8[] memory au = new uint8[](m);
-            for (uint256 k; k < m; ++k) {
+            uint8[] memory au = new uint8[](e.length);
+            for (uint256 k; k < e.length; ++k) {
                 au[k] = uint8(pr.length - 1);
             }
             Lensed memory x = _lensRule(r, pr, e, au);
             Head[] memory hs;
             if (deny && p.below) hs = _viewedHeads(r, p, lens, x.cells);
-            for (uint256 k = m; k != 0; --k) {
+            for (uint256 k; k < e.length; ++k) {
                 if (limit != 0 && got == limit) return (SCAN_LIMIT, got, cov);
                 if (got == rows.length || p.seenCount == p.seen.length || gasleft() < gasReserve) {
                     return (SCAN_GAS, got, cov);
                 }
-                --l.hi;
+                --ls[src[k]].hi;
                 ++info.scanned;
-                bytes32 position = x.positions[k - 1];
-                Coordinate memory c = x.cells[k - 1];
-                _checkCell(p, c);
+                bytes32 position = x.positions[k];
+                Coordinate memory c = x.cells[k];
+                _checkCell(p, c, src[k] == 0);
                 if (_seen(p, position)) {
                     ++info.repeatsSkipped;
                     continue;
                 }
-                if (deny && x.decided[k - 1] == 2) continue; // a lens author's no at the filed position
-                if (hs.length != 0) {
+                if (deny && x.decided[k] == 2) continue; // a lens author's no at the filed position
+                if (hs.length != 0 && c.subject != p.place) {
                     // below: a lens author's no for the same thing at the viewed place hides it here too
-                    uint256 o = (k - 1) * lens.length;
+                    uint256 o = k * lens.length;
                     uint256 sel = _decide(hs, o, lens.length);
                     if (sel != SELECTED_NONE && hs[o + sel].state == 2) continue;
                 }
                 Coverage rc;
                 bool shown;
-                (shown, rc) = _placeRow(r, p, position, c, e[k - 1], row);
+                (shown, rc) = _placeRow(r, p, position, c, e[k], row);
                 cov = _join(cov, rc);
                 if (shown) {
                     rows[got] = row;
@@ -551,7 +539,37 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
                 }
             }
         }
-        return (SCAN_EXHAUSTED, got, cov);
+        return (SCAN_EXHAUSTED, got, cov); // unreachable: the loop returns
+    }
+
+    /// The next entries of the lists (one or two), newest first, at most `m` (1..WINDOW): one slice per list below
+    /// its `hi`, merged by ordinal (unique across the lists); `src[k]` names the list of entry k.
+    function _window(Run memory r, List[] memory ls, uint256 m)
+        private
+        view
+        returns (uint64[] memory e, uint8[] memory src)
+    {
+        List memory a = ls[0];
+        uint64 na = a.hi < m ? a.hi : uint64(m);
+        uint64[] memory wa = na == 0 ? new uint64[](0) : _below(r, a, a.hi, na);
+        uint64 nb;
+        uint64[] memory wb;
+        if (ls.length > 1) {
+            List memory b = ls[1];
+            nb = b.hi < m ? b.hi : uint64(m);
+            if (nb != 0) wb = _below(r, b, b.hi, nb);
+        }
+        uint256 n = na + nb < m ? na + nb : m;
+        e = new uint64[](n);
+        src = new uint8[](n);
+        for (uint256 k; k < n; ++k) {
+            if (nb == 0 || (na != 0 && wa[na - 1] > wb[nb - 1])) {
+                e[k] = wa[--na];
+            } else {
+                e[k] = wb[--nb];
+                src[k] = 1;
+            }
+        }
     }
 
     /// The lens heads at the viewed place's position `(TAG, place, thing)` of each entry of a below window.
@@ -572,13 +590,12 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         return _heads(r, keys);
     }
 
-    /// An entry of the list is a statement at the list's own purpose and place (or thing, for `about`): exact at
-    /// the place, below under a proper descendant of it.
-    function _checkCell(Place memory p, Coordinate memory c) private pure {
-        bool bad = c.purpose != p.purpose;
-        if (p.view_ == VIEW_ABOUT) bad = bad || c.role != p.place;
-        else bad = bad || (c.subject == p.place) == p.below;
-        if (bad) revert E_TOPIC_INCONSISTENT(3);
+    /// An entry of a list is a statement at the list's own purpose and place: `exact` entries (the place list) at
+    /// the place, roll-up entries under a proper descendant of it.
+    function _checkCell(Place memory p, Coordinate memory c, bool exact) private pure {
+        if (c.purpose != p.purpose || (c.subject == p.place) != exact) {
+            revert E_TOPIC_INCONSISTENT(3);
+        }
     }
 
     /// True when `position` was already met on this page; records it otherwise.
@@ -603,35 +620,15 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         cov = _listHead(r, a);
         if (cov == Coverage.UNKNOWN) return (false, cov);
         if (a.count == 0) revert E_TOPIC_INCONSISTENT(3); // a listed position has a first statement
-        if (p.view_ == VIEW_EVERYONE && !p.raw && a.live == 0) return (false, cov); // nobody says yes
+        if (!p.raw && a.live == 0) return (false, cov); // nobody says yes
         row.position = position;
         row.topic = c.subject;
         row.thing = c.role;
         row.bindingOrdinal = entry;
         row.statements = a.count;
         row.yes = a.live;
-        if (p.sample != 0) _sample(r, p, a, position, row);
+        if (p.sample != 0) _sample(r, p.sample, a, position, row);
         return (true, cov);
-    }
-
-    /// The newest `p.sample` authors (at most 64) of the position: who says >= 0, who says < 0.
-    function _sample(
-        Run memory r,
-        Place memory p,
-        List memory a,
-        bytes32 position,
-        PlaceRow memory row
-    ) private view {
-        uint64 n = p.sample > 64 ? 64 : p.sample;
-        if (n > a.count) n = a.count;
-        uint64[] memory adm = _below(r, a, a.count, n);
-        (Status[] memory st,,) = _authors(r, position, adm);
-        for (uint256 i; i < n; ++i) {
-            if (st[i] == Status.PRESENT) ++row.sampleYes;
-            else if (st[i] == Status.MASKED) ++row.sampleNo;
-        }
-        row.sampled = uint16(n);
-        row.incomplete = a.count > n;
     }
 }
 

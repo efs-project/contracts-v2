@@ -1,11 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-import {ActionKind, BindingNumber, FamilyId, Purpose, ScopeKey} from "../interfaces/Actions.sol";
+import {
+    ActionKind,
+    BindingNumber,
+    Coordinate,
+    FamilyId,
+    Purpose,
+    ScopeKey
+} from "../interfaces/Actions.sol";
 import {IBitmapStore} from "../interfaces/IBitmapStore.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {ILedgerReads} from "../interfaces/ILedgerReads.sol";
-import {AuthorRow, ITopicLookupReader, PlaceCount, TopicPageInfo} from "../interfaces/Readers.sol";
+import {
+    AuthorRow,
+    ITopicLookupReader,
+    PlaceCount,
+    PlaceRow,
+    TopicPageInfo
+} from "../interfaces/Readers.sol";
 import {BasisCommit, Coverage, Qualified, Status} from "../interfaces/Results.sol";
 import {AdmissionRow, Head, RecordHeader} from "../interfaces/Views.sol";
 import {Keys} from "../lib/Keys.sol";
@@ -16,8 +29,15 @@ import {E_TOPIC_INCONSISTENT, E_TOPIC_STATUS, TopicReaderBase} from "./TopicRead
 // forge-lint: disable-start(calls-loop)
 // forge-lint: disable-start(require-revert-in-loop)
 
-/// @title TopicLookupReader/1 — one position's authors, counts, word pages and children (design §5.13, §11)
-/// @notice Point reads whose cost does not depend on how many authors, positions or places exist:
+/// @title TopicLookupReader/1 — one position's authors, a thing's places, counts, word pages and children
+///        (design §5.13, §11)
+/// @notice Reads whose cost does not depend on how many authors, positions or places exist:
+///
+///         `about(thing)`: every place anyone filed `thing` under at TAG, either sign (`Keys.rolePlacesList(TAG,
+///         thing)`, family 21: one entry per position), newest first, each with the row of
+///         `TopicPageReader.everyone` (`statements`, `yes`, the optional sample); rows nobody says yes to are
+///         returned, so a lone negative is found from its thing. No lens. Calls per page: one slice, one
+///         `bindingCells`, then one author-list head per row (and the sample's slice and `authorHeads`).
 ///
 ///         `byName(position)`: the authors of ONE position (TAG or FOLDER: "anyone's `pet.jpg` at this address" is
 ///         `byName(Keys.position(FOLDER, home, keccak256("pet.jpg")))`), newest first-stated first. One head read of
@@ -47,6 +67,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     uint8 internal constant VIEW_BY_NAME = 1;
     uint8 internal constant VIEW_WORD = 2;
     uint8 internal constant VIEW_CHILDREN = 3;
+    uint8 internal constant VIEW_ABOUT = 4;
 
     bytes32 public immutable TOPIC_TYPE;
     bytes32 public immutable WORD_TYPE;
@@ -99,6 +120,61 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
                 );
             }
             l.hi -= n;
+        }
+        info.scanned = n;
+        r.selected += n;
+        _end(r, info, l, cov);
+    }
+
+    // =============================================================================================
+    // about
+    // =============================================================================================
+
+    /// @inheritdoc ITopicLookupReader
+    function about(
+        bytes32 thing,
+        uint16 sample,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint16 limit
+    ) external view returns (TopicPageInfo memory info, PlaceRow[] memory rows) {
+        Run memory r;
+        r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_ABOUT, thing, sample));
+        List memory l = List(F_ROLE_PLACES, Purpose.TAG, 0, thing, 0, 0, 0, 0);
+        (Status st, Coverage cov) = _openList(r, expected, continuation, l, info);
+        if (st != Status.PRESENT) {
+            info.q.status = st;
+            return (info, rows);
+        }
+        uint64 n = limit == 0 || limit > BY_NAME_MAX ? uint64(BY_NAME_MAX) : limit;
+        if (n > l.hi) n = l.hi;
+        rows = new PlaceRow[](n);
+        if (n != 0) {
+            uint64[] memory e = _below(r, l, l.hi, n);
+            (bytes32[] memory positions, Coordinate[] memory cells) = _cells(r, e);
+            for (uint256 i; i < n; ++i) {
+                uint256 k = n - 1 - i; // newest first
+                Coordinate memory c = cells[k];
+                if (c.purpose != Purpose.TAG || c.role != thing) revert E_TOPIC_INCONSISTENT(3);
+                List memory a = List(F_POSITION_AUTHORS, 0, 0, positions[k], 0, 0, 0, 0);
+                cov = _join(cov, _listHead(r, a));
+                if (a.count == 0) revert E_TOPIC_INCONSISTENT(3); // a listed position has a statement
+                PlaceRow memory row = rows[i];
+                row.position = positions[k];
+                row.topic = c.subject;
+                row.thing = thing;
+                row.bindingOrdinal = e[k];
+                row.statements = a.count;
+                row.yes = a.live;
+                if (sample != 0 && cov != Coverage.UNKNOWN) {
+                    _sample(r, sample, a, positions[k], row);
+                }
+            }
+            l.hi -= n;
+        }
+        if (cov == Coverage.UNKNOWN) {
+            info.q.status = Status.UNKNOWN;
+            return (info, new PlaceRow[](0));
         }
         info.scanned = n;
         r.selected += n;

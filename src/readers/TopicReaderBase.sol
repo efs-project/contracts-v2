@@ -6,7 +6,7 @@ import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../interfaces/ILedgerReads.sol";
 import {ILedgerViews} from "../interfaces/ILedgerViews.sol";
-import {IReader, TopicPageInfo} from "../interfaces/Readers.sol";
+import {IReader, PlaceRow, TopicPageInfo} from "../interfaces/Readers.sol";
 import {BasisCommit, Coverage, Status} from "../interfaces/Results.sol";
 import {Head} from "../interfaces/Views.sol";
 
@@ -346,6 +346,50 @@ abstract contract TopicReaderBase is IReader {
     // Facet reads
     // =============================================================================================
 
+    /// Binding ordinal → position and cell (`LedgerViews.bindingCells`), every entry PRESENT.
+    function _cells(Run memory r, uint64[] memory ordinals)
+        internal
+        view
+        returns (bytes32[] memory positions, Coordinate[] memory cells)
+    {
+        Status[] memory st;
+        BasisCommit memory b;
+        (st, positions, cells, b) = abi.decode(
+            _sc(VIEWS, abi.encodeCall(ILedgerViews.bindingCells, (LEDGER, ordinals)), 288),
+            (Status[], bytes32[], Coordinate[], BasisCommit)
+        );
+        _echo(r, b);
+        uint256 n = ordinals.length;
+        if (st.length != n || positions.length != n || cells.length != n) {
+            revert E_TOPIC_INCONSISTENT(3);
+        }
+        for (uint256 i; i < n; ++i) {
+            _rowStatus(st[i], Status.ABSENT_PROVEN, 3);
+            if (st[i] != Status.PRESENT) revert E_TOPIC_STATUS(uint8(st[i]));
+        }
+    }
+
+    /// A row's sample: the newest `sample` authors (at most 64) of `position` (`a` its author list, head read),
+    /// who says >= 0 and who says < 0, and whether they are not every author.
+    function _sample(
+        Run memory r,
+        uint16 sample,
+        List memory a,
+        bytes32 position,
+        PlaceRow memory row
+    ) internal view {
+        uint64 n = sample > 64 ? 64 : sample;
+        if (n > a.count) n = a.count;
+        uint64[] memory adm = _below(r, a, a.count, n);
+        (Status[] memory st,,) = _authors(r, position, adm);
+        for (uint256 i; i < n; ++i) {
+            if (st[i] == Status.PRESENT) ++row.sampleYes;
+            else if (st[i] == Status.MASKED) ++row.sampleNo;
+        }
+        row.sampled = uint16(n);
+        row.incomplete = a.count > n;
+    }
+
     /// The lens rule over list entries (`LedgerViews.lensRule`), checked: every entry PRESENT, a decider at or
     /// before its author with a stance (or none), and the author's own head in a state that agrees with it.
     function _lensRule(
@@ -414,30 +458,23 @@ abstract contract TopicReaderBase is IReader {
         }
     }
 
-    /// Raw heads of `keys` (`LedgerViews.heads`), in calls of at most `MAX_KEYS`: each in a defined state (a
-    /// reserved state is UNSUPPORTED), a canonical target and an admission the page has observed.
+    /// Raw heads of at most `MAX_KEYS` `keys` (`LedgerViews.heads`): each in a defined state (a reserved state is
+    /// UNSUPPORTED), a canonical target and an admission the page has observed.
     function _heads(Run memory r, bytes32[] memory keys) internal view returns (Head[] memory hs) {
-        uint256 n = keys.length;
-        hs = new Head[](n);
-        for (uint256 from; from < n; from += MAX_KEYS) {
-            uint256 m = n - from < MAX_KEYS ? n - from : MAX_KEYS;
-            bytes32[] memory part = new bytes32[](m);
-            for (uint256 i; i < m; ++i) {
-                part[i] = keys[from + i];
-            }
-            bytes memory ret = _sc(VIEWS, abi.encodeCall(ILedgerViews.heads, (LEDGER, part)), 256);
-            (Head[] memory got, BasisCommit memory b) = abi.decode(ret, (Head[], BasisCommit));
-            _echo(r, b);
-            if (got.length != m) revert E_TOPIC_INCONSISTENT(4);
-            for (uint256 i; i < m; ++i) {
-                Head memory h = got[i];
-                if (h.state > 3) revert E_TOPIC_STATUS(uint8(Status.UNSUPPORTED));
-                if (
-                    (h.state != 1 && h.target != 0) || (h.state == 0) != (h.admission == 0)
-                        || h.admission > r.observed.admissionHighWater
-                ) revert E_TOPIC_INCONSISTENT(4);
-                hs[from + i] = h;
-            }
+        BasisCommit memory b;
+        (hs, b) = abi.decode(
+            _sc(VIEWS, abi.encodeCall(ILedgerViews.heads, (LEDGER, keys)), 256),
+            (Head[], BasisCommit)
+        );
+        _echo(r, b);
+        if (hs.length != keys.length) revert E_TOPIC_INCONSISTENT(4);
+        for (uint256 i; i < hs.length; ++i) {
+            Head memory h = hs[i];
+            if (h.state > 3) revert E_TOPIC_STATUS(uint8(Status.UNSUPPORTED));
+            if (
+                (h.state != 1 && h.target != 0) || (h.state == 0) != (h.admission == 0)
+                    || h.admission > r.observed.admissionHighWater
+            ) revert E_TOPIC_INCONSISTENT(4);
         }
     }
 

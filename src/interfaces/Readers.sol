@@ -249,7 +249,7 @@ struct MineRow {
     uint64 bindingOrdinal;
 }
 
-/// One row of `everyone`, `raw` or `about`: a position (`thing` filed under `topic`), the list entry
+/// One row of `everyone` (or `raw`) and of `about`: a position (`thing` filed under `topic`), the list entry
 /// (`bindingOrdinal`), its statements (`statements`: authors who ever stated anything there) and how many say yes
 /// now (`yes`), both exact from one head read; then a sample of the newest `sampled` authors: `sampleYes` say >= 0,
 /// `sampleNo` say < 0, and `incomplete` when the sample did not cover every author. The sample is detail, never the
@@ -318,7 +318,8 @@ interface ITopicPageReader is IReader {
         uint256 gasReserve
     ) external view returns (TopicPageInfo memory, MineRow[] memory);
 
-    /// Every author's positions at a place, newest first, minus what the lens hides (nothing with `raw`).
+    /// Every author's positions at a place (and below it), newest first: rows someone says yes to, minus what the
+    /// lens hides; with `raw`, every row.
     function everyone(
         PlaceQuery calldata query,
         bytes32[] calldata lens,
@@ -327,21 +328,10 @@ interface ITopicPageReader is IReader {
         uint32 limit,
         uint256 gasReserve
     ) external view returns (TopicPageInfo memory, PlaceRow[] memory);
-
-    /// Every place anyone filed `thing` under at TAG, either sign, newest first; the lens hides as in `everyone`.
-    function about(
-        bytes32 thing,
-        bytes32[] calldata lens,
-        bool raw,
-        uint16 sample,
-        BasisCommit calldata expected,
-        bytes calldata continuation,
-        uint32 limit,
-        uint256 gasReserve
-    ) external view returns (TopicPageInfo memory, PlaceRow[] memory);
 }
 
-/// @title ITopicLookupReader — one position's authors, counts, word pages and children (design §5.13, §11)
+/// @title ITopicLookupReader — one position's authors, a thing's places, counts, word pages and children (design §5.13,
+///        §11)
 interface ITopicLookupReader is IReader {
     /// The authors of one position, newest first-stated first; at most 64 rows per page.
     function byName(
@@ -350,6 +340,16 @@ interface ITopicLookupReader is IReader {
         bytes calldata continuation,
         uint16 limit
     ) external view returns (TopicPageInfo memory, AuthorRow[] memory);
+
+    /// Every place anyone filed `thing` under at TAG, either sign, newest first (`Keys.rolePlacesList`, one entry
+    /// per position), each with the row of `everyone` (rows nobody says yes to included); no lens; at most 64 rows.
+    function about(
+        bytes32 thing,
+        uint16 sample,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint16 limit
+    ) external view returns (TopicPageInfo memory, PlaceRow[] memory);
 
     /// An "about" count of a place at `purpose`, or below it (TAG): `positionsEver`, the distinct positions that ever
     /// received a statement (the list's `live`, including positions nobody says yes to now: never the number of rows
