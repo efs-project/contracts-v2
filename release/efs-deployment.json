@@ -1,6 +1,6 @@
 {
   "schema": "efs-deployment/1",
-  "releaseDigest": "0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495",
+  "releaseDigest": "0x9f910caf3d1266112062c086645c5e927d7c4a5b1a89f3309cc7f2dd126e6a1e",
   "planHash": "0xf5cbe78320301e69e205453876294a8ec6344810d41c42df643e13f6626b9904",
   "chainId": 31337,
   "realmId": "0x95909a76ac152341d562029990e49adbab04029dd7289a80fd00db151ec0e0e5",
@@ -23,7 +23,7 @@
     },
     "txHash": "0x75fe3b11ab04e18949010990b4c3c5c2cf0bd127ab1d3c556a77902649e24cf2",
     "blockNumber": 44,
-    "blockHash": "0x415f24c2af2362b690a82399a7f5f2d3a9a3226a487ebdb3c2f79b3da41f3b69"
+    "blockHash": "0xdc30ba7b704154a3835cc73c1e996e1266ce77aab5cebd859194de835815d9b2"
   },
   "activation": {
     "revision": 1,
@@ -1621,7 +1621,7 @@
     "snapshot": "taken when the instance was deployed; read live values from the chain"
   },
   "rpc": {
-    "url": "http://127.0.0.1:8600",
+    "url": "http://127.0.0.1:8603",
     "chainId": 31337,
     "hardfork": "osaka"
   },
