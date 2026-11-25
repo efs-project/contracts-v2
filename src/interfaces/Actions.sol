@@ -120,9 +120,18 @@ library Capability {
     uint16 internal constant STAGED_PUBLICATION = 1 << 9;
 }
 
-/// The three closure purposes (design §12.1): a file's HEAD, a directory's FOLDER entries, TAG (reserved to S3).
+/// The closure purposes: a file's HEAD, a directory's FOLDER entries (design §12.1), TAG, and the three statements
+/// about things of design §12.5 (PROPERTY, SAME, BROADER). The kernel accepts any purpose; these are the named ones.
 library Purpose {
     bytes32 internal constant HEAD = keccak256("efs/purpose/head/1");
     bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
     bytes32 internal constant TAG = keccak256("efs/purpose/tag/1");
+    /// A single-valued fact about any subject (a topic, a home, a file, a folder): position (subject, key) → a value
+    /// record, a file subject or an address; one value per author per key. The key is `EfsTopics.propertyKey` of an
+    /// ASCII key string (`label:en`, `definition`, `moved-to`). No validator judges it (design §12.5).
+    bytes32 internal constant PROPERTY = keccak256("efs/purpose/property/1");
+    /// "Same as": position (topic, other topic) → the other topic (design §12.5 for how readers use it).
+    bytes32 internal constant SAME = keccak256("efs/purpose/same/1");
+    /// "Broader": position (topic, parent topic) → the parent topic (the optional booru-style parent).
+    bytes32 internal constant BROADER = keccak256("efs/purpose/broader/1");
 }
