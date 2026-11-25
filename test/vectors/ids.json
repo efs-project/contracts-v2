@@ -13,7 +13,12 @@
     "digest": "0x34e61531e3e8c02ee4471e81c318661b5372716ad88f1d2aa1176c8b333ec547",
     "role-scope": "0x3f6c616797d01274636ac8a7e9ccd07da288ca143c35ef12db01dc76f8b6f0ea",
     "roster": "0x930992982a76179452d218203f2a3392e4da31222ac1a8f9ae247594a3b14000",
-    "live-scope": "0xfa1f2b56a78c17244967a75b3bc174474a9c20cbaca24ed28b3ac65ef0a8eaa4"
+    "live-scope": "0xfa1f2b56a78c17244967a75b3bc174474a9c20cbaca24ed28b3ac65ef0a8eaa4",
+    "place": "0x64f2802ca2cf5ba899f88d43de8d8eb830d1a71089795d6d9e9e5a80a226bc6a",
+    "place-below": "0x6ba31a5e97a75866345ec3d0dee5f3fa527b99d45799b00038ec0932cba3f7b2",
+    "scope-below": "0x4201126ed628afea054dd796c1fec72d9add0ba292ed6bc1347bb41d728f16b9",
+    "position-authors": "0xc169b15288a6aef65707d0c30e1afa9d3465b8fafeea46aa760f057967bbde09",
+    "role-places": "0xca7c5d4aa35584ebeb752753db7d5aaefbb2b972642f2019cd3bc57bdb104247"
   },
   "generator": "tools/vectors.mjs (viem keccak256 + encodeAbiParameters)",
   "domains": {
@@ -26,6 +31,7 @@
     "principal": "0x55aa10605eac1aea030590a95e0dcf32a09159f534564985a202b9c2d6d6d625",
     "type": "0xe812d2a6776ffe39148c8257ef53ac16bf1535f51a86662b6251c0f2490b5a91",
     "roleScope": "0xb57c6b2b357e27ad01706fd089d5a0ba55481faf1d6d9496e5b4006f2ecc5062",
+    "scopeBelow": "0x603cbdfcb0c34eeec7581f07ea19af8e5fb6f2e7d4dc4cc3da901c2e1d507443",
     "realmOrigin": "0x85bcb37b9cfbdd3da88bded6f445c4d9c1c586d1f2ebf086751146c15c72a2ac",
     "realm": "0x17aeef0a3ed5e986ba32f9a2e6bb8a5a2a01c58f41f18fd4df8cb328bb15a998",
     "publication": "0xf2b36655c579c0cc99f0f57a3001d7d97774dce118fcf9f8e757f0d28a64534d",
@@ -55,7 +61,9 @@
     "spec": 2,
     "scalarKind": 7,
     "value": "0xb1dcd004c56bce7c06bb44bf61eccf12120f79be2abcf24023af5bcb71d9e668",
-    "algorithm": "0xaf55790ffe3aced4bba4137afd958140c8b3138f4a53685d60bc4f3afe4e94bb"
+    "algorithm": "0xaf55790ffe3aced4bba4137afd958140c8b3138f4a53685d60bc4f3afe4e94bb",
+    "tagPurpose": "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+    "ancestor": "0x89eed529df016370fc33e370285d189b5012dd5bd4ee69442abf8938047f054a"
   },
   "outputs": {
     "eoaPrincipal": "0x0000000000000000000000001111111111111111111111111111111111111111",
@@ -79,6 +87,12 @@
     "scalarList": "0xdbdc4bd73a2214aaefd3cef77557a8e617a1cf763c5be0f84b22aeaedfc4c896",
     "digestList": "0x46ec6d30f297e35ad958f095351a115ab82f8050eaf3217f30638f4890eede14",
     "roleScopeKey": "0xfa24e88198dddee5b0a1de60e85670b16b2251be26a9996c32426098b9ffe30d",
+    "scopeBelowKey": "0x164363cab3174346a65b779509add8365916c514bf32c92ddffce3e4975bd7f4",
+    "placeList": "0xa61117a88a6c85c49141386cf778384ab731822632f7fc0842e28293e1b7c543",
+    "placeBelowList": "0x8d059dd7be841ff212450e2186030b53cfd3d943f7e32b03cdd616ef613912d7",
+    "scopeBelowList": "0x8d7c70a60c7e68dd79c6ee340410eae9a6e22279c528bbf629d84657e2d75c5c",
+    "positionAuthorsList": "0x09439158cf24916af022706a63f46a8fdcfdfc70a528feefb96f8f46c86334bc",
+    "rolePlacesList": "0x77ab98c053e866eec9435a81dfbd036cbab8ff93952df8522a8cde036b5a9b94",
     "realmOrigin": "0x9e1daf57296d236ab055e95b4bb93d860aad511c9319b8ef30737a8b8a2ac4af",
     "realmId": "0x3e33de9843a60e1525796b5df06bfbe4cf3a7bf20c4e907b25475a0b373e6104",
     "contractPrincipalOfOrigin": "0xb70d255d48dfd5cf1f1580f17474c8289d7e9957d84d4acac675f6e466a49c2c",

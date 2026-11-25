@@ -193,7 +193,7 @@ contract RealIndexTest is Test {
         assertEq(r.layoutId, Layout.LAYOUT_ID);
         assertEq(r.hotAbiId, KernelDeploy.HOT_ABI_ID);
         assertEq(r.manifestHash, g.index.manifestHash());
-        assertEq(r.families.length, 13);
+        assertEq(r.families.length, 18);
         assertEq(r.units.length, 0);
         assertEq(r.completedAdmission, 0);
         assertEq(r.completedPublication, 0);

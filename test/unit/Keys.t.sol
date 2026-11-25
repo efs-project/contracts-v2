@@ -31,6 +31,7 @@ contract KeysTest is Test {
         assertEq(Keys.DOM_PRINCIPAL, b32(".domains.principal"));
         assertEq(Keys.DOM_TYPE, b32(".domains.type"));
         assertEq(Keys.DOM_ROLE_SCOPE, b32(".domains.roleScope"));
+        assertEq(Keys.DOM_SCOPE_BELOW, b32(".domains.scopeBelow"));
         assertEq(Keys.DOM_REALM_ORIGIN, b32(".domains.realmOrigin"));
         assertEq(Keys.DOM_REALM, b32(".domains.realm"));
         assertEq(Keys.DOM_PUBLICATION, b32(".domains.publication"));
@@ -121,6 +122,21 @@ contract KeysTest is Test {
             Keys.publicationId(eoaPrincipal, b32(".inputs.bodyHash")), b32(".outputs.publicationId")
         );
         assertEq(Keys.roleKey(b32(".inputs.purpose"), b32(".inputs.role")), b32(".outputs.roleKey"));
+    }
+
+    /// The keys of the five first-statement lists (design §10.2 kinds 6, 7, 19, 20, 21).
+    function testTagListKeyVectors() public view {
+        bytes32 eoaPrincipal = Keys.principal(addr(".inputs.eoa"));
+        bytes32 tag = b32(".inputs.tagPurpose");
+        bytes32 ancestor = b32(".inputs.ancestor");
+        bytes32 subjectId = Keys.subject(eoaPrincipal, b32(".inputs.salt"));
+        bytes32 positionKey = Keys.position(b32(".inputs.purpose"), subjectId, b32(".inputs.role"));
+        assertEq(Keys.scopeBelow(eoaPrincipal, tag, ancestor), b32(".outputs.scopeBelowKey"));
+        assertEq(Keys.placeList(tag, subjectId), b32(".outputs.placeList"));
+        assertEq(Keys.placeBelowList(tag, ancestor), b32(".outputs.placeBelowList"));
+        assertEq(Keys.scopeBelowList(eoaPrincipal, tag, ancestor), b32(".outputs.scopeBelowList"));
+        assertEq(Keys.positionAuthorsList(positionKey), b32(".outputs.positionAuthorsList"));
+        assertEq(Keys.rolePlacesList(tag, b32(".inputs.role")), b32(".outputs.rolePlacesList"));
         assertEq(this.shapeOf(vm.parseJsonBytes(json, ".inputs.body")), b32(".outputs.shape"));
     }
 
@@ -129,7 +145,7 @@ contract KeysTest is Test {
     }
 
     function testFamilyIds() public view {
-        string[13] memory names = [
+        string[18] memory names = [
             "by-type",
             "by-author",
             "backlink",
@@ -142,7 +158,12 @@ contract KeysTest is Test {
             "digest",
             "role-scope",
             "roster",
-            "live-scope"
+            "live-scope",
+            "place",
+            "place-below",
+            "scope-below",
+            "position-authors",
+            "role-places"
         ];
         for (uint256 i; i < names.length; ++i) {
             assertEq(Keys.familyId(names[i]), b32(string.concat(".families.", names[i])), names[i]);
@@ -152,9 +173,9 @@ contract KeysTest is Test {
         }
     }
 
-    /// Posting kinds 2, 3, 6, 7 and 9 are reserved: no list helper mints them.
+    /// Posting kinds 2, 3 and 9 are reserved: no list helper mints them.
     function testPostingKindsAreDistinctAndReservedOnesUnused() public pure {
-        uint8[10] memory kinds = [
+        uint8[15] memory kinds = [
             Keys.KIND_BY_TYPE,
             Keys.KIND_BY_AUTHOR,
             Keys.KIND_BACKLINK,
@@ -164,7 +185,12 @@ contract KeysTest is Test {
             Keys.KIND_BY_RECORD,
             Keys.KIND_UNIQUE_BY_TYPE,
             Keys.KIND_SCALAR,
-            Keys.KIND_DIGEST
+            Keys.KIND_DIGEST,
+            Keys.KIND_PLACE,
+            Keys.KIND_PLACE_BELOW,
+            Keys.KIND_SCOPE_BELOW,
+            Keys.KIND_POSITION_AUTHORS,
+            Keys.KIND_ROLE_PLACES
         ];
         uint256 seen;
         for (uint256 i; i < kinds.length; ++i) {
@@ -174,7 +200,8 @@ contract KeysTest is Test {
         assertEq(
             seen,
             (1 << 1) | (1 << 4) | (1 << 5) | (1 << 8) | (1 << 10) | (1 << 11) | (1 << 12)
-                | (1 << 13) | (1 << 14) | (1 << 15)
+                | (1 << 13) | (1 << 14) | (1 << 15) | (1 << 6) | (1 << 7) | (1 << 19) | (1 << 20)
+                | (1 << 21)
         );
     }
 

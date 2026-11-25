@@ -118,6 +118,11 @@ abstract contract IndexDoubleCore is IIndexReads {
         _defaultCoverage.status = Coverage.UNKNOWN;
     }
 
+    /// A double keeps no topic lists.
+    function topicTypes() external pure returns (bytes32, bytes32) {
+        return (0, 0);
+    }
+
     // ---- test setters -----------------------------------------------------------------------------------
 
     function setLedger(address ledger_) external onlyOwner {

@@ -25,8 +25,8 @@ contract IndexDeployer {
         bytes bitmapInitcode;
         bytes32[] bitmapFamilies;
         address bitmap;
-        /// The `IndexReads` creation code; its arguments (ledger, hotAbiId, posting, bitmap, units, specs, work)
-        /// are appended here.
+        /// The `IndexReads` creation code; its arguments (ledger, hotAbiId, posting, bitmap, units, specs, work,
+        /// topicTypeId, topicWordTypeId) are appended here.
         bytes readsInitcode;
         /// The generation's creation code without constructor arguments (ledger, decoder, reads); they are appended
         /// here.
@@ -34,6 +34,9 @@ contract IndexDeployer {
         Unit[] units;
         DigestSpec[] specs;
         WorkModel work;
+        /// The `IndexReads` topic Type ids (both zero for a generation without topic lists).
+        bytes32 topicTypeId;
+        bytes32 topicWordTypeId;
     }
 
     address public immutable LEDGER;
@@ -91,7 +94,15 @@ contract IndexDeployer {
             bytes.concat(
                 plan.readsInitcode,
                 abi.encode(
-                    LEDGER, plan.hotAbiId, posting, bitmap, plan.units, plan.specs, plan.work
+                    LEDGER,
+                    plan.hotAbiId,
+                    posting,
+                    bitmap,
+                    plan.units,
+                    plan.specs,
+                    plan.work,
+                    plan.topicTypeId,
+                    plan.topicWordTypeId
                 )
             )
         );

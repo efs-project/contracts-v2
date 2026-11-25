@@ -204,14 +204,22 @@ contract IndexFloorTest is FilesRecipesBase {
         vm.revertToState(snap);
         (a, b) = _createFile("floor-file.txt");
         _measure("create file", a, b);
-        vm.revertToState(snap);
-        (a, b) = _firstTags(32, 3);
+    }
+
+    /// The large rows, one per test: each state diff is large and a test's memory is never freed, so three of them
+    /// in one test run out of memory since the first-statement lists (step 3b) added their writes.
+    function test_floor_row_32_first_tags() public {
+        (Action[] memory a, bytes[] memory b) = _firstTags(32, 3);
         _measure("32 first tags", a, b);
-        vm.revertToState(snap);
-        (a, b) = _wordPages(64, "chunk-");
+    }
+
+    function test_floor_row_64_word_pages() public {
+        (Action[] memory a, bytes[] memory b) = _wordPages(64, "chunk-");
         _measure("64 word pages", a, b);
-        vm.revertToState(snap);
-        (a, b) = _loneNegatives(64, 4);
+    }
+
+    function test_floor_row_64_lone_negatives() public {
+        (Action[] memory a, bytes[] memory b) = _loneNegatives(64, 4);
         _measure("64 lone negatives", a, b);
     }
 

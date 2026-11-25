@@ -32,6 +32,10 @@ contract IndexReads {
     address public immutable BITMAP;
     bytes32 private immutable F_BY_RECORD;
     bytes32 private immutable F_DIGEST;
+    /// The Topics Type ids the topic lists walk (`topic/1`, `topic-word/1`), both zero when the generation keeps no
+    /// topic lists; checked against the unit list at construction (`IndexProfiles.requireTopicUnit`).
+    bytes32 public immutable TOPIC_TYPE;
+    bytes32 public immutable TOPIC_WORD_TYPE;
 
     uint8 private constant SHAPE_APPEND = 1;
     uint8 private constant SHAPE_BITMAP = 2;
@@ -51,8 +55,13 @@ contract IndexReads {
         address bitmap,
         Unit[] memory units,
         DigestSpec[] memory specs,
-        WorkModel memory work
+        WorkModel memory work,
+        bytes32 topicTypeId,
+        bytes32 topicWordTypeId
     ) {
+        IndexProfiles.requireTopicUnit(units, topicTypeId, topicWordTypeId);
+        TOPIC_TYPE = topicTypeId;
+        TOPIC_WORD_TYPE = topicWordTypeId;
         LEDGER = ledger_;
         HOT_ABI_ID = hotAbiId;
         POSTING = posting;
@@ -74,6 +83,13 @@ contract IndexReads {
         _declare("role-scope", 16, 3, SHAPE_APPEND, 1, posting, live);
         _declare("roster", 17, 3, SHAPE_BITMAP, 2, bitmap, off);
         _declare("live-scope", 18, 3, SHAPE_BITMAP, 2, bitmap, live);
+        // the first-statement lists (design §10.2): the two topic roll-ups only with the topic Types
+        uint64 topics = topicTypeId != 0 ? live : off;
+        _declare("place", 6, 3, SHAPE_APPEND, 1, posting, live);
+        _declare("place-below", 7, 3, SHAPE_APPEND, 1, posting, topics);
+        _declare("scope-below", 19, 3, SHAPE_APPEND, 1, posting, topics);
+        _declare("position-authors", 20, 3, SHAPE_APPEND, 1, posting, live);
+        _declare("role-places", 21, 4, SHAPE_APPEND, 1, posting, live);
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }
@@ -159,6 +175,11 @@ contract IndexReads {
 
     function bitmapStore() external view returns (address) {
         return BITMAP;
+    }
+
+    /// The topic Type ids the generation's topic lists walk; both zero when it keeps none (design §10.2).
+    function topicTypes() external view returns (bytes32 topicTypeId, bytes32 topicWordTypeId) {
+        return (TOPIC_TYPE, TOPIC_WORD_TYPE);
     }
 
     function buildDelegate() external pure returns (address) {

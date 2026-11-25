@@ -142,7 +142,7 @@ export const PURPOSE = {
 };
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
 export const familyId = (name) => h(`efs/family/${name}/1`);
-export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope"];
+export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "place", "place-below", "scope-below", "position-authors", "role-places"];
 export const BITMAP_FAMILIES = ["scope", "roster", "live-scope"];
 export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 export const ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
@@ -419,6 +419,9 @@ const FAMILY_TABLE = [
   ["by-record", 12, 5, 1, 2, "posting", 1n], ["unique-by-type", 13, 1, 1, 1, "posting", 1n], ["scalar", 14, 1, 1, 1, "posting", 1n],
   ["digest", 15, 5, 1, 1, "posting", 1n], ["role-scope", 16, 3, 1, 1, "posting", 1n], ["roster", 17, 3, 2, 2, "bitmap", 2n ** 64n - 1n],
   ["live-scope", 18, 3, 2, 2, "bitmap", 1n],
+  // the first-statement lists (design §10.2); the two topic roll-ups are maintained because the Topics Types are in the release
+  ["place", 6, 3, 1, 1, "posting", 1n], ["place-below", 7, 3, 1, 1, "posting", 1n], ["scope-below", 19, 3, 1, 1, "posting", 1n],
+  ["position-authors", 20, 3, 1, 1, "posting", 1n], ["role-places", 21, 4, 1, 1, "posting", 1n],
 ];
 
 // ---- the plan ------------------------------------------------------------------------------------------------------
@@ -564,9 +567,11 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   }));
   const F = Object.fromEntries(FAMILY_TABLE.map(([n]) => [`F_${n.toUpperCase().replace(/-/g, "_")}`, familyId(n)]));
   // G19a: the generation's IndexReads (its manifest and read side), built over the stores before the generation
-  const indexReads = add("G19a", "IndexReads", [ledgerProxy, HOT_ABI_ID, posting.address, bitmap.address, unitsList, specs, WORK_MODEL], { LEDGER: ledgerProxy, HOT_ABI_ID, POSTING: posting.address, BITMAP: bitmap.address, F_BY_RECORD: F.F_BY_RECORD, F_DIGEST: F.F_DIGEST });
+  // the topic lists walk the release's Topics Types; the validator unit is built for the same two ids (IndexProfiles.requireTopicUnit)
+  const topicTypes = { TOPIC_TYPE: ids[T.TOPIC], TOPIC_WORD_TYPE: ids[T.TOPIC_WORD] };
+  const indexReads = add("G19a", "IndexReads", [ledgerProxy, HOT_ABI_ID, posting.address, bitmap.address, unitsList, specs, WORK_MODEL, topicTypes.TOPIC_TYPE, topicTypes.TOPIC_WORD_TYPE], { LEDGER: ledgerProxy, HOT_ABI_ID, POSTING: posting.address, BITMAP: bitmap.address, F_BY_RECORD: F.F_BY_RECORD, F_DIGEST: F.F_DIGEST, ...topicTypes });
   const mHash = manifestHash(families, unitsList, specs, WORK_MODEL, indexReads.address, indexReads.runtimeCodehash);
-  const indexImm = { LEDGER: ledgerProxy, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, READS: indexReads.address, READS_CODEHASH: indexReads.runtimeCodehash, MANIFEST_HASH: mHash, ...F };
+  const indexImm = { LEDGER: ledgerProxy, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, READS: indexReads.address, READS_CODEHASH: indexReads.runtimeCodehash, MANIFEST_HASH: mHash, TOPIC_T: topicTypes.TOPIC_TYPE, WORD_T: topicTypes.TOPIC_WORD_TYPE, ...F };
   const referenced = new Set(immutableLayout("RealmIndex").map((l) => l.name));
   const index = add("G19", "RealmIndex", [ledgerProxy, decoder.address, indexReads.address], Object.fromEntries(Object.entries(indexImm).filter(([k]) => referenced.has(k))), { manifestHash: mHash });
 
