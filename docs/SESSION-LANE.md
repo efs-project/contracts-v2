@@ -176,6 +176,30 @@ The signed lane is relayable, so three options, all with Alice as author:
 A one-prompt variant for the first row is possible: one transaction to the verifier that registers the grant and
 forwards gas money to the session key in the same call. It is a later convenience, not part of the first build.
 
+### Budgets, and the large-file case (added 2026-11-25)
+
+A file stored on chain is sent in parts of about 15 KB, one transaction each, because a part is bound by gas. So a
+150 KB file is 10 wallet prompts today and a 1 MB file is 68, and a wallet batch (EIP-5792) does not help. With a
+session grant the same file is the grant's one prompt, however many parts it has: the session key signs each part
+as Alice. The overhead is the session lane's per-publication cost (about +0.17M gas on a part that costs about
+12.6M, roughly 1%).
+
+"Bounded by a budget" can be had three ways, cheapest first:
+
+- **A gas budget is the session key's balance.** When the session key pays its own gas, Alice funds it with exactly
+  the budget. It cannot spend more, whatever it signs, and it can send back what is left. No contract code.
+- **A publication budget costs no storage.** The proposal already gives each authority its own nonce sequence. Add
+  `maxPublications` to the grant and have the verifier refuse a session write whose nonce has reached it. With the
+  grant's `maxActions` and `maxBodyBytes` per publication, that also caps the total actions and bytes a session can
+  ever write.
+- **A budget in bytes or gas counted on chain** needs a counter written on every session write: one storage slot
+  per grant, about 5k gas per write today and 12k on Glamsterdam (22k and 110k for the first). It also needs the
+  verifier, which today only reads, to write. *Not recommended for the first build*: the two bounds above cover the
+  same risk.
+
+When a relayer pays instead of the session key, the gas budget is the relayer's policy, off chain, and the
+publication budget above is what the chain enforces.
+
 ### What it does to the typehash
 
 Nothing is added or removed. `authorityId` and `authEpoch` are already in the frozen-at-S2 `Intent` string and the
