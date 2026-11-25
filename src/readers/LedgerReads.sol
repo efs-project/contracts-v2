@@ -92,26 +92,49 @@ library LedgerRows {
         return ILedgerHot(ledger).extsload(bytes32(slot));
     }
 
-    /// `slots` through `extsloadBatch`, in chunks of at most 256.
+    /// `slots` through `extsloadBatch`, in chunks of at most 256: one call with `slots` itself when it fits
+    /// (also when it is empty), else one call per chunk. Every batched read of the facets goes through this
+    /// one call site, so the call, its revert forwarding and the array codec are emitted once.
     function loadAll(address ledger, bytes32[] memory slots)
         internal
         view
         returns (bytes32[] memory out)
     {
         uint256 n = slots.length;
-        if (n <= BATCH) return ILedgerHot(ledger).extsloadBatch(slots);
-        out = new bytes32[](n);
-        for (uint256 i = 0; i < n; i += BATCH) {
-            uint256 m = n - i < BATCH ? n - i : BATCH;
-            bytes32[] memory chunk = new bytes32[](m);
-            for (uint256 j; j < m; ++j) {
-                chunk[j] = slots[i + j];
+        bool chunked = n > BATCH;
+        if (chunked) out = new bytes32[](n);
+        uint256 i = 0;
+        do {
+            uint256 m = n - i < BATCH ? n - i : BATCH; // i < n, or i == n == 0
+            bytes32[] memory chunk = slots;
+            if (chunked) {
+                chunk = new bytes32[](m);
+                for (uint256 j; j < m; ++j) {
+                    chunk[j] = slots[i + j];
+                }
             }
             bytes32[] memory got = ILedgerHot(ledger).extsloadBatch(chunk);
-            for (uint256 j; j < m; ++j) {
-                out[i + j] = got[j];
+            if (!chunked) {
+                out = got;
+                break;
             }
-        }
+            for (uint256 j; j < m; ++j) {
+                out[i + j] = got[j]; // checked: a short chunk reply panics here
+            }
+            i += BATCH;
+        } while (i < n);
+        // A reply shorter than the request is the out-of-bounds `Panic(0x32)` an index into it would raise;
+        // after this check `at(out, i)` is in bounds for every `i < slots.length`.
+        if (out.length < n) _panicOutOfBounds();
+    }
+
+    /// `count` consecutive slots from `base` in one batch.
+    function loadRun(address ledger, uint256 base, uint256 count)
+        internal
+        view
+        returns (bytes32[] memory)
+    {
+        return loadAll(ledger, run(base, count));
     }
 
     /// `count` consecutive slots from `base`.
@@ -164,15 +187,31 @@ library LedgerRows {
         }
     }
 
+    function _panicOutOfBounds() private pure {
+        assembly ("memory-safe") {
+            mstore(0, shl(224, 0x4e487b71))
+            mstore(4, 0x32)
+            revert(0, 0x24)
+        }
+    }
+
+    /// `w[i]` without the bounds check, for a reply of `loadAll`/`loadRun` (at least as long as the request)
+    /// and an `i` below the request's length, which every call site fixes as a constant bound.
+    function at(bytes32[] memory w, uint256 i) internal pure returns (bytes32 x) {
+        assembly ("memory-safe") {
+            x := mload(add(w, shl(5, add(i, 1))))
+        }
+    }
+
     /// The read bounds of the live limits profile (realm +13, +14).
     function readBounds(address ledger)
         internal
         view
         returns (uint16 maxReadIds, uint16 maxReadCount, uint32 maxBody)
     {
-        bytes32[] memory w = ILedgerHot(ledger).extsloadBatch(run(REALM + 13, 2));
-        (, maxBody,,,,,,,,,,, maxReadIds) = Layout.unpackRealmStorageWord13(w[0]);
-        (maxReadCount,,,) = Layout.unpackRealmStorageWord14(w[1]);
+        bytes32[] memory w = loadRun(ledger, REALM + 13, 2);
+        (, maxBody,,,,,,,,,,, maxReadIds) = Layout.unpackRealmStorageWord13(at(w, 0));
+        (maxReadCount,,,) = Layout.unpackRealmStorageWord14(at(w, 1));
     }
 
     // ---- row decoders -------------------------------------------------------------------------------------
@@ -219,6 +258,11 @@ library LedgerRows {
 
     /// One revision row (25 words starting at `w[o]`); the ordinal is the caller's.
     function revision(bytes32[] memory w, uint256 o) internal pure returns (Revision memory r) {
+        revisionInto(r, w, o);
+    }
+
+    /// `revision` into a zeroed `r`.
+    function revisionInto(Revision memory r, bytes32[] memory w, uint256 o) internal pure {
         (
             r.activationBlock,
             r.admissionHigh,
@@ -227,31 +271,31 @@ library LedgerRows {
             r.flags,
             r.executionProfileId,
             r.capabilities
-        ) = Layout.unpackRevisionRowWord0(w[o]);
-        r.executionSet = w[o + 1];
+        ) = Layout.unpackRevisionRowWord0(at(w, o));
+        r.executionSet = at(w, o + 1);
         ComponentSet memory c = r.components;
-        (c.ledgerImpl, r.acceptedChainId) = Layout.unpackRevisionRowWord2(w[o + 2]);
-        c.ledgerImplCodehash = w[o + 3];
-        c.registryImpl = Layout.unpackRevisionRowWord4(w[o + 4]);
-        c.registryImplCodehash = w[o + 5];
-        (c.index, r.indexGeneration) = Layout.unpackRevisionRowWord6(w[o + 6]);
-        c.indexCodehash = w[o + 7];
-        c.indexManifestHash = w[o + 8];
-        c.ingress = Layout.unpackRevisionRowWord9(w[o + 9]);
-        c.ingressCodehash = w[o + 10];
-        c.applyDelegate = Layout.unpackRevisionRowWord11(w[o + 11]);
-        c.applyCodehash = w[o + 12];
-        c.controller = Layout.unpackRevisionRowWord13(w[o + 13]);
-        c.controllerCodehash = w[o + 14];
-        c.controllerOwner = Layout.unpackRevisionRowWord15(w[o + 15]);
-        c.steward = Layout.unpackRevisionRowWord16(w[o + 16]);
-        r.layoutId = w[o + 17];
-        c.verifierProfilesRoot = w[o + 18];
-        r.migrationHash = w[o + 19];
-        r.dependencyRoot = w[o + 20];
-        r.limitsProfileId = w[o + 21];
-        r.limits = revisionLimits(w[o + 22], w[o + 23]);
-        r.noticePrincipal = w[o + 24];
+        (c.ledgerImpl, r.acceptedChainId) = Layout.unpackRevisionRowWord2(at(w, o + 2));
+        c.ledgerImplCodehash = at(w, o + 3);
+        c.registryImpl = Layout.unpackRevisionRowWord4(at(w, o + 4));
+        c.registryImplCodehash = at(w, o + 5);
+        (c.index, r.indexGeneration) = Layout.unpackRevisionRowWord6(at(w, o + 6));
+        c.indexCodehash = at(w, o + 7);
+        c.indexManifestHash = at(w, o + 8);
+        c.ingress = Layout.unpackRevisionRowWord9(at(w, o + 9));
+        c.ingressCodehash = at(w, o + 10);
+        c.applyDelegate = Layout.unpackRevisionRowWord11(at(w, o + 11));
+        c.applyCodehash = at(w, o + 12);
+        c.controller = Layout.unpackRevisionRowWord13(at(w, o + 13));
+        c.controllerCodehash = at(w, o + 14);
+        c.controllerOwner = Layout.unpackRevisionRowWord15(at(w, o + 15));
+        c.steward = Layout.unpackRevisionRowWord16(at(w, o + 16));
+        r.layoutId = at(w, o + 17);
+        c.verifierProfilesRoot = at(w, o + 18);
+        r.migrationHash = at(w, o + 19);
+        r.dependencyRoot = at(w, o + 20);
+        r.limitsProfileId = at(w, o + 21);
+        r.limits = revisionLimits(at(w, o + 22), at(w, o + 23));
+        r.noticePrincipal = at(w, o + 24);
     }
 
     /// A head row; the target is canonical (0 unless BOUND), as `ILedgerHot.head` serves it.
@@ -311,24 +355,23 @@ library LedgerRows {
         view
         returns (bool present, Evidence memory e)
     {
-        bytes32[] memory w = ILedgerHot(ledger)
-            .extsloadBatch(run(Layout.publicationsEvidenceSlot(publication), 13));
-        present = w[0] != 0;
+        bytes32[] memory w = loadRun(ledger, Layout.publicationsEvidenceSlot(publication), 13);
+        present = at(w, 0) != 0;
         if (!present) return (present, e);
         uint8 flags;
         (e.author, e.proofKind, e.principalKind, e.v, e.leafCount, e.firstAdmission, flags) =
-            Layout.unpackEvidenceCellWord0(w[0]);
+            Layout.unpackEvidenceCellWord0(at(w, 0));
         (e.nonce, e.deadline, e.basisBlock, e.revision, e.verifierProfile) =
-            Layout.unpackEvidenceCellWord1(w[1]);
-        e.principalId = w[2];
-        e.intentDigest = w[3];
-        e.actionsHash = w[4];
-        e.acceptanceProfile = w[5];
-        e.indexObligations = w[6];
-        e.readSetHash = w[7];
-        e.witness0 = w[8];
-        e.witness1 = w[9];
-        e.submitter = Layout.unpackEvidenceCellWord10(w[10]);
+            Layout.unpackEvidenceCellWord1(at(w, 1));
+        e.principalId = at(w, 2);
+        e.intentDigest = at(w, 3);
+        e.actionsHash = at(w, 4);
+        e.acceptanceProfile = at(w, 5);
+        e.indexObligations = at(w, 6);
+        e.readSetHash = at(w, 7);
+        e.witness0 = at(w, 8);
+        e.witness1 = at(w, 9);
+        e.submitter = Layout.unpackEvidenceCellWord10(at(w, 10));
         // flags: b0 imported, b1 guarded, b3 executionBound, b4 acceptanceBound, b5 witnessInState
         e.imported = flags & 1 != 0;
         e.guarded = flags & 2 != 0;
@@ -346,11 +389,11 @@ library LedgerRows {
         s[1] = bytes32(row + 6);
         s[2] = bytes32(row + 7);
         s[3] = bytes32(row + 8);
-        bytes32[] memory r = ILedgerHot(ledger).extsloadBatch(s);
-        e.executionSet = r[0];
+        bytes32[] memory r = loadAll(ledger, s);
+        e.executionSet = at(r, 0);
         if (e.proofKind == 1) {
-            (address index,) = Layout.unpackRevisionRowWord6(r[1]);
-            e.indexObligations = keccak256(abi.encode(index, r[2], r[3]));
+            (address index,) = Layout.unpackRevisionRowWord6(at(r, 1));
+            e.indexObligations = keccak256(abi.encode(index, at(r, 2), at(r, 3)));
         }
     }
 }
@@ -394,12 +437,12 @@ contract LedgerReads is ILedgerReads {
             s[19 + i] = bytes32(row + i);
         }
         s[44] = bytes32(LedgerRows.IMPLEMENTATION_SLOT);
-        bytes32[] memory w = hot.extsloadBatch(s);
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
         _realm(d, w);
         Revision memory r = LedgerRows.revision(w, 19);
         d.revisionBlock = r.activationBlock;
         d.revisionAdmissionHigh = r.admissionHigh;
-        d.ledgerImpl = address(uint160(uint256(w[44])));
+        d.ledgerImpl = address(uint160(uint256(LedgerRows.at(w, 44))));
         d.ledgerImplCodehash = d.ledgerImpl.codehash;
         d.ingress = r.components.ingress;
         d.ingressCodehash = r.components.ingressCodehash;
@@ -425,29 +468,39 @@ contract LedgerReads is ILedgerReads {
         (, d.indexManifestHash) = LedgerRows.word(d.index, IIndexReads.manifestHash.selector);
         d.registryMutations = uint64(uint256(m));
         d.catalogCount = uint64(uint256(c));
+        // `d` ABI-encoded (see "returns" below): members 0..49, `limits` (member 50, 17 words), member 51
+        assembly ("memory-safe") {
+            let o := mload(0x40)
+            mcopy(o, d, 0x640)
+            mcopy(add(o, 0x640), mload(add(d, 0x640)), 0x220)
+            mstore(add(o, 0x860), mload(add(d, 0x660)))
+            return(o, 0x880)
+        }
     }
 
     function _realm(Description memory d, bytes32[] memory w) private pure {
         uint8 frozen;
-        d.realmId = w[0];
-        d.realmOrigin = w[1];
-        d.realmSalt = w[2];
+        d.realmId = LedgerRows.at(w, 0);
+        d.realmOrigin = LedgerRows.at(w, 1);
+        d.realmSalt = LedgerRows.at(w, 2);
         (d.genesisChainId, d.acceptedChainId, d.revision, frozen) =
-            Layout.unpackRealmStorageWord3(w[3]);
+            Layout.unpackRealmStorageWord3(LedgerRows.at(w, 3));
         d.frozen = frozen != 0;
-        (d.controller, d.executionProfileId, d.capabilities,) = Layout.unpackRealmStorageWord4(w[4]);
-        d.registry = Layout.unpackRealmStorageWord5(w[5]);
-        (d.index, d.indexGeneration) = Layout.unpackRealmStorageWord6(w[6]);
-        d.executionSet = w[7];
-        d.layoutId = w[8];
-        d.domainSeparator = w[9];
-        d.indexObligations = w[10];
-        d.steward = Layout.unpackRealmStorageWord11(w[11]);
-        d.limitsProfileId = w[12];
-        d.limits = LedgerRows.limits(w[13], w[14]);
-        d.readerDirectory = Layout.unpackRealmStorageWord16(w[16]);
-        d.noticePrincipal = w[17];
-        (d.admissions, d.records, d.bindings, d.publications) = Layout.unpackCountersStorage(w[18]);
+        (d.controller, d.executionProfileId, d.capabilities,) =
+            Layout.unpackRealmStorageWord4(LedgerRows.at(w, 4));
+        d.registry = Layout.unpackRealmStorageWord5(LedgerRows.at(w, 5));
+        (d.index, d.indexGeneration) = Layout.unpackRealmStorageWord6(LedgerRows.at(w, 6));
+        d.executionSet = LedgerRows.at(w, 7);
+        d.layoutId = LedgerRows.at(w, 8);
+        d.domainSeparator = LedgerRows.at(w, 9);
+        d.indexObligations = LedgerRows.at(w, 10);
+        d.steward = Layout.unpackRealmStorageWord11(LedgerRows.at(w, 11));
+        d.limitsProfileId = LedgerRows.at(w, 12);
+        d.limits = LedgerRows.limits(LedgerRows.at(w, 13), LedgerRows.at(w, 14));
+        d.readerDirectory = Layout.unpackRealmStorageWord16(LedgerRows.at(w, 16));
+        d.noticePrincipal = LedgerRows.at(w, 17);
+        (d.admissions, d.records, d.bindings, d.publications) =
+            Layout.unpackCountersStorage(LedgerRows.at(w, 18));
     }
 
     /// @inheritdoc ILedgerReads
@@ -457,20 +510,28 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, Revision memory r)
     {
+        _return(_revisionAt(ledger, n, r), r);
+    }
+
+    function _revisionAt(address ledger, uint32 n, Revision memory r)
+        private
+        view
+        returns (Status)
+    {
         Status g = LedgerRows.gate(ledger);
-        if (g != Status.PRESENT) return (g, r);
+        if (g != Status.PRESENT) return g;
         bytes32[] memory s = new bytes32[](26);
         uint256 row = Layout.revisionsRowsSlot(n);
         for (uint256 i; i < 25; ++i) {
             s[i] = bytes32(row + i);
         }
         s[25] = bytes32(REALM + 3);
-        bytes32[] memory w = ILedgerHot(ledger).extsloadBatch(s);
-        (,, uint32 current,) = Layout.unpackRealmStorageWord3(w[25]);
-        if (n == 0 || n > current) return (Status.ABSENT_PROVEN, r);
-        r = LedgerRows.revision(w, 0);
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
+        (,, uint32 current,) = Layout.unpackRealmStorageWord3(LedgerRows.at(w, 25));
+        if (n == 0 || n > current) return Status.ABSENT_PROVEN;
+        LedgerRows.revisionInto(r, w, 0);
         r.ordinal = n;
-        return (Status.PRESENT, r);
+        return Status.PRESENT;
     }
 
     /// @inheritdoc ILedgerReads
@@ -562,14 +623,14 @@ contract LedgerReads is ILedgerReads {
         s[2] = bytes32(Layout.recordsBodyWordsSlot(id, 0));
         s[3] = bytes32(REALM + 13);
         s[4] = bytes32(REALM + 14);
-        bytes32[] memory w = ILedgerHot(ledger).extsloadBatch(s);
-        (, maxBody,,,,,,,,,,,) = Layout.unpackRealmStorageWord13(w[3]);
-        (maxReadCount,,,) = Layout.unpackRealmStorageWord14(w[4]);
-        if (w[0] == 0) return (Status.ABSENT_PROVEN, h, maxReadCount, maxBody);
-        h.typeId = w[0];
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
+        (, maxBody,,,,,,,,,,,) = Layout.unpackRealmStorageWord13(LedgerRows.at(w, 3));
+        (maxReadCount,,,) = Layout.unpackRealmStorageWord14(LedgerRows.at(w, 4));
+        if (LedgerRows.at(w, 0) == 0) return (Status.ABSENT_PROVEN, h, maxReadCount, maxBody);
+        h.typeId = LedgerRows.at(w, 0);
         (h.firstAdmission, h.length, h.occurrences, h.carrierKind) =
-            Layout.unpackRecordCellWord1(w[1]);
-        h.word0 = w[2];
+            Layout.unpackRecordCellWord1(LedgerRows.at(w, 1));
+        h.word0 = LedgerRows.at(w, 2);
         st = Status.PRESENT;
     }
 
@@ -626,12 +687,17 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, Head memory h)
     {
-        Status g = LedgerRows.gate(ledger);
-        if (g != Status.PRESENT) return (g, h);
-        bytes32[] memory w = ILedgerHot(ledger)
-            .extsloadBatch(LedgerRows.run(Layout.bindingsHeadsSlot(bindingKey), 2));
-        h = LedgerRows.head(w[0], w[1]);
-        return (LedgerRows.headStatus(h.state), h);
+        Status st = LedgerRows.gate(ledger);
+        if (st == Status.PRESENT) {
+            bytes32[] memory w = LedgerRows.loadRun(ledger, Layout.bindingsHeadsSlot(bindingKey), 2);
+            h = LedgerRows.head(LedgerRows.at(w, 0), LedgerRows.at(w, 1));
+            st = LedgerRows.headStatus(h.state);
+        }
+        uint256 p;
+        assembly ("memory-safe") {
+            p := h
+        }
+        _returnFlat(st, p, 8);
     }
 
     /// @inheritdoc ILedgerReads
@@ -642,10 +708,10 @@ contract LedgerReads is ILedgerReads {
     {
         Status g = LedgerRows.gate(ledger);
         if (g != Status.PRESENT) return (g, 0, 0, 0);
-        bytes32[] memory w = ILedgerHot(ledger)
-            .extsloadBatch(LedgerRows.run(Layout.bindingsPositionsSlot(position), 3));
-        if (w[0] == 0) return (Status.ABSENT_PROVEN, 0, 0, 0); // purpose is nonzero in every written cell
-        return (Status.PRESENT, w[0], w[1], w[2]);
+        bytes32[] memory w = LedgerRows.loadRun(ledger, Layout.bindingsPositionsSlot(position), 3);
+        // purpose is nonzero in every written cell
+        if (LedgerRows.at(w, 0) == 0) return (Status.ABSENT_PROVEN, 0, 0, 0);
+        return (Status.PRESENT, LedgerRows.at(w, 0), LedgerRows.at(w, 1), LedgerRows.at(w, 2));
     }
 
     /// @inheritdoc ILedgerReads
@@ -666,12 +732,17 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, AdmissionRow memory r)
     {
-        Status g = LedgerRows.gate(ledger);
-        if (g != Status.PRESENT) return (g, r);
-        bytes32[] memory w =
-            ILedgerHot(ledger).extsloadBatch(LedgerRows.run(Layout.admissionsRowsSlot(ordinal), 2));
-        r = LedgerRows.admission(w[0], w[1]);
-        return (LedgerRows.admissionStatus(r.kind), r);
+        Status st = LedgerRows.gate(ledger);
+        if (st == Status.PRESENT) {
+            bytes32[] memory w = LedgerRows.loadRun(ledger, Layout.admissionsRowsSlot(ordinal), 2);
+            r = LedgerRows.admission(LedgerRows.at(w, 0), LedgerRows.at(w, 1));
+            st = LedgerRows.admissionStatus(r.kind);
+        }
+        uint256 p;
+        assembly ("memory-safe") {
+            p := r
+        }
+        _returnFlat(st, p, 11);
     }
 
     /// @inheritdoc ILedgerReads
@@ -698,7 +769,7 @@ contract LedgerReads is ILedgerReads {
         bytes32[] memory w = LedgerRows.loadAll(ledger, s);
         rows = new AdmissionRow[](n);
         for (uint256 i; i < n; ++i) {
-            rows[i] = LedgerRows.admission(w[2 * i], w[2 * i + 1]);
+            rows[i] = LedgerRows.admission(LedgerRows.at(w, 2 * i), LedgerRows.at(w, 2 * i + 1));
         }
         next = from + uint64(n);
     }
@@ -709,11 +780,17 @@ contract LedgerReads is ILedgerReads {
         view
         returns (Status, Evidence memory e)
     {
-        Status g = LedgerRows.gate(ledger);
-        if (g != Status.PRESENT) return (g, e);
-        bool present;
-        (present, e) = LedgerRows.evidence(ledger, publication);
-        return (present ? Status.PRESENT : Status.ABSENT_PROVEN, e);
+        Status st = LedgerRows.gate(ledger);
+        if (st == Status.PRESENT) {
+            bool present;
+            (present, e) = LedgerRows.evidence(ledger, publication);
+            st = present ? Status.PRESENT : Status.ABSENT_PROVEN;
+        }
+        uint256 p;
+        assembly ("memory-safe") {
+            p := e
+        }
+        _returnFlat(st, p, 27);
     }
 
     /// @inheritdoc ILedgerReads
@@ -743,6 +820,38 @@ contract LedgerReads is ILedgerReads {
         out = new bytes32[](accounts.length);
         for (uint256 i; i < accounts.length; ++i) {
             out[i] = Keys.principalFor(accounts[i], origin);
+        }
+    }
+
+    // ---- returns ------------------------------------------------------------------------------------------
+    // The large status-carrying views end the call themselves instead of through the ABI encoder: every view
+    // struct here holds only one-word value members (nested structs are pointers), the compiler cleans every
+    // value it writes to memory, and memory is zeroed where nothing was written, so a struct's memory image,
+    // with each nested struct copied in place of its pointer, is exactly its ABI encoding (all members are
+    // static). One copy routine then replaces one encoder per return type.
+
+    /// Ends the call with `(st, r)` ABI-encoded: `r` with `components` (member 7, 16 words) and `limits`
+    /// (member 16, 17 words) copied in place.
+    function _return(Status st, Revision memory r) private pure {
+        assembly ("memory-safe") {
+            let o := mload(0x40)
+            mstore(o, st)
+            mcopy(add(o, 0x20), r, 0xe0) // members 0..6
+            mcopy(add(o, 0x100), mload(add(r, 0xe0)), 0x200) // components
+            mcopy(add(o, 0x300), add(r, 0x100), 0x100) // members 8..15
+            mcopy(add(o, 0x400), mload(add(r, 0x200)), 0x220) // limits
+            mstore(add(o, 0x620), mload(add(r, 0x220))) // member 17
+            return(o, 0x640)
+        }
+    }
+
+    /// Ends the call with `(st, x)` ABI-encoded, `x` the struct of `words` members at memory `p`.
+    function _returnFlat(Status st, uint256 p, uint256 words) private pure {
+        assembly ("memory-safe") {
+            let o := mload(0x40)
+            mstore(o, st)
+            mcopy(add(o, 0x20), p, shl(5, words))
+            return(o, shl(5, add(words, 1)))
         }
     }
 }

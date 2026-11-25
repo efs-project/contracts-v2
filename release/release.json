@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "b645b61c371ad41c01b5ba6a0c0a1f2a6baa333e",
-    "tree": "a5040cb39a0c7374c534e3744d515eb3d03c88df",
-    "dirty": 11,
+    "commit": "07818d1e90c5bbfefb85bb47f8935a446a6da6ad",
+    "tree": "5f1f2257552e40a77574390571fbe4269e7d7c67",
+    "dirty": 4,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -67,7 +67,7 @@
     "src/interfaces/ILedger.sol": "0xd6340748855349bae4b47623f291d7817d6d728d575d3c2a1601e2810d2a0458",
     "src/interfaces/ILedgerReads.sol": "0x87689135a2344dd389b91612d44e8e19a3e0f03190f7d54514c2e30cccfeeb29",
     "src/interfaces/Views.sol": "0x15c1279e351358f246ada93c37ee0d588cf2039d6b29a774869cfc1a071720b8",
-    "src/readers/LedgerReads.sol": "0xf1446e9fb05d73c171a84aaa8765673b565d10d10881530ec5ba4237a61adc70",
+    "src/readers/LedgerReads.sol": "0x7a4b12b0059b23ab6b3787638732ce83cc97de8f170eb2614abc8929192e769d",
     "src/interfaces/ILedgerViews.sol": "0x04acf582915ec566cd4bc5fa9bc2f9f278e2feae06f9fdb02ff5136ba40874cb",
     "src/readers/LedgerViews.sol": "0x6c66ec9d016a8cd8471e3198ee726e19e6fffdb14f439ccd2b5529da9716f13d",
     "src/interfaces/internal/IDescriptorStore.sol": "0xfac9904c8cb6f5598b9355cfe0b92991c1364df99f6deb8c74a2a01d8aa8a7bd",
@@ -334,18 +334,18 @@
     },
     "LedgerReads": {
       "source": "src/readers/LedgerReads.sol",
-      "runtimeHash": "0xbc3a4c7d361d91694b6754ee191128e962b2f7435256c4fc5eef74ad4fd8ba52",
-      "deployedBytecodeHash": "0xbc3a4c7d361d91694b6754ee191128e962b2f7435256c4fc5eef74ad4fd8ba52",
-      "initcodeHash": "0x49a1b6dab2f12cef0e660322b5a0bfda867ede2eb05fea9bb0d71c466c8b6481",
-      "initcodeWithArgsHash": "0x49a1b6dab2f12cef0e660322b5a0bfda867ede2eb05fea9bb0d71c466c8b6481",
-      "address": "0x61B4E8758E47BC97dC7A7DA0f0ACC0608F10d309",
+      "runtimeHash": "0x3bdcf50e3077b1327c7f8b19d7d33d46dd40a5fafdfb60e4a6a06528d41c13fe",
+      "deployedBytecodeHash": "0x3bdcf50e3077b1327c7f8b19d7d33d46dd40a5fafdfb60e4a6a06528d41c13fe",
+      "initcodeHash": "0xa4eb57598cb0b18dc8d55ccdce1194115e0e9839ebcfb59c9aea1955719496ce",
+      "initcodeWithArgsHash": "0xa4eb57598cb0b18dc8d55ccdce1194115e0e9839ebcfb59c9aea1955719496ce",
+      "address": "0x02c6Cb67a439788469FD03A410E51EC90554837a",
       "realmSpecific": false,
       "planStep": "G3",
       "immutables": [],
       "sizes": {
-        "runtime": 17673,
-        "initcode": 17699,
-        "initcodeWithArgs": 17699
+        "runtime": 14227,
+        "initcode": 14253,
+        "initcodeWithArgs": 14253
       },
       "budget": {
         "runtime": 19660,
@@ -354,18 +354,18 @@
     },
     "LedgerViews": {
       "source": "src/readers/LedgerViews.sol",
-      "runtimeHash": "0xe4d1a7945f9444c856f1189a5968338a15e2915038269c08e5e439797ce78037",
-      "deployedBytecodeHash": "0xe4d1a7945f9444c856f1189a5968338a15e2915038269c08e5e439797ce78037",
-      "initcodeHash": "0x3dc489063575907c00f054a63da6471c192e22c684a3d87d7e36a788254a4129",
-      "initcodeWithArgsHash": "0x3dc489063575907c00f054a63da6471c192e22c684a3d87d7e36a788254a4129",
-      "address": "0xBb641835724B29B0B0Ef274CBB6F9E38669fAE61",
+      "runtimeHash": "0x1e1efa2fbb0d547ecf9b00fd4df5fbc3a964b09a827b0282b73f26e3f4e28a5e",
+      "deployedBytecodeHash": "0x1e1efa2fbb0d547ecf9b00fd4df5fbc3a964b09a827b0282b73f26e3f4e28a5e",
+      "initcodeHash": "0xd0d151e7ff4bdd5f959e0719602d406fc5ca5cbb137e98fd2744475c28026c9c",
+      "initcodeWithArgsHash": "0xd0d151e7ff4bdd5f959e0719602d406fc5ca5cbb137e98fd2744475c28026c9c",
+      "address": "0xFeD47e0060dBA4Acf18198c6DDc0CFBbd8A0dd55",
       "realmSpecific": false,
       "planStep": "G4",
       "immutables": [],
       "sizes": {
-        "runtime": 14927,
-        "initcode": 14953,
-        "initcodeWithArgs": 14953
+        "runtime": 14517,
+        "initcode": 14543,
+        "initcodeWithArgs": 14543
       },
       "budget": {
         "runtime": 19660,
@@ -1166,10 +1166,10 @@
     "LensReader": {
       "source": "src/readers/LensReader.sol",
       "runtimeHash": "0x92118da7369eb0d9a2a3e4bdf667f6827a781b1ad8b0734fde1ecd6d2ac59c7d",
-      "deployedBytecodeHash": "0xaf87838a427f5de2a9e2cd10b45913cefde32c015c56749c6f2331e5dd87e245",
+      "deployedBytecodeHash": "0x25362877c3c2891354e217064147909ca53d35fd259837c8e098b71dbdb3c66d",
       "initcodeHash": "0x5fcf561754fa8de904c5592b7d9266e3a064b63bdccc65a5acf8fbfe1c3ada06",
-      "initcodeWithArgsHash": "0x437ff61912a00225b69f5ee690576e9524c1eba74e53a129a80f8fcf17900d76",
-      "address": "0x5E1559394Bb6867268F93e9E846b80935cc03601",
+      "initcodeWithArgsHash": "0x3e0d29a96b19b2249fae7cd94013b214d73df0ce368e683d9b8edad002548801",
+      "address": "0xafe53Fc89439Ad34E9cc3Cb87644d87304a6375c",
       "realmSpecific": true,
       "planStep": "R1",
       "immutables": [
@@ -1232,10 +1232,10 @@
     "FilesPageReader": {
       "source": "src/readers/FilesPageReader.sol",
       "runtimeHash": "0x5ecccb2925a6051e7c55285dcff26f12d69fcd5f3a74abd69399856935496c8e",
-      "deployedBytecodeHash": "0xf3b4b01a25f9394f435c2eac9e9ff6abeaa032cb612b8b867a9754c3f6c058cf",
+      "deployedBytecodeHash": "0x96e1865e7555413c635106f6a04e740cccb99baf00db0d259dc97200832f46ee",
       "initcodeHash": "0x08c1824f10da0a90b7c34928e42aa372a45aa4076ba32fda9d1b42b5f068957a",
-      "initcodeWithArgsHash": "0x2ca68dddcf022667b4fa8d267019423043b6f25b44aca1903e993a580ca8ba40",
-      "address": "0x0daed65E82C7bd6F207E044f653D16f1A47Bf703",
+      "initcodeWithArgsHash": "0x93869923c62c3f8fbb92eb7f3d9f3c87d6a99c77f5962052656858e3077c31e9",
+      "address": "0x345E7D1BC080B887734896e360E0caD951F2ED48",
       "realmSpecific": true,
       "planStep": "R2",
       "immutables": [
@@ -1343,10 +1343,10 @@
     "EfsWeb3Gateway": {
       "source": "src/periphery/EfsWeb3Gateway.sol",
       "runtimeHash": "0xabf3f75a7e7bad67d9896339add6584f3fcb115098a941edabc85faab83661e1",
-      "deployedBytecodeHash": "0xefd007ca3d74399972ce3126ec4792596f42c17c5592e83718a674b6f0ba096a",
+      "deployedBytecodeHash": "0x9b0794fe4fed952bbe2beb780350ea7a36b8618e236e35f3e7e50e33f2f56da4",
       "initcodeHash": "0x8cf18eb3adfb36a8cfc135c437cd1bd5b3e939e9918083b149ba1b193b376636",
-      "initcodeWithArgsHash": "0x93582c7880e9d555b774dd47bacce9e1df2769fd6aae8ad1da341842c9a5ba33",
-      "address": "0x38BdC180F5EF2b9f7E557FF39af139DF6f9dbC4a",
+      "initcodeWithArgsHash": "0xc76652a231b22f3d29f9bf481074a7c6ff06c5835b75d555ed9faa2330956832",
+      "address": "0xa6f1845596426B924ca618b12C2fC040C552f277",
       "realmSpecific": true,
       "planStep": "R5",
       "immutables": [
@@ -1888,29 +1888,29 @@
     "hotAbiIdPreimage": "efs/ledger-hot/1",
     "readers": {
       "lens": {
-        "address": "0x5E1559394Bb6867268F93e9E846b80935cc03601",
+        "address": "0xafe53Fc89439Ad34E9cc3Cb87644d87304a6375c",
         "kind": "0x88b206ade76a1d3cb58bcd2afda4651746fc0a87ff0ca1b68af3eb90d7a061df",
         "kindLabel": "efs/reader/lens/1",
-        "runtimeCodehash": "0xaf87838a427f5de2a9e2cd10b45913cefde32c015c56749c6f2331e5dd87e245"
+        "runtimeCodehash": "0x25362877c3c2891354e217064147909ca53d35fd259837c8e098b71dbdb3c66d"
       },
       "filesPage": {
-        "address": "0x0daed65E82C7bd6F207E044f653D16f1A47Bf703",
+        "address": "0x345E7D1BC080B887734896e360E0caD951F2ED48",
         "kind": "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
         "kindLabel": "efs/reader/files-page/1",
-        "runtimeCodehash": "0xf3b4b01a25f9394f435c2eac9e9ff6abeaa032cb612b8b867a9754c3f6c058cf"
+        "runtimeCodehash": "0x96e1865e7555413c635106f6a04e740cccb99baf00db0d259dc97200832f46ee"
       },
       "web3Gateway": {
-        "address": "0x38BdC180F5EF2b9f7E557FF39af139DF6f9dbC4a",
-        "runtimeCodehash": "0xefd007ca3d74399972ce3126ec4792596f42c17c5592e83718a674b6f0ba096a",
+        "address": "0xa6f1845596426B924ca618b12C2fC040C552f277",
+        "runtimeCodehash": "0x9b0794fe4fed952bbe2beb780350ea7a36b8618e236e35f3e7e50e33f2f56da4",
         "resolveMode": "5219",
         "rootDirectory": "0xde495817996636283ef72987b0106da2254b949815c75546879defcac169a430",
-        "pager": "0x0daed65E82C7bd6F207E044f653D16f1A47Bf703",
-        "urlBase": "web3://0x38BdC180F5EF2b9f7E557FF39af139DF6f9dbC4a:31337/"
+        "pager": "0x345E7D1BC080B887734896e360E0caD951F2ED48",
+        "urlBase": "web3://0xa6f1845596426B924ca618b12C2fC040C552f277:31337/"
       },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
-        "ledgerReads": "0x61B4E8758E47BC97dC7A7DA0f0ACC0608F10d309",
-        "ledgerViews": "0xBb641835724B29B0B0Ef274CBB6F9E38669fAE61"
+        "ledgerReads": "0x02c6Cb67a439788469FD03A410E51EC90554837a",
+        "ledgerViews": "0xFeD47e0060dBA4Acf18198c6DDc0CFBbd8A0dd55"
       }
     },
     "statusVocabularyId": "0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87",
