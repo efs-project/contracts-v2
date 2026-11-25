@@ -2,7 +2,7 @@
 pragma solidity 0.8.37;
 
 /// @title GenerationStorage — an index generation's own namespace (design §4.6)
-/// @notice Written only in the generation's own context, by its code or by the `IndexBuild` delegate.
+/// @notice Written only by the generation's own code (no delegate: design §10.6).
 abstract contract GenerationStorage {
     struct Progress {
         uint48 lastProcessed;

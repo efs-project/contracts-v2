@@ -5,7 +5,7 @@ import {GenerationStorage} from "./storage/GenerationStorage.sol";
 import {IndexProfiles} from "./IndexProfiles.sol";
 import {Layout} from "../core/layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
-import {ActionKind, FamilyId, PostingKey, ScopeKey, TypeId} from "../interfaces/Actions.sol";
+import {ActionKind, FamilyId, PostingKey, Purpose, ScopeKey} from "../interfaces/Actions.sol";
 import {Phase} from "../interfaces/Results.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
@@ -35,8 +35,9 @@ import {
 ///         contract's address and codehash into `MANIFEST_HASH`. Every read this contract does not answer itself
 ///         is forwarded to that contract by `STATICCALL` from the fallback (design §10.1), so the manifest,
 ///         readiness and coverage reads keep their selectors at this address and no forwarded call can change
-///         state. The replay, build and backfill entry points of §10.6 run through the pinned `IndexBuild`
-///         delegate, which generation 1 does not carry yet: they revert until that build lands.
+///         state. Of the entry points of §10.6, replay into fresh stores runs in this contract's own code; `build`
+///         and `backfill` revert, because generation 1 has no later family to build (the `IndexBuild` delegate is
+///         withdrawn: an index may not DELEGATECALL; design §10.6).
 contract RealmIndex is IRealmIndex, GenerationStorage {
     address public immutable LEDGER;
     address public immutable DECODER;
@@ -67,6 +68,15 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     bytes32 private immutable F_DIGEST;
     bytes32 private immutable F_ROLE_SCOPE;
     bytes32 private immutable F_LIVE_SCOPE;
+    bytes32 private immutable F_PLACE;
+    bytes32 private immutable F_PLACE_BELOW;
+    bytes32 private immutable F_SCOPE_BELOW;
+    bytes32 private immutable F_POSITION_AUTHORS;
+    bytes32 private immutable F_ROLE_PLACES;
+    /// The Topics Type ids the ancestor walk follows (`topic/1`: parent = body word 0; `topic-word/1`: a root),
+    /// copied from READS; both zero when the generation keeps no topic lists (no walk happens).
+    bytes32 private immutable TOPIC_T;
+    bytes32 private immutable WORD_T;
 
     Unit[] private _units;
     DigestSpec[] private _specs;
@@ -107,6 +117,17 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         F_DIGEST = Keys.familyId("digest");
         F_ROLE_SCOPE = Keys.familyId("role-scope");
         F_LIVE_SCOPE = Keys.familyId("live-scope");
+        F_PLACE = Keys.familyId("place");
+        F_PLACE_BELOW = Keys.familyId("place-below");
+        F_SCOPE_BELOW = Keys.familyId("scope-below");
+        F_POSITION_AUTHORS = Keys.familyId("position-authors");
+        F_ROLE_PLACES = Keys.familyId("role-places");
+        // the topic lists only beside the final hook that guarantees a tagged topic was registered strictly before
+        // the tag; re-checked here over the units this generation copies, so no reads contract can switch it on
+        (bytes32 topic, bytes32 word) = r.topicTypes();
+        IndexProfiles.requireTopicUnit(units, topic, word);
+        TOPIC_T = topic;
+        WORD_T = word;
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }
@@ -241,6 +262,16 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
 
     function _add(Appends memory b, bytes32 family, PostingKey key, uint64 ordinal) private pure {
         uint256 n = b.n;
+        if (n == b.keys.length) {
+            // a topic's ancestor walk has no depth cap: double the buffer
+            Appends memory g = _appends(2 * n);
+            for (uint256 i; i < n; ++i) {
+                g.families[i] = b.families[i];
+                g.keys[i] = b.keys[i];
+                g.ordinals[i] = b.ordinals[i];
+            }
+            (b.families, b.keys, b.ordinals) = (g.families, g.keys, g.ordinals);
+        }
         b.families[n] = FamilyId.wrap(family);
         b.keys[n] = key;
         b.ordinals[n] = ordinal;
@@ -309,9 +340,12 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         uint64 admission = e.admission;
         bytes32 scope = Keys.scope(e.principalId, e.purpose, e.subject);
         bytes32 bindingKey = Keys.binding(e.principalId, e.position);
-        Appends memory b = _appends(3);
+        Appends memory b = _appends(8);
         _add(b, F_HISTORY, _pk(0, 8, 0, bindingKey), admission);
-        if (e.oldTarget != 0) {
+        // a BIND that keeps its asserted target (a number-only re-bind) leaves the backlink list alone: releasing
+        // and re-appending the same key would change no live count and only grow the list
+        bool sameTarget = e.kind == ActionKind.BIND && e.oldTarget != 0 && e.oldTarget == e.target;
+        if (e.oldTarget != 0 && !sameTarget) {
             ps.release(FamilyId.wrap(F_BACKLINK), _pk(e.purpose, 5, 0, e.oldTarget), 1);
         }
         uint8 tk = e.transitionKind;
@@ -332,6 +366,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),
                 e.bindingOrdinal
             );
+            _firstStatementLists(e, b);
         } else if (tk == T_REBIND) {
             bs.stamp(ScopeKey.wrap(scope), admission);
         } else if (tk == T_RESTORE) {
@@ -352,10 +387,74 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 admission
             );
         }
-        if (e.kind == ActionKind.BIND) {
+        if (e.kind == ActionKind.BIND && !sameTarget) {
             _add(b, F_BACKLINK, _pk(e.purpose, 5, 0, e.target), admission);
         }
         _flush(b);
+    }
+
+    /// The five first-statement lists (design §10.2 kinds 6, 7, 19, 20, 21), appended only at an author's FIRST
+    /// statement on a position (FIRST_BIND or FIRST_MASK, either sign). A binding's ordinal is allocated once and a
+    /// head never returns to UNSET, so no later re-bind, mask, release or restore of the author's appends to them:
+    /// "newest first" in each means most recently first-stated, and no later action of the author's moves or
+    /// duplicates their entry. Readers take the state and the number from the head.
+    ///   - `position-authors` (TAG, FOLDER): key = the position; entry = this admission ordinal. Its head, read
+    ///     before the append, says whether the position is fresh (no author has stated anything there).
+    ///   - `place` (TAG, FOLDER; fresh positions only): key = (purpose, subject); entry = this binding ordinal.
+    ///   - `role-places` (TAG; fresh positions with a nonzero role): key = (TAG, role); entry = this binding
+    ///     ordinal. The role of a tag is the thing tagged, so every statement of either sign is reachable from its
+    ///     thing (`role-places` → position → `position-authors`), a lone negative included.
+    ///   - `scope-below` (TAG, topic lists kept): key = (author, TAG, ancestor) for every PROPER ancestor of the
+    ///     subject (the subject itself is the exact scope list, family 10); entry = this binding ordinal.
+    ///   - `place-below` (TAG, topic lists kept; fresh positions only): key = (TAG, ancestor) per proper ancestor;
+    ///     entry = this binding ordinal.
+    /// A publication has one principal, who makes at most one first statement per position, and every earlier effect
+    /// of the publication is flushed before this one folds, so the head read sees every earlier statement.
+    function _firstStatementLists(Effect calldata e, Appends memory b) private {
+        bytes32 purpose = e.purpose;
+        bool tag = purpose == Purpose.TAG;
+        if (!tag && purpose != Purpose.FOLDER) return;
+        PostingKey authors = _pk(0, 20, 0, e.position);
+        (uint64 count,,,) = IPostingStore(POSTING).postingHead(authors);
+        bool fresh = count == 0;
+        _add(b, F_POSITION_AUTHORS, authors, e.admission);
+        if (fresh) {
+            _add(b, F_PLACE, _pk(purpose, 6, 0, e.subject), e.bindingOrdinal);
+            if (tag && e.role != 0) {
+                _add(b, F_ROLE_PLACES, _pk(purpose, 21, 0, e.role), e.bindingOrdinal);
+            }
+        }
+        if (tag && TOPIC_T != 0) _walk(e, b, fresh);
+    }
+
+    /// Walks the proper ancestors of a tag's subject: a `topic/1` record's parent is its body word 0, a `topic-word/1`
+    /// record is a root and ends the walk, anything else (an address-shaped home) has no ancestors. No depth cap: the
+    /// walk is bounded by gas alone. One batched ledger read per level (the record's Type word and its body word 0).
+    /// Nothing checks that the subject was registered before this statement: the unit list holds the final hook that
+    /// refuses any other first tag (`FilesFinalValidator` code 9, strictly before), which the constructor requires
+    /// (`IndexProfiles.requireTopicUnit`); every record read is write-once, so a replay walks what the live fold did.
+    function _walk(Effect calldata e, Appends memory b, bool fresh) private {
+        ILedgerHot hot = ILedgerHot(LEDGER);
+        bytes32[] memory slots = new bytes32[](2);
+        bytes32 cur = e.subject;
+        while (true) {
+            slots[0] = bytes32(Layout.recordsCellsSlot(cur));
+            slots[1] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
+            bytes32[] memory w = hot.extsloadBatch(slots);
+            if (cur != e.subject) {
+                // `cur` is a proper ancestor: a topic/1 or topic-word/1 record by the topic Type's reference law
+                if (w[0] != TOPIC_T && w[0] != WORD_T) return; // unreachable for a sound topic/1 record
+                _add(
+                    b,
+                    F_SCOPE_BELOW,
+                    _pk(0, 19, 0, Keys.scopeBelow(e.principalId, Purpose.TAG, cur)),
+                    e.bindingOrdinal
+                );
+                if (fresh) _add(b, F_PLACE_BELOW, _pk(Purpose.TAG, 7, 0, cur), e.bindingOrdinal);
+            }
+            if (w[0] != TOPIC_T) return; // a root word, a home, or (unreachable) anything else
+            cur = w[1];
+        }
     }
 
     function _foldWithdraw(Effect calldata e) private {

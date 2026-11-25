@@ -184,6 +184,9 @@ abstract contract FilesFixture is Test {
     /// When set before `_realm`, the Realm's index pins no unit, so nothing judges its binds: the suites that show
     /// a reader still refusing state the validator would refuse at admission (a bad HEAD already on chain).
     bool internal withoutValidator;
+    /// When set before `_realm`, the index is built with zero topic Type ids: it keeps no topic roll-ups
+    /// (`scope-below`, `place-below`), with or without the validator.
+    bool internal withoutTopicLists;
 
     /// The manifest unit of design §10.7: no fold hook, the validator as the final hook, FOLDER only (none when
     /// `withoutValidator`).
@@ -229,7 +232,7 @@ abstract contract FilesFixture is Test {
         require(r.k.proxy == predicted, "ledger proxy prediction");
         r.ledger = ILedger(r.k.proxy);
         r.hot = ILedgerHot(r.k.proxy);
-        r.g = IndexDeploy.deploy(r.k.proxy, KernelDeploy.HOT_ABI_ID, _units(), _specs());
+        r.g = _gen1(r.k.proxy);
         r.registry.activate(1);
         ILedgerControl(r.k.proxy)
             .activate(
@@ -242,6 +245,20 @@ abstract contract FilesFixture is Test {
                 )
             );
         r.principal = Keys.principalFor(address(this), r.hot.realmOrigin());
+    }
+
+    /// The Realm's generation-1 index: the topic lists ride on the validator, which guarantees a tagged topic was
+    /// registered before the tag (zero topic Type ids without it, or with `withoutTopicLists`).
+    function _gen1(address ledger) internal returns (IndexDeploy.Gen1 memory) {
+        bool off = withoutValidator || withoutTopicLists;
+        return IndexDeploy.deploy(
+            ledger,
+            KernelDeploy.HOT_ABI_ID,
+            _units(),
+            _specs(),
+            off ? bytes32(0) : typeIds[T_TOPIC],
+            off ? bytes32(0) : typeIds[T_TOPIC_WORD]
+        );
     }
 
     /// §8.2 G11 + G21: the thirteen blobs, then permissionless registration (by a stranger) of the thirteen Types.

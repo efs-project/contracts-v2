@@ -7,8 +7,9 @@ pragma solidity ^0.8.27;
 import {ScopeKey} from "../Actions.sol";
 
 /// @title IIndexBuild — the build delegate behind IRealmIndex's three idle-gated entry points (design §5.11)
-/// @notice One per (layoutId, callbackProfile); holds no generation address; every selector reverts
-///         E_DELEGATE_ONLY when address(this) == SELF.
+/// @notice WITHDRAWN (design §10.1, §10.6, 2026-11-25): an index generation may not DELEGATECALL (activation's
+///         plain-runtime scan refuses it), so no `IndexBuild` delegate exists or is pinned; the interface is kept only
+///         so the committed ABI union stays complete until the build step that replaces it is designed.
 interface IIndexBuild {
     function replayNextPublication(uint16 maxFacts) external returns (uint64 processed);
 

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "efs-gas-model/1",
   "title": "efs-gas-model/1 \u2014 a per-action gas model of one native-lane publication",
-  "description": "Written by tools/gas-model.mjs from test/integration/GasModel.t.sol. gas(publication) = fixed + \u03a3 cost(action); PUBLISH new = publishNew[shape] + perWord\u00b7ceil(n/32) + perByte\u00b7n. Planning only: eth_estimateGas stays the authority before sending. Excludes intrinsic, calldata and refunds.",
+  "description": "Written by tools/gas-model.mjs from test/integration/GasModel.t.sol. gas(publication) = fixed + \u03a3 cost(action); PUBLISH new = publishNew[shape] + perWord\u00b7ceil(n/32) + perByte\u00b7n; a first TAG on an n-word topic adds tagLevel terms per proper ancestor. Planning only: eth_estimateGas stays the authority before sending. Excludes intrinsic, calldata and refunds.",
   "type": "object",
   "required": [
     "schema",
@@ -27,7 +27,8 @@
         "measurement",
         "marginal",
         "slopes",
-        "fixed"
+        "fixed",
+        "tagLevels"
       ]
     },
     "profiles": {
@@ -65,10 +66,12 @@
                 "unbindFolder",
                 "releaseFolder",
                 "bindTagFresh",
+                "bindTagSecondAuthor",
                 "bindTagNumberChange",
                 "unbindTagLone",
                 "withdraw",
-                "firstWriteSurcharge"
+                "firstWriteSurcharge",
+                "tagLevel"
               ],
               "properties": {
                 "fixed": {
@@ -122,6 +125,9 @@
                 "bindTagFresh": {
                   "type": "integer"
                 },
+                "bindTagSecondAuthor": {
+                  "type": "integer"
+                },
                 "bindTagNumberChange": {
                   "type": "integer"
                 },
@@ -133,6 +139,19 @@
                 },
                 "firstWriteSurcharge": {
                   "type": "integer"
+                },
+                "tagLevel": {
+                  "type": "object",
+                  "description": "Per proper ancestor of a first TAG statement's topic (design \u00a710.4): mineNew/mineExisting for the author's scope-below list at that ancestor, sharedNew/sharedExisting for the place-below list (written only on a fresh position).",
+                  "required": [
+                    "mineNew",
+                    "mineExisting",
+                    "sharedNew",
+                    "sharedExisting"
+                  ],
+                  "additionalProperties": {
+                    "type": "integer"
+                  }
                 }
               }
             },

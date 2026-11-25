@@ -20,6 +20,7 @@
     "0x577bd336": "progress()",
     "0xd32b1e46": "provenFrom()",
     "0xa77f90e1": "readsContract()",
+    "0x56281388": "topicTypes()",
     "0x82b564f2": "workModel()"
   },
   "events": {},
@@ -866,6 +867,24 @@
         },
         {
           "name": "codehash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "topicTypes",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "topicTypeId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "topicWordTypeId",
           "type": "bytes32",
           "internalType": "bytes32"
         }

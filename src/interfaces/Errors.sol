@@ -68,7 +68,7 @@ error E_REVISION(uint32 expected, uint32 have); // reprepare: a set or a transit
 error E_IMPLEMENTATION(address expected, address live); // none
 error E_LAYOUT(bytes32 expected, bytes32 have); // none
 error E_REGISTRY(uint8 field); // none: 1 activeRevision 2 ledger 3 implementation 4 codehash
-error E_PIN(address target, uint8 which); // none: 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin 10 the index's reads contract (its codehash is not the one the index recorded, or its manifest names another header, profile or ledger)
+error E_PIN(address target, uint8 which); // none: 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin 10 the index's reads contract (its codehash is not the one the index recorded, or its manifest names another header, profile or ledger) 11 the index's topic Type ids (one of them zero, or nonzero without a final unit whose topicTypeId() and topicWordTypeId() equal them)
 error E_INDEX_NOT_READY(uint8 reason); // none
 error E_EXPECTED_SET(bytes32 expected, bytes32 live); // reprepare: the set names an execution set other than the one the live components hash to
 error E_FROZEN(); // none: the Realm is frozen

@@ -23,6 +23,7 @@ export const DOM = {
   principal: h("efs/principal/1"),
   type: h("efs/type/1"),
   roleScope: h("efs/vk/role-scope/1"),
+  scopeBelow: h("efs/vk/scope-below/1"),
   realmOrigin: h("efs/realm-origin/1"),
   realm: h("efs/realm/1"),
   publication: h("efs/publication/1"),
@@ -34,9 +35,9 @@ export const DOM = {
   executionSet: h("efs/execution-set/1"),
 };
 // Index families of design §10.2: keccak("efs/family/<name>/1").
-export const FAMILIES = ["by-type", "by-author", "backlink", "history", "scope", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "roster", "live-scope"];
+export const FAMILIES = ["by-type", "by-author", "backlink", "history", "scope", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "roster", "live-scope", "place", "place-below", "scope-below", "position-authors", "role-places"];
 export const familyId = (name) => keccak256(stringToHex(`efs/family/${name}/1`));
-export const KIND = { byType: 1, byAuthor: 4, backlink: 5, history: 8, scope: 10, referencePosition: 11, byRecord: 12, uniqueByType: 13, scalar: 14, digest: 15 };
+export const KIND = { byType: 1, byAuthor: 4, backlink: 5, history: 8, scope: 10, referencePosition: 11, byRecord: 12, uniqueByType: 13, scalar: 14, digest: 15, place: 6, placeBelow: 7, scopeBelow: 19, positionAuthors: 20, rolePlaces: 21 };
 
 export const keys = {
   principal: (address) => pad(address, { size: 32 }),
@@ -50,6 +51,7 @@ export const keys = {
   scope: (principal, purpose, subject) => k(["bytes32", "bytes32", "bytes32", "bytes32"], [DOM.scope, principal, purpose, subject]),
   posting: (typeId, kind, ordinal, valueKey) => k(["bytes32", "bytes32", "uint256", "uint256", "bytes32"], [DOM.posting, typeId, BigInt(kind), BigInt(ordinal), valueKey]),
   roleScope: (principal, purpose, role) => k(["bytes32", "bytes32", "bytes32", "bytes32"], [DOM.roleScope, principal, purpose, role]),
+  scopeBelow: (principal, purpose, ancestor) => k(["bytes32", "bytes32", "bytes32", "bytes32"], [DOM.scopeBelow, principal, purpose, ancestor]),
   realmOrigin: (chainId, core, salt) => k(["bytes32", "uint64", "address", "bytes32"], [DOM.realmOrigin, chainId, core, salt]),
   realmId: (origin, profile) => k(["bytes32", "bytes32", "uint16"], [DOM.realm, origin, profile]),
   publicationId: (principal, intentDigest) => k(["bytes32", "bytes32", "bytes32"], [DOM.publication, principal, intentDigest]),
@@ -67,6 +69,11 @@ keys.byRecordList = (id) => keys.posting(zero, KIND.byRecord, 0, id);
 keys.uniqueByTypeList = (t) => keys.posting(t, KIND.uniqueByType, 0, zero);
 keys.scalarList = (t, spec, kind, value) => keys.posting(t, KIND.scalar, spec, k(["uint8", "bytes32"], [kind, value]));
 keys.digestList = (alg, value) => keys.posting(zero, KIND.digest, 0, k(["bytes32", "bytes32"], [alg, value]));
+keys.placeList = (purpose, subject) => keys.posting(purpose, KIND.place, 0, subject);
+keys.placeBelowList = (purpose, ancestor) => keys.posting(purpose, KIND.placeBelow, 0, ancestor);
+keys.scopeBelowList = (principal, purpose, ancestor) => keys.posting(zero, KIND.scopeBelow, 0, keys.scopeBelow(principal, purpose, ancestor));
+keys.positionAuthorsList = (position) => keys.posting(zero, KIND.positionAuthors, 0, position);
+keys.rolePlacesList = (purpose, role) => keys.posting(purpose, KIND.rolePlaces, 0, role);
 
 // Fixed inputs: mock addresses and tags that never occur on a real deployment.
 const inputs = {
@@ -86,6 +93,8 @@ const inputs = {
   scalarKind: 7,
   value: h("vectors/value"),
   algorithm: h("sha256"),
+  tagPurpose: h("efs/purpose/tag/1"),
+  ancestor: h("vectors/ancestor"),
 };
 const eoaPrincipal = keys.principal(inputs.eoa);
 const contractPrincipal = keys.contractPrincipal(inputs.realmOrigin, inputs.contractAddress);
@@ -126,6 +135,12 @@ const vectors = {
     scalarList: keys.scalarList(typeId, inputs.spec, inputs.scalarKind, inputs.value),
     digestList: keys.digestList(inputs.algorithm, inputs.value),
     roleScopeKey: keys.roleScope(eoaPrincipal, inputs.purpose, inputs.role),
+    scopeBelowKey: keys.scopeBelow(eoaPrincipal, inputs.tagPurpose, inputs.ancestor),
+    placeList: keys.placeList(inputs.tagPurpose, subjectId),
+    placeBelowList: keys.placeBelowList(inputs.tagPurpose, inputs.ancestor),
+    scopeBelowList: keys.scopeBelowList(eoaPrincipal, inputs.tagPurpose, inputs.ancestor),
+    positionAuthorsList: keys.positionAuthorsList(positionKey),
+    rolePlacesList: keys.rolePlacesList(inputs.tagPurpose, inputs.role),
     realmOrigin,
     realmId: keys.realmId(realmOrigin, 1),
     contractPrincipalOfOrigin: keys.contractPrincipal(realmOrigin, inputs.contractAddress),

@@ -81,7 +81,7 @@ contract IndexReadsSplitTest is Test {
         assertEq(reads, address(g.reads));
         assertEq(codehash, address(g.reads).codehash);
         assertEq(header, keccak256("efs/index-manifest/2"));
-        assertEq(families.length, 13);
+        assertEq(families.length, 18);
         assertEq(
             g.index.manifestHash(),
             keccak256(
@@ -136,7 +136,9 @@ contract IndexReadsSplitTest is Test {
             address(g.bitmap),
             new Unit[](0),
             new DigestSpec[](0),
-            IndexDoubleDefaults.workModel()
+            IndexDoubleDefaults.workModel(),
+            0,
+            0
         );
         vm.expectRevert(abi.encodeWithSelector(E_PIN.selector, address(other), uint8(10)));
         new RealmIndex(k.proxy, address(0), address(other));

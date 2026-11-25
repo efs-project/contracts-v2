@@ -5,8 +5,10 @@ import {ScopeKey} from "./Actions.sol";
 import {Effect, Readiness} from "./Index.sol";
 
 /// @title IRealmIndex — the index generation's callback and build surface (design §5.11, §10)
-/// @notice The three idle-gated build entry points each DELEGATECALL the pinned IndexBuild (BUILD, with
-///         BUILD_CODEHASH re-verified per call) in the generation's own context.
+/// @notice The three idle-gated entry points run in the generation's own code. The delegate shape of `IndexBuild`
+///         (a codehash-pinned DELEGATECALL target) is withdrawn (design §10.6, 2026-11-25): activation's plain-runtime
+///         scan refuses any DELEGATECALL in an index. Generation 1 replays into fresh stores itself and refuses
+///         `build` and `backfill`; a later generation builds its own later families from history before attachment.
 interface IRealmIndex {
     /// Prefix; CALL from ledger context; msg.sender == ledger.
     function onAdmission(uint64 publication, Effect[] calldata effects, bytes32[] calldata refs)

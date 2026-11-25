@@ -39,7 +39,7 @@ library IndexDeploy {
     }
 
     function postingFamilies() internal pure returns (bytes32[] memory f) {
-        f = new bytes32[](10);
+        f = new bytes32[](15);
         f[0] = Keys.familyId("by-type");
         f[1] = Keys.familyId("by-author");
         f[2] = Keys.familyId("backlink");
@@ -50,6 +50,11 @@ library IndexDeploy {
         f[7] = Keys.familyId("scalar");
         f[8] = Keys.familyId("digest");
         f[9] = Keys.familyId("role-scope");
+        f[10] = Keys.familyId("place");
+        f[11] = Keys.familyId("place-below");
+        f[12] = Keys.familyId("scope-below");
+        f[13] = Keys.familyId("position-authors");
+        f[14] = Keys.familyId("role-places");
     }
 
     function bitmapFamilies() internal pure returns (bytes32[] memory f) {
@@ -65,18 +70,74 @@ library IndexDeploy {
         Unit[] memory units,
         DigestSpec[] memory specs
     ) internal returns (Gen1 memory g) {
+        return deploy(ledger, hotAbiId, units, specs, 0, 0);
+    }
+
+    /// With the topic Type ids the topic lists walk (both zero: none; otherwise a unit's final hook must be built
+    /// for the same two Types, or the reads contract's constructor reverts).
+    function deploy(
+        address ledger,
+        bytes32 hotAbiId,
+        Unit[] memory units,
+        DigestSpec[] memory specs,
+        bytes32 topicTypeId,
+        bytes32 topicWordTypeId
+    ) internal returns (Gen1 memory g) {
+        g = _stores(ledger);
+        g.reads = _reads(ledger, hotAbiId, g, units, specs, [topicTypeId, topicWordTypeId]);
+        g.index = IGeneration1(address(new RealmIndex(ledger, address(0), address(g.reads))));
+    }
+
+    function _stores(address ledger) private returns (Gen1 memory g) {
         g.posting = new PostingStore(ledger, address(0), postingFamilies());
         g.bitmap = new BitmapStore(ledger, address(0), bitmapFamilies());
-        g.reads = new IndexReads(
-            ledger,
-            hotAbiId,
-            address(g.posting),
-            address(g.bitmap),
-            units,
-            specs,
-            IndexDoubleDefaults.workModel()
-        );
-        g.index = IGeneration1(address(new RealmIndex(ledger, address(0), address(g.reads))));
+    }
+
+    /// The `IndexReads` constructor arguments as one tuple: `abi.encode(args)` minus its leading offset word is the
+    /// constructor's argument encoding, and encoding one memory struct keeps the encoder's stack small (the nine
+    /// separate arguments, with the nested unit arrays, are too deep for via-IR in some suites).
+    struct ReadsArgs {
+        address ledger;
+        bytes32 hotAbiId;
+        address posting;
+        address bitmap;
+        Unit[] units;
+        DigestSpec[] specs;
+        WorkModel work;
+        bytes32 topicTypeId;
+        bytes32 topicWordTypeId;
+    }
+
+    function _reads(
+        address ledger,
+        bytes32 hotAbiId,
+        Gen1 memory g,
+        Unit[] memory units,
+        DigestSpec[] memory specs,
+        bytes32[2] memory topics
+    ) private returns (IndexReads reads) {
+        ReadsArgs memory x;
+        x.ledger = ledger;
+        x.hotAbiId = hotAbiId;
+        x.posting = address(g.posting);
+        x.bitmap = address(g.bitmap);
+        x.units = units;
+        x.specs = specs;
+        x.work = IndexDoubleDefaults.workModel();
+        x.topicTypeId = topics[0];
+        x.topicWordTypeId = topics[1];
+        bytes memory encoded = abi.encode(x);
+        bytes memory init = type(IndexReads).creationCode;
+        bytes memory code = new bytes(init.length + encoded.length - 32);
+        assembly ("memory-safe") {
+            mcopy(add(code, 32), add(init, 32), mload(init))
+            mcopy(add(add(code, 32), mload(init)), add(encoded, 64), sub(mload(encoded), 32))
+            reads := create(0, add(code, 32), mload(code))
+            if iszero(reads) {
+                returndatacopy(0, 0, returndatasize())
+                revert(0, returndatasize())
+            }
+        }
     }
 
     function deploy(address ledger, bytes32 hotAbiId) internal returns (Gen1 memory g) {
