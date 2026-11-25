@@ -5,6 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {TopicListsBase} from "./TopicListsBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
+import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
@@ -56,8 +57,14 @@ contract TagListsMeasureTest is TopicListsBase {
         }
         // X and Y have written before (a lone negative each on a warm-up topic), so no row pays a first write
         bytes32 warm = _chain("warm", 1)[0];
-        _go(X, _one(EfsTopics.deny(warm, keccak256("warm"), 0, 0)));
-        _go(Y, _one(EfsTopics.deny(warm, keccak256("warm"), 0, 0)));
+        _go(X, _one(EfsTopics.deny(warm, _addr("warm"), 0, 0)));
+        _go(Y, _one(EfsTopics.deny(warm, _addr("warm"), 0, 0)));
+    }
+
+    /// An address-shaped role (top 96 bits zero): something a first "not this" may name without any history, and
+    /// the validator's cheapest admitted role (validator code 15).
+    function _addr(bytes memory label) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(uint256(keccak256(label)))));
     }
 
     // ---- publications --------------------------------------------------------------------------------------------
@@ -260,9 +267,14 @@ contract TagListsMeasureTest is TopicListsBase {
         if (c == 2) {
             _go(address(this), _tags(deepest, 0, 2));
         } else if (c == 4) {
+            // the later statements at the existing position are nos, so the prefill files at every level of the
+            // deep chain once per position (a later first yes would file again)
             _go(address(this), _tags(deepest, 0, 1));
-            _go(Y, _tags(deepest, 0, 1));
-            _go(X, _tags(deepest, 0, 2));
+            _go(Y, _stmts(deepest, 0, 1, true));
+            Action[] memory x = new Action[](2);
+            x[0] = EfsTopics.deny(deepest, s[0], 0, 0);
+            x[1] = EfsTopics.tag(deepest, s[1], 0, 0);
+            _go(X, x);
         }
     }
 
@@ -276,8 +288,10 @@ contract TagListsMeasureTest is TopicListsBase {
             _go(address(this), _tags(topic, 0, 1));
             return (X, _stmts(topic, 0, 1, deny));
         }
+        // Y's earlier statement is a no: it makes the position's second author without filing at every level of
+        // the deep chain (a later first yes would), which keeps the suite under the default test gas limit
         _go(address(this), _tags(topic, 2, 1));
-        _go(Y, _tags(topic, 2, 1));
+        _go(Y, _stmts(topic, 2, 1, true));
         return (X, _stmts(topic, 2, 1, deny));
     }
 
@@ -469,12 +483,13 @@ contract TagListsMeasureTest is TopicListsBase {
     // D. what one list entry costs a spammer
     // =============================================================================================
 
-    /// The cheapest statement that adds an entry: a lone negative (no target, any role) on a fresh position, by an
-    /// account that has written before, alone and per entry in a full publication of 64.
+    /// The cheapest statement that adds an entry: a lone negative (no target; an address-shaped role, which needs no
+    /// history) on a fresh position, by an account that has written before, alone and per entry in a full
+    /// publication of 64.
     function _spam(string memory row, address who, bytes32 topic) internal {
         Action[] memory a = new Action[](64);
         for (uint256 i; i < 64; ++i) {
-            a[i] = EfsTopics.deny(topic, keccak256(abi.encode(row, i)), 0, 0);
+            a[i] = EfsTopics.deny(topic, _addr(abi.encode(row, i)), 0, 0);
         }
         uint256 snap = vm.snapshotState();
         _log(string.concat(row, " alone"), _measure(who, _one(a[0])));
@@ -509,5 +524,80 @@ contract TagListsMeasureTest is TopicListsBase {
             "D position-authors entry warm account",
             _measure(Y, _one(EfsTopics.deny(t[0], s[1], 0, 0)))
         );
+    }
+
+    /// One more `place` (and `place-below`) entry for an EXISTING position: a later author's first yes. Each author
+    /// files at most once per position, so it takes a fresh account each time; one fresh account can file once at
+    /// each of many existing positions. Alone (one first yes) and per entry of 64 (64 first yeses at 64 existing
+    /// positions), the account's first publication.
+    function _spamExisting(string memory row, bytes32 topic) internal {
+        _goChunked(address(this), _tags(topic, 0, 64)); // 64 existing positions at the place
+        uint256 snap = vm.snapshotState();
+        address one = makeAddr(string.concat("measure/filer-one ", row));
+        _log(string.concat(row, " alone"), _measure(one, _tags(topic, 0, 1)));
+        vm.revertToState(snap);
+        address many = makeAddr(string.concat("measure/filer-many ", row));
+        G memory g = _measure(many, _tags(topic, 0, 64));
+        vm.revertToState(snap);
+        emit log_named_uint(string.concat("tl ", row, " per entry of 64 tx"), g.txAll / 64);
+        if (g.state != 0) {
+            emit log_named_uint(string.concat("tl ", row, " per entry of 64 txexec"), g.txExec / 64);
+        }
+    }
+
+    function test_D_spam_existing_positions() public {
+        bytes32[] memory t = _chain("spamx", 2);
+        // a place entry: a first yes at an existing position of a 1-word topic (no ancestor)
+        _spamExisting("D place entry existing position fresh account", t[0]);
+        // a place entry and the ancestor's place-below entry: the same on the 2-word topic
+        _spamExisting("D place-below entry existing position fresh account", t[1]);
+    }
+
+    // =============================================================================================
+    // E. later transitions: a mask, a release and a restore (the yes-count of `position-authors`)
+    // =============================================================================================
+
+    /// X's asserted head at (purpose, subject, role) is masked, restored, released and restored again, each step a
+    /// cooled publication of its own.
+    function _transitions(
+        string memory row,
+        bytes32 purpose,
+        bytes32 subject,
+        bytes32 role,
+        bytes32 target
+    ) internal {
+        _go(X, _one(_bind(purpose, subject, role, target, 0)));
+        _log(
+            string.concat(row, " mask asserted"),
+            _measure(X, _one(EfsFiles.unbind(purpose, subject, role, 1)))
+        );
+        _log(
+            string.concat(row, " restore from masked"),
+            _measure(X, _one(_bind(purpose, subject, role, target, 2)))
+        );
+        _log(
+            string.concat(row, " release asserted"),
+            _measure(X, _one(EfsFiles.release(purpose, subject, role, 3)))
+        );
+        _log(
+            string.concat(row, " restore from released"),
+            _measure(X, _one(_bind(purpose, subject, role, target, 4)))
+        );
+        _log(
+            string.concat(row, " mask of masked"),
+            _measure(X, _one(EfsFiles.unbind(purpose, subject, role, 5)))
+        );
+    }
+
+    function test_E_transitions() public {
+        bytes32 topic = _chain("trans", 2)[1];
+        _go(address(this), _tags(topic, 0, 1)); // the position exists (two authors after X)
+        _transitions("E tag", Purpose.TAG, topic, s[0], s[0]);
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        (a[0], b[0]) = _name("trans.txt");
+        _go(address(this), a, b);
+        bytes32 home = bytes32(uint256(uint160(X)));
+        _transitions("E folder", Purpose.FOLDER, home, keccak256("trans.txt"), s[1]);
     }
 }
