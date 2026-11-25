@@ -533,8 +533,10 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   }, { nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } });
 
   // G16–G17: the stores name the predicted ledger proxy, INITIAL_WRITER = 0
-  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress });
-  const bitmap = add("G17", "BitmapStore", [ledgerProxy, zeroAddress, BITMAP_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, FAMILY_LIVE_SCOPE: familyId("live-scope") });
+  // each store also holds its family set as immutables F0.. (zero padding beyond the set; PostingStore 16, BitmapStore 4)
+  const familySlots = (names, capacity) => Object.fromEntries(Array.from({ length: capacity }, (_, i) => [`F${i}`, i < names.length ? familyId(names[i]) : ZERO]));
+  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, ...familySlots(POSTING_FAMILIES, 16) });
+  const bitmap = add("G17", "BitmapStore", [ledgerProxy, zeroAddress, BITMAP_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, FAMILY_LIVE_SCOPE: familyId("live-scope"), ...familySlots(BITMAP_FAMILIES, 4) });
 
   // G18: RealmGenesis.run — the controller, the registry proxy, the ledger proxy (each initialized in its creation)
   const controllerRuntime = runtimeOf("RealmController", { LEDGER: ledgerProxy, REGISTRY: registryProxy, LEDGER_ADMIN: ledgerAdmin, REGISTRY_ADMIN: registryAdmin, NOTICE_TYPE: ids[T.NOTICE] });
