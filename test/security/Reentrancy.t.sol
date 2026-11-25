@@ -194,6 +194,7 @@ contract ReentrancyTest is Test, IRelay {
         plan.units = new Unit[](0);
         plan.specs = new DigestSpec[](0);
         plan.work = IndexDoubleDefaults.workModel();
+        plan.os = IndexDeploy.defaultOpenScope();
         IndexDeployer d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
         candidate = RealmIndex(d.run(plan));
         candidatePosting = PostingStore(d.postingStore());

@@ -16,7 +16,7 @@ import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerControl} from "../../src/interfaces/ILedgerControl.sol";
 import {ITypeRegistry} from "../../src/interfaces/ITypeRegistry.sol";
-import {DigestSpec, Unit} from "../../src/interfaces/Index.sol";
+import {DigestSpec, OpenScopeConfig, Unit} from "../../src/interfaces/Index.sol";
 import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
 import {FilesRootRule} from "../../src/profiles/FilesRootRule.sol";
 import {FilesChildRule} from "../../src/profiles/FilesChildRule.sol";
@@ -171,6 +171,15 @@ abstract contract FilesFixture is Test {
         specs[1] = DigestSpec({typeId: typeIds[T_EXTERNAL], wordIndex: 5, algorithm: SHA256});
     }
 
+    /// SPIKE (tags-index): the index's all-authors family switches for `_realm` (the harness default unless overridden).
+    function _openScope() internal virtual returns (OpenScopeConfig memory) {
+        return IndexDeploy.defaultOpenScope();
+    }
+
+    function _index(address proxy) internal returns (IndexDeploy.Gen1 memory) {
+        return IndexDeploy.deploy(proxy, KernelDeploy.HOT_ABI_ID, _units(), _specs(), _openScope());
+    }
+
     /// A Realm with the Files unit and specs at genesis; `address(this)` is its controller.
     function _realm(bytes32 realmSalt) internal returns (Realm memory r) {
         r.store = new DescriptorStore();
@@ -191,7 +200,7 @@ abstract contract FilesFixture is Test {
         require(r.k.proxy == predicted, "ledger proxy prediction");
         r.ledger = ILedger(r.k.proxy);
         r.hot = ILedgerHot(r.k.proxy);
-        r.g = IndexDeploy.deploy(r.k.proxy, KernelDeploy.HOT_ABI_ID, _units(), _specs());
+        r.g = _index(r.k.proxy);
         r.registry.activate(1);
         ILedgerControl(r.k.proxy)
             .activate(

@@ -68,6 +68,11 @@ abstract contract LensFixture is Test {
     mapping(address => uint64) internal nonces;
     mapping(bytes32 => uint64) internal revisions; // binding key -> current revision
 
+    /// SPIKE (tags-index): a helper of its own keeps `setUp` under the via-IR stack limit.
+    function _lensIndex(address proxy) internal returns (IndexDeploy.Gen1 memory) {
+        return IndexDeploy.deploy(proxy, KernelDeploy.HOT_ABI_ID);
+    }
+
     function setUp() public virtual {
         registry = new MockRegistry();
         k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs/test/lens/salt"));
@@ -76,7 +81,7 @@ abstract contract LensFixture is Test {
         registry.setLedger(k.proxy);
         registry.setImplementation(address(registry));
         registry.setActiveRevision(1);
-        g = IndexDeploy.deploy(k.proxy, KernelDeploy.HOT_ABI_ID);
+        g = _lensIndex(k.proxy);
         ILedgerControl(k.proxy)
             .activate(
                 KernelDeploy.genesisSet(

@@ -40,6 +40,7 @@ contract IndexDeployerTest is Test {
         p.units = new Unit[](0);
         p.specs = new DigestSpec[](0);
         p.work = IndexDoubleDefaults.workModel();
+        p.os = IndexDeploy.defaultOpenScope();
     }
 
     function testFreshStoresNameThePredictedGeneration() public {

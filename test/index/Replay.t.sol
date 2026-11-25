@@ -206,6 +206,7 @@ contract ReplayTest is Test {
         plan.units = units;
         plan.specs = _specs();
         plan.work = IndexDoubleDefaults.workModel();
+        plan.os = IndexDeploy.defaultOpenScope();
         d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
         ix = RealmIndex(d.run(plan));
     }

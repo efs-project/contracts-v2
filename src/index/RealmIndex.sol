@@ -4,7 +4,14 @@ pragma solidity 0.8.37;
 import {GenerationStorage} from "./storage/GenerationStorage.sol";
 import {Layout} from "../core/layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
-import {ActionKind, FamilyId, PostingKey, ScopeKey, TypeId} from "../interfaces/Actions.sol";
+import {
+    ActionKind,
+    FamilyId,
+    PostingKey,
+    Purpose,
+    ScopeKey,
+    TypeId
+} from "../interfaces/Actions.sol";
 import {Coverage, Phase} from "../interfaces/Results.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
@@ -14,7 +21,15 @@ import {IIndexHook} from "../interfaces/IIndexHook.sol";
 import {IPostingStore} from "../interfaces/IPostingStore.sol";
 import {IBitmapStore} from "../interfaces/IBitmapStore.sol";
 import {IIndexReplayDecoder} from "../interfaces/internal/IIndexReplayDecoder.sol";
-import {DigestSpec, Effect, FamilyEntry, Readiness, Unit, WorkModel} from "../interfaces/Index.sol";
+import {
+    DigestSpec,
+    Effect,
+    FamilyEntry,
+    OpenScopeConfig,
+    Readiness,
+    Unit,
+    WorkModel
+} from "../interfaces/Index.sol";
 import {
     E_BACKFILL,
     E_BUILD,
@@ -68,6 +83,18 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     bytes32 private immutable F_ROLE_SCOPE;
     bytes32 private immutable F_ROSTER;
     bytes32 private immutable F_LIVE_SCOPE;
+    // SPIKE (tags-index): the all-authors families and their constructor switches (OpenScopeConfig)
+    bytes32 private immutable F_OPEN_SCOPE;
+    bytes32 private immutable F_OPEN_SCOPE_BELOW;
+    bytes32 private immutable F_OPEN_SCOPE_WORD;
+    bytes32 private immutable F_WORD_DIRECTORY;
+    bool private immutable OS_EXACT;
+    bytes32 private immutable OS_SKIP;
+    bytes32 private immutable OS_TOPIC;
+    uint8 private immutable OS_CAP;
+    bool private immutable OS_PATHS;
+    bool private immutable OS_WORDS;
+    bool private immutable OS_DIRECTORY;
 
     FamilyEntry[] private _families;
     Unit[] private _units;
@@ -82,7 +109,8 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         address bitmap,
         Unit[] memory units,
         DigestSpec[] memory specs,
-        WorkModel memory work
+        WorkModel memory work,
+        OpenScopeConfig memory os
     ) {
         LEDGER = ledger_;
         LAYOUT_ID = Layout.LAYOUT_ID;
@@ -116,6 +144,26 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         _declare(F_ROLE_SCOPE, 16, 3, SHAPE_APPEND, 1, posting, 1);
         _declare(F_ROSTER, 17, 3, SHAPE_BITMAP, 2, bitmap, NOT_MAINTAINED);
         _declare(F_LIVE_SCOPE, 18, 3, SHAPE_BITMAP, 2, bitmap, 1);
+        // SPIKE (tags-index): a switched-off family is declared NOT_MAINTAINED, so its coverage reads UNKNOWN
+        if (os.depthCap > 64) revert E_BUILD(64);
+        bool topics = os.topicTypeId != 0;
+        F_OPEN_SCOPE = Keys.familyId("open-scope");
+        F_OPEN_SCOPE_BELOW = Keys.familyId("open-scope-below");
+        F_OPEN_SCOPE_WORD = Keys.familyId("open-scope-word");
+        F_WORD_DIRECTORY = Keys.familyId("word-directory");
+        OS_EXACT = os.exact;
+        OS_SKIP = os.skipPurpose;
+        OS_TOPIC = os.topicTypeId;
+        OS_CAP = os.depthCap;
+        OS_PATHS = topics && os.paths;
+        OS_WORDS = topics && os.words;
+        OS_DIRECTORY = topics && os.directory;
+        _declare(F_OPEN_SCOPE, 6, 3, SHAPE_APPEND, 1, posting, os.exact ? 1 : NOT_MAINTAINED);
+        _declare(F_OPEN_SCOPE_BELOW, 7, 3, SHAPE_APPEND, 1, posting, OS_PATHS ? 1 : NOT_MAINTAINED);
+        _declare(F_OPEN_SCOPE_WORD, 9, 3, SHAPE_APPEND, 1, posting, OS_WORDS ? 1 : NOT_MAINTAINED);
+        _declare(
+            F_WORD_DIRECTORY, 2, 1, SHAPE_APPEND, 1, posting, OS_DIRECTORY ? 1 : NOT_MAINTAINED
+        );
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }
@@ -125,7 +173,14 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         _work = work;
         MANIFEST_HASH = keccak256(
             abi.encode(
-                MANIFEST_HEADER, _families, units, specs, work, PHYSICAL_PROFILE, CALLBACK_PROFILE
+                MANIFEST_HEADER,
+                _families,
+                units,
+                specs,
+                work,
+                PHYSICAL_PROFILE,
+                CALLBACK_PROFILE,
+                os
             )
         );
         _gen().progress.replayStage = 1; // FRESH
@@ -262,6 +317,8 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                     FamilyId.wrap(F_REFERENCE_POSITION), _pk(t, 11, uint8(i), refs[i]), admission, 0
                 );
             }
+            // SPIKE (tags-index): a fresh topic is listed once under each distinct word on its path (family 2)
+            if (OS_DIRECTORY && t == OS_TOPIC) _walk(ps, e.recordId, admission, 0);
             for (uint256 i; i < _specs.length; ++i) {
                 DigestSpec storage spec = _specs[i];
                 if (spec.typeId != t) continue;
@@ -310,6 +367,18 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                 e.bindingOrdinal,
                 0
             );
+            // SPIKE (tags-index): the all-authors list, once per (author, position), entry = this admission
+            if (OS_EXACT && e.purpose != OS_SKIP) {
+                ps.append(
+                    FamilyId.wrap(F_OPEN_SCOPE),
+                    _pk(0, 6, 0, Keys.openScope(e.purpose, e.subject)),
+                    admission,
+                    0
+                );
+            }
+            if ((OS_PATHS || OS_WORDS) && e.purpose == Purpose.TAG) {
+                _walk(ps, e.subject, admission, 1);
+            }
         } else if (tk == T_REBIND) {
             bs.stamp(ScopeKey.wrap(scope), admission);
         } else if (tk == T_RESTORE) {
@@ -345,6 +414,61 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         // ledger's occurrence count never drift and replay folds the same stream (review finding)
         if (count == 0) ps.append(FamilyId.wrap(F_BY_RECORD), key, e.withdrawnAdmission, 0);
         ps.release(FamilyId.wrap(F_BY_RECORD), key, 1);
+    }
+
+    /// SPIKE (tags-index): walks a topic stand-in and its ancestors, at most OS_CAP levels (the topic is level 0).
+    /// A level is a topic only when its record is of OS_TOPIC and was first admitted at or before `admission`,
+    /// so a later replay, which sees every record, folds what the live fold folded. `mode` 1 (a TAG first
+    /// statement): family 7 per ancestor (levels >= 1), family 9 per distinct word; `mode` 0 (a fresh topic):
+    /// family 2 per distinct word, keyed by the topic Type. A word repeated on one path is appended once (the
+    /// store's order law refuses a second equal entry).
+    function _walk(IPostingStore ps, bytes32 cur, uint64 admission, uint8 mode) private {
+        bool words = mode == 0 || OS_WORDS;
+        bytes32[] memory slots = new bytes32[](words ? 4 : 3);
+        bytes32[] memory seen = new bytes32[](OS_CAP);
+        uint256 n;
+        for (uint256 level; level < OS_CAP; ++level) {
+            uint256 cell = Layout.recordsCellsSlot(cur);
+            slots[0] = bytes32(cell);
+            slots[1] = bytes32(cell + 1);
+            slots[2] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
+            if (words) slots[3] = bytes32(Layout.recordsBodyWordsSlot(cur, 1));
+            bytes32[] memory w = ILedgerHot(LEDGER).extsloadBatch(slots);
+            uint48 first = uint48(uint256(w[1]));
+            if (w[0] != OS_TOPIC || first == 0 || first > admission) return;
+            if (mode == 1 && level != 0 && OS_PATHS) {
+                ps.append(
+                    FamilyId.wrap(F_OPEN_SCOPE_BELOW),
+                    _pk(0, 7, 0, Keys.openScope(Purpose.TAG, cur)),
+                    admission,
+                    0
+                );
+            }
+            if (words) {
+                bytes32 word = w[3];
+                bool dup;
+                for (uint256 i; i < n; ++i) {
+                    if (seen[i] == word) dup = true;
+                }
+                if (!dup && word != 0) {
+                    seen[n++] = word;
+                    if (mode == 0) {
+                        ps.append(
+                            FamilyId.wrap(F_WORD_DIRECTORY), _pk(OS_TOPIC, 2, 0, word), admission, 0
+                        );
+                    } else {
+                        ps.append(
+                            FamilyId.wrap(F_OPEN_SCOPE_WORD),
+                            _pk(0, 9, 0, Keys.openScope(Purpose.TAG, word)),
+                            admission,
+                            0
+                        );
+                    }
+                }
+            }
+            cur = w[2];
+            if (cur == 0) return;
+        }
     }
 
     /// Bisection over the scope list (strictly increasing binding ordinals).

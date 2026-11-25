@@ -111,3 +111,20 @@ struct Readiness {
     address build;
     bytes32 buildCodehash;
 }
+
+/// SPIKE (tags-index): the constructor switches of the all-authors families, folded into the manifest hash. Never a
+/// production ABI. `exact` maintains family 6 (open-scope) for every purpose but `skipPurpose` (0 = none);
+/// `topicTypeId` names the topic stand-in Type (0 disables families 2, 7 and 9): a record of that Type whose body
+/// word 0 is its parent topic id (0 = top level) and word 1 its word id. `depthCap` bounds the levels a walk reads
+/// (the topic itself is level 0; at most 64). `paths` maintains family 7 (open-scope-below: each ancestor path of a
+/// TAG subject), `words` family 9 (open-scope-word: each distinct word on the path), `directory` family 2
+/// (word-directory: each topic listed once under each distinct word on its path when it is first admitted).
+struct OpenScopeConfig {
+    bool exact;
+    bytes32 skipPurpose;
+    bytes32 topicTypeId;
+    uint8 depthCap;
+    bool paths;
+    bool words;
+    bool directory;
+}
