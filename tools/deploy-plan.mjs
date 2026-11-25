@@ -115,12 +115,19 @@ export const LIMITS = {
   maxBodyBytesPerPublication: 16384, maxFreshSlotsPerPublication: 600, maxReadIds: 64, maxReadCount: 256,
   floorFreshGas: 22100, floorRewriteGas: 5000, kernelTail: 20000,
 };
-/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel() — no release work model exists in src/. */
+/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): the design's slot counts (×10) with compute
+ *  terms measured at step 3a (test/integration/IndexFloor.t.sol, both schedules) plus a margin; no release work model
+ *  exists in src/. */
 export const WORK_MODEL = {
   formulaVersion: 1, freshPerPublication: 2, rwPerPublication: 10, freshPerPublishFresh: 10, rwPerPublish: 50,
-  freshPerBindFresh: 30, rwPerBind: 40, freshPerRef: 10, freshPerDigestSpec: 10, computeBase: 60000,
-  computePerAction: 25000, computePerHookEffect: 60000, finalComputeBase: 60000, finalComputePerBind: 120000,
+  freshPerBindFresh: 30, rwPerBind: 40, freshPerRef: 10, freshPerDigestSpec: 10, computeBase: 150000,
+  computePerAction: 10000, computePerHookEffect: 30000, finalComputeBase: 220000, finalComputePerBind: 10000,
 };
+/** The floor prices a Realm on a Glamsterdam (EIP-8037/8038) chain activates: execution-gas prices only, because the GAS
+ *  opcode never sees the state-gas reservoir (design §10.4): the regular 12,100 of a fresh slot, never the all-in
+ *  ≈ 110,020. `KernelDeploy.s1Limits()` uses them under FOUNDRY_PROFILE=amsterdam. The fixture's chains (osaka,
+ *  prague) use LIMITS. */
+export const GLAMSTERDAM_FLOOR = { floorFreshGas: 12100, floorRewriteGas: 5000, kernelTail: 20000 };
 export const DOM = {
   type: h("efs/type/1"), describedShape: h("efs/described-shape/1"), executionSet: h("efs/execution-set/1"),
   realmOrigin: h("efs/realm-origin/1"), realm: h("efs/realm/1"), record: h("efs/record/1"),

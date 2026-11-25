@@ -13,6 +13,7 @@ import {Limits} from "../../src/interfaces/Limits.sol";
 import {RealmInit, ComponentSet, ActivationSet} from "../../src/interfaces/ILedgerControl.sol";
 import {ILedgerControl} from "../../src/interfaces/ILedgerControl.sol";
 import {ExecutionSets} from "./ExecutionSets.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 /// @notice Test-only deployer for the kernel vertical: the three delegates, the implementation, the
 ///         Transparent proxy (its ProxyAdmin owned by `controller`) and the genesis `initialize`, then a
@@ -30,7 +31,15 @@ library KernelDeploy {
         address proxy;
     }
 
-    function s1Limits() internal pure returns (Limits memory l) {
+    Vm private constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    /// EIP-8037 (Glamsterdam): the execution-gas part of a fresh slot. The GAS opcode never sees the state-gas
+    /// reservoir, so every floor term is an execution-gas price on that schedule (design §10.4).
+    uint32 internal constant GLAMSTERDAM_FLOOR_FRESH_GAS = 12_100;
+
+    /// The design's §4.2 limits. Under `FOUNDRY_PROFILE=amsterdam` the floor's fresh-slot price is the
+    /// Glamsterdam execution-gas price (a rewrite stays 5,000: measured, the callbacks' non-fresh execution gas is
+    /// the same on both schedules), so the suites run with the limits a Glamsterdam Realm would activate.
+    function s1Limits() internal view returns (Limits memory l) {
         l.maxActions = 64;
         l.maxBody = 8_192;
         l.maxRefs = 8;
@@ -45,9 +54,15 @@ library KernelDeploy {
         l.maxFreshSlotsPerPublication = 600;
         l.maxReadIds = 64;
         l.maxReadCount = 256;
-        l.floorFreshGas = 22_100;
+        l.floorFreshGas = _amsterdam() ? GLAMSTERDAM_FLOOR_FRESH_GAS : 22_100;
         l.floorRewriteGas = 5_000;
         l.kernelTail = 20_000;
+    }
+
+    function _amsterdam() private view returns (bool) {
+        return
+            keccak256(bytes(VM.envOr("FOUNDRY_PROFILE", string("default"))))
+                == keccak256("amsterdam");
     }
 
     /// Deploys everything and initializes the proxy; `controller` becomes the ProxyAdmin owner and the

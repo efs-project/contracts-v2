@@ -42,7 +42,13 @@ import {MockCaller, MockRegistry, MockUnsupported} from "./MockRegistry.sol";
 bytes32 constant CALLBACK_PROFILE_4 =
     keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
-/// The initial work-model coefficients of design §10.4, slot counts ×10 as the design stores them.
+/// The generation-1 work model of design §10.4, slot counts ×10 as the design stores them. The slot counts are the
+/// design's; the compute terms are the index's measured execution gas with a margin (step 3a,
+/// `test/integration/IndexFloor.t.sol`, both schedules): a callback spends ≈ 67–97k on the first effect of a
+/// publication (cold stores and ledger), ≈ 99–109k (prague) / 75–77k (amsterdam) per bind and ≈ 41k / 36k per
+/// fresh publish including its slot writes; the final phase ≈ 20k + 2.5k per effect + 5k per bind. The prefix quote
+/// is 1.06–1.6× the callbacks' measured spend on both schedules, the final reserve 1.26–5× the final phase's (its
+/// formula has no per-publish term, so the base carries 64 publishes).
 library IndexDoubleDefaults {
     function workModel() internal pure returns (WorkModel memory w) {
         w.formulaVersion = 1;
@@ -54,11 +60,11 @@ library IndexDoubleDefaults {
         w.rwPerBind = 40; // 4
         w.freshPerRef = 10; // 1
         w.freshPerDigestSpec = 10; // 1
-        w.computeBase = 60_000;
-        w.computePerAction = 25_000;
-        w.computePerHookEffect = 60_000;
-        w.finalComputeBase = 60_000;
-        w.finalComputePerBind = 120_000;
+        w.computeBase = 150_000;
+        w.computePerAction = 10_000;
+        w.computePerHookEffect = 30_000; // charged per bind-kind action
+        w.finalComputeBase = 220_000;
+        w.finalComputePerBind = 10_000;
     }
 }
 
