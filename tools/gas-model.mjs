@@ -10,6 +10,8 @@
 //   cost(PUBLISH existing), cost(REUSE), cost(CREATE), cost(BIND fresh|rebind, purpose), cost(UNBIND|RELEASE, purpose),
 //   cost(BIND TAG number change) (a REBIND to the same target with a new strength), cost(UNBIND TAG lone) (a first mask),
 //   cost(WITHDRAW), plus firstWriteSurcharge once for a principal that has never written
+//   cost(first TAG on an n-word topic) = bindTagFresh | bindTagSecondAuthor (fresh | existing position)
+//     + Σ over the n − 1 proper ancestors: tagLevel.mine{New|Existing} + (fresh position ? tagLevel.shared{New|Existing} : 0)
 //
 // and predicts the suite's validation composites (never fitted). Exit 1 when a prague validation error exceeds 15%.
 //
@@ -84,13 +86,20 @@ const ACTIONS = {
   unbindFolder: "unbind folder",
   releaseFolder: "release folder",
   bindTagFresh: "bind tag fresh",
+  bindTagSecondAuthor: "bind tag second author",
   bindTagNumberChange: "bind tag number change",
   unbindTagLone: "unbind tag lone",
   withdraw: "withdraw",
 };
 
+// The per-level terms of a first tag (design §10.4): each row's k1 tags a 2-word topic and k2 a 6-word topic from the
+// same state, so (k2 − k1) / LEVEL_SPAN is one level of the ancestor walk in that case.
+const LEVEL_SPAN = 4;
+const LEVEL_ROWS = { allNew: "tag level all new", allExisting: "tag level all existing", mineNew: "tag level mine new", mineExisting: "tag level mine existing" };
+
 // The composites (GasModel.t.sol `test_model_validate_*`), as the planner would describe them.
 const pub = (shape, n) => ({ publish: shape, n });
+const levels = (level, n) => ({ level, n });
 const VALIDATION = [
   { key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
     actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
@@ -102,6 +111,8 @@ const VALIDATION = [
     actions: [pub("files-bytes/1", 8192), pub("files-bytes/1", 8192)] },
   { key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
     actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
+  { key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
+    actions: ["bindTagFresh", levels("mineNew", 5), levels("sharedNew", 5)] },
 ];
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */
@@ -146,13 +157,16 @@ function fit(rows, q) {
   const fixedByPair = Object.fromEntries(pairs.map((k) => [k, impliedFixed(k)]));
   const fixed = median(Object.values(fixedByPair));
   const firstWriteSurcharge = get("first write fresh") - get("first write warm");
-  return { fixed, perWord, perByte, publishBase, action, firstWriteSurcharge, publishBaseBySize, fixedByPair };
+  const level = Object.fromEntries(Object.entries(LEVEL_ROWS).map(([k, key]) => [k, marginal(key) / LEVEL_SPAN]));
+  const tagLevel = { mineNew: level.mineNew, mineExisting: level.mineExisting, sharedNew: level.allNew - level.mineNew, sharedExisting: level.allExisting - level.mineExisting };
+  return { fixed, perWord, perByte, publishBase, action, firstWriteSurcharge, tagLevel, publishBaseBySize, fixedByPair };
 }
 
 function predict(c, actions) {
   let g = c.fixed;
   for (const a of actions) {
     if (typeof a === "string") g += c.action[a];
+    else if (a.level) g += c.tagLevel[a.level] * a.n;
     else g += c.publishBase[a.publish] + c.perWord * words(a.n) + c.perByte * a.n;
   }
   return g;
@@ -165,6 +179,7 @@ const rounded = (c) => ({
   publishNew: Object.fromEntries(Object.entries(c.publishBase).map(([k, v]) => [k, round(v)])),
   ...Object.fromEntries(Object.entries(c.action).map(([k, v]) => [k, round(v)])),
   firstWriteSurcharge: round(c.firstWriteSurcharge),
+  tagLevel: Object.fromEntries(Object.entries(c.tagLevel).map(([k, v]) => [k, round(v)])),
 });
 
 function profile(rows, name) {
@@ -209,6 +224,7 @@ function profile(rows, name) {
   return out;
 }
 
+const TAG_LEVELS_METHOD = `a first TAG statement (either sign) on an n-word topic = bindTagFresh (no author has stated anything at the position) or bindTagSecondAuthor (the position exists) + Σ over its n − 1 proper ancestors of tagLevel.mineNew | mineExisting (the author's scope-below list at that ancestor is empty | not) + (fresh position only) tagLevel.sharedNew | sharedExisting (the place-below list at that ancestor is empty | not); a list with exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new. Measured: (k2 − k1) / ${LEVEL_SPAN} of a tag on a 2-word and on a 6-word topic from the same state (rows "tag level all new | all existing | mine new | mine existing"); shared = all − mine`;
 const prague = profile(run("default"), "prague");
 const amsterdam = o["skip-amsterdam"] ? null : profile(run("amsterdam"), "amsterdam");
 
@@ -225,6 +241,7 @@ const model = {
     fixed: "median of 2·gas(k = 1) − gas(k = 2) over every pair (fit.impliedFixedByPair: the first action of a kind in a publication pays some cold state that later ones find warm, which this single constant averages)",
     firstWriteSurcharge: "(CREATE + PUBLISH files-directory/1 as a principal's first publication ever) − (the same shape by a principal that has written once)",
     keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; WITHDRAW of one occurrence",
+    tagLevels: TAG_LEVELS_METHOD,
   },
   profiles: { prague, ...(amsterdam ? { amsterdam } : {}) },
   source: { test: SUITE, commit: git("rev-parse", "HEAD"), dirtyFiles: (git("status", "--porcelain") || "").split("\n").filter(Boolean).length, date: new Date().toISOString(), foundry: execFileSync("forge", ["--version"]).toString().split("\n")[0].trim() },

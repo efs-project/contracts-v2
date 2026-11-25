@@ -6,7 +6,7 @@ import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
+import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.sol";
 
 /// @notice The measurements behind `gas/model.json` (`tools/gas-model.mjs`): a per-action gas model for the SDK's
 ///         write planner. Every measured publication runs on the native lane through `FilesRecipesBase._exec`
@@ -519,6 +519,169 @@ contract GasModelTest is FilesRecipesBase {
             x[i] = _bind(Purpose.TAG, TOPIC, s[30 + i], s[30 + i], 0);
         }
         _actionPair("bind tag fresh", x);
+    }
+
+    /// A first tag by a second author on positions that exist (another author tagged them first): no `place` or
+    /// `role-places` entry, one `position-authors` entry on an existing list. The author has written before.
+    function test_model_bind_tag_second_author() public {
+        _tagged();
+        address second = makeAddr("gas-model second author");
+        _as(second);
+        _send(second, _one1(_bind(Purpose.TAG, TOPIC, s[39], s[39], 0))); // unmeasured: writes once
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
+        }
+        _actionPair("bind tag second author", x);
+        _as(address(0));
+    }
+
+    // ---- the per-level terms of a first tag (design §10.4) ----------------------------------------------------------
+
+    /// The span of the level rows: k1 tags a 2-word topic (1 proper ancestor), k2 a 6-word topic (5), both from the
+    /// same state (each measured, then rolled back), so `(k2 − k1) / LEVEL_SPAN` is one level of the walk.
+    uint256 internal constant LEVEL_SPAN = 4;
+
+    /// Publications of `who` (any principal): `p` follows it, so `_ctx` reads its nonce, and `sender` pranks it.
+    function _as(address who) internal {
+        if (who == address(0)) {
+            p = Keys.principalFor(address(this), r.hot.realmOrigin());
+            sender = address(0);
+        } else {
+            p = Keys.principalFor(who, r.hot.realmOrigin());
+            sender = who;
+        }
+    }
+
+    function _one1(Action memory x) internal pure returns (Action[] memory a) {
+        a = new Action[](1);
+        a[0] = x;
+    }
+
+    /// An unmeasured publication of tags by `who` on `topic` of `things`.
+    function _tagAll(address who, bytes32 topic, bytes32[] memory things) internal {
+        _as(who);
+        Action[] memory a = new Action[](things.length);
+        for (uint256 i; i < things.length; ++i) {
+            a[i] = _bind(Purpose.TAG, topic, things[i], things[i], 0);
+        }
+        _send(who, a);
+        _as(address(0));
+    }
+
+    /// One unmeasured publication of `who` (p and the nonce already follow it): the context is read before the prank.
+    function _send(address who, Action[] memory a) internal {
+        Native memory c = _ctx(a);
+        if (who != address(0) && who != address(this)) vm.prank(who, who);
+        r.ledger.execute(a, new bytes[](a.length), c, "");
+    }
+
+    function _things2(uint256 i) internal view returns (bytes32[] memory t) {
+        t = new bytes32[](2);
+        t[0] = s[i];
+        t[1] = s[i + 1];
+    }
+
+    /// The 6-word path `<name>-0/…/<name>-5` (11 publishes, one unmeasured publication), every prefix's id.
+    function _levelPath(string memory name) internal returns (bytes32[] memory t) {
+        _rememberTopics();
+        EfsTopics.Types memory tt = _topicTypes();
+        bytes[] memory w = new bytes[](6);
+        for (uint256 i; i < 6; ++i) {
+            w[i] = bytes(string.concat(name, "-", vm.toString(i)));
+        }
+        (Action[] memory a, bytes[] memory b,) = EfsTopics.registerPath(tt, w);
+        _do(a, b);
+        t = new bytes32[](6);
+        t[0] = EfsTopics.wordPageId(tt.word, w[0]);
+        for (uint256 i = 1; i < 6; ++i) {
+            t[i] = EfsTopics.childId(tt.topic, t[i - 1], EfsTopics.wordPageId(tt.word, w[i]));
+        }
+    }
+
+    /// k1 = `who` tags t[1] about `thing`, k2 = `who` tags t[5] about it, each from the current state.
+    function _levelPair(string memory key, address who, bytes32[] memory t, bytes32 thing)
+        internal
+    {
+        _as(who);
+        uint256 snap = vm.snapshotState();
+        _exec(
+            string.concat("model ", key, " k1"),
+            _one1(_bind(Purpose.TAG, t[1], thing, thing, 0)),
+            new bytes[](1)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model ", key, " k2"),
+            _one1(_bind(Purpose.TAG, t[5], thing, thing, 0)),
+            new bytes[](1)
+        );
+        vm.revertToState(snap);
+        _as(address(0));
+    }
+
+    address internal constant LEVEL_A = address(0xA11CE);
+    address internal constant LEVEL_B = address(0xB0B);
+
+    /// Both authors have written before (one unmeasured publication each, on another topic).
+    function _levelAuthors(bytes32[] memory t) internal {
+        bytes32[] memory one = new bytes32[](1);
+        one[0] = s[0];
+        _tagAll(LEVEL_A, t[0], one);
+        _tagAll(LEVEL_B, t[0], one);
+    }
+
+    /// Fresh position, every list new: per level, a new per-author entry and a new shared entry.
+    function test_model_tag_level_all_new() public {
+        bytes32[] memory t = _levelPath("lvl-a");
+        _levelAuthors(t);
+        _levelPair("tag level all new", LEVEL_A, t, s[20]);
+    }
+
+    /// Fresh position, every list existing (two or four entries, so the append rewrites an existing word).
+    function test_model_tag_level_all_existing() public {
+        bytes32[] memory t = _levelPath("lvl-b");
+        _levelAuthors(t);
+        _tagAll(LEVEL_A, t[1], _things2(21));
+        _tagAll(LEVEL_A, t[5], _things2(21));
+        _levelPair("tag level all existing", LEVEL_A, t, s[20]);
+    }
+
+    /// Existing position (another author's), this author's roll-ups new: per level, a new per-author entry only.
+    function test_model_tag_level_mine_new() public {
+        bytes32[] memory t = _levelPath("lvl-c");
+        _levelAuthors(t);
+        bytes32[] memory one = new bytes32[](1);
+        one[0] = s[20];
+        _tagAll(LEVEL_A, t[1], one);
+        _tagAll(LEVEL_A, t[5], one);
+        _levelPair("tag level mine new", LEVEL_B, t, s[20]);
+    }
+
+    /// Existing position, this author's roll-ups existing: per level, an existing per-author entry only.
+    function test_model_tag_level_mine_existing() public {
+        bytes32[] memory t = _levelPath("lvl-d");
+        _levelAuthors(t);
+        bytes32[] memory one = new bytes32[](1);
+        one[0] = s[20];
+        _tagAll(LEVEL_A, t[1], one);
+        _tagAll(LEVEL_A, t[5], one);
+        _tagAll(LEVEL_B, t[1], _things2(21));
+        _tagAll(LEVEL_B, t[5], _things2(21));
+        _levelPair("tag level mine existing", LEVEL_B, t, s[20]);
+    }
+
+    /// Composite (never fitted): a first tag on a fresh 6-word path, every list new.
+    function test_model_validate_deep_tag() public {
+        bytes32[] memory t = _levelPath("lvl-v");
+        _levelAuthors(t);
+        _as(LEVEL_A);
+        _exec(
+            "model validate tag 6 words all new",
+            _one1(_bind(Purpose.TAG, t[5], s[20], s[20], 0)),
+            new bytes[](1)
+        );
+        _as(address(0));
     }
 
     // ---- the Topics Types ----------------------------------------------------------------------------------------

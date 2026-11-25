@@ -492,8 +492,19 @@ rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fi
 (amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only). It
 is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
 guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
-script predicts five composites it never fits (create file, edit, rename + move, two chunks, the last publication of
-a 40 KB file) and exits 1 if a prague prediction is off by more than 15%. Regenerate and commit it whenever the
+script predicts six composites it never fits (create file, edit, rename + move, two chunks, the last publication of
+a 40 KB file, a first tag on a fresh 6-word path) and exits 1 if a prague prediction is off by more than 15%.
+
+**First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
+the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author
+has stated anything at its position, `bindTagSecondAuthor` when the position exists, plus, for each of the topic's
+`n − 1` proper ancestors, `tagLevel.mineNew` or `tagLevel.mineExisting` (the author's `scope-below` list at that
+ancestor is empty or not) and, on a fresh position only, `tagLevel.sharedNew` or `tagLevel.sharedExisting` (the
+`place-below` list at that ancestor). The SDK reads those list heads (`postingHeadOf`) when it plans; a list holding
+exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new. The terms are measured
+by four `tag level` rows (`(k2 − k1) / 4` of a tag on a 2-word and on a 6-word topic from the same state, so each is
+one level), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
+these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
 
 `pnpm gas:model:check` (`node tools/gas-model.mjs --check 1 --skip-amsterdam 1`) writes nothing: it re-measures the
