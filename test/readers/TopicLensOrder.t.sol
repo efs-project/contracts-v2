@@ -143,6 +143,85 @@ contract TopicLensOrderTest is TopicReadersBase {
         assertTrue(m);
     }
 
+    /// A viewed position that holds only a stranger's statements (its author list is not empty, so the viewed-place
+    /// shortcut of an empty list does not apply) still shows the row: a stranger never hides, either sign.
+    function test_a_strangers_statement_at_the_viewed_place_does_not_hide() public {
+        bytes32 x = things[3];
+        bytes32 y = things[4];
+        address stranger = makeAddr("lo/stranger-viewed");
+        _tag(alice, tesla, x);
+        _tag(alice, tesla, y);
+        _deny(stranger, cars, x); // a stranger's "not this" at the viewed place
+        _tag(stranger, cars, y); // and a stranger's yes there
+        bytes32[] memory lens = _lens2(alice, bob);
+        (bool e, bool m) = _shows(cars, true, lens, x);
+        assertTrue(e && m, "a stranger's no at the viewed place hides nothing");
+        (e, m) = _shows(cars, true, lens, y);
+        assertTrue(e && m, "a stranger's yes at the viewed place hides nothing");
+        (, MineRow memory mr) = _inMine(_mn(cars, true, lens), x);
+        assertEq(mr.topic, tesla, "through the filing under /cars/tesla");
+        assertEq(mr.decider, 0);
+        // the same stranger in the lens hides x (its no at the viewed place comes first) and not y
+        (e, m) = _shows(cars, true, _lens2(stranger, alice), x);
+        assertFalse(e || m);
+        (e, m) = _shows(cars, true, _lens2(stranger, alice), y);
+        assertTrue(e && m);
+        // a lens of five, each with a "not this" at /cars about another thing, alice last: every one is asked at
+        // the viewed place (enough to read the viewed position's author list first), and the stranger hides nothing
+        address[] memory five = _authorsN("lo/viewed", 5);
+        five[4] = alice;
+        for (uint256 i; i < 5; ++i) {
+            _deny(five[i], cars, things[8]);
+        }
+        (e, m) = _shows(cars, true, _lensOf(five), x);
+        assertTrue(
+            e && m, "a stranger's no at the viewed place hides nothing, at lens index 4 either"
+        );
+        (, mr) = _inMine(_mn(cars, true, _lensOf(five)), x);
+        assertEq(mr.decider, 4);
+        _deny(five[3], cars, x); // and a lens author's own no there does
+        (e, m) = _shows(cars, true, _lensOf(five), x);
+        assertFalse(e || m);
+    }
+
+    /// A lens author with a masked entry at the viewed place about a DIFFERENT thing does not hide this one, at any
+    /// lens position (before or after the decider), and its released entry there hides nothing either.
+    function test_a_lens_authors_no_about_another_thing_at_the_viewed_place_does_not_hide() public {
+        bytes32 x = things[5];
+        bytes32 other = things[6];
+        bytes32 gone = things[7];
+        _tag(bob, tesla, x);
+        _deny(alice, cars, other); // alice (lens index 0): "not this" at /cars, about another thing
+        _deny(carol, cars, other); // carol (after the decider)
+        _tag(alice, cars, gone);
+        _release(alice, cars, gone); // a released entry at the viewed place: neither live nor a no
+        bytes32[][] memory lenses = new bytes32[][](3);
+        lenses[0] = _lens2(alice, bob);
+        lenses[1] = _lensOf(_three(alice, bob, carol));
+        lenses[2] = _lensOf(_three(carol, alice, bob));
+        for (uint256 l; l < lenses.length; ++l) {
+            (bool e, bool m) = _shows(cars, true, lenses[l], x);
+            assertTrue(e && m, "another thing's no at the viewed place hides nothing");
+            (e, m) = _shows(cars, true, lenses[l], other);
+            assertFalse(e || m, "the denied thing itself never shows");
+        }
+        // the decider's own masked entry about another thing does not hide its yes either
+        _deny(bob, cars, other);
+        (bool e2, bool m2) = _shows(cars, true, _lens2(bob, alice), x);
+        assertTrue(e2 && m2);
+        // and once the earlier author says "not this" about x itself at /cars, it hides
+        _deny(alice, cars, x);
+        (e2, m2) = _shows(cars, true, _lens2(alice, bob), x);
+        assertFalse(e2 || m2);
+    }
+
+    function _three(address a, address b, address c) internal pure returns (address[] memory o) {
+        o = new address[](3);
+        o[0] = a;
+        o[1] = b;
+        o[2] = c;
+    }
+
     /// 4. Over a mixed fixture with several lenses and places, everything `mine` returns `everyone` returns too.
     function test_mine_is_everyone_without_the_public_tier() public {
         address[] memory a = new address[](4);
