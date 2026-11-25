@@ -12,6 +12,7 @@ import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../../src/interfaces/ILedgerReads.sol";
 import {ILedgerViews} from "../../src/interfaces/ILedgerViews.sol";
 import {IIndexReads} from "../../src/interfaces/IIndexReads.sol";
+import {WORK_MODEL_WORDS} from "../../src/interfaces/Index.sol";
 import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 
 /// @notice The `FaultyReads` port for `LensReader` (design §11: "every reader is run through the FaultyReads port
@@ -276,7 +277,20 @@ contract LensFaultyTest is LensFixture {
         assertEq(uint8(p.listingCoverage), uint8(Coverage.PARTIAL));
         fi.clear(IIndexReads.coverage.selector);
 
-        _arm(fi, IIndexReads.manifest.selector, SET_WORD, 18, uint256(keccak256("another layout")));
+        // the profiles follow the work model inline in the manifest's head (header, three offsets, WorkModel)
+        uint16 physical = uint16(4 + WORK_MODEL_WORDS);
+        _arm(
+            fi,
+            IIndexReads.manifest.selector,
+            SET_WORD,
+            physical,
+            uint256(keccak256("another layout"))
+        );
+        _pageRefused(_page());
+        fi.clear(IIndexReads.manifest.selector);
+        _arm(
+            fi, IIndexReads.manifest.selector, SET_WORD, physical + 1, uint256(keccak256("another"))
+        );
         _pageRefused(_page());
         fi.clear(IIndexReads.manifest.selector);
         _arm(fl, ILedgerHot.index.selector, SET_WORD, 0, 0);

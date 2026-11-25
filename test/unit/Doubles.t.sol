@@ -820,13 +820,15 @@ contract DoublesTest is Test {
         PrefixAgreement idx = new PrefixAgreement(address(hot));
         assertEq(idx.ledger(), address(hot));
         WorkModel memory w = idx.workModel();
-        assertEq(w.formulaVersion, 1);
+        assertEq(w.formulaVersion, 2);
         assertEq(w.freshPerPublication, 30);
         assertEq(w.rwPerPublication, 10);
         assertEq(w.freshPerPublishFresh, 6);
+        assertEq(w.freshPerPublishExisting, 29);
         assertEq(w.rwPerPublish, 46);
         assertEq(w.freshPerBindFresh, 55);
         assertEq(w.rwPerBind, 40);
+        assertEq(w.rwPerBindLater, 120);
         assertEq(w.freshPerRef, 30);
         assertEq(w.freshPerDigestSpec, 10);
         assertEq(w.computeBase, 54_000);
@@ -834,6 +836,7 @@ contract DoublesTest is Test {
         assertEq(w.computePerHookEffect, 34_000);
         assertEq(w.finalComputeBase, 20_000);
         assertEq(w.finalComputePerBind, 7400);
+        assertEq(w.finalComputePerPublish, 2800);
 
         FamilyId family = FamilyId.wrap(Keys.familyId("by-type"));
         ScopeKey scope = ScopeKey.wrap(keccak256("scope"));

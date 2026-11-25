@@ -237,21 +237,32 @@ Per registered topic, added at registration (≈ one new list head, priced as ta
   publication the rule plans of each shape, its measured execution gas E and the floor's requirement V (both against
   the 16.58M-16.75M of visible execution gas the transaction leaves); every one is admitted, on prague also by running
   it with exactly that gas. "next" is one unit more: refused by the rule for gas (on prague, run anyway, it was still
-  admitted: the rule is conservative) or past the 64-action limit.
+  admitted: the rule is conservative) or past the 64-action limit. With work-model formula 2 (design §10.4: `rwPerBindLater`, `freshPerPublishExisting`,
+  `finalComputePerPublish`) the table also shows the quote against what the index spends: P / spend is the prefix floor over
+  the callbacks' prefix spend (E − K − the final phase), F / final the final reserve over the final phase. Below 1.0:
+  first tags on deep topics (the floor does not know the depth; the gas model does) and the final phase of folder
+  re-binds and create-file recipes (the Files validator's cold reads; the final call receives all remaining gas and V
+  includes E, so neither is refused nor left unfinishable).
 
-  | shape | prague k | E | V | next | amsterdam k | E (execution) | V | next |
-  |---|---:|---:|---:|---|---:|---:|---:|---|
-  | lone negatives, one-word topic | 38 | 13,145,643 | 14,334,338 | gas | 54 | 12,970,264 | 13,891,774 | gas |
-  | first tags, depth 8, everything new | 18 | 11,232,262 | 11,407,894 | gas | 19 | 8,425,173 | 8,608,323 | gas |
-  | first tags, depth 64, everything new | 3 | 10,447,334 | 10,510,204 | gas | 3 | 7,443,234 | 7,506,104 | gas |
-  | first tags, depth 8, everything existing | 22 | 11,364,484 | 11,570,186 | gas | 20 | 8,307,367 | 8,498,034 | gas |
-  | first tags, depth 64, everything existing | 4 | 8,220,552 | 8,290,940 | gas | 3 | 7,354,489 | 7,417,359 | gas |
-  | second author's first tags, depth 8 | 22 | 11,652,528 | 11,858,230 | gas | 20 | 8,311,537 | 8,502,204 | gas |
-  | masks of tags | 64 | 11,158,719 | 11,680,154 | limit | 64 | 11,708,217 | 12,229,652 | limit |
-  | releases of tags | 64 | 11,079,337 | 11,600,772 | limit | 64 | 11,628,835 | 12,150,270 | limit |
-  | restores of tags | 64 | 13,147,742 | 13,669,177 | limit | 64 | 13,507,294 | 14,028,729 | limit |
-  | registration chunk (word pages) | 64 | 13,908,308 | 14,092,263 | limit | 64 | 10,334,848 | 10,429,824 | limit |
-  | create-file recipes (5 actions each) | 10 | 12,910,510 | 14,047,533 | gas | 12 | 10,863,547 | 11,781,879 | limit |
+  | shape | prague k | E | V | P / spend | F / final | next | amsterdam k | E (execution) | V | P / spend | F / final | next |
+  |---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---|
+  | lone negatives, one-word topic | 38 | 13,144,367 | 14,333,062 | 1.14 | 1.39 | gas | 54 | 12,968,171 | 13,889,681 | 1.08 | 1.39 | gas |
+  | first tags, depth 8, everything new | 18 | 11,231,081 | 11,406,713 | 0.50 | 1.41 | gas | 19 | 8,423,892 | 8,607,042 | 0.47 | 1.41 | gas |
+  | first tags, depth 64, everything new | 3 | 10,447,656 | 10,510,526 | 0.07 | 1.27 | gas | 3 | 7,443,556 | 7,506,426 | 0.07 | 1.26 | gas |
+  | first tags, depth 8, everything existing | 22 | 11,362,902 | 11,568,604 | 0.55 | 1.42 | gas | 20 | 8,305,985 | 8,496,652 | 0.46 | 1.41 | gas |
+  | first tags, depth 64, everything existing | 4 | 8,220,775 | 8,291,163 | 0.12 | 1.30 | gas | 3 | 7,354,811 | 7,417,681 | 0.07 | 1.26 | gas |
+  | second author's first tags, depth 8 | 22 | 11,650,946 | 11,856,648 | 0.53 | 1.42 | gas | 20 | 8,310,143 | 8,500,810 | 0.46 | 1.41 | gas |
+  | masks of tags | 64 | 11,165,399 | 13,266,879 | 1.24 | 2.61 | limit | 64 | 11,714,681 | 13,008,120 | 1.10 | 2.60 | limit |
+  | releases of tags | 64 | 11,086,651 | 13,186,659 | 1.24 | 2.61 | limit | 64 | 11,635,933 | 12,927,900 | 1.10 | 2.60 | limit |
+  | restores of tags | 60 | 12,318,826 | 14,326,111 | 1.24 | 2.57 | gas | 64 | 13,510,562 | 14,382,925 | 1.04 | 2.56 | limit |
+  | number changes of tags | 60 | 9,800,553 | 14,347,867 | 2.16 | 2.57 | gas | 64 | 9,444,331 | 14,406,133 | 2.24 | 2.56 | limit |
+  | masks of masks | 64 | 9,119,129 | 13,112,731 | 1.75 | 2.61 | limit | 64 | 8,739,951 | 12,853,972 | 1.81 | 2.60 | limit |
+  | folder entries re-bound to another file | 60 | 13,309,890 | 14,538,595 | 1.22 | 0.56 | gas | 61 | 13,272,109 | 14,364,081 | 1.19 | 0.56 | gas |
+  | repeat publishes of existing name records | 64 | 12,687,090 | 13,564,175 | 1.11 | 1.12 | limit | 64 | 10,346,490 | 10,752,699 | 1.05 | 1.12 | limit |
+  | fresh name records | 61 | 13,337,470 | 13,636,250 | 1.06 | 1.12 | gas | 64 | 10,370,680 | 10,648,792 | 1.06 | 1.12 | limit |
+  | a name record and a first tag (2 actions each) | 21 | 13,412,498 | 13,773,634 | 1.02 | 1.31 | gas | 30 | 13,251,146 | 13,714,514 | 1.04 | 1.31 | gas |
+  | registration chunk (word pages) | 64 | 13,909,124 | 14,275,123 | 1.08 | 1.12 | limit | 64 | 10,335,664 | 10,612,684 | 1.06 | 1.12 | limit |
+  | create-file recipes (5 actions each) | 10 | 12,908,974 | 14,102,886 | 1.28 | 0.84 | gas | 12 | 10,861,569 | 11,848,168 | 1.26 | 0.84 | limit |
 
   The model's estimates for deep tags run 15-45% high (the composition prices every roll-up append from the
   per-level terms with the price-as-new rule), so the rule under-fills those publications rather than over-fills them.

@@ -21,6 +21,8 @@
 // own execution gas. `floor` also carries the kernel's quote inputs exactly (the work model and the Realm's floor
 // prices from tools/deploy-plan.mjs, the per-Type refs and digest specs the suite logs, the 63/64 rule and the
 // dispatch overhead) and `planning` the rule a planner sizes a publication by (tools/gas-plan.mjs implements it).
+// `ILedgerCommitments.indexFloor` prices every bind as a first statement and is an upper bound on the prefix floor only:
+// a consumer plans from the model's rule.
 //
 // `--check 1` (`pnpm gas:model:check`, CI) writes nothing: it re-measures, refits and exits 1 when a checked profile's
 // validation error exceeds 15% or when its fitted constants or measured rows differ from the committed gas/model.json
@@ -209,11 +211,12 @@ const FLOOR_LIMITS = {
 const DISPATCH_OVERHEAD = 2000;
 
 const FLOOR_FORMULA = [
-  "The kernel's quote (LedgerIngress._foldAndQuote) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new) + Σ over BIND/UNBIND/RELEASE whose author's head at the position is UNSET (freshPerBindFresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + rwPerBind per BIND/UNBIND/RELEASE; freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10);",
-  "prefixFloor P = computeBase + n·computePerAction + binds·computePerHookEffect + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas (binds = the BIND/UNBIND/RELEASE count); finalReserve F = finalComputeBase + binds·finalComputePerBind.",
+  "The kernel's quote (LedgerIngress._foldAndQuote, work-model formula 2) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new, or freshPerPublishExisting when it exists: a repeat PUBLISH or any REUSE) + Σ over first statements (freshPerBindFresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + Σ over BIND/UNBIND/RELEASE (rwPerBind, plus rwPerBindLater for a later statement); a first statement is a BIND or UNBIND whose author's head at the position is UNSET, every other bind-kind action (a RELEASE always) is a later statement; freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10);",
+  "prefixFloor P = computeBase + n·computePerAction + binds·computePerHookEffect + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas (binds = the BIND/UNBIND/RELEASE count); finalReserve F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish (publishes = the PUBLISH/REUSE count).",
   "The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail.",
   "Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T.",
   "A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K.",
+  "ILedgerCommitments.indexFloor quotes without a principal, so it prices every BIND and UNBIND as a first statement: it is an upper bound on P only (exact when every bind-kind action is a first statement), and a consumer plans from this rule, never from indexFloor.",
 ].join(" ");
 
 function floorOf(rows, name, types) {

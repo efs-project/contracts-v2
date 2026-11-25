@@ -5,7 +5,8 @@ import {Vm} from "forge-std/Vm.sol";
 import {FloorBase} from "./FloorBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
-import {Action, Native, Purpose} from "../../src/interfaces/Actions.sol";
+import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.sol";
+import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {E_INDEX_GAS} from "../../src/interfaces/Errors.sol";
 
@@ -251,6 +252,217 @@ contract IndexFloorTest is FloorBase {
     function test_floor_row_64_lone_negatives() public {
         (Action[] memory a, bytes[] memory b) = _loneNegatives(64, 4);
         _measure("64 lone negatives", a, b);
+    }
+
+    // ---- later statements and existing-record publishes (formula 2: rwPerBindLater, rwPerPublishExisting) --------
+
+    /// Logs one publication's execution gas E, the kernel's share K, the final phase, the callbacks' prefix spend
+    /// (E − K − final phase) and the kernel's quote (P, F), then leaves the state as it found it.
+    function _spendRow(string memory label, Action[] memory a, bytes[] memory b) internal {
+        Need memory w = _need(a, b, address(0));
+        uint256 fin = _finalPhase(a, b, w.exec);
+        emit log_named_uint(string.concat("floor ", label, " exec"), w.exec);
+        emit log_named_uint(string.concat("floor ", label, " kernel"), w.kernel);
+        emit log_named_uint(string.concat("floor ", label, " final phase"), fin);
+        emit log_named_uint(
+            string.concat("floor ", label, " callbacks prefix"), w.exec - w.kernel - fin
+        );
+        emit log_named_uint(string.concat("floor ", label, " prefixFloor"), w.prefixFloor);
+        emit log_named_uint(string.concat("floor ", label, " finalReserve"), w.finalReserve);
+        uint256 snap = vm.snapshotState();
+        Native memory c = _ctx(a);
+        vm.startStateDiffRecording();
+        r.ledger.execute(a, b, c, "");
+        emit log_named_uint(
+            string.concat("floor ", label, " fresh index slots"),
+            _freshIndexSlots(vm.stopAndReturnStateDiff())
+        );
+        vm.revertToStateAndDelete(snap);
+    }
+
+    /// The same shape at one action and at all of `a` (33), from the same state: the per-action terms are set from
+    /// the difference over 32, the first action's cold costs belong to the per-publication terms.
+    function _spendPair(string memory label, Action[] memory a, bytes[] memory b) internal {
+        Action[] memory a1 = new Action[](1);
+        bytes[] memory b1 = new bytes[](1);
+        (a1[0], b1[0]) = (a[0], b[0]);
+        _spendRow(string.concat(label, " x1"), a1, b1);
+        _spendRow(string.concat(label, " x33"), a, b);
+    }
+
+    uint256 internal constant LATER = 33;
+
+    function _things(string memory seed) internal pure returns (bytes32[] memory t) {
+        t = new bytes32[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            t[i] = bytes32(uint256(uint160(uint256(keccak256(abi.encode(seed, i))))));
+        }
+    }
+
+    function _assert(bytes32[] memory t) internal {
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.tag(topic, t[i], 0, 0);
+        }
+        _execAs(address(this), a, new bytes[](LATER));
+    }
+
+    function test_floor_later_number_changes() public {
+        bytes32[] memory t = _things("later number");
+        _assert(t);
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.tag(topic, t[i], 1, 7);
+        }
+        _spendPair("later number change", a, new bytes[](LATER));
+    }
+
+    function test_floor_later_masks() public {
+        bytes32[] memory t = _things("later mask");
+        _assert(t);
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.deny(topic, t[i], 1, 0);
+        }
+        _spendPair("later mask", a, new bytes[](LATER));
+    }
+
+    function test_floor_later_masks_of_masks() public {
+        bytes32[] memory t = _things("later mask of mask");
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.deny(topic, t[i], 0, 0);
+        }
+        _execAs(address(this), a, new bytes[](LATER));
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.deny(topic, t[i], 1, 3);
+        }
+        _spendPair("later mask of mask", a, new bytes[](LATER));
+    }
+
+    function test_floor_later_releases() public {
+        bytes32[] memory t = _things("later release");
+        _assert(t);
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsFiles.release(Purpose.TAG, topic, t[i], 1);
+        }
+        _spendPair("later release", a, new bytes[](LATER));
+    }
+
+    function test_floor_later_restores() public {
+        bytes32[] memory t = _things("later restore");
+        _assert(t);
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.deny(topic, t[i], 1, 0);
+        }
+        _execAs(address(this), a, new bytes[](LATER));
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = EfsTopics.tag(topic, t[i], 2, 0);
+        }
+        _spendPair("later restore", a, new bytes[](LATER));
+    }
+
+    /// A ten-byte file name `la-<3 letters>.md`, distinct per i (< 26^3).
+    function _fileName(string memory pre, uint256 i) internal pure returns (string memory) {
+        return string(
+            bytes.concat(
+                bytes(pre),
+                bytes1(uint8(97 + (i / 676) % 26)),
+                bytes1(uint8(97 + (i / 26) % 26)),
+                bytes1(uint8(97 + i % 26)),
+                ".md"
+            )
+        );
+    }
+
+    /// Creates LATER files `<pre>xyz.md` in the root folder (five actions each, in publications of 50).
+    function _files(string memory pre) internal returns (bytes32[] memory f) {
+        f = new bytes32[](LATER);
+        Action[] memory a = new Action[](50);
+        bytes[] memory b = new bytes[](50);
+        uint256 n;
+        for (uint256 i; i < LATER; ++i) {
+            string memory name = _fileName(pre, i);
+            (Action[] memory x, bytes[] memory y) = _createFile(name);
+            f[i] = Keys.subject(p, keccak256(bytes(name)));
+            for (uint256 j; j < 5; ++j) {
+                (a[n], b[n]) = (x[j], y[j]);
+                ++n;
+            }
+            if (n == 50 || i + 1 == LATER) {
+                Action[] memory xa = new Action[](n);
+                bytes[] memory yb = new bytes[](n);
+                for (uint256 j; j < n; ++j) {
+                    (xa[j], yb[j]) = (a[j], b[j]);
+                }
+                _execAs(address(this), xa, yb);
+                n = 0;
+            }
+        }
+    }
+
+    /// Re-binds of folder entries to another file (the entry `la-…` from its file to the file of `lb-…`).
+    function test_floor_later_folder_rebinds() public {
+        _files("la-");
+        bytes32[] memory other = _files("lb-");
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] =
+                _bind(Purpose.FOLDER, rootDir, keccak256(bytes(_fileName("la-", i))), other[i], 1);
+        }
+        _spendPair("later folder rebind", a, new bytes[](LATER));
+    }
+
+    /// Re-binds of HEAD to another root record of the same file (an edit).
+    function test_floor_later_head_rebinds() public {
+        bytes32[] memory f = _files("lh-");
+        Action[] memory pa = new Action[](LATER);
+        bytes[] memory pb = new bytes[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            (pa[i], pb[i]) = _publish(T_ROOT, abi.encodePacked(abi.encode(f[i], uint256(0)), "v2"));
+        }
+        _execAs(address(this), pa, pb);
+        Action[] memory a = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            a[i] = _bind(Purpose.HEAD, f[i], 0, _id(T_ROOT, pb[i]), 1);
+        }
+        _spendPair("later head rebind", a, new bytes[](LATER));
+    }
+
+    function _names(string memory pre) internal view returns (Action[] memory a, bytes[] memory b) {
+        a = new Action[](LATER);
+        b = new bytes[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            (a[i], b[i]) = _name(bytes(_fileName(pre, i)));
+        }
+    }
+
+    /// Fresh name records (publish-heavy work; the final phase's per-publish term).
+    function test_floor_publish_names() public {
+        (Action[] memory a, bytes[] memory b) = _names("nn-");
+        _spendPair("publish name", a, b);
+    }
+
+    /// Repeat PUBLISHes of existing records (the same name bodies again).
+    function test_floor_publish_existing() public {
+        (Action[] memory a, bytes[] memory b) = _names("ne-");
+        _execAs(address(this), a, b);
+        _spendPair("publish existing", a, b);
+    }
+
+    /// REUSEs of existing records.
+    function test_floor_reuse() public {
+        (Action[] memory a, bytes[] memory b) = _names("nr-");
+        _execAs(address(this), a, b);
+        Action[] memory x = new Action[](LATER);
+        for (uint256 i; i < LATER; ++i) {
+            x[i].kind = ActionKind.REUSE;
+            x[i].typeId = typeIds[T_NAME];
+            x[i].bodyHashOrRecordId = _id(T_NAME, b[i]);
+        }
+        _spendPair("reuse", x, new bytes[](LATER));
     }
 
     /// 64 lone negatives on a one-word topic, the action limit, in one publication. On Glamsterdam (amsterdam profile)

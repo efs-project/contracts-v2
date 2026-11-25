@@ -57,7 +57,10 @@ interface ILedgerCommitments {
 
     function indexObligationsOf(address ledger) external view returns (bytes32);
 
-    /// Estimation: the floor the dispatcher will demand.
+    /// Estimation: the kernel's index-floor quote (design §10.4) without a principal. Every BIND and UNBIND then reads
+    /// an UNSET head and is priced as a first statement, so the prefix floor is an upper bound only (exact when every
+    /// bind-kind action is a first statement, or there is none); the final reserve does not depend on heads. A consumer
+    /// plans from the gas model's rule (`gas/model.json` `planning`), never from this.
     function indexFloor(address ledger, Action[] calldata actions)
         external
         view
