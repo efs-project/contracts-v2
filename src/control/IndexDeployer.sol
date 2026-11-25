@@ -7,8 +7,9 @@ import {E_DEPLOYER} from "../interfaces/Errors.sol";
 
 /// @title IndexDeployer — a later generation with its fresh stores, created by one contract's nonces (design §10.1, §8.2)
 /// @notice The `RealmGenesis` pattern for an index generation that needs fresh stores: `run()` creates each fresh
-///         store with `INITIAL_WRITER` = the nonce-predicted generation address, then the generation with the
-///         stores' addresses, asserts every prediction and journals. The initcodes arrive in the call and are
+///         store with `INITIAL_WRITER` = the nonce-predicted generation address, then the generation's
+///         `IndexReads` (its manifest and read side) with the stores' addresses, then the generation with the reads
+///         contract's address, asserts every prediction and journals. The initcodes arrive in the call and are
 ///         pinned by `PLAN_HASH`, so this contract embeds no creation code (initcode budget) and a stranger's
 ///         run with the same plan yields the same addresses or reverts. A generation that only re-pins stores
 ///         needs no deployer: it is a plain CREATE2.
@@ -24,7 +25,11 @@ contract IndexDeployer {
         bytes bitmapInitcode;
         bytes32[] bitmapFamilies;
         address bitmap;
-        /// The generation's creation code without constructor arguments; they are appended here.
+        /// The `IndexReads` creation code; its arguments (ledger, hotAbiId, posting, bitmap, units, specs, work)
+        /// are appended here.
+        bytes readsInitcode;
+        /// The generation's creation code without constructor arguments (ledger, decoder, reads); they are appended
+        /// here.
         bytes generationInitcode;
         Unit[] units;
         DigestSpec[] specs;
@@ -37,8 +42,11 @@ contract IndexDeployer {
     address public generation;
     address public postingStore;
     address public bitmapStore;
+    address public readsContract;
 
-    event IndexDeployed(address indexed generation, address postingStore, address bitmapStore);
+    event IndexDeployed(
+        address indexed generation, address postingStore, address bitmapStore, address reads
+    );
 
     constructor(address ledger, bytes32 planHash) {
         LEDGER = ledger;
@@ -49,11 +57,11 @@ contract IndexDeployer {
         return keccak256(abi.encode(plan));
     }
 
-    /// The generation's address: after the fresh stores, by this contract's nonces.
+    /// The generation's address: after the fresh stores and the reads contract, by this contract's nonces.
     function predictGeneration(Plan calldata plan) public view returns (address) {
         uint8 fresh =
             (plan.postingInitcode.length != 0 ? 1 : 0) + (plan.bitmapInitcode.length != 0 ? 1 : 0);
-        return _creation(fresh + 1);
+        return _creation(fresh + 2);
     }
 
     function run(Plan calldata plan) external returns (address gen) {
@@ -79,27 +87,24 @@ contract IndexDeployer {
             );
             if (bitmap != _creation(nonce++)) revert E_DEPLOYER(2);
         }
-        gen = _create(
+        address reads = _create(
             bytes.concat(
-                plan.generationInitcode,
+                plan.readsInitcode,
                 abi.encode(
-                    LEDGER,
-                    plan.hotAbiId,
-                    plan.decoder,
-                    posting,
-                    bitmap,
-                    plan.units,
-                    plan.specs,
-                    plan.work
+                    LEDGER, plan.hotAbiId, posting, bitmap, plan.units, plan.specs, plan.work
                 )
             )
         );
+        if (reads != _creation(nonce)) revert E_DEPLOYER(2);
+        gen =
+            _create(bytes.concat(plan.generationInitcode, abi.encode(LEDGER, plan.decoder, reads)));
         if (gen != predicted) revert E_DEPLOYER(3);
         if (IRealmIndex(gen).replayReadiness().ledger != LEDGER) revert E_DEPLOYER(4);
         generation = gen;
         postingStore = posting;
         bitmapStore = bitmap;
-        emit IndexDeployed(gen, posting, bitmap);
+        readsContract = reads;
+        emit IndexDeployed(gen, posting, bitmap, reads);
     }
 
     function _create(bytes memory initcode) private returns (address created) {

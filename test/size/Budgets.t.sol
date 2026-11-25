@@ -28,7 +28,7 @@ contract ArtifactProbe {
 ///         measured, logged and gated. The estimates are the design's (nominal, pessimistic = +15 %), marked
 ///         `estimate` in `test/snapshots/sizes.json`, which mirrors the table below row for row.
 /// @dev Arguments: until a unit is deployed with real constructor arguments (the deployer library, S0.5), the
-///      gate adds the row's `argsEstimate` to the bare initcode (≈ 3.7 KB of manifest for `RealmIndex`, a few
+///      gate adds the row's `argsEstimate` to the bare initcode (≈ 3.7 KB of manifest for `IndexReads`, a few
 ///      words elsewhere). `sizes.json` is cross-checked against the table when the test may read it; the
 ///      committed `fs_permissions` grant reads of `./test/vectors` only, so until that grant includes
 ///      `./test/snapshots` the cross-check is logged as pending (the table here is then the gate's source).
@@ -54,7 +54,7 @@ contract BudgetsTest is Test {
 
     /// Design §15 (and §3.1 for the units §15 groups): name, nominal, pessimistic, argument allowance.
     function units() internal pure returns (Unit[] memory u) {
-        u = new Unit[](21);
+        u = new Unit[](22);
         u[0] = Unit("LedgerCore", 16_400, 18_900, 256);
         u[1] = Unit("LedgerApply", 7_600, 8_700, 256);
         u[2] = Unit("LedgerIngress", 11_500, 13_200, 256); // S1; S2 15,500 / 17,800
@@ -63,7 +63,7 @@ contract BudgetsTest is Test {
         u[5] = Unit("TypeRegistry", 12_500, 14_400, 256);
         u[6] = Unit("DescribedTypeRule", 5_200, 6_000, 256);
         u[7] = Unit("DescriptorStore", 1_000, 1_200, 256);
-        u[8] = Unit("RealmIndex", 12_500, 14_400, 3_700);
+        u[8] = Unit("RealmIndex", 12_500, 14_400, 256); // the manifest arguments go to IndexReads
         u[9] = Unit("PostingStore", 5_500, 6_300, 256);
         u[10] = Unit("BitmapStore", 5_000, 5_800, 256);
         u[11] = Unit("IndexBuild", 6_000, 6_900, 256);
@@ -76,6 +76,7 @@ contract BudgetsTest is Test {
         u[18] = Unit("LensReader", 12_000, 13_800, 256);
         u[19] = Unit("FilesPageReader", 15_000, 17_300, 256);
         u[20] = Unit("LedgerControl", 16_500, 19_000, 256); // the third pinned delegate (adoption note 7)
+        u[21] = Unit("IndexReads", 8_000, 9_200, 3_700); // the index's read side and manifest (design §10.1)
     }
 
     function artifactOf(string memory name) internal pure returns (string memory) {
@@ -84,7 +85,11 @@ contract BudgetsTest is Test {
 
     function test_table_is_the_design_table() public view {
         Unit[] memory u = units();
-        assertEq(u.length, 21, "every deployable of design section 15 plus the control delegate");
+        assertEq(
+            u.length,
+            22,
+            "every deployable of design section 15, the control delegate and the index reads"
+        );
         for (uint256 i; i < u.length; ++i) {
             assertLe(u[i].nominal, u[i].pessimistic, u[i].name);
             // pessimistic is nominal + 15 %, rounded by the design to the nearest 100 B
@@ -126,7 +131,7 @@ contract BudgetsTest is Test {
                     u[i].pessimistic
                 );
             }
-            console2.log("sizes.json: 20 rows equal the table");
+            console2.log("sizes.json: 22 rows equal the table");
         } catch {
             console2.log(
                 "sizes.json: cross-check pending (not readable: the committed fs_permissions grant ./test/vectors only)"

@@ -154,6 +154,8 @@
       "type": "object",
       "required": [
         "address",
+        "runtimeCodehash",
+        "reads",
         "generation",
         "manifestHash",
         "indexObligations",
@@ -162,7 +164,15 @@
         "units",
         "digestSpecs",
         "workModel"
-      ]
+      ],
+      "properties": {
+        "runtimeCodehash": { "type": "string", "description": "keccak256 of the generation's runtime code (its immutables name the reads contract and its codehash)" },
+        "reads": {
+          "type": "object",
+          "required": ["address", "runtimeCodehash"],
+          "description": "the generation's IndexReads: its manifest and every read the generation forwards (design §10.1)"
+        }
+      }
     },
     "typeIds": {
       "type": "object",

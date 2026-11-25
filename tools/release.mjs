@@ -57,7 +57,7 @@ const budgetOf = (name) => sizes.units.find((u) => u.name === name) ?? null;
 // ---- per-unit facts ------------------------------------------------------------------------------------------------
 const stepOf = (name) => plan.steps.find((s) => s.kind === "CREATE2" && s.contract === name);
 const createdOf = (label) => plan.steps.find((s) => s.id === "G18").creates.find((c) => c.label === label);
-const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "EfsWeb3Gateway"]);
+const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "IndexReads", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "EfsWeb3Gateway"]);
 const contracts = {};
 let reproducible = 0;
 for (const name of Object.keys(UNITS)) {
@@ -126,11 +126,30 @@ const union = (names) => {
   }
   return [...seen.values()];
 };
+// RealmIndex answers every IIndexReads function at its address, the ones it does not implement through its fallback
+// (forwarded to IndexReads by STATICCALL, design §10.1), so its artifact lists them too: callers see one ABI.
+function withForwardedReads(abi, methodIdentifiers) {
+  // the snapshot maps "0x<selector>" -> signature; solc's methodIdentifiers map signature -> "<selector>"
+  const reads = JSON.parse(readFileSync(join(root, "test/snapshots/abi/IIndexReads.json"), "utf8"));
+  const sigOf = (i) => `${i.name}(${(i.inputs ?? []).map((p) => p.type).join(",")})`;
+  const ids = { ...methodIdentifiers };
+  const extra = [];
+  for (const item of reads.abi.filter((i) => i.type === "function")) {
+    const sel = Object.entries(reads.methodIdentifiers).find(([, sig]) => sig === sigOf(item))?.[0];
+    assert.ok(sel, `IIndexReads.${item.name}: no selector in the snapshot`);
+    if (Object.values(methodIdentifiers).includes(sel.slice(2))) continue;
+    extra.push(item);
+    ids[sigOf(item)] = sel.slice(2);
+  }
+  return { abi: [...abi, ...extra], methodIdentifiers: Object.fromEntries(Object.entries(ids).sort(([x], [y]) => (x < y ? -1 : 1))) };
+}
 for (const name of Object.keys(UNITS)) {
   const a = artifact(name);
   const raw = JSON.parse(readFileSync(join(OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8"));
-  const abi = name === "LedgerCore" ? union(["LedgerCore", "LedgerApply", "LedgerIngress", "LedgerControl"]) : a.abi;
-  emit(`artifacts/${name}.json`, toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers: raw.methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
+  let abi = name === "LedgerCore" ? union(["LedgerCore", "LedgerApply", "LedgerIngress", "LedgerControl"]) : a.abi;
+  let methodIdentifiers = raw.methodIdentifiers;
+  if (name === "RealmIndex") ({ abi, methodIdentifiers } = withForwardedReads(abi, methodIdentifiers));
+  emit(`artifacts/${name}.json`, toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
 }
 // artifacts/index.json: what a deploy from artifacts/ alone needs besides the units (tools/deploy-plan.mjs "release" layout)
 emit("artifacts/index.json", toJSON({ schema: "efs-artifacts-index/1", layoutId: plan.layoutId, hotAbiId: plan.hotAbiId, hotAbiIdString: plan.hotAbiIdString, units: Object.keys(UNITS), manifest: "release/release.json", note: "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`" }));
@@ -295,7 +314,7 @@ const manifest = {
     types: plan.profile.map(({ declarationSig, ...p }) => ({ ...p, declarationSig, grade: "NATIVE", wrapperVersion: 0 })),
     acceptors: { RefuseAllPolicy: { address: plan.addresses.refuseAllPolicy, codehash: contracts.RefuseAllPolicy.deployedBytecodeHash } },
     wrappers: [],
-    index: { generation: 1, manifestHash: plan.index.manifestHash, families: plan.index.families, units: plan.index.units, digestSpecs: plan.index.specs, workModel: plan.workModel, stores: { posting: plan.addresses.postingStore, bitmap: plan.addresses.bitmapStore } },
+    index: { generation: 1, address: plan.index.address, runtimeCodehash: plan.index.runtimeCodehash, reads: plan.index.reads, manifestHash: plan.index.manifestHash, families: plan.index.families, units: plan.index.units, digestSpecs: plan.index.specs, workModel: plan.workModel, stores: { posting: plan.addresses.postingStore, bitmap: plan.addresses.bitmapStore } },
     limits: plan.limits,
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,

@@ -143,14 +143,14 @@
       "artifact": "RealmIndex.sol:RealmIndex",
       "runtimeBudget": 19660,
       "initcodeBudget": 36864,
-      "argsEstimate": 3700,
+      "argsEstimate": 256,
       "argsStatus": "estimate",
       "estimate": {
         "status": "estimate",
         "nominal": 12500,
         "pessimistic": 14400,
         "prototypeMeasured": 20981,
-        "basis": "gen-1 dispatcher, top-down from the Files-capable prototype index 20,981 B \u2212 posting/scope storage moved to stores \u2248 5.5 KB \u2212 replay/build drivers moved to IndexBuild \u2248 4 KB + Effect/3 decode, unit iteration, digest specs, coverage \u2248 1 KB; initcode adds the \u2248 3.7 KB manifest"
+        "basis": "gen-1 dispatcher, top-down from the Files-capable prototype index 20,981 B \u2212 posting/scope storage moved to stores \u2248 5.5 KB \u2212 replay/build drivers moved to IndexBuild \u2248 4 KB + Effect/3 decode, unit iteration, digest specs, coverage \u2248 1 KB; initcode adds the \u2248 3.7 KB manifest; since step 3a the manifest arguments and every read are in IndexReads, so the constructor takes three words"
       },
       "measured": null
     },
@@ -343,6 +343,22 @@
         "pessimistic": 19000,
         "prototypeMeasured": null,
         "basis": "measured apply arms 7,897 B inside the prototype Ledger \u2212 _accept 533 \u2212 _checkRefs 456 + Effect/3 building \u2248 700"
+      },
+      "measured": null
+    },
+    {
+      "name": "IndexReads",
+      "artifact": "IndexReads.sol:IndexReads",
+      "runtimeBudget": 19660,
+      "initcodeBudget": 36864,
+      "argsEstimate": 3700,
+      "argsStatus": "estimate",
+      "estimate": {
+        "status": "estimate",
+        "nominal": 8000,
+        "pessimistic": 9200,
+        "prototypeMeasured": null,
+        "basis": "the read side moved out of RealmIndex (manifest, readiness, coverage and family reads with their struct encoders, measured 8,278 B at step 3a); initcode adds the \u2248 3.7 KB manifest"
       },
       "measured": null
     }

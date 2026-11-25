@@ -134,6 +134,11 @@ abstract contract IndexDoubleCore is IIndexReads {
         _work = w;
     }
 
+    /// A double answers its own reads, so it names itself as its reads contract (plain code, its own codehash).
+    function readsContract() external view virtual returns (address, bytes32) {
+        return (address(this), address(this).codehash);
+    }
+
     function setStores(address posting, address bitmap, address build_) external onlyOwner {
         postingStore = posting;
         bitmapStore = bitmap;

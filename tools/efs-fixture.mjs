@@ -549,7 +549,7 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
       registry: await proxy(a.registryProxy, a.registryAdmin, a.registryImpl, g18.creates[1].initializer),
     },
     contracts,
-    index: { address: a.index, generation: Number(d.indexGeneration), manifestHash: plan.index.manifestHash, indexObligations: plan.realm.indexObligations, stores: { posting: a.postingStore, bitmap: a.bitmapStore }, families: plan.index.families, units: plan.index.units, digestSpecs: plan.index.specs, workModel: plan.workModel },
+    index: { address: a.index, runtimeCodehash: plan.index.runtimeCodehash, reads: { address: a.indexReads, runtimeCodehash: plan.index.reads.runtimeCodehash }, generation: Number(d.indexGeneration), manifestHash: plan.index.manifestHash, indexObligations: plan.realm.indexObligations, stores: { posting: a.postingStore, bitmap: a.bitmapStore }, families: plan.index.families, units: plan.index.units, digestSpecs: plan.index.specs, workModel: plan.workModel },
     typeIds,
     profile: plan.profile.map(({ descriptor, declarationSig, ...p }) => p),
     privilegedRoles: { controllerOwner: account.address, ledgerProxyAdminOwner: a.controller, registryProxyAdminOwner: a.controller, steward: zeroAddress, noticePrincipal: plan.activation.noticePrincipal },
@@ -800,6 +800,9 @@ export async function verify(o = {}) {
 
   // 7. the index: manifest, readiness
   eq("index manifestHash", await read(pub, a.index, "RealmIndex", "manifestHash"), plan.index.manifestHash);
+  eq("index codehash", keccak256(await code(a.index)), plan.index.runtimeCodehash);
+  eq("index readsContract", await read(pub, a.index, "RealmIndex", "readsContract"), [a.indexReads, plan.index.reads.runtimeCodehash]);
+  eq("index reads codehash", keccak256(await code(a.indexReads)), plan.index.reads.runtimeCodehash);
   const rd = await read(pub, a.index, "RealmIndex", "replayReadiness");
   eq("index ready", rd.ready, true);
   eq("index families", rd.families, plan.index.families);

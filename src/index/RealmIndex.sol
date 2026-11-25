@@ -2,12 +2,12 @@
 pragma solidity 0.8.37;
 
 import {GenerationStorage} from "./storage/GenerationStorage.sol";
+import {IndexProfiles} from "./IndexProfiles.sol";
 import {Layout} from "../core/layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
 import {ActionKind, FamilyId, PostingKey, ScopeKey, TypeId} from "../interfaces/Actions.sol";
-import {Coverage, Phase} from "../interfaces/Results.sol";
+import {Phase} from "../interfaces/Results.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
-import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
 import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {IIndexHook} from "../interfaces/IIndexHook.sol";
@@ -21,6 +21,7 @@ import {
     E_INDEX_FINAL,
     E_LEDGER,
     E_ORDER,
+    E_PIN,
     E_REPLAY,
     E_STAGED,
     E_WRITER
@@ -28,26 +29,26 @@ import {
 
 /// @title RealmIndex — generation 1: an immutable dispatcher over the per-Realm family stores (design §10)
 /// @notice Holds no posting storage: it folds every Effect/3 into `PostingStore`/`BitmapStore` under the
-///         stores' writer rule and keeps only its progress word. The manifest (families, units, digest
-///         specs, work model, profiles) is fixed at construction and folded into `MANIFEST_HASH`. The
-///         replay, build and backfill entry points of §10.6 run through the pinned `IndexBuild` delegate,
-///         which generation 1 does not carry yet: they revert until that build lands.
-contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
+///         stores' writer rule and keeps only its progress word. Its manifest (families, units, digest specs, work
+///         model, profiles) is held by its `IndexReads` contract, deployed first: the constructor copies the
+///         units, digest specs and work model the fold needs from there, and folds the manifest with the reads
+///         contract's address and codehash into `MANIFEST_HASH`. Every read this contract does not answer itself
+///         is forwarded to that contract by `STATICCALL` from the fallback (design §10.1), so the manifest,
+///         readiness and coverage reads keep their selectors at this address and no forwarded call can change
+///         state. The replay, build and backfill entry points of §10.6 run through the pinned `IndexBuild`
+///         delegate, which generation 1 does not carry yet: they revert until that build lands.
+contract RealmIndex is IRealmIndex, GenerationStorage {
     address public immutable LEDGER;
-    bytes32 public immutable LAYOUT_ID;
-    bytes32 public immutable HOT_ABI_ID;
     address public immutable DECODER;
     address public immutable POSTING;
     address public immutable BITMAP;
+    /// The reads contract and its codehash at construction (design §10.1); both are folded into `MANIFEST_HASH`.
+    address public immutable READS;
+    bytes32 public immutable READS_CODEHASH;
     bytes32 public immutable MANIFEST_HASH;
-    bytes32 public constant PHYSICAL_PROFILE =
-        keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
-    bytes32 public constant CALLBACK_PROFILE =
-        keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
-    bytes32 public constant MANIFEST_HEADER = keccak256("efs/index-manifest/1");
-    uint64 private constant NOT_MAINTAINED = type(uint64).max;
-    uint8 private constant SHAPE_APPEND = 1;
-    uint8 private constant SHAPE_BITMAP = 2;
+    bytes32 public constant PHYSICAL_PROFILE = IndexProfiles.PHYSICAL;
+    bytes32 public constant CALLBACK_PROFILE = IndexProfiles.CALLBACK;
+    bytes32 public constant MANIFEST_HEADER = IndexProfiles.MANIFEST_HEADER;
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_REBIND = 2;
     uint8 private constant T_MASK = 3;
@@ -63,33 +64,38 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     bytes32 private immutable F_REFERENCE_POSITION;
     bytes32 private immutable F_BY_RECORD;
     bytes32 private immutable F_UNIQUE_BY_TYPE;
-    bytes32 private immutable F_SCALAR;
     bytes32 private immutable F_DIGEST;
     bytes32 private immutable F_ROLE_SCOPE;
-    bytes32 private immutable F_ROSTER;
     bytes32 private immutable F_LIVE_SCOPE;
 
-    FamilyEntry[] private _families;
     Unit[] private _units;
     DigestSpec[] private _specs;
     WorkModel private _work;
 
-    constructor(
-        address ledger_,
-        bytes32 hotAbiId,
-        address decoder,
-        address posting,
-        address bitmap,
-        Unit[] memory units,
-        DigestSpec[] memory specs,
-        WorkModel memory work
-    ) {
+    /// @param reads the generation's `IndexReads`, built for `ledger_` over the manifest of this generation; its
+    ///        units, digest specs and work model are copied here, and its manifest must name this build's header
+    ///        and profiles (`E_PIN(reads, 10)` otherwise).
+    constructor(address ledger_, address decoder, address reads) {
         LEDGER = ledger_;
-        LAYOUT_ID = Layout.LAYOUT_ID;
-        HOT_ABI_ID = hotAbiId;
         DECODER = decoder;
-        POSTING = posting;
-        BITMAP = bitmap;
+        READS = reads;
+        READS_CODEHASH = reads.codehash;
+        IIndexReads r = IIndexReads(reads);
+        (
+            bytes32 header,
+            FamilyEntry[] memory families,
+            Unit[] memory units,
+            DigestSpec[] memory specs,
+            WorkModel memory work,
+            bytes32 physical,
+            bytes32 callback
+        ) = r.manifest();
+        if (
+            header != IndexProfiles.MANIFEST_HEADER || physical != IndexProfiles.PHYSICAL
+                || callback != IndexProfiles.CALLBACK || r.ledger() != ledger_
+        ) revert E_PIN(reads, 10);
+        POSTING = r.postingStore();
+        BITMAP = r.bitmapStore();
         F_BY_TYPE = Keys.familyId("by-type");
         F_BY_AUTHOR = Keys.familyId("by-author");
         F_BACKLINK = Keys.familyId("backlink");
@@ -98,24 +104,9 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         F_REFERENCE_POSITION = Keys.familyId("reference-position");
         F_BY_RECORD = Keys.familyId("by-record");
         F_UNIQUE_BY_TYPE = Keys.familyId("unique-by-type");
-        F_SCALAR = Keys.familyId("scalar");
         F_DIGEST = Keys.familyId("digest");
         F_ROLE_SCOPE = Keys.familyId("role-scope");
-        F_ROSTER = Keys.familyId("roster");
         F_LIVE_SCOPE = Keys.familyId("live-scope");
-        _declare(F_BY_TYPE, 1, 1, SHAPE_APPEND, 2, posting, 1);
-        _declare(F_BY_AUTHOR, 4, 2, SHAPE_APPEND, 2, posting, 1);
-        _declare(F_BACKLINK, 5, 4, SHAPE_APPEND, 3, posting, 1);
-        _declare(F_HISTORY, 8, 3, SHAPE_APPEND, 1, posting, 1);
-        _declare(F_SCOPE, 10, 3, SHAPE_APPEND, 1, bitmap, 1);
-        _declare(F_REFERENCE_POSITION, 11, 1, SHAPE_APPEND, 1, posting, 1);
-        _declare(F_BY_RECORD, 12, 5, SHAPE_APPEND, 2, posting, 1);
-        _declare(F_UNIQUE_BY_TYPE, 13, 1, SHAPE_APPEND, 1, posting, 1);
-        _declare(F_SCALAR, 14, 1, SHAPE_APPEND, 1, posting, 1);
-        _declare(F_DIGEST, 15, 5, SHAPE_APPEND, 1, posting, 1);
-        _declare(F_ROLE_SCOPE, 16, 3, SHAPE_APPEND, 1, posting, 1);
-        _declare(F_ROSTER, 17, 3, SHAPE_BITMAP, 2, bitmap, NOT_MAINTAINED);
-        _declare(F_LIVE_SCOPE, 18, 3, SHAPE_BITMAP, 2, bitmap, 1);
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }
@@ -125,35 +116,10 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         _work = work;
         MANIFEST_HASH = keccak256(
             abi.encode(
-                MANIFEST_HEADER, _families, units, specs, work, PHYSICAL_PROFILE, CALLBACK_PROFILE
+                header, families, units, specs, work, physical, callback, reads, reads.codehash
             )
         );
         _gen().progress.replayStage = 1; // FRESH
-    }
-
-    function _declare(
-        bytes32 id,
-        uint8 kind,
-        uint8 universe,
-        uint8 shape,
-        uint8 liveSemantics,
-        address store,
-        uint64 from
-    ) private {
-        _families.push(
-            FamilyEntry({
-                familyId: id,
-                kind: kind,
-                universe: universe,
-                shape: shape,
-                mandatory: from == 1,
-                liveSemantics: liveSemantics,
-                recipe: keccak256(abi.encodePacked("efs/family-recipe/", kind)),
-                fromAdmission: from,
-                store: store,
-                storeCodehash: store.codehash
-            })
-        );
     }
 
     // =============================================================================================
@@ -380,30 +346,6 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     // =============================================================================================
 
     /// @inheritdoc IRealmIndex
-    function replayReadiness() external view returns (Readiness memory r) {
-        Progress storage p = _gen().progress;
-        (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
-        (uint64 admissions,,, uint64 publications) = ILedgerHot(LEDGER).counts();
-        r.version = 1;
-        r.ledger = LEDGER;
-        r.layoutId = LAYOUT_ID;
-        r.hotAbiId = HOT_ABI_ID;
-        r.physicalProfile = PHYSICAL_PROFILE;
-        r.callbackProfile = CALLBACK_PROFILE;
-        r.manifestHash = MANIFEST_HASH;
-        r.provenFrom = 1;
-        r.completedAdmission = p.lastProcessed;
-        r.completedPublication = p.lastPublication;
-        r.phase = phase;
-        r.ready = phase == Phase.IDLE && p.lastProcessed == admissions
-            && p.lastPublication == publications && p.gapped == 0;
-        r.units = _units;
-        r.families = _families;
-        r.build = address(0);
-        r.buildCodehash = bytes32(0);
-    }
-
-    /// @inheritdoc IRealmIndex
     /// @dev Fresh stores only: both stores name this generation as INITIAL_WRITER and are unattached, this
     ///      generation has never folded live, the ledger is idle. One publication per call, decoded by the
     ///      pinned decoder (STATICCALL) and folded through `replayFold` on this contract, so the live fold
@@ -483,111 +425,26 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     }
 
     // =============================================================================================
-    // Reads (design §5.11, §10.5)
+    // Reads answered here (design §5.11); every other read is forwarded to READS
     // =============================================================================================
 
     function manifestHash() external view returns (bytes32) {
         return MANIFEST_HASH;
     }
 
-    function manifest()
-        external
-        view
-        returns (
-            bytes32 header,
-            FamilyEntry[] memory families,
-            Unit[] memory units,
-            DigestSpec[] memory specs,
-            WorkModel memory work,
-            bytes32 physicalProfile,
-            bytes32 callbackProfile
-        )
-    {
-        return (
-            MANIFEST_HEADER, _families, _units, _specs, _work, PHYSICAL_PROFILE, CALLBACK_PROFILE
-        );
-    }
-
+    /// Read by the ingress on every publication's quote, so it is answered here (no forwarding hop on a write).
     function workModel() external view returns (WorkModel memory) {
         return _work;
     }
 
-    /// @inheritdoc IIndexReads
+    /// Read by the ingress per fresh record of a Type, so it is answered here.
     function digestSpecCount(bytes32 typeId) external view returns (uint256 n) {
         for (uint256 i; i < _specs.length; ++i) {
             if (_specs[i].typeId == typeId) ++n;
         }
     }
 
-    function _familyEntry(bytes32 id) private view returns (bool found, FamilyEntry storage f) {
-        for (uint256 i; i < _families.length; ++i) {
-            if (_families[i].familyId == id) return (true, _families[i]);
-        }
-        return (false, _families[0]);
-    }
-
-    function _coverage(bytes32 id) private view returns (Coverage, uint64, uint64, uint8) {
-        (bool found, FamilyEntry storage f) = _familyEntry(id);
-        (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
-        if (!found || f.fromAdmission == NOT_MAINTAINED) return (Coverage.UNKNOWN, 0, 0, phase);
-        Progress storage p = _gen().progress;
-        (uint64 admissions,,,) = ILedgerHot(LEDGER).counts();
-        uint64 through = p.lastProcessed;
-        bool complete = p.gapped == 0 && through == admissions;
-        return (complete ? Coverage.COMPLETE : Coverage.PARTIAL, 1, through, phase);
-    }
-
-    function coverage(FamilyId family, ScopeKey)
-        external
-        view
-        returns (Coverage, uint64, uint64, uint8)
-    {
-        return _coverage(FamilyId.unwrap(family));
-    }
-
-    function coverageOfType(FamilyId family, TypeId typeId)
-        external
-        view
-        returns (Coverage, uint64, uint64, uint8)
-    {
-        if (
-            ITypeRegistry(ILedgerHot(LEDGER).registry()).typeInfo(TypeId.unwrap(typeId)).mandatory
-                == address(0)
-        ) {
-            (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
-            return (Coverage.UNKNOWN, 0, 0, phase);
-        }
-        return _coverage(FamilyId.unwrap(family));
-    }
-
-    function coverageOfSpec(FamilyId family, TypeId typeId, uint8 specIndex)
-        external
-        view
-        returns (Coverage, uint64, uint64, uint8)
-    {
-        if (specIndex >= _specs.length || _specs[specIndex].typeId != TypeId.unwrap(typeId)) {
-            (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
-            return (Coverage.UNKNOWN, 0, 0, phase);
-        }
-        return _coverage(FamilyId.unwrap(family));
-    }
-
-    function coverageOfDigest(uint8 algorithm)
-        external
-        view
-        returns (Coverage, uint64, uint64, uint8)
-    {
-        for (uint256 i; i < _specs.length; ++i) {
-            if (_specs[i].algorithm == algorithm) return _coverage(F_DIGEST);
-        }
-        (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
-        return (Coverage.UNKNOWN, 0, 0, phase);
-    }
-
-    function provenFrom() external pure returns (uint64) {
-        return 1;
-    }
-
+    /// Also the reads contract's source for coverage and readiness (it asks its caller).
     function progress()
         external
         view
@@ -597,67 +454,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         return (p.lastProcessed, p.lastPublication, p.gapped != 0);
     }
 
-    function postingHeadOf(FamilyId family, TypeId typeId, uint8 ordinal, bytes32 value)
-        external
-        view
-        returns (Coverage c, uint64 count, uint64 live, uint64 last, bool synthesized)
-    {
-        (bool found, FamilyEntry storage f) = _familyEntry(FamilyId.unwrap(family));
-        (c,,,) = _coverage(FamilyId.unwrap(family));
-        if (!found) return (Coverage.UNKNOWN, 0, 0, 0, false);
-        (count, live, last,) =
-            IPostingStore(POSTING).postingHead(_pk(TypeId.unwrap(typeId), f.kind, ordinal, value));
-        if (count == 0 && f.kind == 12) {
-            (, uint64 firstAdmission,, uint64 occurrences,) = ILedgerHot(LEDGER).recordHeader(value);
-            if (firstAdmission != 0) return (c, 1, occurrences, firstAdmission, true);
-        }
-    }
-
-    function postingSliceOf(
-        FamilyId family,
-        TypeId typeId,
-        uint8 ordinal,
-        bytes32 value,
-        uint64 from,
-        uint16 n
-    ) external view returns (Coverage c, uint64[] memory entries, bool synthesized) {
-        (bool found, FamilyEntry storage f) = _familyEntry(FamilyId.unwrap(family));
-        (c,,,) = _coverage(FamilyId.unwrap(family));
-        if (!found) return (Coverage.UNKNOWN, entries, false);
-        PostingKey key = _pk(TypeId.unwrap(typeId), f.kind, ordinal, value);
-        (uint64 count,,,) = IPostingStore(POSTING).postingHead(key);
-        if (count == 0 && f.kind == 12) {
-            (, uint64 firstAdmission,,,) = ILedgerHot(LEDGER).recordHeader(value);
-            if (firstAdmission != 0 && from == 0 && n != 0) {
-                entries = new uint64[](1);
-                entries[0] = firstAdmission;
-                return (c, entries, true);
-            }
-            return (c, entries, firstAdmission != 0);
-        }
-        entries = IPostingStore(POSTING).postingSlice(key, from, n);
-    }
-
-    function occurrencesOf(bytes32 recordId)
-        external
-        view
-        returns (Coverage c, uint64 count, uint64 live, uint64[] memory entries)
-    {
-        (c,,,) = _coverage(F_BY_RECORD);
-        PostingKey key = _pk(0, 12, 0, recordId);
-        (count, live,,) = IPostingStore(POSTING).postingHead(key);
-        if (count == 0) {
-            (, uint64 firstAdmission,, uint64 occurrences,) =
-                ILedgerHot(LEDGER).recordHeader(recordId);
-            if (firstAdmission == 0) return (c, 0, 0, entries);
-            entries = new uint64[](1);
-            entries[0] = firstAdmission;
-            return (c, 1, occurrences, entries);
-        }
-        entries = IPostingStore(POSTING)
-            .postingSlice(key, 0, count > type(uint16).max ? type(uint16).max : uint16(count));
-    }
-
+    /// Read by final hooks during a publication (`FilesFinalValidator`), so it is answered here.
     function ledger() external view returns (address) {
         return LEDGER;
     }
@@ -670,7 +467,32 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         return BITMAP;
     }
 
-    function buildDelegate() external pure returns (address) {
-        return address(0);
+    function readsContract() external view returns (address, bytes32) {
+        return (READS, READS_CODEHASH);
+    }
+
+    /// @inheritdoc IRealmIndex
+    /// @dev Answered by READS (it encodes the unit and family tables), returned unchanged.
+    function replayReadiness() external view returns (Readiness memory) {
+        _forward();
+    }
+
+    /// Forwards the reads this contract does not answer (manifest, coverage, postings) to READS.
+    fallback() external {
+        _forward();
+    }
+
+    /// `STATICCALL`s READS with the calldata unchanged and returns or reverts with its returndata: no state can
+    /// change through it, and an unknown selector reverts in READS. It never returns to Solidity, so it may use
+    /// memory from offset 0.
+    function _forward() private view {
+        address reads = READS;
+        assembly {
+            calldatacopy(0, 0, calldatasize())
+            let ok := staticcall(gas(), reads, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            if iszero(ok) { revert(0, returndatasize()) }
+            return(0, returndatasize())
+        }
     }
 }

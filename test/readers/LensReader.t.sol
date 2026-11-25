@@ -249,8 +249,8 @@ contract LensReviewTest is LensFixture {
         assertEq(lens.facetVersion(), 1);
         (bytes32[] memory cb, bytes32[] memory phys) = lens.supportedProfiles();
         assertEq(cb.length, 1);
-        assertEq(cb[0], RealmIndex(address(g.index)).CALLBACK_PROFILE());
-        assertEq(phys[0], RealmIndex(address(g.index)).PHYSICAL_PROFILE());
+        assertEq(cb[0], g.index.CALLBACK_PROFILE());
+        assertEq(phys[0], g.index.PHYSICAL_PROFILE());
     }
 
     function test_reports_runtime_size() public {
