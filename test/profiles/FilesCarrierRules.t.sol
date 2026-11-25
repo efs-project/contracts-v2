@@ -135,10 +135,11 @@ contract FilesCarrierRulesTest is FilesUnitBase {
         _content(d, _bytesHeader(hex"ff"), 3); // word 0 is the checked reference
     }
 
-    // L test_unsupported_algorithm_carrier_media_rejected (+ version, cipher, bounds, nonce domain)
+    // L test_unsupported_algorithm_carrier_media_rejected (+ version, cipher, bounds, nonce domain); word 6 is the
+    // media length now, refused by its own codes (FilesMediaType.t.sol, test_content_media_word below)
     function test_content_unsupported_domains() public {
-        uint256[7] memory word = [uint256(1), 2, 3, 4, 6, 7, 9];
-        uint8[7] memory bad = [2, 3, 2, 0x11, 3, 2, 0x11];
+        uint256[6] memory word = [uint256(1), 2, 3, 4, 7, 9];
+        uint8[6] memory bad = [2, 3, 2, 0x11, 2, 0x11];
         for (uint256 i; i < word.length; ++i) {
             bytes memory d = _descriptor(hex"ff", 0);
             if (word[i] == 4 || word[i] == 9) {
@@ -155,6 +156,17 @@ contract FilesCarrierRulesTest is FilesUnitBase {
         bytes memory n = _descriptor(hex"ff", 0);
         n[8 * 32 + 12] = 0x01; // a nonce byte past the 12 left-aligned bytes
         _content(n, _bytesHeader(hex"ff"), 4);
+    }
+
+    function test_content_media_word() public {
+        // the retired numeric media word is now a length: 3 with no tail is a body-length refusal
+        bytes memory d = _descriptor(hex"ff", 0);
+        d[6 * 32 + 31] = 0x03;
+        _content(d, _bytesHeader(hex"ff"), 2);
+        _content(bytes.concat(d, "a/b"), _bytesHeader(hex"ff"), 0);
+        _content(bytes.concat(d, "A/b"), _bytesHeader(hex"ff"), 12);
+        d[6 * 32 + 30] = 0x01; // 259
+        _content(bytes.concat(d, new bytes(259)), _bytesHeader(hex"ff"), 11);
     }
 
     // L test_inline_target_length_hash_and_type_rejected (the Type half is the kernel's exact-ref check)

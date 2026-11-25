@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {Web3GatewayHarness} from "../harness/doubles/Web3GatewayHarness.sol";
 import {CodeScan} from "../../src/lib/CodeScan.sol";
+import {EfsWeb3Gateway} from "../../src/periphery/EfsWeb3Gateway.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, Purpose} from "../../src/interfaces/Actions.sol";
@@ -159,12 +160,112 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         assertTrue(has);
     }
 
+    function test_external_location_carries_its_declared_media_type() public {
+        Res memory res = _status(_u(P, "/ext.bin"), 307);
+        _headerEq(res, "x-efs-media-type", string(EXT_MEDIA));
+        (bool has,) = _header(res, "X-Content-Type-Options");
+        assertFalse(has, "nosniff is for a served body, not a redirect");
+        // a location with no media type: no header, the redirect is otherwise the same
+        _external("plain.bin", "");
+        res = _status(_u(P, "/plain.bin"), 307);
+        _headerEq(res, "Location", string(LOCATOR));
+        (has,) = _header(res, "x-efs-media-type");
+        assertFalse(has, "no declared media type");
+        // parameters are carried byte for byte
+        _external("clip.mp4", 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+        _headerEq(
+            _status(_u(P, "/clip.mp4"), 307),
+            "x-efs-media-type",
+            'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+        );
+    }
+
+    /// A one-chunk file (carrier 0) named `name` holding `payload`, with media type `media`.
+    function _declared(string memory name, bytes memory payload, bytes memory media) internal {
+        bytes memory chunk = EfsFiles.bytesBody(payload);
+        _contentFile(
+            name,
+            chunk,
+            EfsFiles.contentBody(
+                Keys.record(t.bytes_, chunk), 0, payload.length, sha256(payload), media
+            )
+        );
+    }
+
+    function test_a_declared_media_type_is_served_with_nosniff() public {
+        _declared("page.bin", "<p>hi</p>", "text/html; charset=utf-8");
+        Res memory res = _status(_u(P, "/page.bin"), 200);
+        assertEq(res.body, "<p>hi</p>");
+        _headerEq(res, "Content-Type", "text/html; charset=utf-8");
+        _headerEq(res, "X-Content-Type-Options", "nosniff");
+        _headerEq(res, "Content-Length", "9");
+        assertEq(res.headers[0].key, "Content-Type", "Content-Type stays the first header");
+        // the declaration beats the extension: an author's text/plain under an .html name stays text
+        _declared("note.html", "<script>x</script>", "text/plain; charset=utf-8");
+        res = _status(_u(P, "/note.html"), 200);
+        _headerEq(res, "Content-Type", "text/plain; charset=utf-8");
+        _headerEq(res, "X-Content-Type-Options", "nosniff");
+        // a declared type on a span tree is sent with every chunk
+        (Action[] memory a, bytes[] memory b, bytes32 descriptor) = EfsFiles.storeContent(
+            t, _payload(20_000, "typed"), CHUNK, "application/x.efs-test+octet"
+        );
+        (Action[] memory fa, bytes[] memory fb,,) = EfsFiles.createFileRef(
+            t, p, rootDir, keccak256("typed.bin"), "typed.bin", descriptor, true
+        );
+        (a, b) = EfsFiles.concat(a, b, fa, fb);
+        _publishAll(address(this), a, b);
+        res = _status(_u(P, "/typed.bin?offset=8160"), 200);
+        _headerEq(res, "Content-Type", "application/x.efs-test+octet");
+        _headerEq(res, "X-Content-Type-Options", "nosniff");
+    }
+
+    function test_an_empty_media_type_falls_back_to_the_extension_without_nosniff() public {
+        _declared("plain.txt", "just text", "");
+        Res memory res = _status(_u(P, "/plain.txt"), 200);
+        _headerEq(res, "Content-Type", "text/plain; charset=utf-8");
+        (bool has,) = _header(res, "X-Content-Type-Options");
+        assertFalse(has, "the extension path is unchanged");
+        res = _status(_u(P, "/big.bin"), 200);
+        _headerEq(res, "Content-Type", "application/octet-stream");
+        (has,) = _header(res, "X-Content-Type-Options");
+        assertFalse(has);
+        // inline (form 0) bytes have no descriptor and so no media type
+        res = _status(_u(P, "/hello.txt"), 200);
+        (has,) = _header(res, "X-Content-Type-Options");
+        assertFalse(has);
+    }
+
+    function test_a_descriptor_whose_length_disagrees_with_its_layout_is_500() public {
+        // The rules make such a record impossible on a real Realm, so a gateway is built with the two
+        // descriptor Types swapped: a files-content/1 record is read as a location, and the reverse.
+        EfsWeb3Gateway.Types memory g = _gt();
+        (g.content, g.external_) = (g.external_, g.content);
+        EfsWeb3Gateway swapped = new EfsWeb3Gateway(
+            address(r.ledger), address(reads), address(views), address(reader), rootDir, g
+        );
+        _declared("typed.txt", "typed", "text/plain");
+        // a content body of 362 bytes: word 6 (the media length, 10) and word 7 (the cipher, 0) as the locator
+        // and media lengths: 256 + 10 + 0 != 362
+        Res memory res = _getFrom(swapped, _u(P, "/typed.txt"));
+        assertEq(res.status, 500);
+        assertEq(res.body, "malformed location");
+        // an external body of 256 + 48 + 24 bytes read as content: shorter than the eleven words
+        res = _getFrom(swapped, _u(P, "/ext.bin"));
+        assertEq(res.status, 500);
+        assertEq(res.body, "revision names no descriptor");
+        // a location of 256 + 48 + 54 bytes read as content: word 6 (48, the locator length) is not 358 - 352
+        _external("long.bin", "application/vnd.efs.test-of-a-long-declared-media-type");
+        res = _getFrom(swapped, _u(P, "/long.bin"));
+        assertEq(res.status, 500);
+        assertEq(res.body, "revision names no descriptor");
+    }
+
     function test_remote_only_content_is_404() public {
         bytes memory sentinel = EfsFiles.bytesBody("");
         _contentFile(
             "remote.bin",
             sentinel,
-            EfsFiles.contentBody(Keys.record(t.bytes_, sentinel), 1, 10, sha256("0123456789"), 0)
+            EfsFiles.contentBody(Keys.record(t.bytes_, sentinel), 1, 10, sha256("0123456789"), "")
         );
         Res memory res = _status(_u(P, "/remote.bin"), 404);
         assertEq(res.body, "not found: remote-only content");
@@ -180,7 +281,7 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
             hashAlg: 1,
             length: 48,
             sha256Digest: sha256(ciphertext),
-            media: 0,
+            media: "",
             cipher: 1,
             nonce12: bytes32(bytes12(0x0102030405060708090a0b0c)),
             plaintextLength: 32,

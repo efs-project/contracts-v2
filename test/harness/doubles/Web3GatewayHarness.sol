@@ -16,7 +16,7 @@ import {Action, Purpose} from "../../../src/interfaces/Actions.sol";
 ///           /notes.txt              edited: root "v1" then child "v2: edited"
 ///           /big.bin                40,000 bytes, 8,160-byte chunks (5 chunks, depth 3), files-content/1 carrier 2
 ///           /deep tree.bin          5,000 bytes, 64-byte chunks (79 chunks, depth 7)
-///           /ext.bin                files-external/1 ar://… (307)
+///           /ext.bin                files-external/1 ar://… (307), media type application/octet-stream
 ///           /gone.txt               removed by p (MASKED); alice binds her own gone.txt
 ///           /docs/sub/              nested folder, /docs/sub/leaf.txt
 ///           /docs/guide.html        inline
@@ -48,6 +48,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
     bytes internal deepPayload;
     bytes32 internal extDescriptor;
     bytes internal constant LOCATOR = "ar://bNbA3TEQVL60xlgCcqdz4ZPHFZ711cZ3hmkpGttDt_U";
+    bytes internal constant EXT_MEDIA = "application/octet-stream";
 
     function _setUpGateway() internal {
         _setUpFiles(keccak256("web3/realm"));
@@ -70,7 +71,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         bigRoot = _store(address(this), rootDir, "big.bin", bigPayload, CHUNK);
         deepPayload = _payload(5_000, "deep");
         _store(address(this), rootDir, "deep tree.bin", deepPayload, 64);
-        _external("ext.bin");
+        _external("ext.bin", EXT_MEDIA);
         _file(address(this), rootDir, "gone.txt", "p's gone", true);
         (a, b) = EfsFiles.remove(rootDir, "gone.txt", 1);
         _exec(a, b);
@@ -123,7 +124,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         uint256 chunk
     ) internal returns (bytes32 root) {
         (Action[] memory a, bytes[] memory b, bytes32 descriptor) =
-            EfsFiles.storeContent(t, payload, chunk, 0);
+            EfsFiles.storeContent(t, payload, chunk, "");
         (,,, root) = _descriptorOf(b[b.length - 1]);
         (Action[] memory fa, bytes[] memory fb,,) = EfsFiles.createFileRef(
             t, _principalOf(author), folder, keccak256(bytes(name)), bytes(name), descriptor, true
@@ -155,19 +156,24 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         return author == address(this) ? p : Keys.principal(author);
     }
 
-    /// A form-1 file naming a `files-external/1` location (with the empty-bytes sentinel it references).
-    function _external(string memory name) internal {
+    /// A form-1 file naming a `files-external/1` location of media type `media` (with the empty-bytes sentinel it
+    /// references; the sentinel is published again, a new occurrence of the same record, when it already exists).
+    function _external(string memory name, bytes memory media)
+        internal
+        returns (bytes32 descriptor)
+    {
         Action[] memory a = new Action[](2);
         bytes[] memory b = new bytes[](2);
         b[0] = EfsFiles.bytesBody("");
         a[0] = EfsFiles.publish(t.bytes_, b[0]);
         b[1] = EfsFiles.externalBody(
-            Keys.record(t.bytes_, b[0]), 1234, sha256("remote bytes"), LOCATOR
+            Keys.record(t.bytes_, b[0]), 1234, sha256("remote bytes"), LOCATOR, media
         );
         a[1] = EfsFiles.publish(t.external_, b[1]);
-        extDescriptor = Keys.record(t.external_, b[1]);
+        descriptor = Keys.record(t.external_, b[1]);
+        if (extDescriptor == 0) extDescriptor = descriptor;
         (Action[] memory fa, bytes[] memory fb,,) = EfsFiles.createFileRef(
-            t, p, rootDir, keccak256(bytes(name)), bytes(name), extDescriptor, true
+            t, p, rootDir, keccak256(bytes(name)), bytes(name), descriptor, true
         );
         (a, b) = EfsFiles.concat(a, b, fa, fb);
         _exec(a, b);

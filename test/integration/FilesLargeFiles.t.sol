@@ -177,7 +177,7 @@ contract FilesLargeFilesTest is FilesRecipesBase {
     ) internal returns (bytes32 file, uint256 publications) {
         EfsFiles.Types memory t = _types();
         (Action[] memory a, bytes[] memory b, bytes32 descriptor) =
-            EfsFiles.storeContent(t, payload, chunk, 0);
+            EfsFiles.storeContent(t, payload, chunk, "");
         (Action[] memory fa, bytes[] memory fb, bytes32 f,) = EfsFiles.createFileRef(
             t, p, rootDir, keccak256(bytes(name)), bytes(name), descriptor, true
         );
@@ -196,13 +196,14 @@ contract FilesLargeFilesTest is FilesRecipesBase {
         (a[0], b[0]) = _publish(T_BYTES, EfsFiles.bytesBody(payload));
         bytes32 bytesRec = _id(T_BYTES, b[0]);
         (a[1], b[1]) =
-            _publish(T_CONTENT, EfsFiles.contentBody(bytesRec, 0, payload.length, digest, 0));
+            _publish(T_CONTENT, EfsFiles.contentBody(bytesRec, 0, payload.length, digest, ""));
         bytes32 inlineRec = _id(T_CONTENT, b[1]);
         (a[2], b[2]) = _publish(T_BYTES, EfsFiles.bytesBody(""));
         bytes32 sentinel = _id(T_BYTES, b[2]);
         bytes memory locator = "ar://AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-        (a[3], b[3]) =
-            _publish(T_EXTERNAL, EfsFiles.externalBody(sentinel, payload.length, digest, locator));
+        (a[3], b[3]) = _publish(
+            T_EXTERNAL, EfsFiles.externalBody(sentinel, payload.length, digest, locator, "")
+        );
         bytes32 externalRec = _id(T_EXTERNAL, b[3]);
         _exec("recipe inline bytes + content + sentinel + external", a, b);
 
@@ -230,7 +231,7 @@ contract FilesLargeFilesTest is FilesRecipesBase {
         // the external locator is retained byte for byte
         (bytes32 t,, uint32 length,,) = r.hot.recordHeader(externalRec);
         assertEq(t, typeIds[T_EXTERNAL]);
-        assertEq(length, 224 + locator.length);
+        assertEq(length, 256 + locator.length);
     }
 
     // ---- a large file end to end -------------------------------------------------------------------------------
@@ -309,7 +310,7 @@ contract FilesLargeFilesTest is FilesRecipesBase {
         EfsFiles.Types memory t = _types();
         bytes memory payload = _payload(20_000, "twice");
         (Action[] memory a, bytes[] memory b, bytes32 descriptor) =
-            EfsFiles.storeContent(t, payload, CHUNK, 0);
+            EfsFiles.storeContent(t, payload, CHUNK, "");
         uint64 r0 = _records();
         _publishAll("store once", a, b);
         assertEq(_records() - r0, 6, "3 chunks, 2 spans, the descriptor");
@@ -391,12 +392,12 @@ contract FilesLargeFilesTest is FilesRecipesBase {
         Action[] memory x = new Action[](1);
         bytes[] memory y = new bytes[](1);
         // carrier 2 with a wrong root length
-        (x[0], y[0]) = _publish(T_CONTENT, EfsFiles.contentBody(root, 2, 101, sha256(payload), 0));
+        (x[0], y[0]) = _publish(T_CONTENT, EfsFiles.contentBody(root, 2, 101, sha256(payload), ""));
         _refused(x, y, abi.encodeWithSelector(E_REJECTED.selector, uint8(0), typeIds[T_CONTENT]));
         // carrier 2 over a chunk, carrier 0 over a span
-        (x[0], y[0]) = _publish(T_CONTENT, EfsFiles.contentBody(c0, 2, 64, sha256(payload), 0));
+        (x[0], y[0]) = _publish(T_CONTENT, EfsFiles.contentBody(c0, 2, 64, sha256(payload), ""));
         _refused(x, y, abi.encodeWithSelector(E_REJECTED.selector, uint8(0), typeIds[T_CONTENT]));
-        (x[0], y[0]) = _publish(T_CONTENT, EfsFiles.contentBody(root, 0, 100, sha256(payload), 0));
+        (x[0], y[0]) = _publish(T_CONTENT, EfsFiles.contentBody(root, 0, 100, sha256(payload), ""));
         _refused(x, y, abi.encodeWithSelector(E_REJECTED.selector, uint8(0), typeIds[T_CONTENT]));
         // a span over the empty sentinel, a span of a wrong length, a span over a third Type, a missing child
         (x[0], y[0]) = _publish(T_BYTES, EfsFiles.bytesBody(""));
@@ -427,7 +428,7 @@ contract FilesLargeFilesTest is FilesRecipesBase {
         Action[] memory ok = new Action[](3);
         bytes[] memory okb = new bytes[](3);
         (ok[0], okb[0]) =
-            _publish(T_CONTENT, EfsFiles.contentBody(root, 2, 100, sha256(payload), 0));
+            _publish(T_CONTENT, EfsFiles.contentBody(root, 2, 100, sha256(payload), ""));
         ok[1] = _create(keccak256("form1"));
         (ok[2], okb[2]) = _publish(T_ROOT, EfsFiles.rootRefBody(file, _id(T_CONTENT, okb[0])));
         _run(ok, okb);
