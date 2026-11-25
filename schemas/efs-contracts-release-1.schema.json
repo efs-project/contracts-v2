@@ -20,7 +20,7 @@
     },
     "profiles": { "type": "object", "required": ["declarationKey", "types", "acceptors", "wrappers", "index", "limits", "layoutId", "hotAbiId", "statusVocabularyId", "storeAbiIds", "indexProfiles", "crossCheck"] },
     "constants": { "type": "object", "required": ["from", "actionKinds", "capabilities", "purposes", "status", "coverage", "files"], "properties": { "purposes": { "type": "object", "required": ["HEAD", "FOLDER", "TAG", "PROPERTY", "SAME", "BROADER"] }, "status": { "type": "object", "required": ["id", "preimage", "codes"] }, "files": { "type": "object", "required": ["form", "contentCarrier", "externalCarrier", "hashAlg", "lengthMax", "chunking"] } } },
-    "gasModel": { "type": "object", "required": ["schema", "path", "sha256", "note", "schedules", "envelope"], "properties": { "schedules": { "type": "object", "required": ["prague"] }, "envelope": { "type": "object", "required": ["txGasCap", "headroomPercent", "limits", "shapes", "prague"] } } },
+    "gasModel": { "type": "object", "required": ["schema", "path", "sha256", "note", "schedules", "planning", "tagLists", "envelope"], "properties": { "schedules": { "type": "object", "required": ["prague"], "properties": { "prague": { "type": "object", "required": ["constants", "floor"] } } }, "planning": { "type": "object", "required": ["rule", "txGasCap", "headroomPercent", "limits"] }, "tagLists": { "type": "object", "required": ["priceAsNew"] }, "envelope": { "type": "object", "required": ["txGasCap", "headroomPercent", "limits", "shapes", "prague"] } } },
     "errors": { "type": "object", "required": ["path", "sha256", "count"] }
   }
 }

@@ -16,6 +16,12 @@
 //
 // and predicts the suite's validation composites (never fitted). Exit 1 when a prague validation error exceeds 15%.
 //
+// The floor (design §10.4). Every measured publication is also run with the index's callbacks answered by
+// `vm.mockCall` ("model <key> kernel frame gas"); the same fit of those rows is `floor.<schedule>.kernel`, the kernel's
+// own execution gas. `floor` also carries the kernel's quote inputs exactly (the work model and the Realm's floor
+// prices from tools/deploy-plan.mjs, the per-Type refs and digest specs the suite logs, the 63/64 rule and the
+// dispatch overhead) and `planning` the rule a planner sizes a publication by (tools/gas-plan.mjs implements it).
+//
 // `--check 1` (`pnpm gas:model:check`, CI) writes nothing: it re-measures, refits and exits 1 when a checked profile's
 // validation error exceeds 15% or when its fitted constants or measured rows differ from the committed gas/model.json
 // (gas is deterministic for identical bytecode, so the comparison is exact). `--skip-amsterdam 1` checks prague only.
@@ -25,7 +31,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
+import { GLAMSTERDAM_FLOOR, LIMITS, WORK_MODEL, parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-amsterdam", "check"]);
 const CHECK = !!o.check && o.check !== "0";
@@ -41,18 +47,25 @@ function run(profile) {
   assert.ok(start >= 0, `forge test (${profile}) printed no JSON (exit ${r.status}): ${r.stderr.slice(-3000)}`);
   const json = JSON.parse(r.stdout.slice(start));
   const rows = {};
+  const types = {};
   for (const result of Object.values(json)) {
     for (const [test, res] of Object.entries(result.test_results)) {
       assert.equal(res.status, "Success", `${profile}: ${test} ${res.status} ${res.reason ?? ""}`);
       for (const line of res.decoded_logs ?? []) {
-        const m = line.match(/^model (.*?) (frame state gas|frame gas|gas): (-?\d+)$/);
+        const t = line.match(/^model type (\S+) (refs|specs): (\d+)$/);
+        if (t) {
+          (types[t[1]] ??= {})[t[2]] = Number(t[3]);
+          continue;
+        }
+        const m = line.match(/^model (.*?) (kernel frame gas|frame state gas|frame gas|gas): (-?\d+)$/);
         if (!m) continue;
         rows[m[1]] ??= { key: m[1], test };
-        rows[m[1]][{ gas: "gas", "frame gas": "frameGas", "frame state gas": "frameStateGas" }[m[2]]] = Number(m[3]);
+        rows[m[1]][{ gas: "gas", "frame gas": "frameGas", "frame state gas": "frameStateGas", "kernel frame gas": "kernelFrameGas" }[m[2]]] = Number(m[3]);
       }
     }
   }
-  return Object.values(rows).sort((a, b) => a.key.localeCompare(b.key));
+  assert.ok(Object.keys(types).length > 0, `${profile}: no "model type" lines (test_model_floor_types)`);
+  return { rows: Object.values(rows).sort((a, b) => a.key.localeCompare(b.key)), types };
 }
 
 const words = (n) => Math.ceil(n / 32);
@@ -90,6 +103,9 @@ const ACTIONS = {
   bindTagSecondAuthor: "bind tag second author",
   bindTagNumberChange: "bind tag number change",
   unbindTagLone: "unbind tag lone",
+  unbindTag: "unbind tag",
+  releaseTag: "release tag",
+  restoreTag: "restore tag",
   withdraw: "withdraw",
 };
 
@@ -183,7 +199,42 @@ const rounded = (c) => ({
   tagLevel: Object.fromEntries(Object.entries(c.tagLevel).map(([k, v]) => [k, round(v)])),
 });
 
-function profile(rows, name) {
+/** The kernel's quote inputs exactly as the Realm of this schedule activates them (design §10.4). */
+const FLOOR_LIMITS = {
+  prague: { floorFreshGas: LIMITS.floorFreshGas, floorRewriteGas: LIMITS.floorRewriteGas, kernelTail: LIMITS.kernelTail },
+  amsterdam: GLAMSTERDAM_FLOOR,
+};
+/** An upper bound on the gas the ingress's dispatchIndex spends before its own 63/64 check (the whole dispatch,
+ *  calldata decode, encoding, CALL and acknowledgement, is 1,947 on both schedules in the -vvvv traces). */
+const DISPATCH_OVERHEAD = 2000;
+
+const FLOOR_FORMULA = [
+  "The kernel's quote (LedgerIngress._foldAndQuote) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new) + Σ over BIND/UNBIND/RELEASE whose author's head at the position is UNSET (freshPerBindFresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + rwPerBind per BIND/UNBIND/RELEASE; freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10);",
+  "prefixFloor P = computeBase + n·computePerAction + binds·computePerHookEffect + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas (binds = the BIND/UNBIND/RELEASE count); finalReserve F = finalComputeBase + binds·finalComputePerBind.",
+  "The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail.",
+  "Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T.",
+  "A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K.",
+].join(" ");
+
+function floorOf(rows, name, types) {
+  const kernel = fit(rows, (r) => {
+    assert.ok(Number.isInteger(r.kernelFrameGas), `${name}: no "model ${r.key} kernel frame gas" measurement`);
+    return r.kernelFrameGas;
+  });
+  return {
+    formula: FLOOR_FORMULA,
+    quantity: "execution gas visible to the GAS opcode (on amsterdam the EIP-8037 state-gas reservoir is not visible and the cap counts execution gas only)",
+    workModel: WORK_MODEL,
+    limits: FLOOR_LIMITS[name],
+    callGasRetained: { numerator: 63, denominator: 64 },
+    dispatchOverhead: DISPATCH_OVERHEAD,
+    types: Object.fromEntries(Object.entries(types).sort(([a], [b]) => a.localeCompare(b))),
+    kernel: rounded(kernel),
+    _kernel: kernel,
+  };
+}
+
+function profile({ rows, types }, name) {
   const amsterdam = name === "amsterdam";
   const total = (r) => r.frameGas + (r.frameStateGas ?? 0);
   const c = fit(rows, total);
@@ -205,6 +256,10 @@ function profile(rows, name) {
       return [n, round(m - (c.publishBase["files-bytes/1"] + c.perWord * words(n) + c.perByte * n))];
     })),
   };
+  const floor = floorOf(rows, name, types);
+  const kernelFit = floor._kernel;
+  delete floor._kernel;
+  out.floor = floor;
   out.rows = rows;
   const by = Object.fromEntries(rows.map((r) => [r.key, r]));
   out.validation = VALIDATION.map((v) => {
@@ -212,7 +267,7 @@ function profile(rows, name) {
     assert.ok(m, `no "model ${v.key}" measurement`);
     const measured = total(m);
     const predicted = round(predict(c, v.actions));
-    const row = { key: v.key, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)) };
+    const row = { key: v.key, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)) };
     if (amsterdam) {
       row.measuredExecutionGas = m.frameGas;
       row.predictedExecutionGas = round(predict(ex, v.actions));
@@ -225,7 +280,22 @@ function profile(rows, name) {
   return out;
 }
 
-const TAG_LEVELS_METHOD = `a first TAG statement (either sign) on an n-word topic = bindTagFresh (no author has stated anything at the position) or bindTagSecondAuthor (the position exists; measured as a first yes, which files one place entry, so it is an upper bound for a first no there) + Σ over its n − 1 proper ancestors of tagLevel.mineNew | mineExisting (the author's scope-below list at that ancestor is empty | not) + (a fresh position, either sign, or a first yes at an existing position: every filing) tagLevel.sharedNew | sharedExisting (the place-below list at that ancestor is empty | not); a list with exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new. Measured: (k2 − k1) / ${LEVEL_SPAN} of a first statement on a 2-word and on a 6-word topic from the same state (rows "tag level all new | all existing": a first tag at a fresh position; "mine new | mine existing": a first no at an existing position, which files nothing below); shared = all − mine`;
+const TAG_LEVELS_METHOD = `a first TAG statement (either sign) on an n-word topic = bindTagFresh (no author has stated anything at the position) or bindTagSecondAuthor (the position exists; measured as a first yes, which files one place entry, so it is an upper bound for a first no there) + Σ over its n − 1 proper ancestors of tagLevel.mineNew | mineExisting (the author's scope-below list at that ancestor is empty | not) + (a fresh position, either sign, or a first yes at an existing position: every filing) tagLevel.sharedNew | sharedExisting (the place-below list at that ancestor is empty | not); a list with exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new (tagLists.priceAsNew). Measured: (k2 − k1) / ${LEVEL_SPAN} of a first statement on a 2-word and on a 6-word topic from the same state (rows "tag level all new | all existing": a first tag at a fresh position; "mine new | mine existing": a first no at an existing position, which files nothing below); shared = all − mine`;
+/** The planning rule (tools/gas-plan.mjs implements it; tools/release.mjs reads txGasCap and headroomPercent from here). */
+const PLANNING = {
+  rule: "A publication is planned when it is inside limits (1 ≤ actions ≤ maxActions, bind-kind actions ≤ maxBindsPerPublication, PUBLISH body bytes ≤ maxBodyBytesPerPublication) and max(E, V) ≤ floor(txGasCap × (100 − headroomPercent) / 100), on the schedule of the chain: E the model's execution estimate (prague: constants; amsterdam: split.executionGas), V the floor's visible-gas requirement (profiles.<schedule>.floor.formula). A shape that does not fit is split into publications before it is signed, never shortened; eth_estimateGas on the exact call stays the authority before sending, and the gas limit comes from the estimate, never from V.",
+  txGasCap: 16777216,
+  txGasCapRule: "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
+  headroomPercent: 15,
+  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error (under 9% on both schedules, maxAbsErrorPercent)",
+  limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication },
+};
+/** Read by the planner with the tagLevel terms (design §10.4). */
+const TAG_LISTS = {
+  priceAsNew: { entries: [1], entriesMultipleOf: 5 },
+  note: "A per-author (scope-below) or shared (place-below) roll-up list holding exactly one entry, or a multiple of five entries (zero included: an empty list), takes a fresh word on its next append, so price that append as new (tagLevel.mineNew or sharedNew); otherwise as existing. The fresh word costs one slot rewrite more than a new list, inside the headroom; not separately measured.",
+};
+
 const prague = profile(run("default"), "prague");
 const amsterdam = o["skip-amsterdam"] ? null : profile(run("amsterdam"), "amsterdam");
 
@@ -244,6 +314,8 @@ const model = {
     keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; WITHDRAW of one occurrence",
     tagLevels: TAG_LEVELS_METHOD,
   },
+  planning: PLANNING,
+  tagLists: TAG_LISTS,
   profiles: { prague, ...(amsterdam ? { amsterdam } : {}) },
   source: { test: SUITE, commit: git("rev-parse", "HEAD"), dirtyFiles: (git("status", "--porcelain") || "").split("\n").filter(Boolean).length, date: new Date().toISOString(), foundry: execFileSync("forge", ["--version"]).toString().split("\n")[0].trim() },
 };
@@ -296,8 +368,9 @@ function check(committed) {
     }
     const c = committed.profiles?.[name];
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
-    for (const k of ["constants", "split", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
+    for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
   }
+  for (const k of ["planning", "tagLists"]) diff(committed[k], fresh[k], k, differences);
   for (const m of bound) console.error(`gas-model --check: ${m}`);
   if (differences.length) {
     const shown = Math.min(8, differences.length);

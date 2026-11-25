@@ -222,10 +222,39 @@ Per registered topic, added at registration (≈ one new list head, priced as ta
   same prepared state; "worst: every tag on its own new path" was measured over 8 paths at depth 64 and 64 paths at
   depth 8, more than any row fits. A 64-word first tag on an all-new path does not fit alone under the all-gas reading
   on amsterdam (17.68M), so that row's capacity is 0.
-- **The floor** *(measured, `test/integration/IndexFloor.t.sol`)*. On amsterdam 64 lone negatives on a one-word topic
-  execute in 15.46M (15.41M before the amendments, 12.55M at step 3a) and need 18.93M of visible execution gas by the
-  floor's sufficient bound (18.88M before), which therefore still certifies 56 per transaction (16.56M); on prague their execution gas alone is over the cap at 64, as at
-  step 3a.
+- **The floor** *(measured, `test/integration/IndexFloor.t.sol`, both profiles)*. With the work model re-measured on
+  the amended lists (design §10.4), 64 lone negatives on a one-word topic execute in 15.46M on amsterdam, the kernel's
+  own share K is 7.34M, the prefix floor 8.32M (1.07× the callbacks' 7.77M) and the final reserve 494k (1.39× the final
+  phase's 355k); the floor's requirement V = max(K + P·(64/63)² + 2k, E) + F·64/63 + 20k is 16.46M, within the 16.60M a
+  2^24 transaction leaves after intrinsic gas and calldata, so all 64 are admitted in one publication. (The step-3b
+  figure, 56, came from a bound that took the callbacks' spend as 60k per bind; K is now measured, by the same
+  publication with the index's callbacks mocked.) On prague their execution gas alone (22.32M) is over the cap.
+  The final phase's worst cases, 64 actions each (prague / amsterdam execution gas, reserve 494k): first masks about
+  64 created subjects 994k / 994k, about 64 records 738k / 738k, first tags on 64 distinct topics 471k / 471k, lone
+  negatives about addresses 355k / 355k: the per-bind reserve is set from the topics row, and a per-bind term large
+  enough for the subjects row would put 64 lone negatives over the cap (design §10.4).
+- **The planning rule** *(measured, `test/integration/FloorPlan.t.sol`; `gas/model.json` `planning`)*: the largest
+  publication the rule plans of each shape, its measured execution gas E and the floor's requirement V (both against
+  the 16.58M-16.75M of visible execution gas the transaction leaves); every one is admitted, on prague also by running
+  it with exactly that gas. "next" is one unit more: refused by the rule for gas (on prague, run anyway, it was still
+  admitted: the rule is conservative) or past the 64-action limit.
+
+  | shape | prague k | E | V | next | amsterdam k | E (execution) | V | next |
+  |---|---:|---:|---:|---|---:|---:|---:|---|
+  | lone negatives, one-word topic | 38 | 13,145,643 | 14,334,338 | gas | 54 | 12,970,264 | 13,891,774 | gas |
+  | first tags, depth 8, everything new | 18 | 11,232,262 | 11,407,894 | gas | 19 | 8,425,173 | 8,608,323 | gas |
+  | first tags, depth 64, everything new | 3 | 10,447,334 | 10,510,204 | gas | 3 | 7,443,234 | 7,506,104 | gas |
+  | first tags, depth 8, everything existing | 22 | 11,364,484 | 11,570,186 | gas | 20 | 8,307,367 | 8,498,034 | gas |
+  | first tags, depth 64, everything existing | 4 | 8,220,552 | 8,290,940 | gas | 3 | 7,354,489 | 7,417,359 | gas |
+  | second author's first tags, depth 8 | 22 | 11,652,528 | 11,858,230 | gas | 20 | 8,311,537 | 8,502,204 | gas |
+  | masks of tags | 64 | 11,158,719 | 11,680,154 | limit | 64 | 11,708,217 | 12,229,652 | limit |
+  | releases of tags | 64 | 11,079,337 | 11,600,772 | limit | 64 | 11,628,835 | 12,150,270 | limit |
+  | restores of tags | 64 | 13,147,742 | 13,669,177 | limit | 64 | 13,507,294 | 14,028,729 | limit |
+  | registration chunk (word pages) | 64 | 13,908,308 | 14,092,263 | limit | 64 | 10,334,848 | 10,429,824 | limit |
+  | create-file recipes (5 actions each) | 10 | 12,910,510 | 14,047,533 | gas | 12 | 10,863,547 | 11,781,879 | limit |
+
+  The model's estimates for deep tags run 15-45% high (the composition prices every roll-up append from the
+  per-level terms with the price-as-new rule), so the rule under-fills those publications rather than over-fills them.
 - **Ordinary file work** (table B): a created file pays a `position-authors` entry (a new list) and, at a fresh
   position, a `place` entry (a new list for an empty home, an existing one in a folder with files): +56k to +62k on
   prague (3.6–4.0%), +232k to +245k all gas on amsterdam (4.2–4.6%); the amendments add about 2k to each (the

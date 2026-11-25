@@ -78,8 +78,10 @@ struct Unit {
 }
 
 /// One index family. kind: the §10.2 kind number (0 reserved); universe: 1 TYPE 2 PRINCIPAL 3 SCOPE 4 TARGET
-/// 5 GLOBAL; shape: 1 APPEND_ORDERED 2 BITMAP. liveSemantics, read by shape — APPEND: 1 RETAINED 2 OCCURRENCE
-/// 3 HEADS; BITMAP: 1 MONOTONE 2 CURRENT_STATE; 0 reserved. fromAdmission NOT_MAINTAINED = 2^64-1.
+/// 5 GLOBAL; shape: 1 APPEND_ORDERED 2 BITMAP. liveSemantics, read by shape — APPEND: 1 RETAINED (never releases;
+/// `live` = `count`) 2 OCCURRENCE (releases on WITHDRAW) 3 HEADS (tracks the entries' current heads) 4 DISTINCT
+/// (`live` is raised only by a counted append and never lowered; `count` is every entry, so `live` ≤ `count`);
+/// BITMAP: 1 MONOTONE 2 CURRENT_STATE; 0 reserved. fromAdmission NOT_MAINTAINED = 2^64-1.
 struct FamilyEntry {
     bytes32 familyId;
     uint8 kind;

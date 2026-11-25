@@ -41,6 +41,14 @@ for byte, and `test/profiles/FilesMediaType.t.sol` asserts every vector against 
 `node tools/media-vectors.mjs` writes it alone from the current build. The Type ids are the release's, so the file
 changes whenever a Files rule's code does.
 
+## gas-plan.mjs
+
+The planning rule of `gas/model.json` (design §10.4; [RELEASE.md](RELEASE.md) "The floor and the planning rule"): a
+reference implementation for the SDK's planner that reads only the model it is given (`planner(model, schedule)`:
+`quote`, `check`, `largest`), and the eleven shapes `test/integration/FloorPlan.t.sol` proves. `pnpm release` writes
+`test/vectors/floor-plan.json` from it (`planVectors`), `pnpm release:check` compares it byte for byte, and
+`tools/test/gas-plan.test.mjs` tests the rule.
+
 ## attrib.mjs
 
 Attributes a compiled contract's runtime bytes to source functions, selector wrappers and overhead, using

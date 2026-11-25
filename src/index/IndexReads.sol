@@ -85,8 +85,9 @@ contract IndexReads {
         _declare("live-scope", 18, 3, SHAPE_BITMAP, 2, bitmap, live);
         // the first-statement lists (design §10.2): the two topic roll-ups only with the topic Types
         uint64 topics = topicTypeId != 0 ? live : off;
-        _declare("place", 6, 3, SHAPE_APPEND, 1, posting, live);
-        _declare("place-below", 7, 3, SHAPE_APPEND, 1, posting, topics);
+        // DISTINCT: live = the distinct positions filed (a later author's first yes is appended uncounted)
+        _declare("place", 6, 3, SHAPE_APPEND, 4, posting, live);
+        _declare("place-below", 7, 3, SHAPE_APPEND, 4, posting, topics);
         _declare("scope-below", 19, 3, SHAPE_APPEND, 1, posting, topics);
         _declare("position-authors", 20, 3, SHAPE_APPEND, 3, posting, live); // HEADS: live = the yes-count
         _declare("role-places", 21, 4, SHAPE_APPEND, 1, posting, live);
