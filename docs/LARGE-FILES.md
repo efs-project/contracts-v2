@@ -38,8 +38,8 @@ constructor state of the rules, like the existing sibling ids.
   acceptor ABI can verify this way (three header words: two child ids and the length). A span's record id commits
   to every chunk under it, and every chunk's sha256 was verified at admission, so a span tree is complete and
   correct by construction.
-- **`files-content/1`** is eleven words and a media tail, `[bytesRef, version, carrier, hashAlg, length, sha256,
-  mediaLength, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] ‖ media`, exactly `352 + mediaLength` bytes
+- **`files-content/1`** is ten words and a media tail, `[bytesRef, version, carrier, hashAlg, length, sha256, cipher,
+  nonce12, plaintextLength, plaintextSHA256OrZero] ‖ media`: 320 bytes, then the media type as the rest of the body
   (see "Media types" below); its one reference is `ANY` and the rule checks the Type by
   carrier: `0` one `files-bytes/1` record (length and sha256 verified, as before); `1` the remote sentinel (as
   before); `2` a `files-span/1` root whose word 2 equals `length`. Lengths are bounded by `2^64 − 1`, not 1 MiB.
@@ -62,9 +62,8 @@ blobs, capability b6, design Q4): a record id is `keccak(type, body)` whatever s
 
 ## External locations (`files-external/1`)
 
-`[bytesRef (the empty sentinel), version = 2, carrier = 2, hashAlg = 1, length, sha256, locatorLength, mediaLength] ‖
-locator ‖ media`: an eight-word head (256 bytes), then the locator, then the media type; the body is exactly
-`256 + locatorLength + mediaLength` bytes. The locator is a URI of 1..2,048 bytes, every byte printable ASCII (0x21..0x7e), starting with an RFC 3986 scheme
+`[bytesRef (the empty sentinel), version = 2, carrier = 2, hashAlg = 1, length, sha256, locatorLength] ‖ locator ‖
+media`: a seven-word head (224 bytes), then the locator, then the media type as the rest of the body. The locator is a URI of 1..2,048 bytes, every byte printable ASCII (0x21..0x7e), starting with an RFC 3986 scheme
 (`ALPHA *(ALPHA / DIGIT / "+" / "-" / ".") ":"`) and at least one byte after the colon. **There is no scheme
 allowlist**: `ar://`, `ipfs://`, `bzz://`, `web3://`, `https://` and schemes that do not exist yet are all
 admitted. A scheme list on an immutable rule is not a security boundary (rendering safety lives in the client),
@@ -75,16 +74,21 @@ type is the same field as `files-content/1`'s, checked by the same function.
 ## Media types
 
 Every content descriptor says what its bytes are: a MIME media type string (RFC 6838 `type/subtype` with optional
-parameters), carried as the descriptor's tail with an explicit length word, the pattern the locator already uses.
+parameters), carried as the rest of the descriptor's body. No word stores its length: the record's length already
+fixes it, and a length word that must equal `body.length − constant` would carry no information, cost a nonzero
+storage word and add a refusal every SDK must mirror.
 
 ```text
-files-content/1   [bytesRef, version, carrier, hashAlg, length, sha256, mediaLength, cipher, nonce12,
-                   plaintextLength, plaintextSHA256OrZero] ‖ media              352 + mediaLength bytes
-files-external/1  [bytesRef, version, carrier, hashAlg, length, sha256, locatorLength, mediaLength]
-                   ‖ locator ‖ media                                             256 + locatorLength + mediaLength bytes
+files-content/1   [bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12,
+                   plaintextLength, plaintextSHA256OrZero] ‖ media     media = body[320:]
+files-external/1  [bytesRef, version, carrier, hashAlg, length, sha256, locatorLength]
+                   ‖ locator ‖ media                                  media = body[224 + locatorLength:]
 ```
 
-- **Absent is unknown.** `mediaLength = 0` means the author did not say; a reader falls back to the name's extension.
+- **The tail is final.** Because the media string is the remainder of the body, nothing can ever be appended after
+  it: any further field for `files-content/1` or `files-external/1` needs a new Type, not an appended trailing field.
+- **Absent is unknown.** An empty tail (a 320-byte content body, a location that ends with its locator) means the
+  author did not say; a reader falls back to the name's extension.
 - **The grammar** (`FilesProfile.mediaTypeRefusal`, shared by both rules): at most 255 bytes of `type "/" subtype
   [";" parameters]`. `type` and `subtype` are RFC 6838 restricted-names in **lowercase only**: 1..127 bytes, the first
   `a-z` or `0-9`, the rest `a-z`, `0-9` or one of `! # $ & - ^ _ . +`. Exactly one `/` comes before the first `;` (or
@@ -98,9 +102,10 @@ files-external/1  [bytesRef, version, carrier, hashAlg, length, sha256, locatorL
 - **The SDK normalizes and refuses before it builds the plan.** It lowercases the type and subtype, and refuses an
   invalid string (with the grammar's reason) when it builds the plan, so a bad media type is never an on-chain
   revert. The chain never normalizes: `Text/HTML` is refused, not lowercased.
-- **Refusal codes.** `files-content/1`: 2 the body is not `352 + mediaLength` bytes, 11 `mediaLength > 255`, 12 the
-  grammar. `files-external/1`: 5 the body is not `256 + locatorLength + mediaLength` bytes, 8 `mediaLength > 255`,
-  9 the grammar. The grammar's own reason (1..6) is returned by `mediaTypeRefusal` for a direct call.
+- **Refusal codes.** `files-content/1`: 2 the body is shorter than 320 bytes, 11 the media tail is longer than 255
+  bytes (a body above 575), 12 the grammar. `files-external/1`: 5 `locatorLength` outside 1..2,048 or the body shorter
+  than `224 + locatorLength`, 8 the media tail is longer than 255 bytes, 9 the grammar. There is no "length does not
+  match" case. The grammar's own reason (1..6) is returned by `mediaTypeRefusal` for a direct call.
 - **Encrypted content** (cipher 1): the media type is public metadata about the plaintext. An author who does not want
   to disclose it leaves it empty.
 - **Vectors.** `test/vectors/media.json` (`efs/vectors/media/1`, generated by `tools/media-vectors.mjs` through `pnpm
@@ -113,20 +118,20 @@ whole file: chunk or location, descriptor, CREATE, revision, name, two binds):
 
 | Media type | Small on-chain file, prague | amsterdam | External file, prague | amsterdam |
 |---|---:|---:|---:|---:|
-| none (empty) | 2,549,075 (+58) | 9,196,805 (+58) | 2,280,105 (+2,952) | 8,297,587 (+2,864) |
-| `image/png` (9 B) | 2,592,731 (+43,714) | 9,416,413 (+219,666) | 2,301,256 (+24,103) | 8,406,746 (+112,023) |
-| `text/html; charset=utf-8` (24 B) | 2,594,296 (+45,279) | 9,417,954 (+221,207) | 2,325,547 (+48,394) | 8,518,945 (+224,222) |
-| the 71-byte Word type | 2,644,227 (+95,210) | 9,643,737 (+446,990) | 2,352,748 (+75,595) | 8,634,066 (+339,343) |
+| none (empty) | 2,546,193 (−2,824) | 9,194,047 (−2,700) | 2,277,302 (+149) | 8,294,860 (+137) |
+| `image/png` (9 B) | 2,569,949 (+20,932) | 9,305,711 (+108,964) | 2,278,530 (+1,377) | 8,296,088 (+1,365) |
+| `text/html; charset=utf-8` (24 B) | 2,571,526 (+22,509) | 9,307,300 (+110,553) | 2,302,820 (+25,667) | 8,408,310 (+113,587) |
+| the 71-byte Word type | 2,621,387 (+72,370) | 9,533,037 (+336,290) | 2,330,045 (+52,892) | 8,523,443 (+228,720) |
 
 In brackets: the change from the same file before media types (small file 2,549,017 / 9,196,747, external file
-2,277,153 / 8,294,723), all measured. Nearly all of it is storage: the length word becomes nonzero (a zero word costs
-almost nothing to store, which is why "none" is free) and the tail takes `ceil` of its bytes in new words. A small
-on-chain descriptor is exactly eleven words, so any media type adds the length word and at least one tail word; the
-external head ends half way through a word for a 48-byte locator, so a 9-byte type fits there.
+2,277,153 / 8,294,723), all measured. It is storage: the tail takes `ceil` of its bytes in new words, and nothing else
+changes. With no media type a content descriptor is one (zero) word shorter than before, hence slightly cheaper. A
+48-byte locator ends half way through a word, so a type of up to 16 bytes shares that word and costs an external
+descriptor almost nothing.
 
 The rules' own validation (the `accept` frame, `test/profiles/FilesMediaType.t.sol`, measured): `files-content/1`
-4,484 gas with no media type, +1,141 for `image/png`, +2,526 for `text/html; charset=utf-8`, +6,473 for the docx type
-and +22,297 for the 255-byte maximum; `files-external/1` (48-byte locator) 3,144, +1,119, +2,504, +6,451 and +22,275.
+4,419 gas with no media type, +1,141 for `image/png`, +2,526 for `text/html; charset=utf-8`, +6,473 for the docx type
+and +22,297 for the 255-byte maximum; `files-external/1` (48-byte locator) 3,155, +1,119, +2,504, +6,451 and +22,275.
 The grammar runs a byte at a time (about 87 gas a byte), far inside the 300,000 acceptor budget.
 
 ## `web3://`
@@ -176,8 +181,8 @@ cannot upgrade an author's `text/plain` to HTML; the extension path is unchanged
 (the whole file), `x-efs-record` (the revision or directory record), `x-efs-sha256` (the descriptor's digest: for a
 span tree and for an external location it is the author's claim, verify after reading), `x-efs-cipher`,
 `x-efs-media-type` (on the 307 of a `files-external/1` location that declares one, so a client that does not follow
-the redirect still learns it), `x-efs-listing: complete|partial`. A descriptor whose length disagrees with its media or
-locator length word is a 500. `request` never
+the redirect still learns it), `x-efs-listing: complete|partial`. A descriptor shorter than its words, or a location
+whose locator length is 0 or runs past the body, is a 500. `request` never
 reverts for anything a URL can cause. A directory lists one page of 64 entries; a longer directory is `partial`.
 
 Measured in the suites (cold storage): an inline file 0.13M gas, an 8,160-byte chunk at tree depth 3 about 1.2M, a

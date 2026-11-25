@@ -305,8 +305,8 @@ const SPECS = [
   { description: "abi.encode(seedSubject); a directory is this record, seeded by a created subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel", dependencyClass: 1, refHeaderWords: 1, fields: [] },
-  { description: "[bytesRef, version, carrier, hashAlg, length, sha256, mediaLength, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, exactly 352 + mediaLength bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
-  { description: "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength, mediaLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
+  { description: "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
+  { description: "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1, the rest of the body", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
   { description: "abi.encode(targetObjectId, kind); kind 1 a files-directory/1 record, 2 a created file subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(bytes32 kind, uint256 revision, bytes note); kind frozen | successor | migration", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(left, right, length); each child a files-bytes/1 record with a nonempty payload or a files-span/1 record; length is the sum of the children payload lengths, below 2^64", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_LEFT, SEMANTIC_SPAN_CHILD, () => REF_ANY], [FIELD_RIGHT, SEMANTIC_SPAN_CHILD, () => REF_ANY]] },
@@ -646,19 +646,19 @@ export function splitPublications(bodies, maxActions, maxBodyBytes) {
   return ends;
 }
 
-/** `files-content/1` (EfsFiles.contentBody, plaintext): the eleven words, word 6 the media length, then the media
- *  bytes (docs/LARGE-FILES.md). `media` is a string, already valid (`mediaTypeRefusal(media) === 0`). */
+/** `files-content/1` (EfsFiles.contentBody, plaintext): the ten words, then the media bytes as the rest of the body
+ *  (docs/LARGE-FILES.md). `media` is a string, already valid (`mediaTypeRefusal(media) === 0`). */
 export function filesContentBody({ bytesRef: ref, carrier, length, sha256: digest, media = "" }) {
   const m = stringToHex(media);
   assert.equal(mediaTypeRefusal(m), 0, `invalid media type ${JSON.stringify(media)}`);
-  return concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256", "uint256", "bytes32", "uint256", "bytes32"], [ref, 1n, BigInt(carrier), 1n, BigInt(length), digest, BigInt(size(m)), 0n, ZERO, BigInt(length), digest]), m]);
+  return concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256", "bytes32", "uint256", "bytes32"], [ref, 1n, BigInt(carrier), 1n, BigInt(length), digest, 0n, ZERO, BigInt(length), digest]), m]);
 }
-/** `files-external/1` (EfsFiles.externalBody): eight words, then the locator, then the media bytes. */
+/** `files-external/1` (EfsFiles.externalBody): seven words, then the locator, then the media bytes (the rest). */
 export function filesExternalBody({ sentinel, length, sha256: digest, locator, media = "" }) {
   const l = stringToHex(locator);
   const m = stringToHex(media);
   assert.equal(mediaTypeRefusal(m), 0, `invalid media type ${JSON.stringify(media)}`);
-  return concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256", "uint256"], [sentinel, 2n, 2n, 1n, BigInt(length), digest, BigInt(size(l)), BigInt(size(m))]), l, m]);
+  return concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256"], [sentinel, 2n, 2n, 1n, BigInt(length), digest, BigInt(size(l))]), l, m]);
 }
 /** The media-type grammar of `FilesProfile.mediaTypeRefusal` (hex in): 0 valid (empty is valid: unknown), else the
  *  first refusal: 1 longer than 255 bytes, 2 a bad type name, 3 no "/" after the type, 4 a bad subtype name, 5 the

@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "f9fc37bd4ebb1777d05d637cf052ba90a86c003c",
-    "tree": "424be4eae144422c2be2337b848d2867b48748e7",
-    "dirty": 29,
+    "commit": "ce81a2f386e398320def8027d0e732574b1e6389",
+    "tree": "dee6d1f3dfd4c228d5da7e7260a91285c851f16b",
+    "dirty": 26,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -111,8 +111,8 @@
     "src/profiles/FilesDirectoryRule.sol": "0xe44144eaf106f5261e57858310e98b18797af64e6de69dfb3051e4e3f02d4f8a",
     "src/profiles/FilesNameRule.sol": "0x9cd9ea1ed3906f4383ccfbe1469cfa3877610e889ea37472fd1f8b482e98d9a5",
     "src/profiles/FilesBytesRule.sol": "0x260eae8f368ba64a97ce9fd6296cd705b6a60da2197ea6c76a41cb6ebbb83758",
-    "src/profiles/FilesContentRule.sol": "0x530fe735382a31c0e0f97e1977bd684da220ff5823214fac39dc7ff60a8f63b4",
-    "src/profiles/FilesExternalContentRule.sol": "0x31e6e5ecc1661b609317c87a42afca40426514796b93528b8034bd99fff115b8",
+    "src/profiles/FilesContentRule.sol": "0x08610c7ce1d388d8ad8788936b7057588fd2a3a93b699c3b2b1b9a6ee5e2070a",
+    "src/profiles/FilesExternalContentRule.sol": "0x37697a6f32be1b95e6d6c9ac198fa248aebc115958769e8f4384a84488d6d1b7",
     "src/profiles/DirectoryAliasRule.sol": "0x1570214f1e21e82565b7ee47b0dee43464274d042ac03f88b3aab152861668a8",
     "src/profiles/RealmNoticeRule.sol": "0x0deaf5e2bacc58d532d2808c3c9d7efa768d23e7404504891a9be9596f99e97c",
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
@@ -122,7 +122,7 @@
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
     "src/periphery/KeysView.sol": "0xdd6cdae729a297ac6859171a801c89b21af429bbf085a89970aac2a1825a48f7",
     "src/interfaces/IWeb3Gateway.sol": "0x7fdbf781f32df3fa09aaa04f6790c3623e01eba96a26ab35388857dcff0f22ce",
-    "src/periphery/EfsWeb3Gateway.sol": "0x9ee24fd58a381abe4485a3068137126e3b4d4b4c8343c81373280b942f1dc79f"
+    "src/periphery/EfsWeb3Gateway.sol": "0x7892d3843e71a77b827fc3246127a1f11c2d2e6d8b20597e9542b1ec4c5b820c"
   },
   "contracts": {
     "LedgerIngress": {
@@ -769,10 +769,10 @@
     "RealmIndex": {
       "source": "src/index/RealmIndex.sol",
       "runtimeHash": "0x2b1ceba1551b02c7a4c57e010ba5679d098a2a89aced18ab85058fa21d53cb07",
-      "deployedBytecodeHash": "0xe2153ffd541d85cfb8deca0e6e1c23c63820b9d855b32a613a956459d58ca3b5",
+      "deployedBytecodeHash": "0xd8b8810ddc98f73e441d51ac5d2a4fe0487275a52ca7edd29ecca3bcd2376328",
       "initcodeHash": "0x30c0d42cd8f4fae1406480365414617effd48912f73e266c22bb815eceb71697",
-      "initcodeWithArgsHash": "0xe9b435e241931dd5208a351f8346c2551f3386c9660e08dfb1e2f056d233a056",
-      "address": "0xA54Dd4BcA477b2C76A70F7f436F33D313E69910c",
+      "initcodeWithArgsHash": "0x11c2c49d53984a16ea09b31df02198184ddfeaf855c6f95512060e9b0c86dd7c",
+      "address": "0x9135B0A1D017D8CbA759a6A6A42Fb2FA0b919566",
       "realmSpecific": true,
       "planStep": "G19",
       "immutables": [
@@ -957,8 +957,8 @@
       "runtimeHash": "0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39",
       "deployedBytecodeHash": "0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39",
       "initcodeHash": "0xb0510dee1f0b2d7954dd5cd83e7a6520302603cb49f1a90c94b74d7f19fc827e",
-      "initcodeWithArgsHash": "0x0cdc7a9c961253c6f7d9951f678bf50fb80ff2874d1d6a62c25ac94641835051",
-      "address": "0xE2f2541E90cCaC39E6E690c29d3291511fEDbF0A",
+      "initcodeWithArgsHash": "0x8d6bca29a33f1f0b62c7b1f721fb4cc43b0c7a199d9e46a82946692b1b89ceef",
+      "address": "0xd65df37B79581dEdC752ECDf3325bD91e54c561E",
       "realmSpecific": false,
       "planStep": "G10.0",
       "immutables": [],
@@ -974,8 +974,8 @@
       "runtimeHash": "0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4",
       "deployedBytecodeHash": "0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4",
       "initcodeHash": "0x41e0916730b1cc0360ad0f034dbdb9e358d66e8bdc2be1504900551572daf57f",
-      "initcodeWithArgsHash": "0x304db814a09aca236eea3fa37d4b322fcdc76775e9ee80947e104c6252b7bf7e",
-      "address": "0xb020d7a5D85e21Db0DbfB62EcA1638E918f2c4E1",
+      "initcodeWithArgsHash": "0x66c1c0ab857c7b4830f6ae070d6ec80017a144b9a90f3c52ea2d7c68b4067c4b",
+      "address": "0x4d670A2Ef8915ccb1347b6BcC01C1efd073fB6A8",
       "realmSpecific": false,
       "planStep": "G10.1",
       "immutables": [],
@@ -1039,35 +1039,35 @@
     },
     "FilesContentRule": {
       "source": "src/profiles/FilesContentRule.sol",
-      "runtimeHash": "0x0dbce2934b92be2838d2be05c682ac37f143be29bbc20edf8c4da56bd766c580",
-      "deployedBytecodeHash": "0x0dbce2934b92be2838d2be05c682ac37f143be29bbc20edf8c4da56bd766c580",
-      "initcodeHash": "0x2a2ee0fe284810b6cadeeab9590884d913c67cf98e091688c5bfb7ab2db76e3c",
-      "initcodeWithArgsHash": "0x3537fa850a757c4a7827b73707554454e3c909bdb5860ccd130562a3ade30dcd",
-      "address": "0x9b79d4d2CB574254e89B733069B5F99C41Fc1732",
+      "runtimeHash": "0x9989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a9",
+      "deployedBytecodeHash": "0x9989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a9",
+      "initcodeHash": "0x12c466f26737f3048c26d78ebbdae32f9a277a22f1523b4fe4c0c3549b637f15",
+      "initcodeWithArgsHash": "0x91ec97584dfdc8ec473e81aa3a3f367c3c1ad79ce8ea24ce59029173fb68baf3",
+      "address": "0x24a5E41C539FB0e1FF5924239fE23D3bF86De11E",
       "realmSpecific": false,
       "planStep": "G10.5",
       "immutables": [],
       "sizes": {
-        "runtime": 1920,
-        "initcode": 2031,
-        "initcodeWithArgs": 2095
+        "runtime": 1877,
+        "initcode": 1988,
+        "initcodeWithArgs": 2052
       },
       "budget": null
     },
     "FilesExternalContentRule": {
       "source": "src/profiles/FilesExternalContentRule.sol",
-      "runtimeHash": "0x9cd5d19c3ef74af4d12a981498b57fb43031c6305b38159a9c9ed888e62f8204",
-      "deployedBytecodeHash": "0x9cd5d19c3ef74af4d12a981498b57fb43031c6305b38159a9c9ed888e62f8204",
-      "initcodeHash": "0x44258a3793dc78b6186d4f107699a4536f07210069c8d73a6ebf8220d18ab435",
-      "initcodeWithArgsHash": "0x44258a3793dc78b6186d4f107699a4536f07210069c8d73a6ebf8220d18ab435",
-      "address": "0xB5CC4340ce0708D214C37e533D17Bb5F1940C2E0",
+      "runtimeHash": "0x637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f55",
+      "deployedBytecodeHash": "0x637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f55",
+      "initcodeHash": "0x6ff14c8608639d5093219549f0787ea7f4fa0ed69877a78610047b839a16786a",
+      "initcodeWithArgsHash": "0x6ff14c8608639d5093219549f0787ea7f4fa0ed69877a78610047b839a16786a",
+      "address": "0x9A0B471E27F1CDC8478E214c301aA6Aa4F189FaF",
       "realmSpecific": false,
       "planStep": "G10.6",
       "immutables": [],
       "sizes": {
-        "runtime": 2390,
-        "initcode": 2416,
-        "initcodeWithArgs": 2416
+        "runtime": 2375,
+        "initcode": 2401,
+        "initcodeWithArgs": 2401
       },
       "budget": null
     },
@@ -1232,10 +1232,10 @@
     "FilesPageReader": {
       "source": "src/readers/FilesPageReader.sol",
       "runtimeHash": "0x5ecccb2925a6051e7c55285dcff26f12d69fcd5f3a74abd69399856935496c8e",
-      "deployedBytecodeHash": "0x9d4abf38a3dc1af80045233e56b0226c6f3d9bb60e9d8ab0985791cefeb9bb32",
+      "deployedBytecodeHash": "0x4b9b9decdce2ab8b49763af783e2c9b5e7da797b06c672acc1b81f41f4bd9dc9",
       "initcodeHash": "0x08c1824f10da0a90b7c34928e42aa372a45aa4076ba32fda9d1b42b5f068957a",
-      "initcodeWithArgsHash": "0x02fd534412285d778cd38335b1fc4007086083890c6f2d700d26915e809bfbfb",
-      "address": "0x42fDaE9748113A199A1579E90D535Eba64e06637",
+      "initcodeWithArgsHash": "0xce467222b434c570218f7985dfee67182e4d4ceee77a66e919c29415c85850be",
+      "address": "0x72Fd6c2b8186f66ea2c8eD60c3dd237F87cF8F6e",
       "realmSpecific": true,
       "planStep": "R2",
       "immutables": [
@@ -1342,11 +1342,11 @@
     },
     "EfsWeb3Gateway": {
       "source": "src/periphery/EfsWeb3Gateway.sol",
-      "runtimeHash": "0x1bcefb12859fee93f52ad5334783486f6444fa03f0f45f10a786e3c1f6c148cb",
-      "deployedBytecodeHash": "0xf526cbaa0467b6adae183a442ff2aecabb9841160eb3ba83d190d21536465525",
-      "initcodeHash": "0xf817c0ac838b9230b793970a2856be984cd378223211cabcc559e97fa816250e",
-      "initcodeWithArgsHash": "0x0bb209d6f26d4018b0a1f17cbd3ec4ef1612f3af4ade9ff64100dcad69e1a806",
-      "address": "0x7D5a48C58D08C36FEffED7B4713FEc2aD389C679",
+      "runtimeHash": "0x191cdb7363c25c926c080a86998fca4d7c73e9a82535f3b2550699d5ec2004b7",
+      "deployedBytecodeHash": "0xa9f104aafad56c73d50e4e24d8c8c8da7cf44d27bf958278412bdc855f72ee15",
+      "initcodeHash": "0x4c03e876dfef09ae96e587d7c7e013362624780e05dfeb4d9b16d34c3e9b862e",
+      "initcodeWithArgsHash": "0x1de9f176fcb4e315fdd94c88d3db84fe05d5c8c026d45471373285920440da22",
+      "address": "0x2aed1e8dC7A962F61737E61568Be0a56DC12883A",
       "realmSpecific": true,
       "planStep": "R5",
       "immutables": [
@@ -1354,58 +1354,58 @@
           "name": "BYTES_TYPE",
           "offsets": [
             876,
-            16390,
-            17369
+            16323,
+            17302
           ]
         },
         {
           "name": "CHILD_TYPE",
           "offsets": [
             678,
-            7506
+            7449
           ]
         },
         {
           "name": "CONTENT_TYPE",
           "offsets": [
             736,
-            13676
+            13620
           ]
         },
         {
           "name": "DIRECTORY_TYPE",
           "offsets": [
             934,
-            4107
+            4106
           ]
         },
         {
           "name": "EXTERNAL_TYPE",
           "offsets": [
             1018,
-            13637
+            13581
           ]
         },
         {
           "name": "LAYOUT",
           "offsets": [
             411,
-            4064
+            4063
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
             1227,
-            3992,
-            6011,
-            6733,
-            11100,
-            11374,
-            11543,
-            13569,
-            16351,
-            17299
+            3991,
+            6010,
+            6732,
+            11062,
+            11336,
+            11505,
+            13513,
+            16284,
+            17232
           ]
         },
         {
@@ -1418,41 +1418,41 @@
           "name": "PAGER",
           "offsets": [
             1074,
-            7821
+            7764
           ]
         },
         {
           "name": "READS",
           "offsets": [
             467,
-            11177,
-            11452,
-            11622,
-            13769,
-            16281,
-            17505
+            11139,
+            11414,
+            11584,
+            13713,
+            16214,
+            17438
           ]
         },
         {
           "name": "ROOT_DIRECTORY",
           "offsets": [
             537,
-            4142
+            4141
           ]
         },
         {
           "name": "ROOT_TYPE",
           "offsets": [
             1297,
-            6794
+            6793
           ]
         },
         {
           "name": "SPAN_TYPE",
           "offsets": [
             315,
-            16317,
-            17408
+            16250,
+            17341
           ]
         },
         {
@@ -1463,9 +1463,9 @@
         }
       ],
       "sizes": {
-        "runtime": 18073,
-        "initcode": 19145,
-        "initcodeWithArgs": 19561
+        "runtime": 18006,
+        "initcode": 19078,
+        "initcodeWithArgs": 19494
       },
       "budget": null
     }
@@ -1475,37 +1475,37 @@
     "types": [
       {
         "type": "files-root/1",
-        "typeId": "0x1a7086eb272286dfb5bc8a1907d2966a43300a27ad350cfe8bdefc8dbeaba66d",
+        "typeId": "0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c",
         "rule": "FilesRootRule",
-        "instance": "0xE2f2541E90cCaC39E6E690c29d3291511fEDbF0A",
+        "instance": "0xd65df37B79581dEdC752ECDf3325bD91e54c561E",
         "ruleCodehash": "0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39",
-        "ruleInitcodeHash": "0x0cdc7a9c961253c6f7d9951f678bf50fb80ff2874d1d6a62c25ac94641835051",
+        "ruleInitcodeHash": "0x8d6bca29a33f1f0b62c7b1f721fb4cc43b0c7a199d9e46a82946692b1b89ceef",
         "refTypes": [],
-        "shape": "0xe0f08ab790ca1959b644493ca7e51690fe75dd10ebc23b1f06256e4bd33eaee6",
-        "descriptor": "0x010003000102010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b409cb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f390cdc7a9c961253c6f7d9951f678bf50fb80ff2874d1d6a62c25ac9464183505100bf010066696c65732d726f6f742f316162692e656e636f64652866696c655375626a6563742c20666f726d29207c7c20726573743b20746865206669727374207265766973696f6e206f66206120637265617465642066696c65207375626a6563743b20666f726d20302072657374206973207468652066696c652062797465732c20666f726d20312072657374206973206f6e6520776f7264206e616d696e6720612066696c65732d636f6e74656e742f31206f722066696c65732d65787465726e616c2f31207265636f7264",
+        "shape": "0xb1b5870cae1114022dc8ac146f7564c5cbf52175957542de3700c0a22878f0c4",
+        "descriptor": "0x010003000102010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b409cb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f398d6bca29a33f1f0b62c7b1f721fb4cc43b0c7a199d9e46a82946692b1b89ceef00bf010066696c65732d726f6f742f316162692e656e636f64652866696c655375626a6563742c20666f726d29207c7c20726573743b20746865206669727374207265766973696f6e206f66206120637265617465642066696c65207375626a6563743b20666f726d20302072657374206973207468652066696c652062797465732c20666f726d20312072657374206973206f6e6520776f7264206e616d696e6720612066696c65732d636f6e74656e742f31206f722066696c65732d65787465726e616c2f31207265636f7264",
         "descriptorBytes": 337,
-        "blob": "0xf9dd92879EFeEB20F66306E0C868935BB54Ede56",
-        "blobCodehash": "0x96f985c5aa0c132505ffb73318d4e45d093c32f01d9d11113db4b14539e33709",
-        "declarationSig": "0x993654bbf589a48b63ae31a533c2915d4bc15e6fb807ceb0289b274f1bce8a173be5e596aa05eaad17bfbc933b9752a8a306e28ba03023ba003340eeeda47aac1c",
+        "blob": "0xdda60c8a1FB8caCCAB7e6AaA525f71928Eeb2aD6",
+        "blobCodehash": "0x84fefc67c8a243e8ca2de0af4d0fbd7ca8b7aa80e349295df11515429b8ebe8a",
+        "declarationSig": "0x336b6053ba31b923eef3dceec5668d9206cbee3f47c20dd334ff0b89ba2f4d7327c96db785ba24c3ae2ec1e4cf2bc65494268decf9abd149ce49ee502a45c25f1b",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
       {
         "type": "files-child/1",
-        "typeId": "0x23db4c94493142e4701fa0308c60bf588fe9403af852abb6b841e43dd594ee27",
+        "typeId": "0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120",
         "rule": "FilesChildRule",
-        "instance": "0xb020d7a5D85e21Db0DbfB62EcA1638E918f2c4E1",
+        "instance": "0x4d670A2Ef8915ccb1347b6BcC01C1efd073fB6A8",
         "ruleCodehash": "0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4",
-        "ruleInitcodeHash": "0x304db814a09aca236eea3fa37d4b322fcdc76775e9ee80947e104c6252b7bf7e",
+        "ruleInitcodeHash": "0x66c1c0ab857c7b4830f6ae070d6ec80017a144b9a90f3c52ea2d7c68b4067c4b",
         "refTypes": [
           "0x0000000000000000000000000000000000000000000000000000000000000000"
         ],
-        "shape": "0x8781be622d841b0639348fc860be628559132b4130c9b2bdf33e6a966c8acf41",
-        "descriptor": "0x010003010102010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b40938d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4304db814a09aca236eea3fa37d4b322fcdc76775e9ee80947e104c6252b7bf7e00d9020066696c65732d6368696c642f316162692e656e636f646528706172656e745265636f72642c2066696c655375626a6563742c20666f726d29207c7c20726573743b20706172656e742069732066696c65732d726f6f742f31206f722066696c65732d6368696c642f31206f66207468652073616d652066696c653b20666f726d20302072657374206973207468652066696c652062797465732c20666f726d20312072657374206973206f6e6520776f7264206e616d696e6720612066696c65732d636f6e74656e742f31206f722066696c65732d65787465726e616c2f31207265636f726441620d22c41e37e97f42ad737c31c8a58265eb6c3919e7e5c6266a5b4fbcc61438d153a13871153e5fbea195e9631d9f021c2e60b4dd0058d024c9a5850c51df01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "shape": "0xf75fc795f75c8c7c48bae84b107cf3930799d758bcfd6521d5ed3a804287b8ed",
+        "descriptor": "0x010003010102010100000000000df39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b40938d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d466c1c0ab857c7b4830f6ae070d6ec80017a144b9a90f3c52ea2d7c68b4067c4b00d9020066696c65732d6368696c642f316162692e656e636f646528706172656e745265636f72642c2066696c655375626a6563742c20666f726d29207c7c20726573743b20706172656e742069732066696c65732d726f6f742f31206f722066696c65732d6368696c642f31206f66207468652073616d652066696c653b20666f726d20302072657374206973207468652066696c652062797465732c20666f726d20312072657374206973206f6e6520776f7264206e616d696e6720612066696c65732d636f6e74656e742f31206f722066696c65732d65787465726e616c2f31207265636f726441620d22c41e37e97f42ad737c31c8a58265eb6c3919e7e5c6266a5b4fbcc61438d153a13871153e5fbea195e9631d9f021c2e60b4dd0058d024c9a5850c51df01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         "descriptorBytes": 528,
-        "blob": "0x76c72f6AAeF47554299f564e92f8E556a080c009",
-        "blobCodehash": "0x6131090d2ab1ecd413877ca2102e66b9502042824e5f7b3ed81a9f44e6c25622",
-        "declarationSig": "0x55783da9c1ebf17dfe423de265175244ee4d4a7781b8d1838ab55d61711128bc5ebad21769d92097205705086a80182db2abc0cf2d63ebe7065e34fe0c2ed07f1c",
+        "blob": "0xDa31169D5f2e09792DBaA7Da7b9491Ffd37c827E",
+        "blobCodehash": "0x78e5b39beab3bbd501cc86d6e0775f05274bd8aa61799fa12f7cbc90f31e7cf0",
+        "declarationSig": "0x92d55ec58d83d4c8b444fb083b32bf235fc47af32f87062f9d2e4118c0d63bd96b5ba2a2887d2e56648142cc07db392e84ce1d6372eb474871f830aa1d8c81b21b",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
@@ -1562,39 +1562,39 @@
       },
       {
         "type": "files-content/1",
-        "typeId": "0xad6a50649598f2d77ae837cf1c46d60002d94fd8b025c96c8073f7a43c0386ca",
+        "typeId": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
         "rule": "FilesContentRule",
-        "instance": "0x9b79d4d2CB574254e89B733069B5F99C41Fc1732",
-        "ruleCodehash": "0x0dbce2934b92be2838d2be05c682ac37f143be29bbc20edf8c4da56bd766c580",
-        "ruleInitcodeHash": "0x3537fa850a757c4a7827b73707554454e3c909bdb5860ccd130562a3ade30dcd",
+        "instance": "0x24a5E41C539FB0e1FF5924239fE23D3bF86De11E",
+        "ruleCodehash": "0x9989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a9",
+        "ruleInitcodeHash": "0x91ec97584dfdc8ec473e81aa3a3f367c3c1ad79ce8ea24ce59029173fb68baf3",
         "refTypes": [
           "0x0000000000000000000000000000000000000000000000000000000000000000"
         ],
-        "shape": "0x96be67c19869303a1d5cbefef4fa18efdd364935354016975a871ec89bb08d13",
-        "descriptor": "0x010003010101010100000000000ff39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b4090dbce2934b92be2838d2be05c682ac37f143be29bbc20edf8c4da56bd766c5803537fa850a757c4a7827b73707554454e3c909bdb5860ccd130562a3ade30dcd0174030066696c65732d636f6e74656e742f315b62797465735265662c2076657273696f6e2c20636172726965722c2068617368416c672c206c656e6774682c207368613235362c206d656469614c656e6774682c206369706865722c206e6f6e636531322c20706c61696e746578744c656e6774682c20706c61696e746578745348413235364f725a65726f5d207c7c206d656469612c2065786163746c7920333532202b206d656469614c656e6774682062797465733b20636172726965722030206f6e652066696c65732d62797465732f31207265636f72642c2031207468652072656d6f74652073656e74696e656c2c203220612066696c65732d7370616e2f3120726f6f743b206c656e677468732062656c6f7720325e36343b206d6564696120656d7074792028756e6b6e6f776e29206f722061206c6f7765726361736520524643203638333820747970652f737562747970652077697468206f7074696f6e616c203b706172616d65746572732c206174206d6f7374203235352062797465739820e15ebf8c46b63e6b8f4eb28ce9b69afc123217b31d0f0396fa45eafa5dda4e5992dc6039fca361a6cef7154cc0e7ff3a3fdc7a37d66536a07c794231300a01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "descriptorBytes": 685,
-        "blob": "0x758BA337b784c36b4dEf68e586005b84AAF5Bb12",
-        "blobCodehash": "0xd578aa611247882c6adbe8362fb379d74b1a5703a754f0d935c7d0fb61d6028c",
-        "declarationSig": "0x53cd7ed71b52cad0e1d9f11099c8be2fac1a931495ef37013c0397c60613a66c527680bca6c38806c13557e70dbb8b9781fae92c506d5d282f53f0e30fd25c781c",
+        "shape": "0x07ef22cc398d615eacdc764281361afa78928cf3a9872487641afe4e96e28ad2",
+        "descriptor": "0x010003010101010100000000000ff39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b4099989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a991ec97584dfdc8ec473e81aa3a3f367c3c1ad79ce8ea24ce59029173fb68baf30181030066696c65732d636f6e74656e742f315b62797465735265662c2076657273696f6e2c20636172726965722c2068617368416c672c206c656e6774682c207368613235362c206369706865722c206e6f6e636531322c20706c61696e746578744c656e6774682c20706c61696e746578745348413235364f725a65726f5d207c7c206d656469612c20746865206d656469612074797065206265696e67207468652072657374206f662074686520626f6479206166746572203332302062797465733b20636172726965722030206f6e652066696c65732d62797465732f31207265636f72642c2031207468652072656d6f74652073656e74696e656c2c203220612066696c65732d7370616e2f3120726f6f743b206c656e677468732062656c6f7720325e36343b206d6564696120656d7074792028756e6b6e6f776e29206f722061206c6f7765726361736520524643203638333820747970652f737562747970652077697468206f7074696f6e616c203b706172616d65746572732c206174206d6f7374203235352062797465739820e15ebf8c46b63e6b8f4eb28ce9b69afc123217b31d0f0396fa45eafa5dda4e5992dc6039fca361a6cef7154cc0e7ff3a3fdc7a37d66536a07c794231300a01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "descriptorBytes": 698,
+        "blob": "0x070d773c51CAd67382E56Dfe36318A18C4986d4e",
+        "blobCodehash": "0xcfa96f4c0bc37ae63a0334e8d1d625e21c44ad020275b60744cf232490b1956e",
+        "declarationSig": "0x43889c62bdedec1aaf5ac5258e899ef8fc64b921bc5aa115a40c4cb2cb876e5828d87c1cec76245bc0702f2ffea78ff4389994dad41cbf1be9234175b77d351e1c",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
       {
         "type": "files-external/1",
-        "typeId": "0xf8b6e6e06104ee62b7c0bde4e3e839690c1a2d16945f2d6270b5326ecf6b4ab4",
+        "typeId": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
         "rule": "FilesExternalContentRule",
-        "instance": "0xB5CC4340ce0708D214C37e533D17Bb5F1940C2E0",
-        "ruleCodehash": "0x9cd5d19c3ef74af4d12a981498b57fb43031c6305b38159a9c9ed888e62f8204",
-        "ruleInitcodeHash": "0x44258a3793dc78b6186d4f107699a4536f07210069c8d73a6ebf8220d18ab435",
+        "instance": "0x9A0B471E27F1CDC8478E214c301aA6Aa4F189FaF",
+        "ruleCodehash": "0x637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f55",
+        "ruleInitcodeHash": "0x6ff14c8608639d5093219549f0787ea7f4fa0ed69877a78610047b839a16786a",
         "refTypes": [
           "0x9e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0"
         ],
-        "shape": "0x22bc08f29f5a20e8a40fcb8a5c85e348f871c8a1e7821f0656f37e6fcd2af3e5",
-        "descriptor": "0x0100030101010101000000000010f39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b4099cd5d19c3ef74af4d12a981498b57fb43031c6305b38159a9c9ed888e62f820444258a3793dc78b6186d4f107699a4536f07210069c8d73a6ebf8220d18ab43500ee010066696c65732d65787465726e616c2f315b6279746573526566202874686520656d7074792073656e74696e656c292c2076657273696f6e20322c206361727269657220322c2068617368416c6720312c206c656e6774682c207368613235362c206c6f6361746f724c656e6774682c206d656469614c656e6774685d207c7c206c6f6361746f72207c7c206d656469613b206120555249206f6620312d32303438207072696e7461626c65204153434949206279746573207769746820616e20524643203339383620736368656d652c206e6f20736368656d6520616c6c6f776c6973743b206d656469612061732066696c65732d636f6e74656e742f319820e15ebf8c46b63e6b8f4eb28ce9b69afc123217b31d0f0396fa45eafa5dda4e5992dc6039fca361a6cef7154cc0e7ff3a3fdc7a37d66536a07c794231300a01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0",
-        "descriptorBytes": 552,
-        "blob": "0xf56Cdf748082A7D7CC5683eD91B402Bca11b9aB3",
-        "blobCodehash": "0x80f2552f1f206c56289e5f70cab89414dd7c4099b595a06112a1dcd4cdd4fabe",
-        "declarationSig": "0x918b76596c71d110ae6283bd0ab3c0c6b6ced477545b34336f8ba9d054e0e4b63208709dcd5270f3f0ef7fe820d4cfa43a9ad2c292122c98486d7b7e1a96c3491b",
+        "shape": "0xb5e14e68adba83a8f358c95f283cdd9264baedd0cc182ac70969207f30af96db",
+        "descriptor": "0x0100030101010101000000000010f39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b409637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f556ff14c8608639d5093219549f0787ea7f4fa0ed69877a78610047b839a16786a00f7010066696c65732d65787465726e616c2f315b6279746573526566202874686520656d7074792073656e74696e656c292c2076657273696f6e20322c206361727269657220322c2068617368416c6720312c206c656e6774682c207368613235362c206c6f6361746f724c656e6774685d207c7c206c6f6361746f72207c7c206d656469613b206120555249206f6620312d32303438207072696e7461626c65204153434949206279746573207769746820616e20524643203339383620736368656d652c206e6f20736368656d6520616c6c6f776c6973743b206d656469612061732066696c65732d636f6e74656e742f312c207468652072657374206f662074686520626f64799820e15ebf8c46b63e6b8f4eb28ce9b69afc123217b31d0f0396fa45eafa5dda4e5992dc6039fca361a6cef7154cc0e7ff3a3fdc7a37d66536a07c794231300a01000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0",
+        "descriptorBytes": 561,
+        "blob": "0xCb899af01083acF59F73165c19b2F83C451cc781",
+        "blobCodehash": "0x1ba8b3bcea3b6d06c2181af0bd11dc2f0b2b7653e55bce3e2b44c729a2dcabd8",
+        "declarationSig": "0xb2fe522df99fdb05774a14612c8d2e8dfbfcfe3fabe40d008de68907116f8f273004b295cdc457944d4bc44ea036efdbb1111a9a079893f3d154f02214d2db131c",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
@@ -1662,7 +1662,7 @@
     "wrappers": [],
     "index": {
       "generation": 1,
-      "manifestHash": "0x8a22386020b8ef645c8dcf1f3a25fe5175d901f730157e8baa4d3bd0b5d12505",
+      "manifestHash": "0xd29ea91006d38e6a4bb788a5b9f7faf5607f0637b95811efbc0ea95818662c38",
       "families": [
         {
           "familyId": "0x6e9951606fbc96e12b5da9d5c55cec8c09a145840b260cb897a2b8f4be21fca4",
@@ -1835,12 +1835,12 @@
       ],
       "digestSpecs": [
         {
-          "typeId": "0xad6a50649598f2d77ae837cf1c46d60002d94fd8b025c96c8073f7a43c0386ca",
+          "typeId": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
           "wordIndex": 5,
           "algorithm": 1
         },
         {
-          "typeId": "0xf8b6e6e06104ee62b7c0bde4e3e839690c1a2d16945f2d6270b5326ecf6b4ab4",
+          "typeId": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
           "wordIndex": 5,
           "algorithm": 1
         }
@@ -1896,18 +1896,18 @@
         "runtimeCodehash": "0x25362877c3c2891354e217064147909ca53d35fd259837c8e098b71dbdb3c66d"
       },
       "filesPage": {
-        "address": "0x42fDaE9748113A199A1579E90D535Eba64e06637",
+        "address": "0x72Fd6c2b8186f66ea2c8eD60c3dd237F87cF8F6e",
         "kind": "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
         "kindLabel": "efs/reader/files-page/1",
-        "runtimeCodehash": "0x9d4abf38a3dc1af80045233e56b0226c6f3d9bb60e9d8ab0985791cefeb9bb32"
+        "runtimeCodehash": "0x4b9b9decdce2ab8b49763af783e2c9b5e7da797b06c672acc1b81f41f4bd9dc9"
       },
       "web3Gateway": {
-        "address": "0x7D5a48C58D08C36FEffED7B4713FEc2aD389C679",
-        "runtimeCodehash": "0xf526cbaa0467b6adae183a442ff2aecabb9841160eb3ba83d190d21536465525",
+        "address": "0x2aed1e8dC7A962F61737E61568Be0a56DC12883A",
+        "runtimeCodehash": "0xa9f104aafad56c73d50e4e24d8c8c8da7cf44d27bf958278412bdc855f72ee15",
         "resolveMode": "5219",
         "rootDirectory": "0xde495817996636283ef72987b0106da2254b949815c75546879defcac169a430",
-        "pager": "0x42fDaE9748113A199A1579E90D535Eba64e06637",
-        "urlBase": "web3://0x7D5a48C58D08C36FEffED7B4713FEc2aD389C679:31337/"
+        "pager": "0x72Fd6c2b8186f66ea2c8eD60c3dd237F87cF8F6e",
+        "urlBase": "web3://0x2aed1e8dC7A962F61737E61568Be0a56DC12883A:31337/"
       },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
@@ -2054,7 +2054,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0xcf4f68307da44134c5a275e5b45cf0071bab0575176646bad19795ba2c813254",
+    "sha256": "0xf33693f9850e620ea5831fd1943763a5002e16181e1f5168be9d6101b6b74cc0",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2069,23 +2069,23 @@
           "perByte": 11.8,
           "publishNew": {
             "files-bytes/1": 174925,
-            "files-span/1": 315095,
-            "files-content/1 carrier 0": 179645,
-            "files-content/1 carrier 2": 199240,
-            "files-external/1": 226509,
+            "files-span/1": 315083,
+            "files-content/1 carrier 0": 199875,
+            "files-content/1 carrier 2": 219482,
+            "files-external/1": 246845,
             "files-directory/1": 179150,
-            "files-name/2": 158899,
-            "files-root/1 form 0": 158617,
-            "files-root/1 form 1": 184710,
+            "files-name/2": 158911,
+            "files-root/1 form 0": 158605,
+            "files-root/1 form 1": 184686,
             "files-child/1 form 0": 245664,
             "files-child/1 form 1": 271822
           },
           "publishExisting": 193324,
           "reuse": 196737,
           "create": 96918,
-          "bindHeadFresh": 329831,
-          "bindHeadRebind": 195112,
-          "bindFolderFreshFile": 367175,
+          "bindHeadFresh": 329855,
+          "bindHeadRebind": 195124,
+          "bindFolderFreshFile": 367163,
           "bindFolderFreshDirectory": 366921,
           "bindFolderRebind": 205284,
           "unbindFolder": 135821,
@@ -2107,54 +2107,54 @@
           "publishNew": {
             "files-bytes/1": 526905,
             "files-span/1": 1019133,
-            "files-content/1 carrier 0": 355539,
-            "files-content/1 carrier 2": 463190,
-            "files-external/1": 599755,
+            "files-content/1 carrier 0": 463825,
+            "files-content/1 carrier 2": 571464,
+            "files-external/1": 708135,
             "files-directory/1": 531130,
             "files-name/2": 349285,
-            "files-root/1 form 0": 422577,
-            "files-root/1 form 1": 536690,
-            "files-child/1 form 0": 773648,
-            "files-child/1 form 1": 887826
+            "files-root/1 form 0": 422553,
+            "files-root/1 form 1": 536666,
+            "files-child/1 form 0": 773672,
+            "files-child/1 form 1": 887862
           },
           "publishExisting": 552370,
           "reuse": 555783,
           "create": 360878,
-          "bindHeadFresh": 1297765,
-          "bindHeadRebind": 583106,
+          "bindHeadFresh": 1297741,
+          "bindHeadRebind": 583082,
           "bindFolderFreshFile": 1422969,
           "bindFolderFreshDirectory": 1422715,
-          "bindFolderRebind": 586030,
+          "bindFolderRebind": 586018,
           "unbindFolder": 333349,
           "releaseFolder": 331571,
           "withdraw": 430225,
           "firstWriteSurcharge": 85487
         },
         "executionGas": {
-          "fixed": 324450,
+          "fixed": 324438,
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
             "files-bytes/1": 135225,
             "files-span/1": 235773,
-            "files-content/1 carrier 0": 159699,
-            "files-content/1 carrier 2": 169430,
-            "files-external/1": 208075,
+            "files-content/1 carrier 0": 170065,
+            "files-content/1 carrier 2": 179784,
+            "files-external/1": 218535,
             "files-directory/1": 139450,
             "files-name/2": 153445,
-            "files-root/1 form 0": 128817,
-            "files-root/1 form 1": 145010,
-            "files-child/1 form 0": 186128,
-            "files-child/1 form 1": 202386
+            "files-root/1 form 0": 128793,
+            "files-root/1 form 1": 144986,
+            "files-child/1 form 0": 186152,
+            "files-child/1 form 1": 202422
           },
           "publishExisting": 160690,
           "reuse": 164103,
           "create": 67118,
-          "bindHeadFresh": 220645,
-          "bindHeadRebind": 191426,
+          "bindHeadFresh": 220621,
+          "bindHeadRebind": 191402,
           "bindFolderFreshFile": 247929,
           "bindFolderFreshDirectory": 247675,
-          "bindFolderRebind": 194350,
+          "bindFolderRebind": 194338,
           "unbindFolder": 137509,
           "releaseFolder": 135731,
           "withdraw": 136465,
@@ -2209,26 +2209,26 @@
         "editSmall": {
           "count": 23,
           "boundBy": "gas",
-          "gasEach": 602192,
-          "gasOfPublication": 14186014
+          "gasEach": 602204,
+          "gasOfPublication": 14186290
         },
         "edit1k": {
           "count": 11,
           "boundBy": "gas",
-          "gasEach": 1249507,
-          "gasOfPublication": 14080180
+          "gasEach": 1249519,
+          "gasOfPublication": 14080312
         },
         "createSmall": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 1272620,
-          "gasOfPublication": 13061801
+          "gasEach": 1272632,
+          "gasOfPublication": 13061921
         },
         "create1k": {
           "count": 7,
           "boundBy": "gas",
-          "gasEach": 1919935,
-          "gasOfPublication": 13775148
+          "gasEach": 1919947,
+          "gasOfPublication": 13775232
         },
         "chunk": {
           "count": 2,
@@ -2239,8 +2239,8 @@
         "spanNode": {
           "count": 36,
           "boundBy": "gas",
-          "gasEach": 384415,
-          "gasOfPublication": 14174536
+          "gasEach": 384403,
+          "gasOfPublication": 14174104
         }
       },
       "amsterdam": {
@@ -2259,14 +2259,14 @@
         "createSmall": {
           "count": 12,
           "boundBy": "maxActions",
-          "gasEach": 4630094,
-          "gasOfPublication": 56487249
+          "gasEach": 4630046,
+          "gasOfPublication": 56486673
         },
         "create1k": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 7739169,
-          "gasOfPublication": 78317813
+          "gasEach": 7739121,
+          "gasOfPublication": 78317333
         },
         "chunk": {
           "count": 2,
@@ -2318,7 +2318,7 @@
   "vectors": {
     "vectors/layout.json": "0x742bda3da5c05ed88f84c993eb5fa4e097f8dcf85e420a76c52d1bf9537bace2",
     "test/vectors/ids.json": "0x7b9ff24f6e29b5c918a0f370f1d7566260ef27b7f388529b96d31a1c4b789675",
-    "test/vectors/media.json": "0x4e74a3089186f2f9884ed0222753c3ccd156ea12033071f86bc5bf81f3d1aa26"
+    "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206"
   },
   "dependencyRoot": null,
   "deployPlan": {

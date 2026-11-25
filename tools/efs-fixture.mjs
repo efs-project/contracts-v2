@@ -854,9 +854,9 @@ export async function verify(o = {}) {
     if (f.contentRecordId) {
       eq(`files ${f.name}.descriptor`, named, f.contentRecordId);
       const [cst, ch, cb] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, f.contentRecordId]);
-      const w = decodeAbiParameters(Array(11).fill({ type: "uint256" }), cb);
+      const w = decodeAbiParameters(Array(10).fill({ type: "uint256" }), cb);
       eq(`files ${f.name}.content`, [cst, ch.typeId, toHex(w[0], { size: 32 }), w[2], w[4], toHex(w[5], { size: 32 })], [2, dep.typeIds["files-content/1"], f.spanRootId, f.spanCount ? 2n : 0n, BigInt(f.length), f.sha256]);
-      eq(`files ${f.name}.media`, [w[6], size(cb), hexToString(`0x${cb.slice(2 + 704)}`)], [BigInt(size(toHex(f.media ?? ""))), 352 + size(toHex(f.media ?? "")), f.media ?? ""]);
+      eq(`files ${f.name}.media`, [size(cb), hexToString(`0x${cb.slice(2 + 640)}`)], [320 + size(toHex(f.media ?? "")), f.media ?? ""]);
       try {
         const t = await readTree(read, pub, plan, f.spanRootId);
         eq(`files ${f.name}.reassembled`, [size(t.bytes), sha256(t.bytes), t.chunks, t.spans], [f.length, f.sha256, f.chunkCount, f.spanCount]);
@@ -865,10 +865,10 @@ export async function verify(o = {}) {
     if (f.externalRecordId) {
       eq(`files ${f.name}.descriptor`, named, f.externalRecordId);
       const [xst, xh, xb] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, f.externalRecordId]);
-      const w = decodeAbiParameters(Array(8).fill({ type: "uint256" }), xb);
-      const locatorEnd = 2 + 512 + 2 * Number(w[6]);
-      eq(`files ${f.name}.external media`, [w[7], hexToString(`0x${xb.slice(locatorEnd)}`)], [BigInt(size(toHex(f.media ?? ""))), f.media ?? ""]);
-      eq(`files ${f.name}.external`, [xst, xh.typeId, toHex(w[0], { size: 32 }), w[1], w[2], w[3], w[4], toHex(w[5], { size: 32 }), hexToString(`0x${xb.slice(2 + 512, locatorEnd)}`)], [2, dep.typeIds["files-external/1"], f.sentinelRecordId, 2n, 2n, 1n, BigInt(f.length), f.sha256, f.locator]);
+      const w = decodeAbiParameters(Array(7).fill({ type: "uint256" }), xb);
+      const locatorEnd = 2 + 448 + 2 * Number(w[6]);
+      eq(`files ${f.name}.external media`, [size(xb) - 224 - Number(w[6]), hexToString(`0x${xb.slice(locatorEnd)}`)], [size(toHex(f.media ?? "")), f.media ?? ""]);
+      eq(`files ${f.name}.external`, [xst, xh.typeId, toHex(w[0], { size: 32 }), w[1], w[2], w[3], w[4], toHex(w[5], { size: 32 }), hexToString(`0x${xb.slice(2 + 448, locatorEnd)}`)], [2, dep.typeIds["files-external/1"], f.sentinelRecordId, 2n, 2n, 1n, BigInt(f.length), f.sha256, f.locator]);
       const [sst, sh, sb] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, f.sentinelRecordId]);
       eq(`files ${f.name}.sentinel`, [sst, sh.typeId, sb], [2, dep.typeIds["files-bytes/1"], sha256("0x")]);
     }

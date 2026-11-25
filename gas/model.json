@@ -21,23 +21,23 @@
         "perByte": 11.8,
         "publishNew": {
           "files-bytes/1": 174925,
-          "files-span/1": 315095,
-          "files-content/1 carrier 0": 179645,
-          "files-content/1 carrier 2": 199240,
-          "files-external/1": 226509,
+          "files-span/1": 315083,
+          "files-content/1 carrier 0": 199875,
+          "files-content/1 carrier 2": 219482,
+          "files-external/1": 246845,
           "files-directory/1": 179150,
-          "files-name/2": 158899,
-          "files-root/1 form 0": 158617,
-          "files-root/1 form 1": 184710,
+          "files-name/2": 158911,
+          "files-root/1 form 0": 158605,
+          "files-root/1 form 1": 184686,
           "files-child/1 form 0": 245664,
           "files-child/1 form 1": 271822
         },
         "publishExisting": 193324,
         "reuse": 196737,
         "create": 96918,
-        "bindHeadFresh": 329831,
-        "bindHeadRebind": 195112,
-        "bindFolderFreshFile": 367175,
+        "bindHeadFresh": 329855,
+        "bindHeadRebind": 195124,
+        "bindFolderFreshFile": 367163,
         "bindFolderFreshDirectory": 366921,
         "bindFolderRebind": 205284,
         "unbindFolder": 135821,
@@ -48,12 +48,12 @@
       "fit": {
         "publishNewBaseBySize": {
           "files-external/1": {
-            "296": 224979,
-            "656": 228040
+            "264": 245334,
+            "624": 248356
           },
           "files-name/2": {
-            "12": 143591,
-            "200": 174206
+            "12": 143603,
+            "200": 174218
           }
         },
         "impliedFixedByPair": {
@@ -63,29 +63,29 @@
           "pub bytes 1024": 339273,
           "pub bytes 4096": 338009,
           "pub bytes 8192": 335603,
-          "pub span": 301725,
-          "pub content c0": 349467,
-          "pub content c2": 349491,
-          "pub external 40": 382339,
-          "pub external 400": 382255,
+          "pub span": 301737,
+          "pub content c0": 349473,
+          "pub content c2": 349485,
+          "pub external 40": 382295,
+          "pub external 400": 382251,
           "pub directory": 339539,
-          "pub name 12": 407951,
-          "pub name 200": 407917,
-          "pub root f0": 339451,
-          "pub root f1": 341504,
+          "pub name 12": 407939,
+          "pub name 200": 407905,
+          "pub root f0": 339475,
+          "pub root f1": 341540,
           "pub child f0": 299666,
           "pub child f1": 301684,
           "pub existing": 321888,
           "reuse": 321910,
-          "create": 267781,
-          "bind head fresh": 301058,
-          "bind head rebind": 305370,
-          "bind folder fresh file": 308098,
+          "create": 267793,
+          "bind head fresh": 301034,
+          "bind head rebind": 305358,
+          "bind folder fresh file": 308110,
           "bind folder fresh dir": 308135,
           "bind folder rebind": 317258,
-          "unbind folder": 310137,
-          "release folder": 314106,
-          "withdraw": 301915
+          "unbind folder": 310149,
+          "release folder": 314118,
+          "withdraw": 301927
         },
         "bytesResiduals": {
           "64": 413,
@@ -118,8 +118,8 @@
         {
           "key": "bind folder fresh file k2",
           "test": "test_model_bind_folder_fresh_file()",
-          "gas": 1046747,
-          "frameGas": 1042448
+          "gas": 1046735,
+          "frameGas": 1042436
         },
         {
           "key": "bind folder rebind k1",
@@ -142,8 +142,8 @@
         {
           "key": "bind head fresh k2",
           "test": "test_model_bind_head_fresh()",
-          "gas": 965019,
-          "frameGas": 960720
+          "gas": 965043,
+          "frameGas": 960744
         },
         {
           "key": "bind head rebind k1",
@@ -154,20 +154,20 @@
         {
           "key": "bind head rebind k2",
           "test": "test_model_bind_head_rebind()",
-          "gas": 699893,
-          "frameGas": 695594
+          "gas": 699905,
+          "frameGas": 695606
         },
         {
           "key": "create k1",
           "test": "test_model_create()",
-          "gas": 368440,
-          "frameGas": 364699
+          "gas": 368452,
+          "frameGas": 364711
         },
         {
           "key": "create k2",
           "test": "test_model_create()",
-          "gas": 465916,
-          "frameGas": 461617
+          "gas": 465928,
+          "frameGas": 461629
         },
         {
           "key": "first write fresh",
@@ -280,26 +280,26 @@
         {
           "key": "pub content c0 k1",
           "test": "test_model_publish_content_carrier0()",
-          "gas": 787096,
-          "frameGas": 783277
+          "gas": 784219,
+          "frameGas": 780407
         },
         {
           "key": "pub content c0 k2",
           "test": "test_model_publish_content_carrier0()",
-          "gas": 1221544,
-          "frameGas": 1217087
+          "gas": 1215783,
+          "frameGas": 1211341
         },
         {
           "key": "pub content c2 k1",
           "test": "test_model_publish_content_carrier2()",
-          "gas": 806717,
-          "frameGas": 802896
+          "gas": 803840,
+          "frameGas": 800026
         },
         {
           "key": "pub content c2 k2",
           "test": "test_model_publish_content_carrier2()",
-          "gas": 1260763,
-          "frameGas": 1256301
+          "gas": 1255013,
+          "frameGas": 1250567
         },
         {
           "key": "pub directory k1",
@@ -328,26 +328,26 @@
         {
           "key": "pub external 40 k1",
           "test": "test_model_publish_external_40()",
-          "gas": 841905,
-          "frameGas": 838094
+          "gas": 839103,
+          "frameGas": 835299
         },
         {
           "key": "pub external 40 k2",
           "test": "test_model_publish_external_40()",
-          "gas": 1298291,
-          "frameGas": 1293849
+          "gas": 1292730,
+          "frameGas": 1288303
         },
         {
           "key": "pub external 400 k1",
           "test": "test_model_publish_external_400()",
-          "gas": 1099223,
-          "frameGas": 1095331
+          "gas": 1096421,
+          "frameGas": 1092537
         },
         {
           "key": "pub external 400 k2",
           "test": "test_model_publish_external_400()",
-          "gas": 1813015,
-          "frameGas": 1808407
+          "gas": 1807416,
+          "frameGas": 1802823
         },
         {
           "key": "pub name 12 k1",
@@ -358,8 +358,8 @@
         {
           "key": "pub name 12 k2",
           "test": "test_model_publish_name_12()",
-          "gas": 745183,
-          "frameGas": 740873
+          "gas": 745195,
+          "frameGas": 740885
         },
         {
           "key": "pub name 200 k1",
@@ -370,14 +370,14 @@
         {
           "key": "pub name 200 k2",
           "test": "test_model_publish_name_200()",
-          "gas": 1083639,
-          "frameGas": 1079247
+          "gas": 1083651,
+          "frameGas": 1079259
         },
         {
           "key": "pub root f0 k1",
           "test": "test_model_publish_root_form0()",
-          "gas": 640158,
-          "frameGas": 636373
+          "gas": 640170,
+          "frameGas": 636385
         },
         {
           "key": "pub root f0 k2",
@@ -388,14 +388,14 @@
         {
           "key": "pub root f1 k1",
           "test": "test_model_publish_root_form1()",
-          "gas": 599290,
-          "frameGas": 595532
+          "gas": 599302,
+          "frameGas": 595544
         },
         {
           "key": "pub root f1 k2",
           "test": "test_model_publish_root_form1()",
-          "gas": 853897,
-          "frameGas": 849560
+          "gas": 853885,
+          "frameGas": 849548
         },
         {
           "key": "pub span k1",
@@ -406,20 +406,20 @@
         {
           "key": "pub span k2",
           "test": "test_model_publish_span()",
-          "gas": 1074888,
-          "frameGas": 1070551
+          "gas": 1074876,
+          "frameGas": 1070539
         },
         {
           "key": "release folder k1",
           "test": "test_model_release_folder()",
-          "gas": 451889,
-          "frameGas": 448149
+          "gas": 451901,
+          "frameGas": 448161
         },
         {
           "key": "release folder k2",
           "test": "test_model_release_folder()",
-          "gas": 586490,
-          "frameGas": 582192
+          "gas": 586502,
+          "frameGas": 582204
         },
         {
           "key": "reuse k1",
@@ -436,26 +436,26 @@
         {
           "key": "unbind folder k1",
           "test": "test_model_unbind_folder()",
-          "gas": 449698,
-          "frameGas": 445958
+          "gas": 449710,
+          "frameGas": 445970
         },
         {
           "key": "unbind folder k2",
           "test": "test_model_unbind_folder()",
-          "gas": 586077,
-          "frameGas": 581779
+          "gas": 586089,
+          "frameGas": 581791
         },
         {
           "key": "validate 40kb last publication",
           "test": "test_model_validate_40kb_last_publication()",
-          "gas": 9182641,
-          "frameGas": 9172673
+          "gas": 9179768,
+          "frameGas": 9169803
         },
         {
           "key": "validate create file",
           "test": "test_model_validate_recipes()",
-          "gas": 1641759,
-          "frameGas": 1635759
+          "gas": 1641771,
+          "frameGas": 1635771
         },
         {
           "key": "validate edit",
@@ -466,8 +466,8 @@
         {
           "key": "validate rename move",
           "test": "test_model_validate_recipes()",
-          "gas": 1076331,
-          "frameGas": 1071454
+          "gas": 1076319,
+          "frameGas": 1071442
         },
         {
           "key": "validate two chunks",
@@ -478,35 +478,35 @@
         {
           "key": "withdraw k1",
           "test": "test_model_withdraw()",
-          "gas": 457519,
-          "frameGas": 453780
+          "gas": 457531,
+          "frameGas": 453792
         },
         {
           "key": "withdraw k2",
           "test": "test_model_withdraw()",
-          "gas": 609942,
-          "frameGas": 605645
+          "gas": 609954,
+          "frameGas": 605657
         }
       ],
       "validation": [
         {
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
-          "measured": 1635759,
-          "predicted": 1539041,
+          "measured": 1635771,
+          "predicted": 1539053,
           "errorPercent": -5.91
         },
         {
           "key": "validate edit",
           "what": "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
           "measured": 849955,
-          "predicted": 868637,
+          "predicted": 868649,
           "errorPercent": 2.2
         },
         {
           "key": "validate rename move",
           "what": "rename + move: PUBLISH name (9 B), UNBIND FOLDER, BIND FOLDER fresh (another folder)",
-          "measured": 1071454,
+          "measured": 1071442,
           "predicted": 1020332,
           "errorPercent": -4.77
         },
@@ -520,8 +520,8 @@
         {
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-          "measured": 9172673,
-          "predicted": 9068717,
+          "measured": 9169803,
+          "predicted": 9065805,
           "errorPercent": -1.13
         }
       ],
@@ -536,24 +536,24 @@
         "publishNew": {
           "files-bytes/1": 526905,
           "files-span/1": 1019133,
-          "files-content/1 carrier 0": 355539,
-          "files-content/1 carrier 2": 463190,
-          "files-external/1": 599755,
+          "files-content/1 carrier 0": 463825,
+          "files-content/1 carrier 2": 571464,
+          "files-external/1": 708135,
           "files-directory/1": 531130,
           "files-name/2": 349285,
-          "files-root/1 form 0": 422577,
-          "files-root/1 form 1": 536690,
-          "files-child/1 form 0": 773648,
-          "files-child/1 form 1": 887826
+          "files-root/1 form 0": 422553,
+          "files-root/1 form 1": 536666,
+          "files-child/1 form 0": 773672,
+          "files-child/1 form 1": 887862
         },
         "publishExisting": 552370,
         "reuse": 555783,
         "create": 360878,
-        "bindHeadFresh": 1297765,
-        "bindHeadRebind": 583106,
+        "bindHeadFresh": 1297741,
+        "bindHeadRebind": 583082,
         "bindFolderFreshFile": 1422969,
         "bindFolderFreshDirectory": 1422715,
-        "bindFolderRebind": 586030,
+        "bindFolderRebind": 586018,
         "unbindFolder": 333349,
         "releaseFolder": 331571,
         "withdraw": 430225,
@@ -561,30 +561,30 @@
       },
       "split": {
         "executionGas": {
-          "fixed": 324450,
+          "fixed": 324438,
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
             "files-bytes/1": 135225,
             "files-span/1": 235773,
-            "files-content/1 carrier 0": 159699,
-            "files-content/1 carrier 2": 169430,
-            "files-external/1": 208075,
+            "files-content/1 carrier 0": 170065,
+            "files-content/1 carrier 2": 179784,
+            "files-external/1": 218535,
             "files-directory/1": 139450,
             "files-name/2": 153445,
-            "files-root/1 form 0": 128817,
-            "files-root/1 form 1": 145010,
-            "files-child/1 form 0": 186128,
-            "files-child/1 form 1": 202386
+            "files-root/1 form 0": 128793,
+            "files-root/1 form 1": 144986,
+            "files-child/1 form 0": 186152,
+            "files-child/1 form 1": 202422
           },
           "publishExisting": 160690,
           "reuse": 164103,
           "create": 67118,
-          "bindHeadFresh": 220645,
-          "bindHeadRebind": 191426,
+          "bindHeadFresh": 220621,
+          "bindHeadRebind": 191402,
           "bindFolderFreshFile": 247929,
           "bindFolderFreshDirectory": 247675,
-          "bindFolderRebind": 194350,
+          "bindFolderRebind": 194338,
           "unbindFolder": 137509,
           "releaseFolder": 135731,
           "withdraw": 136465,
@@ -597,9 +597,9 @@
           "publishNew": {
             "files-bytes/1": 391680,
             "files-span/1": 783360,
-            "files-content/1 carrier 0": 195840,
-            "files-content/1 carrier 2": 293760,
-            "files-external/1": 391680,
+            "files-content/1 carrier 0": 293760,
+            "files-content/1 carrier 2": 391680,
+            "files-external/1": 489600,
             "files-directory/1": 391680,
             "files-name/2": 195840,
             "files-root/1 form 0": 293760,
@@ -625,8 +625,8 @@
       "fit": {
         "publishNewBaseBySize": {
           "files-external/1": {
-            "296": 598237,
-            "656": 601274
+            "264": 706600,
+            "624": 709670
           },
           "files-name/2": {
             "12": 333977,
@@ -641,25 +641,25 @@
           "pub bytes 4096": 928529,
           "pub bytes 8192": 926123,
           "pub span": 716181,
-          "pub content c0": 939999,
-          "pub content c2": 939987,
-          "pub external 40": 1186795,
-          "pub external 400": 1186735,
+          "pub content c0": 939993,
+          "pub content c2": 939993,
+          "pub external 40": 1186787,
+          "pub external 400": 1186683,
           "pub directory": 930059,
           "pub name 12": 1321671,
           "pub name 200": 1321637,
-          "pub root f0": 929971,
-          "pub root f1": 932024,
-          "pub child f0": 714124,
-          "pub child f1": 716130,
+          "pub root f0": 930007,
+          "pub root f1": 932060,
+          "pub child f0": 714088,
+          "pub child f1": 716118,
           "pub existing": 898042,
           "reuse": 898064,
           "create": 814313,
-          "bind head fresh": 774686,
-          "bind head rebind": 852618,
+          "bind head fresh": 774734,
+          "bind head rebind": 852666,
           "bind folder fresh file": 781798,
           "bind folder fresh dir": 781847,
-          "bind folder rebind": 871754,
+          "bind folder rebind": 871778,
           "unbind folder": 864635,
           "release folder": 868604,
           "withdraw": 863213
@@ -705,8 +705,8 @@
         {
           "key": "bind folder rebind k1",
           "test": "test_model_bind_folder_rebind()",
-          "gas": 1461525,
-          "frameGas": 478584,
+          "gas": 1461537,
+          "frameGas": 478596,
           "frameStateGas": 979200
         },
         {
@@ -719,8 +719,8 @@
         {
           "key": "bind head fresh k1",
           "test": "test_model_bind_head_fresh()",
-          "gas": 2076192,
-          "frameGas": 505731,
+          "gas": 2076216,
+          "frameGas": 505755,
           "frameStateGas": 1566720
         },
         {
@@ -733,8 +733,8 @@
         {
           "key": "bind head rebind k1",
           "test": "test_model_bind_head_rebind()",
-          "gas": 1439465,
-          "frameGas": 456524,
+          "gas": 1439489,
+          "frameGas": 456548,
           "frameStateGas": 979200
         },
         {
@@ -859,57 +859,57 @@
         {
           "key": "pub child f0 k1",
           "test": "test_model_publish_child_form0()",
-          "gas": 2268414,
-          "frameGas": 599983,
+          "gas": 2268402,
+          "frameGas": 599971,
           "frameStateGas": 1664640
         },
         {
           "key": "pub child f0 k2",
           "test": "test_model_publish_child_form0()",
-          "gas": 3819523,
-          "frameGas": 877522,
+          "gas": 3819535,
+          "frameGas": 877534,
           "frameStateGas": 2937600
         },
         {
           "key": "pub child f1 k1",
           "test": "test_model_publish_child_form1()",
-          "gas": 2051825,
-          "frameGas": 579260,
+          "gas": 2051849,
+          "frameGas": 579284,
           "frameStateGas": 1468800
         },
         {
           "key": "pub child f1 k2",
           "test": "test_model_publish_child_form1()",
-          "gas": 3384340,
-          "frameGas": 834070,
+          "gas": 3384400,
+          "frameGas": 834130,
           "frameStateGas": 2545920
         },
         {
           "key": "pub content c0 k1",
           "test": "test_model_publish_content_carrier0()",
-          "gas": 2520642,
-          "frameGas": 656343,
+          "gas": 2517889,
+          "frameGas": 653597,
           "frameStateGas": 1860480
         },
         {
           "key": "pub content c0 k2",
           "test": "test_model_publish_content_carrier0()",
-          "gas": 4098104,
-          "frameGas": 960207,
+          "gas": 4092603,
+          "frameGas": 954721,
           "frameStateGas": 3133440
         },
         {
           "key": "pub content c2 k1",
           "test": "test_model_publish_content_carrier2()",
-          "gas": 2628283,
-          "frameGas": 666062,
+          "gas": 2625530,
+          "frameGas": 663316,
           "frameStateGas": 1958400
         },
         {
           "key": "pub content c2 k2",
           "test": "test_model_publish_content_carrier2()",
-          "gas": 4313398,
-          "frameGas": 979657,
+          "gas": 4307885,
+          "frameGas": 974159,
           "frameStateGas": 3329280
         },
         {
@@ -943,29 +943,29 @@
         {
           "key": "pub external 40 k1",
           "test": "test_model_publish_external_40()",
-          "gas": 2898819,
-          "frameGas": 642848,
+          "gas": 2896141,
+          "frameGas": 640177,
           "frameStateGas": 2252160
         },
         {
           "key": "pub external 40 k2",
           "test": "test_model_publish_external_40()",
-          "gas": 4607663,
-          "frameGas": 980181,
+          "gas": 4602314,
+          "frameGas": 974847,
           "frameStateGas": 3623040
         },
         {
           "key": "pub external 400 k1",
           "test": "test_model_publish_external_400()",
-          "gas": 4123257,
-          "frameGas": 790085,
+          "gas": 4120567,
+          "frameGas": 787403,
           "frameStateGas": 3329280
         },
         {
           "key": "pub external 400 k2",
           "test": "test_model_publish_external_400()",
-          "gas": 7056604,
-          "frameGas": 1274715,
+          "gas": 7051276,
+          "frameGas": 1269403,
           "frameStateGas": 5777280
         },
         {
@@ -999,29 +999,29 @@
         {
           "key": "pub root f0 k1",
           "test": "test_model_publish_root_form0()",
-          "gas": 2022158,
-          "frameGas": 549573,
+          "gas": 2022170,
+          "frameGas": 549585,
           "frameStateGas": 1468800
         },
         {
           "key": "pub root f0 k2",
           "test": "test_model_publish_root_form0()",
-          "gas": 3111161,
-          "frameGas": 756695,
+          "gas": 3111149,
+          "frameGas": 756683,
           "frameStateGas": 2350080
         },
         {
           "key": "pub root f1 k1",
           "test": "test_model_publish_root_form1()",
-          "gas": 1805550,
-          "frameGas": 528832,
+          "gas": 1805562,
+          "frameGas": 528844,
           "frameStateGas": 1272960
         },
         {
           "key": "pub root f1 k2",
           "test": "test_model_publish_root_form1()",
-          "gas": 2675897,
-          "frameGas": 713160,
+          "gas": 2675885,
+          "frameGas": 713148,
           "frameStateGas": 1958400
         },
         {
@@ -1083,8 +1083,8 @@
         {
           "key": "validate 40kb last publication",
           "test": "test_model_validate_40kb_last_publication()",
-          "gas": 38887689,
-          "frameGas": 5976601,
+          "gas": 38884916,
+          "frameGas": 5973831,
           "frameStateGas": 32901120
         },
         {
@@ -1097,8 +1097,8 @@
         {
           "key": "validate edit",
           "test": "test_model_validate_recipes()",
-          "gas": 2536791,
-          "frameGas": 769897,
+          "gas": 2536803,
+          "frameGas": 769909,
           "frameStateGas": 1762560
         },
         {
@@ -1135,21 +1135,21 @@
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
           "measured": 5599183,
-          "predicted": 5223275,
+          "predicted": 5223227,
           "errorPercent": -6.71,
           "measuredExecutionGas": 1290703,
-          "predictedExecutionGas": 1194402,
+          "predictedExecutionGas": 1194342,
           "measuredStateGas": 4308480,
           "predictedStateGas": 4014720
         },
         {
           "key": "validate edit",
           "what": "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
-          "measured": 2532457,
+          "measured": 2532469,
           "predicted": 2726815,
           "errorPercent": 7.67,
-          "measuredExecutionGas": 769897,
-          "predictedExecutionGas": 754262,
+          "measuredExecutionGas": 769909,
+          "predictedExecutionGas": 754250,
           "measuredStateGas": 1762560,
           "predictedStateGas": 1958400
         },
@@ -1160,7 +1160,7 @@
           "predicted": 3142480,
           "errorPercent": -6.55,
           "measuredExecutionGas": 914720,
-          "predictedExecutionGas": 876167,
+          "predictedExecutionGas": 876155,
           "measuredStateGas": 2448000,
           "predictedStateGas": 2252160
         },
@@ -1171,18 +1171,18 @@
           "predicted": 58825209,
           "errorPercent": 0,
           "measuredExecutionGas": 7320007,
-          "predictedExecutionGas": 7305136,
+          "predictedExecutionGas": 7305124,
           "measuredStateGas": 51505920,
           "predictedStateGas": 51505920
         },
         {
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-          "measured": 38877721,
-          "predicted": 38604733,
+          "measured": 38874951,
+          "predicted": 38601933,
           "errorPercent": -0.7,
-          "measuredExecutionGas": 5976601,
-          "predictedExecutionGas": 5787380,
+          "measuredExecutionGas": 5973831,
+          "predictedExecutionGas": 5784568,
           "measuredStateGas": 32901120,
           "predictedStateGas": 32803200
         }
@@ -1192,9 +1192,9 @@
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "f9fc37bd4ebb1777d05d637cf052ba90a86c003c",
-    "dirtyFiles": 25,
-    "date": "2026-11-25T06:42:02.723Z",
+    "commit": "ce81a2f386e398320def8027d0e732574b1e6389",
+    "dirtyFiles": 21,
+    "date": "2026-11-25T06:58:07.852Z",
     "foundry": "forge Version: 1.8.3"
   }
 }

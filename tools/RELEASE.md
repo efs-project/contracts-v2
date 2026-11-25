@@ -446,7 +446,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0xa598bcab9852e5e51abe026bad6897e06a4dc51ed18997323ab8bf79c37961b7`.
+  `0x9c4692dc8db33e573d80dc6e90bb1cc50e17cacd6a9355556a69ae7f3c8d53a0`.
 
 ## The planning model (`gas/model.json`)
 
@@ -459,9 +459,10 @@ for intrinsic gas, calldata and the model's error, less the fixed cost) and the 
 shapes: a small and a 1 KB edit, a small and a 1 KB create, an 8 KB chunk and a span node. It is for user-facing
 messages ("this save is too large to be atomic"); a planner uses the constants and confirms with `eth_estimateGas`.
 Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`. Media
-types: the measured content and external rows carry an empty media type, whose length word is a zero word (almost free
-to store), so a body with a nonempty media type costs about one `perWord` more than its byte length predicts (the
-length word becomes nonzero): a planner adds one `perWord` when `mediaLength > 0`.
+types: a descriptor's media type is the tail of its body (no length word), so a planner prices a content or external
+body by its byte length with the ordinary `perWord`/`perByte` terms and no special case (measured on `test/integration/MediaTypeMeasure.t.sol`: for 9-, 24- and 71-byte types on a small on-chain file and an
+external file, the model's predicted change is low by 0.9k-6.4k gas, at most 0.28% of the file on prague and 0.08% on
+amsterdam; the residual is the grammar's own validation, about 87 gas a byte against `perByte` 11.8).
 
 `pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
 rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
