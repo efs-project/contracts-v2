@@ -663,6 +663,13 @@ function headsAt(address ledger, bytes32[] calldata principals, bytes32 position
 function headSnapshots(address ledger, bytes32[] calldata principals, bytes32[] calldata positions) external view returns (bytes32[] memory);   // n·m, position-major; the read-set preflight
 function acceptanceBasis(address ledger, uint64 ordinal) external view returns (Status, AcceptanceBasis memory);
 function historyAt(address ledger, bytes32 bindingKey, uint64 asOf, uint16 maxHops) external view returns (History, Head memory);   // prev-chain walk; UNKNOWN beyond maxHops; the strength is the found row's
+// the first-statement lists' entries (§10.2), batched for the topic readers (§5.13); each ≤ maxReadIds entries, blanket statuses as records()
+function bindingCells(address ledger, uint64[] calldata ordinals) external view returns (Status[] memory, bytes32[] memory positions, Coordinate[] memory cells, BasisCommit memory);
+    // binding ordinal → position → cell; ABSENT_PROVEN for an ordinal that names no binding
+function lensRule(address ledger, bytes32[] calldata principals, uint64[] calldata ordinals, uint8[] calldata authors) external view returns (Status[] memory, bytes32[] memory positions, Coordinate[] memory cells, uint8[] memory decider, uint8[] memory decided, Head[] memory own, BasisCommit memory);
+    // per entry: its cell, the first of principals[0..authors[i]] with a stance (255 none) and that head's state (only the state word of each earlier head is read), the author's own head
+function authorHeads(address ledger, bytes32 position, uint64[] calldata admissions) external view returns (Status[] memory, bytes32[] memory principals, Head[] memory heads, BasisCommit memory);
+    // a position-authors entry (admission ordinal) → its publication's principal → that author's head at position; INVALID for a row of another kind or binding
 ```
 
 `publication()` is keyed by `(principalId, nonce)` because that is the only retained id→ordinal map; `Evidence.publicationId` is recomputed for the caller. `describe()` reads the realm namespace (limits included), the current revision row, the ERC-1967 implementation slot and the counters through one `extsloadBatch`; its `thisFacet`/`thisFacetCodehash` fields describe the facet the caller is talking to; the SDK trusts nothing it says about code until it compares the proxy's implementation slot and `keccak(eth_getCode)` with `release.json`. Every facet checks `ILedgerHot(ledger).layoutId()` against the layouts it was generated for and returns `UNSUPPORTED` otherwise (the facet-layout rule).
@@ -904,6 +911,27 @@ interface IFilesPageReader is IReader {
     function listDirectory(bytes32 folderSubject, bytes32[] calldata principals, Query calldata q, BasisCommit calldata expected, bytes calldata continuation, uint32 limit, uint256 gasReserve)
         external view returns (DirectoryPage memory);
     function lookupName(bytes32 folderSubject, bytes32 nameRole, bytes32[] calldata principals, BasisCommit calldata expected) external view returns (Qualified memory, Row memory);
+}
+struct TopicPageInfo { Qualified q; Coverage listingCoverage; uint8 scanStatus; bool startsAtOrigin; bool completeFromOrigin; bool dedupWithinPageOnly;
+                       uint64 scanned; uint64 rawTotal; uint64 selectedSoFar; uint64 repeatsSkipped; bytes next; }
+    // the page laws above; q.status UNKNOWN (no rows) when a list the view needs has coverage UNKNOWN; dedupWithinPageOnly: repeats removed within this page only
+struct MineRow { bytes32 position; bytes32 topic; bytes32 thing; uint8 targetKind; uint8 decider; bytes32 principalId; int32 number; uint64 revision; uint64 admission; uint64 bindingOrdinal; }
+struct PlaceRow { bytes32 position; bytes32 topic; bytes32 thing; uint64 bindingOrdinal; uint64 statements; uint64 yes; uint16 sampled; uint16 sampleYes; uint16 sampleNo; bool incomplete; }
+struct AuthorRow { bytes32 principalId; uint64 firstAdmission; Status status; int32 number; bytes32 target; uint8 targetKind; uint64 revision; uint64 admission; }
+struct PlaceCount { bytes32 place; uint64 admission; uint64 positionsEver; uint64 positionsEverBelow; uint64 filings; uint64 filingsBelow; }
+interface ITopicPageReader is IReader {   // TopicPageReader/1, kind efs/reader/topic-page/1 (§11)
+    struct PlaceQuery { bytes32 purpose; bytes32 place; bool below; bool raw; uint16 sample; }
+    function mine(bytes32[] calldata lens, bytes32 place, bool below, BasisCommit calldata expected, bytes calldata continuation, uint32 limit, uint256 gasReserve) external view returns (TopicPageInfo memory, MineRow[] memory);
+    function everyone(PlaceQuery calldata query, bytes32[] calldata lens, BasisCommit calldata expected, bytes calldata continuation, uint32 limit, uint256 gasReserve) external view returns (TopicPageInfo memory, PlaceRow[] memory);
+}
+interface ITopicLookupReader is IReader {   // TopicLookupReader/1, kind efs/reader/topic-lookup/1 (§11); pages of at most 64 rows
+    function byName(bytes32 position, BasisCommit calldata expected, bytes calldata continuation, uint16 limit) external view returns (TopicPageInfo memory, AuthorRow[] memory);
+    function about(bytes32 thing, uint16 sample, BasisCommit calldata expected, bytes calldata continuation, uint16 limit) external view returns (TopicPageInfo memory, PlaceRow[] memory);
+    function placeCount(bytes32 purpose, bytes32 place, bool below, BasisCommit calldata expected) external view returns (Qualified memory, Coverage, uint64 positionsEver, uint64 filings);
+    function authorCount(bytes32 position, BasisCommit calldata expected) external view returns (Qualified memory, Coverage, uint64 statements, uint64 yes);
+    function entryCount(bytes32 principalId, bytes32 purpose, bytes32 place, bool below, BasisCommit calldata expected) external view returns (Qualified memory, Coverage, uint64 count, uint64 live);
+    function wordPage(bytes32 wordPage, BasisCommit calldata expected, bytes calldata continuation, uint16 limit) external view returns (TopicPageInfo memory, PlaceCount[] memory);
+    function children(bytes32 topic, BasisCommit calldata expected, bytes calldata continuation, uint16 limit) external view returns (TopicPageInfo memory, PlaceCount[] memory);
 }
 interface IReaderDirectory {   // permissionless, append-only, advisory
     function list(address ledger, bytes32 kind, address reader) external;   // requires real code and IReader(reader).ledger() == ledger; records codehash, layoutId, physicalProfile
@@ -1345,6 +1373,14 @@ Generic core + a constructor-fixed list of codehash-pinned units `{foldHook, fin
 
 `FilesPageReader/1`: candidates from `liveWords` over the scope list (stable order), masks from higher principals via `headsAt`, rows carry only the masked fields (`F_HEADER` fills `headRecord`/`headRevision`/`headerWord0` from the file's HEAD so a subsequent `record()` is one call), name bytes via `bodySlice`, `gasReserve` early stop returning `PARTIAL` + continuation, the `DirectoryPage` flags of §5.13 (`startsAtOrigin`, `completeFromOrigin`, `selectedSoFar`, `inventoryPin`, `scanStatus`), `listingCoverage` = the listing's; a terminal page from a continuation is never `COMPLETE`. Paid multi-transaction completeness is `lib/QueryAccumulator.sol` (owned accumulators; Q14). Every reader is run through the `FaultyReads` port (22 fault modes).
 
+**The topic readers (docs/TAG-DESIGN.md §6; step 4).** Two immutable, stateless readers listed in `ReaderDirectory` (kinds `efs/reader/topic-page/1`, `efs/reader/topic-lookup/1`), `release.json` and `efs-deployment/1`, with the page laws of `FilesPageReader` (principal-id APIs only, the expected `BasisCommit` checked and echoed, continuations bound to the query hash, the basis and the origin, `Qualified` statuses, `scanStatus`, the `gasReserve` stop with a continuation, the listing-coverage law) and one more: a list the view needs with coverage `UNKNOWN` makes the page `UNKNOWN` with no rows, never empty (a Realm whose index keeps no topic roll-ups answers every below view so). They read the lists through the index's reads and the bitmap store, and every ledger fact through `LedgerViews.lensRule`, `bindingCells`, `heads` and `authorHeads` (§5.7); they never read raw slots. A place is a topic or a home; "below" is the place and everything filed under its descendant topics.
+
+- **The lens rule.** For (topic, thing) the first lens author with a stance at the position decides: a number ≥ 0 shows the row with that number, a negative hides it, release and silence fall through, `UNKNOWN` never reads as silence. `TopicPageReader.mine(lens, place, below)` merges, newest first, each lens author's exact scope list (family 10; a clear live bit is never shown) and, below, the author's roll-up (family 19). A candidate of lens author j is decided over lens[0..j] only, in batches of 16 through `lensRule` (the state word of each earlier head, the author's whole head), and a row comes only from the deciding author's own entry, so a (topic, thing) appears once per listing read at one block. A thing filed under two topics is two rows.
+- **The public views.** `TopicPageReader.everyone(place)` pages the place list (family 6, TAG or FOLDER) and, below, the roll-up (family 7), merged newest first. A row exists because a statement exists and is shown when someone says yes now: the position's author head (family 20) gives `statements` (its count) and `yes` (its live count, the authors whose head is BOUND), one read, no scan; a row with `yes == 0` is left out and `raw` returns it. Only a lens author hides a row: when the lens rule decides a negative at the position the entry was filed under or, below, at the same thing in the viewed place; a denial does not travel down to child topics, a denial of a child topic says nothing about the place, and a stranger's statement of either sign never hides anything. `TopicLookupReader.about(thing)` pages `role-places` (family 21: every position about the thing, either sign, so a lone negative is found from its thing) with the same rows and no lens. `sample` > 0 adds the newest authors' stances (how many ≥ 0, how many < 0, `incomplete` when not every author was read) as detail; no scan decides a row.
+- **Repeats.** `place` and `place-below` file a position at its first statement and again at every later author's first yes, so a popular thing recurs: a page keeps the newest occurrence of each position and skips the rest (`repeatsSkipped`), a reader keeps no state between calls, and every page over those lists (and `mine`, where a changed stance can move a row between pages) sets `dedupWithinPageOnly`: the consumer removes repeats across pages by `position`.
+- **Point reads.** `TopicLookupReader.byName(position)` (the authors of one position, TAG or FOLDER: "anyone's `pet.jpg` at this address"), `placeCount` (the place list's `live` = distinct positions ever stated, an "about" count that includes positions nobody says yes to now and is never a row count, and `count` = filings), `authorCount` (statements and yes), `entryCount` (one author's entries), `wordPage` (the root place of a word and every path whose last word it is: family 11 on `topic/1`'s second reference) and `children` (family 11 on the first) cost the same whatever the number of authors, positions or places (measured: 300 authors against 3, 2,000 positions against 3). The readers do not fold words: the SDK re-folds every listed word and skips one that is not its own fold.
+- **Call size.** Providers cap one read call; at a 10M cap (docs/TAG-NUMBERS.md "Reads", both schedules within 0.1%): `mine` ≈ 276k + 18.8k·L + 30k·rows + 6.6k·Σ(j + 1) gas over the rows' deciding lens indices j (worst case every row from the last of L lens authors: 30k + 6.6k·L per row), so page × lens ≤ 900 keeps one call under 10M whatever the order of the lens; `everyone` ≈ 57k + 3.5k·L per row exact and about 16k·L more below; `byName` ≈ 23k per row; a word page ≈ 48k per place. The SDK splits a larger read into calls by these terms, so a big lens never fails as one call too big.
+
 ---
 
 ## 12. Files profile and the first-milestone cut
@@ -1393,7 +1429,7 @@ Purposes `HEAD`, `FOLDER`, `TAG`, `PROPERTY`, `SAME` and `BROADER` are closure c
 | tiny external Solidity consumer | `examples/NativeApp.sol`: registers a NATIVE Type at its deterministic instance, publishes, binds, reads back, reverts its own state on `E_REJECTED` | atomicity both directions; forwarding writer becomes the author; proxy-hosted app; two composing apps |
 | then: AR/IPFS reference | `files-external/1` (§12.1; S1b, inside C2) with its gen-1 `DigestSpec` | 1 call per descriptor read; `coverageOfDigest(sha256)` `COMPLETE`; `occurrencesOf`/digest lookup finds the file by sha256 whether its bytes are inline (`files-content/1`) or external |
 | two-author Lens fallback | `LensReader` ordered principals | `headsAt` 64 principals in one call |
-| tags | the topic Types, the tag subject law, homes, the text Type and the three statement purposes (§12.5; docs/TAG-DESIGN.md §12 step 2); the tag lists, their readers and the gateway's home start are later steps of that order | `TopicMeasure.t.sol` rows on both schedules; `test/vectors/topics.json` |
+| tags | the topic Types, the tag subject law, homes, the text Type and the three statement purposes (§12.5; docs/TAG-DESIGN.md §12 step 2); the first-statement lists (step 3b, §10.2); the topic readers and the gateway's home start (step 4, §5.13, §11) | `TopicMeasure.t.sol` rows on both schedules; `test/vectors/topics.json` |
 | populated upgrade (behavior 5) | the C2 subset of §16.4 | seed the Files fixture; activate a new `LedgerCore` with a new ingress/apply pin; the `StateDigest` outside the migration scope is unchanged; directory and file reads are identical through both readers before and after; a bound stale plan is refused with its nonce intact; a new write lands; the pre-upgrade publication retried → `AlreadyAdmitted` |
 | large directory | `FilesPageReader.listDirectory` over a 1,000-entry filtered folder | pages, calls, gas per page and returndata bytes recorded as a regression bound (the prototype needed 199 calls); cold versus warm |
 | root and home | the seed root (§12.2), `efs-deployment/1.root`, `defaultLensPrincipals` | a cold client lists the root `COMPLETE` from the manifest alone, with no prompt |
@@ -1401,7 +1437,7 @@ Purposes `HEAD`, `FOLDER`, `TAG`, `PROPERTY`, `SAME` and `BROADER` are closure c
 
 ### 12.4 Deferred from M1 and why
 
-Signed lanes and guards (S2); ERC-1271 (S2b); the tag lists, tag readers and a `web3://` home start (docs/TAG-DESIGN.md §12 steps 3–4; the Types, laws and purposes are §12.5); `PlanV1` tiers; stateful rules (b4); import (S4); codec-2 specs; `ROSTER` writes; `BodyStore`; stage-then-commit (b9); substring search; the lease library and the six-command fixture CLI. AR/IPFS references are **not** deferred: `files-external/1` is an S1b Type.
+Signed lanes and guards (S2); ERC-1271 (S2b); `PlanV1` tiers; stateful rules (b4); import (S4); codec-2 specs; `ROSTER` writes; `BodyStore`; stage-then-commit (b9); substring search; the lease library and the six-command fixture CLI. AR/IPFS references are **not** deferred: `files-external/1` is an S1b Type.
 
 ### 12.5 Topics, homes and statements about things (docs/TAG-DESIGN.md §1–§3, §8)
 
@@ -1471,12 +1507,18 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
   `place-below`, one entry per proper ancestor of the topic); their per-level gas terms and how to compose them are in
   §10.4 and `gas/model.json`, and the measured costs in `docs/TAG-NUMBERS.md`. The index keeps the topic roll-ups only
   beside this validator (built for the same two topic Types), so it never has to check that a topic was registered.
+- **Reading (step 4).** The topic readers, the denial rule, repeats and call sizes are §11; their interfaces §5.13; the
+  gateway's `/~home/0x<40 hex>/…` start is docs/LARGE-FILES.md "`web3://`".
 - **Adoption.** A Realm deployed before this release has no Topics Types and a validator that judges neither HEAD nor
   TAG subjects: tags written there on arbitrary subjects stay readable by position but are not topics, and a bad HEAD
   already on chain is still reported `INVALID` by the readers. Moving to these laws is a new generation with this
   validator (§10.6) or a new Realm; nothing already admitted is rejudged. Writers adopt by registering pages and paths
   before their first statement (the SDK plans this from the words) and by keying tags (topic, thing), never (thing,
-  topic), which is now refused.
+  topic), which is now refused. The topic readers serve such a Realm as far as its index goes: exact views and point
+  reads work on any generation-1 index; a below view, a roll-up count and a word page or children list (their below
+  counts) answer `UNKNOWN` where the index keeps no topic roll-ups; a reader reports `UNSUPPORTED` on another index
+  profile or ledger layout. A Realm built on step 3b before its amendments (place lists of fresh positions only,
+  `position-authors` without the yes-count) is not served correctly by `everyone`: it needs the amended index.
 
 ---
 
