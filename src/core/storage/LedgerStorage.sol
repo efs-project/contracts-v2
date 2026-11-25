@@ -146,9 +146,10 @@ abstract contract LedgerStorage {
         uint48 bindingOrdinal;
         uint48 expectedRevision;
         uint48 prevAdmission;
-        // PUBLISH/REUSE rows: 0 or 1. SPIKE (T-4 number): BIND/UNBIND/RELEASE rows carry the action's strength
-        // (its `salt`, 0..255) here; the byte is otherwise dead in bind rows (WITHDRAW refuses them, E_WITHDRAW 1)
-        uint8 withdrawn;
+        uint8 withdrawn; // 0 or 1 (PUBLISH/REUSE rows)
+        // PUBLISH/REUSE rows: the policy row. SPIKE (T-4 number, 16 bits): BIND/UNBIND/RELEASE rows carry the action's
+        // strength (its `salt`, 0..65535; RELEASE 0) here: the kernel passes policyRow 0 for every bind kind, so the
+        // field is dead in bind rows
         uint16 policyRow;
         uint16 roleRow;
         uint8 targetKind; // BIND rows: 1 RECORD 2 SUBJECT 3 ADDRESS (SPIKE), so the decoder rebuilds oldTarget without shadow heads
@@ -233,10 +234,12 @@ abstract contract LedgerStorage {
         uint8 targetKind; // 0 NONE 1 RECORD 2 SUBJECT 3 ADDRESS (SPIKE, tags/topics Part C)
         uint48 prevAdmission;
         uint48 bindingOrdinal;
-        uint40 notAfter; // reserved zero; the "stale not dead" seam
-        // SPIKE (T-4 number): the head's strength (0..255; RELEASE writes 0); number = strength when BOUND,
-        // -1 - strength when MASKED, none otherwise
-        uint8 strength;
+        // reserved zero; the "stale not dead" seam. SPIKE (T-4 number, 16 bits): narrowed from u40 to u32 (still
+        // 136 years of unix seconds, or 2^32 blocks) to give the strength 16 bits
+        uint32 notAfter;
+        // SPIKE (T-4 number): the head's strength (0..65535; RELEASE writes 0); number = strength when BOUND,
+        // -1 - strength when MASKED (-1..-65536), none otherwise
+        uint16 strength;
         bytes32 target;
     }
 

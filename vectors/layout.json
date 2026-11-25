@@ -822,15 +822,15 @@
                 "name": "notAfter",
                 "slot": 0,
                 "offset": 26,
-                "bytes": 5,
-                "type": "uint40"
+                "bytes": 4,
+                "type": "uint32"
               },
               {
                 "name": "strength",
                 "slot": 0,
-                "offset": 31,
-                "bytes": 1,
-                "type": "uint8"
+                "offset": 30,
+                "bytes": 2,
+                "type": "uint16"
               },
               {
                 "name": "target",
@@ -2200,5 +2200,5 @@
       ]
     }
   },
-  "layoutId": "0x6f2ac9d428a4ba7f938ff277edcba2f8f316fbba440184112a48728a74ce1288"
+  "layoutId": "0x3a753c5347f9beb3f92e4fc1d9134215df6e2a63c29dc6f19ed31feadf484157"
 }

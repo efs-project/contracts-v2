@@ -9,7 +9,7 @@ pragma solidity 0.8.37;
 // forge-lint: disable-start(unsafe-typecast)
 library Layout {
     bytes32 internal constant LAYOUT_ID =
-        0x6f2ac9d428a4ba7f938ff277edcba2f8f316fbba440184112a48728a74ce1288;
+        0x3a753c5347f9beb3f92e4fc1d9134215df6e2a63c29dc6f19ed31feadf484157;
 
     // ---- efs.ledger.realm — RealmStorage, 18 slot(s)
     bytes32 internal constant LEDGER_REALM_ROOT =
@@ -416,7 +416,7 @@ library Layout {
         s = uint256(keccak256(abi.encode(k0, s)));
     }
 
-    // slot +0 of HeadRow: state at bit 0 | revision at bit 8 | admission at bit 56 | targetKind at bit 104 | prevAdmission at bit 112 | bindingOrdinal at bit 160 | notAfter at bit 208 | strength at bit 248
+    // slot +0 of HeadRow: state at bit 0 | revision at bit 8 | admission at bit 56 | targetKind at bit 104 | prevAdmission at bit 112 | bindingOrdinal at bit 160 | notAfter at bit 208 | strength at bit 240
     function unpackHeadRowWord0(bytes32 w)
         internal
         pure
@@ -427,8 +427,8 @@ library Layout {
             uint8 targetKind,
             uint48 prevAdmission,
             uint48 bindingOrdinal,
-            uint40 notAfter,
-            uint8 strength
+            uint32 notAfter,
+            uint16 strength
         )
     {
         uint256 x = uint256(w);
@@ -438,8 +438,8 @@ library Layout {
         targetKind = uint8(x >> 104);
         prevAdmission = uint48(x >> 112);
         bindingOrdinal = uint48(x >> 160);
-        notAfter = uint40(x >> 208);
-        strength = uint8(x >> 248);
+        notAfter = uint32(x >> 208);
+        strength = uint16(x >> 240);
     }
 
     // ---- efs.ledger.principals — PrincipalsStorage, 1 slot(s)

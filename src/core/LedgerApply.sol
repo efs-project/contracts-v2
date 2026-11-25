@@ -85,12 +85,12 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
             (row.prevAdmission, row.targetKind) = _applyBind(action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal);
             row.expectedRevision = uint48(action.expectedRevision);
-            row.withdrawn = _strength(action); // SPIKE (T-4 number): the strength byte of a bind row
+            row.policyRow = _strength(action); // SPIKE (T-4 number): a bind row's policyRow is its strength
         } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
             row.prevAdmission = _applyMaskOrRelease(kind, action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal); // names the position through bindingPosition[ordinal]
             row.expectedRevision = uint48(action.expectedRevision);
-            row.withdrawn = _strength(action); // SPIKE (T-4 number): 0 for RELEASE (shape law)
+            row.policyRow = _strength(action); // SPIKE (T-4 number): 0 for RELEASE (shape law)
         } else if (kind == ActionKind.CREATE) {
             row.a = action.salt;
             _applyCreate(action, principalId, principalKind, admission, effect);
@@ -237,9 +237,9 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.target = target;
     }
 
-    /// SPIKE (T-4 number): a bind kind's strength is its `salt` word, 0..255 by the shape law (kernel `_checkShape`).
-    function _strength(Action calldata action) private pure returns (uint8) {
-        return uint8(uint256(action.salt));
+    /// SPIKE (T-4 number): a bind kind's strength is its `salt` word, 0..65535 by the shape law (kernel `_checkShape`).
+    function _strength(Action calldata action) private pure returns (uint16) {
+        return uint16(uint256(action.salt));
     }
 
     /// The first transition of a binding: a fresh binding ordinal, its position, the position cell if new.
