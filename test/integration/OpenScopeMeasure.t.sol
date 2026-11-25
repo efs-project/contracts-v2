@@ -3,65 +3,35 @@ pragma solidity 0.8.37;
 
 import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
-import {Factory} from "../harness/doubles/Factory.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, ActionKind, Native, PostingKey, Purpose} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {OpenScopeConfig} from "../../src/interfaces/Index.sol";
-import {IAcceptor, AcceptContext, RefHeader} from "../../src/interfaces/IAcceptor.sol";
-import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
 import {OpenScopeReader} from "../../src/readers/OpenScopeReader.sol";
-
-/// SPIKE stand-in (tags-index2): the word page Type's rule. Body = the word's bytes (1..64), no references.
-contract WordPageStandInRule is IAcceptor {
-    function accept(
-        AcceptContext calldata ctx,
-        bytes calldata body,
-        bytes32[] calldata refs,
-        RefHeader[] calldata
-    ) external view returns (bytes4) {
-        require(ctx.ledger == msg.sender && refs.length == 0, "word");
-        require(body.length != 0 && body.length <= 64, "word length");
-        return IAcceptor.accept.selector;
-    }
-}
-
-/// SPIKE stand-in (tags-index2): the path Type's rule. Body exactly `[parent, wordPage]`, both declared references
-/// (parent ANY — a word page or a path —, the word page exact), so the kernel admits both first and family 11 lists
-/// the path under each.
-contract PathStandInRule is IAcceptor {
-    function accept(
-        AcceptContext calldata ctx,
-        bytes calldata body,
-        bytes32[] calldata refs,
-        RefHeader[] calldata
-    ) external view returns (bytes4) {
-        require(ctx.ledger == msg.sender && refs.length == 2 && body.length == 64, "path");
-        return IAcceptor.accept.selector;
-    }
-}
+import {Layout} from "../../src/core/layout/Layout.sol";
 
 /// @notice SPIKE (tags-index2) measurements of the topic lists on the Files Realm. Every measured publication is
 ///         cooled (each pays what a transaction of its own pays), native lane. Logs `os <variant> <row>`:
 ///         `exec` = the execution frame's regular gas, `state` = its EIP-8037 state gas (zero on prague),
 ///         `all` = exec + state, `tx` = all + 21,000 + the calldata's standard cost (an estimate of the whole
-///         transaction). Each concrete contract is one index build (`OpenScopeConfig`).
+///         transaction). Each concrete contract is one index build (`OpenScopeConfig`) over the REAL `topic-word/1`
+///         and `topic/1` Types, with `trustRegistered` on (the validator admits a first tag only on a topic first
+///         admitted strictly before it). Words are made to satisfy the word grammar (`_wordAction` lowercases and
+///         turns spaces into `-`).
 abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     uint256 internal constant N = 128;
     uint256 internal constant CAP = 1 << 24;
     uint8 internal constant V_MINE = 1; // family 19
     uint8 internal constant V_ALL = 2; // families 6 + 20 (TAG, FOLDER)
     uint8 internal constant V_ALL_BELOW = 4; // family 7
-    uint8 internal constant V_TRUST = 8;
+    uint8 internal constant V_RP = 16; // family 21 for TAG and FOLDER
+    uint8 internal constant V_RP_TAG = 32; // family 21 for TAG only
+    uint8 internal constant FULL = V_MINE | V_ALL | V_ALL_BELOW | V_RP;
 
     address[] internal cold;
     bytes32[N] internal s; // CREATE subjects of p: the tagged things
     OpenScopeReader internal reader;
-    address internal wordRule;
-    address internal pathRule;
-    bytes internal wordDescriptor;
-    bytes internal pathDescriptor;
     bytes32 internal wordType;
     bytes32 internal pathType;
     mapping(address => uint64) internal nonces;
@@ -70,7 +40,8 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     function _vname() internal pure virtual returns (string memory);
 
     function _openScope() internal virtual override returns (OpenScopeConfig memory os) {
-        _types();
+        wordType = topicTypeIds[TT_WORD];
+        pathType = topicTypeIds[TT_PATH];
         uint8 v = _variant();
         os.wordTypeId = wordType;
         os.pathTypeId = pathType;
@@ -81,49 +52,22 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
             os.allAuthors[1] = Purpose.FOLDER;
         }
         os.allBelow = v & V_ALL_BELOW != 0;
-        os.trustRegistered = v & V_TRUST != 0;
+        os.trustRegistered = true;
+        os.rolePlaces = v & V_RP != 0 ? 2 : (v & V_RP_TAG != 0 ? 1 : 0);
     }
 
-    function _types() internal {
-        if (wordRule != address(0)) return;
-        bytes memory wi = type(WordPageStandInRule).creationCode;
-        wordRule = Factory.deploy(wi);
-        FilesTypes.Spec memory spec = FilesTypes.bytesSpec();
-        spec.name = "test/word-page-stand-in/1";
-        spec.description = "SPIKE stand-in: the word's bytes";
-        wordDescriptor = FilesTypes.encode(declarationKey, wordRule.codehash, keccak256(wi), spec);
-        wordType = FilesTypes.typeIdOf(wordDescriptor);
-        bytes memory pi = type(PathStandInRule).creationCode;
-        pathRule = Factory.deploy(pi);
-        spec.name = "test/path-stand-in/1";
-        spec.description = "SPIKE stand-in: [parent, wordPage]";
-        spec.fields = bytes.concat(
-            FilesTypes.refField(keccak256("spike/field/parent"), keccak256("spike/parent"), 0),
-            FilesTypes.refField(keccak256("spike/field/word"), keccak256("spike/word"), wordType)
-        );
-        spec.fieldCount = 2;
-        pathDescriptor = FilesTypes.encode(declarationKey, pathRule.codehash, keccak256(pi), spec);
-        pathType = FilesTypes.typeIdOf(pathDescriptor);
-    }
-
-    function _registerType(bytes memory d, bytes32 id, address rule) internal {
-        bytes memory sig = _declare(r.registry, id);
-        r.store.put(d, sig);
-        vm.prank(address(0xCAFE));
-        (bytes32 got,) = r.registry.registerDescribed(d, sig, rule, "");
-        require(got == id, "stand-in type");
+    function _isFull() internal pure returns (bool) {
+        return _variant() == FULL;
     }
 
     function setUp() public override {
         super.setUp();
-        _registerType(wordDescriptor, wordType, wordRule);
-        _registerType(pathDescriptor, pathType, pathRule);
         reader = new OpenScopeReader();
         for (uint256 i; i < 10; ++i) {
             cold.push(instances[i]);
         }
-        cold.push(wordRule);
-        cold.push(pathRule);
+        cold.push(topicInstances[TT_WORD]);
+        cold.push(topicInstances[TT_PATH]);
         cold.push(address(validator));
         cold.push(address(r.k.ingress));
         cold.push(address(r.k.applyDelegate));
@@ -261,7 +205,14 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
         return _stmts(topic, from, n, false);
     }
 
+    /// Makes `w` a `topic-word/1` word IN PLACE (callers keep the same bytes as the body): ASCII upper case to lower
+    /// case, space to `-`.
     function _wordAction(bytes memory w) internal view returns (Action memory a, bytes32 id) {
+        for (uint256 i; i < w.length; ++i) {
+            bytes1 c = w[i];
+            if (c == 0x20) w[i] = 0x2d;
+            else if (c >= 0x41 && c <= 0x5a) w[i] = bytes1(uint8(c) + 32);
+        }
         a.kind = ActionKind.PUBLISH;
         a.typeId = wordType;
         a.bodyHashOrRecordId = keccak256(w);
@@ -450,7 +401,8 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     /// The deepest topic whose single statement (case `c`) fits 2^24: predicted from the slope between depths 17
     /// and 33 (estimate), then measured: a bisection between a depth that fits and one that does not.
     function _fit(uint8 c, bool deny, bool regularOnly) internal {
-        if (_variant() == 0) return;
+        uint8 v = _variant();
+        if (v != V_MINE && v != (V_ALL | V_ALL_BELOW) && v != FULL) return; // mine, all, full only
         string memory row = string.concat(
             deny ? "deny" : "tag",
             " case ",
@@ -612,7 +564,8 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     }
 
     function test_files() public {
-        if (_variant() != 0 && _variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        uint8 v = _variant();
+        if (v != 0 && v & (V_MINE | V_ALL | V_ALL_BELOW) != (V_MINE | V_ALL | V_ALL_BELOW)) return;
         (Action[] memory a, bytes[] memory b, bytes32 file, bytes32 rootRec) = _createFile(0);
         G memory one = _run("file create k1", address(this), a, b);
         (a, b,,) = _createFile(1);
@@ -637,11 +590,30 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     }
 
     // =============================================================================================
+    // 4b. what family 21 (role-places) adds to a first tag on a fresh position
+    // =============================================================================================
+
+    /// A first tag on a fresh position of an existing one-word topic (the place list exists, the author's scope list
+    /// exists): the thing never tagged before (its role-places list is fresh) and the thing already tagged under
+    /// another topic (its list exists). Compare `full` with `full-no-rp`; `full-rp-tag` equals `full` here.
+    function test_role_places_cost() public {
+        if (_variant() & (V_MINE | V_ALL | V_ALL_BELOW) != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        bytes32 x = _chain("rp-x", 1)[0];
+        bytes32 y = _chain("rp-y", 1)[0];
+        _go(address(this), _tags(x, 10, 2)); // x's place list and the author's scope list on x exist
+        _go(address(this), _tags(y, 0, 1)); // thing 0 is already tagged elsewhere
+        _run("role-places first tag, thing never tagged", address(this), _tags(x, 1, 1));
+        _run("role-places first tag, thing tagged elsewhere", address(this), _tags(x, 0, 1));
+        _run("role-places lone negative, thing never tagged", address(this), _stmts(x, 2, 1, true));
+        _run("role-places k10 things never tagged", address(this), _tags(x, 20, 10));
+    }
+
+    // =============================================================================================
     // 5. registering path records (family 11 included)
     // =============================================================================================
 
     function test_register() public {
-        if (_variant() != 0 && _variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        if (_variant() != 0 && !_isFull()) return;
         bytes32[] memory base = _chain("reg", 2);
         // one path record alone: parent and word exist
         bytes memory wb = bytes("reg-new-word");
@@ -824,7 +796,7 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     }
 
     function _reads(uint256 d) internal {
-        if (_variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        if (!_isFull()) return;
         (bytes32 t,) = _populate(d);
         string memory dd = string.concat("read depth ", _n(d), " ");
         uint256[4] memory lenses = [uint256(1), 8, 32, 64];
@@ -862,6 +834,52 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
         _reads(64);
     }
 
+    /// One word page `/w` rendered from the family-11 directory: the topics that use the word (family 11, ordinal 1,
+    /// one entry per `topic/1` record naming the page, its admission), each topic's id from its admission row (word
+    /// +1), then one place count (family 6 head) per topic. k = 1, 5, 20 places, 3 things tagged in each. Cold.
+    function test_word_page_render() public {
+        if (!_isFull()) return;
+        uint256[3] memory ks = [uint256(1), 5, 20];
+        for (uint256 x; x < 3; ++x) {
+            uint256 k = ks[x];
+            bytes memory wb = bytes(string.concat("render-", _n(k)));
+            Action[] memory a = new Action[](1);
+            bytes[] memory b = new bytes[](1);
+            bytes32 w;
+            (a[0], w) = _wordAction(wb);
+            b[0] = wb;
+            _go(address(this), a, b);
+            bytes32[] memory paths = new bytes32[](k);
+            for (uint256 i; i < k; ++i) {
+                bytes32 parent = _chain(string.concat("render-", _n(k), "-parent-", _n(i)), 1)[0];
+                (a[0], b[0], paths[i]) = _pathAction(parent, w);
+                _go(address(this), a, b);
+                _go(address(this), _tags(paths[i], 3 * i, 3));
+            }
+            _cool();
+            uint256 before = gasleft();
+            PostingKey dir = PostingKey.wrap(Keys.referenceList(pathType, 1, w));
+            (uint64 n,,,) = r.g.posting.postingHead(dir);
+            uint64[] memory adm = r.g.posting.postingSlice(dir, 0, uint16(n));
+            bytes32[] memory slots = new bytes32[](n);
+            for (uint256 i; i < n; ++i) {
+                slots[i] = bytes32(Layout.admissionsRowsSlot(adm[i]) + 1);
+            }
+            bytes32[] memory ids = r.hot.extsloadBatch(slots);
+            uint256 total;
+            for (uint256 i; i < n; ++i) {
+                total += reader.places(address(r.ledger), Purpose.TAG, ids[i]);
+            }
+            uint256 used = before - gasleft();
+            assertEq(n, k, "k topics use the word");
+            for (uint256 i; i < n; ++i) {
+                assertEq(ids[i], paths[i], "admission row word 1 is the record id");
+            }
+            assertEq(total, 3 * k);
+            emit log_named_uint(_label(string.concat("render word page k ", _n(k), " gas")), used);
+        }
+    }
+
     function _byName(string memory row, bytes32 position, uint16 count) internal {
         _cool();
         uint256 before = gasleft();
@@ -874,7 +892,7 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
 
     /// "anyone's pet.jpg at this address": one position with 3 authors and one with 300 (targeted spam).
     function test_by_name() public {
-        if (_variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        if (!_isFull()) return;
         bytes32 x = _chain("byname", 1)[0];
         for (uint256 i; i < 3; ++i) {
             _go(_author(100 + i), _tags(x, 0, 1));
@@ -913,7 +931,7 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     // =============================================================================================
 
     function test_spam() public {
-        if (_variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        if (!_isFull()) return;
         bytes32[] memory t = _chain("spam", 2);
         // (a) a place entry: lone negatives on fresh roles of a word-page topic (no walk), batch of 10
         _go(address(this), _stmts(t[0], 0, 1, true)); // the lists exist
@@ -995,7 +1013,7 @@ contract OpenScopeMeasureAll is OpenScopeMeasureBase {
 
 contract OpenScopeMeasureFull is OpenScopeMeasureBase {
     function _variant() internal pure override returns (uint8) {
-        return V_MINE | V_ALL | V_ALL_BELOW;
+        return FULL;
     }
 
     function _vname() internal pure override returns (string memory) {
@@ -1003,12 +1021,24 @@ contract OpenScopeMeasureFull is OpenScopeMeasureBase {
     }
 }
 
-contract OpenScopeMeasureTrust is OpenScopeMeasureBase {
+/// Every list but role-places (family 21): `full` minus this is what family 21 adds.
+contract OpenScopeMeasureFullNoRolePlaces is OpenScopeMeasureBase {
     function _variant() internal pure override returns (uint8) {
-        return V_MINE | V_ALL | V_ALL_BELOW | V_TRUST;
+        return V_MINE | V_ALL | V_ALL_BELOW;
     }
 
     function _vname() internal pure override returns (string memory) {
-        return "full-trust";
+        return "full-no-rp";
+    }
+}
+
+/// Every list, role-places for TAG only (FOLDER positions append no family-21 entry).
+contract OpenScopeMeasureFullRolePlacesTag is OpenScopeMeasureBase {
+    function _variant() internal pure override returns (uint8) {
+        return V_MINE | V_ALL | V_ALL_BELOW | V_RP_TAG;
+    }
+
+    function _vname() internal pure override returns (string memory) {
+        return "full-rp-tag";
     }
 }

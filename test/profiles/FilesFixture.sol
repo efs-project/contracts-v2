@@ -210,9 +210,10 @@ abstract contract FilesFixture is Test {
         specs[1] = DigestSpec({typeId: typeIds[T_EXTERNAL], wordIndex: 5, algorithm: SHA256});
     }
 
-    /// SPIKE (tags-index): the index's all-authors family switches for `_realm` (the harness default unless overridden).
+    /// SPIKE (tags integration): the index's topic-list switches for `_realm`: every list on over the REAL
+    /// `topic-word/1` and `topic/1` Types, `trustRegistered` on (the validator guarantees it), unless overridden.
     function _openScope() internal virtual returns (OpenScopeConfig memory) {
-        return IndexDeploy.defaultOpenScope();
+        return IndexDeploy.fullOpenScope(topicTypeIds[TT_WORD], topicTypeIds[TT_PATH], true);
     }
 
     function _index(address proxy) internal returns (IndexDeploy.Gen1 memory) {
