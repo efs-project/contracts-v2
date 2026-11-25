@@ -86,6 +86,44 @@ contract FacetsListsTest is TopicReadersBase {
         assertEq(hs[2].state, 0);
     }
 
+    function test_lens_rule_decides_over_each_entrys_lens_prefix() public view {
+        bytes32[] memory lens = new bytes32[](3);
+        lens[0] = _pid(carol); // silent at things[0]
+        lens[1] = _pid(bob); // no at things[0]
+        lens[2] = _pid(alice); // yes 9 at things[0]
+        uint64[] memory o = new uint64[](3);
+        o[0] = _ordinal(alice, Purpose.TAG, topic, things[0]);
+        o[1] = _ordinal(alice, Purpose.TAG, topic, things[0]);
+        o[2] = _ordinal(carol, Purpose.TAG, topic, things[1]);
+        uint8[] memory who = new uint8[](3);
+        who[0] = 2; // alice's entry, the whole lens: bob's no decides
+        who[1] = 0; // only carol: nobody decides
+        who[2] = 0; // carol's own yes at things[1]
+        (
+            Status[] memory st,
+            bytes32[] memory pos,
+            Coordinate[] memory c,
+            uint8[] memory d,
+            uint8[] memory ds,
+            Head[] memory own,
+        ) = views.lensRule(address(r.ledger), lens, o, who);
+        assertEq(uint8(st[0]), uint8(Status.PRESENT));
+        assertEq(pos[0], Keys.position(Purpose.TAG, topic, things[0]));
+        assertEq(c[0].role, things[0]);
+        assertEq(d[0], 1);
+        assertEq(ds[0], 2, "MASKED");
+        assertEq(own[0].strength, 9, "alice's own head");
+        assertEq(d[1], 255);
+        assertEq(ds[1], 0);
+        assertEq(own[1].state, 0, "carol never stated anything at things[0]");
+        assertEq(d[2], 0);
+        assertEq(ds[2], 1);
+        // an author index past the lens: every entry INVALID
+        who[2] = 3;
+        (st,,,,,,) = views.lensRule(address(r.ledger), lens, o, who);
+        assertEq(uint8(st[0]), uint8(Status.INVALID));
+    }
+
     function test_blanket_statuses() public {
         uint64[] memory many = new uint64[](65);
         (Status[] memory st,,,) = views.bindingCells(address(r.ledger), many);

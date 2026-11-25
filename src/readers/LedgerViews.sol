@@ -350,6 +350,100 @@ contract LedgerViews is ILedgerViews {
         positions = new bytes32[](n);
         cells = new Coordinate[](n);
         if (_fill(st, all)) return (st, positions, cells, b);
+        (st, positions, cells) = _cells(ledger, ordinals);
+    }
+
+    /// @inheritdoc ILedgerViews
+    /// @dev Three batched rounds: every ordinal's position, every position's cell, then the heads the lens rule
+    ///      needs: the first word (the state) of `principals[k]`'s head for every k < `authors[i]` and the whole head
+    ///      of `principals[authors[i]]`. `decider[i]` is the first k <= `authors[i]` whose head is BOUND or MASKED
+    ///      (255 when none is) and `decided[i]` that head's state (1 BOUND, 2 MASKED; 0 when none); `own[i]` is the
+    ///      author's head. Per entry PRESENT, ABSENT_PROVEN (zero cell, no heads
+    ///      read) for an ordinal that names no binding, UNSUPPORTED when a reserved head state is met before the
+    ///      decision; INVALID for every entry when an author index is not below `principals.length`. Blanket
+    ///      statuses as `bindingCells`, LIMIT_EXCEEDED also past `limits.maxReadIds` principals.
+    function lensRule(
+        address ledger,
+        bytes32[] calldata principals,
+        uint64[] calldata ordinals,
+        uint8[] calldata authors
+    )
+        external
+        view
+        returns (
+            Status[] memory st,
+            bytes32[] memory positions,
+            Coordinate[] memory cells,
+            uint8[] memory decider,
+            uint8[] memory decided,
+            Head[] memory own,
+            BasisCommit memory b
+        )
+    {
+        uint256 n = ordinals.length;
+        decided = new uint8[](n);
+        Status all = _blanket(ledger, n > principals.length ? n : principals.length);
+        (, b) = LedgerRows.gateBasis(ledger);
+        st = new Status[](n);
+        positions = new bytes32[](n);
+        cells = new Coordinate[](n);
+        decider = new uint8[](n);
+        own = new Head[](n);
+        if (all == Status.UNSET && authors.length != n) all = Status.INVALID;
+        uint256 slots;
+        for (uint256 i; i < n && all == Status.UNSET; ++i) {
+            if (authors[i] >= principals.length) all = Status.INVALID;
+            slots += uint256(authors[i]) + 2;
+        }
+        if (_fill(st, all)) return (st, positions, cells, decider, decided, own, b);
+        (st, positions, cells) = _cells(ledger, ordinals);
+        bytes32[] memory s = new bytes32[](slots);
+        slots = 0;
+        for (uint256 i; i < n; ++i) {
+            if (st[i] != Status.PRESENT) continue;
+            uint256 j = authors[i];
+            for (uint256 k; k <= j; ++k) {
+                s[slots++] =
+                    bytes32(Layout.bindingsHeadsSlot(Keys.binding(principals[k], positions[i])));
+            }
+            s[slots] = bytes32(uint256(s[slots - 1]) + 1); // the author's target word
+            ++slots;
+        }
+        assembly ("memory-safe") {
+            mstore(s, slots)
+        }
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
+        slots = 0;
+        for (uint256 i; i < n; ++i) {
+            decider[i] = LedgerRows.SELECTED_NONE;
+            if (st[i] != Status.PRESENT) continue;
+            uint256 j = authors[i];
+            for (uint256 k; k <= j; ++k) {
+                (uint8 state,,,,,,,) = Layout.unpackHeadRowWord0(w[slots + k]);
+                if (state > 3) {
+                    st[i] = Status.UNSUPPORTED;
+                    break;
+                }
+                if (state == 1 || state == 2) {
+                    decider[i] = uint8(k);
+                    decided[i] = state;
+                    break;
+                }
+            }
+            own[i] = LedgerRows.head(w[slots + j], w[slots + j + 1]);
+            slots += j + 2;
+        }
+    }
+
+    /// Binding ordinal → position and cell (the two rounds of `bindingCells`).
+    function _cells(address ledger, uint64[] calldata ordinals)
+        private
+        view
+        returns (Status[] memory st, bytes32[] memory positions, Coordinate[] memory cells)
+    {
+        uint256 n = ordinals.length;
+        st = new Status[](n);
+        cells = new Coordinate[](n);
         bytes32[] memory s = new bytes32[](n);
         for (uint256 i; i < n; ++i) {
             s[i] = bytes32(Layout.bindingsBindingPositionSlot(ordinals[i]));
