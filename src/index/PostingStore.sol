@@ -17,7 +17,7 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
     uint256 private constant MASK48 = (1 << 48) - 1;
 
     constructor(address ledger_, address initialWriter_, bytes32[] memory families)
-        StoreBase(ledger_, initialWriter_)
+        StoreBase(ledger_, initialWriter_, families)
     {
         PostingStorage storage $ = _posting();
         for (uint256 i; i < families.length; ++i) {
@@ -61,9 +61,23 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
         PostingKey[] calldata keys,
         uint64[] calldata ordinals
     ) external {
-        for (uint256 i; i < keys.length; ++i) {
-            (uint8 mode,) = _authorize(FamilyId.unwrap(families[i]));
-            if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        // SPIKE (tags-index2): the caller is authorized once per call, not once per entry. `_authorize` depends on
+        // msg.sender, the ledger's index(), phase() and counts(), and this store's attached flag and writers
+        // range; nothing in this call changes the first four (the store only reads the ledger) and `_attach` is
+        // idempotent for the same generation, so the mode and the attachment of every entry equal the first
+        // entry's. Family membership is constructor-fixed, so each entry's family is still checked (skipped only
+        // when it equals the previous entry's). An empty batch writes nothing and authorizes nothing, as before.
+        uint256 n = keys.length;
+        if (n == 0) return;
+        bytes32 checked = FamilyId.unwrap(families[0]);
+        (uint8 mode,) = _authorize(checked);
+        if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        for (uint256 i; i < n; ++i) {
+            bytes32 f = FamilyId.unwrap(families[i]);
+            if (f != checked) {
+                _requireFamily(f);
+                checked = f;
+            }
             _append(PostingKey.unwrap(keys[i]), ordinals[i], 0);
         }
     }

@@ -23,7 +23,7 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
     bytes32 private immutable FAMILY_LIVE_SCOPE;
 
     constructor(address ledger_, address initialWriter_, bytes32[] memory families)
-        StoreBase(ledger_, initialWriter_)
+        StoreBase(ledger_, initialWriter_, families)
     {
         BitmapStorage storage $ = _bitmap();
         for (uint256 i; i < families.length; ++i) {

@@ -16,13 +16,57 @@ abstract contract StoreBase {
     address public immutable LEDGER;
     address public immutable INITIAL_WRITER;
 
+    // SPIKE (tags-index2): the first 16 family ids as immutables, so a membership check reads no storage. The
+    // storage array (`familyIds()`) keeps the same ids in the same order and is scanned only beyond 16, so the
+    // accepted set is exactly the constructor's (the old check scanned the array: one SLOAD per element, cold at
+    // the first write of a transaction — 2,100 gas per element up to the family's index).
+    uint256 private immutable FAMILY_COUNT;
+    bytes32 private immutable FAM0;
+    bytes32 private immutable FAM1;
+    bytes32 private immutable FAM2;
+    bytes32 private immutable FAM3;
+    bytes32 private immutable FAM4;
+    bytes32 private immutable FAM5;
+    bytes32 private immutable FAM6;
+    bytes32 private immutable FAM7;
+    bytes32 private immutable FAM8;
+    bytes32 private immutable FAM9;
+    bytes32 private immutable FAM10;
+    bytes32 private immutable FAM11;
+    bytes32 private immutable FAM12;
+    bytes32 private immutable FAM13;
+    bytes32 private immutable FAM14;
+    bytes32 private immutable FAM15;
+
     uint8 internal constant MODE_LIVE = 1;
     uint8 internal constant MODE_BACKFILL = 2;
     uint8 internal constant MODE_BUILD = 3;
 
-    constructor(address ledger_, address initialWriter_) {
+    constructor(address ledger_, address initialWriter_, bytes32[] memory families) {
         LEDGER = ledger_;
         INITIAL_WRITER = initialWriter_;
+        uint256 n = families.length;
+        FAMILY_COUNT = n;
+        FAM0 = _at(families, 0);
+        FAM1 = _at(families, 1);
+        FAM2 = _at(families, 2);
+        FAM3 = _at(families, 3);
+        FAM4 = _at(families, 4);
+        FAM5 = _at(families, 5);
+        FAM6 = _at(families, 6);
+        FAM7 = _at(families, 7);
+        FAM8 = _at(families, 8);
+        FAM9 = _at(families, 9);
+        FAM10 = _at(families, 10);
+        FAM11 = _at(families, 11);
+        FAM12 = _at(families, 12);
+        FAM13 = _at(families, 13);
+        FAM14 = _at(families, 14);
+        FAM15 = _at(families, 15);
+    }
+
+    function _at(bytes32[] memory f, uint256 i) private pure returns (bytes32) {
+        return i < f.length ? f[i] : bytes32(0);
     }
 
     function _familyIds() internal view virtual returns (bytes32[] storage);
@@ -81,11 +125,49 @@ abstract contract StoreBase {
     }
 
     function _requireFamily(bytes32 family) internal view {
-        bytes32[] storage ids = _familyIds();
-        for (uint256 i; i < ids.length; ++i) {
-            if (ids[i] == family) return;
+        uint256 n = FAMILY_COUNT;
+        // a zero id is a member only when the constructor listed it (the padding of a short set is zero)
+        if (family != 0 || n >= 16) {
+            if (
+                family == FAM0 || family == FAM1 || family == FAM2 || family == FAM3
+                    || family == FAM4 || family == FAM5 || family == FAM6 || family == FAM7
+                    || family == FAM8 || family == FAM9 || family == FAM10 || family == FAM11
+                    || family == FAM12 || family == FAM13 || family == FAM14 || family == FAM15
+            ) return;
+        } else {
+            for (uint256 i; i < n; ++i) {
+                if (_at16(i) == 0) return;
+            }
+        }
+        if (n > 16) {
+            bytes32[] storage ids = _familyIds();
+            for (uint256 i = 16; i < n; ++i) {
+                if (ids[i] == family) return;
+            }
         }
         revert E_FAMILY(family);
+    }
+
+    function _at16(uint256 i) private view returns (bytes32) {
+        bytes32[16] memory f = [
+            FAM0,
+            FAM1,
+            FAM2,
+            FAM3,
+            FAM4,
+            FAM5,
+            FAM6,
+            FAM7,
+            FAM8,
+            FAM9,
+            FAM10,
+            FAM11,
+            FAM12,
+            FAM13,
+            FAM14,
+            FAM15
+        ];
+        return f[i];
     }
 
     function _writersView()
