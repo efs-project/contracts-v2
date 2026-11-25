@@ -58,7 +58,7 @@ const budgetOf = (name) => sizes.units.find((u) => u.name === name) ?? null;
 // ---- per-unit facts ------------------------------------------------------------------------------------------------
 const stepOf = (name) => plan.steps.find((s) => s.kind === "CREATE2" && s.contract === name);
 const createdOf = (label) => plan.steps.find((s) => s.id === "G18").creates.find((c) => c.label === label);
-const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "IndexReads", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "EfsWeb3Gateway"]);
+const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "IndexReads", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "TopicPageReader", "TopicLookupReader", "EfsWeb3Gateway"]);
 const contracts = {};
 let reproducible = 0;
 for (const name of Object.keys(UNITS)) {
@@ -322,7 +322,7 @@ const manifest = {
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
     hotAbiIdName: plan.hotAbiIdString,
-    readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, web3Gateway: plan.gateway, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
+    readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, topicPage: plan.readers.topicPage, topicLookup: plan.readers.topicLookup, web3Gateway: plan.gateway, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
     statusVocabularyId: constants.status.id,
     storeAbiIds: { posting: storeId("efs/posting-store/2"), bitmap: storeId("efs/bitmap-store/1") },
     abiIdRule: "keccak(name ‖ for each function sorted by selector: selector ‖ keccak(canonical output tuple)) (tools/abi-id.mjs)",

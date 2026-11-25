@@ -205,6 +205,8 @@
         "readerDirectory",
         "lensReader",
         "filesPageReader",
+        "topicPageReader",
+        "topicLookupReader",
         "web3Gateway",
         "listed"
       ],
@@ -253,9 +255,35 @@
             "childType"
           ]
         },
+        "topicPageReader": {
+          "type": "object",
+          "required": [
+            "address",
+            "runtimeCodehash",
+            "kind",
+            "ledger",
+            "views",
+            "reads",
+            "layoutId"
+          ]
+        },
+        "topicLookupReader": {
+          "type": "object",
+          "required": [
+            "address",
+            "runtimeCodehash",
+            "kind",
+            "ledger",
+            "views",
+            "reads",
+            "layoutId",
+            "topicType",
+            "wordType"
+          ]
+        },
         "listed": {
           "type": "array",
-          "minItems": 2,
+          "minItems": 4,
           "items": {
             "type": "object",
             "required": [
