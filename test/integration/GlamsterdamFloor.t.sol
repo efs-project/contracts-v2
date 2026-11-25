@@ -52,12 +52,16 @@ contract GlamsterdamFloorTest is FilesRecipesBase {
         Vm.Gas memory f = vm.lastFrameGas();
         emit log_named_uint("floor probe 100 fresh slots: GAS delta inside", seen);
         emit log_named_uint("floor probe 100 fresh slots: GAS delta of the caller", outer);
-        emit log_named_uint("floor probe 100 fresh slots: lastFrameGas.gasTotalUsed", f.gasTotalUsed);
+        emit log_named_uint(
+            "floor probe 100 fresh slots: lastFrameGas.gasTotalUsed", f.gasTotalUsed
+        );
         emit log_named_int("floor probe 100 fresh slots: lastFrameGas.gasStateUsed", f.gasStateUsed);
         // call gas 40k per slot: above the regular price on both schedules, far below 110,020 (amsterdam's total)
         uint256 limit = n * 40_000;
         try writer.write{gas: limit}(5_000, n) returns (uint256 s2) {
-            emit log_named_uint("floor probe capped call (4,000,000 gas) succeeded, GAS delta inside", s2);
+            emit log_named_uint(
+                "floor probe capped call (4,000,000 gas) succeeded, GAS delta inside", s2
+            );
             emit log_named_int("floor probe capped call state gas", vm.lastFrameGas().gasStateUsed);
         } catch {
             emit log("floor probe capped call (4,000,000 gas) ran out of gas: state gas is drawn from it");
@@ -108,7 +112,9 @@ contract GlamsterdamFloorTest is FilesRecipesBase {
         emit log_named_uint(string.concat("floor ", label, " finalReserve"), w.finalReserve);
         emit log_named_uint(string.concat("floor ", label, " fresh slots quoted"), w.fresh);
         emit log_named_uint(string.concat("floor ", label, " rewrites quoted"), w.rewrites);
-        emit log_named_uint(string.concat("floor ", label, " visible gas the check needs"), w.needed);
+        emit log_named_uint(
+            string.concat("floor ", label, " visible gas the check needs"), w.needed
+        );
         emit log_named_uint(string.concat("floor ", label, " measured exec (regular)"), w.exec);
         emit log_named_int(string.concat("floor ", label, " measured state"), w.state);
         emit log_named_uint(
@@ -166,7 +172,8 @@ contract GlamsterdamFloorTest is FilesRecipesBase {
         Action[] memory tags64 = new Action[](64);
         for (uint256 i; i < 64; ++i) {
             bytes32 role = keccak256(abi.encode("floor/neg", i));
-            tags64[i] = _bindKind(ActionKind.UNBIND, Purpose.TAG, _wordId("floor-deep-0"), role, 0, 0);
+            tags64[i] =
+                _bindKind(ActionKind.UNBIND, Purpose.TAG, _wordId("floor-deep-0"), role, 0, 0);
         }
         Row memory w = _row("64 lone negatives, 1-word topic", tags64, new bytes[](64));
         // The floor alone refuses this publication on every schedule: the first callback check needs more visible

@@ -536,9 +536,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                     e.bindingOrdinal
                 );
                 uint8 rp = OS_ROLE_PLACES;
-                if (
-                    e.role != 0 && (rp == 2 || (rp == 1 && purpose == Purpose.TAG))
-                ) {
+                if (e.role != 0 && (rp == 2 || (rp == 1 && purpose == Purpose.TAG))) {
                     _push(
                         buf,
                         F_ROLE_PLACES,

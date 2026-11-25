@@ -61,9 +61,14 @@ contract TopicListsIntegratedTest is FilesRecipesBase {
         );
     }
 
-    function _act(address who, uint8 kind, bytes32 topic, bytes32 thing, uint64 rev, uint16 strength)
-        internal
-    {
+    function _act(
+        address who,
+        uint8 kind,
+        bytes32 topic,
+        bytes32 thing,
+        uint64 rev,
+        uint16 strength
+    ) internal {
         Action memory x = _bindKind(
             kind, Purpose.TAG, topic, thing, kind == ActionKind.BIND ? thing : bytes32(0), rev
         );
@@ -131,8 +136,7 @@ contract TopicListsIntegratedTest is FilesRecipesBase {
     }
 
     function _ordinal(address who, bytes32 topic, bytes32 thing) internal view returns (uint64 o) {
-        (,,,,, o,) =
-            r.hot.head(Keys.binding(_pid(who), Keys.position(Purpose.TAG, topic, thing)));
+        (,,,,, o,) = r.hot.head(Keys.binding(_pid(who), Keys.position(Purpose.TAG, topic, thing)));
     }
 
     // =============================================================================================
@@ -228,11 +232,13 @@ contract TopicListsIntegratedTest is FilesRecipesBase {
         assertEq(rows[1].topic, x);
         assertEq(rows[1].authors, 1);
         assertEq(rows[1].number, -1, "alice's lone negative is visible");
-        (, OpenScopeReader.AuthorRow[] memory ax) = reader.byName(address(r.ledger), rows[1].position, 0, 8);
+        (, OpenScopeReader.AuthorRow[] memory ax) =
+            reader.byName(address(r.ledger), rows[1].position, 0, 8);
         assertEq(ax.length, 1);
         assertEq(ax[0].principalId, _pid(alice));
         assertEq(ax[0].number, -1);
-        (, OpenScopeReader.AuthorRow[] memory ay) = reader.byName(address(r.ledger), rows[0].position, 0, 8);
+        (, OpenScopeReader.AuthorRow[] memory ay) =
+            reader.byName(address(r.ledger), rows[0].position, 0, 8);
         assertEq(ay.length, 2);
         assertEq(ay[0].principalId, _pid(carol));
         assertEq(ay[0].number, -1);
@@ -454,7 +460,9 @@ contract TopicListsIntegratedTest is FilesRecipesBase {
         // every family of the spike is non-empty somewhere in the comparison
         assertGt(_count(_allBelow(topics[0])), 0, "family 7");
         assertGt(_count(_mineBelow(_pid(alice), topics[0])), 0, "family 19");
-        assertEq(_count(_authors(Keys.position(Purpose.FOLDER, rootDir, roles[14]))), 3, "family 20");
+        assertEq(
+            _count(_authors(Keys.position(Purpose.FOLDER, rootDir, roles[14]))), 3, "family 20"
+        );
         assertEq(_count(_pk(6, Keys.openScope(Purpose.FOLDER, topics[7]))), 1, "family 6 at a home");
         assertEq(_count(_rolePlaces(Purpose.TAG, things[0])), 1, "family 21");
         assertEq(_count(_rolePlaces(Purpose.TAG, roles[10])), 1, "family 21, address");
@@ -469,14 +477,18 @@ contract TopicListsIntegratedTest is FilesRecipesBase {
     // targeted spam on a FOLDER position at a home
     // =============================================================================================
 
-    function _byNameGas(bytes32 position, uint16 count) internal returns (uint256 used, uint256 rows) {
+    function _byNameGas(bytes32 position, uint16 count)
+        internal
+        returns (uint256 used, uint256 rows)
+    {
         vm.cool(address(r.k.proxy));
         vm.cool(address(r.k.implementation));
         vm.cool(address(r.g.posting));
         vm.cool(address(r.g.index));
         vm.cool(address(reader));
         uint256 before = gasleft();
-        (, OpenScopeReader.AuthorRow[] memory a) = reader.byName(address(r.ledger), position, 0, count);
+        (, OpenScopeReader.AuthorRow[] memory a) =
+            reader.byName(address(r.ledger), position, 0, count);
         used = before - gasleft();
         rows = a.length;
     }
@@ -494,7 +506,8 @@ contract TopicListsIntegratedTest is FilesRecipesBase {
             bytes32 salt = keccak256(abi.encode("pet", i));
             Action[] memory a = new Action[](2);
             a[0] = _create(salt);
-            a[1] = _bind(Purpose.FOLDER, i < 3 ? small : big, role, Keys.subject(_pid(who), salt), 0);
+            a[1] =
+                _bind(Purpose.FOLDER, i < 3 ? small : big, role, Keys.subject(_pid(who), salt), 0);
             _execAs(who, a, new bytes[](2));
         }
         bytes32 ps = Keys.position(Purpose.FOLDER, small, role);
