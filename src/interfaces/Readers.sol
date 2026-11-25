@@ -200,3 +200,195 @@ interface IReaderDirectory {
             uint16 next
         );
 }
+
+// =============================================================================================
+// Topic readers (design §5.13, §11; docs/TAG-DESIGN.md §6). A place is a topic or a home; "below" is the place
+// and everything filed under its descendant topics. Every list they page is append-only and is read newest first,
+// which means most recently first-stated (design §10.2): an entry is written at an author's first statement on a
+// position, and the state and the number always come from the head.
+// =============================================================================================
+
+/// The page laws of every topic view: `q.status` PRESENT for a served page, UNKNOWN when a list the view needs has
+/// coverage UNKNOWN (no rows: an UNKNOWN is never empty), BASIS_STALE / UNSUPPORTED / LIMIT_EXCEEDED / INVALID as
+/// refusals with no rows. `listingCoverage` COMPLETE only when `completeFromOrigin` (origin-started, exhausted, every
+/// list COMPLETE); a page from a continuation is at most PARTIAL. `scanStatus` 1 EXHAUSTED 2 LIMIT 3 GAS (0 when
+/// no scan ran). `scanned`: list entries consumed on this page; `rawTotal`: the entries of every list at this page's
+/// read; `selectedSoFar`: rows returned so far in the listing. `next`: the continuation (empty when exhausted),
+/// bound to the query hash, the basis and the origin. `repeatsSkipped`: list entries this page left out because a
+/// row for the same position was already on this page. `dedupWithinPageOnly`: true for every view whose lists can
+/// name one position more than once (`place` and `place-below` carry a later author's first yes; a lens author's
+/// row can move between pages when a head changes): repeats are removed within this page only, since a reader keeps
+/// no state between calls, so a consumer removes repeats across pages by `position`.
+struct TopicPageInfo {
+    Qualified q;
+    Coverage listingCoverage;
+    uint8 scanStatus;
+    bool startsAtOrigin;
+    bool completeFromOrigin;
+    bool dedupWithinPageOnly;
+    uint64 scanned;
+    uint64 rawTotal;
+    uint64 selectedSoFar;
+    uint64 repeatsSkipped;
+    bytes next;
+}
+
+/// One row of `mine`: the thing (`thing`, the position's role) filed under `topic` (the position's subject), with
+/// the deciding lens author (`decider` its lens index, `principalId`) and that author's head: the number, the
+/// target kind, the revision and the admission. `bindingOrdinal` is the list entry (the decider's binding).
+struct MineRow {
+    bytes32 position;
+    bytes32 topic;
+    bytes32 thing;
+    uint8 targetKind;
+    uint8 decider;
+    bytes32 principalId;
+    int32 number;
+    uint64 revision;
+    uint64 admission;
+    uint64 bindingOrdinal;
+}
+
+/// One row of `everyone`, `raw` or `about`: a position (`thing` filed under `topic`), the list entry
+/// (`bindingOrdinal`), its statements (`statements`: authors who ever stated anything there) and how many say yes
+/// now (`yes`), both exact from one head read; then a sample of the newest `sampled` authors: `sampleYes` say >= 0,
+/// `sampleNo` say < 0, and `incomplete` when the sample did not cover every author. The sample is detail, never the
+/// basis for showing a row.
+struct PlaceRow {
+    bytes32 position;
+    bytes32 topic;
+    bytes32 thing;
+    uint64 bindingOrdinal;
+    uint64 statements;
+    uint64 yes;
+    uint16 sampled;
+    uint16 sampleYes;
+    uint16 sampleNo;
+    bool incomplete;
+}
+
+/// One author at one position (`byName`): the author's first statement there (`firstAdmission`, the list entry),
+/// the head's status (PRESENT, MASKED or RELEASED), number (0 when RELEASED), target and target kind (0 unless
+/// PRESENT), revision and admission.
+struct AuthorRow {
+    bytes32 principalId;
+    uint64 firstAdmission;
+    Status status;
+    int32 number;
+    bytes32 target;
+    uint8 targetKind;
+    uint64 revision;
+    uint64 admission;
+}
+
+/// One place of a word page or of a topic's children: the place, the admission of its first registration, and
+/// two "about" figures at TAG: `positionsEver`, the distinct positions that ever received a statement at the place
+/// (the place list's `live`), and `positionsEverBelow`, the same below it (the roll-up's `live`), both including
+/// positions nobody says yes to now, so neither is the number of rows a public view returns; then the filings
+/// behind each (`filings`, `filingsBelow`: the lists' `count`, first statements plus later first yeses).
+struct PlaceCount {
+    bytes32 place;
+    uint64 admission;
+    uint64 positionsEver;
+    uint64 positionsEverBelow;
+    uint64 filings;
+    uint64 filingsBelow;
+}
+
+/// @title ITopicPageReader — the lens and public views of a place (design §5.13, §11; docs/TAG-DESIGN.md §6)
+interface ITopicPageReader is IReader {
+    /// `everyone` / `raw` query: the place list at `purpose` (TAG or FOLDER), or with `below` (TAG only) the
+    /// roll-up; `raw` skips the lens; `sample` newest authors are sampled per row (0: none).
+    struct PlaceQuery {
+        bytes32 purpose;
+        bytes32 place;
+        bool below;
+        bool raw;
+        uint16 sample;
+    }
+
+    /// The lens's own entries at `place` (exact), or with `below` the place and everything below it, newest first.
+    function mine(
+        bytes32[] calldata lens,
+        bytes32 place,
+        bool below,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint32 limit,
+        uint256 gasReserve
+    ) external view returns (TopicPageInfo memory, MineRow[] memory);
+
+    /// Every author's positions at a place, newest first, minus what the lens hides (nothing with `raw`).
+    function everyone(
+        PlaceQuery calldata query,
+        bytes32[] calldata lens,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint32 limit,
+        uint256 gasReserve
+    ) external view returns (TopicPageInfo memory, PlaceRow[] memory);
+
+    /// Every place anyone filed `thing` under at TAG, either sign, newest first; the lens hides as in `everyone`.
+    function about(
+        bytes32 thing,
+        bytes32[] calldata lens,
+        bool raw,
+        uint16 sample,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint32 limit,
+        uint256 gasReserve
+    ) external view returns (TopicPageInfo memory, PlaceRow[] memory);
+}
+
+/// @title ITopicLookupReader — one position's authors, counts, word pages and children (design §5.13, §11)
+interface ITopicLookupReader is IReader {
+    /// The authors of one position, newest first-stated first; at most 64 rows per page.
+    function byName(
+        bytes32 position,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint16 limit
+    ) external view returns (TopicPageInfo memory, AuthorRow[] memory);
+
+    /// An "about" count of a place at `purpose`, or below it (TAG): `positionsEver`, the distinct positions that ever
+    /// received a statement (the list's `live`, including positions nobody says yes to now: never the number of rows
+    /// a public view returns, and never a loop bound), and `filings` (the list's `count`).
+    function placeCount(bytes32 purpose, bytes32 place, bool below, BasisCommit calldata expected)
+        external
+        view
+        returns (Qualified memory, Coverage, uint64 positionsEver, uint64 filings);
+
+    /// A position's authors: `statements` who ever stated anything there, `yes` who say yes now.
+    function authorCount(bytes32 position, BasisCommit calldata expected)
+        external
+        view
+        returns (Qualified memory, Coverage, uint64 statements, uint64 yes);
+
+    /// One author's entries at a place: exact (`count`, and `live` the entries whose head is BOUND), or below it
+    /// (TAG; `live` is not kept there and is returned 0).
+    function entryCount(
+        bytes32 principalId,
+        bytes32 purpose,
+        bytes32 place,
+        bool below,
+        BasisCommit calldata expected
+    ) external view returns (Qualified memory, Coverage, uint64 count, uint64 live);
+
+    /// The places whose own word is `wordPage`'s word: the root place `wordPage` itself (the first row of the first
+    /// page), then every registered path whose last word it is, newest first.
+    function wordPage(
+        bytes32 wordPage,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint16 limit
+    ) external view returns (TopicPageInfo memory, PlaceCount[] memory);
+
+    /// A topic's child topics, newest first.
+    function children(
+        bytes32 topic,
+        BasisCommit calldata expected,
+        bytes calldata continuation,
+        uint16 limit
+    ) external view returns (TopicPageInfo memory, PlaceCount[] memory);
+}
