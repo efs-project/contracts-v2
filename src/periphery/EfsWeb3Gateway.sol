@@ -35,24 +35,31 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         from the Etched hot getters (`head`, `recordHeader`, `layoutId`), bodies from `LedgerReads.bodySlice` /
 ///         `bodyWords`; it never reads raw slots and never consults the index for a file read.
 ///
-///         URL grammar: `/<principal>[/<name>…][/][?lens=<principal>,<principal>…][&offset=<n>]`.
-///         `<principal>`: 64 hex digits (a principal id), `0x` + 64 hex digits (the same), or `0x` + 40 hex digits
-///         (an account; accepted only when `Keys.principalFor` makes it a key principal — no code, or exactly an
-///         EIP-7702 designator — and then the left-padded address; a contract account is 400, use its id). Hex is
-///         case-insensitive, no checksum. `lens` appends fall-through principals after the path principal (at most
-///         64 in all). `offset` (decimal, < 2^64, default 0) is the first byte served. Other parameters are ignored;
-///         a repeated parameter's last value wins. A trailing empty segment (a trailing slash) is dropped; any other
-///         empty segment is 400. At most 32 names, each 1..255 bytes.
-///
-///         Home start: `/~home/0x<40 hex>[/<name>…][/][?lens=…]` resolves the names from the address's place (its
-///         home, `bytes32(uint256(uint160(address)))`, design §12.5) instead of the root folder. `~` opens no
-///         principal and no topic word (`~` first segments are reserved for the system, and a word never starts with
-///         one), so the form cannot be read as another URL. The address is `0x` + exactly 40 hex digits, either case
-///         (else 400). The lens is the `lens` parameter alone when one is given; otherwise the address's own author
-///         identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's
-///         contract principal of a contract (a Safe's home shows the Safe's own entries). Another author's entry is
-///         served only when the lens names that author. The home directory itself is named `x-efs-home: 0x<40 hex>`
-///         (lowercase) in place of `x-efs-record`: a home is an address, never a record.
+///         URL grammar (docs/LARGE-FILES.md "`web3://`"; the shared link grammar): the FIRST path segment decides
+///         the kind of path.
+///         - `/0x<40 hex>[/<name>…][/][?lens=…][&offset=<n>]`: that address's HOME (its place,
+///           `bytes32(uint256(uint160(address)))`, design §12.5). The lens defaults to the address's own author
+///           identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's
+///           contract principal of a contract (a Safe's home shows the Safe's own entries). The home itself is named
+///           `x-efs-home: 0x<40 hex>` (lowercase) in place of `x-efs-record`: a home is an address, never a record.
+///           Any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id".
+///         - `/~efs/o/<folder id>[/<name>…][/][?lens=…][&offset=<n>]`: any folder, the Realm root included, by its
+///           `files-directory/1` record id (`0x` + 64 hex). The lens defaults to the folder's creator, the record's
+///           body word 0 (`abi.encode(creator, salt)`). An id that is not a `files-directory/1` record (no record, a
+///           record of another Type, a file subject: files are not served by id) is 404 "not found: not a folder",
+///           never an empty listing; an id of another shape is 400 "malformed id". Every other `~` first
+///           segment, and every other `~efs/…` form, is 400 "unknown system path" (`~` first segments are the
+///           system's).
+///         - Anything else is a topic path (`/<word>/…`): 501 "topic paths are not served" (this gateway serves
+///           none yet). No folder is ever served there, so a topic link can never mean a folder.
+///         `lens` replaces the default lens with exactly the listed principals (at most 64): each 64 hex digits (a
+///         principal id), `0x` + 64 hex digits (the same), or `0x` + 40 hex digits (an account; accepted only when
+///         `Keys.principalFor` makes it a key principal — no code, or exactly an EIP-7702 designator — and then the
+///         left-padded address; a contract account is 400, use its id). Hex is case-insensitive, no checksum.
+///         `offset` (decimal, < 2^64, default 0) is the first byte served. Other parameters are ignored; a repeated
+///         parameter's last value wins. A trailing empty segment (a trailing slash) is dropped; any other empty
+///         segment is 400. At most 32 names, each 1..255 bytes. `ROOT_DIRECTORY` is the Realm root's record id, the
+///         folder id of the root's own path `/~efs/o/<ROOT_DIRECTORY>/…`; it is configuration, never a default.
 ///
 ///         Resolution: each name is one FOLDER position `(FOLDER, directoryRecord, keccak256(name))`, read for each
 ///         principal in order through `ILedgerHot.head(Keys.binding(principal, position))`: the first BOUND head
@@ -79,7 +86,8 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         body, is a 500.
 ///
 ///         Statuses (never a revert for anything a URL can cause): 200 served; 307 external location; 400 malformed
-///         URL; 404 not found, removed (masked), file used as a folder, or remote-only content; 416 `offset` at or
+///         URL or unknown system path; 404 not found, removed (masked), file used as a folder, an id that is not a
+///         folder, or remote-only content; 501 a topic path; 416 `offset` at or
 ///         past the end (except 0 on an empty file); 500 a broken invariant (a Type, length or record the Files
 ///         laws guarantee is wrong or missing, a failed listing); 503 a ledger layout or head state this gateway was
 ///         not built for, or a read the facet refuses (UNSUPPORTED, LIMIT_EXCEEDED).
@@ -145,10 +153,11 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         uint256 n;
         uint256 start;
         bytes32 home;
+        bytes32 folder;
     }
 
     /// @param pager_ a `FilesPageReader` bound to `ledger_`, or zero for no listings
-    /// @param rootDirectory_ the Realm root's `files-directory/1` record id (the `/<principal>/` directory)
+    /// @param rootDirectory_ the Realm root's `files-directory/1` record id (served as `/~efs/o/<id>/`)
     constructor(
         address ledger_,
         address reads_,
@@ -231,19 +240,26 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     {
         Req memory q = _parse(resource, params);
         if (ILedgerHot(LEDGER).layoutId() != LAYOUT) _fail(503, "foreign ledger layout");
-        bytes32 dir = q.home != 0 ? q.home : ROOT_DIRECTORY;
+        bytes32 dir = q.home;
+        if (q.home == 0) {
+            // a folder by id: a `files-directory/1` record, never a silent empty folder; its creator (body word 0,
+            // `abi.encode(creator, salt)`) is the lens unless `lens` names one
+            dir = q.folder;
+            if (!_isDirectory(dir)) _fail(404, "not found: not a folder");
+            if (q.lensParam.length == 0) q.lens[0] = _words(dir, 0, 1)[0];
+        }
         for (uint256 i = q.start; i < q.last; ++i) {
             (uint8 state, uint8 kind, bytes32 target) =
                 _select(q.lens, Keys.position(Purpose.FOLDER, dir, keccak256(bytes(resource[i]))));
             if (state == MASKED) _fail(404, "not found: removed");
             if (state != BOUND) _fail(404, "not found");
             if (kind == TARGET_SUBJECT) {
-                if (i + 1 != q.last) _fail(404, "not found: a file is not a folder");
+                if (i + 1 != q.last) _fail(404, "not found: file used as a folder");
                 return _file(q, resource, target);
             }
-            if (kind != TARGET_RECORD) _fail(500, "folder target of an unknown kind");
-            (bytes32 typeId,,,,) = ILedgerHot(LEDGER).recordHeader(target);
-            if (typeId != DIRECTORY_TYPE) _fail(500, "folder target is not a directory");
+            if (kind != TARGET_RECORD || !_isDirectory(target)) {
+                _fail(500, "folder target is not a directory");
+            }
             dir = target;
         }
         return _directory(q, dir);
@@ -252,6 +268,11 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     // =============================================================================================
     // Files
     // =============================================================================================
+
+    function _isDirectory(bytes32 id) private view returns (bool) {
+        (bytes32 typeId,,,,) = ILedgerHot(LEDGER).recordHeader(id);
+        return typeId == DIRECTORY_TYPE;
+    }
 
     /// The lens selection at `position`: (BOUND, kind, target), (MASKED, 0, 0) or (0, 0, 0) when every principal
     /// is UNSET or RELEASED. A reserved head state is 503 (it never falls through).
@@ -281,12 +302,12 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         if (kind != TARGET_RECORD) _fail(500, "HEAD law: target is not a record");
         (bytes32 typeId,, uint32 length,,) = ILedgerHot(LEDGER).recordHeader(rev);
         if (typeId != ROOT_TYPE && typeId != CHILD_TYPE) {
-            _fail(500, "HEAD law: target is not a revision");
+            _fail(500, "HEAD law: target not a revision");
         }
         uint256 base = typeId == ROOT_TYPE ? 0 : 32; // the file word: root word 0, child word 1
         if (length < base + 64) _fail(500, "HEAD law: short revision");
         bytes memory body = _slice(rev, 0, length);
-        if (_word(body, base) != file) _fail(500, "HEAD law: revision of another file");
+        if (_word(body, base) != file) _fail(500, "HEAD law: revision of other file");
         _add(q, "Content-Type", _contentType(bytes(resource[q.last - 1])));
         _add(q, "x-efs-record", _hex(rev));
         uint256 form = uint256(_word(body, base + 32));
@@ -461,11 +482,29 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     {
         uint256 last = resource.length;
         if (last > 1 && bytes(resource[last - 1]).length == 0) --last; // a trailing slash
-        if (last == 0) _fail(400, "missing principal");
-        // `/~home/0x<40 hex>/…`: the names start at the address's place
-        bool home = keccak256(bytes(resource[0])) == keccak256("~home");
-        q.start = home ? 2 : 1;
-        if (last < q.start) _fail(400, "missing home address");
+        if (last == 0 || bytes(resource[0]).length == 0) _fail(400, "empty segment");
+        // the first segment decides the kind: `~` the system, `0x` an address's home, anything else a topic
+        bytes calldata s0 = bytes(resource[0]);
+        bytes32 first;
+        if (s0[0] == "~") {
+            // `/~efs/o/<folder id>/…`, the only system path served
+            if (
+                last < 3
+                    || keccak256(bytes.concat(s0, "/", bytes(resource[1]))) != keccak256("~efs/o")
+            ) {
+                _fail(400, "unknown system path");
+            }
+            q.folder = bytes32(_id(bytes(resource[2]), 66));
+            q.start = 3;
+        } else if (_prefixed(s0)) {
+            q.home = bytes32(_id(s0, 42));
+            first = Keys.principalFor(
+                address(uint160(uint256(q.home))), ILedgerHot(LEDGER).realmOrigin()
+            );
+            q.start = 1;
+        } else {
+            _fail(501, "topic paths are not served");
+        }
         if (last - q.start > MAX_NAMES) _fail(400, "too many segments");
         for (uint256 i = q.start; i < last; ++i) {
             uint256 n = bytes(resource[i]).length;
@@ -474,25 +513,15 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         }
         q.last = last;
         q.h = new KeyValue[](MAX_HEADERS);
-        bytes32 first;
-        if (home) {
-            bytes calldata a = bytes(resource[1]);
-            if (a.length != 42 || a[0] != "0" || a[1] != "x") _fail(400, "malformed home address");
-            q.home = bytes32(_hexValue(a[2:]));
-            first = Keys.principalFor(
-                address(uint160(uint256(q.home))), ILedgerHot(LEDGER).realmOrigin()
-            );
-        } else {
-            first = _principal(bytes(resource[0]));
-        }
         bytes calldata lens = msg.data[0:0];
         for (uint256 i; i < params.length; ++i) {
             bytes32 key = keccak256(bytes(params[i].key));
             if (key == keccak256("lens")) lens = bytes(params[i].value);
             else if (key == keccak256("offset")) q.offset = _uint(bytes(params[i].value));
         }
-        // a home's lens is the `lens` parameter alone when one is given, else the address's own principal
-        uint256 k = home && lens.length != 0 ? 0 : 1;
+        // the lens is the `lens` parameter alone when one is given, else the place's default principal (the
+        // address's own; a folder's creator, read in `serve`)
+        uint256 k = lens.length != 0 ? 0 : 1;
         uint256 count = k;
         for (uint256 i; i < lens.length; ++i) {
             if (lens[i] == ",") ++count;
@@ -516,16 +545,25 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     function _principal(bytes calldata s) private view returns (bytes32) {
         uint256 n = s.length;
         if (n == 64) return bytes32(_hexValue(s));
-        if ((n != 66 && n != 42) || s[0] != "0" || (s[1] != "x" && s[1] != "X")) {
-            _fail(400, "malformed principal");
-        }
-        uint256 v = _hexValue(s[2:]);
+        if (n != 66 && n != 42) _fail(400, "malformed principal");
+        uint256 v = _id(s, n);
         if (n == 66) return bytes32(v);
         address account = address(uint160(v));
         if (Keys.principalFor(account, 0) != Keys.principal(account)) {
-            _fail(400, "contract account: use its principal id");
+            _fail(400, "contract account: use its id");
         }
         return Keys.principal(account);
+    }
+
+    /// `0x` + hex of exactly `n` bytes in all (an address 42, a record id 66), else 400 "malformed id".
+    function _id(bytes calldata s, uint256 n) private pure returns (uint256) {
+        if (s.length != n || !_prefixed(s)) _fail(400, "malformed id");
+        return _hexValue(s[2:]);
+    }
+
+    /// `0x` or `0X` and at least one more byte.
+    function _prefixed(bytes calldata s) private pure returns (bool) {
+        return s.length > 2 && s[0] == "0" && (s[1] == "x" || s[1] == "X");
     }
 
     function _hexValue(bytes calldata s) private pure returns (uint256 v) {
@@ -534,7 +572,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             if (c >= 48 && c <= 57) c -= 48;
             else if (c >= 97 && c <= 102) c -= 87;
             else if (c >= 65 && c <= 70) c -= 55;
-            else _fail(400, "malformed principal");
+            else _fail(400, "malformed id");
             v = v << 4 | c;
         }
     }
@@ -549,7 +587,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         if (v > type(uint64).max) _fail(400, "malformed offset");
     }
 
-    /// `/<principal>/<name>…?offset=<next>[&lens=<lens>]`, every name byte outside RFC 3986 unreserved escaped.
+    /// The request's own path `?offset=<next>[&lens=<lens>]`, every segment byte outside RFC 3986 unreserved escaped.
     function _nextUrl(Req memory q, string[] calldata resource, uint256 next)
         private
         pure
