@@ -336,8 +336,8 @@ function seedIds(plan) {
     file: { name: s.file.name, subjectId: s.file.subjectId, headRecordId: s.file.rootRecordId, headRevision: 1 },
     files: s.files.map((f) => {
       const base = { name: f.name, subjectId: f.subjectId, headRecordId: f.headRecordId, headRevision: f.headRevision, form: f.form, length: f.length, sha256: f.sha256 };
-      if (f.contentRecordId) return { ...base, contentRecordId: f.contentRecordId, spanRootId: f.spanRootId, chunkCount: f.chunkCount, spanCount: f.spanCount, chunkPayload: f.chunkPayload, publications: f.publications };
-      if (f.externalRecordId) return { ...base, externalRecordId: f.externalRecordId, sentinelRecordId: f.sentinelRecordId, locator: f.locator };
+      if (f.contentRecordId) return { ...base, contentRecordId: f.contentRecordId, media: f.media, spanRootId: f.spanRootId, chunkCount: f.chunkCount, spanCount: f.spanCount, chunkPayload: f.chunkPayload, publications: f.publications };
+      if (f.externalRecordId) return { ...base, externalRecordId: f.externalRecordId, sentinelRecordId: f.sentinelRecordId, locator: f.locator, media: f.media };
       return base;
     }),
   };
@@ -856,6 +856,7 @@ export async function verify(o = {}) {
       const [cst, ch, cb] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, f.contentRecordId]);
       const w = decodeAbiParameters(Array(11).fill({ type: "uint256" }), cb);
       eq(`files ${f.name}.content`, [cst, ch.typeId, toHex(w[0], { size: 32 }), w[2], w[4], toHex(w[5], { size: 32 })], [2, dep.typeIds["files-content/1"], f.spanRootId, f.spanCount ? 2n : 0n, BigInt(f.length), f.sha256]);
+      eq(`files ${f.name}.media`, [w[6], size(cb), hexToString(`0x${cb.slice(2 + 704)}`)], [BigInt(size(toHex(f.media ?? ""))), 352 + size(toHex(f.media ?? "")), f.media ?? ""]);
       try {
         const t = await readTree(read, pub, plan, f.spanRootId);
         eq(`files ${f.name}.reassembled`, [size(t.bytes), sha256(t.bytes), t.chunks, t.spans], [f.length, f.sha256, f.chunkCount, f.spanCount]);
@@ -864,8 +865,10 @@ export async function verify(o = {}) {
     if (f.externalRecordId) {
       eq(`files ${f.name}.descriptor`, named, f.externalRecordId);
       const [xst, xh, xb] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, f.externalRecordId]);
-      const w = decodeAbiParameters(Array(7).fill({ type: "uint256" }), xb);
-      eq(`files ${f.name}.external`, [xst, xh.typeId, toHex(w[0], { size: 32 }), w[1], w[2], w[3], w[4], toHex(w[5], { size: 32 }), hexToString(`0x${xb.slice(2 + 448)}`)], [2, dep.typeIds["files-external/1"], f.sentinelRecordId, 2n, 2n, 1n, BigInt(f.length), f.sha256, f.locator]);
+      const w = decodeAbiParameters(Array(8).fill({ type: "uint256" }), xb);
+      const locatorEnd = 2 + 512 + 2 * Number(w[6]);
+      eq(`files ${f.name}.external media`, [w[7], hexToString(`0x${xb.slice(locatorEnd)}`)], [BigInt(size(toHex(f.media ?? ""))), f.media ?? ""]);
+      eq(`files ${f.name}.external`, [xst, xh.typeId, toHex(w[0], { size: 32 }), w[1], w[2], w[3], w[4], toHex(w[5], { size: 32 }), hexToString(`0x${xb.slice(2 + 512, locatorEnd)}`)], [2, dep.typeIds["files-external/1"], f.sentinelRecordId, 2n, 2n, 1n, BigInt(f.length), f.sha256, f.locator]);
       const [sst, sh, sb] = await read(pub, a.ledgerReads, "LedgerReads", "record", [a.ledgerProxy, f.sentinelRecordId]);
       eq(`files ${f.name}.sentinel`, [sst, sh.typeId, sb], [2, dep.typeIds["files-bytes/1"], sha256("0x")]);
     }
@@ -927,19 +930,21 @@ export async function verify(o = {}) {
   const [gwReadme, gwBig, gwRemote] = exp.files;
   const base = `/${exp.root.principalId}/docs`;
   const one = await web3Get(`${base}/${gwReadme.name}`);
-  eq("gateway readme", [one.status, sha256(one.body), size(one.body), one.headers["content-type"], one.headers["x-efs-record"]], [200, gwReadme.sha256, gwReadme.length, "text/plain; charset=utf-8", gwReadme.headRecordId]);
+  // readme.txt is inline (no descriptor, no media type): Content-Type from the extension, no nosniff
+  eq("gateway readme", [one.status, sha256(one.body), size(one.body), one.headers["content-type"], one.headers["x-efs-record"], one.headers["x-content-type-options"] ?? null], [200, gwReadme.sha256, gwReadme.length, "text/plain; charset=utf-8", gwReadme.headRecordId, null]);
   eq("gateway readme by account", (await web3Get(`/${dep.actors.fixturePrincipal}/docs/${gwReadme.name}`)).body, one.body);
   const parts = [];
   for (let url = `${base}/${gwBig.name}`; url; ) {
     const r = await web3Get(url);
-    eq(`gateway big chunk ${parts.length}`, [r.status, r.headers["content-length"], r.headers["x-efs-sha256"]], [200, String(gwBig.length), gwBig.sha256]);
+    // big.bin declares its media type: served as Content-Type with nosniff on every chunk
+    eq(`gateway big chunk ${parts.length}`, [r.status, r.headers["content-length"], r.headers["x-efs-sha256"], r.headers["content-type"], r.headers["x-content-type-options"] ?? null], [200, String(gwBig.length), gwBig.sha256, gwBig.media, "nosniff"]);
     parts.push(r.body);
     url = r.status === 200 && parts.length <= gwBig.chunkCount ? r.headers["web3-next-chunk"] : undefined;
   }
   const whole = concatHex(parts);
   eq("gateway big", [parts.length, size(whole), sha256(whole)], [gwBig.chunkCount, gwBig.length, gwBig.sha256]);
   const moved = await web3Get(`${base}/${gwRemote.name}`);
-  eq("gateway remote", [moved.status, moved.headers.location, moved.headers["x-efs-sha256"]], [307, gwRemote.locator, gwRemote.sha256]);
+  eq("gateway remote", [moved.status, moved.headers.location, moved.headers["x-efs-sha256"], moved.headers["x-efs-media-type"] ?? null], [307, gwRemote.locator, gwRemote.sha256, gwRemote.media]);
   const listed = await web3Get(base);
   eq("gateway listing", [listed.status, listed.headers["x-efs-listing"], JSON.parse(hexToString(listed.body))], [200, "complete", { entries: exp.files.map((f) => ({ name: f.name, kind: "file" })), complete: true }]);
   eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get("/not-a-principal/docs")).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 400, 416]);
