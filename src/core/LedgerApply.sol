@@ -34,6 +34,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
     uint8 private constant STATE_RELEASED = 3;
     uint8 private constant TARGET_RECORD = 1;
     uint8 private constant TARGET_SUBJECT = 2;
+    uint8 private constant TARGET_ADDRESS = 3; // SPIKE (tags/topics, Part C)
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_REBIND = 2;
     uint8 private constant T_MASK = 3;
@@ -84,12 +85,12 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
             (row.prevAdmission, row.targetKind) = _applyBind(action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal);
             row.expectedRevision = uint48(action.expectedRevision);
-            row.withdrawn = _strength(action); // SPIKE (T-4 number): the strength byte of a bind row
+            row.policyRow = _strength(action); // SPIKE (T-4 number): a bind row's policyRow is its strength
         } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
             row.prevAdmission = _applyMaskOrRelease(kind, action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal); // names the position through bindingPosition[ordinal]
             row.expectedRevision = uint48(action.expectedRevision);
-            row.withdrawn = _strength(action); // SPIKE (T-4 number): 0 for RELEASE (shape law)
+            row.policyRow = _strength(action); // SPIKE (T-4 number): 0 for RELEASE (shape law)
         } else if (kind == ActionKind.CREATE) {
             row.a = action.salt;
             _applyCreate(action, principalId, principalKind, admission, effect);
@@ -198,6 +199,10 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         bytes32 target = action.target;
         if (_records().cells[target].typeId != 0) targetKind = TARGET_RECORD;
         else if (_subjects().cells[target].createAdmission != 0) targetKind = TARGET_SUBJECT;
+        // SPIKE (tags/topics, Part C): a nonzero address-shaped word (top 96 bits zero) that is neither a record
+        // nor a subject is an ADDRESS target, for every purpose: an address that never transacted can be tagged.
+        // Record and subject ids are keccak outputs, so neither is address-shaped in practice (~2^96 work).
+        else if (uint256(target) >> 160 == 0) targetKind = TARGET_ADDRESS;
         else revert E_TARGET_MISSING(effect.leaf, target);
 
         prevAdmission = head.admission;
@@ -232,9 +237,9 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.target = target;
     }
 
-    /// SPIKE (T-4 number): a bind kind's strength is its `salt` word, 0..255 by the shape law (kernel `_checkShape`).
-    function _strength(Action calldata action) private pure returns (uint8) {
-        return uint8(uint256(action.salt));
+    /// SPIKE (T-4 number): a bind kind's strength is its `salt` word, 0..65535 by the shape law (kernel `_checkShape`).
+    function _strength(Action calldata action) private pure returns (uint16) {
+        return uint16(uint256(action.salt));
     }
 
     /// The first transition of a binding: a fresh binding ordinal, its position, the position cell if new.

@@ -17,7 +17,8 @@ import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.
 ///         Logs: `num <row> gas` (and `frame state gas` under the amsterdam profile).
 contract TagNumberMeasureTest is FilesRecipesBase {
     uint256 internal constant N = 60;
-    bytes32 internal constant X = keccak256("measure/number/concept/x");
+    // SPIKE (tags/topics): the concept is a registered topic (a `topic-word/1` page, registered in `setUp`)
+    bytes32 internal X;
 
     address[] internal cold;
     bytes32[N] internal s;
@@ -47,6 +48,12 @@ contract TagNumberMeasureTest is FilesRecipesBase {
             }
             r.ledger.execute(a, new bytes[](20), _ctx(a), "");
         }
+        (Action memory wp, bytes memory wb) = _wordPage("measure-number-x");
+        Action[] memory reg = new Action[](1);
+        bytes[] memory regb = new bytes[](1);
+        (reg[0], regb[0]) = (wp, wb);
+        r.ledger.execute(reg, regb, _ctx(reg), "");
+        X = _wordId("measure-number-x");
         // the concept's first member, so every measured row is a later member
         _silent(_acts(ActionKind.BIND, N - 1, 1, 0, 0));
         t.root = typeIds[T_ROOT];
@@ -117,10 +124,10 @@ contract TagNumberMeasureTest is FilesRecipesBase {
         _silent(_acts(kind, 0, 11, strength, rev));
     }
 
-    function _numHead(uint256 i) internal view returns (uint8 state, uint8 strength) {
+    function _numHead(uint256 i) internal view returns (uint8 state, uint16 strength) {
         uint256 m =
             uint256(r.hot.extsload(bytes32(Layout.bindingsHeadsSlot(_key(Purpose.TAG, X, s[i])))));
-        return (uint8(m), uint8(m >> 248));
+        return (uint8(m), uint16(m >> 240));
     }
 
     // ---- 1: assert with strength 0 and 75 -----------------------------------------------------------------
@@ -131,7 +138,7 @@ contract TagNumberMeasureTest is FilesRecipesBase {
 
     function test_1_assert_strength_75() public {
         _row("assert s75", ActionKind.BIND, 75, 0);
-        (uint8 st, uint8 sv) = _numHead(0);
+        (uint8 st, uint16 sv) = _numHead(0);
         assertEq(abi.encode(st, sv), abi.encode(1, 75));
     }
 
@@ -143,7 +150,7 @@ contract TagNumberMeasureTest is FilesRecipesBase {
 
     function test_2_lone_negative_strength_4() public {
         _row("lone negative s4 (-5)", ActionKind.UNBIND, 4, 0);
-        (uint8 st, uint8 sv) = _numHead(0);
+        (uint8 st, uint16 sv) = _numHead(0);
         assertEq(abi.encode(st, sv), abi.encode(2, 4));
     }
 
@@ -152,7 +159,7 @@ contract TagNumberMeasureTest is FilesRecipesBase {
     function test_3_rebind_0_to_75() public {
         _prep(ActionKind.BIND, 0, 0);
         _row("rebind 0->75", ActionKind.BIND, 75, 1);
-        (uint8 st, uint8 sv) = _numHead(0);
+        (uint8 st, uint16 sv) = _numHead(0);
         assertEq(abi.encode(st, sv), abi.encode(1, 75));
     }
 
@@ -161,7 +168,7 @@ contract TagNumberMeasureTest is FilesRecipesBase {
     function test_4_negative_minus1_to_minus5() public {
         _prep(ActionKind.UNBIND, 0, 0);
         _row("mask again -1->-5", ActionKind.UNBIND, 4, 1);
-        (uint8 st, uint8 sv) = _numHead(0);
+        (uint8 st, uint16 sv) = _numHead(0);
         assertEq(abi.encode(st, sv), abi.encode(2, 4));
     }
 
@@ -180,7 +187,7 @@ contract TagNumberMeasureTest is FilesRecipesBase {
     function test_5_negative_to_silent() public {
         _prep(ActionKind.UNBIND, 4, 0);
         _row("negative->silent (-5, release)", ActionKind.RELEASE, 0, 1);
-        (uint8 st, uint8 sv) = _numHead(0);
+        (uint8 st, uint16 sv) = _numHead(0);
         assertEq(abi.encode(st, sv), abi.encode(3, 0));
     }
 

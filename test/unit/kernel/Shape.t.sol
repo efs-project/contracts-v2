@@ -214,9 +214,9 @@ contract ShapeTest is KernelFixture {
         uint8 field = f[bound(fieldSeed, 0, f.length - 1)];
         if (field == F_REVISION) vm.assume(uint64(uint256(v)) != 0);
         vm.assume(v != 0);
-        // SPIKE (T-4 number): BIND/UNBIND admit a strength 0..255 in salt; only a larger word is forbidden
+        // SPIKE (T-4 number): BIND/UNBIND admit a strength 0..65535 in salt; only a larger word is forbidden
         if (field == F_SALT && (kind == ActionKind.BIND || kind == ActionKind.UNBIND)) {
-            vm.assume(uint256(v) > 255);
+            vm.assume(uint256(v) > 65_535);
         }
         Action memory a = _base(kind);
         _set(a, field, v);

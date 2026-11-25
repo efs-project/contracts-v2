@@ -15,6 +15,7 @@ import {
 } from "../../src/interfaces/Actions.sol";
 import {Coverage} from "../../src/interfaces/Results.sol";
 import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
+import {TopicTypes} from "../../src/profiles/TopicTypes.sol";
 
 /// @notice The Files Realm of the recipe suites (`FilesRecipes.t.sol`, `FilesLargeFiles.t.sol`): the profile on a
 ///         real kernel, registry proxy and generation-1 index, the Realm root seeded by this contract's principal,
@@ -175,6 +176,78 @@ abstract contract FilesRecipesBase is FilesFixture {
     function _assertHistory(bytes32 key, uint64 count) internal view {
         (uint64 c,) = _posting(F_HISTORY, 0, key);
         assertEq(c, count, "history entries");
+    }
+
+    // ---- SPIKE (tags/topics): topic builders --------------------------------------------------------------------
+
+    /// PUBLISH of the page of `word` (the root-level topic `/<word>`).
+    function _wordPage(bytes memory word) internal view returns (Action memory a, bytes memory) {
+        a.kind = ActionKind.PUBLISH;
+        a.typeId = topicTypeIds[TT_WORD];
+        a.bodyHashOrRecordId = keccak256(word);
+        return (a, word);
+    }
+
+    /// PUBLISH of the `topic/1` record `[parent, wordPage]`.
+    function _topicRecord(bytes32 parent, bytes32 wordPage)
+        internal
+        view
+        returns (Action memory a, bytes memory body)
+    {
+        body = abi.encode(parent, wordPage);
+        a.kind = ActionKind.PUBLISH;
+        a.typeId = topicTypeIds[TT_PATH];
+        a.bodyHashOrRecordId = keccak256(body);
+    }
+
+    function _wordId(bytes memory word) internal view returns (bytes32) {
+        return TopicTypes.wordPageId(topicTypeIds[TT_WORD], word);
+    }
+
+    function _pathId(bytes[] memory words) internal view returns (bytes32) {
+        return TopicTypes.pathId(topicTypeIds[TT_WORD], topicTypeIds[TT_PATH], words);
+    }
+
+    /// The registrations of a brand-new path, parents first: for each word its page (when `withPages`), then each
+    /// `topic/1` record from the two-word prefix on. Returns the actions, bodies and the path's id.
+    function _pathActions(bytes[] memory words, bool withPages)
+        internal
+        view
+        returns (Action[] memory a, bytes[] memory b, bytes32 id)
+    {
+        uint256 n = words.length;
+        uint256 m = (withPages ? n : 0) + n - 1;
+        a = new Action[](m);
+        b = new bytes[](m);
+        uint256 k;
+        if (withPages) {
+            for (uint256 i; i < n; ++i) {
+                (a[k], b[k]) = _wordPage(words[i]);
+                ++k;
+            }
+        }
+        id = _wordId(words[0]);
+        for (uint256 i = 1; i < n; ++i) {
+            bytes32 w = _wordId(words[i]);
+            (a[k], b[k]) = _topicRecord(id, w);
+            id = TopicTypes.childId(topicTypeIds[TT_PATH], id, w);
+            ++k;
+        }
+    }
+
+    /// Native execution as `author` (an EOA author is also tx.origin), both expectations bound; no gas log.
+    function _execAs(address author, Action[] memory a, bytes[] memory b)
+        internal
+        returns (uint64 publication)
+    {
+        bytes32 principal = author == address(this) ? p : Keys.principal(author);
+        Native memory c;
+        (c.nonce,) = r.hot.nonceOf(principal);
+        c.expectedExecutionSet = r.hot.executionSet();
+        c.expectedAcceptanceProfile =
+            ILedgerCommitments(r.hot.ingress()).acceptanceProfileOf(address(r.ledger), a);
+        if (author != address(this)) vm.prank(author, author);
+        (publication,) = r.ledger.execute(a, b, c, "");
     }
 
     // ---- refusals land nothing ---------------------------------------------------------------------------------

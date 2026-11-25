@@ -337,8 +337,13 @@ library LedgerRows {
             r.roleRow,
             r.targetKind
         ) = Layout.unpackAdmissionRowWord0(meta);
-        // SPIKE (T-4 number): the byte is a bind row's strength, so only a record row reads it as withdrawn
-        r.withdrawn = withdrawn != 0 && r.kind <= ActionKind.REUSE;
+        r.withdrawn = withdrawn != 0;
+        // SPIKE (T-4 number): a bind row's policyRow field is its strength; no policy row applies to a bind kind
+        if (
+            r.kind == ActionKind.BIND || r.kind == ActionKind.UNBIND || r.kind == ActionKind.RELEASE
+        ) {
+            r.policyRow = 0;
+        }
         r.a = a;
     }
 

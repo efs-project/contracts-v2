@@ -35,6 +35,12 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      address-shaped home word, 3 self-link (target ==
 ///      parent), 4 a subject target not created by then, 5 a record target that is not a directory record admitted
 ///      by then, 6 an unknown target kind.
+///      SPIKE (tags/topics): 7 a TAG effect whose `transitionKind` is FIRST_BIND (1) or FIRST_MASK (6) has a subject
+///      that is neither address-shaped (a home) nor a `topic/1` or `topic-word/1` record admitted at or before the
+///      terminal admission. Later transitions on an existing TAG binding (REBIND, MASK, RELEASE, RESTORE) are never
+///      refused, so a tag can always be changed or withdrawn. A topic's admission is write-once (a WITHDRAW of its
+///      registrant's admission decrements occurrences and keeps `firstAdmission`), so a withdrawn registration
+///      still registers the topic. Two more cold `SLOAD`s (the topic Type ids) per publication with a first TAG.
 ///      SPIKE (T-5 homes): a FOLDER parent whose top 96 bits are zero is the home of that address
 ///      (`bytes32(uint256(uint160(addr)))`, equal to `Keys.principal(addr)` for a key account). Nothing about the
 ///      address is checked (no code, balance or admission needed); a precompile address 0x1..0xff is just an unowned
@@ -47,16 +53,36 @@ contract FilesFinalValidator is IIndexHook {
     bytes32 public nameTypeId;
     /// The exact `files-directory/1` Type id of the profile (constructor state, never rewritten).
     bytes32 public directoryTypeId;
+    /// SPIKE (tags/topics): the exact `topic/1` and `topic-word/1` Type ids (constructor state, never rewritten).
+    bytes32 public topicTypeId;
+    bytes32 public topicWordTypeId;
 
-    constructor(bytes32 nameTypeId_, bytes32 directoryTypeId_) {
+    uint8 private constant T_FIRST_BIND = 1;
+    uint8 private constant T_FIRST_MASK = 6;
+
+    constructor(
+        bytes32 nameTypeId_,
+        bytes32 directoryTypeId_,
+        bytes32 topicTypeId_,
+        bytes32 topicWordTypeId_
+    ) {
         nameTypeId = nameTypeId_;
         directoryTypeId = directoryTypeId_;
+        topicTypeId = topicTypeId_;
+        topicWordTypeId = topicWordTypeId_;
     }
 
-    /// The manifest `Unit.identity` of this validator: its unit name and the two Type ids it enforces.
+    /// The manifest `Unit.identity` of this validator: its unit name and the four Type ids it enforces.
     function identity() external view returns (bytes32) {
-        return
-            keccak256(abi.encode(keccak256("efs/unit/files-final/1"), nameTypeId, directoryTypeId));
+        return keccak256(
+            abi.encode(
+                keccak256("efs/unit/files-final/1"),
+                nameTypeId,
+                directoryTypeId,
+                topicTypeId,
+                topicWordTypeId
+            )
+        );
     }
 
     /// @inheritdoc IIndexHook
@@ -77,11 +103,33 @@ contract FilesFinalValidator is IIndexHook {
         ILedgerHot hot;
         bytes32 nameType;
         bytes32 directoryType;
+        bytes32 topicType;
+        bytes32 wordType;
         for (uint256 i; i < n; ++i) {
             Effect calldata e = effects[i];
+            if (e.purpose == Purpose.TAG) {
+                // SPIKE (tags/topics): a first tag stands on a registered topic or a home
+                uint8 tk = e.transitionKind;
+                if (tk != T_FIRST_BIND && tk != T_FIRST_MASK) continue;
+                if (uint256(e.subject) >> 160 == 0) continue; // a home (the zero word is refused by the shape law)
+                if (address(hot) == address(0)) {
+                    hot = ILedgerHot(IIndexReads(msg.sender).ledger());
+                }
+                if (topicType == 0) {
+                    topicType = topicTypeId;
+                    wordType = topicWordTypeId;
+                }
+                (bytes32 t, uint64 first,,,) = hot.recordHeader(e.subject);
+                if ((t != topicType && t != wordType) || first == 0 || first > terminal) {
+                    revert E_FILES_FINAL(7, e.leaf);
+                }
+                continue;
+            }
             if (e.kind != ActionKind.BIND || e.purpose != Purpose.FOLDER) continue;
             if (address(hot) == address(0)) {
                 hot = ILedgerHot(IIndexReads(msg.sender).ledger());
+            }
+            if (nameType == 0) {
                 nameType = nameTypeId;
                 directoryType = directoryTypeId;
             }

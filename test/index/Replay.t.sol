@@ -479,6 +479,44 @@ contract ReplayTest is Test {
         }
     }
 
+    /// SPIKE (tags/topics, Part C): a bind to an ADDRESS target (kind 3: neither record nor subject, address-shaped)
+    /// folds live, decodes with targetKind 3, and replays to the same backlink and history lists.
+    function testReplayFoldsAnAddressTarget() public {
+        _history();
+        bytes32 addr = bytes32(uint256(uint160(address(0xBADC0DE))));
+        bytes32 role = keccak256("address-role");
+        assertEq(_one(_bindKind(ActionKind.BIND, role, addr, 0), ""), 9);
+        assertEq(_one(_bindKind(ActionKind.BIND, role, recordId, 1), ""), 10); // rebind away: oldTarget = addr
+        IndexReplayDecoder dec = new IndexReplayDecoder();
+        (Effect[] memory e,) = dec.decode(k.proxy, 9);
+        assertEq(
+            abi.encode(e[0].transitionKind, e[0].targetKind, e[0].target), abi.encode(1, 3, addr)
+        );
+        (e,) = dec.decode(k.proxy, 10);
+        assertEq(abi.encode(e[0].oldTargetKind, e[0].oldTarget), abi.encode(3, addr));
+        (IndexDeployer d, RealmIndex ix) = _gen2();
+        assertEq(_replayAll(ix), 10);
+        PostingKey[] memory keys = new PostingKey[](2);
+        keys[0] = PostingKey.wrap(Keys.backlinkList(addr));
+        keys[1] = PostingKey.wrap(
+            Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, role)))
+        );
+        IPostingStore p2 = IPostingStore(d.postingStore());
+        for (uint256 i; i < keys.length; ++i) {
+            (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(keys[i]);
+            (uint64 c2, uint64 l2, uint64 last2, uint16 f2) = p2.postingHead(keys[i]);
+            assertEq(abi.encode(c1, l1, last1, f1), abi.encode(c2, l2, last2, f2), "posting head");
+            assertEq(
+                keccak256(abi.encode(g.posting.postingSlice(keys[i], 0, 64))),
+                keccak256(abi.encode(p2.postingSlice(keys[i], 0, 64)))
+            );
+        }
+        (uint64 bc, uint64 bl,,) = g.posting.postingHead(keys[0]);
+        assertEq(
+            abi.encode(bc, bl), abi.encode(1, 0), "the address backlink, released by the rebind"
+        );
+    }
+
     // ---- review findings -------------------------------------------------------------------------------------
 
     /// A replayed store stamps the mutating admission, not the frontier at replay time.

@@ -460,10 +460,10 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             if (kind == ActionKind.BIND ? a.target == 0 : a.target != 0) {
                 revert E_SHAPE(leaf, kind == ActionKind.BIND ? 1 : 2);
             }
-            // SPIKE (T-4 number): BIND/UNBIND carry a strength 0..255 in `salt`; RELEASE keeps salt == 0
+            // SPIKE (T-4 number): BIND/UNBIND carry a strength 0..65535 in `salt`; RELEASE keeps salt == 0
             if (
                 a.typeId != 0 || a.bodyHashOrRecordId != 0
-                    || uint256(a.salt) > (kind == ActionKind.RELEASE ? 0 : 255)
+                    || uint256(a.salt) > (kind == ActionKind.RELEASE ? 0 : 65_535)
             ) revert E_SHAPE(leaf, 2);
             if (bodyLen != 0) revert E_SHAPE(leaf, 3);
         } else if (kind == ActionKind.CREATE) {
@@ -517,6 +517,25 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
                 Keys.scope(principalId, a.purpose, a.subject),
                 position,
                 principalId
+            );
+            // SPIKE (tags/topics, Part E): the binding's full transition for indexers (Effect words 15 and 16)
+            uint256 transitionKind;
+            uint256 targetKind;
+            assembly ("memory-safe") {
+                let b := add(blob, 32)
+                transitionKind := mload(add(b, 480))
+                targetKind := mload(add(b, 512))
+            }
+            emit Bound(
+                admission,
+                a.purpose,
+                a.subject,
+                a.role,
+                a.target,
+                kind,
+                uint16(uint256(a.salt)),
+                uint8(transitionKind),
+                uint8(targetKind)
             );
         } else if (kind == ActionKind.WITHDRAW) {
             emit Admitted(admission, kind, typeId, a.target, principalId);

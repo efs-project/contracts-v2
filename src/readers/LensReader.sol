@@ -72,6 +72,7 @@ contract LensReader is ILensReader {
     uint8 private constant NONE = type(uint8).max;
     uint8 private constant TARGET_RECORD = 1;
     uint8 private constant TARGET_SUBJECT = 2;
+    uint8 private constant TARGET_ADDRESS = 3; // SPIKE (tags/topics, Part C)
     uint8 private constant SCAN_EXHAUSTED = 1;
     uint8 private constant SCAN_LIMIT = 2;
 
@@ -845,7 +846,7 @@ contract LensReader is ILensReader {
 
     /// The head-row invariants of design §4.3 under admission high water `high`: an UNSET head is all zero; a
     /// written head names an admission in `[1, high]` after its `prevAdmission`, a binding ordinal and a
-    /// RECORD/SUBJECT target kind; a BOUND head has a target and a revision, a MASKED/RELEASED head the canonical
+    /// RECORD/SUBJECT/ADDRESS (SPIKE, Part C) target kind; a BOUND head has a target and a revision, a MASKED/RELEASED head the canonical
     /// zero target, a revision ≥ 2 and a previous admission. SPIKE (T-4): a MASKED/RELEASED head that was never
     /// bound has target kind 0, and a first mask has revision 1 and no previous admission. Reserved states pass
     /// (callers make them UNKNOWN).
@@ -858,7 +859,7 @@ contract LensReader is ILensReader {
         }
         if (
             h.admission == 0 || h.admission > high || h.prevAdmission >= h.admission
-                || h.bindingOrdinal == 0 || h.targetKind > TARGET_SUBJECT
+                || h.bindingOrdinal == 0 || h.targetKind > TARGET_ADDRESS
         ) return false;
         if (s == 1) return h.target != 0 && h.revision != 0 && h.targetKind != 0;
         // SPIKE (T-4): a head that was never bound (first mask, then release/mask) keeps target kind 0; only a

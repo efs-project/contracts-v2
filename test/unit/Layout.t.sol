@@ -233,7 +233,7 @@ contract LayoutTest is Test {
     function testLayoutIdIsStable() public pure {
         // Regenerate with `pnpm layout`; a changed id means a one-way door moved.
         assertEq(
-            Layout.LAYOUT_ID, 0x6f2ac9d428a4ba7f938ff277edcba2f8f316fbba440184112a48728a74ce1288
+            Layout.LAYOUT_ID, 0x3a753c5347f9beb3f92e4fc1d9134215df6e2a63c29dc6f19ed31feadf484157
         );
     }
 
@@ -458,8 +458,8 @@ contract LayoutTest is Test {
             uint8 targetKind,
             uint48 prevAdmission,
             uint48 bindingOrdinal,
-            uint40 notAfter,
-            uint8 strength
+            uint32 notAfter,
+            uint16 strength
         ) = Layout.unpackHeadRowWord0(raw(address(L), s));
         assertEq(state, h.state);
         assertEq(revision, h.revision);

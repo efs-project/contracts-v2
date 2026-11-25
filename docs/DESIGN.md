@@ -269,20 +269,20 @@ AdmissionRow { uint256 meta; bytes32 a }                           (2 slots; UNB
       | prevAdmission u48@156 | withdrawn u1@204 | policyRow u16@205 | roleRow u16@221 | targetKind u8@237 | reserved u11@245
   a:    PUBLISH/REUSE = recordId; BIND = target; CREATE = salt; WITHDRAW = bytes32(targetAdmission)
   kind: 1 PUBLISH 2 REUSE 3 BIND 4 UNBIND 5 CREATE 6 WITHDRAW 7 RELEASE; 8 STAGE, 9 COMMIT reserved (refused until b9); 10..15 reserved
-  SPIKE (T-4 number): bind-kind rows carry the action's strength (its salt, 0..255; RELEASE 0). The generated Layout has no
-      reserved bits in this word (byte-aligned fields: withdrawn is u8@208, targetKind u8@248), so the strength reuses the
-      withdrawn byte, which is dead in bind rows (WITHDRAW refuses them, E_WITHDRAW 1); readers report withdrawn for kinds 1/2 only.
+  SPIKE (T-4 number, 16 bits): bind-kind rows carry the action's strength (its salt, 0..65535; RELEASE 0) in the policyRow
+      field (u16@216 in the generated Layout), which the kernel always fills with 0 for BIND/UNBIND/RELEASE; withdrawn keeps
+      meaning withdrawn only; LedgerReads.admission reports policyRow 0 for bind kinds.
   The signed Action tuple is re-encodable: typeId from the record cell, bodyHash = keccak(body words),
   purpose/subject/role from position[bindingPosition[bindingOrdinal]], target from a, expectedRevision from meta.
   targetKind in BIND rows lets the replay decoder rebuild oldTarget/oldTargetKind from the prevAdmission chain (no shadow heads).
 
 HeadRow { uint256 meta; bytes32 target }                           (2 slots per fresh binding)
   meta: state u8@0 | revision u48@8 | admission u48@56 | targetKind u8@104 | prevAdmission u48@112
-      | bindingOrdinal u48@160 | notAfter u40@208 (reserved zero; "stale not dead" seam) | strength u8@248 (SPIKE, T-4 number)
+      | bindingOrdinal u48@160 | notAfter u32@208 (reserved zero; "stale not dead" seam; SPIKE: was u40) | strength u16@240 (SPIKE, T-4 number)
   state: 0 UNSET 1 BOUND 2 MASKED 3 RELEASED; 4..255 reserved (refused)
-  targetKind: 0 NONE 1 RECORD 2 SUBJECT; 3..255 reserved
-  strength (SPIKE, T-4 number): the signed number is derived, never stored signed: BOUND → number = strength (0..255),
-      MASKED → number = -1 - strength (-1..-256), UNSET/RELEASED → none (RELEASE writes 0). A strength-0 action keeps today's meaning.
+  targetKind: 0 NONE 1 RECORD 2 SUBJECT 3 ADDRESS (SPIKE, tags/topics: a nonzero address-shaped target that is neither); 4..255 reserved
+  strength (SPIKE, T-4 number): the signed number is derived, never stored signed: BOUND → number = strength (0..65535),
+      MASKED → number = -1 - strength (-1..-65536), UNSET/RELEASED → none (RELEASE writes 0). A strength-0 action keeps today's meaning.
   The target word is KEPT on MASK and RELEASE (never cleared): a later RESTORE or re-bind to the same target
   rewrites instead of re-creating a fresh slot (5,000 / 12,100 instead of 22,100 / 110,020). The canonical target
   is defined as 0 whenever state != BOUND: Layout.canonicalTarget, ILedgerHot.head, LedgerReads.head, headSnapshotHash
@@ -974,7 +974,7 @@ For leaf `i`: `++admission`; `kind` dispatch with the per-kind zero-shape law (`
 
 - **PUBLISH/REUSE.** *Kernel:* `typeInfo` (one registry `STATICCALL`; `E_UNKNOWN_TYPE`); PUBLISH: `body.length ≤ limits.maxBody`, `keccak(body) == bodyHash` (`E_BODY`); REUSE: the record header exists with the same Type (`E_MISSING_RECORD`, `E_TYPE_MISMATCH`). *Ingress:* `DELEGATECALL LedgerIngress.validateLeaf(leaf, typeInfo, recordId, body, admission, principalId)` (zero-write; for REUSE it loads the body words through `Layout`): resolves the leading `refCount` body words as existing records of the expected Types (`0 = ANY`, `1 = SELF` by one compare; other sentinels refused, `E_REF`), builds `RefHeader[]` with `refHeaderWords` words each, builds `AcceptContext{…, ledger = address(this), index = realm.index, registry}`, re-verifies `extcodehash(mandatory) == ruleId` (`E_ACCEPTOR_CODE`), computes `available = (gasleft() − limits.kernelTail) × 63/64` and requires `available ≥ effectiveValidationGas` (`E_GAS(leaf, needed, available)`), calls the mandatory rule by assembly `staticcall{gas: available}` into a 32-byte output buffer; success is `returndatasize() == 32 && word == selector`; on failure, empty returndata with `gasUsed ≥ available − 2,000`, or a 32-byte `EXHAUSTED` word (§5.10), → `E_ACCEPTOR_GAS(leaf, typeId, available)` (resubmit), anything else → `E_REJECTED(leaf, typeId)`; then, **only when the Type's active policy row names a nonzero acceptor**, the policy acceptor the same way (`E_POLICY_REJECTED`); the policy row (possibly a no-policy row) is recorded in the admission row either way. *Apply:* `DELEGATECALL LedgerApply.applyLeaf(...)` writes a fresh cell + body words or bumps `occurrences`; the admission row `{meta, a = recordId}` with `policyRow`; returns the Effect/3 with `freshRecord`, `refCount` (refs appended to the publication's `refs` buffer).
 - **BIND.** `position = Keys.position(purpose, subject, role)`, `key = Keys.binding(principalId, position)`; `head.state ≤ 3` (`E_NOT_LIVE`); CAS on `revision == expectedRevision` (`E_CAS`); target exists as a record or subject (`E_TARGET_MISSING`); the *kernel* calls `roleExpectation(purpose, role)` (one registry `STATICCALL`) and requires a match when a row exists (`E_TARGET_TYPE`), passing `roleRow` to the apply delegate, which makes no external call; a fresh key mints `bindingOrdinal`, writes `bindingPosition` and the write-once position cell; head meta rewritten `(BOUND, revision + 1, admission, targetKind, prevAdmission = old admission, bindingOrdinal)`; the target word is rewritten only when it differs; admission row with `prevAdmission` and `targetKind`; Effect/3 carries `transitionKind` (FIRST_BIND / REBIND / RESTORE), `oldTarget`, `oldTargetKind`.
-- **SPIKE (T-4 number) shape law for bind kinds.** BIND and UNBIND carry an unsigned strength in `salt`: `salt > 255` → `E_SHAPE(leaf, 2)` (refused, never truncated); RELEASE keeps `salt == 0`. The head and the admission row record it (§4.3). BIND on a BOUND head to the same target with another strength is an ordinary REBIND.
+- **SPIKE (T-4 number) shape law for bind kinds.** BIND and UNBIND carry an unsigned strength in `salt`: `salt > 65535` → `E_SHAPE(leaf, 2)` (refused, never truncated); RELEASE keeps `salt == 0`. The head and the admission row record it (§4.3). BIND on a BOUND head to the same target with another strength is an ordinary REBIND.
 - **UNBIND (mask) / RELEASE.** live (RELEASE also from MASKED; SPIKE (T-4): UNBIND from UNSET as FIRST_MASK, from BOUND, RELEASED and MASKED, so -1 becomes -5 in one action); CAS; state → 2 / 3; **the target word is kept**; admission row (meta only); Effect/3 with `oldTarget` = the canonical target before the transition.
 - **CREATE.** `salt != 0` (`E_SALT`); `subjectId = Keys.subject(principalId, salt)` unseen (`E_SUBJECT_EXISTS`); subject cell; admission row `{meta, a = salt}`.
 - **WITHDRAW.** `target ∈ (0, admission)`, a PUBLISH/REUSE, not withdrawn, retained principal equals the author (`E_WITHDRAW`); target row `withdrawn = 1`; `occurrences − 1` by checked subtraction; bytes never erased; heads untouched; Effect/3 carries the withdrawn coordinate.
