@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "f28c929c00b9f912580fced5d29eee77a91802c6",
-    "tree": "3ae98ebc0c6c2a407b07f40a6582fb22eb9d3e7f",
-    "dirty": 7,
+    "commit": "9e4d52557593904cbdf8cf71233f8d9895559fc8",
+    "tree": "877ae2d0d51ab8e44baef9e409422879844965e8",
+    "dirty": 2,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -128,7 +128,7 @@
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
     "src/periphery/KeysView.sol": "0xdd6cdae729a297ac6859171a801c89b21af429bbf085a89970aac2a1825a48f7",
     "src/interfaces/IWeb3Gateway.sol": "0x7fdbf781f32df3fa09aaa04f6790c3623e01eba96a26ab35388857dcff0f22ce",
-    "src/periphery/EfsWeb3Gateway.sol": "0x6715ad1b681d8f9269890c36d1b86f30f0acdadd21e26e9799b0f11bdc8def18",
+    "src/periphery/EfsWeb3Gateway.sol": "0x5cfaec5f7e18b982d84fd81a829818b00405006b8a5005ada49dc37e1c99bcf0",
     "src/profiles/TopicProfile.sol": "0xee515a8a7d7ea4ff9fcceab44b9e45f72654671326dfb87317e8ada855b59e42",
     "src/profiles/TopicWordRule.sol": "0xbac191bfd610fe172765e39c86694dd6dd4b28154e5663314a46d73f2d4116e1",
     "src/profiles/TopicRule.sol": "0xc9c538e054c8e4d6a2fc8cf9165e70590fa454d4ea148732ff2d411915759eb0",
@@ -1770,11 +1770,11 @@
     },
     "EfsWeb3Gateway": {
       "source": "src/periphery/EfsWeb3Gateway.sol",
-      "runtimeHash": "0x6143750592d238c78f1f17bc3a7d471ba1ef7a7327a9ffcd730b895faf33bb78",
-      "deployedBytecodeHash": "0x53eeb478c4dd7d158ea3cf755140094231fe7c3202c892c689d1300bc9c59aa5",
-      "initcodeHash": "0xa0b0d8137e20b351886b977db7026e2605729f4c3bff46589ea10c1e122b2d78",
-      "initcodeWithArgsHash": "0xe8226c69f8dd18e0d68e53a804189ac29e03d58aaeefa91c2a083a01ec1e7a00",
-      "address": "0xddf4B7c510DcBd02542f459058ebe7F73944C21a",
+      "runtimeHash": "0xb763c05aae544d51a0353f201af4a1c4ac12f4d6aa3b2aa24b69751665cad811",
+      "deployedBytecodeHash": "0x748bc42406d51f752f0303f4ae229ac517ad3aabff741022d38b9443975a0430",
+      "initcodeHash": "0x75d6406ca0fc4e27d0038cd7923e8118ab473cff53110a9f314369c9aa6bffc9",
+      "initcodeWithArgsHash": "0x14383642a96b856f80062105447da199ec4b28477e68b823af233ba80ddf3955",
+      "address": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD",
       "realmSpecific": true,
       "planStep": "R5",
       "immutables": [
@@ -1782,60 +1782,60 @@
           "name": "BYTES_TYPE",
           "offsets": [
             876,
-            17901,
-            18880
+            17945,
+            18924
           ]
         },
         {
           "name": "CHILD_TYPE",
           "offsets": [
             678,
-            8719
+            8857
           ]
         },
         {
           "name": "CONTENT_TYPE",
           "offsets": [
             736,
-            15516
+            15560
           ]
         },
         {
           "name": "DIRECTORY_TYPE",
           "offsets": [
             934,
-            7154
+            4813,
+            5144
           ]
         },
         {
           "name": "EXTERNAL_TYPE",
           "offsets": [
             1018,
-            15477
+            15521
           ]
         },
         {
           "name": "LAYOUT",
           "offsets": [
             411,
-            4182
+            4437
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
             1227,
-            4114,
-            6307,
-            7095,
-            7283,
-            8024,
-            12971,
-            13232,
-            13401,
-            15409,
-            17862,
-            18810
+            4357,
+            6861,
+            7551,
+            8337,
+            13015,
+            13276,
+            13445,
+            15453,
+            17906,
+            18854
           ]
         },
         {
@@ -1848,20 +1848,20 @@
           "name": "PAGER",
           "offsets": [
             1074,
-            9183
+            9304
           ]
         },
         {
           "name": "READS",
           "offsets": [
             467,
-            4819,
-            13048,
-            13310,
-            13480,
-            15609,
-            17792,
-            19016
+            5245,
+            13092,
+            13354,
+            13524,
+            15653,
+            17836,
+            19060
           ]
         },
         {
@@ -1874,15 +1874,15 @@
           "name": "ROOT_TYPE",
           "offsets": [
             1297,
-            8085
+            8398
           ]
         },
         {
           "name": "SPAN_TYPE",
           "offsets": [
             315,
-            17828,
-            18919
+            17872,
+            18963
           ]
         },
         {
@@ -1893,9 +1893,9 @@
         }
       ],
       "sizes": {
-        "runtime": 19584,
-        "initcode": 20670,
-        "initcodeWithArgs": 21086
+        "runtime": 19628,
+        "initcode": 20714,
+        "initcodeWithArgs": 21130
       },
       "budget": null
     },
@@ -2521,12 +2521,12 @@
         "runtimeCodehash": "0xcba05c8656048e89ff95173c7db7ff3b558a8cb7799e0c7ddd2e77ce564dc1b4"
       },
       "web3Gateway": {
-        "address": "0xddf4B7c510DcBd02542f459058ebe7F73944C21a",
-        "runtimeCodehash": "0x53eeb478c4dd7d158ea3cf755140094231fe7c3202c892c689d1300bc9c59aa5",
+        "address": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD",
+        "runtimeCodehash": "0x748bc42406d51f752f0303f4ae229ac517ad3aabff741022d38b9443975a0430",
         "resolveMode": "5219",
         "rootDirectory": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
         "pager": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
-        "urlBase": "web3://0xddf4B7c510DcBd02542f459058ebe7F73944C21a:31337/"
+        "urlBase": "web3://0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD:31337/"
       },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
@@ -2702,7 +2702,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0xdff01548bb72687de68efbc1b37c934a4bee0a6cf67bba45c46067cdba6512e3",
+    "sha256": "0x82cbe1dae7c873e60aafad8c9768b788052b997bc535391d78ba451f4c2bc631",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
