@@ -734,8 +734,8 @@ rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fi
 (amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only). It
 is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
 guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
-script predicts six composites it never fits (create file, edit, rename + move, two chunks, the last publication of
-a 40 KB file, a first tag on a fresh 6-word path) and exits 1 if a prague prediction is off by more than 15%.
+script predicts seven composites it never fits (create file, edit, rename + move, two chunks, the last publication of
+a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and exits 1 if a prague prediction is off by more than 15%.
 
 **First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
 the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author
@@ -749,6 +749,40 @@ by four `tag level` rows (`(k2 − k1) / 4` of a first statement on a 2-word and
 so each is one level: "all" rows a first tag at a fresh position, "mine" rows a first no at an existing position), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
 these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
+
+**Statements about topics (`PROPERTY`, `SAME`, `BROADER`, design §12.5).** One constant per statement shape, measured
+like every bind row (k2 − k1 of one and two statements at distinct positions, by an author who has written before, the
+topics and texts registered by an unmeasured publication in the row's own test). A label is `PROPERTY` at
+(topic, `labelKey("en")`) → an existing `text/1`; `SAME` is measured word page to word page and 2-word path to 2-word
+path (the two differ by about 100 gas, so a planner may use either), `BROADER` word page to word page; the later
+statements are on word pages. None of them has a per-level term: a path costs what a word page does. **A label with a
+new text** in the same publication (`EfsTopics.label`) is the `text/1` publish row plus the first statement:
+`publishNew["text/1"] + perWord·ceil(n/32) + perByte·n + bindPropertyFresh` for an n-byte text. The composite
+`validate label new text` (24 bytes) checks it: predicted 828,939 against 890,272 measured on prague (−6.89%), 2,812,603
+against 3,057,918 on amsterdam (−8.02%), inside the headroom. The rows (gas; amsterdam execution gas in brackets) and the
+nearest existing row:
+
+| constant | statement | prague | amsterdam (execution) | nearest existing row (prague; amsterdam execution) |
+|---|---|---:|---:|---|
+| `bindPropertyFresh` | a label as a first statement, naming an existing text | 328,774 | 1,303,760 (226,640) | `bindHeadFresh` −0.7%; +2.1% |
+| `bindPropertyRebind` | a label changed to another existing text (a re-bind) | 196,281 | 584,361 (192,681) | `bindHeadRebind` −3.9%; −4.0% |
+| `unbindProperty` | a mask of a label | 145,913 | 350,753 (154,913) | `unbindTag` −6.4%; −6.1% |
+| `releaseProperty` | a release of a label | 144,725 | 349,565 (153,725) | `releaseTag` −6.5%; −6.1% |
+| `bindSameFreshWord` | `same`, word page to word page, first statement | 357,488 | 1,413,358 (238,318) | `bindTagFresh` −13.7%; −13.4% |
+| `bindSameFreshPath` | `same`, path to path, first statement | 357,384 | 1,413,290 (238,250) | `bindSameFreshWord` −104 gas; −68 gas |
+| `unbindSame` | a mask of a `same` | 146,024 | 350,840 (155,000) | `unbindProperty` +111 gas; +87 gas |
+| `releaseSame` | a release of a `same` | 144,824 | 349,664 (153,824) | `releaseProperty` +99 gas; +99 gas |
+| `restoreSame` | a restore of a masked `same` | 174,603 | 474,639 (180,879) | `restoreTag` −6.5%; −6.3% |
+| `bindBroaderFresh` | `broader`, word page to word page, first statement | 357,463 | 1,413,381 (238,341) | `bindSameFreshWord` −25 gas; +23 gas |
+| `unbindBroader` | a mask of a `broader` | 146,035 | 350,875 (155,035) | `unbindSame` +11 gas; +35 gas |
+| `releaseBroader` | a release of a `broader` | 144,847 | 349,675 (153,835) | `releaseSame` +23 gas; +11 gas |
+| `restoreBroader` | a restore of a masked `broader` | 174,614 | 474,662 (180,902) | `restoreSame` +11 gas; +23 gas |
+
+`SAME` and `BROADER` cost the same to within 40 gas, and their masks and releases cost what a label's do; a first
+`SAME` or `BROADER` is about 29k above a label's (the validator reads both topics' headers) and well below a first TAG,
+which also writes the topic lists. `tools/gas-plan.mjs` prices every one of them from its constants key (`{ kind:
+"bind", cost: "bindSameFreshWord", first: true }`) with no purpose-specific code; `first` is true for the three first
+statements and false for every later one.
 
 **The floor and the planning rule (design §10.4).** Before each index callback the kernel requires a floor of
 execution gas to be visible (`gasleft()`), and on Glamsterdam only execution gas is visible and capped. So that a
