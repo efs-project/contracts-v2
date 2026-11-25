@@ -30,6 +30,13 @@ import {E_CODE_SHAPE} from "../interfaces/Errors.sol";
 ///      are live and hold a forbidden opcode. `tools/checks.mjs` applies the identical rule off chain.
 ///      Gas: one table lookup per instruction (no bounds check: 64 sentinel bytes of 0xff stop the walk),
 ///      unrolled 16 times; ≈ 32 gas per instruction walked (`test/unit/CodeScan.t.sol` logs the figures).
+///      The cost of a scan depends on the unit's constant bytes, not only on its size: the fast walk stops at the
+///      first forbidden byte, and when that byte lies before the trailer the unit is walked again from pc 0
+///      with liveness tracked. Under via-IR such bytes sit in the 32-byte constants after the final `INVALID`,
+///      so which units pay the second walk changes whenever a constant changes (measured 2026-11-24: renaming
+///      the protocol strings moved the gen-1 activation from 4.21M to 2.97M gas with no code change). Budget an
+///      activation as if every scanned unit were walked twice; a revision that records the first dead stretch
+///      in the fast walk would make the cost a function of size alone.
 library CodeScan {
     /// Bit `op` set for each forbidden opcode: f0 CREATE, f2 CALLCODE, f4 DELEGATECALL, f5 CREATE2,
     /// ff SELFDESTRUCT.

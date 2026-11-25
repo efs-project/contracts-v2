@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "7fc4540ec97bf3decab3d0051f2bff0a6d289df0",
-    "tree": "998a3f6e32095302e218b79ed4b9439e99827832",
-    "dirty": 120,
+    "commit": "fc21e1b41da0f0dc0389a300d11bc28b10122781",
+    "tree": "3b3a0f0732755b48cde6083376119ab03ee614aa",
+    "dirty": 1,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -60,7 +60,7 @@
     "src/interfaces/ILedgerControl.sol": "0x30c58e8e4682bfedcda8ecd83ee4e2811cb185060fcc9a976051541a8c5f02e6",
     "src/interfaces/IPostingStore.sol": "0xbe0adc5213eae601f6630120eee57e13dadc96391ea56518074042b78ac71c02",
     "src/interfaces/internal/ILedgerControlDelegate.sol": "0x54e2b3a9d4b1cce67ce7dd28adaedc5b7d32aee4baa9da52c6c0a8fc1b1934ae",
-    "src/lib/CodeScan.sol": "0x13b9a14bb6ff97cdccbbed1efd2740cbbe49691bf1fdbd635a89a1fc475b27e5",
+    "src/lib/CodeScan.sol": "0xb44e1da7e8fcba74f6499d7c825ab0923c2f22b898587cb8c58fdd1d709bcd61",
     "dependencies/@openzeppelin-contracts-5.6.1/proxy/utils/Initializable.sol": "0xf527a063813c2bf60c153fb08e38539578935402894fcc36fac42324ca325d3b",
     "dependencies/@openzeppelin-contracts-upgradeable-5.6.1/proxy/utils/Initializable.sol": "0xa8b2a4ade9afe90f8e5026906c69911489389f2a892c5e4fe3de5cb918869251",
     "src/core/LedgerCore.sol": "0x537da2b03ca31ffff3f674f5ef7007dec07a3c1463af858a94423005ea19a5f9",
