@@ -213,7 +213,7 @@ assert.equal(constants.status.codes["12"], "LIMIT_EXCEEDED");
 assert.deepEqual(constants.files.form, { INLINE: 0, CONTENT: 1 });
 assert.deepEqual(constants.files.contentCarrier, { INLINE: 0, REMOTE: 1, SPAN: 2 });
 assert.equal(constants.files.chunking.chunkPayload, 8160);
-assert.deepEqual(constants.topics.refusedClasses, { C1: 1, BIDI: 2, INVISIBLE: 3, JOINER: 4, NONCHARACTER: 5 });
+assert.deepEqual(constants.topics.refusedClasses, { C1: 1, BIDI: 2, INVISIBLE: 3, JOINER: 4, NONCHARACTER: 5, WHITESPACE: 6 });
 assert.equal(constants.topics.wordMax, 255);
 assert.equal(constants.purposes.FOLDER.id, plan.index.units[0].purposeFilter ?? constants.purposes.FOLDER.id, "Purpose.FOLDER != the validator unit's purpose filter");
 
