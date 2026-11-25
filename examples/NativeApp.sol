@@ -30,7 +30,7 @@ contract NativeAppRule is IAcceptor {
     }
 }
 
-/// @title NativeApp — a tiny external Solidity consumer of an EFS v2 ledger (design §12.3)
+/// @title NativeApp — a tiny external Solidity consumer of an EFS ledger (design §12.3)
 /// @notice At initialization it deploys its own NATIVE rule at the deterministic instance (the EIP-7997 factory,
 ///         salt 0), retains the declaration it was given (descriptor bytes + the declaration key's signature) in
 ///         the registry's descriptor store and registers the Type — idempotently, so any number of apps (or
@@ -52,7 +52,7 @@ contract NativeAppRule is IAcceptor {
 contract NativeApp {
     using EfsNative for ILedger;
 
-    bytes32 public constant FOLDER = keccak256("efs2/purpose/folder/1");
+    bytes32 public constant FOLDER = keccak256("efs/purpose/folder/1");
 
     struct Entry {
         bytes32 subject;

@@ -5,7 +5,7 @@ pragma solidity ^0.8.27;
 // `IIndexReads` and the kernel-internal delegates.
 
 /// Effect/3: 24 static words (768 B); callbackProfile =
-/// keccak("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs").
+/// keccak("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs").
 /// transitionKind: 0 none (publish/reuse/create/withdraw) 1 FIRST_BIND 2 REBIND 3 MASK 4 RELEASE 5 RESTORE (BIND
 /// from MASKED/RELEASED). freshRecord: first admission of recordId. refCount: how many entries of `refs` belong
 /// to this effect, in order. WITHDRAW: recordId/typeId of the withdrawn record, withdrawnAdmission = target

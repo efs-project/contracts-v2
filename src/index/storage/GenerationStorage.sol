@@ -18,14 +18,14 @@ abstract contract GenerationStorage {
         uint8 state; // 1 BUILDING 2 BUILT
     }
 
-    /// @custom:storage-location erc7201:efs.index.v2.gen
+    /// @custom:storage-location erc7201:efs.index.gen
     struct GenStorage {
         Progress progress;
         mapping(bytes32 family => BuildFrontier) buildFrontier;
     }
 
     bytes32 internal constant GEN_ROOT =
-        0x1dec63f4cbafd6b4fe84cdc042050c704f9cdfe7f0d5bcbdfce1b30ca8f26300;
+        0xb5c0d2a68acfe73ade1091b3f74f29317622b434abd8d361aeac70e6ad780e00;
 
     function _gen() internal pure returns (GenStorage storage $) {
         assembly ("memory-safe") {

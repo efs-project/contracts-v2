@@ -10,7 +10,7 @@ import {E_READER} from "../interfaces/Errors.sol";
 ///         first physical profile at listing time and is never removed or changed. Nothing in the kernel reads
 ///         this contract: a listing is a discovery hint, never an endorsement — a client still pins the reader's
 ///         codehash from a release it trusts and checks the basis every read echoes. `kind` is the caller's
-///         label (for example `keccak256("efs2/reader/lens/1")`); the directory does not interpret it.
+///         label (for example `keccak256("efs/reader/lens/1")`); the directory does not interpret it.
 /// @dev Immutable, no owner. Refuses a code-less or EIP-7702-designator reader (`E_CODE_SHAPE`, `CodePins`) and,
 ///      as `E_READER(reader, code)`: 1 already listed under this `(ledger, kind)`, 2 `ledger()` names another
 ///      ledger, 3 a malformed `supportedProfiles()` reply, 4 the `(ledger, kind)` list is full (the `uint16` page

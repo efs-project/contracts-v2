@@ -41,10 +41,10 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     address public immutable BITMAP;
     bytes32 public immutable MANIFEST_HASH;
     bytes32 public constant PHYSICAL_PROFILE =
-        keccak256("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
+        keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
     bytes32 public constant CALLBACK_PROFILE =
-        keccak256("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs");
-    bytes32 public constant MANIFEST_HEADER = keccak256("efs2/index-manifest/1");
+        keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+    bytes32 public constant MANIFEST_HEADER = keccak256("efs/index-manifest/1");
     uint64 private constant NOT_MAINTAINED = type(uint64).max;
     uint8 private constant SHAPE_APPEND = 1;
     uint8 private constant SHAPE_BITMAP = 2;
@@ -147,7 +147,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                 shape: shape,
                 mandatory: from == 1,
                 liveSemantics: liveSemantics,
-                recipe: keccak256(abi.encodePacked("efs2/family-recipe/", kind)),
+                recipe: keccak256(abi.encodePacked("efs/family-recipe/", kind)),
                 fromAdmission: from,
                 store: store,
                 storeCodehash: store.codehash

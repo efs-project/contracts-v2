@@ -12,7 +12,7 @@ import {FilesSpanRule} from "../../src/profiles/FilesSpanRule.sol";
 import {Factory} from "../harness/doubles/Factory.sol";
 import {FilesFixture} from "./FilesFixture.sol";
 
-/// @notice The ten descriptors from `FilesTypes`: they parse under codec `efs2/described/1` exactly as the
+/// @notice The ten descriptors from `FilesTypes`: they parse under codec `efs/described/1` exactly as the
 ///         registry parses them, their headers name the deterministic instances, their REF32 projections are the
 ///         ones design §12.1 lists, `typeIdOf` is the registry's derivation, and every instance is a plain runtime.
 contract FilesTypesTest is FilesFixture {
@@ -56,7 +56,7 @@ contract FilesTypesTest is FilesFixture {
             assertEq(h.textProfile, 1);
             assertEq(h.validationGas, 0);
             assertEq(h.declarationKey, declarationKey);
-            assertEq(h.namespace, keccak256("efs2/files/1"));
+            assertEq(h.namespace, keccak256("efs/files/1"));
             assertEq(
                 h.ruleCodehash, instances[t].codehash, "ruleCodehash names the instance's runtime"
             );

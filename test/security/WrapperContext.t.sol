@@ -94,7 +94,7 @@ contract WrapperContextTest is DescribedRealm {
     function _bindingIdFor(AcceptContext memory c, address custom) internal view returns (bytes32) {
         return keccak256(
             abi.encode(
-                keccak256("efs2/described-binding/1"),
+                keccak256("efs/described-binding/1"),
                 address(rule).codehash,
                 block.chainid,
                 c.registry,
@@ -127,7 +127,7 @@ contract WrapperContextTest is DescribedRealm {
         LookalikeCoordinator co = new LookalikeCoordinator();
         // a descriptor naming another rule codehash, in a blob the coordinator put
         Descriptors.Params memory q = _params(1, 0, _textFields(), 1);
-        q.ruleCodehash = keccak256("efs2/test/another-rule");
+        q.ruleCodehash = keccak256("efs/test/another-rule");
         bytes memory d = q.encode();
         address blob = a.store.put(d, hex"01");
         bytes32 claimed = _idFor(d, q.ruleCodehash); // the id a registry derives from this header
@@ -150,7 +150,7 @@ contract WrapperContextTest is DescribedRealm {
             noHeaders
         );
         assertEq(reply, _err(E_GRADE.selector, 1));
-        d = _params(3, keccak256("efs2/test/initcode"), _textFields(), 1).encode();
+        d = _params(3, keccak256("efs/test/initcode"), _textFields(), 1).encode();
         blob = a.store.put(d, hex"01");
         (ok, reply) = co.ask(
             address(rule),
@@ -316,7 +316,7 @@ contract WrapperContextTest is DescribedRealm {
                 keccak256(
                     abi.encode(
                         t,
-                        uint256(0xb88a601303f5b59143b779b8925ece487b1fa8710d521523140b6c2d91568c00)
+                        uint256(0xf33da83cec8cfa19b823e041c9adb0176a906c07f2b895fc2182be31f9d30100)
                             + 1
                     )
                 )
@@ -440,7 +440,7 @@ contract WrapperContextTest is DescribedRealm {
         assertEq(vm.getDeployedCode("DescribedTypeRule.sol:DescribedTypeRule"), address(rule).code);
         vm.prank(address(0xD00D));
         DescribedTypeRule other = new DescribedTypeRule();
-        DescribedTypeRule salted = new DescribedTypeRule{salt: keccak256("efs2/test/salt")}();
+        DescribedTypeRule salted = new DescribedTypeRule{salt: keccak256("efs/test/salt")}();
         assertEq(address(other).codehash, address(rule).codehash, "deployer-independent");
         assertEq(address(salted).codehash, address(rule).codehash, "CREATE2-independent");
     }

@@ -64,10 +64,10 @@ contract LensReader is ILensReader {
     uint8 public constant STRICT_CONTINUATION = 0x80;
     /// The generation-1 index profiles this reader serves (`RealmIndex.CALLBACK_PROFILE`/`PHYSICAL_PROFILE`).
     bytes32 public constant CALLBACK_PROFILE =
-        keccak256("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+        keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
     bytes32 public constant PHYSICAL_PROFILE =
-        keccak256("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
-    bytes32 public constant QUERY_DOMAIN = keccak256("efs2/lens/list-query/1");
+        keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
+    bytes32 public constant QUERY_DOMAIN = keccak256("efs/lens/list-query/1");
 
     uint8 private constant NONE = type(uint8).max;
     uint8 private constant TARGET_RECORD = 1;

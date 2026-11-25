@@ -4,7 +4,7 @@ pragma solidity 0.8.37;
 import {ClosureConstants} from "../interfaces/Limits.sol";
 import {E_CODEC, E_BODY} from "../interfaces/Errors.sol";
 
-/// @title DescribedCodec — codec `efs2/described/1` (design §9.2)
+/// @title DescribedCodec — codec `efs/described/1` (design §9.2)
 /// @notice The identity-bearing descriptor grammar: a 134-byte header, the name, the description, then
 ///         `fieldCount` rows of 164 bytes exactly as the prototype's WIRE grammar (kinds 1–8). `parse` is what
 ///         the registry runs at registration and what the described wrapper re-runs at every acceptance;

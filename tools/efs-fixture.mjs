@@ -781,7 +781,7 @@ export async function verify(o = {}) {
     indexGeneration: 1, indexManifestHash: plan.index.manifestHash, indexObligations: plan.realm.indexObligations, controller: a.controller, controllerCodehash: set.components.controllerCodehash,
     controllerOwner: plan.owner, steward: zeroAddress, frozen: false, phase: 0, readerDirectory: a.readerDirectory, thisFacet: a.ledgerReads, thisFacetCodehash: plan.units.LedgerReads.runtimeCodehash,
     facetVersion: 1, admissions: BigInt(exp.counts.admissions), records: BigInt(exp.counts.records), bindings: BigInt(exp.counts.bindings), publications: BigInt(exp.counts.publications),
-    domainSeparator: plan.realm.domainSeparator, limitsProfileId: plan.realm.limitsProfileId, statusVocabularyId: keccak256(toHex("efs2/status-vocabulary/1")),
+    domainSeparator: plan.realm.domainSeparator, limitsProfileId: plan.realm.limitsProfileId, statusVocabularyId: keccak256(toHex("efs/status-vocabulary/1")),
     revisionBlock: BigInt(dep.activation.blockNumber), revisionAdmissionHigh: 0n, registryMutations: 1n,
     verifierProfilesRoot: pad("0x", { size: 32 }), dependencyRoot: pad("0x", { size: 32 }), noticePrincipal: pad("0x", { size: 32 }),
   };
@@ -876,9 +876,9 @@ export async function verify(o = {}) {
   const readme = exp.files[0];
   eq("keysView subjectId", await read(pub, kv, "KeysView", "subjectId", [exp.root.principalId, keccak256(toHex("readme"))]), readme.subjectId);
   eq("keysView recordId", await read(pub, kv, "KeysView", "recordId", [dep.typeIds["files-root/1"], keccak256(exp.file.body)]), readme.headRecordId);
-  const headPos = await read(pub, kv, "KeysView", "positionKey", [keccak256(toHex("efs2/purpose/head/1")), readme.subjectId, pad("0x", { size: 32 })]);
+  const headPos = await read(pub, kv, "KeysView", "positionKey", [keccak256(toHex("efs/purpose/head/1")), readme.subjectId, pad("0x", { size: 32 })]);
   eq("keysView bindingKey", await read(pub, kv, "KeysView", "bindingKey", [exp.root.principalId, headPos]), readme.headKey);
-  eq("keysView scopeKey", await read(pub, kv, "KeysView", "scopeKey", [exp.root.principalId, keccak256(toHex("efs2/purpose/folder/1")), exp.folder.directoryRecordId]), exp.file.scopeKey);
+  eq("keysView scopeKey", await read(pub, kv, "KeysView", "scopeKey", [exp.root.principalId, keccak256(toHex("efs/purpose/folder/1")), exp.folder.directoryRecordId]), exp.file.scopeKey);
   for (const spec of plan.index.specs) eq(`index digestSpecCount ${spec.typeId.slice(0, 10)}`, await read(pub, a.index, "RealmIndex", "digestSpecCount", [spec.typeId]), 1n);
   eq("seed root-is-directory", (await read(pub, a.ledgerProxy, "LedgerCore", "recordHeader", [dep.root.directoryRecordId]))[0], dep.typeIds["files-directory/1"]);
 
@@ -892,7 +892,7 @@ export async function verify(o = {}) {
   for (const [fn, value] of [["LEDGER", a.ledgerProxy], ["VIEWS", a.ledgerViews], ["READS", a.ledgerReads], ["LAYOUT", plan.layoutId], ["NAME_TYPE", dep.typeIds["files-name/2"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]]]) {
     eq(`readers page.${fn}`, await read(pub, pageR, "FilesPageReader", fn), value);
   }
-  const physical = keccak256(toHex("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"));
+  const physical = keccak256(toHex("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"));
   for (const r of [plan.readers.lens, plan.readers.filesPage]) {
     const [readers, codehashes, layoutIds, profiles] = await read(pub, a.readerDirectory, "ReaderDirectory", "readers", [a.ledgerProxy, r.kind, 0, 16]);
     eq(`readers directory ${r.kindLabel}`, [readers, codehashes, layoutIds, profiles], [[r.address], [r.runtimeCodehash], [plan.layoutId], [physical]]);

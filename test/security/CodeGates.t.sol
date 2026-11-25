@@ -27,7 +27,7 @@ contract CodeGatesTest is ControlFixture {
         uint8 reason;
     }
 
-    bytes32 internal constant MANIFEST = keccak256("efs2/test/security/code-gates/manifest");
+    bytes32 internal constant MANIFEST = keccak256("efs/test/security/code-gates/manifest");
 
     function _hostiles() internal returns (Hostile[4] memory h) {
         address target = address(new AcceptAll());
@@ -65,7 +65,7 @@ contract CodeGatesTest is ControlFixture {
         u[0].finalCodehash = fin == address(0) ? bytes32(0) : fin.codehash;
         u[0].familyIds = new bytes32[](0);
         u[0].hotAbiId = KernelDeploy.HOT_ABI_ID;
-        u[0].identity = keccak256("efs2/test/security/code-gates/unit");
+        u[0].identity = keccak256("efs/test/security/code-gates/unit");
     }
 
     function test_every_activation_code_gate_refuses_every_hostile_shape() public {

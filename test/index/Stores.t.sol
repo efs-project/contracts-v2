@@ -458,8 +458,8 @@ contract StoresTest is Test {
         assertEq(posting.ledger(), address(ledger));
         assertEq(bitmap.ledger(), address(ledger));
         assertEq(posting.initialWriter(), address(0));
-        assertEq(posting.storeAbiId(), keccak256("efs2/posting-store/1"));
-        assertEq(bitmap.storeAbiId(), keccak256("efs2/bitmap-store/1"));
+        assertEq(posting.storeAbiId(), keccak256("efs/posting-store/1"));
+        assertEq(bitmap.storeAbiId(), keccak256("efs/bitmap-store/1"));
         assertEq(posting.familyIds().length, 2);
         assertEq(bitmap.familyIds().length, 3);
         assertEq(bitmap.familyIds()[2], LIVE);

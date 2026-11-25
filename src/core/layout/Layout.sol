@@ -9,11 +9,11 @@ pragma solidity 0.8.37;
 // forge-lint: disable-start(unsafe-typecast)
 library Layout {
     bytes32 internal constant LAYOUT_ID =
-        0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a;
+        0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb;
 
-    // ---- efs.ledger.v2.realm — RealmStorage, 18 slot(s)
+    // ---- efs.ledger.realm — RealmStorage, 18 slot(s)
     bytes32 internal constant LEDGER_REALM_ROOT =
-        0xd1d82880908abd64876dc5abdb3d21a6118aa67f635eb0d222f8ae0c6374eb00;
+        0x282113142e9b03b41f73f795c71a689c6393962a323022d5ac5450977a98b200;
     uint256 internal constant LEDGER_REALM_REALMID_SLOT = uint256(LEDGER_REALM_ROOT) + 0; // bytes32 @ byte 0
     uint256 internal constant LEDGER_REALM_REALMORIGIN_SLOT = uint256(LEDGER_REALM_ROOT) + 1; // bytes32 @ byte 0
     uint256 internal constant LEDGER_REALM_REALMSALT_SLOT = uint256(LEDGER_REALM_ROOT) + 2; // bytes32 @ byte 0
@@ -205,9 +205,9 @@ library Layout {
         readerDirectory = address(uint160(x));
     }
 
-    // ---- efs.ledger.v2.counters — CountersStorage, 1 slot(s)
+    // ---- efs.ledger.counters — CountersStorage, 1 slot(s)
     bytes32 internal constant LEDGER_COUNTERS_ROOT =
-        0x63eac95c642a8299ccca6df135b3f61f7cfd222a0712997d1cd9fcdcfa9e5500;
+        0x2965fd57160ca86ec032f96eac3be480be385a49dbc724794da83198a2b1fb00;
     uint256 internal constant LEDGER_COUNTERS_ADMISSIONS_SLOT = uint256(LEDGER_COUNTERS_ROOT) + 0; // uint48 @ byte 0
     uint256 internal constant LEDGER_COUNTERS_RECORDS_SLOT = uint256(LEDGER_COUNTERS_ROOT) + 0; // uint48 @ byte 6
     uint256 internal constant LEDGER_COUNTERS_BINDINGS_SLOT = uint256(LEDGER_COUNTERS_ROOT) + 0; // uint48 @ byte 12
@@ -226,9 +226,9 @@ library Layout {
         publications = uint48(x >> 144);
     }
 
-    // ---- efs.ledger.v2.records — RecordsStorage, 2 slot(s)
+    // ---- efs.ledger.records — RecordsStorage, 2 slot(s)
     bytes32 internal constant LEDGER_RECORDS_ROOT =
-        0x7524f85143c406ba14d3b73dea3182e972b4d4504f1b783a38f0858767c1de00;
+        0x95ea68df03033e4e485691c801b399ada592d1857a089601df38c503c05de100;
 
     // cells[bytes32] -> RecordCell (64 bytes)
     function recordsCellsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -256,9 +256,9 @@ library Layout {
         carrierKind = uint8(x >> 128);
     }
 
-    // ---- efs.ledger.v2.subjects — SubjectsStorage, 1 slot(s)
+    // ---- efs.ledger.subjects — SubjectsStorage, 1 slot(s)
     bytes32 internal constant LEDGER_SUBJECTS_ROOT =
-        0xe593fc8637d8cc4bf73cbb933a15ce289f597399c2da2882777592cc3ee4c000;
+        0x34a8b688ba7a9f244b30e5d5c3e6a84c66b5c53c194d1ad88e53060ce8ff7100;
 
     // cells[bytes32] -> SubjectCell (32 bytes)
     function subjectsCellsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -277,9 +277,9 @@ library Layout {
         creatorKind = uint8(x >> 48);
     }
 
-    // ---- efs.ledger.v2.admissions — AdmissionsStorage, 1 slot(s)
+    // ---- efs.ledger.admissions — AdmissionsStorage, 1 slot(s)
     bytes32 internal constant LEDGER_ADMISSIONS_ROOT =
-        0x33042cebcd07e2f265085d626def780948525aefc12f3aa3822ae3531c63eb00;
+        0xf936524673093aaa638ecef8cea1b1fcb0a86f97670c7ca482a4fea6b1488e00;
 
     // rows[uint256] -> AdmissionRow (64 bytes)
     function admissionsRowsSlot(uint256 k0) internal pure returns (uint256 s) {
@@ -317,9 +317,9 @@ library Layout {
         targetKind = uint8(x >> 248);
     }
 
-    // ---- efs.ledger.v2.publications — PublicationsStorage, 2 slot(s)
+    // ---- efs.ledger.publications — PublicationsStorage, 2 slot(s)
     bytes32 internal constant LEDGER_PUBLICATIONS_ROOT =
-        0xe9165e74d7cf63baf9a84b176011c878a390e3e9f989a60de35575a350940a00;
+        0xef587c61258bfad7cfa2d61a999b8bebef5caa2271ed63df641e1f934e8f4f00;
 
     // evidence[uint256] -> EvidenceCell (416 bytes)
     function publicationsEvidenceSlot(uint256 k0) internal pure returns (uint256 s) {
@@ -394,9 +394,9 @@ library Layout {
         authEpoch = uint64(x);
     }
 
-    // ---- efs.ledger.v2.bindings — BindingsStorage, 3 slot(s)
+    // ---- efs.ledger.bindings — BindingsStorage, 3 slot(s)
     bytes32 internal constant LEDGER_BINDINGS_ROOT =
-        0xceda1ceb7d6e35dde16546393af20354114f252f7fbb4c227d63f743c35ffb00;
+        0x47b6d5a9531485da5c6460648366d4b22fa902f89c0d4efccabbd7b6f0738f00;
 
     // heads[bytes32] -> HeadRow (64 bytes)
     function bindingsHeadsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -440,9 +440,9 @@ library Layout {
         notAfter = uint40(x >> 208);
     }
 
-    // ---- efs.ledger.v2.principals — PrincipalsStorage, 1 slot(s)
+    // ---- efs.ledger.principals — PrincipalsStorage, 1 slot(s)
     bytes32 internal constant LEDGER_PRINCIPALS_ROOT =
-        0xf6114a07ac14eb57f9dac3ac5f41fd2824feddb467129b9fa50d96bc2daac900;
+        0x502ecb3517614eabd6915919aa7adca45b70b54c7b691fd5ee3825f222b63b00;
 
     // rows[bytes32] -> PrincipalRow (32 bytes)
     function principalsRowsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -461,9 +461,9 @@ library Layout {
         viewMutationVersion = uint48(x >> 48);
     }
 
-    // ---- efs.ledger.v2.revisions — RevisionsStorage, 1 slot(s)
+    // ---- efs.ledger.revisions — RevisionsStorage, 1 slot(s)
     bytes32 internal constant LEDGER_REVISIONS_ROOT =
-        0xd9645fc105a27a63ec9effce4033ff09babd0e322d92c50976c833cd02e4eb00;
+        0xc201c190a1412d71d30fef1177b33b57bf8640364aaafa2bd05597a067d7b700;
 
     // rows[uint256] -> RevisionRow (800 bytes)
     function revisionsRowsSlot(uint256 k0) internal pure returns (uint256 s) {
@@ -607,9 +607,9 @@ library Layout {
         limits_kernelTail = uint32(x >> 80);
     }
 
-    // ---- efs.registry.v2.types — TypesStorage, 2 slot(s)
+    // ---- efs.registry.types — TypesStorage, 2 slot(s)
     bytes32 internal constant REGISTRY_TYPES_ROOT =
-        0xb88a601303f5b59143b779b8925ece487b1fa8710d521523140b6c2d91568c00;
+        0xf33da83cec8cfa19b823e041c9adb0176a906c07f2b895fc2182be31f9d30100;
 
     // rows[bytes32] -> TypeRow (192 bytes)
     function typesRowsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -675,9 +675,9 @@ library Layout {
         blobLength = uint16(x >> 160);
     }
 
-    // ---- efs.registry.v2.declarations — DeclarationsStorage, 1 slot(s)
+    // ---- efs.registry.declarations — DeclarationsStorage, 1 slot(s)
     bytes32 internal constant REGISTRY_DECLARATIONS_ROOT =
-        0x8f2637a7c7ef5342894e46d7ac564c4785ed47b68917ca992a8f09c97592e400;
+        0xcd8e6cb67099bf4deab380a79e39e866feedda3f0365bab5f4c71bd0b7220500;
 
     // rows[bytes32] -> DeclarationRow (64 bytes)
     function declarationsRowsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -696,9 +696,9 @@ library Layout {
         installed = uint8(x >> 160);
     }
 
-    // ---- efs.registry.v2.policy — PolicyStorage, 1 slot(s)
+    // ---- efs.registry.policy — PolicyStorage, 1 slot(s)
     bytes32 internal constant REGISTRY_POLICY_ROOT =
-        0x7607b3cefdb65ccdfb170dbf9826aca7c3eb2dc0e0e0e5b7bce6a5dffc3f8400;
+        0xf79f93f502a9f1db3ca03146652b2c7e63c6e515716b59dda68bf801d5d37700;
 
     // rows[bytes32][uint256] -> PolicyRow (64 bytes)
     function policyRowsSlot(bytes32 k0, uint256 k1) internal pure returns (uint256 s) {
@@ -719,9 +719,9 @@ library Layout {
         mutationAt = uint48(x >> 200);
     }
 
-    // ---- efs.registry.v2.roles — RolesStorage, 2 slot(s)
+    // ---- efs.registry.roles — RolesStorage, 2 slot(s)
     bytes32 internal constant REGISTRY_ROLES_ROOT =
-        0xff16ead419b5fba0549e2629eb15e3f34a6f0ce7330d7cbb2139b6c4e90ceb00;
+        0x6864ecb50b786d57d32a993ea982bcb79fe8ccac6d2ff77ca134e1ab5ada1500;
 
     // rows[bytes32][uint256] -> RoleRow (64 bytes)
     function rolesRowsSlot(bytes32 k0, uint256 k1) internal pure returns (uint256 s) {
@@ -747,9 +747,9 @@ library Layout {
         mutationAt = uint48(x >> 40);
     }
 
-    // ---- efs.registry.v2.bindings — BindingsStorage, 1 slot(s)
+    // ---- efs.registry.bindings — BindingsStorage, 1 slot(s)
     bytes32 internal constant REGISTRY_BINDINGS_ROOT =
-        0x8a64542b45955b344eb3568068f1a96cd4fb0b1d8aae3976b48ef53dd8a65a00;
+        0x7f74cb4214d2027c0c0b9f1f324390fbcac1113b4ba0b4a3cf89779ed1dd0a00;
 
     // rows[bytes32] -> BindingRow (64 bytes)
     function bindingsRowsSlot(bytes32 k0) internal pure returns (uint256 s) {
@@ -768,9 +768,9 @@ library Layout {
         customAbi = uint8(x >> 160);
     }
 
-    // ---- efs.registry.v2.wrappers — WrappersStorage, 1 slot(s)
+    // ---- efs.registry.wrappers — WrappersStorage, 1 slot(s)
     bytes32 internal constant REGISTRY_WRAPPERS_ROOT =
-        0x1f2457b895e07513acc7a811602edc7bb7a689b9636346c7d88f35b713b9cc00;
+        0x5ba824ff1a0cd666e5f4d466df1e8dc1c48bab3e6b5f3f782f0484396c78cb00;
 
     // rows[uint256] -> WrapperRow (96 bytes)
     function wrappersRowsSlot(uint256 k0) internal pure returns (uint256 s) {
@@ -790,9 +790,9 @@ library Layout {
         activatedAt = uint40(x >> 168);
     }
 
-    // ---- efs.registry.v2.catalog — CatalogStorage, 1 slot(s)
+    // ---- efs.registry.catalog — CatalogStorage, 1 slot(s)
     bytes32 internal constant REGISTRY_CATALOG_ROOT =
-        0xc84eebc1c1b2541cf63d04f7c3100d60f4e279f74ae58772ae0888ed60264000;
+        0xc291987f9a0dae7a0ba69b59a92083e69a889825804dd3b1b561b0d85218a000;
 
     // typeAt[uint256] -> bytes32 (32 bytes)
     function catalogTypeAtSlot(uint256 k0) internal pure returns (uint256 s) {
@@ -800,9 +800,9 @@ library Layout {
         s = uint256(keccak256(abi.encode(k0, s)));
     }
 
-    // ---- efs.registry.v2.control — ControlStorage, 2 slot(s)
+    // ---- efs.registry.control — ControlStorage, 2 slot(s)
     bytes32 internal constant REGISTRY_CONTROL_ROOT =
-        0x746f5ca92ad4053adbc9ee32a7eb3c5322aee798e9dd1d4ffd591785f460be00;
+        0xd66677389f9bccfb9c56e4cd57ee93fada10258bbfc71f9559907a6a53b2ea00;
     uint256 internal constant REGISTRY_CONTROL_LEDGER_SLOT = uint256(REGISTRY_CONTROL_ROOT) + 0; // address @ byte 0
     uint256 internal constant REGISTRY_CONTROL_ACTIVEREVISION_SLOT =
         uint256(REGISTRY_CONTROL_ROOT) + 0; // uint32 @ byte 20
@@ -831,9 +831,9 @@ library Layout {
         catalogCount = uint48(x);
     }
 
-    // ---- efs.index.v2.store.posting — PostingStorage, 5 slot(s)
+    // ---- efs.index.store.posting — PostingStorage, 5 slot(s)
     bytes32 internal constant INDEX_STORE_POSTING_ROOT =
-        0xafadaed06cad87ccf20afccb1a44eec86b687f3eab1409e879b2ae8416b40a00;
+        0x17a0279c1971e9724be0233d1b0c8d1806af2df4a8793066d7d0fc0644d5e600;
     uint256 internal constant INDEX_STORE_POSTING_ATTACHED_SLOT =
         uint256(INDEX_STORE_POSTING_ROOT) + 3; // uint8 @ byte 0
 
@@ -897,9 +897,9 @@ library Layout {
         toAdmission = uint48(x >> 208);
     }
 
-    // ---- efs.index.v2.store.bitmap — BitmapStorage, 7 slot(s)
+    // ---- efs.index.store.bitmap — BitmapStorage, 7 slot(s)
     bytes32 internal constant INDEX_STORE_BITMAP_ROOT =
-        0x4640202bf0ab6387cbfef29b92cbbb784eceffe554551be074390efd2b65b600;
+        0x55e8a600ede9d478e75d626d97b87f5ed8831fef1cffb5713a957d8e20572700;
     uint256 internal constant INDEX_STORE_BITMAP_ATTACHED_SLOT =
         uint256(INDEX_STORE_BITMAP_ROOT) + 5; // uint8 @ byte 0
 
@@ -988,9 +988,9 @@ library Layout {
         state = uint8(x >> 144);
     }
 
-    // ---- efs.index.v2.gen — GenStorage, 2 slot(s)
+    // ---- efs.index.gen — GenStorage, 2 slot(s)
     bytes32 internal constant INDEX_GEN_ROOT =
-        0x1dec63f4cbafd6b4fe84cdc042050c704f9cdfe7f0d5bcbdfce1b30ca8f26300;
+        0xb5c0d2a68acfe73ade1091b3f74f29317622b434abd8d361aeac70e6ad780e00;
     uint256 internal constant INDEX_GEN_PROGRESS_LASTPROCESSED_SLOT = uint256(INDEX_GEN_ROOT) + 0; // uint48 @ byte 0
     uint256 internal constant INDEX_GEN_PROGRESS_LASTPUBLICATION_SLOT = uint256(INDEX_GEN_ROOT) + 0; // uint48 @ byte 6
     uint256 internal constant INDEX_GEN_PROGRESS_GAPPED_SLOT = uint256(INDEX_GEN_ROOT) + 0; // uint8 @ byte 12
@@ -1030,19 +1030,19 @@ library Layout {
         state = uint8(x >> 48);
     }
 
-    // ---- efs.ledger.v2.source (reserved (S4 SourceEvidence))
+    // ---- efs.ledger.source (reserved (S4 SourceEvidence))
     bytes32 internal constant LEDGER_SOURCE_ROOT =
-        0x2fca977fd3a2c6b167fb728d5b0bcfec6fb20471b834ea01ad3f693a92a9ca00;
+        0x6abfaf7133487a77383fac82c37b59ba29355e6aabba6843abd6ada22ca0c000;
 
-    // ---- efs.ledger.v2.staging (reserved (stage-then-commit))
+    // ---- efs.ledger.staging (reserved (stage-then-commit))
     bytes32 internal constant LEDGER_STAGING_ROOT =
-        0x5dd7299b00a7c05d3490b804591aa32f13000f9f1e77b236afb15ef1dcd26900;
+        0xc8f8104a8aeeb64ca2e69ce6149d38108a5874c5323ed475213f98156ae60100;
 
-    // ---- efs.ledger.v2.lock (transient)
+    // ---- efs.ledger.lock (transient)
     bytes32 internal constant LEDGER_LOCK_ROOT =
-        0x6c6eb23cf3b383a5fb365ecd153e56a97a2ae1f01e555420253212131c40d200;
+        0x4c4f67d80a37938dcd47d00dc4f183f159d48fe29a94186c0984897509322c00;
 
-    // efs.ledger.v2.lock: phase at bit 0 | stagedPublication at 8 | admissionFrontier at 56 | mutationsSnapshot at 104
+    // efs.ledger.lock: phase at bit 0 | stagedPublication at 8 | admissionFrontier at 56 | mutationsSnapshot at 104
     function unpackLock(bytes32 w)
         internal
         pure

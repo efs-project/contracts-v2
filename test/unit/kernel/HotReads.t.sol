@@ -103,8 +103,9 @@ contract HotReadsTest is KernelFixture {
     }
 
     function _lockSlot() internal pure returns (bytes32) {
-        return keccak256(abi.encode(uint256(keccak256("efs.ledger.v2.lock")) - 1))
-            & ~bytes32(uint256(0xff));
+        return
+            keccak256(abi.encode(uint256(keccak256("efs.ledger.lock")) - 1))
+                & ~bytes32(uint256(0xff));
     }
 
     function test_realm_getters_match_raw_storage() public view {
@@ -120,7 +121,7 @@ contract HotReadsTest is KernelFixture {
         assertEq(hot.revision(), rev);
         (uint8 phase, uint64 staged, uint64 frontier, uint32 prev) = hot.phase();
         assertEq(abi.encode(phase, staged, frontier, prev), abi.encode(Phase.IDLE, 0, 0, rev));
-        assertEq(_lockSlot(), 0x6c6eb23cf3b383a5fb365ecd153e56a97a2ae1f01e555420253212131c40d200);
+        assertEq(_lockSlot(), 0x4c4f67d80a37938dcd47d00dc4f183f159d48fe29a94186c0984897509322c00);
         assertEq(hot.exttload(_lockSlot()), 0, "the lock word is clear between publications");
         assertEq(hot.executionSet(), _realmWord(7));
         assertEq(hot.realmId(), _realmWord(0));

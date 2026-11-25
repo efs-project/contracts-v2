@@ -14,7 +14,7 @@ import {E_BACKFILL, E_COVERAGE, E_ORDER, E_WRITER} from "../interfaces/Errors.so
 ///         `lastMutation`. The live-scope family (18) keeps its first 48 bits in the head word; every further
 ///         bit, and every other BITMAP family's bits, live in `bits[scope][family][word]` at bit index `entry`.
 contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
-    bytes32 public constant STORE_ABI_ID = keccak256("efs2/bitmap-store/1");
+    bytes32 public constant STORE_ABI_ID = keccak256("efs/bitmap-store/1");
     uint256 private constant MASK48 = (1 << 48) - 1;
     uint8 private constant COVERAGE_OPEN = 1;
     uint8 private constant COVERAGE_COMPLETE = 2;

@@ -57,13 +57,13 @@ import {E_LAYOUT, E_READSET_SHAPE, E_RESERVED} from "../../src/interfaces/Errors
 ///         every S1 action kind and every binding transition. Every publication's `Published.effectsHash` and
 ///         every head after every publication are captured for the suites.
 abstract contract FacetFixture is Test {
-    bytes32 internal constant TYPE_OK = keccak256("efs2/test/readers/type/ok");
-    bytes32 internal constant TYPE_REF = keccak256("efs2/test/readers/type/ref");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
-    bytes32 internal constant ROLE_NAME = keccak256("efs2/test/readers/role/name");
-    bytes32 internal constant SALT = keccak256("efs2/test/readers/realm-salt");
-    bytes32 internal constant SALT1 = keccak256("efs2/test/readers/subject/1");
-    bytes32 internal constant SALT2 = keccak256("efs2/test/readers/subject/2");
+    bytes32 internal constant TYPE_OK = keccak256("efs/test/readers/type/ok");
+    bytes32 internal constant TYPE_REF = keccak256("efs/test/readers/type/ref");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
+    bytes32 internal constant ROLE_NAME = keccak256("efs/test/readers/role/name");
+    bytes32 internal constant SALT = keccak256("efs/test/readers/realm-salt");
+    bytes32 internal constant SALT1 = keccak256("efs/test/readers/subject/1");
+    bytes32 internal constant SALT2 = keccak256("efs/test/readers/subject/2");
     uint32 internal constant VALIDATION_GAS = 50_000;
     uint64 internal constant POLICY1_AT = 100;
     uint64 internal constant POLICY2_AT = 200;
@@ -165,7 +165,7 @@ abstract contract FacetFixture is Test {
         s1 = Keys.subject(p1, SALT1);
         s2 = Keys.subject(p2, SALT2);
         body70 = abi.encodePacked(
-            keccak256("efs2/test/readers/w0"), keccak256("efs2/test/readers/w1"), hex"a1b2c3d4e5f6"
+            keccak256("efs/test/readers/w0"), keccak256("efs/test/readers/w1"), hex"a1b2c3d4e5f6"
         );
         r1 = Keys.record(TYPE_OK, body70);
         refBody = abi.encodePacked(r1, "tail.");
@@ -565,7 +565,7 @@ abstract contract FacetSuite is FacetFixture {
         _st(st, Status.PRESENT, "record");
         assertEq(body, body70, "70-byte body");
         assertEq(h.length, 70);
-        assertEq(h.word0, keccak256("efs2/test/readers/w0"));
+        assertEq(h.word0, keccak256("efs/test/readers/w0"));
         (st,, body,) = reads.record(k.proxy, r2);
         assertEq(body, refBody, "ref body");
         (st,, body,) = reads.record(k.proxy, r3);
@@ -580,8 +580,8 @@ abstract contract FacetSuite is FacetFixture {
         (st, words) = reads.bodyWords(k.proxy, r1, 0, 3);
         _st(st, Status.PRESENT, "bodyWords");
         assertEq(words.length, 3);
-        assertEq(words[0], keccak256("efs2/test/readers/w0"));
-        assertEq(words[1], keccak256("efs2/test/readers/w1"));
+        assertEq(words[0], keccak256("efs/test/readers/w0"));
+        assertEq(words[1], keccak256("efs/test/readers/w1"));
         assertEq(words[2], bytes32(hex"a1b2c3d4e5f6"), "the tail word is masked");
         for (uint256 i; i < 3; ++i) {
             assertEq(words[i], vm.load(k.proxy, bytes32(Layout.recordsBodyWordsSlot(r1, i))));
@@ -1278,7 +1278,7 @@ abstract contract FacetSuite is FacetFixture {
     // =============================================================================================
 
     function testForeignLayoutIsUnsupported() public {
-        bytes32 other = keccak256("efs2/ledger-layout/other");
+        bytes32 other = keccak256("efs/ledger-layout/other");
         vm.store(k.proxy, bytes32(Layout.LEDGER_REALM_LAYOUTID_SLOT), other);
         assertEq(hot.layoutId(), other);
         address l = k.proxy;

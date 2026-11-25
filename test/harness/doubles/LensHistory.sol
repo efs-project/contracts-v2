@@ -33,14 +33,14 @@ import {TypeInfo} from "../../../src/interfaces/ITypeRegistry.sol";
 ///         Tests drive the later transitions (mask, release, rebind, restore) through the helpers, which track
 ///         each binding's CAS revision.
 abstract contract LensFixture is Test {
-    bytes32 internal constant TYPE_OK = keccak256("efs2/test/lens/type/ok");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
-    bytes32 internal constant X = keccak256("efs2/test/lens/role/x");
-    bytes32 internal constant Y = keccak256("efs2/test/lens/role/y");
-    bytes32 internal constant Z = keccak256("efs2/test/lens/role/z");
-    bytes32 internal constant SUB = keccak256("efs2/test/lens/role/sub");
-    bytes32 internal constant TINY = keccak256("efs2/test/lens/role/tiny");
-    bytes32 internal constant SALT_S = keccak256("efs2/test/lens/subject/S");
+    bytes32 internal constant TYPE_OK = keccak256("efs/test/lens/type/ok");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
+    bytes32 internal constant X = keccak256("efs/test/lens/role/x");
+    bytes32 internal constant Y = keccak256("efs/test/lens/role/y");
+    bytes32 internal constant Z = keccak256("efs/test/lens/role/z");
+    bytes32 internal constant SUB = keccak256("efs/test/lens/role/sub");
+    bytes32 internal constant TINY = keccak256("efs/test/lens/role/tiny");
+    bytes32 internal constant SALT_S = keccak256("efs/test/lens/subject/S");
 
     KernelDeploy.Kernel internal k;
     MockRegistry internal registry;
@@ -70,7 +70,7 @@ abstract contract LensFixture is Test {
 
     function setUp() public virtual {
         registry = new MockRegistry();
-        k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs2/test/lens/salt"));
+        k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs/test/lens/salt"));
         ledger = ILedger(k.proxy);
         hot = ILedgerHot(k.proxy);
         registry.setLedger(k.proxy);

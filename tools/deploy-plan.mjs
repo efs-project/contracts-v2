@@ -101,13 +101,13 @@ export const FACTORY = {
 };
 /** anvil's first default key: a public throwaway, the fixture's owner, declaration key and seed principal. */
 export const FIXTURE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-export const DEFAULTS = { chainId: 31337, realmSalt: h("efs2/fixture/realm/1"), executionProfileId: 1 };
-/** The release hot-ABI id: keccak256("efs2/ledger-hot/1") (the suites keep "efs2/ledger-hot/1:test"). It is
+export const DEFAULTS = { chainId: 31337, realmSalt: h("efs/fixture/realm/1"), executionProfileId: 1 };
+/** The release hot-ABI id: keccak256("efs/ledger-hot/1") (the suites keep "efs/ledger-hot/1:test"). It is
  *  LedgerCore's HOT_ABI_ID immutable, RealmIndex's HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
-export const HOT_ABI_ID_STRING = "efs2/ledger-hot/1";
+export const HOT_ABI_ID_STRING = "efs/ledger-hot/1";
 export const HOT_ABI_ID = h(HOT_ABI_ID_STRING);
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
-export const READER_KINDS = { lens: h("efs2/reader/lens/1"), filesPage: h("efs2/reader/files-page/1") };
+export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1") };
 /** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values. */
 export const LIMITS = {
   maxActions: 64, maxBody: 8192, maxRefs: 8, maxReadSetPrincipals: 64, maxReadSetPositions: 4, maxWitness: 4096,
@@ -122,14 +122,14 @@ export const WORK_MODEL = {
   computePerAction: 25000, computePerHookEffect: 60000, finalComputeBase: 60000, finalComputePerBind: 120000,
 };
 export const DOM = {
-  type: h("efs2/type/1"), describedShape: h("efs2/described-shape/1"), executionSet: h("efs2/execution-set/1"),
-  realmOrigin: h("efs2/realm-origin/1"), realm: h("efs2/realm/1"), record: h("efs2/record/1"),
-  subject: h("efs2/subject/1"), position: h("efs2/position/1"), binding: h("efs2/binding/1"),
-  scope: h("efs2/vk/binding-scope/1"),
+  type: h("efs/type/1"), describedShape: h("efs/described-shape/1"), executionSet: h("efs/execution-set/1"),
+  realmOrigin: h("efs/realm-origin/1"), realm: h("efs/realm/1"), record: h("efs/record/1"),
+  subject: h("efs/subject/1"), position: h("efs/position/1"), binding: h("efs/binding/1"),
+  scope: h("efs/vk/binding-scope/1"),
 };
-export const PURPOSE = { HEAD: h("efs2/purpose/head/1"), FOLDER: h("efs2/purpose/folder/1"), TAG: h("efs2/purpose/tag/1") };
+export const PURPOSE = { HEAD: h("efs/purpose/head/1"), FOLDER: h("efs/purpose/folder/1"), TAG: h("efs/purpose/tag/1") };
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
-export const familyId = (name) => h(`efs2/family/${name}/1`);
+export const familyId = (name) => h(`efs/family/${name}/1`);
 export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope"];
 export const BITMAP_FAMILIES = ["scope", "roster", "live-scope"];
 export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
@@ -286,14 +286,14 @@ export function runtimeOf(name, values = {}) {
 export const T = { ROOT: 0, CHILD: 1, DIRECTORY: 2, NAME: 3, BYTES: 4, CONTENT: 5, EXTERNAL: 6, ALIAS: 7, NOTICE: 8, SPAN: 9 };
 export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/2", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1"];
 export const RULES = ["FilesRootRule", "FilesChildRule", "FilesDirectoryRule", "FilesNameRule", "FilesBytesRule", "FilesContentRule", "FilesExternalContentRule", "DirectoryAliasRule", "RealmNoticeRule", "FilesSpanRule"];
-const NAMESPACE = h("efs2/files/1");
-const FIELD_PARENT = h("efs2/files/field/parent/1");
-const FIELD_BYTES = h("efs2/files/field/bytes/1");
-const FIELD_LEFT = h("efs2/files/field/left/1");
-const FIELD_RIGHT = h("efs2/files/field/right/1");
-const SEMANTIC_REVISION = h("efs2/files/semantic/parent-revision/1");
-const SEMANTIC_CARRIER = h("efs2/files/semantic/bytes-carrier/1");
-const SEMANTIC_SPAN_CHILD = h("efs2/files/semantic/span-child/1");
+const NAMESPACE = h("efs/files/1");
+const FIELD_PARENT = h("efs/files/field/parent/1");
+const FIELD_BYTES = h("efs/files/field/bytes/1");
+const FIELD_LEFT = h("efs/files/field/left/1");
+const FIELD_RIGHT = h("efs/files/field/right/1");
+const SEMANTIC_REVISION = h("efs/files/semantic/parent-revision/1");
+const SEMANTIC_CARRIER = h("efs/files/semantic/bytes-carrier/1");
+const SEMANTIC_SPAN_CHILD = h("efs/files/semantic/span-child/1");
 /** `refTypes` sentinel: any Type. */
 const REF_ANY = ZERO;
 const refField = (id, semantic, ref) => encodePacked(["bytes32", "bytes32", "uint8", "uint8", "uint16", "uint256", "uint256", "bytes32"], [id, semantic, 1, 0, 32, 0n, 0n, ref]);
@@ -354,7 +354,7 @@ export function limitsProfileId(limits) {
   return keccak256(encodeAbiParameters([limitsParam], [limits]));
 }
 export function domainSeparator(chainId, ledger) {
-  return keccak256(enc(["bytes32", "bytes32", "bytes32", "uint256", "address"], [h("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"), h("EFS"), h("2"), BigInt(chainId), ledger]));
+  return keccak256(enc(["bytes32", "bytes32", "bytes32", "uint256", "address"], [h("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"), h("EFS"), h("1"), BigInt(chainId), ledger]));
 }
 /** Design §8.1, exactly as LedgerControl._activate (and test/harness/ExecutionSets.sol) computes it. */
 export function executionSet(set, ledger) {
@@ -372,12 +372,12 @@ export function manifestHash(families, units, specs, work) {
   const ctor = ctorInputs(ri);
   return keccak256(encodeAbiParameters(
     [{ type: "bytes32" }, component(readiness.components, "families"), component(ctor, "units"), component(ctor, "specs"), component(ctor, "work"), { type: "bytes32" }, { type: "bytes32" }],
-    [h("efs2/index-manifest/1"), families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback],
+    [h("efs/index-manifest/1"), families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback],
   ));
 }
 export const MANIFEST_PROFILES = {
-  physical: h("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"),
-  callback: h("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs"),
+  physical: h("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"),
+  callback: h("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs"),
 };
 /** RealmIndex's constructor `_declare` table: (name, kind, universe, shape, liveSemantics, store, fromAdmission). */
 const FAMILY_TABLE = [
@@ -474,7 +474,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
 
   // G12: FilesFinalValidator, no caller pin
   const validator = add("G12", "FilesFinalValidator", [ids[T.NAME], ids[T.DIRECTORY]], {});
-  const validatorIdentity = keccak256(enc(["bytes32", "bytes32", "bytes32"], [h("efs2/unit/files-final/1"), ids[T.NAME], ids[T.DIRECTORY]]));
+  const validatorIdentity = keccak256(enc(["bytes32", "bytes32", "bytes32"], [h("efs/unit/files-final/1"), ids[T.NAME], ids[T.DIRECTORY]]));
 
   // G13–G14: the two implementations
   const core = add("G13", "LedgerCore", [ingress.address, apply.address, control.address, HOT_ABI_ID], { INGRESS: ingress.address, INGRESS_CODEHASH: ingress.runtimeCodehash, APPLY: apply.address, APPLY_CODEHASH: apply.runtimeCodehash, CONTROL: control.address, CONTROL_CODEHASH: control.runtimeCodehash, HOT_ABI_ID });
@@ -524,7 +524,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const unitsList = [{ foldHook: zeroAddress, foldCodehash: ZERO, finalHook: validator.address, finalCodehash: validator.runtimeCodehash, familyIds: [], purposeFilter: PURPOSE.FOLDER, hotAbiId: HOT_ABI_ID, identity: validatorIdentity }];
   const specs = [{ typeId: ids[T.CONTENT], wordIndex: 5, algorithm: 1 }, { typeId: ids[T.EXTERNAL], wordIndex: 5, algorithm: 1 }];
   const families = FAMILY_TABLE.map(([n, kind, universe, shape, live, s, from]) => ({
-    familyId: familyId(n), kind, universe, shape, mandatory: from === 1n, liveSemantics: live, recipe: keccak256(encodePacked(["string", "uint8"], ["efs2/family-recipe/", kind])),
+    familyId: familyId(n), kind, universe, shape, mandatory: from === 1n, liveSemantics: live, recipe: keccak256(encodePacked(["string", "uint8"], ["efs/family-recipe/", kind])),
     fromAdmission: from, store: s === "posting" ? posting.address : bitmap.address, storeCodehash: s === "posting" ? posting.runtimeCodehash : bitmap.runtimeCodehash,
   }));
   const mHash = manifestHash(families, unitsList, specs, WORK_MODEL);
@@ -551,8 +551,8 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const lens = add("R1", "LensReader", [ledgerProxy, views.address, reads.address], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId, F_SCOPE: familyId("scope") });
   const page = add("R2", "FilesPageReader", [ledgerProxy, views.address, reads.address, ids[T.NAME], ids[T.ROOT], ids[T.CHILD]], { LEDGER: ledgerProxy, VIEWS: views.address, READS: reads.address, LAYOUT: layoutId, NAME_TYPE: ids[T.NAME], ROOT_TYPE: ids[T.ROOT], CHILD_TYPE: ids[T.CHILD] });
   const listing = (id, kind, reader, label) => steps.push({ id, kind: "CALL", contract: "ReaderDirectory", to: directory.address, function: "list(address,bytes32,address)", label, args: [ledgerProxy, kind, reader], postCheck: "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile", data: encodeFunctionData({ abi: artifact("ReaderDirectory").abi, functionName: "list", args: [ledgerProxy, kind, reader] }) });
-  listing("R3", READER_KINDS.lens, lens.address, "list LensReader under efs2/reader/lens/1");
-  listing("R4", READER_KINDS.filesPage, page.address, "list FilesPageReader under efs2/reader/files-page/1");
+  listing("R3", READER_KINDS.lens, lens.address, "list LensReader under efs/reader/lens/1");
+  listing("R4", READER_KINDS.filesPage, page.address, "list FilesPageReader under efs/reader/files-page/1");
 
   // G21: permissionless registration of the ten Types
   for (let t = 0; t < TYPE_NAMES.length; t++) {
@@ -578,7 +578,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     hotAbiId: HOT_ABI_ID, layoutId, executionProfileId, limits: LIMITS, workModel: WORK_MODEL,
     genesis: { address: G, nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } },
     addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address, web3Gateway: gateway.address },
-    readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs2/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs2/reader/files-page/1", runtimeCodehash: page.runtimeCodehash } },
+    readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs/reader/files-page/1", runtimeCodehash: page.runtimeCodehash } },
     gateway: { address: gateway.address, runtimeCodehash: gateway.runtimeCodehash, resolveMode: "5219", rootDirectory, pager: page.address, urlBase: `web3://${gateway.address}:${chainId}/` },
     hotAbiIdString: HOT_ABI_ID_STRING,
     realm, activation: set, index: { address: index.address, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
@@ -600,7 +600,7 @@ export function fixturePayload(n, seed) {
   return `0x${words.join("").slice(0, n * 2)}`;
 }
 
-/** EfsFiles.chunk (`efs2/chunking/1`): chunks in payload order, then the span nodes in post-order. */
+/** EfsFiles.chunk (`efs/chunking/1`): chunks in payload order, then the span nodes in post-order. */
 export function chunkPayload(ids, payload, chunkSize = CHUNK_PAYLOAD) {
   const total = size(payload);
   const n = total === 0 ? 1 : Math.ceil(total / chunkSize);
@@ -646,7 +646,7 @@ export function splitPublications(bodies, maxActions, maxBodyBytes) {
   return ends;
 }
 
-/** The canonical chunk payload of efs2/chunking/1 (EfsFiles.CHUNK_PAYLOAD). */
+/** The canonical chunk payload of efs/chunking/1 (EfsFiles.CHUNK_PAYLOAD). */
 export const CHUNK_PAYLOAD = 8160;
 export const SEED_VERSION = "efs-fixture-seed/2";
 /** The seed's big file: about 20 KB of deterministic bytes (three chunks, two span nodes). */
@@ -657,7 +657,7 @@ export const REMOTE_FILE = { name: "remote.txt", text: "This file lives at its l
 /**
  * The seed of design §12.2 (G22) and docs/LARGE-FILES.md, as the fixture principal: the root; the folder docs/;
  * docs/readme.txt (form 0, inline bytes); docs/big.bin (form 1 naming a files-content/1 carrier-2 descriptor over
- * an efs2/chunking/1 span tree, split into publications under the Realm limits); docs/remote.txt (form 1 naming a
+ * an efs/chunking/1 span tree, split into publications under the Realm limits); docs/remote.txt (form 1 naming a
  * files-external/1 record with a web3:// locator and the empty files-bytes/1 sentinel).
  */
 export function seedPlan({ ids, principalId, limits = LIMITS }) {

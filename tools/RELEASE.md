@@ -73,7 +73,7 @@ every command: --home DIR (the registry; default below)
 | `--port P` | Use exactly P; exit 3 when it is leased by a live process, bound by anything, or 60742. |
 | `--port-range LO-HI` | Search range when no port is given; default 8600–8999 (the client's proposed gateway range 8546–8599 stays free). |
 | `--chain-id N` | Default 31337. |
-| `--realm-salt 0x…` / `--fresh` | The Realm salt (default `keccak256("efs2/fixture/realm/1")`) or a random one, so the Realm id is fresh. The plan stays computable offline per `(chainId, realmSalt)`: both are in the lease, the documents and the `up` JSON. |
+| `--realm-salt 0x…` / `--fresh` | The Realm salt (default `keccak256("efs/fixture/realm/1")`) or a random one, so the Realm id is fresh. The plan stays computable offline per `(chainId, realmSalt)`: both are in the lease, the documents and the `up` JSON. |
 | `--ttl S` / `--ttl 0` / `--keep` | The watchdog: anvil runs as `perl -e 'alarm S; exec @ARGV' anvil …` and dies after S seconds (default 900) even if nobody calls `down`. `0` or `--keep` runs anvil without a watchdog, for a dev session; the lease then has `expiresAt: null`. |
 | `--no-unlocked` | Start anvil with `--accounts 0 --fund-accounts <the ten default addresses>:10000`: no unlocked accounts, the same funded addresses (alias `--no-unlocked-accounts`). See "Signing". |
 | `--state-dir DIR` | Where the instance's pid, log, journal and documents go (default `<home>/instances/<name>/`). Only the files listed below are written or removed there. |
@@ -121,30 +121,30 @@ leased in state `failed`.
 {
   "ok": true, "command": "up", "name": "contracts-v2-e4d3", "kind": "chain", "generation": 1,
   "rpcUrl": "http://127.0.0.1:8600", "host": "127.0.0.1", "port": 8600, "chainId": 31337,
-  "realmSalt": "0x06e8…710f", "realmId": "0x8383…e741", "layoutId": "0x61a4…484a", "pid": 6683,
+  "realmSalt": "0x1419…260f", "realmId": "0x10fb…bc9e", "layoutId": "0x9d4c…9deb", "pid": 6683,
   "stateDir": "<home>/instances/<name>", "deployment": "<stateDir>/efs-deployment.json",
   "expected": "<stateDir>/expected.json", "journal": "<stateDir>/fixture.json", "log": "<stateDir>/anvil.log",
-  "ledger": "0x984B…3373", "registry": "0x…", "controller": "0x…", "keysView": "0xc50e…2f30",
-  "web3Gateway": "0xd658…ea81", "web3Url": "web3://0xd658…ea81:31337/0x0000…f39f…2266/",
-  "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0xc50e…2f30", "web3Gateway": "0xd658…ea81" },
-  "root": { "directoryRecordId": "0x4bca…36ce", "subjectId": "0xbf64…2b34", "principalId": "0x…f39f…2266" },
+  "ledger": "0x870a…0c1c", "registry": "0x…", "controller": "0x…", "keysView": "0x50dE…757F",
+  "web3Gateway": "0x6cd2…77B2", "web3Url": "web3://0x6cd2…77B2:31337/0x0000…f39f…2266/",
+  "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x6cd2…77B2" },
+  "root": { "directoryRecordId": "0xde49…a430", "subjectId": "0x2494…4951", "principalId": "0x…f39f…2266" },
   "seed": {
     "version": "efs-fixture-seed/2", "root": { "…": "as above" },
-    "folder": { "name": "docs", "directoryRecordId": "0xec08…104a", "subjectId": "0xedf5…35ff" },
-    "file": { "name": "readme.txt", "subjectId": "0x3883…40d1", "headRecordId": "0x1957…ccd7", "headRevision": 1 },
+    "folder": { "name": "docs", "directoryRecordId": "0x6be2…f06e", "subjectId": "0x7ba4…1c20" },
+    "file": { "name": "readme.txt", "subjectId": "0xb77c…4065", "headRecordId": "0xbd3d…9e8d", "headRevision": 1 },
     "files": [
-      { "name": "readme.txt", "subjectId": "0x3883…40d1", "headRecordId": "0x1957…ccd7", "headRevision": 1, "form": 0, "length": 18, "sha256": "0x0e7b…6df6" },
-      { "name": "big.bin", "subjectId": "0x266b…622e", "headRecordId": "0x26af…c554", "headRevision": 1, "form": 1, "length": 20000, "sha256": "0xda46…efc9",
-        "contentRecordId": "0xd41a…5771", "spanRootId": "0x00a5…d92e", "chunkCount": 3, "spanCount": 2, "chunkPayload": 8160, "publications": 2 },
-      { "name": "remote.txt", "subjectId": "0x1049…03cf", "headRecordId": "0x2a39…1c1d", "headRevision": 1, "form": 1, "length": 51, "sha256": "0xf380…a9cc",
-        "externalRecordId": "0xbebd…e727", "sentinelRecordId": "0x810e…f6e7", "locator": "web3://0x0000000000000000000000000000000000000000:31337/remote.txt" }
+      { "name": "readme.txt", "subjectId": "0xb77c…4065", "headRecordId": "0xbd3d…9e8d", "headRevision": 1, "form": 0, "length": 18, "sha256": "0x0e7b…6df6" },
+      { "name": "big.bin", "subjectId": "0xe160…c12e", "headRecordId": "0x006b…0105", "headRevision": 1, "form": 1, "length": 20000, "sha256": "0xda46…efc9",
+        "contentRecordId": "0x9109…5ad4", "spanRootId": "0x26e1…bc67", "chunkCount": 3, "spanCount": 2, "chunkPayload": 8160, "publications": 2 },
+      { "name": "remote.txt", "subjectId": "0xf9ad…8385", "headRecordId": "0x2938…fa77", "headRevision": 1, "form": 1, "length": 51, "sha256": "0xf380…a9cc",
+        "externalRecordId": "0x7854…3c9b", "sentinelRecordId": "0xbf5a…cb52", "locator": "web3://0x0000000000000000000000000000000000000000:31337/remote.txt" }
     ]
   },
   "typeIds": { "files-root/1": "0x…", "…": "one per Files Type" },
   "signerCapable": true,
-  "capabilities": { "filesSeed": "efs-fixture-seed/2", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs2/reader/lens/1", "efs2/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
+  "capabilities": { "filesSeed": "efs-fixture-seed/2", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
-  "planHash": "0x8a60…8cfc", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
+  "planHash": "0x7395…77d2", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
   "verified": { "skipped": false, "ok": true, "checks": 371, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
@@ -262,7 +262,7 @@ So a release directory or another checkout deploys with no forge build and no `o
 `up --artifacts <repo>/artifacts --plan <repo>/deploy/plan.json`. In the release layout, `vectors/layout.json` (or
 `artifacts/index.json`'s `layoutId`), `release/` and `deploy/` are read from `DIR/..`. Verified: the committed
 `artifacts/`, a copy of `artifacts/ release/ vectors/ deploy/` in an empty directory, and a snapshot of
-`out/release-ast` each reproduce the committed `deploy/plan.json` hash (`0x38e9…891c`) and deploy and verify OK.
+`out/release-ast` each reproduce the committed `deploy/plan.json` hash (`0x7395…77d2`) and deploy and verify OK.
 `release.mjs` now also writes `artifacts/index.json` (`efs-artifacts-index/1`: `layoutId`, `hotAbiId`,
 `hotAbiIdString`, the unit list, the manifest path) so `artifacts/` alone carries the layout id; until the next
 `pnpm release` it falls back to `vectors/layout.json`. The plan's ABIs travel with the plan (`plan.local`, not part of
@@ -311,11 +311,11 @@ viem local account and submitted with `eth_sendRawTransaction`; the fixture's RP
 
 ### The hot-ABI id
 
-The release hot-ABI id is **`keccak256("efs2/ledger-hot/1")`** =
-`0x5e2699b8fb658570bf743780fa5efbfd4b40e49f5ff596c5b5f1300b1b8d3f0d` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
+The release hot-ABI id is **`keccak256("efs/ledger-hot/1")`** =
+`0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
 It is `LedgerCore`'s `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `RealmIndex`'s
 `hotAbiId` constructor argument and the `FilesFinalValidator` unit's `hotAbiId`. The suites keep
-`keccak256("efs2/ledger-hot/1:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
+`keccak256("efs/ledger-hot/1:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
 `profiles.hotAbiId` with `hotAbiIdPreimage`, and `efs-deployment.json` as `hotAbiId` and `hotAbiIdString`.
 
 ### The readers
@@ -323,8 +323,8 @@ It is `LedgerCore`'s `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds()
 `LensReader(ledger, views, reads)` and `FilesPageReader(ledger, views, reads, files-name/2, files-root/1,
 files-child/1)` are CREATE2 steps **R1** and **R2**. Their constructors read `layoutId()` from the ledger proxy, so
 they follow G18; they run after the genesis activation (G20). **R3** and **R4** list them permissionlessly in the
-`ReaderDirectory` under the kind labels `keccak256("efs2/reader/lens/1")` and
-`keccak256("efs2/reader/files-page/1")` (the strings `test/periphery/ReaderDirectory.t.sol` uses; the directory does
+`ReaderDirectory` under the kind labels `keccak256("efs/reader/lens/1")` and
+`keccak256("efs/reader/files-page/1")` (the strings `test/periphery/ReaderDirectory.t.sol` uses; the directory does
 not interpret them). Both readers are realm-specific, because their immutables name the ledger proxy.
 
 ### The fixture key
@@ -441,8 +441,8 @@ five codehashes against `describe()` and the release.
   both `LedgerControl` and the controller revert with `E_EXPECTED_SET` on any difference, so the genesis activation
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
-  live value. On the default fixture (chain 31337, salt `keccak256("efs2/fixture/realm/1")`) the value is
-  `0x863d4eb7487f3255978b9b38bbb4760b2147accc3fe7376610f3d60e4beb9baa`.
+  live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
+  `0x5440a17bac803bdcd97568ccffe1d4f3becb0b28ccafaa63932f651fd2be9d44`.
 
 ## The planning model (`gas/model.json`)
 
@@ -475,17 +475,17 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (CREATE + PUBLISH directory) | 770,658 | 2,711,511 (2,154,240) |
-| Native 1-leaf PUBLISH (32 B directory body, steady author) | 579,580 | 1,771,418 (1,272,960) |
-| M1 create folder (first placement in root, fresh scope) | 1,394,667 | 4,867,655 (3,818,880) |
-| M1 create file (5 leaves, fresh folder) | 1,676,815 | 5,860,829 (4,602,240) |
-| Edit | 894,824 | 2,805,410 (2,056,320) |
-| Rename / move | 1,081,809 | 3,380,252 (2,448,000) |
-| Remove | 445,794 | 1,197,821 (783,360) |
-| Restore (masked → same target) | 487,148 | 1,253,709 (783,360) |
-| RELEASE from mask | 409,372 | 1,073,512 (685,440) |
-| RELEASE from BOUND (not a §14 row) | 428,959 | 1,100,300 (685,440) |
-| Restore a released placement (Move-back analog) | 502,014 | 1,349,249 (881,280) |
+| Root seed (CREATE + PUBLISH directory) | 770,658 | 2,711,499 (2,154,240) |
+| Native 1-leaf PUBLISH (32 B directory body, steady author) | 579,592 | 1,771,418 (1,272,960) |
+| M1 create folder (first placement in root, fresh scope) | 1,394,655 | 4,867,667 (3,818,880) |
+| M1 create file (5 leaves, fresh folder) | 1,676,803 | 5,860,841 (4,602,240) |
+| Edit | 894,800 | 2,805,374 (2,056,320) |
+| Rename / move | 1,081,797 | 3,380,264 (2,448,000) |
+| Remove | 445,782 | 1,197,809 (783,360) |
+| Restore (masked → same target) | 487,136 | 1,253,697 (783,360) |
+| RELEASE from mask | 409,360 | 1,073,500 (685,440) |
+| RELEASE from BOUND (not a §14 row) | 428,947 | 1,100,288 (685,440) |
+| Restore a released placement (Move-back analog) | 501,990 | 1,349,249 (881,280) |
 | WITHDRAW | 457,508 | 1,297,166 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
@@ -507,13 +507,17 @@ The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, 
 
 The prototype needed 199 calls.
 
-The report also carries 25 supplementary recipe steps and the fixture's 61 transaction receipts, which are prague
+The report also carries 25 supplementary recipe steps and the fixture's 62 transaction receipts, which are prague
 only and include intrinsic cost:
 
 - Genesis code deposit: 44.6M over 27 transactions (the ten rules included).
 - Readers and views (R0–R5): 11.17M (`KeysView` 0.38M, `LensReader` 3.76M, `FilesPageReader` 2.81M, each listing 0.16M, `EfsWeb3Gateway` 3.88M).
 - The ten descriptor blobs: 1.54M.
-- **Genesis activation: 4.21M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure).
+- **Genesis activation: 2.97M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). It was 4.21M before the
+  protocol-string rename, which changed only constants: when `CodeScan`'s fast walk meets a byte that reads as a
+  forbidden opcode before the trailer (such as a byte of the 32-byte constants via-IR places after the final
+  `INVALID`), it walks the unit again from pc 0, so the constants' bytes decide which units pay a second walk
+  (before: `BitmapStore`, `LedgerIngress`, `TypeRegistry`; now: `LedgerControl`, `TypeRegistry`).
 - `registerDescribed`: 0.24–0.27M each (design ≈ 0.30M).
 - Seed: root 0.77M, folder 1.39M, `readme.txt` 1.67M; `big.bin` 12.60M (two 8 KB chunks, 16,384 body bytes) +
   5.87M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.41M.
@@ -540,9 +544,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 3. **G9: `IndexBuild/1` does not exist.** `RealmIndex` takes no build, `Readiness.build` is 0, and the plan has no G9.
 4. **G13.** `LAYOUT_ID` is a compiled constant, not an immutable. `PREDECESSOR_LAYOUT_ID` is on `LedgerControl`.
    `SUPPORTED_HOT_ABI_IDS` is computed as `[HOT_ABI_ID]`. `LedgerCore` has no `SELF` immutable.
-5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs2/ledger-hot/1" ‖ sorted selectors ‖ return layouts)`), but
+5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs/ledger-hot/1" ‖ sorted selectors ‖ return layouts)`), but
    neither `src/` nor `vectors/` commits one. On the coordinator's instruction the release uses the plain string id
-   `keccak256("efs2/ledger-hot/1")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
+   `keccak256("efs/ledger-hot/1")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
 6. **G15: `RealmGenesis`' constructor differs from the design.** It is `(owner, ledgerImpl, registryImpl, realmSalt,
    executionProfileId, limitsHash, readerDirectory, wrapperV1, noticeType, controllerInitcodeHash, proxyInitcodeHash)`.
    It reads the implementation codehashes itself, takes the limits only as a hash, and receives the controller and
@@ -571,7 +575,7 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
     schemas are new, unreviewed drafts.
 14. **Seed (`efs-fixture-seed/2`).** The root, `docs/`, and three files in `docs/`: `readme.txt` (form 0, the bytes
     inline after `abi.encode(file, 0)`), `big.bin` (20,000 deterministic bytes, word i = keccak256(abi.encode(
-    keccak256("efs-fixture/big.bin"), i)), chunked by `efs2/chunking/1` into 8,160-byte chunks, chunks in order then
+    keccak256("efs-fixture/big.bin"), i)), chunked by `efs/chunking/1` into 8,160-byte chunks, chunks in order then
     spans in post-order, a `files-content/1` carrier-2 descriptor, a form-1 revision; split by `EfsFiles.split`'s
     greedy rule under 64 actions / 16,384 body bytes into two publications) and `remote.txt` (the empty
     `files-bytes/1` sentinel, a `files-external/1` record with locator

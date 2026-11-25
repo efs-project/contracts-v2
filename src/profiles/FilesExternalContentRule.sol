@@ -13,7 +13,7 @@ import {FilesProfile, E_FILES_REFUSED} from "./FilesProfile.sol";
 ///         least one byte after the colon. There is NO scheme allowlist: `ar://`, `ipfs://`, `bzz://`, `web3://`,
 ///         `https://`, `data:` and schemes that do not exist yet are all admitted. A scheme list on an immutable rule
 ///         is not a security boundary (rendering safety lives in the client), is trivially evaded and cannot
-///         anticipate new schemes (the v1 ruling of 2026-06-19, ADR-0056, carried into v2). `length` ≤ 2^64 − 1. No
+///         anticipate new schemes (the v1 ruling of 2026-06-19, ADR-0056, carried over). `length` ≤ 2^64 − 1. No
 ///         remote proof is taken at admission; readers verify the sha256 (word 5, which feeds the digest family
 ///         through the second gen-1 `DigestSpec`). `refs[0]` is the empty-sentinel bytes record (`refHeaders[0]`:
 ///         `length == 32 && word0 == sha256("")`).

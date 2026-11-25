@@ -224,7 +224,7 @@ contract TransitionTest is ControlFixture {
     /// the idle gate refuses it and the transition stays open for an idle caller.
     function test_abortTransition_is_idle_gated() public {
         AbortingIndex idx = new AbortingIndex(k.proxy);
-        idx.setManifestHash(keccak256("efs2/test/control/aborting-index"));
+        idx.setManifestHash(keccak256("efs/test/control/aborting-index"));
         idx.setReadiness(liveReadiness(idx));
         activate(withIndex(nextSet(), address(idx))); // revision 2
         uint48 d = uint48(vm.getBlockNumber() + 10);

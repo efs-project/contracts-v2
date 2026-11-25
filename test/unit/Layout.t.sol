@@ -233,7 +233,7 @@ contract LayoutTest is Test {
     function testLayoutIdIsStable() public pure {
         // Regenerate with `pnpm layout`; a changed id means a one-way door moved.
         assertEq(
-            Layout.LAYOUT_ID, 0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a
+            Layout.LAYOUT_ID, 0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb
         );
     }
 

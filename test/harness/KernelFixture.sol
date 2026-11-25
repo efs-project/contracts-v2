@@ -30,11 +30,11 @@ import {Effect, FamilyEntry, Readiness, Unit} from "../../src/interfaces/Index.s
 ///      positions, principals) before the before-digest is taken, so a refused call's would-be rows are inside
 ///      the digest. The index double's prefix record (`prefixCalls`, `prefixDigest`, progress) is folded in.
 abstract contract KernelFixture is Test {
-    bytes32 internal constant TYPE_OK = keccak256("efs2/test/fixture/type/ok");
-    bytes32 internal constant TYPE_OK2 = keccak256("efs2/test/fixture/type/ok2");
-    bytes32 internal constant TYPE_REJECT = keccak256("efs2/test/fixture/type/reject");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
-    bytes32 internal constant ROLE = keccak256("efs2/test/fixture/role/name");
+    bytes32 internal constant TYPE_OK = keccak256("efs/test/fixture/type/ok");
+    bytes32 internal constant TYPE_OK2 = keccak256("efs/test/fixture/type/ok2");
+    bytes32 internal constant TYPE_REJECT = keccak256("efs/test/fixture/type/reject");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
+    bytes32 internal constant ROLE = keccak256("efs/test/fixture/role/name");
 
     KernelDeploy.Kernel internal k;
     MockRegistry internal registry;
@@ -58,7 +58,7 @@ abstract contract KernelFixture is Test {
 
     function setUp() public virtual {
         registry = _newRegistry();
-        k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs2/test/fixture"));
+        k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs/test/fixture"));
         ledger = ILedger(k.proxy);
         hot = ILedgerHot(k.proxy);
         commitments = ILedgerCommitments(address(k.ingress));

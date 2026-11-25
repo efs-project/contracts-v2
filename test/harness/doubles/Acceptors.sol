@@ -18,7 +18,7 @@ import {Action, ActionKind, Native} from "../../../src/interfaces/Actions.sol";
 // `MockAcceptor`, whose storage mode changes behaviour under one codehash).
 
 // The refusal word the refusing doubles return: neither the selector nor `EXHAUSTED`.
-bytes4 constant ACCEPTOR_REFUSAL = bytes4(keccak256("efs2/test/acceptor/refuse"));
+bytes4 constant ACCEPTOR_REFUSAL = bytes4(keccak256("efs/test/acceptor/refuse"));
 
 /// The selector, always (no context check: the context-checking variant is `ContextAssertingAcceptor`).
 /// Also the implementation behind `ProxyAcceptor` (Signers.sol).
@@ -212,7 +212,7 @@ contract ReentrantAcceptor {
     function reentryCalldata() public pure returns (bytes memory) {
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("efs2/test/acceptor/reentry");
+        actions[0].salt = keccak256("efs/test/acceptor/reentry");
         Native memory ctx;
         return abi.encodeCall(ILedger.execute, (actions, new bytes[](1), ctx, ""));
     }

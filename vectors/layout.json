@@ -1,9 +1,9 @@
 {
-  "schema": "efs2/layout/1",
+  "schema": "efs/layout/1",
   "namespaces": {
-    "efs.ledger.v2.realm": {
+    "efs.ledger.realm": {
       "section": "ledger",
-      "root": "0xd1d82880908abd64876dc5abdb3d21a6118aa67f635eb0d222f8ae0c6374eb00",
+      "root": "0x282113142e9b03b41f73f795c71a689c6393962a323022d5ac5450977a98b200",
       "struct": "RealmStorage",
       "slots": 18,
       "fields": [
@@ -312,9 +312,9 @@
       "mappings": [],
       "arrays": []
     },
-    "efs.ledger.v2.counters": {
+    "efs.ledger.counters": {
       "section": "ledger",
-      "root": "0x63eac95c642a8299ccca6df135b3f61f7cfd222a0712997d1cd9fcdcfa9e5500",
+      "root": "0x2965fd57160ca86ec032f96eac3be480be385a49dbc724794da83198a2b1fb00",
       "struct": "CountersStorage",
       "slots": 1,
       "fields": [
@@ -350,9 +350,9 @@
       "mappings": [],
       "arrays": []
     },
-    "efs.ledger.v2.records": {
+    "efs.ledger.records": {
       "section": "ledger",
-      "root": "0x7524f85143c406ba14d3b73dea3182e972b4d4504f1b783a38f0858767c1de00",
+      "root": "0x95ea68df03033e4e485691c801b399ada592d1857a089601df38c503c05de100",
       "struct": "RecordsStorage",
       "slots": 2,
       "fields": [],
@@ -421,9 +421,9 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.subjects": {
+    "efs.ledger.subjects": {
       "section": "ledger",
-      "root": "0xe593fc8637d8cc4bf73cbb933a15ce289f597399c2da2882777592cc3ee4c000",
+      "root": "0x34a8b688ba7a9f244b30e5d5c3e6a84c66b5c53c194d1ad88e53060ce8ff7100",
       "struct": "SubjectsStorage",
       "slots": 1,
       "fields": [],
@@ -460,9 +460,9 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.admissions": {
+    "efs.ledger.admissions": {
       "section": "ledger",
-      "root": "0x33042cebcd07e2f265085d626def780948525aefc12f3aa3822ae3531c63eb00",
+      "root": "0xf936524673093aaa638ecef8cea1b1fcb0a86f97670c7ca482a4fea6b1488e00",
       "struct": "AdmissionsStorage",
       "slots": 1,
       "fields": [],
@@ -562,9 +562,9 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.publications": {
+    "efs.ledger.publications": {
       "section": "ledger",
-      "root": "0xe9165e74d7cf63baf9a84b176011c878a390e3e9f989a60de35575a350940a00",
+      "root": "0xef587c61258bfad7cfa2d61a999b8bebef5caa2271ed63df641e1f934e8f4f00",
       "struct": "PublicationsStorage",
       "slots": 2,
       "fields": [],
@@ -759,9 +759,9 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.bindings": {
+    "efs.ledger.bindings": {
       "section": "ledger",
-      "root": "0xceda1ceb7d6e35dde16546393af20354114f252f7fbb4c227d63f743c35ffb00",
+      "root": "0x47b6d5a9531485da5c6460648366d4b22fa902f89c0d4efccabbd7b6f0738f00",
       "struct": "BindingsStorage",
       "slots": 3,
       "fields": [],
@@ -886,9 +886,9 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.principals": {
+    "efs.ledger.principals": {
       "section": "ledger",
-      "root": "0xf6114a07ac14eb57f9dac3ac5f41fd2824feddb467129b9fa50d96bc2daac900",
+      "root": "0x502ecb3517614eabd6915919aa7adca45b70b54c7b691fd5ee3825f222b63b00",
       "struct": "PrincipalsStorage",
       "slots": 1,
       "fields": [],
@@ -925,9 +925,9 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.revisions": {
+    "efs.ledger.revisions": {
       "section": "ledger",
-      "root": "0xd9645fc105a27a63ec9effce4033ff09babd0e322d92c50976c833cd02e4eb00",
+      "root": "0xc201c190a1412d71d30fef1177b33b57bf8640364aaafa2bd05597a067d7b700",
       "struct": "RevisionsStorage",
       "slots": 1,
       "fields": [],
@@ -1286,9 +1286,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.types": {
+    "efs.registry.types": {
       "section": "registry",
-      "root": "0xb88a601303f5b59143b779b8925ece487b1fa8710d521523140b6c2d91568c00",
+      "root": "0xf33da83cec8cfa19b823e041c9adb0176a906c07f2b895fc2182be31f9d30100",
       "struct": "TypesStorage",
       "slots": 2,
       "fields": [],
@@ -1448,9 +1448,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.declarations": {
+    "efs.registry.declarations": {
       "section": "registry",
-      "root": "0x8f2637a7c7ef5342894e46d7ac564c4785ed47b68917ca992a8f09c97592e400",
+      "root": "0xcd8e6cb67099bf4deab380a79e39e866feedda3f0365bab5f4c71bd0b7220500",
       "struct": "DeclarationsStorage",
       "slots": 1,
       "fields": [],
@@ -1494,9 +1494,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.policy": {
+    "efs.registry.policy": {
       "section": "registry",
-      "root": "0x7607b3cefdb65ccdfb170dbf9826aca7c3eb2dc0e0e0e5b7bce6a5dffc3f8400",
+      "root": "0xf79f93f502a9f1db3ca03146652b2c7e63c6e515716b59dda68bf801d5d37700",
       "struct": "PolicyStorage",
       "slots": 1,
       "fields": [],
@@ -1548,9 +1548,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.roles": {
+    "efs.registry.roles": {
       "section": "registry",
-      "root": "0xff16ead419b5fba0549e2629eb15e3f34a6f0ce7330d7cbb2139b6c4e90ceb00",
+      "root": "0x6864ecb50b786d57d32a993ea982bcb79fe8ccac6d2ff77ca134e1ab5ada1500",
       "struct": "RolesStorage",
       "slots": 2,
       "fields": [],
@@ -1605,9 +1605,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.bindings": {
+    "efs.registry.bindings": {
       "section": "registry",
-      "root": "0x8a64542b45955b344eb3568068f1a96cd4fb0b1d8aae3976b48ef53dd8a65a00",
+      "root": "0x7f74cb4214d2027c0c0b9f1f324390fbcac1113b4ba0b4a3cf89779ed1dd0a00",
       "struct": "BindingsStorage",
       "slots": 1,
       "fields": [],
@@ -1651,9 +1651,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.wrappers": {
+    "efs.registry.wrappers": {
       "section": "registry",
-      "root": "0x1f2457b895e07513acc7a811602edc7bb7a689b9636346c7d88f35b713b9cc00",
+      "root": "0x5ba824ff1a0cd666e5f4d466df1e8dc1c48bab3e6b5f3f782f0484396c78cb00",
       "struct": "WrappersStorage",
       "slots": 1,
       "fields": [],
@@ -1711,9 +1711,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.catalog": {
+    "efs.registry.catalog": {
       "section": "registry",
-      "root": "0xc84eebc1c1b2541cf63d04f7c3100d60f4e279f74ae58772ae0888ed60264000",
+      "root": "0xc291987f9a0dae7a0ba69b59a92083e69a889825804dd3b1b561b0d85218a000",
       "struct": "CatalogStorage",
       "slots": 1,
       "fields": [],
@@ -1731,9 +1731,9 @@
       ],
       "arrays": []
     },
-    "efs.registry.v2.control": {
+    "efs.registry.control": {
       "section": "registry",
-      "root": "0x746f5ca92ad4053adbc9ee32a7eb3c5322aee798e9dd1d4ffd591785f460be00",
+      "root": "0xd66677389f9bccfb9c56e4cd57ee93fada10258bbfc71f9559907a6a53b2ea00",
       "struct": "ControlStorage",
       "slots": 2,
       "fields": [
@@ -1776,9 +1776,9 @@
       "mappings": [],
       "arrays": []
     },
-    "efs.index.v2.store.posting": {
+    "efs.index.store.posting": {
       "section": "index",
-      "root": "0xafadaed06cad87ccf20afccb1a44eec86b687f3eab1409e879b2ae8416b40a00",
+      "root": "0x17a0279c1971e9724be0233d1b0c8d1806af2df4a8793066d7d0fc0644d5e600",
       "struct": "PostingStorage",
       "slots": 5,
       "fields": [
@@ -1889,9 +1889,9 @@
         }
       ]
     },
-    "efs.index.v2.store.bitmap": {
+    "efs.index.store.bitmap": {
       "section": "index",
-      "root": "0x4640202bf0ab6387cbfef29b92cbbb784eceffe554551be074390efd2b65b600",
+      "root": "0x55e8a600ede9d478e75d626d97b87f5ed8831fef1cffb5713a957d8e20572700",
       "struct": "BitmapStorage",
       "slots": 7,
       "fields": [
@@ -2072,9 +2072,9 @@
         }
       ]
     },
-    "efs.index.v2.gen": {
+    "efs.index.gen": {
       "section": "index",
-      "root": "0x1dec63f4cbafd6b4fe84cdc042050c704f9cdfe7f0d5bcbdfce1b30ca8f26300",
+      "root": "0xb5c0d2a68acfe73ade1091b3f74f29317622b434abd8d361aeac70e6ad780e00",
       "struct": "GenStorage",
       "slots": 2,
       "fields": [
@@ -2147,19 +2147,19 @@
       ],
       "arrays": []
     },
-    "efs.ledger.v2.source": {
+    "efs.ledger.source": {
       "section": "ledger",
-      "root": "0x2fca977fd3a2c6b167fb728d5b0bcfec6fb20471b834ea01ad3f693a92a9ca00",
+      "root": "0x6abfaf7133487a77383fac82c37b59ba29355e6aabba6843abd6ada22ca0c000",
       "reserved": "reserved (S4 SourceEvidence)"
     },
-    "efs.ledger.v2.staging": {
+    "efs.ledger.staging": {
       "section": "ledger",
-      "root": "0x5dd7299b00a7c05d3490b804591aa32f13000f9f1e77b236afb15ef1dcd26900",
+      "root": "0xc8f8104a8aeeb64ca2e69ce6149d38108a5874c5323ed475213f98156ae60100",
       "reserved": "reserved (stage-then-commit)"
     },
-    "efs.ledger.v2.lock": {
+    "efs.ledger.lock": {
       "section": "ledger",
-      "root": "0x6c6eb23cf3b383a5fb365ecd153e56a97a2ae1f01e555420253212131c40d200",
+      "root": "0x4c4f67d80a37938dcd47d00dc4f183f159d48fe29a94186c0984897509322c00",
       "transient": true,
       "fields": [
         {
@@ -2193,5 +2193,5 @@
       ]
     }
   },
-  "layoutId": "0x61a441c149dcbe899e7243167ec95077ad34211feeb9232959903c20a6c6484a"
+  "layoutId": "0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb"
 }

@@ -38,9 +38,9 @@ import {MockCaller, MockRegistry, MockUnsupported} from "./MockRegistry.sol";
 // (`lab-b/test/CoreOrderedAcceptance.t.sol`, `MatchedRollback.t.sol`) ported to Effect/3 and IAcceptor/2-era
 // ABIs. Constructors never read the ledger; they take its address.
 
-// keccak("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs") (design §5.11).
+// keccak("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs") (design §5.11).
 bytes32 constant CALLBACK_PROFILE_3 =
-    keccak256("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+    keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
 
 /// The initial work-model coefficients of design §10.4, slot counts ×10 as the design stores them.
 library IndexDoubleDefaults {
@@ -80,7 +80,7 @@ abstract contract IndexDoubleCore is IIndexReads {
     address public immutable owner = msg.sender;
 
     address public ledger;
-    bytes32 public manifestHash = keccak256("efs2/test/index-double/1");
+    bytes32 public manifestHash = keccak256("efs/test/index-double/1");
     bytes32 public physicalProfile;
     uint64 public provenFrom = 1;
     address public postingStore;
@@ -662,7 +662,7 @@ contract AttackIndex is BaseIndexDouble {
     function reentryCalldata() public pure returns (bytes memory) {
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("efs2/test/index/reentry");
+        actions[0].salt = keccak256("efs/test/index/reentry");
         Native memory ctx;
         return abi.encodeCall(ILedger.execute, (actions, new bytes[](1), ctx, ""));
     }

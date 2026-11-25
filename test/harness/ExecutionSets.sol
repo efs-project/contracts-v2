@@ -20,7 +20,7 @@ library ExecutionSets {
     {
         return keccak256(
             abi.encode(
-                DOMAIN_TYPEHASH, keccak256("EFS"), keccak256("2"), uint256(acceptedChainId), ledger
+                DOMAIN_TYPEHASH, keccak256("EFS"), keccak256("1"), uint256(acceptedChainId), ledger
             )
         );
     }

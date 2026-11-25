@@ -14,28 +14,28 @@ const enc = (types, values) => encodeAbiParameters(types.map((type) => ({ type }
 const k = (types, values) => keccak256(enc(types, values));
 
 export const DOM = {
-  record: h("efs2/record/1"),
-  position: h("efs2/position/1"),
-  binding: h("efs2/binding/1"),
-  scope: h("efs2/vk/binding-scope/1"),
-  posting: h("efs2/pk/1"),
-  subject: h("efs2/subject/1"),
-  principal: h("efs2/principal/1"),
-  type: h("efs2/type/1"),
-  roleScope: h("efs2/vk/role-scope/1"),
-  realmOrigin: h("efs2/realm-origin/1"),
-  realm: h("efs2/realm/1"),
-  publication: h("efs2/publication/1"),
-  nativeIntent: h("efs2/native-intent/1"),
-  signedIntent: h("efs2/signed-intent/1"),
-  profile: h("efs2/acceptance-profile/1"),
-  describedShape: h("efs2/described-shape/1"),
-  roleKey: h("efs2/role-key/1"),
-  executionSet: h("efs2/execution-set/1"),
+  record: h("efs/record/1"),
+  position: h("efs/position/1"),
+  binding: h("efs/binding/1"),
+  scope: h("efs/vk/binding-scope/1"),
+  posting: h("efs/pk/1"),
+  subject: h("efs/subject/1"),
+  principal: h("efs/principal/1"),
+  type: h("efs/type/1"),
+  roleScope: h("efs/vk/role-scope/1"),
+  realmOrigin: h("efs/realm-origin/1"),
+  realm: h("efs/realm/1"),
+  publication: h("efs/publication/1"),
+  nativeIntent: h("efs/native-intent/1"),
+  signedIntent: h("efs/signed-intent/1"),
+  profile: h("efs/acceptance-profile/1"),
+  describedShape: h("efs/described-shape/1"),
+  roleKey: h("efs/role-key/1"),
+  executionSet: h("efs/execution-set/1"),
 };
-// Index families of design §10.2: keccak("efs2/family/<name>/1").
+// Index families of design §10.2: keccak("efs/family/<name>/1").
 export const FAMILIES = ["by-type", "by-author", "backlink", "history", "scope", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "roster", "live-scope"];
-export const familyId = (name) => keccak256(stringToHex(`efs2/family/${name}/1`));
+export const familyId = (name) => keccak256(stringToHex(`efs/family/${name}/1`));
 export const KIND = { byType: 1, byAuthor: 4, backlink: 5, history: 8, scope: 10, referencePosition: 11, byRecord: 12, uniqueByType: 13, scalar: 14, digest: 15 };
 
 export const keys = {
@@ -79,7 +79,7 @@ const inputs = {
   body: stringToHex("hello, efs"),
   bodyHash: keccak256(stringToHex("hello, efs")),
   salt: h("vectors/salt"),
-  purpose: h("efs2/purpose/head/1"),
+  purpose: h("efs/purpose/head/1"),
   role: h("vectors/role"),
   ordinal: 3,
   spec: 2,
@@ -99,7 +99,7 @@ const scopeKey = keys.scope(eoaPrincipal, inputs.purpose, subjectId);
 
 const realmOrigin = keys.realmOrigin(11155111n, inputs.contractAddress, inputs.salt);
 const vectors = {
-  schema: "efs2/vectors/ids/1",
+  schema: "efs/vectors/ids/1",
   families: Object.fromEntries(FAMILIES.map((n) => [n, familyId(n)])),
   generator: "tools/vectors.mjs (viem keccak256 + encodeAbiParameters)",
   domains: DOM,

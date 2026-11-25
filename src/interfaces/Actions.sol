@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-// @title Actions — the write-side types of the EFS v2 consumer closure (design §5.1)
+// @title Actions — the write-side types of the EFS consumer closure (design §5.1)
 // @notice File-level declarations so every interface and library shares one definition. The
 //         `Action` tuple is the nine-field shape the kernel admits; its per-kind zero-shape law is
 //         enforced by the kernel (`E_SHAPE`), never by the encoder.
@@ -12,7 +12,7 @@ type TypeId is bytes32;
 type ScopeKey is bytes32;
 /// Posting-list key from `Keys.posting` (design §5.8); never a coverage scope.
 type PostingKey is bytes32;
-/// Index family id: keccak("efs2/family/<name>/1") (design §10.2).
+/// Index family id: keccak("efs/family/<name>/1") (design §10.2).
 type FamilyId is bytes32;
 
 /// One admission leaf. `bodyHashOrRecordId` is the body hash for PUBLISH and the record id for
@@ -104,7 +104,7 @@ library Capability {
 
 /// The three closure purposes (design §12.1): a file's HEAD, a directory's FOLDER entries, TAG (reserved to S3).
 library Purpose {
-    bytes32 internal constant HEAD = keccak256("efs2/purpose/head/1");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
-    bytes32 internal constant TAG = keccak256("efs2/purpose/tag/1");
+    bytes32 internal constant HEAD = keccak256("efs/purpose/head/1");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
+    bytes32 internal constant TAG = keccak256("efs/purpose/tag/1");
 }

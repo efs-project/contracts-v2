@@ -14,10 +14,10 @@ import {Limits} from "../../interfaces/Limits.sol";
 ///      asserted against the formula in test/unit/StorageRoots.t.sol.
 abstract contract LedgerStorage {
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.realm — identity, component pins, cached commitments, limits, transition, flags
+    // efs.ledger.realm — identity, component pins, cached commitments, limits, transition, flags
     // ---------------------------------------------------------------------------------------------
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.realm
+    /// @custom:storage-location erc7201:efs.ledger.realm
     struct RealmStorage {
         bytes32 realmId; // keccak(DOM_REALM, realmOrigin, genesisExecutionProfileId)
         bytes32 realmOrigin; // keccak(DOM_REALM_ORIGIN, genesisChainId, coreAddress, realmSalt)
@@ -53,7 +53,7 @@ abstract contract LedgerStorage {
     }
 
     bytes32 internal constant REALM_ROOT =
-        0xd1d82880908abd64876dc5abdb3d21a6118aa67f635eb0d222f8ae0c6374eb00;
+        0x282113142e9b03b41f73f795c71a689c6393962a323022d5ac5450977a98b200;
 
     function _realm() internal pure returns (RealmStorage storage $) {
         assembly ("memory-safe") {
@@ -62,10 +62,10 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.counters — one packed word
+    // efs.ledger.counters — one packed word
     // ---------------------------------------------------------------------------------------------
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.counters
+    /// @custom:storage-location erc7201:efs.ledger.counters
     struct CountersStorage {
         uint48 admissions;
         uint48 records;
@@ -74,7 +74,7 @@ abstract contract LedgerStorage {
     }
 
     bytes32 internal constant COUNTERS_ROOT =
-        0x63eac95c642a8299ccca6df135b3f61f7cfd222a0712997d1cd9fcdcfa9e5500;
+        0x2965fd57160ca86ec032f96eac3be480be385a49dbc724794da83198a2b1fb00;
 
     function _counters() internal pure returns (CountersStorage storage $) {
         assembly ("memory-safe") {
@@ -83,7 +83,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.records — record cells and inline body words
+    // efs.ledger.records — record cells and inline body words
     // ---------------------------------------------------------------------------------------------
 
     /// Two slots per fresh record plus body words. `carrierKind`: 0 INLINE_WORDS; 1 CODE_BLOB reserved.
@@ -95,14 +95,14 @@ abstract contract LedgerStorage {
         uint8 carrierKind;
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.records
+    /// @custom:storage-location erc7201:efs.ledger.records
     struct RecordsStorage {
         mapping(bytes32 recordId => RecordCell) cells;
         mapping(bytes32 recordId => mapping(uint256 index => bytes32)) bodyWords;
     }
 
     bytes32 internal constant RECORDS_ROOT =
-        0x7524f85143c406ba14d3b73dea3182e972b4d4504f1b783a38f0858767c1de00;
+        0x95ea68df03033e4e485691c801b399ada592d1857a089601df38c503c05de100;
 
     function _records() internal pure returns (RecordsStorage storage $) {
         assembly ("memory-safe") {
@@ -111,7 +111,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.subjects
+    // efs.ledger.subjects
     // ---------------------------------------------------------------------------------------------
 
     /// `creatorKind`: the principalKind of the creating principal (1 KEY 2 CONTRACT).
@@ -120,13 +120,13 @@ abstract contract LedgerStorage {
         uint8 creatorKind;
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.subjects
+    /// @custom:storage-location erc7201:efs.ledger.subjects
     struct SubjectsStorage {
         mapping(bytes32 subjectId => SubjectCell) cells;
     }
 
     bytes32 internal constant SUBJECTS_ROOT =
-        0xe593fc8637d8cc4bf73cbb933a15ce289f597399c2da2882777592cc3ee4c000;
+        0x34a8b688ba7a9f244b30e5d5c3e6a84c66b5c53c194d1ad88e53060ce8ff7100;
 
     function _subjects() internal pure returns (SubjectsStorage storage $) {
         assembly ("memory-safe") {
@@ -135,7 +135,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.admissions — one row per leaf (two slots; UNBIND/RELEASE write the meta word only)
+    // efs.ledger.admissions — one row per leaf (two slots; UNBIND/RELEASE write the meta word only)
     // ---------------------------------------------------------------------------------------------
 
     /// `a`: PUBLISH/REUSE = recordId; BIND = target; CREATE = salt; WITHDRAW = bytes32(targetAdmission).
@@ -153,13 +153,13 @@ abstract contract LedgerStorage {
         bytes32 a;
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.admissions
+    /// @custom:storage-location erc7201:efs.ledger.admissions
     struct AdmissionsStorage {
         mapping(uint256 ordinal => AdmissionRow) rows;
     }
 
     bytes32 internal constant ADMISSIONS_ROOT =
-        0x33042cebcd07e2f265085d626def780948525aefc12f3aa3822ae3531c63eb00;
+        0xf936524673093aaa638ecef8cea1b1fcb0a86f97670c7ca482a4fea6b1488e00;
 
     function _admissions() internal pure returns (AdmissionsStorage storage $) {
         assembly ("memory-safe") {
@@ -168,7 +168,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.publications — sparse evidence cells and the retry map
+    // efs.ledger.publications — sparse evidence cells and the retry map
     // ---------------------------------------------------------------------------------------------
 
     /// Sparse: a native publication writes w0–w4; signed lanes add w5–w10. `flags`: b0 imported,
@@ -204,14 +204,14 @@ abstract contract LedgerStorage {
         uint64 authEpoch;
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.publications
+    /// @custom:storage-location erc7201:efs.ledger.publications
     struct PublicationsStorage {
         mapping(uint256 publication => EvidenceCell) evidence;
         mapping(bytes32 principalId => mapping(uint256 nonce => uint48)) publicationAt;
     }
 
     bytes32 internal constant PUBLICATIONS_ROOT =
-        0xe9165e74d7cf63baf9a84b176011c878a390e3e9f989a60de35575a350940a00;
+        0xef587c61258bfad7cfa2d61a999b8bebef5caa2271ed63df641e1f934e8f4f00;
 
     function _publications() internal pure returns (PublicationsStorage storage $) {
         assembly ("memory-safe") {
@@ -220,7 +220,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.bindings — heads, binding ordinals, write-once position cells
+    // efs.ledger.bindings — heads, binding ordinals, write-once position cells
     // ---------------------------------------------------------------------------------------------
 
     /// The target word is KEPT on MASK and RELEASE; the canonical target is 0 unless state == BOUND.
@@ -242,7 +242,7 @@ abstract contract LedgerStorage {
         bytes32 role;
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.bindings
+    /// @custom:storage-location erc7201:efs.ledger.bindings
     struct BindingsStorage {
         mapping(bytes32 bindingKey => HeadRow) heads;
         mapping(uint256 bindingOrdinal => bytes32) bindingPosition;
@@ -250,7 +250,7 @@ abstract contract LedgerStorage {
     }
 
     bytes32 internal constant BINDINGS_ROOT =
-        0xceda1ceb7d6e35dde16546393af20354114f252f7fbb4c227d63f743c35ffb00;
+        0x47b6d5a9531485da5c6460648366d4b22fa902f89c0d4efccabbd7b6f0738f00;
 
     function _bindings() internal pure returns (BindingsStorage storage $) {
         assembly ("memory-safe") {
@@ -259,7 +259,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.principals
+    // efs.ledger.principals
     // ---------------------------------------------------------------------------------------------
 
     struct PrincipalRow {
@@ -267,13 +267,13 @@ abstract contract LedgerStorage {
         uint48 viewMutationVersion; // increments with the nonce when the publication contains a bind kind
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.principals
+    /// @custom:storage-location erc7201:efs.ledger.principals
     struct PrincipalsStorage {
         mapping(bytes32 principalId => PrincipalRow) rows;
     }
 
     bytes32 internal constant PRINCIPALS_ROOT =
-        0xf6114a07ac14eb57f9dac3ac5f41fd2824feddb467129b9fa50d96bc2daac900;
+        0x502ecb3517614eabd6915919aa7adca45b70b54c7b691fd5ee3825f222b63b00;
 
     function _principals() internal pure returns (PrincipalsStorage storage $) {
         assembly ("memory-safe") {
@@ -282,7 +282,7 @@ abstract contract LedgerStorage {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.revisions — append-only, write-once, one row per activation
+    // efs.ledger.revisions — append-only, write-once, one row per activation
     // ---------------------------------------------------------------------------------------------
 
     /// `flags`: b0 frozenTerminal, b1 sameCodeReactivation, b2 chainAcceptanceChange, b3 controllerMigrated,
@@ -322,13 +322,13 @@ abstract contract LedgerStorage {
         bytes32 noticePrincipal;
     }
 
-    /// @custom:storage-location erc7201:efs.ledger.v2.revisions
+    /// @custom:storage-location erc7201:efs.ledger.revisions
     struct RevisionsStorage {
         mapping(uint256 revision => RevisionRow) rows;
     }
 
     bytes32 internal constant REVISIONS_ROOT =
-        0xd9645fc105a27a63ec9effce4033ff09babd0e322d92c50976c833cd02e4eb00;
+        0xc201c190a1412d71d30fef1177b33b57bf8640364aaafa2bd05597a067d7b700;
 
     function _revisions() internal pure returns (RevisionsStorage storage $) {
         assembly ("memory-safe") {
@@ -340,20 +340,20 @@ abstract contract LedgerStorage {
     // Reserved namespaces: never written before the stage that defines them (design §4.1)
     // ---------------------------------------------------------------------------------------------
 
-    /// efs.ledger.v2.source — SourceEvidence (S4 import lane).
+    /// efs.ledger.source — SourceEvidence (S4 import lane).
     bytes32 internal constant SOURCE_ROOT =
-        0x2fca977fd3a2c6b167fb728d5b0bcfec6fb20471b834ea01ad3f693a92a9ca00;
-    /// efs.ledger.v2.staging — stage-then-commit (action kinds 8/9, capability b9).
+        0x6abfaf7133487a77383fac82c37b59ba29355e6aabba6843abd6ada22ca0c000;
+    /// efs.ledger.staging — stage-then-commit (action kinds 8/9, capability b9).
     bytes32 internal constant STAGING_ROOT =
-        0x5dd7299b00a7c05d3490b804591aa32f13000f9f1e77b236afb15ef1dcd26900;
+        0xc8f8104a8aeeb64ca2e69ce6149d38108a5874c5323ed475213f98156ae60100;
 
     // ---------------------------------------------------------------------------------------------
-    // efs.ledger.v2.lock — the transient publication lock (one word; EIP-1153)
+    // efs.ledger.lock — the transient publication lock (one word; EIP-1153)
     //   phase u8@0 | stagedPublication u48@8 | admissionFrontier u48@56 | mutationsSnapshot u48@104
     // ---------------------------------------------------------------------------------------------
 
     bytes32 internal constant LOCK_SLOT =
-        0x6c6eb23cf3b383a5fb365ecd153e56a97a2ae1f01e555420253212131c40d200;
+        0x4c4f67d80a37938dcd47d00dc4f183f159d48fe29a94186c0984897509322c00;
 
     function _lockWord() internal view returns (uint256 word) {
         assembly ("memory-safe") {

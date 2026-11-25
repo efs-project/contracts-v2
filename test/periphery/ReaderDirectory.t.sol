@@ -17,10 +17,10 @@ contract ReaderDirectoryTest is Test {
 
     ReaderDirectory internal dir;
     address internal constant LEDGER = address(0x1ED6E5);
-    bytes32 internal constant LENS = keccak256("efs2/reader/lens/1");
-    bytes32 internal constant PAGES = keccak256("efs2/reader/files-page/1");
-    bytes32 internal constant LAYOUT = keccak256("efs2/test/layout");
-    bytes32 internal constant PHYS = keccak256("efs2/test/physical/1");
+    bytes32 internal constant LENS = keccak256("efs/reader/lens/1");
+    bytes32 internal constant PAGES = keccak256("efs/reader/files-page/1");
+    bytes32 internal constant LAYOUT = keccak256("efs/test/layout");
+    bytes32 internal constant PHYS = keccak256("efs/test/physical/1");
 
     function setUp() public {
         dir = new ReaderDirectory();
@@ -28,7 +28,7 @@ contract ReaderDirectoryTest is Test {
 
     function _reader(address ledger, bytes32 profile) internal returns (ReaderDouble) {
         bytes32[] memory p = new bytes32[](profile == 0 ? 0 : 2);
-        if (profile != 0) (p[0], p[1]) = (profile, keccak256("efs2/test/physical/2"));
+        if (profile != 0) (p[0], p[1]) = (profile, keccak256("efs/test/physical/2"));
         return new ReaderDouble(ledger, LAYOUT, p);
     }
 

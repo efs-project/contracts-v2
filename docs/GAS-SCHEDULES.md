@@ -1,6 +1,6 @@
 # Gas schedules
 
-EFS v2 contracts are priced on **two** schedules, because the chain is changing under the design:
+EFS contracts are priced on **two** schedules, because the chain is changing under the design:
 
 | Schedule | Status (verified 2026-10-13) | Fresh storage slot | Rewrite of an existing slot (cold) | Code deposit | New account |
 | --- | --- | ---: | ---: | ---: | ---: |

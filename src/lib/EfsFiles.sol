@@ -6,7 +6,7 @@ import {Action, ActionKind, Purpose} from "../interfaces/Actions.sol";
 /// @title EfsFiles — the Files recipes of design §12.2 as `Action[]`/`bytes[]` builders (design §5.14)
 /// @notice Pure builders for the measured recipes — root seed, create folder, create file, edit, rename/move,
 ///         remove, restore, release — plus the body encoders of the ten Files Types (§12.1 and docs/LARGE-FILES.md),
-///         the canonical chunker of a large file (`efs2/chunking/1`, `chunk`), a publication splitter (`split`,
+///         the canonical chunker of a large file (`efs/chunking/1`, `chunk`), a publication splitter (`split`,
 ///         `slice`) and the ids a client needs (subject, record, name record, position, FOLDER scope). Every builder
 ///         returns the `actions` and the aligned `bodies` the ledger's `execute` takes; hand them to
 ///         `EfsNative.batch` (or `ILedger.execute`).
@@ -54,10 +54,10 @@ library EfsFiles {
         bytes32 plaintextSha256OrZero;
     }
 
-    bytes32 internal constant DOM_RECORD = keccak256("efs2/record/1");
-    bytes32 internal constant DOM_SUBJECT = keccak256("efs2/subject/1");
-    bytes32 internal constant DOM_POSITION = keccak256("efs2/position/1");
-    bytes32 internal constant DOM_SCOPE = keccak256("efs2/vk/binding-scope/1");
+    bytes32 internal constant DOM_RECORD = keccak256("efs/record/1");
+    bytes32 internal constant DOM_SUBJECT = keccak256("efs/subject/1");
+    bytes32 internal constant DOM_POSITION = keccak256("efs/position/1");
+    bytes32 internal constant DOM_SCOPE = keccak256("efs/vk/binding-scope/1");
     /// `directory-alias/1` kinds (design §12.1).
     uint256 internal constant ALIAS_DIRECTORY = 1;
     uint256 internal constant ALIAS_FILE = 2;
@@ -71,7 +71,7 @@ library EfsFiles {
     /// The one `files-external/1` carrier: a URI locator.
     uint256 internal constant CARRIER_LOCATION = 2;
     uint256 internal constant HASH_SHA256 = 1;
-    /// `efs2/chunking/1`: the canonical chunk payload (a `files-bytes/1` body of 8,192 bytes, the S1 `maxBody`).
+    /// `efs/chunking/1`: the canonical chunk payload (a `files-bytes/1` body of 8,192 bytes, the S1 `maxBody`).
     uint256 internal constant CHUNK_PAYLOAD = 8_160;
 
     // =============================================================================================
@@ -523,7 +523,7 @@ library EfsFiles {
     }
 
     // =============================================================================================
-    // Large files: the canonical chunker (`efs2/chunking/1`) and publication splitting
+    // Large files: the canonical chunker (`efs/chunking/1`) and publication splitting
     // =============================================================================================
 
     /// The chunker's working state (memory, shared by the recursion).
@@ -537,7 +537,7 @@ library EfsFiles {
         uint256 cursor;
     }
 
-    /// `efs2/chunking/1` (docs/LARGE-FILES.md; a convention, never enforced): `payload` cut into `chunkPayload`-byte
+    /// `efs/chunking/1` (docs/LARGE-FILES.md; a convention, never enforced): `payload` cut into `chunkPayload`-byte
     /// chunks except the last (`CHUNK_PAYLOAD` = 8,160 is the canonical size; an empty payload is one empty chunk,
     /// the sentinel record), one `files-bytes/1` PUBLISH per chunk, and over `n` chunks the tree `tree(1) = the
     /// chunk`, `tree(n) = span(tree(first k), tree(rest))` with `k` the largest power of two below `n`.

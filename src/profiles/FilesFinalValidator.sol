@@ -48,7 +48,7 @@ contract FilesFinalValidator is IIndexHook {
     /// The manifest `Unit.identity` of this validator: its unit name and the two Type ids it enforces.
     function identity() external view returns (bytes32) {
         return
-            keccak256(abi.encode(keccak256("efs2/unit/files-final/1"), nameTypeId, directoryTypeId));
+            keccak256(abi.encode(keccak256("efs/unit/files-final/1"), nameTypeId, directoryTypeId));
     }
 
     /// @inheritdoc IIndexHook

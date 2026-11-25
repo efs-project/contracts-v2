@@ -29,14 +29,14 @@ abstract contract RegistryStorage {
         bytes32 grammarProfile; // grades 1–2: the wrapper's pure constant; zero for native
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.types
+    /// @custom:storage-location erc7201:efs.registry.types
     struct TypesStorage {
         mapping(bytes32 typeId => TypeRow) rows;
         mapping(bytes32 typeId => mapping(uint256 index => bytes32)) refTypes;
     }
 
     bytes32 internal constant TYPES_ROOT =
-        0xb88a601303f5b59143b779b8925ece487b1fa8710d521523140b6c2d91568c00;
+        0xf33da83cec8cfa19b823e041c9adb0176a906c07f2b895fc2182be31f9d30100;
 
     function _types() internal pure returns (TypesStorage storage $) {
         assembly ("memory-safe") {
@@ -50,13 +50,13 @@ abstract contract RegistryStorage {
         bytes32 signatureHash;
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.declarations
+    /// @custom:storage-location erc7201:efs.registry.declarations
     struct DeclarationsStorage {
         mapping(bytes32 typeId => DeclarationRow) rows;
     }
 
     bytes32 internal constant DECLARATIONS_ROOT =
-        0x8f2637a7c7ef5342894e46d7ac564c4785ed47b68917ca992a8f09c97592e400;
+        0xcd8e6cb67099bf4deab380a79e39e866feedda3f0365bab5f4c71bd0b7220500;
 
     function _declarations() internal pure returns (DeclarationsStorage storage $) {
         assembly ("memory-safe") {
@@ -72,13 +72,13 @@ abstract contract RegistryStorage {
         bytes32 codehash;
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.policy
+    /// @custom:storage-location erc7201:efs.registry.policy
     struct PolicyStorage {
         mapping(bytes32 typeId => mapping(uint256 row => PolicyRow)) rows;
     }
 
     bytes32 internal constant POLICY_ROOT =
-        0x7607b3cefdb65ccdfb170dbf9826aca7c3eb2dc0e0e0e5b7bce6a5dffc3f8400;
+        0xf79f93f502a9f1db3ca03146652b2c7e63c6e515716b59dda68bf801d5d37700;
 
     function _policy() internal pure returns (PolicyStorage storage $) {
         assembly ("memory-safe") {
@@ -93,14 +93,14 @@ abstract contract RegistryStorage {
         uint48 mutationAt;
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.roles
+    /// @custom:storage-location erc7201:efs.registry.roles
     struct RolesStorage {
         mapping(bytes32 roleKey => mapping(uint256 n => RoleRow)) rows;
         mapping(bytes32 roleKey => uint16) count;
     }
 
     bytes32 internal constant ROLES_ROOT =
-        0xff16ead419b5fba0549e2629eb15e3f34a6f0ce7330d7cbb2139b6c4e90ceb00;
+        0x6864ecb50b786d57d32a993ea982bcb79fe8ccac6d2ff77ca134e1ab5ada1500;
 
     function _roles() internal pure returns (RolesStorage storage $) {
         assembly ("memory-safe") {
@@ -115,13 +115,13 @@ abstract contract RegistryStorage {
         bytes32 bindingId;
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.bindings
+    /// @custom:storage-location erc7201:efs.registry.bindings
     struct BindingsStorage {
         mapping(bytes32 typeId => BindingRow) rows;
     }
 
     bytes32 internal constant BINDINGS_ROOT =
-        0x8a64542b45955b344eb3568068f1a96cd4fb0b1d8aae3976b48ef53dd8a65a00;
+        0x7f74cb4214d2027c0c0b9f1f324390fbcac1113b4ba0b4a3cf89779ed1dd0a00;
 
     function _bindings() internal pure returns (BindingsStorage storage $) {
         assembly ("memory-safe") {
@@ -137,13 +137,13 @@ abstract contract RegistryStorage {
         bytes32 grammarProfile;
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.wrappers
+    /// @custom:storage-location erc7201:efs.registry.wrappers
     struct WrappersStorage {
         mapping(uint256 version => WrapperRow) rows;
     }
 
     bytes32 internal constant WRAPPERS_ROOT =
-        0x1f2457b895e07513acc7a811602edc7bb7a689b9636346c7d88f35b713b9cc00;
+        0x5ba824ff1a0cd666e5f4d466df1e8dc1c48bab3e6b5f3f782f0484396c78cb00;
 
     function _wrappers() internal pure returns (WrappersStorage storage $) {
         assembly ("memory-safe") {
@@ -151,13 +151,13 @@ abstract contract RegistryStorage {
         }
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.catalog
+    /// @custom:storage-location erc7201:efs.registry.catalog
     struct CatalogStorage {
         mapping(uint256 ordinal => bytes32) typeAt;
     }
 
     bytes32 internal constant CATALOG_ROOT =
-        0xc84eebc1c1b2541cf63d04f7c3100d60f4e279f74ae58772ae0888ed60264000;
+        0xc291987f9a0dae7a0ba69b59a92083e69a889825804dd3b1b561b0d85218a000;
 
     function _catalog() internal pure returns (CatalogStorage storage $) {
         assembly ("memory-safe") {
@@ -165,7 +165,7 @@ abstract contract RegistryStorage {
         }
     }
 
-    /// @custom:storage-location erc7201:efs.registry.v2.control
+    /// @custom:storage-location erc7201:efs.registry.control
     struct ControlStorage {
         address ledger;
         uint32 activeRevision;
@@ -175,7 +175,7 @@ abstract contract RegistryStorage {
     }
 
     bytes32 internal constant CONTROL_ROOT =
-        0x746f5ca92ad4053adbc9ee32a7eb3c5322aee798e9dd1d4ffd591785f460be00;
+        0xd66677389f9bccfb9c56e4cd57ee93fada10258bbfc71f9559907a6a53b2ea00;
 
     function _control() internal pure returns (ControlStorage storage $) {
         assembly ("memory-safe") {

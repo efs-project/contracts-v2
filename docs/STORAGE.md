@@ -8,7 +8,7 @@ How the contracts lay out state, what is fixed forever, and how to change it. Th
 Every table is an ERC-7201 namespaced struct declared in an abstract storage contract that the
 implementation inherits, so `@openzeppelin/upgrades-core` validates it across upgrades:
 
-| Contract | Namespaces (`efs.<unit>.v2.<table>`) |
+| Contract | Namespaces (`efs.<unit>.<table>`) |
 | --- | --- |
 | `src/core/storage/LedgerStorage.sol` | `ledger.realm`, `ledger.counters`, `ledger.records`, `ledger.subjects`, `ledger.admissions`, `ledger.publications`, `ledger.bindings`, `ledger.principals`, `ledger.revisions`; reserved `ledger.source` (S4) and `ledger.staging` (stage-then-commit); the transient `ledger.lock` |
 | `src/types/storage/RegistryStorage.sol` | `registry.types`, `registry.declarations`, `registry.policy`, `registry.roles`, `registry.bindings`, `registry.wrappers`, `registry.catalog`, `registry.control` |
@@ -47,7 +47,7 @@ raw slots (the two facets, the replay decoder, `StateDigest`, the SDK twin) go t
 kernel, the delegates, the registry and the stores read their typed structs directly. Only `core/`,
 `control/`, `index/` and the two facets may import it (`tools/checks.mjs`).
 
-`Layout.LAYOUT_ID = keccak256("efs2/ledger-layout/1" ‖ canonical JSON of the ledger section of
+`Layout.LAYOUT_ID = keccak256("efs/ledger-layout/1" ‖ canonical JSON of the ledger section of
 vectors/layout.json)` is the implementation's `LAYOUT_ID` immutable, a realm word and a revision-row
 field (design §4.1). `test/unit/Layout.t.sol` pins the current value; a change means a one-way door
 moved and must be deliberate: a layout change before genesis re-versions the id, a layout change

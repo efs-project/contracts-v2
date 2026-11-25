@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Build and identity policy for the EFS v2 contracts (see docs/BUILD-IDENTITY.md).
+# Build and identity policy for the EFS contracts (see docs/BUILD-IDENTITY.md).
 [profile.default]
 src = "src"
 test = "test"

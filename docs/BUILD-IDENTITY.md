@@ -1,6 +1,6 @@
 # Build identity
 
-EFS v2 pins Types to the **compiled runtime bytes** of their validation rules, so what the compiler
+EFS pins Types to the **compiled runtime bytes** of their validation rules, so what the compiler
 emits is part of the protocol's identity. This document states the policy and what it implies.
 
 ## Policy

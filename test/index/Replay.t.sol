@@ -69,7 +69,7 @@ contract ReplayTest is Test {
     ILedger internal ledger;
     ILedgerHot internal hot;
     bytes32 internal constant TYPE_OK = keccak256("test/type/ok");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
     bytes32 internal constant NAME = keccak256("name");
     bytes32 internal principal;
     bytes internal body = "0123456789abcdef0123456789abcdef-tail";

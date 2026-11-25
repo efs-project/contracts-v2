@@ -129,7 +129,7 @@ contract ContractSignatureWallet {
         if (m == WRONG) return ERC1271_REFUSAL;
         if (m == WRITE) ++writes;
         if (m == REENTER) {
-            (bool ok,) = msg.sender.call(createCalldata(keccak256("efs2/test/wallet/reentry"), 0));
+            (bool ok,) = msg.sender.call(createCalldata(keccak256("efs/test/wallet/reentry"), 0));
             if (ok) return ERC1271_REFUSAL;
         }
         return valid(hash, signature) ? ERC1271_MAGIC : ERC1271_REFUSAL;

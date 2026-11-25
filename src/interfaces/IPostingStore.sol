@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import {FamilyId, PostingKey} from "./Actions.sol";
 
 /// @title IPostingStore — the per-Realm APPEND_ORDERED family store (design §5.11, §4.6)
-/// @notice STORE_ABI_ID = keccak("efs2/posting-store/1" ‖ sorted selectors ‖ return layouts): an immutable
+/// @notice STORE_ABI_ID = keccak("efs/posting-store/1" ‖ sorted selectors ‖ return layouts): an immutable
 ///         exposed by storeAbiId(), snapshot-tested like ILedgerHot; stores outlive generations, so this ABI is
 ///         Etched. Writes are authorized per §4.6 (E_WRITER / E_FAMILY / E_ORDER). The reads are raw storage
 ///         getters for the oracle, not family reads; the index derives keys.

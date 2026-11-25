@@ -48,7 +48,7 @@ interface IOwnable {
 /// @title LedgerControl — the genesis, activation, freeze and transition writer (design §8)
 /// @notice Runs only by DELEGATECALL in the kernel's context after the kernel's wrappers applied the
 ///         controller, idle, initializer and frozen gates; carries the same selectors as `ILedgerControl`
-///         so the kernel forwards `msg.data` verbatim. Writes `efs.ledger.v2.{realm,revisions}` and the
+///         so the kernel forwards `msg.data` verbatim. Writes `efs.ledger.{realm,revisions}` and the
 ///         transition word. Pinned by the kernel implementation's CONTROL / CONTROL_CODEHASH immutables.
 contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
     address private immutable SELF = address(this);
@@ -67,7 +67,7 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
     );
     bytes32 private constant DOMAIN_NAME = keccak256("EFS");
-    bytes32 private constant DOMAIN_VERSION = keccak256("2");
+    bytes32 private constant DOMAIN_VERSION = keccak256("1");
     uint64 private constant NOT_MAINTAINED = type(uint64).max;
     uint8 private constant SHAPE_APPEND = 1;
     uint16 private constant REV_FROZEN = 1 << 0;

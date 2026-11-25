@@ -32,7 +32,7 @@ contract RegistryDriftTest is ControlFixture {
         intent.realmId = hot.realmId();
         intent.realmOrigin = hot.realmOrigin();
         intent.executionSet = hot.executionSet();
-        intent.principalId = keccak256("efs2/test/security/drift/signed-principal");
+        intent.principalId = keccak256("efs/test/security/drift/signed-principal");
         intent.verifierProfile = 1;
     }
 

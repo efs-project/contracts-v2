@@ -189,7 +189,7 @@ const constants = {
     hashAlg: pick(efsFiles, "HASH_"), alias: pick(efsFiles, "ALIAS_"), targetKind: pick(filesProfile, "TARGET_"), lengthMax: filesProfile.LENGTH_MAX, sha256Empty: filesProfile.SHA256_EMPTY,
     // fixed by each rule's law, not a named constant: FilesContentRule / FilesExternalContentRule refusal code 4
     contentVersion: 1, externalVersion: 2,
-    chunking: { id: "efs2/chunking/1", chunkPayload: efsFiles.CHUNK_PAYLOAD, spec: "docs/LARGE-FILES.md" },
+    chunking: { id: "efs/chunking/1", chunkPayload: efsFiles.CHUNK_PAYLOAD, spec: "docs/LARGE-FILES.md" },
   },
 };
 for (const [k, n] of [["actionKinds", 9], ["capabilities", 10], ["purposes", 3]]) assert.equal(Object.keys(constants[k]).length, n, `constants.${k}: expected ${n} entries`);
@@ -284,8 +284,8 @@ const manifest = {
     hotAbiIdPreimage: plan.hotAbiIdString,
     readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, web3Gateway: plan.gateway, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
     statusVocabularyId: constants.status.id,
-    storeAbiIds: { posting: keccak256(Buffer.from("efs2/posting-store/1")), bitmap: keccak256(Buffer.from("efs2/bitmap-store/1")) },
-    indexProfiles: { physical: keccak256(Buffer.from("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs")) },
+    storeAbiIds: { posting: keccak256(Buffer.from("efs/posting-store/1")), bitmap: keccak256(Buffer.from("efs/bitmap-store/1")) },
+    indexProfiles: { physical: keccak256(Buffer.from("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs")) },
     crossCheck: scriptCheck,
   },
   constants,

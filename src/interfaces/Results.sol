@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-// @title Results — the read-side vocabulary of the EFS v2 consumer closure (design §5.1)
+// @title Results — the read-side vocabulary of the EFS consumer closure (design §5.1)
 // @notice Value 0 of every enum is reserved and never returned: a zero-decoded struct is a transport
 //         fault, never a result. `STATUS_VOCABULARY_ID` versions the enums; additions are append-only.
 
@@ -75,4 +75,4 @@ library Phase {
 }
 
 // Versions the enums above; changed only when a value is appended.
-bytes32 constant STATUS_VOCABULARY_ID = keccak256("efs2/status-vocabulary/1");
+bytes32 constant STATUS_VOCABULARY_ID = keccak256("efs/status-vocabulary/1");
