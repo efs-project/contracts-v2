@@ -7,7 +7,7 @@ import {LedgerRows} from "./LedgerReads.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ILedgerViews} from "../interfaces/ILedgerViews.sol";
 import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
-import {ActionKind} from "../interfaces/Actions.sol";
+import {ActionKind, Coordinate} from "../interfaces/Actions.sol";
 import {Effect} from "../interfaces/Index.sol";
 import {BasisCommit, History, Status} from "../interfaces/Results.sol";
 import {
@@ -322,6 +322,131 @@ contract LedgerViews is ILedgerViews {
             Head memory h = hs[k];
             out[k] = keccak256(abi.encode(h.state, h.revision, h.admission, h.target));
         }
+    }
+
+    // =============================================================================================
+    // List entries (the first-statement lists of design §10.2, read by the topic readers)
+    // =============================================================================================
+
+    /// @inheritdoc ILedgerViews
+    /// @dev Two batched rounds: every ordinal's `bindingPosition` row, then every written position's cell. Per
+    ///      entry PRESENT with the position and its cell, ABSENT_PROVEN (zero position and cell) for an ordinal
+    ///      that names no binding; every entry LIMIT_EXCEEDED past `limits.maxReadIds`, UNSUPPORTED on a foreign
+    ///      layout, UNKNOWN without a ledger (the blanket statuses of `records`).
+    function bindingCells(address ledger, uint64[] calldata ordinals)
+        external
+        view
+        returns (
+            Status[] memory st,
+            bytes32[] memory positions,
+            Coordinate[] memory cells,
+            BasisCommit memory b
+        )
+    {
+        uint256 n = ordinals.length;
+        Status all = _blanket(ledger, n);
+        (, b) = LedgerRows.gateBasis(ledger);
+        st = new Status[](n);
+        positions = new bytes32[](n);
+        cells = new Coordinate[](n);
+        if (_fill(st, all)) return (st, positions, cells, b);
+        bytes32[] memory s = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            s[i] = bytes32(Layout.bindingsBindingPositionSlot(ordinals[i]));
+        }
+        positions = LedgerRows.loadAll(ledger, s);
+        s = new bytes32[](3 * n);
+        for (uint256 i; i < n; ++i) {
+            uint256 cell = Layout.bindingsPositionsSlot(positions[i]);
+            s[3 * i] = bytes32(cell);
+            s[3 * i + 1] = bytes32(cell + 1);
+            s[3 * i + 2] = bytes32(cell + 2);
+        }
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
+        for (uint256 i; i < n; ++i) {
+            // a written binding row names a written position, whose purpose is nonzero
+            if (positions[i] == 0 || w[3 * i] == 0) {
+                st[i] = Status.ABSENT_PROVEN;
+                positions[i] = 0;
+                continue;
+            }
+            st[i] = Status.PRESENT;
+            cells[i] = Coordinate(w[3 * i], w[3 * i + 1], w[3 * i + 2]);
+        }
+    }
+
+    /// @inheritdoc ILedgerViews
+    /// @dev Three batched rounds: each admission row's first word, each row's publication principal (evidence
+    ///      word 2), each `head(binding(principal, position))`. Per entry the head's status (`LedgerRows.headStatus`)
+    ///      when the row is a BIND, UNBIND or RELEASE whose binding ordinal is the head's (so the row stated this
+    ///      principal's binding at `position`); ABSENT_PROVEN (zero principal and head) for an unwritten row;
+    ///      INVALID (the principal and head as read) for a row of another kind or another binding. Blanket statuses
+    ///      as `bindingCells`.
+    function authorHeads(address ledger, bytes32 position, uint64[] calldata admissions)
+        external
+        view
+        returns (
+            Status[] memory st,
+            bytes32[] memory principals,
+            Head[] memory hs,
+            BasisCommit memory b
+        )
+    {
+        uint256 n = admissions.length;
+        Status all = _blanket(ledger, n);
+        (, b) = LedgerRows.gateBasis(ledger);
+        st = new Status[](n);
+        principals = new bytes32[](n);
+        hs = new Head[](n);
+        if (_fill(st, all)) return (st, principals, hs, b);
+        bytes32[] memory s = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            s[i] = bytes32(Layout.admissionsRowsSlot(admissions[i]));
+        }
+        bytes32[] memory rows = LedgerRows.loadAll(ledger, s);
+        for (uint256 i; i < n; ++i) {
+            (,, uint48 pub,,,,,,,) = Layout.unpackAdmissionRowWord0(rows[i]);
+            s[i] = bytes32(Layout.publicationsEvidenceSlot(pub) + 2);
+        }
+        principals = LedgerRows.loadAll(ledger, s);
+        bytes32[] memory keys = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            keys[i] = Keys.binding(principals[i], position);
+        }
+        hs = _heads(ledger, keys);
+        for (uint256 i; i < n; ++i) {
+            (uint8 kind,,, uint48 ordinal,,,,,,) = Layout.unpackAdmissionRowWord0(rows[i]);
+            if (kind == 0) {
+                st[i] = Status.ABSENT_PROVEN;
+                principals[i] = 0;
+                delete hs[i];
+            } else if (
+                (kind != ActionKind.BIND && kind != ActionKind.UNBIND && kind != ActionKind.RELEASE)
+                    || ordinal != hs[i].bindingOrdinal
+            ) {
+                st[i] = Status.INVALID;
+            } else {
+                st[i] = LedgerRows.headStatus(hs[i].state);
+            }
+        }
+    }
+
+    /// The status every entry of a batched view carries when the batch is not served row by row: the gate's
+    /// (UNKNOWN, UNSUPPORTED), LIMIT_EXCEEDED past `limits.maxReadIds`, else UNSET (served row by row).
+    function _blanket(address ledger, uint256 n) private view returns (Status all) {
+        all = LedgerRows.gate(ledger);
+        if (all != Status.PRESENT) return all;
+        (uint16 maxReadIds,,) = LedgerRows.readBounds(ledger);
+        return n > maxReadIds ? Status.LIMIT_EXCEEDED : Status.UNSET;
+    }
+
+    /// Writes the blanket status `all` into every entry; true when it applies (the batch is not read).
+    function _fill(Status[] memory st, Status all) private pure returns (bool) {
+        if (all == Status.UNSET) return false;
+        for (uint256 i; i < st.length; ++i) {
+            st[i] = all;
+        }
+        return true;
     }
 
     function _heads(address ledger, bytes32[] memory keys) private view returns (Head[] memory hs) {

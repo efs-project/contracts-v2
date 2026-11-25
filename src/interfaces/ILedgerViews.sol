@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
+import {Coordinate} from "./Actions.sol";
 import {BasisCommit, History, Status} from "./Results.sol";
 import {AcceptanceBasis, Head, PublicationView, RecordHeader} from "./Views.sol";
 
@@ -44,6 +45,30 @@ interface ILedgerViews {
         bytes32[] calldata principals,
         bytes32[] calldata positions
     ) external view returns (bytes32[] memory);
+
+    /// Binding ordinal → its position and the position's cell, at most maxReadIds ordinals (the entries of the
+    /// first-statement lists, design §10.2).
+    function bindingCells(address ledger, uint64[] calldata ordinals)
+        external
+        view
+        returns (
+            Status[] memory,
+            bytes32[] memory positions,
+            Coordinate[] memory cells,
+            BasisCommit memory
+        );
+
+    /// Admission ordinal of a first statement at `position` → its author's principal and that author's head
+    /// there, at most maxReadIds admissions (the entries of `position-authors`, design §10.2).
+    function authorHeads(address ledger, bytes32 position, uint64[] calldata admissions)
+        external
+        view
+        returns (
+            Status[] memory,
+            bytes32[] memory principals,
+            Head[] memory heads,
+            BasisCommit memory
+        );
 
     function acceptanceBasis(address ledger, uint64 ordinal)
         external
