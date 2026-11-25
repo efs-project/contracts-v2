@@ -199,6 +199,24 @@ nothing more.
 - **A block must still have room.** A block's usage is the larger of its execution gas and its storage gas. The
   worst-case tag carries 14.7M of storage gas, which fits any plausible block.
 
+**If the Glamsterdam rule changes before it activates** so that all gas counts against the cap, the worst case is
+59 words, under the 64 the ruling requires. Nothing is built for this; two options, neither of which ever skips a
+level:
+
+- **Open the roll-up list when the topic is registered** *(preferred)*. The worst case is dear because every
+  all-authors list on a new path is brand new, and a new list is a new storage slot. If registering a topic also
+  writes that topic's all-authors roll-up list head, those lists always exist by the time anything is tagged. Only
+  the author's own lists can then be new. A first tag on a 64-word path becomes about 12.7M all gas *(estimate:
+  2.6M base, 63 levels at 123k for the author's new lists and 38k for the existing shared ones)*, which fits, and
+  the limit moves to about 88 words. Price: one more storage slot per registered topic (22k gas today, 110k on
+  Glamsterdam), paid at registration, which already splits across transactions. The tag stays one atomic write.
+- **A roll-up continuation** *(for paths deeper than that)*. The tag is admitted with its exact lists and as many
+  ancestor levels as fit; a later action, which anyone may send, finishes the remaining levels. A tag whose lists
+  are unfinished must be visible as such to readers, and the continuation must be an ordinary recorded action so a
+  rebuilt index matches the live one. Price *(estimate)*: one storage slot per unfinished tag for its progress, the
+  fixed cost of a publication (about 0.3M today) per continuation, and the same per-level cost as now. It is a new
+  action kind and a real addition to the kernel, so it is the fallback, not the plan.
+
 **Registering a brand-new path, every word new:**
 
 | Words | Today | Transactions | Glamsterdam, all gas | Execution only | Transactions |
@@ -313,9 +331,13 @@ Assigned to an indexer (The Graph) or the client on purpose:
    of execution gas to run, so it is refused though it can pay (asserted in a test). The cause is a reserve of 120k
    per bind in the index's work model, far above what a bind's final check uses. The fix is in the work model, not a
    limits value, and belongs in the same release. On today's schedule that publication cannot pay anyway.
-3. **The floor does not price the lists.** A deep tag that is under-quoted fails with a clear out-of-gas error and
-   is retried with more gas; it is never silently accepted without its lists. The quote cannot know a topic's depth
-   without walking it. Options: store the depth in the path record, or quote from the measured per-level cost.
+3. **The quote does not price the lists.** A deep tag sent with too little gas fails with a clear out-of-gas error
+   and is never accepted without its lists, but the person pays for the failed transaction. The primary fix is in
+   the SDK: it always plans from the words, so it knows the depth, the number of new words, and (from two reads)
+   whether the author's and the shared lists exist. The release publishes the per-level terms in the gas model (a
+   new list, an existing list, per author and shared, on both schedules) so the SDK's gas limit and the kernel's
+   floor are computed from the same figures. Storing the depth in the path record, so the kernel can quote it too,
+   is optional. The floor fix of finding 2 ships with it.
 4. **A design document error.** DESIGN §4.3 lists 11 reserved bits in the admission row; the real layout has none.
    The proper version corrects the text and re-versions the layout identities.
 5. **No reader returns the number yet.** It must be added to the head and admission views, which changes those ABIs
@@ -323,8 +345,12 @@ Assigned to an indexer (The Graph) or the client on purpose:
 6. **Removing a file should release, not mask.** A mask stops the lens search, so removing my `pet.jpg` at a shared
    place would hide other people's. The reference recipes change in the same release (remove and move release; hide
    masks).
-7. **Trusting registration only works behind the validator.** The index skips two reads per level because the
-   validator guarantees topics are registered first. A Realm built without that validator must not set the flag.
+7. **"Trust that topics are registered" must not be a setting.** The spike's index has a flag that skips two reads
+   per level because the validator guarantees a topic is registered before it is tagged. A Realm built with the flag
+   and without the validator would quietly drop roll-up entries. In the proper version there is no flag: the index
+   keeps the topic lists only when its own fixed list of units contains the profile validator built for the same two
+   topic Types, and its constructor refuses any other combination. A test proves the misconfigured index cannot be
+   deployed.
 
 ## 12. The proper version, as one release
 
