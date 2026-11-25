@@ -216,7 +216,7 @@ contract FilesPageReaderTest is FilesPageHarness {
         (Action[] memory a, bytes[] memory b) = EfsFiles.remove(rootDir, "pet.jpg", 1);
         assertEq(a[0].kind, ActionKind.RELEASE);
         _execAs(alice, a, b);
-        (uint8 state,,,,,,) =
+        (uint8 state,,,,,,,) =
             r.hot.head(Keys.binding(pa, EfsFiles.folderPosition(rootDir, "pet.jpg")));
         assertEq(state, 3, "alice's head is RELEASED");
         (Qualified memory q, IFilesPageReader.Row memory row) =
@@ -261,7 +261,7 @@ contract FilesPageReaderTest is FilesPageHarness {
         bytes32 dest = Keys.binding(pa, EfsFiles.folderPosition(docs, "cat.jpg"));
         vm.expectRevert(abi.encodeWithSelector(E_CAS.selector, dest, uint64(5), uint64(0)));
         this.execAsExternal(alice, a, b);
-        (uint8 state, uint64 rev,,,,, bytes32 target) = r.hot.head(key);
+        (uint8 state, uint64 rev,,,,, bytes32 target,) = r.hot.head(key);
         assertEq(state, 1, "the RELEASE rolled back with the refused BIND");
         assertEq(rev, 1);
         assertEq(target, aliceFile);
@@ -271,7 +271,7 @@ contract FilesPageReaderTest is FilesPageHarness {
         // the move lands
         (a, b) = EfsFiles.move(t, aliceFile, rootDir, "pet.jpg", 1, docs, "cat.jpg", 0, true);
         _execAs(alice, a, b);
-        (state,,,,,,) = r.hot.head(key);
+        (state,,,,,,,) = r.hot.head(key);
         assertEq(state, 3, "the source is RELEASED, not masked");
         (Qualified memory q, IFilesPageReader.Row memory row) =
             reader.lookupName(rootDir, keccak256("pet.jpg"), _lens(pa, pb), _unbound());

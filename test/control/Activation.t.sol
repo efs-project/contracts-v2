@@ -686,7 +686,7 @@ contract ActivationTest is ControlFixture {
         Action[] memory actions = new Action[](33);
         for (uint256 i; i < 33; ++i) {
             actions[i].kind = ActionKind.CREATE;
-            actions[i].salt = bytes32(i + 1);
+            actions[i].saltOrStrength = bytes32(i + 1);
         }
         bytes[] memory bodies = new bytes[](33);
         uint64 nonce = nextNonce();

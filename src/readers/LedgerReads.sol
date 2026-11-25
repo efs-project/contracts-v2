@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {Layout} from "../core/layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
+import {ActionKind} from "../interfaces/Actions.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../interfaces/ILedgerReads.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
@@ -307,7 +308,8 @@ library LedgerRows {
             h.targetKind,
             h.prevAdmission,
             h.bindingOrdinal,
-            h.notAfter
+            h.notAfter,
+            h.strength
         ) = Layout.unpackHeadRowWord0(meta);
         if (h.state == 1) h.target = target;
     }
@@ -321,8 +323,11 @@ library LedgerRows {
         return Status.UNSUPPORTED;
     }
 
+    /// An admission row; the stored `policyRowOrStrength` field is served as `policyRow` on PUBLISH/REUSE rows
+    /// and as `strength` on BIND/UNBIND/RELEASE rows (the other is 0).
     function admission(bytes32 meta, bytes32 a) internal pure returns (AdmissionRow memory r) {
         uint8 withdrawn;
+        uint16 policyRowOrStrength;
         (
             r.kind,
             r.leaf,
@@ -331,12 +336,18 @@ library LedgerRows {
             r.expectedRevision,
             r.prevAdmission,
             withdrawn,
-            r.policyRow,
+            policyRowOrStrength,
             r.roleRow,
             r.targetKind
         ) = Layout.unpackAdmissionRowWord0(meta);
         r.withdrawn = withdrawn != 0;
         r.a = a;
+        uint8 kind = r.kind;
+        if (kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
+            r.strength = policyRowOrStrength;
+        } else {
+            r.policyRow = policyRowOrStrength;
+        }
     }
 
     /// Kind 0 is an unwritten row; kinds 8..15 are reserved (refused by the kernel until they are defined).
@@ -697,7 +708,7 @@ contract LedgerReads is ILedgerReads {
         assembly ("memory-safe") {
             p := h
         }
-        _returnFlat(st, p, 8);
+        _returnFlat(st, p, 9);
     }
 
     /// @inheritdoc ILedgerReads
@@ -742,7 +753,7 @@ contract LedgerReads is ILedgerReads {
         assembly ("memory-safe") {
             p := r
         }
-        _returnFlat(st, p, 11);
+        _returnFlat(st, p, 12);
     }
 
     /// @inheritdoc ILedgerReads

@@ -325,7 +325,7 @@ abstract contract ControlFixture is Test {
     {
         actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = salt;
+        actions[0].saltOrStrength = salt;
         bodies = new bytes[](1);
     }
 

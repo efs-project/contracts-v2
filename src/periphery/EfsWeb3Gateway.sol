@@ -249,7 +249,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         returns (uint8, uint8, bytes32)
     {
         for (uint256 i; i < lens.length; ++i) {
-            (uint8 state,,, uint8 kind,,, bytes32 target) =
+            (uint8 state,,, uint8 kind,,, bytes32 target,) =
                 ILedgerHot(LEDGER).head(Keys.binding(lens[i], position));
             if (state == BOUND) return (BOUND, kind, target);
             if (state == MASKED) return (MASKED, 0, 0);

@@ -238,7 +238,16 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
         vm.mockCall(
             address(r.ledger),
             abi.encodeCall(ILedgerHot.head, (key)),
-            abi.encode(uint8(4), uint64(1), uint64(1), uint8(0), uint64(0), uint64(1), bytes32(0))
+            abi.encode(
+                uint8(4),
+                uint64(1),
+                uint64(1),
+                uint8(0),
+                uint64(0),
+                uint64(1),
+                bytes32(0),
+                uint16(0)
+            )
         );
         assertEq(_status(_p("/hello.txt"), 503).body, "unsupported head state");
     }

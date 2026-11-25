@@ -38,9 +38,9 @@ import {MockCaller, MockRegistry, MockUnsupported} from "./MockRegistry.sol";
 // (`lab-b/test/CoreOrderedAcceptance.t.sol`, `MatchedRollback.t.sol`) ported to Effect/3 and IAcceptor/2-era
 // ABIs. Constructors never read the ledger; they take its address.
 
-// keccak("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs") (design §5.11).
-bytes32 constant CALLBACK_PROFILE_3 =
-    keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+// keccak("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs") (design §5.11).
+bytes32 constant CALLBACK_PROFILE_4 =
+    keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
 /// The initial work-model coefficients of design §10.4, slot counts ×10 as the design stores them.
 library IndexDoubleDefaults {
@@ -275,7 +275,7 @@ abstract contract IndexDoubleCore is IIndexReads {
         r.version = 1;
         r.ledger = ledger;
         r.physicalProfile = physicalProfile;
-        r.callbackProfile = CALLBACK_PROFILE_3;
+        r.callbackProfile = CALLBACK_PROFILE_4;
         r.manifestHash = manifestHash;
         r.provenFrom = provenFrom;
         r.completedAdmission = lastProcessed;
@@ -377,7 +377,7 @@ contract PrefixAgreement is BaseIndexDouble {
         } else if (
             kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
         ) {
-            (uint8 state, uint64 revision, uint64 admission,,, uint64 ordinal, bytes32 target) =
+            (uint8 state, uint64 revision, uint64 admission,,, uint64 ordinal, bytes32 target,) =
                 hot.head(Keys.binding(e.principalId, e.position));
             uint8 want = kind == ActionKind.BIND ? 1 : kind == ActionKind.UNBIND ? 2 : 3;
             if (
@@ -662,7 +662,7 @@ contract AttackIndex is BaseIndexDouble {
     function reentryCalldata() public pure returns (bytes memory) {
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("efs/test/index/reentry");
+        actions[0].saltOrStrength = keccak256("efs/test/index/reentry");
         Native memory ctx;
         return abi.encodeCall(ILedger.execute, (actions, new bytes[](1), ctx, ""));
     }

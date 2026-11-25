@@ -57,7 +57,7 @@ abstract contract FilesRecipesBase is FilesFixture {
 
     function _create(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function _publish(uint8 t, bytes memory body)
@@ -121,6 +121,21 @@ abstract contract FilesRecipesBase is FilesFixture {
         }
     }
 
+    /// Native execution as `author` (an EOA author is also tx.origin), both expectations bound; no gas log.
+    function _execAs(address author, Action[] memory a, bytes[] memory b)
+        internal
+        returns (uint64 publication)
+    {
+        bytes32 principal = author == address(this) ? p : Keys.principal(author);
+        Native memory c;
+        (c.nonce,) = r.hot.nonceOf(principal);
+        c.expectedExecutionSet = r.hot.executionSet();
+        c.expectedAcceptanceProfile =
+            ILedgerCommitments(r.hot.ingress()).acceptanceProfileOf(address(r.ledger), a);
+        if (author != address(this)) vm.prank(author, author);
+        (publication,) = r.ledger.execute(a, b, c, "");
+    }
+
     /// Runs after the expectations are read and before the measured `execute` (`GasModel.t.sol` cools the state
     /// and may prank the caller here; a no-op for the recipe suites).
     function _beforeExecute() internal virtual {}
@@ -158,7 +173,7 @@ abstract contract FilesRecipesBase is FilesFixture {
         view
         returns (uint8 state, uint64 revision, bytes32 target)
     {
-        (state, revision,,,,, target) = r.hot.head(key);
+        (state, revision,,,,, target,) = r.hot.head(key);
     }
 
     function _assertScope(bytes32 dir, uint64 count, uint64 live, uint48 bits) internal view {

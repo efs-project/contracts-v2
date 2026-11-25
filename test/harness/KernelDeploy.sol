@@ -20,7 +20,7 @@ import {ExecutionSets} from "./ExecutionSets.sol";
 ///         The real deployer (`RealmGenesis`, design §8.2) replaces this at S1.4; the S1 limits are the
 ///         design's §4.2 values.
 library KernelDeploy {
-    bytes32 internal constant HOT_ABI_ID = keccak256("efs/ledger-hot/1:test");
+    bytes32 internal constant HOT_ABI_ID = keccak256("efs/ledger-hot/2:test");
 
     struct Kernel {
         LedgerIngress ingress;

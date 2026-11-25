@@ -212,7 +212,7 @@ contract ReentrantAcceptor {
     function reentryCalldata() public pure returns (bytes memory) {
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("efs/test/acceptor/reentry");
+        actions[0].saltOrStrength = keccak256("efs/test/acceptor/reentry");
         Native memory ctx;
         return abi.encodeCall(ILedger.execute, (actions, new bytes[](1), ctx, ""));
     }

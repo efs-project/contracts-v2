@@ -20,6 +20,7 @@ abstract contract RegistryStorage {
         uint48 catalogOrdinal;
         uint8 codecVersion;
         uint8 textProfile;
+        uint8 flags; // descriptor byte 133: bit 0 TYPE_FLAG_EMITS_BODY (packed in the header word, bits 192..199)
         // pins
         bytes32 shape;
         bytes32 ruleId;

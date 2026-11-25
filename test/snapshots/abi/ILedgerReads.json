@@ -78,6 +78,11 @@
         "internalType": "bytes32",
         "name": "a",
         "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "strength",
+        "type": "uint16"
       }
     ],
     "BasisCommit": [
@@ -625,14 +630,19 @@
         "type": "uint64"
       },
       {
-        "internalType": "uint40",
+        "internalType": "uint32",
         "name": "notAfter",
-        "type": "uint40"
+        "type": "uint32"
       },
       {
         "internalType": "bytes32",
         "name": "target",
         "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "strength",
+        "type": "uint16"
       }
     ],
     "Limits": [
@@ -928,6 +938,11 @@
               "name": "a",
               "type": "bytes32",
               "internalType": "bytes32"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         }
@@ -1014,6 +1029,11 @@
               "name": "a",
               "type": "bytes32",
               "internalType": "bytes32"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         },
@@ -1812,13 +1832,18 @@
             },
             {
               "name": "notAfter",
-              "type": "uint40",
-              "internalType": "uint40"
+              "type": "uint32",
+              "internalType": "uint32"
             },
             {
               "name": "target",
               "type": "bytes32",
               "internalType": "bytes32"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         }

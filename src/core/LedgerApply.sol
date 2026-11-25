@@ -34,11 +34,13 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
     uint8 private constant STATE_RELEASED = 3;
     uint8 private constant TARGET_RECORD = 1;
     uint8 private constant TARGET_SUBJECT = 2;
+    uint8 private constant TARGET_ADDRESS = 3;
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_REBIND = 2;
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
 
     modifier delegateOnly() {
         if (address(this) == SELF) revert E_DELEGATE_ONLY();
@@ -71,24 +73,26 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         row.kind = action.kind;
         row.leaf = leaf;
         row.publication = uint48(effect.publication);
-        row.policyRow = policyRow;
         row.roleRow = roleRow;
 
         uint8 kind = action.kind;
         if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
             row.a = _applyRecord(kind, action, body, refCount, admission, effect, refs);
+            row.policyRowOrStrength = policyRow;
             refCountOut = refCount;
         } else if (kind == ActionKind.BIND) {
             row.a = action.target;
             (row.prevAdmission, row.targetKind) = _applyBind(action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal);
             row.expectedRevision = uint48(action.expectedRevision);
+            row.policyRowOrStrength = _strength(action);
         } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
             row.prevAdmission = _applyMaskOrRelease(kind, action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal); // names the position through bindingPosition[ordinal]
             row.expectedRevision = uint48(action.expectedRevision);
+            row.policyRowOrStrength = _strength(action); // RELEASE carries 0 (the shape law)
         } else if (kind == ActionKind.CREATE) {
-            row.a = action.salt;
+            row.a = action.saltOrStrength;
             _applyCreate(action, principalId, principalKind, admission, effect);
         } else if (kind == ActionKind.WITHDRAW) {
             row.a = action.target;
@@ -195,23 +199,16 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         bytes32 target = action.target;
         if (_records().cells[target].typeId != 0) targetKind = TARGET_RECORD;
         else if (_subjects().cells[target].createAdmission != 0) targetKind = TARGET_SUBJECT;
+        // a nonzero address-shaped word (top 96 bits zero) that is neither a record nor a subject: an address,
+        // which needs no code, balance or history. Record and subject ids are keccak outputs, so producing one
+        // that is address-shaped takes about 2^96 hash evaluations; the kinds cannot be confused in practice.
+        else if (uint256(target) >> 160 == 0) targetKind = TARGET_ADDRESS;
         else revert E_TARGET_MISSING(effect.leaf, target);
 
         prevAdmission = head.admission;
         uint48 ordinal = head.bindingOrdinal;
         if (state == STATE_UNSET) {
-            CountersStorage storage c = _counters();
-            ordinal = c.bindings + 1;
-            if (ordinal > ClosureConstants.SATURATION) revert E_COUNTER_SATURATED(2);
-            c.bindings = ordinal;
-            b.bindingPosition[ordinal] = position;
-            PositionCell storage p = b.positions[position];
-            if (p.purpose == 0) {
-                p.purpose = action.purpose;
-                p.subject = action.subject;
-                if (action.role != 0) p.role = action.role;
-            }
-            head.bindingOrdinal = ordinal;
+            ordinal = _allocate(b, head, action, position);
             effect.transitionKind = T_FIRST_BIND;
         } else if (state == STATE_BOUND) {
             effect.oldTarget = head.target;
@@ -226,6 +223,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         head.admission = uint48(admission);
         head.targetKind = targetKind;
         head.prevAdmission = prevAdmission;
+        head.strength = _strength(action); // a new strength on the same target is a REBIND
         if (head.target != target) head.target = target;
 
         effect.bindingOrdinal = ordinal;
@@ -239,6 +237,33 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.target = target;
     }
 
+    /// A bind kind's strength: its `saltOrStrength` word, 0..65,535 by the kernel's shape law (0 for RELEASE).
+    function _strength(Action calldata action) private pure returns (uint16) {
+        return uint16(uint256(action.saltOrStrength));
+    }
+
+    /// The first transition of a binding, positive or negative: a fresh binding ordinal, its position and, when
+    /// no author has stated anything there yet, the write-once position cell.
+    function _allocate(
+        BindingsStorage storage b,
+        HeadRow storage head,
+        Action calldata action,
+        bytes32 position
+    ) private returns (uint48 ordinal) {
+        CountersStorage storage c = _counters();
+        ordinal = c.bindings + 1;
+        if (ordinal > ClosureConstants.SATURATION) revert E_COUNTER_SATURATED(2);
+        c.bindings = ordinal;
+        b.bindingPosition[ordinal] = position;
+        PositionCell storage p = b.positions[position];
+        if (p.purpose == 0) {
+            p.purpose = action.purpose;
+            p.subject = action.subject;
+            if (action.role != 0) p.role = action.role;
+        }
+        head.bindingOrdinal = ordinal;
+    }
+
     // ---- UNBIND (mask) / RELEASE ---------------------------------------------------------------------------------
 
     function _applyMaskOrRelease(
@@ -250,24 +275,36 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
     ) private returns (uint48 prevAdmission) {
         bytes32 position = Keys.position(action.purpose, action.subject, action.role);
         bytes32 key = Keys.binding(principalId, position);
-        HeadRow storage head = _bindings().heads[key];
+        BindingsStorage storage b = _bindings();
+        HeadRow storage head = b.heads[key];
         uint8 state = head.state;
-        bool live = state == STATE_BOUND || (kind == ActionKind.RELEASE && state == STATE_MASKED);
+        // an UNBIND is admitted from every state (a first statement may be negative; a mask of a mask changes
+        // the number); a RELEASE only from BOUND or MASKED
+        bool live = kind == ActionKind.UNBIND
+            ? state <= STATE_RELEASED
+            : state == STATE_BOUND || state == STATE_MASKED;
         if (!live) revert E_NOT_LIVE(effect.leaf, key, state);
         if (head.revision != action.expectedRevision) {
             revert E_CAS(key, action.expectedRevision, head.revision);
         }
 
         prevAdmission = head.admission;
+        uint8 transition = kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
         if (state == STATE_BOUND) {
             effect.oldTarget = head.target; // the canonical target before the transition
             effect.oldTargetKind = head.targetKind;
+        } else if (state == STATE_UNSET) {
+            // a first mask: the binding and its position are allocated as a first BIND allocates them, with no
+            // target (target kind 0, target word 0)
+            _allocate(b, head, action, position);
+            transition = T_FIRST_MASK;
         }
         uint48 newRevision = head.revision + 1;
         head.state = kind == ActionKind.UNBIND ? STATE_MASKED : STATE_RELEASED;
         head.revision = newRevision;
         head.admission = uint48(admission);
         head.prevAdmission = prevAdmission; // the target word is KEPT (design §4.3)
+        head.strength = _strength(action);
 
         effect.bindingOrdinal = head.bindingOrdinal;
         effect.position = position;
@@ -276,7 +313,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.role = action.role;
         effect.revision = newRevision;
         effect.prevAdmission = prevAdmission;
-        effect.transitionKind = kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
+        effect.transitionKind = transition;
     }
 
     // ---- CREATE --------------------------------------------------------------------------------------------------
@@ -288,8 +325,8 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         uint64 admission,
         Effect memory effect
     ) private {
-        if (action.salt == 0) revert E_SALT(effect.leaf);
-        bytes32 subjectId = Keys.subject(principalId, action.salt);
+        if (action.saltOrStrength == 0) revert E_SALT(effect.leaf);
+        bytes32 subjectId = Keys.subject(principalId, action.saltOrStrength);
         SubjectCell storage s = _subjects().cells[subjectId];
         if (s.createAdmission != 0) revert E_SUBJECT_EXISTS(effect.leaf, subjectId);
         s.createAdmission = uint48(admission);

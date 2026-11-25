@@ -5,7 +5,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {LedgerStorage} from "./storage/LedgerStorage.sol";
 import {Layout} from "./layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
-import {Action, ActionKind, Native, Intent} from "../interfaces/Actions.sol";
+import {Action, ActionKind, BindingNumber, Native, Intent} from "../interfaces/Actions.sol";
 import {Phase} from "../interfaces/Results.sol";
 import {ClosureConstants, Limits} from "../interfaces/Limits.sol";
 import {ILedger} from "../interfaces/ILedger.sol";
@@ -437,7 +437,7 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             refs[base + i] = w;
         }
         r.refCount = base + refCount;
-        _emitAdmitted(admission, a, ret, p.principalId);
+        _emitAdmitted(admission, a, body, ret, p.principalId, v.typeFlags);
         _counters().admissions = uint48(admission); // checkpoint: the staged frontier is visible through counts()
         _notifyIndex(r, ret);
         _recheck(r);
@@ -449,7 +449,7 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
         bool zeroPos = a.purpose == 0 && a.subject == 0 && a.role == 0;
         if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
             if (a.typeId == 0 || a.bodyHashOrRecordId == 0) revert E_SHAPE(leaf, 1);
-            if (!zeroPos || a.target != 0 || a.salt != 0 || a.expectedRevision != 0) {
+            if (!zeroPos || a.target != 0 || a.saltOrStrength != 0 || a.expectedRevision != 0) {
                 revert E_SHAPE(leaf, 2);
             }
             if (kind == ActionKind.REUSE && bodyLen != 0) revert E_SHAPE(leaf, 3);
@@ -460,10 +460,16 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             if (kind == ActionKind.BIND ? a.target == 0 : a.target != 0) {
                 revert E_SHAPE(leaf, kind == ActionKind.BIND ? 1 : 2);
             }
-            if (a.typeId != 0 || a.bodyHashOrRecordId != 0 || a.salt != 0) revert E_SHAPE(leaf, 2);
+            // BIND and UNBIND carry a strength 0..MAX_STRENGTH, RELEASE none: a larger word is refused, never
+            // truncated, so a later widening cannot change the meaning of an action already admitted
+            if (
+                a.typeId != 0 || a.bodyHashOrRecordId != 0
+                    || uint256(a.saltOrStrength)
+                        > (kind == ActionKind.RELEASE ? 0 : BindingNumber.MAX_STRENGTH)
+            ) revert E_SHAPE(leaf, 2);
             if (bodyLen != 0) revert E_SHAPE(leaf, 3);
         } else if (kind == ActionKind.CREATE) {
-            if (a.salt == 0) revert E_SHAPE(leaf, 1);
+            if (a.saltOrStrength == 0) revert E_SHAPE(leaf, 1);
             if (
                 a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.target != 0
                     || a.expectedRevision != 0
@@ -472,7 +478,7 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
         } else if (kind == ActionKind.WITHDRAW) {
             if (a.target == 0) revert E_SHAPE(leaf, 1);
             if (
-                a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.salt != 0
+                a.typeId != 0 || a.bodyHashOrRecordId != 0 || !zeroPos || a.saltOrStrength != 0
                     || a.expectedRevision != 0
             ) revert E_SHAPE(leaf, 2);
             if (bodyLen != 0) revert E_SHAPE(leaf, 3);
@@ -483,24 +489,35 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
         }
     }
 
-    /// Topic 3 and the id come from the apply delegate's words (typeId 5, recordId 6, subjectId 7, position 9).
+    /// Topic 3 and the id come from the apply delegate's words (typeId 5, recordId 6, subjectId 7, position 9);
+    /// `Bound` from the action and the Effect words transitionKind 15 and targetKind 16; `Body` when word 19
+    /// (freshRecord) is set on a PUBLISH whose Type sets `ClosureConstants.TYPE_FLAG_EMITS_BODY` (`typeFlags`,
+    /// the ingress's `LeafVerdict`) and whose body is at most `ClosureConstants.BODY_EVENT_MAX` bytes.
     function _emitAdmitted(
         uint64 admission,
         Action calldata a,
+        bytes calldata body,
         bytes memory blob,
-        bytes32 principalId
+        bytes32 principalId,
+        uint8 typeFlags
     ) private {
         uint8 kind = a.kind;
         bytes32 typeId;
         bytes32 recordId;
         bytes32 subjectId;
         bytes32 position;
+        uint256 transitionKind;
+        uint256 targetKind;
+        uint256 freshRecord;
         assembly ("memory-safe") {
             let b := add(blob, 32)
             typeId := mload(add(b, 160))
             recordId := mload(add(b, 192))
             subjectId := mload(add(b, 224))
             position := mload(add(b, 288))
+            transitionKind := mload(add(b, 480))
+            targetKind := mload(add(b, 512))
+            freshRecord := mload(add(b, 608))
         }
         if (kind == ActionKind.CREATE) {
             emit Admitted(admission, kind, subjectId, subjectId, principalId);
@@ -514,10 +531,27 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
                 position,
                 principalId
             );
+            emit Bound(
+                admission,
+                a.purpose,
+                a.subject,
+                a.role,
+                a.target,
+                kind,
+                uint16(uint256(a.saltOrStrength)),
+                uint8(transitionKind),
+                uint8(targetKind)
+            );
         } else if (kind == ActionKind.WITHDRAW) {
             emit Admitted(admission, kind, typeId, a.target, principalId);
         } else {
             emit Admitted(admission, kind, a.typeId, recordId, principalId);
+            if (
+                freshRecord != 0 && typeFlags & ClosureConstants.TYPE_FLAG_EMITS_BODY != 0
+                    && body.length <= ClosureConstants.BODY_EVENT_MAX
+            ) {
+                emit Body(recordId, a.typeId, body);
+            }
         }
     }
 
@@ -681,7 +715,7 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
     function head(bytes32 bindingKey)
         external
         view
-        returns (uint8, uint64, uint64, uint8, uint64, uint64, bytes32)
+        returns (uint8, uint64, uint64, uint8, uint64, uint64, bytes32, uint16)
     {
         HeadRow storage h = _bindings().heads[bindingKey];
         uint8 state = h.state;
@@ -692,7 +726,8 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             h.targetKind,
             h.prevAdmission,
             h.bindingOrdinal,
-            state == 1 ? h.target : bytes32(0)
+            state == 1 ? h.target : bytes32(0),
+            h.strength
         );
     }
 
@@ -703,6 +738,10 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
     {
         RecordCell storage cell = _records().cells[recordId];
         return (cell.typeId, cell.firstAdmission, cell.length, cell.occurrences, cell.carrierKind);
+    }
+
+    function bodyWord(bytes32 recordId, uint256 index) external view returns (bytes32) {
+        return _records().bodyWords[recordId][index];
     }
 
     function publicationAt(bytes32 principalId, uint64 nonce)

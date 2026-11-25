@@ -64,6 +64,8 @@
                 "bindFolderRebind",
                 "unbindFolder",
                 "releaseFolder",
+                "bindTagNumberChange",
+                "unbindTagLone",
                 "withdraw",
                 "firstWriteSurcharge"
               ],
@@ -114,6 +116,12 @@
                   "type": "integer"
                 },
                 "releaseFolder": {
+                  "type": "integer"
+                },
+                "bindTagNumberChange": {
+                  "type": "integer"
+                },
+                "unbindTagLone": {
                   "type": "integer"
                 },
                 "withdraw": {

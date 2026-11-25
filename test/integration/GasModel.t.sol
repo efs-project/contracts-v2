@@ -20,6 +20,7 @@ contract GasModelTest is FilesRecipesBase {
     uint256 internal constant N_SUBJECTS = 40;
     uint256 internal constant N_CHUNKS = 40;
     uint256 internal constant N_NAMES = 15;
+    bytes32 internal constant TOPIC = keccak256("efs/test/gas-model/topic"); // a plain TAG subject
 
     address[] internal cold; // every account setUp touched (cooled before each measured execute)
     address internal sender; // the caller of the next measured execute (address(this) when zero)
@@ -475,6 +476,36 @@ contract GasModelTest is FilesRecipesBase {
             );
         }
         _actionPair("release folder", x);
+    }
+
+    /// TAG binds of s[35..38) under TOPIC: the number-change targets and the lone negatives' scope. Run inside the
+    /// row's own test, not `setUp`, whose amsterdam execution gas is at the EIP-7825 per-transaction cap.
+    function _tagged() internal {
+        Action[] memory a = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            a[i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
+        }
+        _do(a, new bytes[](3));
+    }
+
+    /// A number change on an asserted tag: BIND to the same target with a new strength (0 -> 75), a REBIND.
+    function test_model_bind_tag_number_change() public {
+        _tagged();
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.bindWithStrength(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 1, 75);
+        }
+        _actionPair("bind tag number change", x);
+    }
+
+    /// A lone negative: UNBIND at a fresh position of an existing scope (FIRST_MASK), strength 4 (-5).
+    function test_model_unbind_tag_lone() public {
+        _tagged();
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, keccak256(abi.encode("lone", i)), 4);
+        }
+        _actionPair("unbind tag lone", x);
     }
 
     function test_model_withdraw() public {

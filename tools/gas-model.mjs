@@ -8,6 +8,7 @@
 //   gas(publication) = fixed + Σ cost(action)
 //   cost(PUBLISH new, shape S, body n bytes) = base[S] + perWord·ceil(n/32) + perByte·n
 //   cost(PUBLISH existing), cost(REUSE), cost(CREATE), cost(BIND fresh|rebind, purpose), cost(UNBIND|RELEASE, purpose),
+//   cost(BIND TAG number change) (a REBIND to the same target with a new strength), cost(UNBIND TAG lone) (a first mask),
 //   cost(WITHDRAW), plus firstWriteSurcharge once for a principal that has never written
 //
 // and predicts the suite's validation composites (never fitted). Exit 1 when a prague validation error exceeds 15%.
@@ -79,6 +80,8 @@ const ACTIONS = {
   bindFolderRebind: "bind folder rebind",
   unbindFolder: "unbind folder",
   releaseFolder: "release folder",
+  bindTagNumberChange: "bind tag number change",
+  unbindTagLone: "unbind tag lone",
   withdraw: "withdraw",
 };
 

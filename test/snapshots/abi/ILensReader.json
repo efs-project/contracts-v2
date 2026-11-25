@@ -260,6 +260,11 @@
         "internalType": "uint8",
         "name": "selectedIndex",
         "type": "uint8"
+      },
+      {
+        "internalType": "uint16",
+        "name": "strength",
+        "type": "uint16"
       }
     ]
   },
@@ -540,6 +545,11 @@
                       "name": "selectedIndex",
                       "type": "uint8",
                       "internalType": "uint8"
+                    },
+                    {
+                      "name": "strength",
+                      "type": "uint16",
+                      "internalType": "uint16"
                     }
                   ]
                 }
@@ -827,6 +837,11 @@
               "name": "selectedIndex",
               "type": "uint8",
               "internalType": "uint8"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         }
@@ -996,6 +1011,11 @@
               "name": "selectedIndex",
               "type": "uint8",
               "internalType": "uint8"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         }
@@ -1165,6 +1185,11 @@
               "name": "selectedIndex",
               "type": "uint8",
               "internalType": "uint8"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         }
@@ -1329,6 +1354,11 @@
               "name": "selectedIndex",
               "type": "uint8",
               "internalType": "uint8"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         }
@@ -1498,6 +1528,11 @@
               "name": "selectedIndex",
               "type": "uint8",
               "internalType": "uint8"
+            },
+            {
+              "name": "strength",
+              "type": "uint16",
+              "internalType": "uint16"
             }
           ]
         },

@@ -138,7 +138,9 @@ abstract contract LedgerStorage {
     // efs.ledger.admissions — one row per leaf (two slots; UNBIND/RELEASE write the meta word only)
     // ---------------------------------------------------------------------------------------------
 
-    /// `a`: PUBLISH/REUSE = recordId; BIND = target; CREATE = salt; WITHDRAW = bytes32(targetAdmission).
+    /// `a`: PUBLISH/REUSE = recordId; BIND = target; CREATE = the creator salt; WITHDRAW = bytes32(targetAdmission).
+    /// `policyRowOrStrength`: the policy row for PUBLISH/REUSE, the strength for BIND/UNBIND/RELEASE (the two never
+    /// share a row); `withdrawn` means only that a PUBLISH/REUSE row was withdrawn.
     struct AdmissionRow {
         uint8 kind; // 1 PUBLISH 2 REUSE 3 BIND 4 UNBIND 5 CREATE 6 WITHDRAW 7 RELEASE; 8/9 reserved
         uint8 leaf;
@@ -146,10 +148,13 @@ abstract contract LedgerStorage {
         uint48 bindingOrdinal;
         uint48 expectedRevision;
         uint48 prevAdmission;
-        uint8 withdrawn; // 0 or 1
-        uint16 policyRow;
+        uint8 withdrawn; // PUBLISH/REUSE rows: 0 or 1; always 0 in other rows
+        // One 16-bit field, two uses by kind: PUBLISH/REUSE rows record the Type's policy row the leaf was
+        // accepted under; BIND/UNBIND/RELEASE rows record the action's strength (`Action.saltOrStrength`,
+        // 0..65,535; 0 for RELEASE), so the head's number is re-derivable from the row; CREATE/WITHDRAW rows 0.
+        uint16 policyRowOrStrength;
         uint16 roleRow;
-        uint8 targetKind; // BIND rows: 1 RECORD 2 SUBJECT, so the decoder rebuilds oldTarget without shadow heads
+        uint8 targetKind; // BIND rows: 1 RECORD 2 SUBJECT 3 ADDRESS, so the decoder rebuilds oldTarget without shadow heads
         bytes32 a;
     }
 
@@ -228,10 +233,13 @@ abstract contract LedgerStorage {
         uint8 state; // 0 UNSET 1 BOUND 2 MASKED 3 RELEASED
         uint48 revision;
         uint48 admission;
-        uint8 targetKind; // 0 NONE 1 RECORD 2 SUBJECT
+        uint8 targetKind; // 0 NONE 1 RECORD 2 SUBJECT 3 ADDRESS; 0 on a head that was never bound (a first mask)
         uint48 prevAdmission;
         uint48 bindingOrdinal;
-        uint40 notAfter; // reserved zero; the "stale not dead" seam
+        uint32 notAfter; // reserved zero, written by nothing; the "stale not dead" seam (unix seconds to 2106)
+        // The strength of the last BIND or UNBIND (0..65,535; a RELEASE writes 0). The signed number is derived
+        // (`BindingNumber.numberOf`): `strength` when BOUND, `-1 - strength` when MASKED, none otherwise.
+        uint16 strength;
         bytes32 target;
     }
 

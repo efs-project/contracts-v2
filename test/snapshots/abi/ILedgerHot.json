@@ -4,6 +4,7 @@
   "closure": true,
   "methodIdentifiers": {
     "0x20b2d6e8": "applyDelegate()",
+    "0xc8404f45": "bodyWord(bytes32,uint256)",
     "0xd8de6587": "control()",
     "0xf77c4791": "controller()",
     "0x817cc1ea": "counts()",
@@ -43,6 +44,30 @@
           "name": "",
           "type": "address",
           "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "bodyWord",
+      "inputs": [
+        {
+          "name": "recordId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "index",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
         }
       ],
       "stateMutability": "view"
@@ -231,6 +256,11 @@
           "name": "target",
           "type": "bytes32",
           "internalType": "bytes32"
+        },
+        {
+          "name": "strength",
+          "type": "uint16",
+          "internalType": "uint16"
         }
       ],
       "stateMutability": "view"

@@ -102,9 +102,9 @@ export const FACTORY = {
 /** anvil's first default key: a public throwaway, the fixture's owner, declaration key and seed principal. */
 export const FIXTURE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 export const DEFAULTS = { chainId: 31337, realmSalt: h("efs/fixture/realm/1"), executionProfileId: 1 };
-/** The release hot-ABI id: keccak256("efs/ledger-hot/1") (the suites keep "efs/ledger-hot/1:test"). It is
+/** The release hot-ABI id: keccak256("efs/ledger-hot/2") (the suites keep "efs/ledger-hot/2:test"). It is
  *  LedgerCore's HOT_ABI_ID immutable, RealmIndex's HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
-export const HOT_ABI_ID_STRING = "efs/ledger-hot/1";
+export const HOT_ABI_ID_STRING = "efs/ledger-hot/2";
 export const HOT_ABI_ID = h(HOT_ABI_ID_STRING);
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
 export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1") };
@@ -297,13 +297,16 @@ const SEMANTIC_SPAN_CHILD = h("efs/files/semantic/span-child/1");
 /** `refTypes` sentinel: any Type. */
 const REF_ANY = ZERO;
 const refField = (id, semantic, ref) => encodePacked(["bytes32", "bytes32", "uint8", "uint8", "uint16", "uint256", "uint256", "bytes32"], [id, semantic, 1, 0, 32, 0n, 0n, ref]);
-/** FilesTypes.*Spec(), byte for byte: description, dependencyClass, refHeaderWords and the REF32 field rows as
- *  [id, semantic, ref(ids)] (fieldCount = rows; refTypes = each row's ref, in order). */
+/** FilesTypes.*Spec(), byte for byte: description, dependencyClass, refHeaderWords, the REF32 field rows as
+ *  [id, semantic, ref(ids)] (fieldCount = rows; refTypes = each row's ref, in order) and flags (header byte 133;
+ *  0 when absent). Bit 0 is TYPE_FLAG_EMITS_BODY (the kernel logs a fresh body of at most 256 bytes in `Body`),
+ *  meant for names, words and topic records: of these ten only files-name/2 sets it; the topic and text Types the
+ *  tag profile adds set it there. */
 const SPECS = [
   { description: "abi.encode(fileSubject, form) || rest; the first revision of a created file subject; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(parentRecord, fileSubject, form) || rest; parent is files-root/1 or files-child/1 of the same file; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 2, fields: [[FIELD_PARENT, SEMANTIC_REVISION, () => REF_ANY]] },
   { description: "abi.encode(bytes32 creatorPrincipal, bytes32 salt); a folder is this record, admitted only when the publishing principal is the creator word and the salt is nonzero", dependencyClass: 1, refHeaderWords: 1, fields: [] },
-  { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [] },
+  { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [], flags: 1 },
   { description: "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
   { description: "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1, the rest of the body", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
@@ -326,7 +329,7 @@ export function descriptor(t, key, ruleCodehash, initcodeHash, ids) {
   const fields = s.fields.length ? concat(s.fields.map(([id, sem, ref]) => refField(id, sem, ref(ids)))) : "0x";
   const header = encodePacked(
     ["uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint24", "uint8", "uint8", "uint8", "address", "bytes32", "bytes32", "bytes32", "uint16", "uint8", "uint8"],
-    [1, 0, 3, s.fields.length, 1, s.dependencyClass, 1, 1, 0, 0, 0, size(name), key, NAMESPACE, ruleCodehash, initcodeHash, size(description), s.refHeaderWords, 0],
+    [1, 0, 3, s.fields.length, 1, s.dependencyClass, 1, 1, 0, 0, 0, size(name), key, NAMESPACE, ruleCodehash, initcodeHash, size(description), s.refHeaderWords, s.flags ?? 0],
   );
   assert.equal(size(header), 134);
   return concat([header, name, description, fields]);
@@ -377,7 +380,7 @@ export function manifestHash(families, units, specs, work) {
 }
 export const MANIFEST_PROFILES = {
   physical: h("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"),
-  callback: h("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs"),
+  callback: h("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs"),
 };
 /** RealmIndex's constructor `_declare` table: (name, kind, universe, shape, liveSemantics, store, fromAdmission). */
 const FAMILY_TABLE = [
@@ -702,8 +705,8 @@ export const REMOTE_FILE = { name: "remote.txt", text: "This file lives at its l
  * files-external/1 record with a web3:// locator and the empty files-bytes/1 sentinel).
  */
 export function seedPlan({ ids, principalId, limits = LIMITS }) {
-  const action = (o) => ({ kind: 0, typeId: ZERO, bodyHashOrRecordId: ZERO, purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, salt: ZERO, ...o });
-  const create = (salt) => ({ a: action({ kind: ACTION.CREATE, salt }), b: "0x" });
+  const action = (o) => ({ kind: 0, typeId: ZERO, bodyHashOrRecordId: ZERO, purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, saltOrStrength: ZERO, ...o });
+  const create = (salt) => ({ a: action({ kind: ACTION.CREATE, saltOrStrength: salt }), b: "0x" });
   const publish = (typeId, body) => ({ a: action({ kind: ACTION.PUBLISH, typeId, bodyHashOrRecordId: keccak256(body) }), b: body });
   const bind = (purpose, subject, role, target, expectedRevision = 0n) => ({ a: action({ kind: ACTION.BIND, purpose, subject, role, target, expectedRevision }), b: "0x" });
   const step = (id, label, list, marker, postCheck) => ({ id, label, actions: list.map((x) => x.a), bodies: list.map((x) => x.b), marker, postCheck });

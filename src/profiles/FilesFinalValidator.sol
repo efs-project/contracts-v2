@@ -33,7 +33,12 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      Refusal codes (`E_FILES_FINAL(code, leaf)`): 1 no `files-name/2` record for the role at or before the
 ///      terminal admission, 2 the parent is not a directory record admitted by then, 3 self-link (target ==
 ///      parent), 4 a subject target not created by then, 5 a record target that is not a directory record admitted
-///      by then, 6 an unknown target kind.
+///      by then, 6 an unknown target kind (an ADDRESS target among them: a folder entry cannot name an address),
+///      7 a HEAD BIND whose target kind is 3 (ADDRESS). This profile's readers cannot serve a HEAD or a folder entry
+///      that points at an address (it would confirm and never be readable), so those two are refused; TAG may
+///      point at an address, and the validator judges only the purposes it names: any other purpose (another
+///      app's own, or a later profile's) is not judged here, whatever its target kind. UNBIND and RELEASE carry no
+///      target and are never refused here.
 contract FilesFinalValidator is IIndexHook {
     /// The exact `files-name/2` Type id of the profile (constructor state, never rewritten).
     bytes32 public nameTypeId;
@@ -71,7 +76,13 @@ contract FilesFinalValidator is IIndexHook {
         bytes32 directoryType;
         for (uint256 i; i < n; ++i) {
             Effect calldata e = effects[i];
-            if (e.kind != ActionKind.BIND || e.purpose != Purpose.FOLDER) continue;
+            if (e.kind != ActionKind.BIND) continue;
+            if (e.purpose != Purpose.FOLDER) {
+                if (e.purpose == Purpose.HEAD && e.targetKind == FilesProfile.TARGET_ADDRESS) {
+                    revert E_FILES_FINAL(7, e.leaf);
+                }
+                continue;
+            }
             if (address(hot) == address(0)) {
                 hot = ILedgerHot(IIndexReads(msg.sender).ledger());
                 nameType = nameTypeId;

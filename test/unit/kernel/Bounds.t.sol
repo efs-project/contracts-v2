@@ -150,7 +150,7 @@ contract BoundsTest is KernelFixture {
         bytes32 key = _key(principal, FOLDER, "s", ROLE);
         vm.expectRevert(abi.encodeWithSelector(E_COUNTER_SATURATED.selector, uint8(2)));
         ledger.execute(_acts(_bind(FOLDER, "s", ROLE, r, 0)), _bodies(1), _native(1), "");
-        (uint8 state,,,,,,) = hot.head(key);
+        (uint8 state,,,,,,,) = hot.head(key);
         assertEq(state, 0, "no head row");
     }
 

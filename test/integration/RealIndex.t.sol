@@ -119,7 +119,7 @@ contract RealIndexTest is Test {
 
     function _create(bytes32 s) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = s;
+        a.saltOrStrength = s;
     }
 
     function _publish(bytes32 typeId, bytes memory b) internal pure returns (Action memory a) {

@@ -316,11 +316,11 @@ viem local account and submitted with `eth_sendRawTransaction`; the fixture's RP
 
 ### The hot-ABI id
 
-The release hot-ABI id is **`keccak256("efs/ledger-hot/1")`** =
-`0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
+The release hot-ABI id is **`keccak256("efs/ledger-hot/2")`** (`/2` since `head` returns the strength) =
+`0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
 It is `LedgerCore`'s `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `RealmIndex`'s
 `hotAbiId` constructor argument and the `FilesFinalValidator` unit's `hotAbiId`. The suites keep
-`keccak256("efs/ledger-hot/1:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
+`keccak256("efs/ledger-hot/2:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
 `profiles.hotAbiId` with `hotAbiIdPreimage`, and `efs-deployment.json` as `hotAbiId` and `hotAbiIdString`.
 
 ### The readers
@@ -452,7 +452,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0x9c4692dc8db33e573d80dc6e90bb1cc50e17cacd6a9355556a69ae7f3c8d53a0`.
+  `0x5078878cd0911b35236939cccee1666df6e43ddd3fda3a89330c4a750bb9fc6a`.
 
 ## The planning model (`gas/model.json`)
 
@@ -496,25 +496,25 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 694,242 | 2,459,042 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 598,670 | 1,878,417 (1,370,880) |
-| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,317,857 | 4,614,817 (3,623,040) |
-| M1 create file (5 leaves, fresh folder) | 1,676,801 | 5,860,838 (4,602,240) |
-| Edit | 894,810 | 2,805,384 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,081,999 | 3,380,453 (2,448,000) |
-| Remove (RELEASE from BOUND) | 445,984 | 1,198,011 (783,360) |
-| Restore (released → same target) | 487,148 | 1,253,708 (783,360) |
-| RELEASE from mask | 409,372 | 1,073,512 (685,440) |
-| Hide (UNBIND from BOUND) | 428,767 | 1,100,109 (685,440) |
-| Restore a released placement (Move-back analog) | 502,014 | 1,349,249 (881,280) |
-| WITHDRAW | 457,530 | 1,297,177 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 694,925 | 2,459,701 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,353 | 1,879,076 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,326,369 | 4,623,305 (3,623,040) |
+| M1 create file (5 leaves, fresh folder) | 1,690,112 | 5,874,115 (4,602,240) |
+| Edit | 900,073 | 2,810,624 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,093,961 | 3,392,391 (2,448,000) |
+| Remove (RELEASE from BOUND) | 450,101 | 1,202,115 (783,360) |
+| Restore (released → same target) | 491,429 | 1,257,977 (783,360) |
+| RELEASE from mask | 413,359 | 1,077,487 (685,440) |
+| Hide (UNBIND from BOUND) | 434,247 | 1,105,576 (685,440) |
+| Restore a released placement (Move-back analog) | 506,307 | 1,353,517 (881,280) |
+| WITHDRAW | 457,685 | 1,297,320 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
 
 - `FilesPageReader.listDirectory`, one page of `docs/` (now three rows; limit 32, one principal, unbound basis,
-  F_NAME | F_HEADER | F_KIND): 580,788 gas, 548 B calldata, 1,856 B returndata.
-- `LedgerReads.record` of `readme.txt`'s root record: 91,502 gas, 68 B calldata, 576 B returndata.
+  F_NAME | F_HEADER | F_KIND): 583,235 gas, 548 B calldata, 1,856 B returndata.
+- `LedgerReads.record` of `readme.txt`'s root record: 91,620 gas, 68 B calldata, 576 B returndata.
 
 The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, whose `console2.log` lines `forge test
 --json -vv` exposes in `decoded_logs`. Each run lists all 1,000 live rows; per-page detail is in the report:
@@ -565,9 +565,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 3. **G9: `IndexBuild/1` does not exist.** `RealmIndex` takes no build, `Readiness.build` is 0, and the plan has no G9.
 4. **G13.** `LAYOUT_ID` is a compiled constant, not an immutable. `PREDECESSOR_LAYOUT_ID` is on `LedgerControl`.
    `SUPPORTED_HOT_ABI_IDS` is computed as `[HOT_ABI_ID]`. `LedgerCore` has no `SELF` immutable.
-5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs/ledger-hot/1" ‖ sorted selectors ‖ return layouts)`), but
+5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs/ledger-hot/2" ‖ sorted selectors ‖ return layouts)`), but
    neither `src/` nor `vectors/` commits one. On the coordinator's instruction the release uses the plain string id
-   `keccak256("efs/ledger-hot/1")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
+   `keccak256("efs/ledger-hot/2")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
 6. **G15: `RealmGenesis`' constructor differs from the design.** It is `(owner, ledgerImpl, registryImpl, realmSalt,
    executionProfileId, limitsHash, readerDirectory, wrapperV1, noticeType, controllerInitcodeHash, proxyInitcodeHash)`.
    It reads the implementation codehashes itself, takes the limits only as a hash, and receives the controller and

@@ -280,7 +280,7 @@ library EfsFiles {
 
     function create(bytes32 salt) internal pure returns (Action memory a) {
         a.kind = ActionKind.CREATE;
-        a.salt = salt;
+        a.saltOrStrength = salt;
     }
 
     function publish(bytes32 typeId, bytes memory body) internal pure returns (Action memory a) {
@@ -312,6 +312,43 @@ library EfsFiles {
         returns (Action memory)
     {
         return _coordinate(ActionKind.RELEASE, purpose, subject, role_, expected);
+    }
+
+    /// A BIND that states the number `strength` (0..65,535; `bind` states 0). Changing a positive number on the
+    /// same target is this action again under the head's current revision (a REBIND).
+    function bindWithStrength(
+        bytes32 purpose,
+        bytes32 subject,
+        bytes32 role_,
+        bytes32 target,
+        uint64 expected,
+        uint16 strength
+    ) internal pure returns (Action memory a) {
+        a = bind(purpose, subject, role_, target, expected);
+        a.saltOrStrength = bytes32(uint256(strength));
+    }
+
+    /// An UNBIND that states the number `-1 - strength` (-1..-65,536; `unbind` states -1). It is admitted from
+    /// every state, so it also changes a negative number (expected = the masked head's revision).
+    function unbindWithStrength(
+        bytes32 purpose,
+        bytes32 subject,
+        bytes32 role_,
+        uint64 expected,
+        uint16 strength
+    ) internal pure returns (Action memory a) {
+        a = unbind(purpose, subject, role_, expected);
+        a.saltOrStrength = bytes32(uint256(strength));
+    }
+
+    /// A lone negative: a first statement that is negative ("not this", number `-1 - strength`) about a position
+    /// the author never stated anything at, so `expectedRevision` is 0 (transition FIRST_MASK).
+    function loneNegative(bytes32 purpose, bytes32 subject, bytes32 role_, uint16 strength)
+        internal
+        pure
+        returns (Action memory)
+    {
+        return unbindWithStrength(purpose, subject, role_, 0, strength);
     }
 
     function _coordinate(

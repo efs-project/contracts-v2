@@ -64,14 +64,17 @@ contract LensReader is ILensReader {
     uint8 public constant STRICT_CONTINUATION = 0x80;
     /// The generation-1 index profiles this reader serves (`RealmIndex.CALLBACK_PROFILE`/`PHYSICAL_PROFILE`).
     bytes32 public constant CALLBACK_PROFILE =
-        keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+        keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
     bytes32 public constant PHYSICAL_PROFILE =
         keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
     bytes32 public constant QUERY_DOMAIN = keccak256("efs/lens/list-query/1");
 
     uint8 private constant NONE = type(uint8).max;
+    /// A `Head` is nine static words in every facet reply.
+    uint256 private constant HEAD_WORDS = 9;
+    uint256 private constant HEAD_BYTES = HEAD_WORDS * 32;
     uint8 private constant TARGET_RECORD = 1;
-    uint8 private constant TARGET_SUBJECT = 2;
+    uint8 private constant TARGET_ADDRESS = 3;
     uint8 private constant SCAN_EXHAUSTED = 1;
     uint8 private constant SCAN_LIMIT = 2;
 
@@ -628,16 +631,17 @@ contract LensReader is ILensReader {
         (bool ok, bytes memory r) = VIEWS.staticcall(
             abi.encodeCall(ILedgerViews.headsAt, (LEDGER, principals, position))
         );
-        if (!ok || r.length < 576 || _w(r, 10) != 544) return (Status.UNKNOWN, all);
-        uint256 len = _w(r, 17);
-        if (len > NONE || r.length != 576 + (len << 8)) return (Status.UNKNOWN, all);
+        // (status, Head selected [9 words], selectedIndex, offset of all, BasisCommit [6], len, Head[len])
+        if (!ok || r.length < 608 || _w(r, 11) != 576) return (Status.UNKNOWN, all);
+        uint256 len = _w(r, 18);
+        if (len > NONE || r.length != 608 + len * HEAD_BYTES) return (Status.UNKNOWN, all);
         BasisCommit memory echo;
-        (ok, echo) = _basisAt(r, 11);
+        (ok, echo) = _basisAt(r, 12);
         if (!ok || keccak256(abi.encode(echo)) != keccak256(abi.encode(obs))) {
             return (Status.UNKNOWN, all);
         }
         uint256 st = _w(r, 0);
-        uint256 idx = _w(r, 9);
+        uint256 idx = _w(r, 10);
         if (len == 0) {
             bool blanket = st == uint256(Status.UNSUPPORTED) || st == uint256(Status.LIMIT_EXCEEDED);
             return (blanket && idx == NONE ? Status(st) : Status.UNKNOWN, all);
@@ -649,7 +653,7 @@ contract LensReader is ILensReader {
         uint256 firstStatus = uint256(Status.ABSENT_PROVEN);
         for (uint256 i; i < n; ++i) {
             Head memory h;
-            (ok, h) = _headAt(r, 18 + (i << 3));
+            (ok, h) = _headAt(r, 19 + i * HEAD_WORDS);
             if (!ok || !_sane(h, obs.admissionHighWater)) return (Status.UNKNOWN, all);
             all[i] = h;
             if (first == NONE && h.state != 0 && h.state != 3) {
@@ -661,10 +665,10 @@ contract LensReader is ILensReader {
                 );
             }
         }
-        bytes32 selected = _hash(r, 1, 8);
+        bytes32 selected = _hash(r, 1, HEAD_WORDS);
         bool same = first == NONE
-            ? selected == keccak256(new bytes(256))
-            : selected == _hash(r, 18 + (first << 3), 8);
+            ? selected == keccak256(new bytes(HEAD_BYTES))
+            : selected == _hash(r, 19 + first * HEAD_WORDS, HEAD_WORDS);
         if (st != firstStatus || idx != first || !same) return (Status.UNKNOWN, all);
         return (Status.UNSET, all);
     }
@@ -717,7 +721,7 @@ contract LensReader is ILensReader {
     {
         bytes memory r;
         (ok, r) = _static(
-            VIEWS, abi.encodeCall(ILedgerViews.historyAt, (LEDGER, key, asOf, MAX_HOPS)), 9
+            VIEWS, abi.encodeCall(ILedgerViews.historyAt, (LEDGER, key, asOf, MAX_HOPS)), 10
         );
         if (!ok) return (false, h);
         uint256 found = _w(r, 0);
@@ -737,7 +741,7 @@ contract LensReader is ILensReader {
         returns (bool)
     {
         (bool ok, bytes memory r) = _static(
-            LEDGER, abi.encodeCall(ILedgerHot.head, (Keys.binding(principal, position))), 7
+            LEDGER, abi.encodeCall(ILedgerHot.head, (Keys.binding(principal, position))), 8
         );
         return ok
             && keccak256(r)
@@ -749,7 +753,8 @@ contract LensReader is ILensReader {
                 h.targetKind,
                 h.prevAdmission,
                 h.bindingOrdinal,
-                h.target
+                h.target,
+                h.strength
             )
             );
     }
@@ -844,24 +849,28 @@ contract LensReader is ILensReader {
     // =============================================================================================
 
     /// The head-row invariants of design §4.3 under admission high water `high`: an UNSET head is all zero; a
-    /// written head names an admission in `[1, high]` after its `prevAdmission`, a binding ordinal and a
-    /// RECORD/SUBJECT target kind; a BOUND head has a target and a revision, a MASKED/RELEASED head the canonical
-    /// zero target, a revision ≥ 2 and a previous admission. Reserved states pass (callers make them UNKNOWN).
+    /// written head names an admission in `[1, high]` after its `prevAdmission`, a binding ordinal, a zero
+    /// `notAfter` and a target kind of at most ADDRESS; a BOUND head has a target, a revision and a nonzero target
+    /// kind; a MASKED/RELEASED head the canonical zero target and a revision. A MASKED/RELEASED head with revision
+    /// 1 is a first mask: MASKED, no previous admission, target kind 0 (never bound); every other one has a
+    /// previous admission. A RELEASED head carries strength 0. Reserved states pass (callers make them UNKNOWN).
     function _sane(Head memory h, uint64 high) private pure returns (bool) {
         uint8 s = h.state;
         if (s > 3) return true;
         if (s == 0) {
             return h.revision == 0 && h.admission == 0 && h.targetKind == 0 && h.prevAdmission == 0
-                && h.bindingOrdinal == 0 && h.notAfter == 0 && h.target == 0;
+                && h.bindingOrdinal == 0 && h.notAfter == 0 && h.target == 0 && h.strength == 0;
         }
         if (
             h.admission == 0 || h.admission > high || h.prevAdmission >= h.admission
-                || h.bindingOrdinal == 0
-                || (h.targetKind != TARGET_RECORD && h.targetKind != TARGET_SUBJECT)
+                || h.bindingOrdinal == 0 || h.notAfter != 0 || h.targetKind > TARGET_ADDRESS
+                || h.revision == 0
         ) return false;
-        return s == 1
-            ? h.target != 0 && h.revision != 0
-            : h.target == 0 && h.revision > 1 && h.prevAdmission != 0;
+        if (s == 1) return h.target != 0 && h.targetKind != 0;
+        if (h.target != 0 || (s == 3 && h.strength != 0)) return false;
+        return h.revision == 1
+            ? s == 2 && h.prevAdmission == 0 && h.targetKind == 0
+            : h.prevAdmission != 0;
     }
 
     function _headAt(bytes memory r, uint256 o) private pure returns (bool, Head memory h) {
@@ -871,9 +880,10 @@ contract LensReader is ILensReader {
         h.targetKind = uint8(_w(r, o + 3));
         h.prevAdmission = uint64(_w(r, o + 4));
         h.bindingOrdinal = uint64(_w(r, o + 5));
-        h.notAfter = uint40(_w(r, o + 6));
+        h.notAfter = uint32(_w(r, o + 6));
         h.target = bytes32(_w(r, o + 7));
-        return (keccak256(abi.encode(h)) == _hash(r, o, 8), h);
+        h.strength = uint16(_w(r, o + 8));
+        return (keccak256(abi.encode(h)) == _hash(r, o, HEAD_WORDS), h);
     }
 
     function _basisAt(bytes memory r, uint256 o) private pure returns (bool, BasisCommit memory b) {
@@ -898,6 +908,7 @@ contract LensReader is ILensReader {
         s.principalId = principal;
         s.admission = h.admission;
         s.selectedIndex = uint8(i);
+        s.strength = h.strength;
     }
 
     function _none(Status st) private pure returns (Selection memory s) {

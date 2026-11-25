@@ -9,6 +9,8 @@
   },
   "events": {
     "0xabe8abe688d1b331d11f5dd65012b513b224c555ece4718668439d55682757f4": "Admitted(uint64,uint8,bytes32,bytes32,bytes32)",
+    "0x12ccd64bdfa18bed3544ab8770fe697d957e9ec1f6416ea76fc3d655022e4d0e": "Body(bytes32,bytes32,bytes)",
+    "0x8439c1e5542ac956d3270a0388d21fecc29eef7c3f6cfc370408be36f4c3dc59": "Bound(uint64,bytes32,bytes32,bytes32,bytes32,uint8,uint16,uint8,uint8)",
     "0x481454233a299e1c9dd13b6197bc16607379344737542172e3c7911ee537ea39": "Published(uint64,bytes32,bytes32,uint8,uint64,uint8,bytes32,uint32)",
     "0xd48e52f45feca78de3e221c9b3c23e561d29f98dd6b5bb33942de5f809e43a1b": "ReadSetChecked(uint64,bytes32,bytes)",
     "0x202ec96a6f934513ab6449c7506a6a48d9ebbc9b41737a6a20c8789428a0c1c6": "WitnessRetained(uint64,bytes32,uint16,bytes)"
@@ -58,7 +60,7 @@
       },
       {
         "internalType": "bytes32",
-        "name": "salt",
+        "name": "saltOrStrength",
         "type": "bytes32"
       }
     ],
@@ -186,6 +188,92 @@
           "type": "bytes32",
           "indexed": false,
           "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Body",
+      "inputs": [
+        {
+          "name": "recordId",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "typeId",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "body",
+          "type": "bytes",
+          "indexed": false,
+          "internalType": "bytes"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Bound",
+      "inputs": [
+        {
+          "name": "admission",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "purpose",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "subject",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "role",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "target",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "kind",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "strength",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        },
+        {
+          "name": "transitionKind",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "targetKind",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
         }
       ],
       "anonymous": false
@@ -351,7 +439,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -531,7 +619,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }

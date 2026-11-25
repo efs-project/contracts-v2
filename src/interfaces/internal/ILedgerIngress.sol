@@ -34,11 +34,13 @@ struct Prepared {
 }
 
 /// What the ingress tells the kernel about one leaf after the shape law, the registry reads and the
-/// acceptors: the kernel passes these scalars to the apply delegate and never decodes a TypeInfo.
+/// acceptors: the kernel passes these scalars to the apply delegate and never decodes a TypeInfo. `typeFlags`
+/// is `TypeInfo.flags` (the kernel reads bit 0, `ClosureConstants.TYPE_FLAG_EMITS_BODY`, to decide `Body`).
 struct LeafVerdict {
     uint8 refCount;
     uint16 policyRow;
     uint16 roleRow;
+    uint8 typeFlags;
 }
 
 /// @title ILedgerIngress — the preparation, validation and dispatch delegate (design §5.15, §6.2–§6.5)

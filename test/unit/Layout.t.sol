@@ -233,7 +233,7 @@ contract LayoutTest is Test {
     function testLayoutIdIsStable() public pure {
         // Regenerate with `pnpm layout`; a changed id means a one-way door moved.
         assertEq(
-            Layout.LAYOUT_ID, 0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb
+            Layout.LAYOUT_ID, 0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212
         );
     }
 
@@ -376,7 +376,7 @@ contract LayoutTest is Test {
             uint48 expectedRevision,
             uint48 prevAdmission,
             uint8 withdrawn,
-            uint16 policyRow,
+            uint16 policyRowOrStrength,
             uint16 roleRow,
             uint8 targetKind
         ) = Layout.unpackAdmissionRowWord0(raw(address(L), s));
@@ -387,7 +387,7 @@ contract LayoutTest is Test {
         assertEq(expectedRevision, row.expectedRevision);
         assertEq(prevAdmission, row.prevAdmission);
         assertEq(withdrawn, row.withdrawn);
-        assertEq(policyRow, row.policyRow);
+        assertEq(policyRowOrStrength, row.policyRowOrStrength);
         assertEq(roleRow, row.roleRow);
         assertEq(targetKind, row.targetKind);
         assertEq(raw(address(L), s + 1), row.a);
@@ -458,7 +458,8 @@ contract LayoutTest is Test {
             uint8 targetKind,
             uint48 prevAdmission,
             uint48 bindingOrdinal,
-            uint40 notAfter
+            uint32 notAfter,
+            uint16 strength
         ) = Layout.unpackHeadRowWord0(raw(address(L), s));
         assertEq(state, h.state);
         assertEq(revision, h.revision);
@@ -467,6 +468,7 @@ contract LayoutTest is Test {
         assertEq(prevAdmission, h.prevAdmission);
         assertEq(bindingOrdinal, h.bindingOrdinal);
         assertEq(notAfter, h.notAfter);
+        assertEq(strength, h.strength);
         assertEq(raw(address(L), s + 1), h.target);
     }
 
@@ -521,7 +523,8 @@ contract LayoutTest is Test {
             uint40 registeredAt,
             uint48 catalogOrdinal,
             uint8 codecVersion,
-            uint8 textProfile
+            uint8 textProfile,
+            uint8 flags
         ) = Layout.unpackTypeRowWord0(raw(address(R), s));
         assertEq(grade, row.grade);
         assertEq(refCount, row.refCount);
@@ -535,6 +538,7 @@ contract LayoutTest is Test {
         assertEq(catalogOrdinal, row.catalogOrdinal);
         assertEq(codecVersion, row.codecVersion);
         assertEq(textProfile, row.textProfile);
+        assertEq(flags, row.flags);
         assertEq(raw(address(R), s + 1), row.shape);
         assertEq(raw(address(R), s + 2), row.ruleId);
         assertEq(Layout.unpackTypeRowWord3(raw(address(R), s + 3)), row.mandatory);

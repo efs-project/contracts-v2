@@ -5,7 +5,7 @@ pragma solidity ^0.8.27;
 // without via-IR). It imports every consumer-closure file: src/interfaces/ outside internal/, and src/lib/Keys.sol.
 // It must never import src/interfaces/internal/ (kernel-internal, outside the closure).
 
-import {ActionKind} from "../../src/interfaces/Actions.sol";
+import {ActionKind, BindingNumber} from "../../src/interfaces/Actions.sol";
 import {E_RESERVED} from "../../src/interfaces/Errors.sol";
 import {ClosureConstants} from "../../src/interfaces/Limits.sol";
 import {STATUS_VOCABULARY_ID} from "../../src/interfaces/Results.sol";
@@ -63,11 +63,13 @@ contract ClosureTest {
         Effect memory effect;
         require(abi.encode(effect).length == 768, "Effect/3 is 24 static words");
         Head memory head;
-        require(abi.encode(head).length == 8 * 32, "Head is 8 static words");
+        require(abi.encode(head).length == 9 * 32, "Head is 9 static words");
         require(EXHAUSTED == keccak256("efs/acceptor/2/exhausted"), "EXHAUSTED");
         require(STATUS_VOCABULARY_ID == keccak256("efs/status-vocabulary/1"), "vocabulary");
         require(Keys.DOM_RECORD == keccak256("efs/record/1"), "DOM_RECORD");
         require(ActionKind.RELEASE == 7, "RELEASE");
         require(ClosureConstants.DESCRIPTOR_MAX == 4_096, "DESCRIPTOR_MAX");
+        require(ClosureConstants.BODY_EVENT_MAX == 256, "BODY_EVENT_MAX");
+        require(BindingNumber.MAX_STRENGTH == 65_535, "MAX_STRENGTH");
     }
 }

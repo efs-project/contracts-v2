@@ -185,7 +185,7 @@ contract NativeApp {
         bytes32 key = Keys.binding(ledger.myPrincipal(), Keys.position(FOLDER, e.subject, e.role));
         uint8 state;
         bytes32 target;
-        (state, revision,,,,, target) = h.head(key);
+        (state, revision,,,,, target,) = h.head(key);
         headBound = state == 1 && target == e.recordId;
     }
 }

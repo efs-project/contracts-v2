@@ -48,13 +48,14 @@ library DescribedCodec {
         bytes32 auxHash; // customHash (grade 2) | ruleInitcodeHash (grade 3) | 0 (grade 1)
         uint16 descriptionLength;
         uint8 refHeaderWords;
+        uint8 flags; // byte 133: bit 0 TYPE_FLAG_EMITS_BODY; bits 1-7 reserved (refused)
         uint256 fieldsStart;
     }
 
     /// Parses and validates a descriptor; returns the header and the reference Types projected from the
     /// leading REF32 fields. Codes: 1 length outside 134..4,096 or not equal to the header's own sum;
     /// 2 codecVersion; 3 grade; 4 ruleMode; 5 dependencyClass; 6 refProjectionProfile; 7 textProfile;
-    /// 8 indexSpecCount; 9 sectionCount; 10 refHeaderWords; 11 reserved byte; 12 fieldCount; 13 name empty;
+    /// 8 indexSpecCount; 9 sectionCount; 10 refHeaderWords; 11 a reserved flags bit (1–7) set; 12 fieldCount; 13 name empty;
     /// 14 declarationKey zero; 15 namespace zero; 16 ruleCodehash zero; 17 auxHash shape for the grade;
     /// 20 field ids; 21 duplicate field id; 22 kind; 23 optional flag; 24 REF32 placement or shape;
     /// 25 referenceType; 26 width or bounds for the kind.
@@ -95,7 +96,8 @@ library DescribedCodec {
         h.descriptionLength = uint16(bytes2(d[130:132]));
         h.refHeaderWords = uint8(d[132]);
         if (h.refHeaderWords < 1 || h.refHeaderWords > 3) revert E_CODEC(132, 10);
-        if (uint8(d[133]) != 0) revert E_CODEC(133, 11);
+        h.flags = uint8(d[133]);
+        if (h.flags & ~ClosureConstants.TYPE_FLAG_EMITS_BODY != 0) revert E_CODEC(133, 11);
         h.fieldsStart = HEADER + h.nameLength + h.descriptionLength;
         if (h.fieldsStart + uint256(h.fieldCount) * FIELD != d.length) revert E_CODEC(0, 1);
         refTypes = _fields(d, h);

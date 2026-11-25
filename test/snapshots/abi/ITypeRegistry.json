@@ -121,6 +121,11 @@
         "internalType": "bytes32",
         "name": "bindingId",
         "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "flags",
+        "type": "uint8"
       }
     ]
   },
@@ -803,6 +808,11 @@
               "name": "bindingId",
               "type": "bytes32",
               "internalType": "bytes32"
+            },
+            {
+              "name": "flags",
+              "type": "uint8",
+              "internalType": "uint8"
             }
           ]
         }

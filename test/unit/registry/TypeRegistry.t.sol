@@ -151,6 +151,7 @@ contract TypeRegistryTest is Test {
         assertEq(info.refHeaderWords, 1);
         assertEq(info.validationGas, 0);
         assertEq(info.policyRows, 1);
+        assertEq(info.flags, 0);
         assertEq(info.policyRow, 1);
         assertEq(info.mandatory, instance);
         assertEq(info.ruleId, instance.codehash);
@@ -179,6 +180,33 @@ contract TypeRegistryTest is Test {
         address blob = info.descriptorBlob;
         assertEq(blob.codehash, keccak256(bytes.concat(hex"00", d, sig)));
         assertEq(uint8(blob.code[0]), 0);
+    }
+
+    /// Byte 133 bit 0 (EMITS_BODY) is identity-bearing: the flagged descriptor is a different Type with the same
+    /// rule, and the registry serves the flag in `TypeInfo.flags` from the row's header word (no extra slot).
+    function testFlagsAreIdentityBearingAndServed() public {
+        Descriptors.Params memory p = _native();
+        (bytes32 plain,) = _registerNative(p);
+        p.flags = ClosureConstants.TYPE_FLAG_EMITS_BODY;
+        bytes memory d = p.encode();
+        (, bytes memory sig) = _declare(d);
+        vm.record();
+        (bytes32 flagged, uint64 ordinal) = registry.registerDescribed(d, sig, instance, "");
+        (, bytes32[] memory writes) = vm.accesses(proxy);
+        assertTrue(flagged != plain, "the flag changes the Type id");
+        assertEq(ordinal, 2);
+        assertEq(registry.typeInfo(plain).flags, 0);
+        assertEq(registry.typeInfo(flagged).flags, 1);
+        assertEq(registry.typeInfo(flagged).mandatory, instance, "the same rule instance");
+        // the flag rides in the header word: a flagged registration writes the same slots as a plain one
+        Descriptors.Params memory q = _native();
+        q.description = "same shape, unflagged";
+        bytes memory dq = q.encode();
+        (, bytes memory sigq) = _declare(dq);
+        vm.record();
+        registry.registerDescribed(dq, sigq, instance, "");
+        (, bytes32[] memory writesPlain) = vm.accesses(proxy);
+        assertEq(writes.length, writesPlain.length, "no extra slot for the flag");
     }
 
     function testRegistrationIsIdempotentAndFrontRunSafe() public {
@@ -338,9 +366,20 @@ contract TypeRegistryTest is Test {
         p = _native();
         p.refHeaderWords = 4;
         _expectCodec(p.encode(), 132, 10);
+        // flags (byte 133): bit 0 is EMITS_BODY; any of bits 1-7 is refused
+        for (uint256 bit = 1; bit < 8; ++bit) {
+            p = _native();
+            p.flags = uint8(1 << bit);
+            _expectCodec(p.encode(), 133, 11);
+            p.flags = uint8(1 << bit) | 1;
+            _expectCodec(p.encode(), 133, 11);
+        }
         p = _native();
-        p.reserved = 1;
+        p.flags = 0xFF;
         _expectCodec(p.encode(), 133, 11);
+        p.flags = 1;
+        (DescribedCodec.Header memory hf,) = this.parse(p.encode());
+        assertEq(hf.flags, 1);
         p = _native();
         p.fieldCount = 17;
         p.fields = new bytes(17 * 164);

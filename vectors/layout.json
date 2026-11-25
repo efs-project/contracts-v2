@@ -527,7 +527,7 @@
                 "type": "uint8"
               },
               {
-                "name": "policyRow",
+                "name": "policyRowOrStrength",
                 "slot": 0,
                 "offset": 27,
                 "bytes": 2,
@@ -822,8 +822,15 @@
                 "name": "notAfter",
                 "slot": 0,
                 "offset": 26,
-                "bytes": 5,
-                "type": "uint40"
+                "bytes": 4,
+                "type": "uint32"
+              },
+              {
+                "name": "strength",
+                "slot": 0,
+                "offset": 30,
+                "bytes": 2,
+                "type": "uint16"
               },
               {
                 "name": "target",
@@ -1384,6 +1391,13 @@
                 "name": "textProfile",
                 "slot": 0,
                 "offset": 23,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
+                "name": "flags",
+                "slot": 0,
+                "offset": 24,
                 "bytes": 1,
                 "type": "uint8"
               },
@@ -2193,5 +2207,5 @@
       ]
     }
   },
-  "layoutId": "0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb"
+  "layoutId": "0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212"
 }

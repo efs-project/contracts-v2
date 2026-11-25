@@ -176,7 +176,7 @@ contract FilesPageFaultyTest is FilesPageHarness {
     }
 
     function test_m12_heads_at_selects_nobody() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 9, 255);
+        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 10, 255);
         _inconsistent(5);
     }
 
@@ -206,7 +206,7 @@ contract FilesPageFaultyTest is FilesPageHarness {
     }
 
     function test_m22_heads_at_echoes_another_basis() public {
-        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 11, uint256(keccak256("e")));
+        _set(fv, ILedgerViews.headsAt.selector, M_SET_WORD, 12, uint256(keccak256("e")));
         _inconsistent(6);
     }
 

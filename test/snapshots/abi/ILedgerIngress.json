@@ -56,7 +56,7 @@
       },
       {
         "internalType": "bytes32",
-        "name": "salt",
+        "name": "saltOrStrength",
         "type": "bytes32"
       }
     ],
@@ -142,6 +142,11 @@
         "internalType": "uint16",
         "name": "roleRow",
         "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "typeFlags",
+        "type": "uint8"
       }
     ],
     "Native": [
@@ -377,7 +382,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -659,7 +664,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -865,7 +870,7 @@
               "internalType": "uint64"
             },
             {
-              "name": "salt",
+              "name": "saltOrStrength",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -907,6 +912,11 @@
               "name": "roleRow",
               "type": "uint16",
               "internalType": "uint16"
+            },
+            {
+              "name": "typeFlags",
+              "type": "uint8",
+              "internalType": "uint8"
             }
           ]
         }

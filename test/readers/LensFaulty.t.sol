@@ -23,12 +23,12 @@ import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 ///         fault must yield UNKNOWN or UNSUPPORTED as data — never PRESENT, ABSENT_PROVEN, a zero status or a
 ///         COMPLETE listing — and the faithful reply before arming must be the true answer.
 ///
-///         headsAt reply words (lens [pA, pB] at x): 0 status, 1–8 selected, 9 selectedIndex, 10 offset, 11–16
-///         basis (11 executionSet, 12 revision, 13 indexGeneration, 14 registryMutations, 15 admissionHighWater,
-///         16 phase), 17 length, 18–25 all[0] (18 state, 19 revision, 20 admission, 21 targetKind, 22 prev, 23
-///         ordinal, 24 notAfter, 25 target), 26–33 all[1]. record reply: 0 status, 1–6 header (1 typeId, 2
-///         firstAdmission, …), 7 offset, 8–13 basis, 14 length, body. Hot `head`: 0 state, 1 revision, 2
-///         admission, …, 6 target; hot `recordHeader`: 0 typeId, 1 firstAdmission, 2 length, 3 occurrences, 4 kind.
+///         headsAt reply words (lens [pA, pB] at x): 0 status, 1–9 selected, 10 selectedIndex, 11 offset, 12–17
+///         basis (12 executionSet, 13 revision, 14 indexGeneration, 15 registryMutations, 16 admissionHighWater,
+///         17 phase), 18 length, 19–27 all[0] (19 state, 20 revision, 21 admission, 22 targetKind, 23 prev, 24
+///         ordinal, 25 notAfter, 26 target, 27 strength), 28–36 all[1]. record reply: 0 status, 1–6 header (1
+///         typeId, 2 firstAdmission, …), 7 offset, 8–13 basis, 14 length, body. Hot `head`: 0 state, 1 revision, 2
+///         admission, …, 6 target, 7 strength; hot `recordHeader`: 0 typeId, 1 firstAdmission, 2 length, 3 occurrences, 4 kind.
 contract LensFaultyTest is LensFixture {
     uint8 internal constant REVERT = 1;
     uint8 internal constant SHORT = 2;
@@ -84,12 +84,12 @@ contract LensFaultyTest is LensFixture {
     }
 
     function test_fault03_ADMISSION_NOT_BIND() public {
-        _arm(fv, HEADS_AT, SET_WORD, 18, 3); // pA's bound head reported RELEASED: it would fall through to pB
+        _arm(fv, HEADS_AT, SET_WORD, 19, 3); // pA's bound head reported RELEASED: it would fall through to pB
         _refused(lensV);
     }
 
     function test_fault04_ADMISSION_OUT_OF_RANGE() public {
-        _arm(fv, HEADS_AT, SET_WORD, 9, 7); // a selected index beyond the lens
+        _arm(fv, HEADS_AT, SET_WORD, 10, 7); // a selected index beyond the lens
         _refused(lensV);
     }
 
@@ -124,12 +124,12 @@ contract LensFaultyTest is LensFixture {
     }
 
     function test_fault10_ZERO_SELECTED_ADMISSION() public {
-        _arm(fv, HEADS_AT, SET_WORD, 20, 0);
+        _arm(fv, HEADS_AT, SET_WORD, 21, 0);
         _refused(lensV);
     }
 
     function test_fault11_FUTURE_SELECTED_ADMISSION() public {
-        _arm(fv, HEADS_AT, FUTURE_ADMISSION, 20, 1);
+        _arm(fv, HEADS_AT, FUTURE_ADMISSION, 21, 1);
         _refused(lensV);
     }
 
@@ -144,7 +144,7 @@ contract LensFaultyTest is LensFixture {
     }
 
     function test_fault14_WRONG_BINDING_POSITION() public {
-        _arm(fv, HEADS_AT, SET_WORD, 25, uint256(rA2)); // a real record, the wrong one
+        _arm(fv, HEADS_AT, SET_WORD, 26, uint256(rA2)); // a real record, the wrong one
         _refused(lensV);
         fv.clear(HEADS_AT);
         _arm(fl, HOT_HEAD, SET_WORD, 6, uint256(rA2));
@@ -163,7 +163,7 @@ contract LensFaultyTest is LensFixture {
     function test_fault15_WRONG_ADMISSION_REVISION() public {
         _arm(fl, HOT_HEAD, ADD_WORD, 1, 1);
         _refused(lensL);
-        _arm(fv, HEADS_AT, ADD_WORD, 27, 1); // the second candidate's revision: no-tiebreak confirms it
+        _arm(fv, HEADS_AT, ADD_WORD, 29, 1); // the second candidate's revision: no-tiebreak confirms it
         (Qualified memory q, Selection[] memory c) =
             lensV.resolveNoTiebreak(_lens(pA, pB), _at(X), _unpinned());
         assertEq(uint8(q.status), uint8(Status.UNKNOWN));
@@ -171,27 +171,27 @@ contract LensFaultyTest is LensFixture {
     }
 
     function test_fault16_MAX_ADMISSION_REVISION() public {
-        _arm(fv, HEADS_AT, SET_WORD, 19, type(uint256).max); // must not wrap into a uint64 revision
+        _arm(fv, HEADS_AT, SET_WORD, 20, type(uint256).max); // must not wrap into a uint64 revision
         _refused(lensV);
     }
 
     function test_fault17_IMPORTED_PUBLICATION() public {
-        _arm(fv, HEADS_AT, SET_WORD, 18, 4); // a reserved head state the facet did not report
+        _arm(fv, HEADS_AT, SET_WORD, 19, 4); // a reserved head state the facet did not report
         _refused(lensV);
     }
 
     function test_fault18_CURSOR_GENERATION_MISMATCH() public {
-        _arm(fv, HEADS_AT, ADD_WORD, 13, 1);
+        _arm(fv, HEADS_AT, ADD_WORD, 14, 1);
         _refused(lensV);
     }
 
     function test_fault19_CURSOR_EPOCH_MISMATCH() public {
-        _arm(fv, HEADS_AT, ADD_WORD, 12, 1);
+        _arm(fv, HEADS_AT, ADD_WORD, 13, 1);
         _refused(lensV);
     }
 
     function test_fault20_CURSOR_CORE_MISMATCH() public {
-        _arm(fv, HEADS_AT, SET_WORD, 11, uint256(keccak256("another execution set")));
+        _arm(fv, HEADS_AT, SET_WORD, 12, uint256(keccak256("another execution set")));
         _refused(lensV);
     }
 
@@ -203,7 +203,7 @@ contract LensFaultyTest is LensFixture {
     }
 
     function test_fault22_CURSOR_LENS_MISMATCH() public {
-        _arm(fv, HEADS_AT, SET_WORD, 17, 1); // the heads array no longer matches the lens
+        _arm(fv, HEADS_AT, SET_WORD, 18, 1); // the heads array no longer matches the lens
         _refused(lensV);
     }
 

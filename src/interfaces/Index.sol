@@ -5,9 +5,11 @@ pragma solidity ^0.8.27;
 // `IIndexReads` and the kernel-internal delegates.
 
 /// Effect/3: 24 static words (768 B); callbackProfile =
-/// keccak("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs").
-/// transitionKind: 0 none (publish/reuse/create/withdraw) 1 FIRST_BIND 2 REBIND 3 MASK 4 RELEASE 5 RESTORE (BIND
-/// from MASKED/RELEASED). freshRecord: first admission of recordId. refCount: how many entries of `refs` belong
+/// keccak("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs") (callback 4 is the Effect/3 shape with
+/// transition kind 6 and target kind 3 added). transitionKind: 0 none (publish/reuse/create/withdraw) 1 FIRST_BIND
+/// 2 REBIND 3 MASK (UNBIND from BOUND, MASKED or RELEASED) 4 RELEASE 5 RESTORE (BIND from MASKED/RELEASED)
+/// 6 FIRST_MASK (UNBIND from UNSET: the binding is allocated with no target). targetKind/oldTargetKind: 0 none
+/// 1 RECORD 2 SUBJECT 3 ADDRESS. freshRecord: first admission of recordId. refCount: how many entries of `refs` belong
 /// to this effect, in order. WITHDRAW: recordId/typeId of the withdrawn record, withdrawnAdmission = target
 /// admission, withdrawnPrincipal = its retained principal.
 struct Effect {

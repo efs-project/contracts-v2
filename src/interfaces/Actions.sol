@@ -16,8 +16,10 @@ type PostingKey is bytes32;
 type FamilyId is bytes32;
 
 /// One admission leaf. `bodyHashOrRecordId` is the body hash for PUBLISH and the record id for
-/// REUSE/WITHDRAW-less kinds; `target` is the bound target for BIND, zero otherwise; `salt` is
-/// nonzero only for CREATE; `expectedRevision` is the CAS value for bind kinds.
+/// REUSE/WITHDRAW-less kinds; `target` is the bound target for BIND, zero otherwise; `expectedRevision` is the
+/// CAS value for bind kinds. `saltOrStrength` is the creator salt for CREATE (nonzero), the binding's unsigned
+/// strength for BIND and UNBIND (0..`BindingNumber.MAX_STRENGTH`; a larger value is refused with
+/// `E_SHAPE(leaf, 2)`, never truncated) and zero for every other kind, RELEASE included (design §6.4).
 struct Action {
     uint8 kind;
     bytes32 typeId;
@@ -27,7 +29,7 @@ struct Action {
     bytes32 role;
     bytes32 target;
     uint64 expectedRevision;
-    bytes32 salt;
+    bytes32 saltOrStrength;
 }
 
 /// Native-lane context (design §5.1). `deadline` 0 = none (unix seconds). A zero expectation is
@@ -85,6 +87,22 @@ library ActionKind {
     uint8 internal constant RELEASE = 7;
     uint8 internal constant STAGE_RESERVED = 8;
     uint8 internal constant COMMIT_RESERVED = 9;
+}
+
+/// The number every binding carries (design §6.4). A head stores an unsigned `strength`; its signed number is
+/// derived, never stored: BOUND → `strength` (0..65,535), MASKED → `-1 - strength` (-1..-65,536), UNSET and
+/// RELEASED → no number. A BIND states the number `strength`, an UNBIND `-1 - strength`, a RELEASE none, so an
+/// action written before strengths existed keeps its meaning (a bind is 0, a mask is -1).
+library BindingNumber {
+    /// The largest strength a BIND or UNBIND may carry in `Action.saltOrStrength`.
+    uint256 internal constant MAX_STRENGTH = 65_535;
+
+    /// The signed number of a head in `state` (0 UNSET 1 BOUND 2 MASKED 3 RELEASED) with `strength`; `has` is
+    /// false, and `number` 0, when the state carries none (UNSET, RELEASED or a reserved state).
+    function numberOf(uint8 state, uint16 strength) internal pure returns (bool has, int32 number) {
+        if (state == 1) return (true, int32(uint32(strength)));
+        if (state == 2) return (true, -1 - int32(uint32(strength)));
+    }
 }
 
 /// Realm capability bits (design §4.2). A clear bit means the corresponding input is refused with a

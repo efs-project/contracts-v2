@@ -43,7 +43,7 @@ import {
 import {
     AttackIndex,
     BudgetBurning,
-    CALLBACK_PROFILE_3,
+    CALLBACK_PROFILE_4,
     IndexDoubleCore,
     LateRefusing,
     LegacyFallback,
@@ -149,7 +149,7 @@ contract HotStub {
     function head(bytes32 key)
         external
         view
-        returns (uint8, uint64, uint64, uint8, uint64, uint64, bytes32)
+        returns (uint8, uint64, uint64, uint8, uint64, uint64, bytes32, uint16)
     {
         HeadRow storage h = _heads[key];
         return (
@@ -159,7 +159,8 @@ contract HotStub {
             1,
             0,
             h.bindingOrdinal,
-            h.state == 1 ? h.target : bytes32(0)
+            h.state == 1 ? h.target : bytes32(0),
+            0
         );
     }
 
@@ -311,6 +312,7 @@ contract DoublesTest is Test {
             refHeaderWords: 3,
             validationGas: 123_456,
             policyRows: 2,
+            flags: 1,
             mandatory: address(0xa1),
             ruleId: keccak256("rule"),
             shape: keccak256("shape"),
@@ -671,7 +673,7 @@ contract DoublesTest is Test {
         assertTrue(isAck(ok, ret, IRealmIndex.onAdmission.selector), "legacy prefix acks");
         (ok, ret) = hot.staticRelay(address(legacy), finalCall(1, es));
         assertTrue(ok && ret.length == 32 && bytes32(ret) == 0, "fallback answers 32 zero bytes");
-        assertEq(IRealmIndex(address(legacy)).replayReadiness().callbackProfile, CALLBACK_PROFILE_3);
+        assertEq(IRealmIndex(address(legacy)).replayReadiness().callbackProfile, CALLBACK_PROFILE_4);
 
         uint256[4] memory lengths = [uint256(33), 31, 4, 64];
         for (uint256 i; i < lengths.length; ++i) {
@@ -856,7 +858,7 @@ contract DoublesTest is Test {
         Readiness memory derived = idx.replayReadiness();
         assertEq(derived.version, 1);
         assertEq(derived.ledger, address(hot));
-        assertEq(derived.callbackProfile, CALLBACK_PROFILE_3);
+        assertEq(derived.callbackProfile, CALLBACK_PROFILE_4);
         assertEq(derived.manifestHash, idx.manifestHash());
         assertEq(derived.provenFrom, 1);
         assertFalse(derived.ready);
@@ -994,7 +996,7 @@ contract DoublesTest is Test {
         Scoped7702Delegate d = new Scoped7702Delegate(address(hot));
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("7702");
+        actions[0].saltOrStrength = keccak256("7702");
         Native memory ctx;
         vm.expectRevert(Scoped7702Delegate.E_SELF_ONLY.selector);
         d.execute(actions, new bytes[](1), ctx, "");

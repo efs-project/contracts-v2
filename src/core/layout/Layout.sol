@@ -9,7 +9,7 @@ pragma solidity 0.8.37;
 // forge-lint: disable-start(unsafe-typecast)
 library Layout {
     bytes32 internal constant LAYOUT_ID =
-        0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb;
+        0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212;
 
     // ---- efs.ledger.realm — RealmStorage, 18 slot(s)
     bytes32 internal constant LEDGER_REALM_ROOT =
@@ -287,7 +287,7 @@ library Layout {
         s = uint256(keccak256(abi.encode(k0, s)));
     }
 
-    // slot +0 of AdmissionRow: kind at bit 0 | leaf at bit 8 | publication at bit 16 | bindingOrdinal at bit 64 | expectedRevision at bit 112 | prevAdmission at bit 160 | withdrawn at bit 208 | policyRow at bit 216 | roleRow at bit 232 | targetKind at bit 248
+    // slot +0 of AdmissionRow: kind at bit 0 | leaf at bit 8 | publication at bit 16 | bindingOrdinal at bit 64 | expectedRevision at bit 112 | prevAdmission at bit 160 | withdrawn at bit 208 | policyRowOrStrength at bit 216 | roleRow at bit 232 | targetKind at bit 248
     function unpackAdmissionRowWord0(bytes32 w)
         internal
         pure
@@ -299,7 +299,7 @@ library Layout {
             uint48 expectedRevision,
             uint48 prevAdmission,
             uint8 withdrawn,
-            uint16 policyRow,
+            uint16 policyRowOrStrength,
             uint16 roleRow,
             uint8 targetKind
         )
@@ -312,7 +312,7 @@ library Layout {
         expectedRevision = uint48(x >> 112);
         prevAdmission = uint48(x >> 160);
         withdrawn = uint8(x >> 208);
-        policyRow = uint16(x >> 216);
+        policyRowOrStrength = uint16(x >> 216);
         roleRow = uint16(x >> 232);
         targetKind = uint8(x >> 248);
     }
@@ -416,7 +416,7 @@ library Layout {
         s = uint256(keccak256(abi.encode(k0, s)));
     }
 
-    // slot +0 of HeadRow: state at bit 0 | revision at bit 8 | admission at bit 56 | targetKind at bit 104 | prevAdmission at bit 112 | bindingOrdinal at bit 160 | notAfter at bit 208
+    // slot +0 of HeadRow: state at bit 0 | revision at bit 8 | admission at bit 56 | targetKind at bit 104 | prevAdmission at bit 112 | bindingOrdinal at bit 160 | notAfter at bit 208 | strength at bit 240
     function unpackHeadRowWord0(bytes32 w)
         internal
         pure
@@ -427,7 +427,8 @@ library Layout {
             uint8 targetKind,
             uint48 prevAdmission,
             uint48 bindingOrdinal,
-            uint40 notAfter
+            uint32 notAfter,
+            uint16 strength
         )
     {
         uint256 x = uint256(w);
@@ -437,7 +438,8 @@ library Layout {
         targetKind = uint8(x >> 104);
         prevAdmission = uint48(x >> 112);
         bindingOrdinal = uint48(x >> 160);
-        notAfter = uint40(x >> 208);
+        notAfter = uint32(x >> 208);
+        strength = uint16(x >> 240);
     }
 
     // ---- efs.ledger.principals — PrincipalsStorage, 1 slot(s)
@@ -624,7 +626,7 @@ library Layout {
         s = uint256(keccak256(abi.encode(k1, s)));
     }
 
-    // slot +0 of TypeRow: grade at bit 0 | refCount at bit 8 | wrapperVersion at bit 16 | ruleMode at bit 24 | dependencyClass at bit 32 | refHeaderWords at bit 40 | validationGas at bit 48 | policyRows at bit 72 | registeredAt at bit 88 | catalogOrdinal at bit 128 | codecVersion at bit 176 | textProfile at bit 184
+    // slot +0 of TypeRow: grade at bit 0 | refCount at bit 8 | wrapperVersion at bit 16 | ruleMode at bit 24 | dependencyClass at bit 32 | refHeaderWords at bit 40 | validationGas at bit 48 | policyRows at bit 72 | registeredAt at bit 88 | catalogOrdinal at bit 128 | codecVersion at bit 176 | textProfile at bit 184 | flags at bit 192
     function unpackTypeRowWord0(bytes32 w)
         internal
         pure
@@ -640,7 +642,8 @@ library Layout {
             uint40 registeredAt,
             uint48 catalogOrdinal,
             uint8 codecVersion,
-            uint8 textProfile
+            uint8 textProfile,
+            uint8 flags
         )
     {
         uint256 x = uint256(w);
@@ -656,6 +659,7 @@ library Layout {
         catalogOrdinal = uint48(x >> 128);
         codecVersion = uint8(x >> 176);
         textProfile = uint8(x >> 184);
+        flags = uint8(x >> 192);
     }
 
     // slot +3 of TypeRow: mandatory at bit 0

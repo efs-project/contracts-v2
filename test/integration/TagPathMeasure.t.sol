@@ -50,7 +50,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
             Action[] memory a = new Action[](20);
             for (uint256 i; i < 20; ++i) {
                 a[i] = _create(keccak256(abi.encode("tagged", from + i)));
-                s[from + i] = Keys.subject(p, a[i].salt);
+                s[from + i] = Keys.subject(p, a[i].saltOrStrength);
             }
             r.ledger.execute(a, new bytes[](20), _ctx(a), "");
         }
@@ -120,16 +120,16 @@ contract TagPathMeasureTest is FilesRecipesBase {
     function test_deny_reassert_silent() public {
         _silent(_tags(X, 0, 3));
         bytes32 key = Keys.binding(p, Keys.position(Purpose.TAG, X, s[0]));
-        (, uint64 rev,,,,,) = r.hot.head(key);
+        (, uint64 rev,,,,,,) = r.hot.head(key);
         _run(
             "deny (mask an assertion)",
             _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[0], 0, rev))
         );
-        (, rev,,,,,) = r.hot.head(key);
+        (, rev,,,,,,) = r.hot.head(key);
         _run("re-assert a denied tag", _one(_bind(Purpose.TAG, X, s[0], s[0], rev)));
-        (, rev,,,,,) = r.hot.head(key);
+        (, rev,,,,,,) = r.hot.head(key);
         _silent(_one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[0], 0, rev)));
-        (, rev,,,,,) = r.hot.head(key);
+        (, rev,,,,,,) = r.hot.head(key);
         _run(
             "silent again (release a denial)",
             _one(_bindKind(ActionKind.RELEASE, Purpose.TAG, X, s[0], 0, rev))
@@ -138,34 +138,16 @@ contract TagPathMeasureTest is FilesRecipesBase {
 
     /// A denial of something this author never asserted: the kernel masks only a BOUND head, so it is refused
     /// alone and costs an assertion plus a mask (measured in one publication if the kernel takes both, else two).
+    /// A first statement may be negative: "not X" about a thing never tagged is one UNBIND from UNSET (a first
+    /// mask), alone in its publication.
     function test_deny_without_a_prior_assertion() public {
-        Action[] memory a = _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, 0));
-        bytes[] memory b = new bytes[](1);
-        try r.ledger.execute(a, b, _ctx(a), "") {
-            emit log_named_uint("tag deny from silent: accepted alone", 1);
-        } catch {
-            emit log_named_uint("tag deny from silent: accepted alone", 0);
-        }
-        a = new Action[](2);
-        a[0] = _bind(Purpose.TAG, X, s[5], s[5], 0);
-        a[1] = _bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, 1);
-        b = new bytes[](2);
-        try this.both(a, b) {
-            emit log_named_uint("tag deny from silent: one publication of two actions", 1);
-        } catch {
-            emit log_named_uint("tag deny from silent: one publication of two actions", 0);
-            _run("deny from silent, step 1 (assert)", _one(a[0]));
-            (, uint64 rev,,,,,) = r.hot.head(Keys.binding(p, Keys.position(Purpose.TAG, X, s[5])));
-            _run(
-                "deny from silent, step 2 (mask)",
-                _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, rev))
-            );
-        }
-    }
-
-    function both(Action[] calldata a, bytes[] calldata b) external {
-        require(msg.sender == address(this));
-        _exec("tag deny from silent (assert + mask in one publication)", a, b);
+        _run(
+            "deny from silent (a lone negative)",
+            _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, X, s[5], 0, 0))
+        );
+        (uint8 state, uint64 rev,, uint8 kind,,,,) =
+            r.hot.head(Keys.binding(p, Keys.position(Purpose.TAG, X, s[5])));
+        assertEq(abi.encode(state, rev, kind), abi.encode(uint8(2), uint64(1), uint8(0)));
     }
 
     // ---- reads ------------------------------------------------------------------------------------------------
@@ -231,7 +213,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
             bytes32 key = Keys.binding(
                 p, Keys.position(Purpose.TAG, keccak256(abi.encode("concept", i)), target)
             );
-            (uint8 state,,,,,,) = r.hot.head(key);
+            (uint8 state,,,,,,,) = r.hot.head(key);
             assertEq(state, 1);
         }
         emit log_named_uint("tag read concepts on a target: 8 head reads gas", before - gasleft());
@@ -243,7 +225,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         bytes32 key = Keys.binding(p, Keys.position(Purpose.TAG, X, s[0]));
         _cool();
         uint256 before = gasleft();
-        (uint8 state,,,,,,) = r.hot.head(key);
+        (uint8 state,,,,,,,) = r.hot.head(key);
         emit log_named_uint("tag read one membership: head gas", before - gasleft());
         assertEq(state, 1);
         Y; // the second concept id is reserved for a later row

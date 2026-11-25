@@ -55,7 +55,15 @@ contract ShapeTest is KernelFixture {
         else if (field == F_ROLE) a.role = v;
         else if (field == F_TARGET) a.target = v;
         else if (field == F_REVISION) a.expectedRevision = uint64(uint256(v));
-        else a.salt = v;
+        else a.saltOrStrength = v;
+    }
+
+    /// `saltOrStrength` is a strength on BIND and UNBIND: only a word above 65,535 is forbidden there.
+    function _forbiddenValue(uint8 kind, uint8 field, bytes32 v) internal pure returns (bytes32) {
+        if (field == F_SALT && (kind == ActionKind.BIND || kind == ActionKind.UNBIND)) {
+            return bytes32(uint256(v) | (uint256(1) << 16));
+        }
+        return v;
     }
 
     /// Submits `a` as leaf `_case % 4` (after that many CREATE leaves) with `body` at that leaf.
@@ -181,10 +189,16 @@ contract ShapeTest is KernelFixture {
         cas.expectedRevision = 5;
         bytes32 key = _key(principal, FOLDER, SUBJ, ROLE);
         _refuse(cas, "", abi.encodeWithSelector(E_CAS.selector, key, uint64(5), uint64(0)));
+        // a roleless UNBIND from UNSET passes the law and is admitted: a first mask
         Action memory mask = _base(ActionKind.UNBIND);
         mask.role = 0;
-        bytes32 roleless0 = _key(principal, FOLDER, SUBJ, 0);
-        _refuse(mask, "", abi.encodeWithSelector(E_NOT_LIVE.selector, _leaf(), roleless0, 0));
+        _exec(_acts(mask), _bodies(1));
+        (uint8 state,,,,,,,) = hot.head(_key(principal, FOLDER, SUBJ, 0));
+        assertEq(state, 2);
+        // a RELEASE still needs a live head
+        Action memory rel = _base(ActionKind.RELEASE);
+        bytes32 key0 = _key(principal, FOLDER, SUBJ, ROLE);
+        _refuse(rel, "", abi.encodeWithSelector(E_NOT_LIVE.selector, _leaf(), key0, 0));
     }
 
     // ---- reserved and unknown kinds ------------------------------------------------------------------------
@@ -211,7 +225,7 @@ contract ShapeTest is KernelFixture {
         if (field == F_REVISION) vm.assume(uint64(uint256(v)) != 0);
         vm.assume(v != 0);
         Action memory a = _base(kind);
-        _set(a, field, v);
+        _set(a, field, _forbiddenValue(kind, field, v));
         _refuse(a, _bodyOf(kind), _shape(2));
     }
 

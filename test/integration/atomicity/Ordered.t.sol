@@ -413,7 +413,7 @@ contract OrderedTest is KernelFixture {
         b[4] = "ordered/trace";
         _expectNoChange(a, b, abi.encodeWithSelector(E_REJECTED.selector, uint8(4), TYPE_REJECT));
         (bytes32 t,,,,) = hot.recordHeader(rid);
-        (uint8 state,,,,,,) = hot.head(_key(principal, FOLDER, sid, ROLE));
+        (uint8 state,,,,,,,) = hot.head(_key(principal, FOLDER, sid, ROLE));
         (uint64 pub,) = hot.publicationAt(principal, 0);
         assertEq(abi.encode(t, state, pub, hot.subjectCreatedAt(sid)), abi.encode(0, 0, 0, 0));
         assertEq(IndexDoubleCore(index).prefixCalls(), 0, "no posting call survived");
