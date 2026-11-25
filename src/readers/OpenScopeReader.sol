@@ -95,19 +95,19 @@ contract OpenScopeReader {
         for (uint256 i; i < n; ++i) {
             s[i] = bytes32(Layout.admissionsRowsSlot(adm[i]));
         }
-        bytes32[] memory meta = hot.extsloadBatch(s);
+        bytes32[] memory meta = _xs(hot, s);
         for (uint256 i; i < n; ++i) {
             (,, uint48 pub,,,,,,,) = Layout.unpackAdmissionRowWord0(meta[i]);
             s[i] = bytes32(Layout.publicationsEvidenceSlot(pub) + 2);
         }
-        bytes32[] memory who = hot.extsloadBatch(s);
+        bytes32[] memory who = _xs(hot, s);
         s = new bytes32[](2 * n);
         for (uint256 i; i < n; ++i) {
             uint256 head = Layout.bindingsHeadsSlot(Keys.binding(who[i], position));
             s[2 * i] = bytes32(head);
             s[2 * i + 1] = bytes32(head + 1);
         }
-        bytes32[] memory h = hot.extsloadBatch(s);
+        bytes32[] memory h = _xs(hot, s);
         rows = new AuthorRow[](n);
         for (uint256 i; i < n; ++i) {
             (uint8 state, int256 number,) = _stance(h[2 * i]);
@@ -179,7 +179,7 @@ contract OpenScopeReader {
                     bytes32(Layout.bindingsHeadsSlot(Keys.binding(q.lens[j], pos[i])));
             }
         }
-        bytes32[] memory c = hot.extsloadBatch(s);
+        bytes32[] memory c = _xs(hot, s);
         // the author count and the newest author's admission: one family-20 head per position
         uint64[] memory cnt = new uint64[](n);
         bytes32[] memory a = new bytes32[](n);
@@ -188,16 +188,16 @@ contract OpenScopeReader {
             (cnt[i],, lastAdm,) = store.postingHead(_pk(20, pos[i]));
             a[i] = bytes32(Layout.admissionsRowsSlot(lastAdm));
         }
-        a = hot.extsloadBatch(a);
+        a = _xs(hot, a);
         for (uint256 i; i < n; ++i) {
             (,, uint48 pub,,,,,,,) = Layout.unpackAdmissionRowWord0(a[i]);
             a[i] = bytes32(Layout.publicationsEvidenceSlot(pub) + 2);
         }
-        bytes32[] memory who = hot.extsloadBatch(a);
+        bytes32[] memory who = _xs(hot, a);
         for (uint256 i; i < n; ++i) {
             a[i] = bytes32(Layout.bindingsHeadsSlot(Keys.binding(who[i], pos[i])));
         }
-        a = hot.extsloadBatch(a);
+        a = _xs(hot, a);
         for (uint256 i; i < n && got < rows.length; ++i) {
             bool hidden;
             for (uint256 j; j < lens; ++j) {
@@ -348,7 +348,7 @@ contract OpenScopeReader {
         for (uint256 j; j <= owner; ++j) {
             s[2 + j] = bytes32(Layout.bindingsHeadsSlot(Keys.binding(lens[j], position)));
         }
-        bytes32[] memory h = hot.extsloadBatch(s);
+        bytes32[] memory h = _xs(hot, s);
         bytes32 thing = h[1];
         for (uint256 i; i < got; ++i) {
             if (rows[i].thing == thing) return got; // shown already in this page
@@ -363,7 +363,7 @@ contract OpenScopeReader {
         for (uint256 j; j < rest; ++j) {
             s[j] = bytes32(Layout.bindingsHeadsSlot(Keys.binding(lens[owner + 1 + j], position)));
         }
-        bytes32[] memory r = hot.extsloadBatch(s);
+        bytes32[] memory r = _xs(hot, s);
         for (uint256 j; j < rest; ++j) {
             (, int256 number, bool has) = _stance(r[j]);
             if (has) return _decide(rows, got, h[0], thing, number, ordinal, owner + 1 + j);
@@ -398,6 +398,28 @@ contract OpenScopeReader {
         if (state == MASKED) return (state, -1 - int256(uint256(strength)), true);
     }
 
+    /// `extsloadBatch` in rounds of at most 256 slots (the ledger's bound).
+    function _xs(ILedgerHot hot, bytes32[] memory slots)
+        private
+        view
+        returns (bytes32[] memory out)
+    {
+        uint256 n = slots.length;
+        if (n <= 256) return hot.extsloadBatch(slots);
+        out = new bytes32[](n);
+        for (uint256 from; from < n; from += 256) {
+            uint256 m = n - from < 256 ? n - from : 256;
+            bytes32[] memory part = new bytes32[](m);
+            for (uint256 i; i < m; ++i) {
+                part[i] = slots[from + i];
+            }
+            part = hot.extsloadBatch(part);
+            for (uint256 i; i < m; ++i) {
+                out[from + i] = part[i];
+            }
+        }
+    }
+
     function _positions(ILedgerHot hot, uint64[] memory ord)
         private
         view
@@ -407,7 +429,7 @@ contract OpenScopeReader {
         for (uint256 i; i < ord.length; ++i) {
             s[i] = bytes32(Layout.bindingsBindingPositionSlot(ord[i]));
         }
-        return hot.extsloadBatch(s);
+        return _xs(hot, s);
     }
 
     /// Entries at list indices length-1-from down to length-from-n (newest first).

@@ -1,90 +1,129 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
+import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Factory} from "../harness/doubles/Factory.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, ActionKind, Native, PostingKey, Purpose} from "../../src/interfaces/Actions.sol";
+import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {OpenScopeConfig} from "../../src/interfaces/Index.sol";
 import {IAcceptor, AcceptContext, RefHeader} from "../../src/interfaces/IAcceptor.sol";
 import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
 import {OpenScopeReader} from "../../src/readers/OpenScopeReader.sol";
 
-/// SPIKE stand-in (tags-index): the topic Type's rule. Body: word 0 = parent topic id (0 = top level), word 1 = word
-/// id, then anything; no references. Not a proposal for a topic Type: the parent pointer is a measurement device.
-contract TopicStandInRule is IAcceptor {
+/// SPIKE stand-in (tags-index2): the word page Type's rule. Body = the word's bytes (1..64), no references.
+contract WordPageStandInRule is IAcceptor {
     function accept(
         AcceptContext calldata ctx,
         bytes calldata body,
         bytes32[] calldata refs,
         RefHeader[] calldata
     ) external view returns (bytes4) {
-        require(ctx.ledger == msg.sender && refs.length == 0 && body.length >= 64, "topic");
+        require(ctx.ledger == msg.sender && refs.length == 0, "word");
+        require(body.length != 0 && body.length <= 64, "word length");
         return IAcceptor.accept.selector;
     }
 }
 
-/// @notice SPIKE (tags-index) measurements of the all-authors families on the Files Realm, in the style of
-///         `TagPathMeasure.t.sol`: every publication cooled (each pays what a transaction of its own pays), native
-///         lane, logs `os <variant> <row> gas` (and `frame state gas` under the amsterdam profile). Each concrete
-///         contract below is one index build (`OpenScopeConfig`); a row is measured only in the variants where it
-///         means something. Topics are records of the test-only `TopicStandInRule` Type (SPIKE stand-in).
+/// SPIKE stand-in (tags-index2): the path Type's rule. Body exactly `[parent, wordPage]`, both declared references
+/// (parent ANY — a word page or a path —, the word page exact), so the kernel admits both first and family 11 lists
+/// the path under each.
+contract PathStandInRule is IAcceptor {
+    function accept(
+        AcceptContext calldata ctx,
+        bytes calldata body,
+        bytes32[] calldata refs,
+        RefHeader[] calldata
+    ) external view returns (bytes4) {
+        require(ctx.ledger == msg.sender && refs.length == 2 && body.length == 64, "path");
+        return IAcceptor.accept.selector;
+    }
+}
+
+/// @notice SPIKE (tags-index2) measurements of the topic lists on the Files Realm. Every measured publication is
+///         cooled (each pays what a transaction of its own pays), native lane. Logs `os <variant> <row>`:
+///         `exec` = the execution frame's regular gas, `state` = its EIP-8037 state gas (zero on prague),
+///         `all` = exec + state, `tx` = all + 21,000 + the calldata's standard cost (an estimate of the whole
+///         transaction). Each concrete contract is one index build (`OpenScopeConfig`).
 abstract contract OpenScopeMeasureBase is FilesRecipesBase {
-    uint256 internal constant N = 64;
-    uint8 internal constant V_EXACT = 1;
-    uint8 internal constant V_SKIP_HEAD = 2;
-    uint8 internal constant V_PATHS = 4;
-    uint8 internal constant V_WORDS = 8;
-    uint8 internal constant V_DIR = 16;
+    uint256 internal constant N = 128;
+    uint256 internal constant CAP = 1 << 24;
+    uint8 internal constant V_MINE = 1; // family 19
+    uint8 internal constant V_ALL = 2; // families 6 + 20 (TAG, FOLDER)
+    uint8 internal constant V_ALL_BELOW = 4; // family 7
+    uint8 internal constant V_TRUST = 8;
 
     address[] internal cold;
     bytes32[N] internal s; // CREATE subjects of p: the tagged things
     OpenScopeReader internal reader;
-    address internal topicRule;
-    bytes internal topicDescriptor;
-    bytes32 internal topicType;
+    address internal wordRule;
+    address internal pathRule;
+    bytes internal wordDescriptor;
+    bytes internal pathDescriptor;
+    bytes32 internal wordType;
+    bytes32 internal pathType;
     mapping(address => uint64) internal nonces;
 
     function _variant() internal pure virtual returns (uint8);
     function _vname() internal pure virtual returns (string memory);
 
     function _openScope() internal virtual override returns (OpenScopeConfig memory os) {
-        _topicType();
+        _types();
         uint8 v = _variant();
-        os.exact = v & V_EXACT != 0;
-        os.skipPurpose = v & V_SKIP_HEAD != 0 ? Purpose.HEAD : bytes32(0);
-        os.topicTypeId = topicType;
-        os.depthCap = 64;
-        os.paths = v & V_PATHS != 0;
-        os.words = v & V_WORDS != 0;
-        os.directory = v & V_DIR != 0;
+        os.wordTypeId = wordType;
+        os.pathTypeId = pathType;
+        os.scopeBelow = v & V_MINE != 0;
+        if (v & V_ALL != 0) {
+            os.allAuthors = new bytes32[](2);
+            os.allAuthors[0] = Purpose.TAG;
+            os.allAuthors[1] = Purpose.FOLDER;
+        }
+        os.allBelow = v & V_ALL_BELOW != 0;
+        os.trustRegistered = v & V_TRUST != 0;
     }
 
-    function _topicType() internal {
-        if (topicRule != address(0)) return;
-        bytes memory initcode = type(TopicStandInRule).creationCode;
-        topicRule = Factory.deploy(initcode);
+    function _types() internal {
+        if (wordRule != address(0)) return;
+        bytes memory wi = type(WordPageStandInRule).creationCode;
+        wordRule = Factory.deploy(wi);
         FilesTypes.Spec memory spec = FilesTypes.bytesSpec();
-        spec.name = "test/topic-stand-in/1";
-        spec.description = "SPIKE stand-in: word 0 parent topic, word 1 word id";
-        topicDescriptor =
-            FilesTypes.encode(declarationKey, topicRule.codehash, keccak256(initcode), spec);
-        topicType = FilesTypes.typeIdOf(topicDescriptor);
+        spec.name = "test/word-page-stand-in/1";
+        spec.description = "SPIKE stand-in: the word's bytes";
+        wordDescriptor = FilesTypes.encode(declarationKey, wordRule.codehash, keccak256(wi), spec);
+        wordType = FilesTypes.typeIdOf(wordDescriptor);
+        bytes memory pi = type(PathStandInRule).creationCode;
+        pathRule = Factory.deploy(pi);
+        spec.name = "test/path-stand-in/1";
+        spec.description = "SPIKE stand-in: [parent, wordPage]";
+        spec.fields = bytes.concat(
+            FilesTypes.refField(keccak256("spike/field/parent"), keccak256("spike/parent"), 0),
+            FilesTypes.refField(keccak256("spike/field/word"), keccak256("spike/word"), wordType)
+        );
+        spec.fieldCount = 2;
+        pathDescriptor = FilesTypes.encode(declarationKey, pathRule.codehash, keccak256(pi), spec);
+        pathType = FilesTypes.typeIdOf(pathDescriptor);
+    }
+
+    function _registerType(bytes memory d, bytes32 id, address rule) internal {
+        bytes memory sig = _declare(r.registry, id);
+        r.store.put(d, sig);
+        vm.prank(address(0xCAFE));
+        (bytes32 got,) = r.registry.registerDescribed(d, sig, rule, "");
+        require(got == id, "stand-in type");
     }
 
     function setUp() public override {
         super.setUp();
-        bytes memory sig = _declare(r.registry, topicType);
-        r.store.put(topicDescriptor, sig);
-        vm.prank(address(0xCAFE));
-        (bytes32 got,) = r.registry.registerDescribed(topicDescriptor, sig, topicRule, "");
-        require(got == topicType, "topic type");
+        _registerType(wordDescriptor, wordType, wordRule);
+        _registerType(pathDescriptor, pathType, pathRule);
         reader = new OpenScopeReader();
         for (uint256 i; i < 10; ++i) {
             cold.push(instances[i]);
         }
-        cold.push(topicRule);
+        cold.push(wordRule);
+        cold.push(pathRule);
         cold.push(address(validator));
         cold.push(address(r.k.ingress));
         cold.push(address(r.k.applyDelegate));
@@ -125,416 +164,434 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
         return string.concat("os ", _vname(), " ", row);
     }
 
-    function _run(string memory row, Action[] memory a) internal {
-        _exec(_label(row), a, new bytes[](a.length));
-    }
-
-    function _runB(string memory row, Action[] memory a, bytes[] memory b) internal {
-        _exec(_label(row), a, b);
-    }
-
-    function _silent(Action[] memory a) internal {
-        r.ledger.execute(a, new bytes[](a.length), _ctx(a), "");
-    }
-
-    function _silentB(Action[] memory a, bytes[] memory b) internal {
-        r.ledger.execute(a, b, _ctx(a), "");
-    }
-
-    /// Another author: an EOA key principal on the native lane.
-    function _asAuthor(address who, Action[] memory a) internal {
-        Native memory c;
-        c.nonce = nonces[who]++;
-        c.expectedExecutionSet = r.hot.executionSet();
-        c.expectedAcceptanceProfile =
-            ILedgerCommitments(r.hot.ingress()).acceptanceProfileOf(address(r.ledger), a);
-        vm.prank(who, who);
-        r.ledger.execute(a, new bytes[](a.length), c, "");
-    }
-
     function _author(uint256 i) internal pure returns (address) {
         return address(uint160(0xA0000 + i));
     }
 
+    function _pid(address who) internal view returns (bytes32) {
+        return who == address(this) ? p : Keys.principal(who);
+    }
+
+    function _nctx(address who, Action[] memory a) internal returns (Native memory c) {
+        if (who == address(this)) return _ctx(a);
+        c.nonce = nonces[who]++;
+        c.expectedExecutionSet = r.hot.executionSet();
+        c.expectedAcceptanceProfile =
+            ILedgerCommitments(r.hot.ingress()).acceptanceProfileOf(address(r.ledger), a);
+    }
+
+    function _go(address who, Action[] memory a, bytes[] memory b) internal {
+        Native memory c = _nctx(who, a);
+        if (who != address(this)) vm.prank(who, who);
+        r.ledger.execute(a, b, c, "");
+    }
+
+    function _go(address who, Action[] memory a) internal {
+        _go(who, a, new bytes[](a.length));
+    }
+
+    struct G {
+        uint256 exec; // regular gas of the frame
+        uint256 state; // EIP-8037 state gas of the frame
+        uint256 all; // exec + state
+        uint256 txAll; // all + intrinsic + calldata (estimate)
+        uint256 txRegular; // exec + intrinsic + calldata (estimate)
+    }
+
+    function _calldataCost(bytes memory cd) internal pure returns (uint256 c) {
+        for (uint256 i; i < cd.length; ++i) {
+            c += cd[i] == 0 ? 4 : 16;
+        }
+    }
+
+    /// One cooled publication by `who`; never logs.
+    function _measure(address who, Action[] memory a, bytes[] memory b)
+        internal
+        returns (G memory g)
+    {
+        Native memory c = _nctx(who, a);
+        uint256 extra =
+            21_000 + _calldataCost(abi.encodeCall(ILedger.execute, (a, b, c, bytes(""))));
+        _cool();
+        if (who != address(this)) vm.prank(who, who);
+        r.ledger.execute(a, b, c, "");
+        Vm.Gas memory f = vm.lastFrameGas();
+        g.exec = f.gasTotalUsed;
+        g.state = f.gasStateUsed > 0 ? uint256(int256(f.gasStateUsed)) : 0;
+        g.all = g.exec + g.state;
+        g.txAll = g.all + extra;
+        g.txRegular = g.exec + extra;
+    }
+
+    function _log(string memory row, G memory g) internal {
+        emit log_named_uint(_label(string.concat(row, " exec")), g.exec);
+        if (g.state != 0) emit log_named_uint(_label(string.concat(row, " state")), g.state);
+        emit log_named_uint(_label(string.concat(row, " all")), g.all);
+        emit log_named_uint(_label(string.concat(row, " tx")), g.txAll);
+    }
+
+    function _run(string memory row, address who, Action[] memory a, bytes[] memory b)
+        internal
+        returns (G memory g)
+    {
+        g = _measure(who, a, b);
+        _log(row, g);
+    }
+
+    function _run(string memory row, address who, Action[] memory a) internal returns (G memory) {
+        return _run(row, who, a, new bytes[](a.length));
+    }
+
     // ---- statements and topics -------------------------------------------------------------------------------
 
-    function _tags(bytes32 topic, uint256 from, uint256 n)
+    function _stmts(bytes32 topic, uint256 from, uint256 n, bool deny)
         internal
         view
         returns (Action[] memory a)
     {
         a = new Action[](n);
         for (uint256 i; i < n; ++i) {
-            a[i] = _bind(Purpose.TAG, topic, s[from + i], s[from + i], 0);
+            a[i] = deny
+                ? _bindKind(ActionKind.UNBIND, Purpose.TAG, topic, s[from + i], 0, 0)
+                : _bind(Purpose.TAG, topic, s[from + i], s[from + i], 0);
         }
     }
 
-    function _denies(bytes32 topic, uint256 from, uint256 n)
-        internal
-        view
-        returns (Action[] memory a)
-    {
-        a = new Action[](n);
-        for (uint256 i; i < n; ++i) {
-            a[i] = _bindKind(ActionKind.UNBIND, Purpose.TAG, topic, s[from + i], 0, 0);
-        }
+    function _tags(bytes32 topic, uint256 from, uint256 n) internal view returns (Action[] memory) {
+        return _stmts(topic, from, n, false);
     }
 
-    function _topicBody(bytes32 parent, bytes32 word, bytes32 salt)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encode(parent, word, salt);
+    function _wordAction(bytes memory w) internal view returns (Action memory a, bytes32 id) {
+        a.kind = ActionKind.PUBLISH;
+        a.typeId = wordType;
+        a.bodyHashOrRecordId = keccak256(w);
+        id = Keys.record(wordType, w);
     }
 
-    function _topicAction(bytes32 parent, bytes32 word, bytes32 salt)
+    function _pathAction(bytes32 parent, bytes32 wordPage)
         internal
         view
         returns (Action memory a, bytes memory body, bytes32 id)
     {
-        body = _topicBody(parent, word, salt);
+        body = abi.encode(parent, wordPage);
         a.kind = ActionKind.PUBLISH;
-        a.typeId = topicType;
+        a.typeId = pathType;
         a.bodyHashOrRecordId = keccak256(body);
-        id = Keys.record(topicType, body);
+        id = Keys.record(pathType, body);
     }
 
-    function _word(string memory chain, uint256 level) internal pure returns (bytes32) {
-        return keccak256(abi.encode("word", chain, level));
+    function _wordBytes(string memory chain, uint256 i) internal pure returns (bytes memory) {
+        return bytes(string.concat(chain, "-", vm.toString(i)));
     }
 
-    /// Registers a chain of `n` topics (level 0 top), silently, 16 per publication; returns the ids.
-    function _chain(string memory name, uint256 n, bytes32 parent)
-        internal
-        returns (bytes32[] memory ids)
-    {
-        ids = new bytes32[](n);
-        for (uint256 from; from < n; from += 16) {
-            uint256 m = n - from < 16 ? n - from : 16;
+    /// A chain of `n` topics (index 0 the word page `<name>-0`), every level a new word, silently: the words
+    /// first (64 per publication), then the paths (64 per publication).
+    function _chain(string memory name, uint256 n) internal returns (bytes32[] memory t) {
+        t = new bytes32[](n);
+        bytes32[] memory w = new bytes32[](n);
+        for (uint256 from; from < n; from += 64) {
+            uint256 m = n - from < 64 ? n - from : 64;
             Action[] memory a = new Action[](m);
             bytes[] memory b = new bytes[](m);
             for (uint256 i; i < m; ++i) {
-                (a[i], b[i], ids[from + i]) =
-                    _topicAction(parent, _word(name, from + i), keccak256(bytes(name)));
-                parent = ids[from + i];
+                b[i] = _wordBytes(name, from + i);
+                (a[i], w[from + i]) = _wordAction(b[i]);
             }
-            _silentB(a, b);
+            _go(address(this), a, b);
+        }
+        t[0] = w[0];
+        for (uint256 from = 1; from < n; from += 64) {
+            uint256 m = n - from < 64 ? n - from : 64;
+            Action[] memory a = new Action[](m);
+            bytes[] memory b = new bytes[](m);
+            for (uint256 i; i < m; ++i) {
+                (a[i], b[i], t[from + i]) = _pathAction(t[from + i - 1], w[from + i]);
+            }
+            _go(address(this), a, b);
         }
     }
 
-    function _one(Action memory x) internal pure returns (Action[] memory a) {
-        a = new Action[](1);
-        a[0] = x;
+    /// A deep chain over ONE repeated word (the walk does not care which word a level holds).
+    function _deepChain(string memory name, uint256 n) internal returns (bytes32[] memory t) {
+        t = new bytes32[](n);
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        b[0] = bytes(name);
+        bytes32 w;
+        (a[0], w) = _wordAction(b[0]);
+        _go(address(this), a, b);
+        t[0] = w;
+        for (uint256 from = 1; from < n; from += 64) {
+            uint256 m = n - from < 64 ? n - from : 64;
+            a = new Action[](m);
+            b = new bytes[](m);
+            for (uint256 i; i < m; ++i) {
+                (a[i], b[i], t[from + i]) = _pathAction(t[from + i - 1], w);
+            }
+            _go(address(this), a, b);
+        }
     }
 
     function _n(uint256 n) internal pure returns (string memory) {
         return vm.toString(n);
     }
 
-    // ---- 1. family 6 on plain topics (every variant; Off is the baseline) -------------------------------------
+    // =============================================================================================
+    // 1./3. one statement on an n-word topic, four cases, alone and in a batch of 10
+    // =============================================================================================
 
-    function test_exact_writes() public {
-        bytes32 x = keccak256("measure/os/x");
-        _run("assert entry 1 (first ever on a topic)", _tags(x, 0, 1));
-        _run("assert entry 2", _tags(x, 1, 1));
-        _silent(_tags(x, 2, 3));
-        _run("assert entry 6", _tags(x, 5, 1));
-        _silent(_tags(x, 6, 4));
-        _run("assert entry 11", _tags(x, 10, 1));
-        _run("assert entry 12", _tags(x, 11, 1));
-        _run("assert k10 entries 13-22", _tags(x, 12, 10));
-        _run("deny-unset k1 entry 23", _denies(x, 22, 1));
-        _run("deny-unset k10 entries 24-33", _denies(x, 23, 10));
-        bytes32 y = keccak256("measure/os/y");
-        _run("deny-unset entry 1 (first ever on a topic)", _denies(y, 0, 1));
-    }
+    address internal constant X = address(0xA0001);
+    address internal constant Y = address(0xA0002);
 
-    // ---- 2./5a. roll-up and words at depth --------------------------------------------------------------------
-
-    function _depth(uint256 n) internal {
-        if (!_on(V_PATHS) && !_on(V_WORDS)) return;
-        string memory d = string.concat("depth ", _n(n), " ");
-        bytes32[] memory c = _chain(string.concat("a", _n(n)), n, 0);
-        bytes32 leaf = c[n - 1];
-        _run(string.concat(d, "fresh lists k1"), _tags(leaf, 0, 1));
-        _silent(_tags(leaf, 1, 5));
-        _run(string.concat(d, "existing lists k1"), _tags(leaf, 6, 1));
-        _run(string.concat(d, "existing lists k10"), _tags(leaf, 7, 10));
-        _run(string.concat(d, "existing lists deny-unset k10"), _denies(leaf, 17, 10));
-        bytes32[] memory c2 = _chain(string.concat("b", _n(n)), n, 0);
-        _run(string.concat(d, "fresh lists k10"), _tags(c2[n - 1], 0, 10));
-        bytes32[] memory c3 = _chain(string.concat("c", _n(n)), n, 0);
-        _run(string.concat(d, "fresh lists deny-unset k1"), _denies(c3[n - 1], 0, 1));
-    }
-
-    function test_depth_01() public {
-        _depth(1);
-    }
-
-    function test_depth_02() public {
-        _depth(2);
-    }
-
-    function test_depth_04() public {
-        _depth(4);
-    }
-
-    function test_depth_05() public {
-        _depth(5);
-    }
-
-    function test_depth_08() public {
-        _depth(8);
-    }
-
-    function test_depth_09() public {
-        _depth(9);
-    }
-
-    function test_depth_16() public {
-        _depth(16);
-    }
-
-    function test_depth_32() public {
-        _depth(32);
-    }
-
-    function test_depth_64() public {
-        _depth(64);
-    }
-
-    /// Paths: each tag of a batch on a different sibling under one parent at depth n (shared ancestor lists).
-    function _siblings(uint256 n) internal {
-        if (!_on(V_PATHS)) return;
-        string memory d = string.concat("depth ", _n(n), " siblings ");
-        bytes32[] memory c = _chain(string.concat("sib", _n(n)), n - 1, 0);
-        bytes32 parent = c[n - 2];
-        bytes32[] memory leaves = new bytes32[](12);
-        Action[] memory a = new Action[](12);
-        bytes[] memory b = new bytes[](12);
-        for (uint256 i; i < 12; ++i) {
-            (a[i], b[i], leaves[i]) =
-                _topicAction(parent, _word(string.concat("sibleaf", _n(n)), i), bytes32(i));
-        }
-        _silentB(a, b);
-        _silent(_tags(leaves[0], 0, 1)); // the ancestor lists exist
-        _run(string.concat(d, "k1"), _one(_tags(leaves[1], 1, 1)[0]));
-        Action[] memory t = new Action[](10);
-        for (uint256 i; i < 10; ++i) {
-            t[i] = _tags(leaves[2 + i], 2 + i, 1)[0];
-        }
-        _run(string.concat(d, "k10"), t);
-    }
-
-    function test_siblings_04() public {
-        _siblings(4);
-    }
-
-    function test_siblings_08() public {
-        _siblings(8);
-    }
-
-    function test_siblings_64() public {
-        _siblings(64);
-    }
-
-    // ---- 3. reads ---------------------------------------------------------------------------------------------
-
-    function _q(uint8 kind, bytes32 key, uint64 from, uint16 count, bool newest, bool dead)
+    /// Prepares case `c` (1..4) on `topic` and returns the measured publication: author and statements.
+    /// (i) everything fresh; (ii) the author's lists and the all-authors lists exist (6 entries), the position is
+    /// new; (iii) the position exists (another author's), this author's below-lists are fresh; (iv) everything
+    /// exists, the position has two authors already. `k` statements on things from a fixed base.
+    function _case(uint8 c, bytes32 topic, uint256 k, bool deny)
         internal
-        pure
-        returns (OpenScopeReader.Query memory q)
+        returns (address who, Action[] memory a)
     {
-        q.kind = kind;
-        q.purpose = Purpose.TAG;
-        q.key = key;
-        q.from = from;
-        q.count = count;
-        q.newestFirst = newest;
-        q.minNumber = type(int16).min;
-        q.includeDead = dead;
-    }
-
-    function _page(string memory row, OpenScopeReader.Query memory q) internal {
-        _cool();
-        uint256 before = gasleft();
-        (uint64 len,, OpenScopeReader.Row[] memory rows) = reader.page(address(r.ledger), q);
-        uint256 used = before - gasleft();
-        emit log_named_uint(_label(string.concat(row, " gas")), used);
-        emit log_named_uint(_label(string.concat(row, " rows")), rows.length);
-        emit log_named_uint(_label(string.concat(row, " list length")), len);
-        if (rows.length != 0) {
-            emit log_named_uint(_label(string.concat(row, " gas per row")), used / rows.length);
+        if (c == 1) return (address(this), _stmts(topic, 0, k, deny));
+        if (c == 2) {
+            _go(address(this), _tags(topic, 0, 6));
+            return (address(this), _stmts(topic, 6, k, deny));
         }
-    }
-
-    /// `authors` authors x 10 statements on `topic`; statement j of author i is a lone negative when j == i % 10.
-    function _populate(bytes32 topic, uint256 authors) internal {
-        for (uint256 i; i < authors; ++i) {
-            Action[] memory a = new Action[](10);
-            for (uint256 j; j < 10; ++j) {
-                a[j] = j == i % 10
-                    ? _bindKind(ActionKind.UNBIND, Purpose.TAG, topic, s[j], 0, 0)
-                    : _bind(Purpose.TAG, topic, s[j], s[j], 0);
-            }
-            _asAuthor(_author(i), a);
+        if (c == 3) {
+            _go(address(this), _tags(topic, 0, 10));
+            return (X, _stmts(topic, 0, k, deny));
         }
+        _go(address(this), _tags(topic, 0, 16));
+        _go(Y, _tags(topic, 6, 10));
+        _go(X, _tags(topic, 0, 6));
+        return (X, _stmts(topic, 6, k, deny));
     }
 
-    function _readSet(string memory what, uint8 kind, bytes32 key) internal {
-        _page(string.concat(what, " oldest page 10"), _q(kind, key, 0, 10, false, false));
-        _page(string.concat(what, " oldest page 50"), _q(kind, key, 0, 50, false, false));
-        _page(string.concat(what, " newest page 10"), _q(kind, key, 0, 10, true, false));
-        _page(string.concat(what, " newest page 50"), _q(kind, key, 0, 50, true, false));
-        _page(string.concat(what, " newest page 50 incl dead"), _q(kind, key, 0, 50, true, true));
-    }
-
-    function test_reads_exact() public {
-        if (_variant() != V_EXACT) return;
-        bytes32 x = keccak256("measure/os/read");
-        _populate(x, 20); // 200 entries, 20 dead
-        _cool();
-        uint256 before = gasleft();
-        (uint64 len,,,) = r.g.posting
-            .postingHead(PostingKey.wrap(Keys.posting(0, 6, 0, Keys.openScope(Purpose.TAG, x))));
-        emit log_named_uint(_label("read length (store postingHead, cold) gas"), before - gasleft());
-        assertEq(len, 200);
-        _readSet("exact 200", 6, x);
-        _page("exact 200 middle page 50", _q(6, x, 75, 50, false, false));
-    }
-
-    function test_reads_below_and_word() public {
-        if (!_on(V_PATHS | V_WORDS)) return;
-        bytes32[] memory c = _chain("read4", 4, 0);
-        _populate(c[3], 20);
-        _readSet("below depth4 200", 7, c[0]);
-        _readSet("word depth4 200", 9, _word("read4", 0));
-        bytes32[] memory d = _chain("read64", 64, 0);
-        _populate(d[63], 5);
-        _readSet("below depth64 50", 7, d[0]);
-        _readSet("word depth64 50", 9, _word("read64", 0));
-    }
-
-    // ---- 5b. the word directory --------------------------------------------------------------------------------
-
-    function _register(uint256 n) internal {
-        string memory d = string.concat("register leaf of ", _n(n), " words");
-        bytes32 parent;
-        if (n > 1) {
-            bytes32[] memory c = _chain(string.concat("reg", _n(n)), n - 1, 0);
-            parent = c[n - 2];
-        }
-        (Action memory a, bytes memory b,) =
-            _topicAction(parent, _word(string.concat("reg", _n(n)), n - 1), "leaf");
-        Action[] memory aa = new Action[](1);
-        bytes[] memory bb = new bytes[](1);
-        aa[0] = a;
-        bb[0] = b;
-        _runB(d, aa, bb);
-    }
-
-    function test_register() public {
-        if (_variant() != 0 && _variant() != (V_EXACT | V_DIR)) return;
-        _register(1);
-        _register(4);
-        _register(8);
-        _register(16);
-        _register(32);
-        _register(64);
-    }
-
-    /// A whole brand-new 64-word path in one publication, then in prefix chunks.
-    function test_register_path_64() public {
-        if (_variant() != 0 && _variant() != (V_EXACT | V_DIR)) return;
-        for (uint256 chunk = 64; chunk >= 8; chunk /= 2) {
-            uint256 snap = vm.snapshotState();
-            bytes32 parent;
-            string memory name = string.concat("path64x", _n(chunk));
-            for (uint256 from; from < 64; from += chunk) {
-                Action[] memory a = new Action[](chunk);
-                bytes[] memory b = new bytes[](chunk);
-                for (uint256 i; i < chunk; ++i) {
-                    bytes32 id;
-                    (a[i], b[i], id) = _topicAction(parent, _word(name, from + i), "p");
-                    parent = id;
-                }
-                Native memory c = _ctx(a);
-                _cool();
-                uint256 before = gasleft();
-                try r.ledger.execute(a, b, c, "") {
+    function _cases(bool deny) internal {
+        if (!_on(V_MINE) && !_on(V_ALL) && _variant() != 0) return;
+        bytes32[] memory t = _chain(deny ? "neg" : "pos", 64);
+        string memory kind = deny ? "deny" : "tag";
+        uint256[7] memory depths = [uint256(1), 2, 4, 8, 16, 32, 64];
+        for (uint8 c = 1; c <= 4; ++c) {
+            for (uint256 d; d < 7; ++d) {
+                uint256 n = depths[d];
+                string memory row = string.concat(kind, " case ", _n(c), " n ", _n(n), " ");
+                uint256 snap = vm.snapshotState();
+                (address who, Action[] memory a) = _case(c, t[n - 1], 1, deny);
+                G memory one = _run(string.concat(row, "k1"), who, a);
+                vm.revertToState(snap);
+                (who, a) = _case(c, t[n - 1], 10, deny);
+                G memory ten = _run(string.concat(row, "k10"), who, a);
+                vm.revertToState(snap);
+                emit log_named_uint(
+                    _label(string.concat(row, "marginal all")), (ten.all - one.all) / 9
+                );
+                if (ten.state != 0) {
                     emit log_named_uint(
-                        _label(
-                            string.concat(
-                                "register 64-word path in chunks of ", _n(chunk), " chunk gas"
-                            )
-                        ),
-                        before - gasleft()
+                        _label(string.concat(row, "marginal state")), (ten.state - one.state) / 9
                     );
-                } catch (bytes memory err) {
-                    emit log_named_bytes(
-                        _label(
-                            string.concat(
-                                "register 64-word path in chunks of ", _n(chunk), " REFUSED"
-                            )
-                        ),
-                        err
-                    );
-                    break;
                 }
             }
-            vm.revertToState(snap);
         }
     }
 
-    /// Directory reads: k one-word paths share the word W, each path's list holds 10 tags.
-    function test_directory_reads() public {
-        if (_variant() != (V_EXACT | V_DIR)) return;
-        bytes32 w = keccak256("measure/os/dir-word");
-        bytes32[] memory topics = new bytes32[](26);
-        Action[] memory a = new Action[](26);
-        bytes[] memory b = new bytes[](26);
-        for (uint256 i; i < 26; ++i) {
-            bytes32 word = i < 1 ? w : i < 6 ? keccak256("w5") : keccak256("w20");
-            (a[i], b[i], topics[i]) = _topicAction(0, word, bytes32(i));
-        }
-        _silentB(a, b);
-        for (uint256 i; i < 26; ++i) {
-            _silent(_tags(topics[i], 0, 10));
-        }
-        _dirRead("k1", w, topics, 0, 1);
-        _dirRead("k5", keccak256("w5"), topics, 1, 5);
-        _dirRead("k20", keccak256("w20"), topics, 6, 20);
+    function test_cases_tag() public {
+        _cases(false);
     }
 
-    function _dirRead(
-        string memory k,
-        bytes32 word,
-        bytes32[] memory topics,
-        uint256 from,
-        uint256 n
-    ) internal {
-        _cool();
-        uint256 before = gasleft();
-        (uint64 len, bytes32[] memory got,) =
-            reader.directory(address(r.ledger), topicType, word, 0, 64, true);
-        uint256 used = before - gasleft();
-        assertEq(len, n);
-        assertEq(got.length, n);
-        emit log_named_uint(_label(string.concat("directory ", k, " read gas")), used);
-        before = gasleft();
-        for (uint256 i; i < n; ++i) {
-            (,, OpenScopeReader.Row[] memory rows) =
-                reader.page(address(r.ledger), _q(6, topics[from + i], 0, 10, true, false));
-            assertEq(rows.length, 10);
+    function test_cases_deny() public {
+        _cases(true);
+    }
+
+    // =============================================================================================
+    // 2./3. the deepest topic whose single statement fits one transaction (2^24)
+    // =============================================================================================
+
+    uint256 internal constant DEEP_MAX = 4096;
+
+    /// The deep-fit preparation. Prefill that every depth shares is stated once on the deepest topic of the chain
+    /// (its ancestors are every shallower topic's ancestors, so the author and all-authors roll-up lists of every
+    /// shallower topic exist with two entries); per-depth prefill only where the case needs the position itself.
+    /// Deviation from `_case`, both cases 2 and 4: the measured topic's own exact lists (family 10, and the place
+    /// list in case 2) are fresh, one slot each, < 0.2% of a transaction at the depths measured.
+    function _prefillDeep(uint8 c, bytes32 deepest) internal {
+        if (c == 2) {
+            _go(address(this), _tags(deepest, 0, 2));
+        } else if (c == 4) {
+            _go(address(this), _tags(deepest, 0, 1));
+            _go(Y, _tags(deepest, 0, 1));
+            _go(X, _tags(deepest, 0, 2));
         }
-        emit log_named_uint(
-            _label(string.concat("directory ", k, " newest 10 of each list gas")),
-            before - gasleft()
+    }
+
+    function _caseAt(uint8 c, bytes32 topic, bool deny)
+        internal
+        returns (address who, Action[] memory a)
+    {
+        if (c == 1) return (address(this), _stmts(topic, 0, 1, deny));
+        if (c == 2) return (address(this), _stmts(topic, 2, 1, deny));
+        if (c == 3) {
+            _go(address(this), _tags(topic, 0, 1));
+            return (X, _stmts(topic, 0, 1, deny));
+        }
+        _go(address(this), _tags(topic, 2, 1));
+        _go(Y, _tags(topic, 2, 1));
+        return (X, _stmts(topic, 2, 1, deny));
+    }
+
+    function _cost(bytes32 topic, uint8 c, bool deny, bool regularOnly) internal returns (uint256) {
+        uint256 snap = vm.snapshotState();
+        (address who, Action[] memory a) = _caseAt(c, topic, deny);
+        G memory g = _measure(who, a, new bytes[](1));
+        vm.revertToState(snap);
+        if (regularOnly && g.state == 0) return type(uint256).max; // not a state-gas schedule
+        return regularOnly ? g.txRegular : g.txAll;
+    }
+
+    /// The deepest topic whose single statement (case `c`) fits 2^24: predicted from the slope between depths 17
+    /// and 33 (estimate), then measured: a bisection between a depth that fits and one that does not.
+    function _fit(uint8 c, bool deny, bool regularOnly) internal {
+        if (_variant() == 0) return;
+        string memory row = string.concat(
+            deny ? "deny" : "tag",
+            " case ",
+            _n(c),
+            regularOnly ? " regular-only" : " all-gas",
+            " deepest"
         );
+        bytes32[] memory small = _deepChain(string.concat(row, " small"), 34);
+        _prefillDeep(c, small[33]);
+        uint256 c17 = _cost(small[16], c, deny, regularOnly);
+        if (c17 == type(uint256).max) return; // regular-only rows exist on amsterdam only
+        uint256 c33 = _cost(small[32], c, deny, regularOnly);
+        uint256 slope = (c33 - c17) / 16;
+        emit log_named_uint(_label(string.concat(row, " per level (estimate)")), slope);
+        if (slope < 100) {
+            emit log_named_uint(_label(string.concat(row, " depth-independent, tx at 33")), c33);
+            return;
+        }
+        uint256 n = c17 >= CAP ? 1 : 17 + (CAP - c17) / slope;
+        emit log_named_uint(_label(string.concat(row, " predicted (estimate)")), n);
+        if (n + 8 > DEEP_MAX) {
+            emit log_named_uint(_label(string.concat(row, " beyond the spike chain")), DEEP_MAX);
+            return;
+        }
+        bytes32[] memory t = _deepChain(string.concat(row, " deep"), n + 3);
+        _prefillDeep(c, t[n + 2]);
+        uint256 hi = n + 1; // depth n + 1 is t[n]
+        uint256 lo = n - (n / 32 + 4);
+        uint256 atLo = _cost(t[lo - 1], c, deny, regularOnly);
+        while (atLo > CAP) {
+            hi = lo;
+            lo = lo - (n / 32 + 4);
+            atLo = _cost(t[lo - 1], c, deny, regularOnly);
+        }
+        uint256 atHi = _cost(t[hi - 1], c, deny, regularOnly);
+        if (atHi <= CAP) {
+            emit log_named_uint(_label(string.concat(row, " >= (measured)")), hi);
+            return;
+        }
+        while (hi - lo > 1) {
+            uint256 mid = (lo + hi) / 2;
+            uint256 at = _cost(t[mid - 1], c, deny, regularOnly);
+            if (at <= CAP) (lo, atLo) = (mid, at);
+            else (hi, atHi) = (mid, at);
+        }
+        emit log_named_uint(_label(string.concat(row, " (measured)")), lo);
+        emit log_named_uint(_label(string.concat(row, " tx at n")), atLo);
+        emit log_named_uint(_label(string.concat(row, " tx at n+1")), atHi);
     }
 
-    // ---- 6. file operations and topic records ------------------------------------------------------------------
+    function test_fit_tag_case1_all() public {
+        _fit(1, false, false);
+    }
+
+    function test_fit_tag_case1_regular() public {
+        _fit(1, false, true);
+    }
+
+    function test_fit_tag_case2_all() public {
+        _fit(2, false, false);
+    }
+
+    function test_fit_tag_case2_regular() public {
+        _fit(2, false, true);
+    }
+
+    function test_fit_tag_case3_all() public {
+        _fit(3, false, false);
+    }
+
+    function test_fit_tag_case3_regular() public {
+        _fit(3, false, true);
+    }
+
+    function test_fit_tag_case4_all() public {
+        _fit(4, false, false);
+    }
+
+    function test_fit_tag_case4_regular() public {
+        _fit(4, false, true);
+    }
+
+    function test_fit_deny_case1_all() public {
+        _fit(1, true, false);
+    }
+
+    function test_fit_deny_case1_regular() public {
+        _fit(1, true, true);
+    }
+
+    function test_fit_deny_case2_all() public {
+        _fit(2, true, false);
+    }
+
+    function test_fit_deny_case2_regular() public {
+        _fit(2, true, true);
+    }
+
+    function test_fit_deny_case3_all() public {
+        _fit(3, true, false);
+    }
+
+    function test_fit_deny_case3_regular() public {
+        _fit(3, true, true);
+    }
+
+    function test_fit_deny_case4_all() public {
+        _fit(4, true, false);
+    }
+
+    function test_fit_deny_case4_regular() public {
+        _fit(4, true, true);
+    }
+
+    // =============================================================================================
+    // Part 2: the per-list cost on a word-page topic (no walk)
+    // =============================================================================================
+
+    /// Position-authors only (the position exists, so no place entry): the second author materializes word 0, the
+    /// third and fourth write into it. Compare with `off` for the per-list cost (one fresh-detection head read plus
+    /// one append).
+    function test_per_list() public {
+        bytes32 x = _chain("per-list", 1)[0];
+        Action[] memory a = _tags(x, 0, 1);
+        _run("per-list author 1 (place 0->1, authors 0->1)", address(this), a);
+        _run("per-list author 2 (authors 1->2)", X, a);
+        _run("per-list author 3 (authors 2->3)", Y, a);
+        _run("per-list author 4 (authors 3->4)", _author(3), a);
+        _run("per-list author 1 thing 2 (place 1->2, authors 0->1)", address(this), _tags(x, 1, 1));
+        _run("per-list author 1 thing 3 (place 2->3, authors 0->1)", address(this), _tags(x, 2, 1));
+        // the per-author roll-up on a 2-word topic: one ancestor list (0->1, 1->2, 2->3) plus a one-level walk
+        bytes32 y = _chain("per-list-2", 2)[1];
+        _run("per-list n2 entry 1", address(this), _tags(y, 0, 1));
+        _run("per-list n2 entry 2", address(this), _tags(y, 1, 1));
+        _run("per-list n2 entry 3", address(this), _tags(y, 2, 1));
+        _run("per-list n2 k10 entries 4-13", address(this), _tags(y, 3, 10));
+    }
+
+    // =============================================================================================
+    // 4. ordinary file work (FOLDER two-level lists on in `all` builds)
+    // =============================================================================================
 
     function _createFile(uint256 i)
         internal
@@ -555,11 +612,11 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
     }
 
     function test_files() public {
-        if (_variant() > (V_EXACT | V_SKIP_HEAD)) return;
+        if (_variant() != 0 && _variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
         (Action[] memory a, bytes[] memory b, bytes32 file, bytes32 rootRec) = _createFile(0);
-        _runB("file create k1", a, b);
+        G memory one = _run("file create k1", address(this), a, b);
         (a, b,,) = _createFile(1);
-        _runB("file create k1 (second)", a, b);
+        _run("file create k1 (second)", address(this), a, b);
         Action[] memory batch = new Action[](50);
         bytes[] memory bodies = new bytes[](50);
         for (uint256 f; f < 10; ++f) {
@@ -569,46 +626,340 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
                 bodies[5 * f + j] = b[j];
             }
         }
-        _runB("file create k10", batch, bodies);
+        G memory ten = _run("file create k10", address(this), batch, bodies);
+        emit log_named_uint(_label("file create marginal all"), (ten.all - one.all) / 9);
         a = new Action[](2);
         b = new bytes[](2);
         (a[0], b[0]) =
             _publish(T_CHILD, bytes.concat(abi.encode(rootRec, file, uint256(0)), "edited"));
         a[1] = _bind(Purpose.HEAD, file, 0, _id(T_CHILD, b[0]), 1);
-        _runB("file edit (HEAD rebind)", a, b);
+        _run("file edit (HEAD rebind)", address(this), a, b);
     }
 
-    function test_topic_records() public {
-        if (_variant() != 0) return;
-        (Action memory x, bytes memory xb,) = _topicAction(0, keccak256("rec/w"), "one");
+    // =============================================================================================
+    // 5. registering path records (family 11 included)
+    // =============================================================================================
+
+    function test_register() public {
+        if (_variant() != 0 && _variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        bytes32[] memory base = _chain("reg", 2);
+        // one path record alone: parent and word exist
+        bytes memory wb = bytes("reg-new-word");
         Action[] memory a = new Action[](1);
         bytes[] memory b = new bytes[](1);
-        a[0] = x;
-        b[0] = xb;
-        _runB("topic record k1", a, b);
+        bytes32 w;
+        (a[0], w) = _wordAction(wb);
+        b[0] = wb;
+        _run("register word page k1", address(this), a, b);
+        (a[0], b[0],) = _pathAction(base[1], w);
+        G memory one = _run("register path k1 (parent and word exist)", address(this), a, b);
+        Action[] memory again = a;
+        bytes[] memory againB = b;
         a = new Action[](10);
         b = new bytes[](10);
+        // ten new paths under ten different existing parents, all with the existing word w
+        bytes32[] memory parents = _chain("reg-parents", 10);
         for (uint256 i; i < 10; ++i) {
-            (a[i], b[i],) = _topicAction(0, keccak256(abi.encode("rec/w", i)), "ten");
+            (a[i], b[i],) = _pathAction(parents[i], w);
         }
-        _runB("topic record k10", a, b);
-        // a second registrant publishes the first record again
-        a = new Action[](1);
-        b = new bytes[](1);
-        a[0] = x;
-        b[0] = xb;
-        Native memory c;
-        c.nonce = nonces[_author(0)]++;
-        c.expectedExecutionSet = r.hot.executionSet();
-        c.expectedAcceptanceProfile =
-            ILedgerCommitments(r.hot.ingress()).acceptanceProfileOf(address(r.ledger), a);
+        G memory ten = _run("register path k10", address(this), a, b);
+        emit log_named_uint(_label("register path marginal all"), (ten.all - one.all) / 9);
+        _run("register path second registrant (REUSE-like republish)", X, again, againB);
+        // brand-new paths of n words, every word new, in consecutive chunks of at most 64 actions
+        uint256[5] memory ns = [uint256(2), 8, 16, 32, 64];
+        for (uint256 i; i < 5; ++i) {
+            _brandNew(ns[i]);
+        }
+    }
+
+    /// The 2n-1 actions of a brand-new n-word path (w0, then w_i and p_i), split greedily into chunks that fit
+    /// 64 actions and 2^24 (all gas, and regular-only when the schedule has state gas).
+    function _brandNew(uint256 n) internal {
+        uint256 m = 2 * n - 1;
+        Action[] memory all = new Action[](m);
+        bytes[] memory bodies = new bytes[](m);
+        string memory name = string.concat("brand-", _n(n));
+        bytes32 parent;
+        for (uint256 i; i < n; ++i) {
+            bytes memory wb = _wordBytes(name, i);
+            bytes32 w;
+            uint256 at = i == 0 ? 0 : 2 * i - 1;
+            (all[at], w) = _wordAction(wb);
+            bodies[at] = wb;
+            if (i == 0) {
+                parent = w;
+            } else {
+                (all[at + 1], bodies[at + 1], parent) = _pathAction(parent, w);
+            }
+        }
+        for (uint8 metric; metric < 2; ++metric) {
+            uint256 snap = vm.snapshotState();
+            (uint256 txs, uint256 total, bool sawState) = _chunks(all, bodies, metric == 1);
+            vm.revertToState(snap);
+            if (metric == 1 && !sawState) break;
+            string memory row = string.concat(
+                "brand-new path n ", _n(n), metric == 1 ? " regular-only" : " all-gas"
+            );
+            emit log_named_uint(_label(string.concat(row, " transactions")), txs);
+            emit log_named_uint(_label(string.concat(row, " total tx gas")), total);
+        }
+    }
+
+    function _chunks(Action[] memory all, bytes[] memory bodies, bool regularOnly)
+        internal
+        returns (uint256 txs, uint256 total, bool sawState)
+    {
+        uint256 m = all.length;
+        for (uint256 start; start < m;) {
+            uint256 size = m - start < 64 ? m - start : 64;
+            while (true) {
+                uint256 inner = vm.snapshotState();
+                G memory g = _measureSlice(all, bodies, start, size);
+                if (g.state != 0) sawState = true;
+                if ((regularOnly ? g.txRegular : g.txAll) <= CAP) {
+                    total += g.txAll;
+                    break;
+                }
+                vm.revertToState(inner);
+                size /= 2;
+                require(size != 0, "one action does not fit");
+            }
+            start += size;
+            ++txs;
+        }
+    }
+
+    function _measureSlice(Action[] memory all, bytes[] memory bodies, uint256 start, uint256 size)
+        internal
+        returns (G memory)
+    {
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, start, size);
+        return _measure(address(this), a, b);
+    }
+
+    function _slice(Action[] memory a, bytes[] memory b, uint256 from, uint256 n)
+        internal
+        pure
+        returns (Action[] memory x, bytes[] memory y)
+    {
+        x = new Action[](n);
+        y = new bytes[](n);
+        for (uint256 i; i < n; ++i) {
+            x[i] = a[from + i];
+            y[i] = b[from + i];
+        }
+    }
+
+    // =============================================================================================
+    // 6. reads (cold)
+    // =============================================================================================
+
+    function _lens(uint256 n) internal view returns (bytes32[] memory l) {
+        l = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            l[i] = i == 0 ? p : Keys.principal(_author(i));
+        }
+    }
+
+    /// Topic T at depth d with one child C. Author 0 (this contract) tags things 0..59 on T and 60..119 on C;
+    /// authors 1..63 each tag thing i%60 on T and 60 + i%60 on C, after author 0 (so their statements are the
+    /// newest); author 1 also denies thing 2 on T.
+    function _populate(uint256 d) internal returns (bytes32 t, bytes32 c) {
+        bytes32[] memory ch = _chain(string.concat("read", _n(d)), d);
+        t = ch[d - 1];
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        bytes memory wb = bytes(string.concat("child", _n(d)));
+        bytes32 w;
+        (a[0], w) = _wordAction(wb);
+        b[0] = wb;
+        _go(address(this), a, b);
+        (a[0], b[0], c) = _pathAction(t, w);
+        _go(address(this), a, b);
+        _go(address(this), _tags(t, 0, 60));
+        Action[] memory below = new Action[](60);
+        for (uint256 i; i < 60; ++i) {
+            below[i] = _bind(Purpose.TAG, c, s[60 + i], s[60 + i], 0);
+        }
+        _go(address(this), below);
+        for (uint256 i = 1; i < 64; ++i) {
+            Action[] memory x = new Action[](i == 1 ? 3 : 2);
+            x[0] = _bind(Purpose.TAG, t, s[i % 60], s[i % 60], 0);
+            x[1] = _bind(Purpose.TAG, c, s[60 + i % 60], s[60 + i % 60], 0);
+            if (i == 1) x[2] = _bindKind(ActionKind.UNBIND, Purpose.TAG, t, s[2], 0, 0);
+            _go(_author(i), x);
+        }
+    }
+
+    function _mineRead(string memory row, bytes32 t, uint256 lens, uint16 count) internal {
+        OpenScopeReader.MineQuery memory q;
+        q.lens = _lens(lens);
+        q.topic = t;
+        q.below = true;
+        q.count = count;
         _cool();
-        vm.prank(_author(0), _author(0));
         uint256 before = gasleft();
-        r.ledger.execute(a, b, c, "");
+        (OpenScopeReader.MineRow[] memory rows,) = reader.mine(address(r.ledger), q);
+        uint256 used = before - gasleft();
+        emit log_named_uint(_label(string.concat(row, " gas")), used);
+        emit log_named_uint(_label(string.concat(row, " rows")), rows.length);
+    }
+
+    function _everyRead(string memory row, bytes32 t, bool below, uint16 count, bool raw) internal {
+        OpenScopeReader.EveryoneQuery memory q;
+        q.purpose = Purpose.TAG;
+        q.topic = t;
+        q.below = below;
+        q.count = count;
+        q.lens = _lens(8);
+        q.raw = raw;
+        _cool();
+        uint256 before = gasleft();
+        (uint64 len,, OpenScopeReader.PlaceRow[] memory rows) =
+            reader.everyone(address(r.ledger), q);
+        uint256 used = before - gasleft();
+        emit log_named_uint(_label(string.concat(row, " gas")), used);
+        emit log_named_uint(_label(string.concat(row, " rows")), rows.length);
+        emit log_named_uint(_label(string.concat(row, " list length")), len);
+    }
+
+    function _reads(uint256 d) internal {
+        if (_variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        (bytes32 t,) = _populate(d);
+        string memory dd = string.concat("read depth ", _n(d), " ");
+        uint256[4] memory lenses = [uint256(1), 8, 32, 64];
+        for (uint256 i; i < 4; ++i) {
+            _mineRead(string.concat(dd, "mine lens ", _n(lenses[i]), " page 10"), t, lenses[i], 10);
+            _mineRead(string.concat(dd, "mine lens ", _n(lenses[i]), " page 50"), t, lenses[i], 50);
+        }
+        _everyRead(string.concat(dd, "everyone exact lens 8 page 10"), t, false, 10, false);
+        _everyRead(string.concat(dd, "everyone exact lens 8 page 50"), t, false, 50, false);
+        _everyRead(string.concat(dd, "everyone exact raw page 10"), t, false, 10, true);
+        _everyRead(string.concat(dd, "everyone exact raw page 50"), t, false, 50, true);
+        _everyRead(string.concat(dd, "everyone below lens 8 page 10"), t, true, 10, false);
+        _everyRead(string.concat(dd, "everyone below raw page 50"), t, true, 50, true);
+        _cool();
+        uint256 before = gasleft();
+        uint64 n = reader.places(address(r.ledger), Purpose.TAG, t);
+        emit log_named_uint(_label(string.concat(dd, "count places gas")), before - gasleft());
+        emit log_named_uint(_label(string.concat(dd, "count places")), n);
+        _cool();
+        before = gasleft();
+        n = reader.authors(address(r.ledger), Keys.position(Purpose.TAG, t, s[1]));
+        emit log_named_uint(_label(string.concat(dd, "count authors gas")), before - gasleft());
+        emit log_named_uint(_label(string.concat(dd, "count authors")), n);
+    }
+
+    function test_reads_01() public {
+        _reads(1);
+    }
+
+    function test_reads_08() public {
+        _reads(8);
+    }
+
+    function test_reads_64() public {
+        _reads(64);
+    }
+
+    function _byName(string memory row, bytes32 position, uint16 count) internal {
+        _cool();
+        uint256 before = gasleft();
+        (uint64 len, OpenScopeReader.AuthorRow[] memory rows) =
+            reader.byName(address(r.ledger), position, 0, count);
+        emit log_named_uint(_label(string.concat(row, " gas")), before - gasleft());
+        emit log_named_uint(_label(string.concat(row, " rows")), rows.length);
+        emit log_named_uint(_label(string.concat(row, " authors")), len);
+    }
+
+    /// "anyone's pet.jpg at this address": one position with 3 authors and one with 300 (targeted spam).
+    function test_by_name() public {
+        if (_variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        bytes32 x = _chain("byname", 1)[0];
+        for (uint256 i; i < 3; ++i) {
+            _go(_author(100 + i), _tags(x, 0, 1));
+        }
+        for (uint256 i; i < 300; ++i) {
+            _go(_author(1000 + i), _tags(x, 1, 1));
+        }
+        _byName("byName 3 authors page 3", Keys.position(Purpose.TAG, x, s[0]), 3);
+        _byName("byName 300 authors page 3", Keys.position(Purpose.TAG, x, s[1]), 3);
+        _byName("byName 300 authors page 10", Keys.position(Purpose.TAG, x, s[1]), 10);
+        // one name in a place of 3 positions and in a place of 2,000 positions (lone negatives on fresh roles)
+        bytes32 small = _chain("place-small", 1)[0];
+        bytes32 big = _chain("place-big", 1)[0];
+        _go(address(this), _tags(small, 0, 3));
+        for (uint256 from; from < 2000; from += 50) {
+            Action[] memory a = new Action[](50);
+            for (uint256 i; i < 50; ++i) {
+                a[i] = _bindKind(
+                    ActionKind.UNBIND, Purpose.TAG, big, keccak256(abi.encode(from + i)), 0, 0
+                );
+            }
+            _go(address(this), a);
+        }
+        _go(address(this), _tags(big, 0, 1));
+        _go(X, _tags(small, 0, 1));
+        _go(X, _tags(big, 0, 1));
+        _byName("lookup one name in a place of 3", Keys.position(Purpose.TAG, small, s[0]), 3);
+        _byName("lookup one name in a place of 2001", Keys.position(Purpose.TAG, big, s[0]), 3);
         emit log_named_uint(
-            _label("topic record already exists (second registrant) gas"), before - gasleft()
+            _label("place of 2001 positions"), reader.places(address(r.ledger), Purpose.TAG, big)
         );
+    }
+
+    // =============================================================================================
+    // 7. spam: the cheapest statement that adds one entry
+    // =============================================================================================
+
+    function test_spam() public {
+        if (_variant() != (V_MINE | V_ALL | V_ALL_BELOW)) return;
+        bytes32[] memory t = _chain("spam", 2);
+        // (a) a place entry: lone negatives on fresh roles of a word-page topic (no walk), batch of 10
+        _go(address(this), _stmts(t[0], 0, 1, true)); // the lists exist
+        Action[] memory a = new Action[](10);
+        for (uint256 i; i < 10; ++i) {
+            a[i] = _bindKind(
+                ActionKind.UNBIND, Purpose.TAG, t[0], keccak256(abi.encode("a", i)), 0, 0
+            );
+        }
+        G memory ten = _run("spam place k10", address(this), a);
+        Action[] memory one = new Action[](1);
+        one[0] = _bindKind(ActionKind.UNBIND, Purpose.TAG, t[0], keccak256("a-one"), 0, 0);
+        G memory k1 = _run("spam place k1", address(this), one);
+        emit log_named_uint(_label("spam place per entry (batch marginal)"), (ten.all - k1.all) / 9);
+        // (b) an all-authors roll-up entry of the ancestor t[0]: lone negatives on fresh roles of t[1]
+        for (uint256 i; i < 10; ++i) {
+            a[i] = _bindKind(
+                ActionKind.UNBIND, Purpose.TAG, t[1], keccak256(abi.encode("b", i)), 0, 0
+            );
+        }
+        _go(address(this), _stmts(t[1], 0, 1, true));
+        ten = _run("spam roll-up k10", address(this), a);
+        one[0] = _bindKind(ActionKind.UNBIND, Purpose.TAG, t[1], keccak256("b-one"), 0, 0);
+        k1 = _run("spam roll-up k1", address(this), one);
+        emit log_named_uint(
+            _label("spam roll-up per entry (batch marginal)"), (ten.all - k1.all) / 9
+        );
+        // (c) a position-authors entry: a new principal's lone negative on an existing position (one per tx)
+        _run("spam position-authors new principal", _author(500), _stmts(t[0], 0, 1, true));
+        _run("spam position-authors new principal 2", _author(501), _stmts(t[0], 0, 1, true));
+    }
+
+    // =============================================================================================
+    // round one's row that still applies: entries on one exact topic (a word page: no walk)
+    // =============================================================================================
+
+    function test_exact_writes() public {
+        bytes32 x = _chain("exact", 1)[0];
+        _run("exact assert entry 1 (first ever on a topic)", address(this), _tags(x, 0, 1));
+        _run("exact assert entry 2", address(this), _tags(x, 1, 1));
+        _go(address(this), _tags(x, 2, 3));
+        _run("exact assert entry 6", address(this), _tags(x, 5, 1));
+        _go(address(this), _tags(x, 6, 4));
+        _run("exact assert entry 11", address(this), _tags(x, 10, 1));
+        _run("exact assert k10 entries 12-21", address(this), _tags(x, 11, 10));
+        _run("exact deny k10 entries 22-31", address(this), _stmts(x, 21, 10, true));
     }
 }
 
@@ -622,62 +973,42 @@ contract OpenScopeMeasureOff is OpenScopeMeasureBase {
     }
 }
 
-contract OpenScopeMeasureExact is OpenScopeMeasureBase {
+contract OpenScopeMeasureMine is OpenScopeMeasureBase {
     function _variant() internal pure override returns (uint8) {
-        return V_EXACT;
+        return V_MINE;
     }
 
     function _vname() internal pure override returns (string memory) {
-        return "exact";
+        return "mine";
     }
 }
 
-contract OpenScopeMeasureSkipHead is OpenScopeMeasureBase {
+contract OpenScopeMeasureAll is OpenScopeMeasureBase {
     function _variant() internal pure override returns (uint8) {
-        return V_EXACT | V_SKIP_HEAD;
+        return V_ALL | V_ALL_BELOW;
     }
 
     function _vname() internal pure override returns (string memory) {
-        return "exact-skip-head";
+        return "all";
     }
 }
 
-contract OpenScopeMeasurePaths is OpenScopeMeasureBase {
+contract OpenScopeMeasureFull is OpenScopeMeasureBase {
     function _variant() internal pure override returns (uint8) {
-        return V_EXACT | V_PATHS;
+        return V_MINE | V_ALL | V_ALL_BELOW;
     }
 
     function _vname() internal pure override returns (string memory) {
-        return "paths";
+        return "full";
     }
 }
 
-contract OpenScopeMeasureWords is OpenScopeMeasureBase {
+contract OpenScopeMeasureTrust is OpenScopeMeasureBase {
     function _variant() internal pure override returns (uint8) {
-        return V_EXACT | V_WORDS;
+        return V_MINE | V_ALL | V_ALL_BELOW | V_TRUST;
     }
 
     function _vname() internal pure override returns (string memory) {
-        return "words";
-    }
-}
-
-contract OpenScopeMeasureBoth is OpenScopeMeasureBase {
-    function _variant() internal pure override returns (uint8) {
-        return V_EXACT | V_PATHS | V_WORDS;
-    }
-
-    function _vname() internal pure override returns (string memory) {
-        return "both";
-    }
-}
-
-contract OpenScopeMeasureDir is OpenScopeMeasureBase {
-    function _variant() internal pure override returns (uint8) {
-        return V_EXACT | V_DIR;
-    }
-
-    function _vname() internal pure override returns (string memory) {
-        return "dir";
+        return "full-trust";
     }
 }
