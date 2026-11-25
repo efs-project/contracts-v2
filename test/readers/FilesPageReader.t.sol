@@ -449,22 +449,20 @@ contract FilesPageReaderTest is FilesPageHarness {
         assertEq(EfsFiles.directoryRecord(t.directory, Keys.subject(p, keccak256("docs"))), docs);
         assertEq(EfsFiles.bytesBody("x"), bytes.concat(sha256("x"), "x"));
         EfsFiles.Content memory c;
-        assertEq(EfsFiles.contentBody(c).length, 352);
+        assertEq(EfsFiles.contentBody(c).length, 320);
         c.media = "image/png";
-        assertEq(EfsFiles.contentBody(c).length, 352 + 9);
-        assertEq(
-            uint256(bytes32(_slice(EfsFiles.contentBody(c), 192))), 9, "word 6 is the media length"
-        );
-        assertEq(EfsFiles.externalBody(0, 1, 0, "ar://x", "").length, 8 * 32 + 6);
+        c.cipher = 1;
+        assertEq(EfsFiles.contentBody(c).length, 320 + 9, "the media type is the rest of the body");
+        assertEq(uint256(bytes32(_slice(EfsFiles.contentBody(c), 192))), 1, "word 6 is the cipher");
+        assertEq(EfsFiles.externalBody(0, 1, 0, "ar://x", "").length, 7 * 32 + 6);
         bytes memory x = EfsFiles.externalBody(0, 1, 0, "ar://x", "image/png");
-        assertEq(x.length, 8 * 32 + 6 + 9);
+        assertEq(x.length, 7 * 32 + 6 + 9);
         assertEq(uint256(bytes32(_slice(x, 192))), 6, "word 6 is the locator length");
-        assertEq(uint256(bytes32(_slice(x, 224))), 9, "word 7 is the media length");
     }
 
     function test_efs_files_revision_and_span_encoders() public view {
-        assertEq(EfsFiles.contentBody(0, 2, 5, 0, "").length, 352);
-        assertEq(EfsFiles.contentBody(0, 2, 5, 0, "text/plain").length, 362);
+        assertEq(EfsFiles.contentBody(0, 2, 5, 0, "").length, 320);
+        assertEq(EfsFiles.contentBody(0, 2, 5, 0, "text/plain").length, 330);
         assertEq(EfsFiles.rootBody(fileA, "d"), bytes.concat(abi.encode(fileA, uint256(0)), "d"));
         assertEq(EfsFiles.rootRefBody(fileA, docs), abi.encode(fileA, uint256(1), docs));
         assertEq(

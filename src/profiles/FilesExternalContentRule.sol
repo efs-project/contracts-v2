@@ -6,32 +6,35 @@ import {FilesProfile, E_FILES_REFUSED} from "./FilesProfile.sol";
 
 /// @title FilesExternalContentRule — the mandatory rule of `files-external/1` (design §12.1, revised by
 ///        docs/LARGE-FILES.md)
-/// @notice `[bytesRef (the empty sentinel), version = 2, carrier = 2, hashAlg = 1, length, sha256, locatorLength,
-///         mediaLength] ‖ locator ‖ media`, refs `[files-bytes/1]` (the kernel checks the exact Type). The body is
-///         exactly `256 + locatorLength + mediaLength` bytes. The locator is a URI of 1..2,048 bytes, every byte
+/// @notice `[bytesRef (the empty sentinel), version = 2, carrier = 2, hashAlg = 1, length, sha256, locatorLength]
+///         ‖ locator ‖ media`, refs `[files-bytes/1]` (the kernel checks the exact Type). The media bytes are the
+///         rest of the body after the locator (`body.length − 224 − locatorLength`; the record's length fixes it,
+///         so no length word is stored), 0..255 of them. The locator is a URI of 1..2,048 bytes, every byte
 ///         printable ASCII (0x21..0x7e), beginning with an RFC 3986 scheme (`ALPHA *(ALPHA / DIGIT / "+" / "-" /
 ///         ".") ":"`) with at least one byte after the colon. There is NO scheme allowlist: `ar://`, `ipfs://`,
 ///         `bzz://`, `web3://`, `https://`, `data:` and schemes that do not exist yet are all admitted. A scheme
 ///         list on an immutable rule is not a security boundary (rendering safety lives in the client), is
 ///         trivially evaded and cannot anticipate new schemes (the v1 ruling of 2026-06-19, ADR-0056, carried
-///         over). The media type is the `files-content/1` one: 0..255 bytes satisfying
+///         over). The media type is the `files-content/1` one: the tail, satisfying
 ///         `FilesProfile.mediaTypeRefusal` (empty: unknown; otherwise a lowercase RFC 6838 `type/subtype` with
 ///         optional `;` parameters), checked on chain because the `web3://` gateway emits it in an HTTP header
 ///         (`x-efs-media-type`; no control byte may ever be admitted) and because a client compares `type/subtype`
-///         byte for byte (mixed case cannot be admitted). `length` ≤ 2^64 − 1. No remote proof is taken at
+///         byte for byte (mixed case cannot be admitted). The media string is the remainder of the body, so
+///         nothing can ever be appended after it: any further field of `files-external/1` needs a new Type, not an
+///         appended trailing field. `length` ≤ 2^64 − 1. No remote proof is taken at
 ///         admission; readers verify the sha256 (word 5, which feeds the digest family through the second gen-1
 ///         `DigestSpec`). `refs[0]` is the empty-sentinel bytes record (`refHeaders[0]`: `length == 32 && word0 ==
 ///         sha256("")`).
 /// @dev Pure over calldata and `refHeaders`. The locator checks run a word at a time (lane-parallel byte tests;
 ///      the tail word's bytes past the locator read as `!`), so a 2,048-byte locator, or a 2,046-byte scheme,
 ///      costs a few thousand gas whatever its shape.
-///      Refusal codes (`E_FILES_REFUSED`): 1 not exactly one ref/header, 2 body shorter than the 8-word head,
+///      Refusal codes (`E_FILES_REFUSED`): 1 not exactly one ref/header, 2 body shorter than the 7-word head,
 ///      3 `bytesRef != refs[0]`, 4 version/carrier/hashAlg/length domain, 5 locatorLength outside 1..2,048 or the
-///      body not exactly `256 + locatorLength + mediaLength` bytes, 6 locator grammar (a byte outside 0x21..0x7e,
-///      no scheme, or nothing after the colon), 7 the ref is not the empty sentinel, 8 `mediaLength` above 255,
+///      body shorter than `224 + locatorLength`, 6 locator grammar (a byte outside 0x21..0x7e, no scheme, or
+///      nothing after the colon), 7 the ref is not the empty sentinel, 8 the media bytes are longer than 255,
 ///      9 the media bytes are not a media type (`FilesProfile.mediaTypeRefusal` is nonzero).
 contract FilesExternalContentRule is IAcceptor {
-    uint256 private constant HEAD = 256;
+    uint256 private constant HEAD = 224;
     uint256 private constant LOCATOR_MAX = 2_048;
     /// The one carrier of this Type: an external location given as a URI.
     uint256 private constant CARRIER_LOCATION = 2;
@@ -62,11 +65,11 @@ contract FilesExternalContentRule is IAcceptor {
                 || uint256(bytes32(body[128:160])) > FilesProfile.LENGTH_MAX
         ) revert E_FILES_REFUSED(4);
         uint256 locatorLength = uint256(bytes32(body[192:224]));
-        if (locatorLength == 0 || locatorLength > LOCATOR_MAX) revert E_FILES_REFUSED(5);
-        uint256 mediaLength = uint256(bytes32(body[224:256]));
-        if (mediaLength > FilesProfile.MEDIA_MAX) revert E_FILES_REFUSED(8);
         uint256 media = HEAD + locatorLength;
-        if (body.length != media + mediaLength) revert E_FILES_REFUSED(5);
+        if (locatorLength == 0 || locatorLength > LOCATOR_MAX || body.length < media) {
+            revert E_FILES_REFUSED(5);
+        }
+        if (body.length - media > FilesProfile.MEDIA_MAX) revert E_FILES_REFUSED(8);
         if (!_locator(body[HEAD:media])) revert E_FILES_REFUSED(6);
         if (FilesProfile.mediaTypeRefusal(body[media:]) != 0) revert E_FILES_REFUSED(9);
         RefHeader calldata b = refHeaders[0];

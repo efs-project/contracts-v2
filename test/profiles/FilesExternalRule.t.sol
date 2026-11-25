@@ -7,7 +7,7 @@ import {FilesUnitBase} from "./FilesUnitBase.sol";
 
 /// @notice `files-external/1` (docs/LARGE-FILES.md): the structural locator law — a URI of 1..2,048 printable ASCII
 ///         bytes starting with an RFC 3986 scheme and at least one byte after the colon, with no scheme allowlist —
-///         the 8-word head (the media type is `FilesMediaType.t.sol`), the empty-sentinel reference and the context check; a fuzzed differential against a
+///         the 7-word head (the media type, the body's tail, is `FilesMediaType.t.sol`), the empty-sentinel reference and the context check; a fuzzed differential against a
 ///         byte-at-a-time reference of the law.
 contract FilesExternalRuleTest is FilesUnitBase {
     FilesExternalContentRule internal ext;
@@ -33,14 +33,7 @@ contract FilesExternalRuleTest is FilesUnitBase {
     {
         return bytes.concat(
             abi.encode(
-                BYTES_REF,
-                uint256(2),
-                carrier,
-                uint256(1),
-                length,
-                sha256("hello"),
-                uri.length,
-                uint256(0)
+                BYTES_REF, uint256(2), carrier, uint256(1), length, sha256("hello"), uri.length
             ),
             uri
         );
@@ -125,7 +118,7 @@ contract FilesExternalRuleTest is FilesUnitBase {
     function test_external_domains_inclusive_bounds() public {
         _ext(_external(type(uint64).max, bytes(AR)), 0); // the length bound is inclusive
         _ext(_external(0, bytes(AR)), 0);
-        assertEq(_external(5, bytes(AR)).length, 304, "eight words and 48 locator bytes");
+        assertEq(_external(5, bytes(AR)).length, 272, "seven words and 48 locator bytes");
     }
 
     // ---- refused: the locator law ------------------------------------------------------------------------------
@@ -281,27 +274,18 @@ contract FilesExternalRuleTest is FilesUnitBase {
         _ext(v1, 4);
     }
 
-    function test_external_locator_length_is_the_body_tail() public {
+    function test_external_locator_length_and_the_media_tail() public {
         bytes memory b = _external(5, bytes(AR));
-        _ext(bytes.concat(b, "x"), 5); // a trailing byte the length word does not cover
+        // bytes after the locator are the media type, judged by its grammar ("x" has no "/")
+        _ext(bytes.concat(b, "x"), 9);
+        _ext(bytes.concat(b, "text/plain"), 0);
+        // a locator length past the body
         b[223] = bytes1(uint8(b[223]) + 1);
         _ext(b, 5);
+        // a shorter locator length leaves the locator's last byte ("A") as the media type: refused
+        b[223] = bytes1(uint8(b[223]) - 2);
+        _ext(b, 9);
         _ext(new bytes(223), 2);
-        _ext(new bytes(255), 2); // the head is eight words now
-        // a head without the media word: the locator's first word is read as a media length and refused
-        bytes memory seven = bytes.concat(
-            abi.encode(
-                BYTES_REF,
-                uint256(2),
-                uint256(2),
-                uint256(1),
-                uint256(5),
-                sha256("hello"),
-                uint256(48)
-            ),
-            bytes(AR)
-        );
-        _ext(seven, 8);
         // a length word claiming a 2,049-byte locator that is present
         _ext(_external(5, bytes.concat(_long(2_048), "x")), 5);
     }

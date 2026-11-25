@@ -193,41 +193,37 @@ contract FilesMediaTypeTest is FilesUnitBase {
         _expect(bytes.concat(_run(127, "a"), "/", _run(127, "b"), ";"), 1); // 256 bytes
     }
 
-    function test_media_length_word_must_be_the_tail() public {
-        bytes memory c = _content("image/png");
-        assertEq(_contentCode(bytes.concat(c, "x")), 2, "trailing bytes after the tail");
-        bytes memory short = new bytes(c.length - 1);
-        for (uint256 i; i < short.length; ++i) {
-            short[i] = c[i];
-        }
-        assertEq(_contentCode(short), 2, "a tail shorter than mediaLength");
-        c[223] = bytes1(uint8(10)); // mediaLength 10 over a 9-byte tail
-        assertEq(_contentCode(c), 2);
-        c[223] = bytes1(uint8(8)); // mediaLength 8: the ninth byte is trailing
-        assertEq(_contentCode(c), 2);
-        c = _content("");
-        c[222] = 0x01; // mediaLength 256 is refused by the length bound before the body length
-        assertEq(_contentCode(c), 11);
-        c[192] = 0xff; // a huge mediaLength never overflows
-        assertEq(_contentCode(c), 11);
-        assertEq(_contentCode(new bytes(351)), 2, "shorter than the eleven words");
+    /// The media length is the body's beyond the head: no word stores it, so the boundaries are body lengths.
+    function test_media_is_the_rest_of_the_body() public {
+        bytes memory max = bytes.concat(_run(127, "a"), "/", _run(127, "b"));
+        // files-content/1: exactly 320 bytes (no media), 320 + 255, and 320 + 256 refused
+        assertEq(_content("").length, 320);
+        assertEq(_contentCode(_content("")), 0);
+        assertEq(_content(max).length, 575);
+        assertEq(_contentCode(_content(max)), 0);
+        assertEq(_contentCode(_content(bytes.concat(max, ";"))), 11, "320 + 256");
+        assertEq(
+            _contentCode(_content(new bytes(10_000))), 11, "a long tail is refused by length first"
+        );
+        assertEq(_contentCode(new bytes(319)), 2, "shorter than the ten words");
+        // a stray trailing byte is part of the media type, so the grammar judges it
+        assertEq(_contentCode(bytes.concat(_content("image/png"), " ")), 12);
+        assertEq(_contentCode(bytes.concat(_content("image/png"), ";x")), 0);
 
-        bytes memory x = _external("image/png");
-        assertEq(_externalCode(bytes.concat(x, "x")), 5, "trailing bytes after the tail");
-        x[255] = bytes1(uint8(10));
-        assertEq(_externalCode(x), 5);
-        x = _external("");
-        x[254] = 0x01; // mediaLength 256
-        assertEq(_externalCode(x), 8);
-        x[224] = 0xff; // a huge mediaLength
-        assertEq(_externalCode(x), 8);
-        assertEq(_externalCode(new bytes(255)), 2, "shorter than the eight words");
+        // files-external/1: the 48-byte locator then media 255 and 256
+        assertEq(_external("").length, 224 + 48);
+        assertEq(_externalCode(_external(max)), 0);
+        assertEq(_external(max).length, 224 + 48 + 255);
+        assertEq(_externalCode(_external(bytes.concat(max, ";"))), 8, "media 256");
+        assertEq(_externalCode(new bytes(223)), 2, "shorter than the seven words");
         // the locator check stops at the locator: a media tail is never read as locator bytes
-        x = _external("text/plain; a=b");
-        assertEq(_externalCode(x), 0);
+        assertEq(_externalCode(_external("text/plain; a=b")), 0);
         // and the media check starts after it: a locator byte is never read as media
-        x = EfsFiles.externalBody(BYTES_REF, 5, sha256("x"), "a:B", "");
-        assertEq(_externalCode(x), 0);
+        assertEq(_externalCode(EfsFiles.externalBody(BYTES_REF, 5, sha256("x"), "a:B", "")), 0);
+        // a locator length past the body is the locator-length refusal
+        bytes memory x = _external("");
+        x[223] = bytes1(uint8(49));
+        assertEq(_externalCode(x), 5);
     }
 
     function test_encrypted_content_may_declare_or_withhold_its_type() public {

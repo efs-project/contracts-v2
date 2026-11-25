@@ -39,10 +39,11 @@ library EfsFiles {
         bytes32 span;
     }
 
-    /// The `files-content/1` body (docs/LARGE-FILES.md): eleven words, word 6 `media.length`, then the `media` bytes
-    /// (a MIME media type: empty for unknown, else a lowercase RFC 6838 `type/subtype` with optional `;` parameters,
-    /// at most 255 bytes; `FilesProfile.mediaTypeRefusal` is the law). These encoders do not validate it: an SDK
-    /// lowercases the type and subtype and refuses an invalid string before it builds the plan.
+    /// The `files-content/1` body (docs/LARGE-FILES.md): ten words, then the `media` bytes (their length is the
+    /// body's beyond 320; a MIME media type: empty for unknown, else a lowercase RFC 6838 `type/subtype` with
+    /// optional `;` parameters, at most 255 bytes; `FilesProfile.mediaTypeRefusal` is the law). The media bytes are
+    /// the rest of the body, so nothing can follow them. These encoders do not validate it: an SDK lowercases the
+    /// type and subtype and refuses an invalid string before it builds the plan.
     struct Content {
         bytes32 bytesRef;
         uint256 version;
@@ -50,11 +51,11 @@ library EfsFiles {
         uint256 hashAlg;
         uint256 length;
         bytes32 sha256Digest;
-        bytes media;
         uint256 cipher;
         bytes32 nonce12;
         uint256 plaintextLength;
         bytes32 plaintextSha256OrZero;
+        bytes media;
     }
 
     bytes32 internal constant DOM_RECORD = keccak256("efs/record/1");
@@ -191,13 +192,11 @@ library EfsFiles {
         return abi.encode(left, right, length);
     }
 
-    /// `files-content/1`: the eleven words in order (word 6 is `media.length`), then the media bytes.
+    /// `files-content/1`: the ten words in order, then the media bytes (320 + media.length bytes).
     function contentBody(Content memory c) internal pure returns (bytes memory) {
         return bytes.concat(
             abi.encode(c.bytesRef, c.version, c.carrier, c.hashAlg, c.length, c.sha256Digest),
-            abi.encode(
-                c.media.length, c.cipher, c.nonce12, c.plaintextLength, c.plaintextSha256OrZero
-            ),
+            abi.encode(c.cipher, c.nonce12, c.plaintextLength, c.plaintextSha256OrZero),
             c.media
         );
     }
@@ -229,7 +228,7 @@ library EfsFiles {
         );
     }
 
-    /// `files-external/1`: `[emptyBytesRef, 2, 2, 1, length, sha256, locatorLength, mediaLength] ‖ locator ‖ media`;
+    /// `files-external/1`: `[emptyBytesRef, 2, 2, 1, length, sha256, locatorLength] ‖ locator ‖ media`;
     /// `locator` is any URI (1..2,048 printable ASCII bytes with an RFC 3986 scheme: `ar://…`, `ipfs://…`,
     /// `web3://…`, `https://…`); `media` is the media type as in `Content` (empty for unknown).
     function externalBody(
@@ -247,8 +246,7 @@ library EfsFiles {
                 HASH_SHA256,
                 length,
                 sha256Digest,
-                locator.length,
-                media.length
+                locator.length
             ),
             locator,
             media

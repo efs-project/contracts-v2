@@ -291,7 +291,7 @@ contract GasModelTest is FilesRecipesBase {
         bytes[3] memory bodies;
         for (uint256 i; i < 3; ++i) {
             bodies[i] = EfsFiles.contentBody(c[6 + i], 0, 32, cDigest[6 + i], "");
-            assertEq(bodies[i].length, 352);
+            assertEq(bodies[i].length, 320);
         }
         _publishPair("pub content c0", T_CONTENT, bodies);
     }
@@ -313,7 +313,7 @@ contract GasModelTest is FilesRecipesBase {
         bytes[3] memory bodies;
         for (uint256 i; i < 3; ++i) {
             bodies[i] = EfsFiles.externalBody(sentinel, 1000 + i, _salt("ext", i), locator, "");
-            assertEq(bodies[i].length, 256 + len);
+            assertEq(bodies[i].length, 224 + len);
         }
         _publishPair(string.concat("pub external ", vm.toString(len)), T_EXTERNAL, bodies);
     }

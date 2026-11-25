@@ -244,18 +244,12 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
             address(r.ledger), address(reads), address(views), address(reader), rootDir, g
         );
         _declared("typed.txt", "typed", "text/plain");
-        // a content body of 362 bytes: word 6 (the media length, 10) and word 7 (the cipher, 0) as the locator
-        // and media lengths: 256 + 10 + 0 != 362
+        // a content body of 330 bytes read as a location: word 6 (the cipher, 0) as the locator length
         Res memory res = _getFrom(swapped, _u(P, "/typed.txt"));
         assertEq(res.status, 500);
         assertEq(res.body, "malformed location");
-        // an external body of 256 + 48 + 24 bytes read as content: shorter than the eleven words
+        // an external body of 224 + 48 + 24 bytes read as content: shorter than the ten words
         res = _getFrom(swapped, _u(P, "/ext.bin"));
-        assertEq(res.status, 500);
-        assertEq(res.body, "revision names no descriptor");
-        // a location of 256 + 48 + 54 bytes read as content: word 6 (48, the locator length) is not 358 - 352
-        _external("long.bin", "application/vnd.efs.test-of-a-long-declared-media-type");
-        res = _getFrom(swapped, _u(P, "/long.bin"));
         assertEq(res.status, 500);
         assertEq(res.body, "revision names no descriptor");
     }

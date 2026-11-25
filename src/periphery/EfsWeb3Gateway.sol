@@ -64,8 +64,9 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         directory record), `x-efs-sha256` (a descriptor's digest: the author's claim for carrier 2 and external
 ///         locations, verify after reading), `x-efs-cipher` (a nonzero cipher word: the stored ciphertext is
 ///         served), `x-efs-media-type` (a `files-external/1` location's declared media type, on the 307, so a
-///         client that does not follow the redirect still learns it). A descriptor whose length disagrees with its
-///         media or locator length word is a 500.
+///         client that does not follow the redirect still learns it). A media type is the rest of a descriptor's
+///         body; a descriptor shorter than its words, or a location whose locator length is 0 or runs past the
+///         body, is a 500.
 ///
 ///         Statuses (never a revert for anything a URL can cause): 200 served; 307 external location; 400 malformed
 ///         URL; 404 not found, removed (masked), file used as a folder, or remote-only content; 416 `offset` at or
@@ -294,36 +295,34 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     {
         (bytes32 typeId,, uint32 length,,) = ILedgerHot(LEDGER).recordHeader(d);
         if (typeId == EXTERNAL_TYPE) {
-            // [sentinel, 2, 2, 1, length, sha256, locatorLength, mediaLength] ‖ locator ‖ media
-            if (length <= 256) _fail(500, "malformed location");
+            // [sentinel, 2, 2, 1, length, sha256, locatorLength] ‖ locator ‖ media (the rest of the body)
+            if (length <= 224) _fail(500, "malformed location");
             bytes memory b = _slice(d, 0, length);
             uint256 locator = uint256(_word(b, 192));
-            uint256 media = uint256(_word(b, 224));
-            if (locator > length || media > length || 256 + locator + media != length) {
-                _fail(500, "malformed location");
-            }
+            if (locator == 0 || locator > length - 224) _fail(500, "malformed location");
             _add(q, "x-efs-sha256", _hex(_word(b, 160)));
-            _add(q, "Location", string(_cut(b, 256, locator)));
-            if (media != 0) _add(q, "x-efs-media-type", string(_cut(b, 256 + locator, media)));
+            _add(q, "Location", string(_cut(b, 224, locator)));
+            if (224 + locator < length) {
+                _add(q, "x-efs-media-type", string(_tail(b, 224 + locator)));
+            }
             return (307, "", _headers(q));
         }
-        if (typeId != CONTENT_TYPE || length < 352) _fail(500, "revision names no descriptor");
-        // [bytesRef, version, carrier, hashAlg, length, sha256, mediaLength, cipher, …] ‖ media
-        bytes32[] memory w = _words(d, 0, 8);
-        if (uint256(w[6]) != length - 352) _fail(500, "revision names no descriptor");
+        if (typeId != CONTENT_TYPE || length < 320) _fail(500, "revision names no descriptor");
+        // [bytesRef, version, carrier, hashAlg, length, sha256, cipher, …] ‖ media (the rest of the body)
+        bytes32[] memory w = _words(d, 0, 7);
         uint256 carrier = uint256(w[2]);
         uint256 size = uint256(w[4]);
         if (carrier == CARRIER_REMOTE) _fail(404, "not found: remote-only content");
         if (carrier > CARRIER_SPAN) _fail(500, "unknown carrier");
         _range(q.offset, size);
-        if (length > 352) {
+        if (length > 320) {
             // the declared media type replaces the extension's guess (Content-Type is always header 0)
-            q.h[0].value = string(_slice(d, 352, length - 352));
+            q.h[0].value = string(_slice(d, 320, length - 320));
             _add(q, "X-Content-Type-Options", "nosniff");
         }
         _add(q, "Content-Length", _dec(size));
         _add(q, "x-efs-sha256", _hex(w[5]));
-        if (w[7] != 0) _add(q, "x-efs-cipher", _dec(uint256(w[7])));
+        if (w[6] != 0) _add(q, "x-efs-cipher", _dec(uint256(w[6])));
         bytes memory chunk = _chunk(w[0], carrier == CARRIER_SPAN, size, q.offset);
         uint256 next = q.offset + chunk.length;
         if (next < size) _add(q, "web3-next-chunk", _nextUrl(q, resource, next));

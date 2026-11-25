@@ -231,7 +231,7 @@ contract FilesLargeFilesTest is FilesRecipesBase {
         // the external locator is retained byte for byte
         (bytes32 t,, uint32 length,,) = r.hot.recordHeader(externalRec);
         assertEq(t, typeIds[T_EXTERNAL]);
-        assertEq(length, 256 + locator.length);
+        assertEq(length, 224 + locator.length);
     }
 
     // ---- a large file end to end -------------------------------------------------------------------------------
