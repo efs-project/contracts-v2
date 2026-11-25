@@ -112,19 +112,21 @@ struct Readiness {
     bytes32 buildCodehash;
 }
 
-/// SPIKE (tags-index): the constructor switches of the all-authors families, folded into the manifest hash. Never a
-/// production ABI. `exact` maintains family 6 (open-scope) for every purpose but `skipPurpose` (0 = none);
-/// `topicTypeId` names the topic stand-in Type (0 disables families 2, 7 and 9): a record of that Type whose body
-/// word 0 is its parent topic id (0 = top level) and word 1 its word id. `depthCap` bounds the levels a walk reads
-/// (the topic itself is level 0; at most 64). `paths` maintains family 7 (open-scope-below: each ancestor path of a
-/// TAG subject), `words` family 9 (open-scope-word: each distinct word on the path), `directory` family 2
-/// (word-directory: each topic listed once under each distinct word on its path when it is first admitted).
+/// SPIKE (tags-index2): the constructor switches of the topic lists, folded into the manifest hash. Never a
+/// production ABI. A topic is a path of words: a record of `wordTypeId` (a word page, the root-level topic) or of
+/// `pathTypeId` (body exactly `[parent, wordPage]`, both declared references; parent is a word page or a path).
+/// `scopeBelow` maintains family 19 (per-author roll-up: one list per (author, TAG, proper ancestor)).
+/// `allAuthors` (at most 4 purposes, no zero) maintains, for those purposes, family 6 (place: one entry per distinct
+/// position of `(purpose, subject)`) and family 20 (position-authors: one entry per author of a position).
+/// `allBelow` maintains family 7 (all-authors roll-up: one entry per distinct TAG position per proper ancestor); it
+/// needs TAG in `allAuthors` (the fresh-position test reads family 20). `trustRegistered` skips the replay-safety
+/// check (the tagged topic record first admitted at or before the statement) because an admission validator
+/// guarantees it.
 struct OpenScopeConfig {
-    bool exact;
-    bytes32 skipPurpose;
-    bytes32 topicTypeId;
-    uint8 depthCap;
-    bool paths;
-    bool words;
-    bool directory;
+    bytes32 wordTypeId;
+    bytes32 pathTypeId;
+    bool scopeBelow;
+    bytes32[] allAuthors;
+    bool allBelow;
+    bool trustRegistered;
 }

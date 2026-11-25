@@ -38,6 +38,9 @@ library Keys {
     // SPIKE (tags-index): open-scope key: keccak256(abi.encode(DOM_OPEN_SCOPE, purpose, subjectOrWord)) — the value
     // key of the all-authors families 6 (exact), 7 (below) and 9 (word); no principal in the key
     bytes32 internal constant DOM_OPEN_SCOPE = keccak256("efs/vk/open-scope/1");
+    // SPIKE (tags-index2): per-author roll-up key: keccak256(abi.encode(DOM_SCOPE_BELOW, principal, purpose, ancestor))
+    // — the value key of family 19 (scope-below): one list per (author, purpose, proper ancestor of the topic)
+    bytes32 internal constant DOM_SCOPE_BELOW = keccak256("efs/vk/scope-below/1");
     // Realm origin: keccak256(abi.encode(DOM_REALM_ORIGIN, genesisChainId, coreAddress, realmSalt)) — the one
     // identity input that names a chain and an address; it qualifies contract principals (design §1.2 row 12)
     bytes32 internal constant DOM_REALM_ORIGIN = keccak256("efs/realm-origin/1");
@@ -60,13 +63,14 @@ library Keys {
     // revisionOrdinal, executionProfileId, capabilities, acceptedChainId, limitsProfileId))
     bytes32 internal constant DOM_EXECUTION_SET = keccak256("efs/execution-set/1");
 
-    // Posting-list kinds. 3 is reserved (never minted). SPIKE (tags-index): 2, 6, 7, 9 are minted by the spike's
-    // word-directory, open-scope, open-scope-below and open-scope-word families.
+    // Posting-list kinds. 3 is reserved (never minted). SPIKE (tags-index2): 6, 7, 19, 20 are minted by the spike's
+    // open-scope (place), open-scope-below (all-authors roll-up), scope-below (per-author roll-up) and
+    // position-authors families; round one's 2 (word-directory) and 9 (open-scope-word) are no longer built.
     uint8 internal constant KIND_BY_TYPE = 1;
-    uint8 internal constant KIND_WORD_DIRECTORY = 2;
     uint8 internal constant KIND_OPEN_SCOPE = 6;
     uint8 internal constant KIND_OPEN_SCOPE_BELOW = 7;
-    uint8 internal constant KIND_OPEN_SCOPE_WORD = 9;
+    uint8 internal constant KIND_SCOPE_BELOW = 19;
+    uint8 internal constant KIND_POSITION_AUTHORS = 20;
     uint8 internal constant KIND_BY_AUTHOR = 4;
     uint8 internal constant KIND_BACKLINK = 5;
     uint8 internal constant KIND_HISTORY = 8;
@@ -116,6 +120,15 @@ library Keys {
     /// SPIKE (tags-index): the all-authors value key of families 6, 7 and 9.
     function openScope(bytes32 purpose, bytes32 subjectOrWord) internal pure returns (bytes32) {
         return keccak256(abi.encode(DOM_OPEN_SCOPE, purpose, subjectOrWord));
+    }
+
+    /// SPIKE (tags-index2): the per-author roll-up value key of family 19.
+    function scopeBelow(bytes32 principalId, bytes32 purpose, bytes32 ancestor)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(DOM_SCOPE_BELOW, principalId, purpose, ancestor));
     }
 
     /// Realm origin: fixed at genesis; the only id that names a chain and an address.

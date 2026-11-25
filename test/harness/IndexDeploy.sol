@@ -5,6 +5,7 @@ import {PostingStore} from "../../src/index/PostingStore.sol";
 import {BitmapStore} from "../../src/index/BitmapStore.sol";
 import {RealmIndex} from "../../src/index/RealmIndex.sol";
 import {Keys} from "../../src/lib/Keys.sol";
+import {Purpose} from "../../src/interfaces/Actions.sol";
 import {DigestSpec, OpenScopeConfig, Unit, WorkModel} from "../../src/interfaces/Index.sol";
 import {IndexDoubleDefaults} from "./doubles/IndexDoubles.sol";
 
@@ -30,11 +31,11 @@ library IndexDeploy {
         f[7] = Keys.familyId("scalar");
         f[8] = Keys.familyId("digest");
         f[9] = Keys.familyId("role-scope");
-        // SPIKE (tags-index): after the generation-1 families, so their own membership scans are unchanged
+        // SPIKE (tags-index2): after the generation-1 families
         f[10] = Keys.familyId("open-scope");
         f[11] = Keys.familyId("open-scope-below");
-        f[12] = Keys.familyId("open-scope-word");
-        f[13] = Keys.familyId("word-directory");
+        f[12] = Keys.familyId("scope-below");
+        f[13] = Keys.familyId("position-authors");
     }
 
     function bitmapFamilies() internal pure returns (bytes32[] memory f) {
@@ -44,9 +45,12 @@ library IndexDeploy {
         f[2] = Keys.familyId("live-scope");
     }
 
-    /// SPIKE (tags-index): the harness default: family 6 on for every purpose, every topic family off.
+    /// SPIKE (tags-index2): the harness default: the two all-authors levels (families 6 and 20) for TAG and FOLDER,
+    /// no topic Types (families 7 and 19 unmaintained).
     function defaultOpenScope() internal pure returns (OpenScopeConfig memory os) {
-        os.exact = true;
+        os.allAuthors = new bytes32[](2);
+        os.allAuthors[0] = Purpose.TAG;
+        os.allAuthors[1] = Purpose.FOLDER;
     }
 
     function deploy(
@@ -67,20 +71,50 @@ library IndexDeploy {
     ) internal returns (Gen1 memory g) {
         g.posting = new PostingStore(ledger, address(0), postingFamilies());
         g.bitmap = new BitmapStore(ledger, address(0), bitmapFamilies());
-        g.index = new RealmIndex(
+        g.index =
+            _generation(ledger, hotAbiId, address(g.posting), address(g.bitmap), units, specs, os);
+    }
+
+    /// SPIKE (tags-index2): an external factory call keeps the constructor's argument encoding (the config's
+    /// nested dynamic array) out of the callers' frames, which via-IR otherwise inlines past the stack limit.
+    function _generation(
+        address ledger,
+        bytes32 hotAbiId,
+        address posting,
+        address bitmap,
+        Unit[] memory units,
+        DigestSpec[] memory specs,
+        OpenScopeConfig memory os
+    ) private returns (RealmIndex) {
+        return new GenerationFactory().make(ledger, hotAbiId, posting, bitmap, units, specs, os);
+    }
+
+    function deploy(address ledger, bytes32 hotAbiId) internal returns (Gen1 memory g) {
+        return deploy(ledger, hotAbiId, new Unit[](0), new DigestSpec[](0));
+    }
+}
+
+/// SPIKE (tags-index2): see `IndexDeploy._generation`.
+contract GenerationFactory {
+    function make(
+        address ledger,
+        bytes32 hotAbiId,
+        address posting,
+        address bitmap,
+        Unit[] calldata units,
+        DigestSpec[] calldata specs,
+        OpenScopeConfig calldata os
+    ) external returns (RealmIndex) {
+        return new RealmIndex(
             ledger,
             hotAbiId,
             address(0),
-            address(g.posting),
-            address(g.bitmap),
+            posting,
+            bitmap,
             units,
             specs,
             IndexDoubleDefaults.workModel(),
             os
         );
-    }
-
-    function deploy(address ledger, bytes32 hotAbiId) internal returns (Gen1 memory g) {
-        return deploy(ledger, hotAbiId, new Unit[](0), new DigestSpec[](0));
     }
 }

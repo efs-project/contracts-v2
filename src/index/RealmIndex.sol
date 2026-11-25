@@ -83,18 +83,20 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     bytes32 private immutable F_ROLE_SCOPE;
     bytes32 private immutable F_ROSTER;
     bytes32 private immutable F_LIVE_SCOPE;
-    // SPIKE (tags-index): the all-authors families and their constructor switches (OpenScopeConfig)
+    // SPIKE (tags-index2): the topic lists and their constructor switches (OpenScopeConfig)
     bytes32 private immutable F_OPEN_SCOPE;
     bytes32 private immutable F_OPEN_SCOPE_BELOW;
-    bytes32 private immutable F_OPEN_SCOPE_WORD;
-    bytes32 private immutable F_WORD_DIRECTORY;
-    bool private immutable OS_EXACT;
-    bytes32 private immutable OS_SKIP;
-    bytes32 private immutable OS_TOPIC;
-    uint8 private immutable OS_CAP;
-    bool private immutable OS_PATHS;
-    bool private immutable OS_WORDS;
-    bool private immutable OS_DIRECTORY;
+    bytes32 private immutable F_SCOPE_BELOW;
+    bytes32 private immutable F_POSITION_AUTHORS;
+    bytes32 private immutable WORD_T;
+    bytes32 private immutable PATH_T;
+    bool private immutable OS_MINE;
+    bool private immutable OS_ALL_BELOW;
+    bool private immutable OS_TRUST;
+    bytes32 private immutable AP0;
+    bytes32 private immutable AP1;
+    bytes32 private immutable AP2;
+    bytes32 private immutable AP3;
 
     FamilyEntry[] private _families;
     Unit[] private _units;
@@ -144,26 +146,36 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         _declare(F_ROLE_SCOPE, 16, 3, SHAPE_APPEND, 1, posting, 1);
         _declare(F_ROSTER, 17, 3, SHAPE_BITMAP, 2, bitmap, NOT_MAINTAINED);
         _declare(F_LIVE_SCOPE, 18, 3, SHAPE_BITMAP, 2, bitmap, 1);
-        // SPIKE (tags-index): a switched-off family is declared NOT_MAINTAINED, so its coverage reads UNKNOWN
-        if (os.depthCap > 64) revert E_BUILD(64);
-        bool topics = os.topicTypeId != 0;
+        // SPIKE (tags-index2): a switched-off family is declared NOT_MAINTAINED, so its coverage reads UNKNOWN
+        uint256 na = os.allAuthors.length;
+        if (na > 4) revert E_BUILD(4);
+        bool tagAll;
+        for (uint256 i; i < na; ++i) {
+            if (os.allAuthors[i] == 0) revert E_BUILD(4);
+            if (os.allAuthors[i] == Purpose.TAG) tagAll = true;
+        }
+        bool paths = os.pathTypeId != 0 && os.wordTypeId != 0;
+        if (os.allBelow && !tagAll) revert E_BUILD(7);
+        AP0 = na > 0 ? os.allAuthors[0] : bytes32(0);
+        AP1 = na > 1 ? os.allAuthors[1] : bytes32(0);
+        AP2 = na > 2 ? os.allAuthors[2] : bytes32(0);
+        AP3 = na > 3 ? os.allAuthors[3] : bytes32(0);
+        WORD_T = os.wordTypeId;
+        PATH_T = os.pathTypeId;
+        OS_MINE = paths && os.scopeBelow;
+        OS_ALL_BELOW = paths && os.allBelow;
+        OS_TRUST = os.trustRegistered;
         F_OPEN_SCOPE = Keys.familyId("open-scope");
         F_OPEN_SCOPE_BELOW = Keys.familyId("open-scope-below");
-        F_OPEN_SCOPE_WORD = Keys.familyId("open-scope-word");
-        F_WORD_DIRECTORY = Keys.familyId("word-directory");
-        OS_EXACT = os.exact;
-        OS_SKIP = os.skipPurpose;
-        OS_TOPIC = os.topicTypeId;
-        OS_CAP = os.depthCap;
-        OS_PATHS = topics && os.paths;
-        OS_WORDS = topics && os.words;
-        OS_DIRECTORY = topics && os.directory;
-        _declare(F_OPEN_SCOPE, 6, 3, SHAPE_APPEND, 1, posting, os.exact ? 1 : NOT_MAINTAINED);
-        _declare(F_OPEN_SCOPE_BELOW, 7, 3, SHAPE_APPEND, 1, posting, OS_PATHS ? 1 : NOT_MAINTAINED);
-        _declare(F_OPEN_SCOPE_WORD, 9, 3, SHAPE_APPEND, 1, posting, OS_WORDS ? 1 : NOT_MAINTAINED);
+        F_SCOPE_BELOW = Keys.familyId("scope-below");
+        F_POSITION_AUTHORS = Keys.familyId("position-authors");
+        uint64 all = na != 0 ? 1 : NOT_MAINTAINED;
+        _declare(F_OPEN_SCOPE, 6, 3, SHAPE_APPEND, 1, posting, all);
         _declare(
-            F_WORD_DIRECTORY, 2, 1, SHAPE_APPEND, 1, posting, OS_DIRECTORY ? 1 : NOT_MAINTAINED
+            F_OPEN_SCOPE_BELOW, 7, 3, SHAPE_APPEND, 1, posting, OS_ALL_BELOW ? 1 : NOT_MAINTAINED
         );
+        _declare(F_SCOPE_BELOW, 19, 3, SHAPE_APPEND, 1, posting, OS_MINE ? 1 : NOT_MAINTAINED);
+        _declare(F_POSITION_AUTHORS, 20, 3, SHAPE_APPEND, 1, posting, all);
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }
@@ -227,22 +239,35 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         _requireLedger();
         (uint8 phase, uint64 staged,,) = ILedgerHot(LEDGER).phase();
         if (phase != Phase.APPLYING || publication != staged) revert E_STAGED(staged, publication);
+        _foldAll(publication, effects, refs);
+        _gen().progress.liveStarted = 1;
+        return IRealmIndex.onAdmission.selector;
+    }
+
+    /// The fold of one publication, live or replayed. SPIKE (tags-index2): every posting append of the publication
+    /// is buffered in memory and written by ONE `appendBatch` (one store CALL, one authorization) at the end, or
+    /// earlier when the fold must read or release a key that has a pending entry (`_settle`), so every read and
+    /// release sees exactly the list it saw when each append was its own call. Appends to different keys commute
+    /// and the buffer keeps each key's entries in fold order, so the stores end in the same state.
+    function _foldAll(uint64 publication, Effect[] calldata effects, bytes32[] calldata refs)
+        private
+    {
         Progress storage p = _gen().progress;
         uint64 expected = p.lastProcessed + 1;
         uint256 refIndex;
+        Buf memory buf = _buf(16);
         for (uint256 i; i < effects.length; ++i) {
             Effect calldata e = effects[i];
             if (e.admission != expected) revert E_ORDER(expected, e.admission);
             if (e.publication != publication) revert E_STAGED(publication, e.publication);
-            _fold(e, refs[refIndex:refIndex + e.refCount]);
+            _fold(e, refs[refIndex:refIndex + e.refCount], buf);
             refIndex += e.refCount;
             ++expected;
         }
+        _flush(buf);
         p.lastProcessed = uint48(expected - 1);
         p.lastPublication = uint48(publication);
-        p.liveStarted = 1;
         _foldHooks(effects, refs, publication);
-        return IRealmIndex.onAdmission.selector;
     }
 
     /// @inheritdoc IRealmIndex
@@ -288,37 +313,93 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         }
     }
 
+    // ---- the append buffer (SPIKE tags-index2) --------------------------------------------------------------
+
+    struct Buf {
+        FamilyId[] f;
+        PostingKey[] k;
+        uint64[] o;
+        uint256 n;
+    }
+
+    function _buf(uint256 cap) private pure returns (Buf memory b) {
+        b.f = new FamilyId[](cap);
+        b.k = new PostingKey[](cap);
+        b.o = new uint64[](cap);
+    }
+
+    function _push(Buf memory b, bytes32 family, PostingKey key, uint64 ordinal) private pure {
+        uint256 n = b.n;
+        if (n == b.k.length) {
+            Buf memory g = _buf(2 * n);
+            for (uint256 i; i < n; ++i) {
+                g.f[i] = b.f[i];
+                g.k[i] = b.k[i];
+                g.o[i] = b.o[i];
+            }
+            (b.f, b.k, b.o) = (g.f, g.k, g.o);
+        }
+        b.f[n] = FamilyId.wrap(family);
+        b.k[n] = key;
+        b.o[n] = ordinal;
+        b.n = n + 1;
+    }
+
+    function _flush(Buf memory b) private {
+        uint256 n = b.n;
+        if (n == 0) return;
+        FamilyId[] memory f = b.f;
+        PostingKey[] memory k = b.k;
+        uint64[] memory o = b.o;
+        uint256 cap = k.length;
+        assembly ("memory-safe") {
+            mstore(f, n)
+            mstore(k, n)
+            mstore(o, n)
+        }
+        IPostingStore(POSTING).appendBatch(f, k, o);
+        assembly ("memory-safe") {
+            mstore(f, cap)
+            mstore(k, cap)
+            mstore(o, cap)
+        }
+        b.n = 0;
+    }
+
+    /// Writes the buffer first when `key` has a pending entry, so a read or release of `key` sees its list.
+    function _settle(Buf memory b, PostingKey key) private {
+        for (uint256 i; i < b.n; ++i) {
+            if (PostingKey.unwrap(b.k[i]) == PostingKey.unwrap(key)) return _flush(b);
+        }
+    }
+
     // ---- the generic fold (design §10.2) -------------------------------------------------------------
 
-    function _fold(Effect calldata e, bytes32[] calldata refs) private {
+    function _fold(Effect calldata e, bytes32[] calldata refs, Buf memory buf) private {
         uint8 kind = e.kind;
         if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
-            _foldRecord(e, refs);
+            _foldRecord(e, refs, buf);
         } else if (
             kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
         ) {
-            _foldBind(e);
+            _foldBind(e, buf);
         } else if (kind == ActionKind.WITHDRAW) {
-            _foldWithdraw(e);
+            _foldWithdraw(e, buf);
         }
         // CREATE touches no family
     }
 
-    function _foldRecord(Effect calldata e, bytes32[] calldata refs) private {
+    function _foldRecord(Effect calldata e, bytes32[] calldata refs, Buf memory buf) private {
         IPostingStore ps = IPostingStore(POSTING);
         uint64 admission = e.admission;
         bytes32 t = e.typeId;
-        ps.append(FamilyId.wrap(F_BY_TYPE), _pk(t, 1, 0, 0), admission, 0);
-        ps.append(FamilyId.wrap(F_BY_AUTHOR), _pk(0, 4, 0, e.principalId), admission, 0);
+        _push(buf, F_BY_TYPE, _pk(t, 1, 0, 0), admission);
+        _push(buf, F_BY_AUTHOR, _pk(0, 4, 0, e.principalId), admission);
         if (e.freshRecord) {
-            ps.append(FamilyId.wrap(F_UNIQUE_BY_TYPE), _pk(t, 13, 0, 0), admission, 0);
+            _push(buf, F_UNIQUE_BY_TYPE, _pk(t, 13, 0, 0), admission);
             for (uint256 i; i < refs.length; ++i) {
-                ps.append(
-                    FamilyId.wrap(F_REFERENCE_POSITION), _pk(t, 11, uint8(i), refs[i]), admission, 0
-                );
+                _push(buf, F_REFERENCE_POSITION, _pk(t, 11, uint8(i), refs[i]), admission);
             }
-            // SPIKE (tags-index): a fresh topic is listed once under each distinct word on its path (family 2)
-            if (OS_DIRECTORY && t == OS_TOPIC) _walk(ps, e.recordId, admission, 0);
             for (uint256 i; i < _specs.length; ++i) {
                 DigestSpec storage spec = _specs[i];
                 if (spec.typeId != t) continue;
@@ -326,30 +407,34 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                     .extsload(bytes32(Layout.recordsBodyWordsSlot(e.recordId, spec.wordIndex)));
                 PostingKey dk =
                     PostingKey.wrap(Keys.digestList(bytes32(uint256(spec.algorithm)), word));
+                _settle(buf, dk);
                 (,, uint64 dlast,) = ps.postingHead(dk);
                 if (dlast == admission) continue; // two specs resolving to one key fold once
-                ps.append(FamilyId.wrap(F_DIGEST), dk, admission, 0);
+                _push(buf, F_DIGEST, dk, admission);
             }
         } else {
             // by-record is virtual until the second occurrence: materialize the first entry then
             PostingKey key = _pk(0, 12, 0, e.recordId);
+            _settle(buf, key);
             (uint64 count,,,) = ps.postingHead(key);
             if (count == 0) {
                 (, uint64 firstAdmission,,,) = ILedgerHot(LEDGER).recordHeader(e.recordId);
-                ps.append(FamilyId.wrap(F_BY_RECORD), key, firstAdmission, 0);
+                _push(buf, F_BY_RECORD, key, firstAdmission);
             }
-            ps.append(FamilyId.wrap(F_BY_RECORD), key, admission, 0);
+            _push(buf, F_BY_RECORD, key, admission);
         }
     }
 
-    function _foldBind(Effect calldata e) private {
-        IPostingStore ps = IPostingStore(POSTING);
+    function _foldBind(Effect calldata e, Buf memory buf) private {
         IBitmapStore bs = IBitmapStore(BITMAP);
         uint64 admission = e.admission;
         bytes32 scope = Keys.scope(e.principalId, e.purpose, e.subject);
-        bytes32 bindingKey = Keys.binding(e.principalId, e.position);
-        ps.append(FamilyId.wrap(F_HISTORY), _pk(0, 8, 0, bindingKey), admission, 0);
-        if (e.oldTarget != 0) ps.release(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.oldTarget), 1);
+        _push(buf, F_HISTORY, _pk(0, 8, 0, Keys.binding(e.principalId, e.position)), admission);
+        if (e.oldTarget != 0) {
+            PostingKey old = _pk(0, 5, 0, e.oldTarget);
+            _settle(buf, old);
+            IPostingStore(POSTING).release(FamilyId.wrap(F_BACKLINK), old, 1);
+        }
         uint8 tk = e.transitionKind;
         if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
             uint64 entry = bs.appendScopeEntry(
@@ -361,24 +446,13 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
                     FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(scope), entry, false, admission
                 );
             }
-            ps.append(
-                FamilyId.wrap(F_ROLE_SCOPE),
+            _push(
+                buf,
+                F_ROLE_SCOPE,
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),
-                e.bindingOrdinal,
-                0
+                e.bindingOrdinal
             );
-            // SPIKE (tags-index): the all-authors list, once per (author, position), entry = this admission
-            if (OS_EXACT && e.purpose != OS_SKIP) {
-                ps.append(
-                    FamilyId.wrap(F_OPEN_SCOPE),
-                    _pk(0, 6, 0, Keys.openScope(e.purpose, e.subject)),
-                    admission,
-                    0
-                );
-            }
-            if ((OS_PATHS || OS_WORDS) && e.purpose == Purpose.TAG) {
-                _walk(ps, e.subject, admission, 1);
-            }
+            _topicLists(e, buf);
         } else if (tk == T_REBIND) {
             bs.stamp(ScopeKey.wrap(scope), admission);
         } else if (tk == T_RESTORE) {
@@ -400,11 +474,12 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
             );
         }
         if (e.kind == ActionKind.BIND) {
-            ps.append(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.target), admission, 0);
+            _push(buf, F_BACKLINK, _pk(0, 5, 0, e.target), admission);
         }
     }
 
-    function _foldWithdraw(Effect calldata e) private {
+    function _foldWithdraw(Effect calldata e, Buf memory buf) private {
+        _flush(buf);
         IPostingStore ps = IPostingStore(POSTING);
         ps.release(FamilyId.wrap(F_BY_TYPE), _pk(e.typeId, 1, 0, 0), 1);
         ps.release(FamilyId.wrap(F_BY_AUTHOR), _pk(0, 4, 0, e.withdrawnPrincipal), 1);
@@ -416,58 +491,91 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         ps.release(FamilyId.wrap(F_BY_RECORD), key, 1);
     }
 
-    /// SPIKE (tags-index): walks a topic stand-in and its ancestors, at most OS_CAP levels (the topic is level 0).
-    /// A level is a topic only when its record is of OS_TOPIC and was first admitted at or before `admission`,
-    /// so a later replay, which sees every record, folds what the live fold folded. `mode` 1 (a TAG first
-    /// statement): family 7 per ancestor (levels >= 1), family 9 per distinct word; `mode` 0 (a fresh topic):
-    /// family 2 per distinct word, keyed by the topic Type. A word repeated on one path is appended once (the
-    /// store's order law refuses a second equal entry).
-    function _walk(IPostingStore ps, bytes32 cur, uint64 admission, uint8 mode) private {
-        bool words = mode == 0 || OS_WORDS;
-        bytes32[] memory slots = new bytes32[](words ? 4 : 3);
-        bytes32[] memory seen = new bytes32[](OS_CAP);
-        uint256 n;
-        for (uint256 level; level < OS_CAP; ++level) {
-            uint256 cell = Layout.recordsCellsSlot(cur);
-            slots[0] = bytes32(cell);
-            slots[1] = bytes32(cell + 1);
-            slots[2] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
-            if (words) slots[3] = bytes32(Layout.recordsBodyWordsSlot(cur, 1));
-            bytes32[] memory w = ILedgerHot(LEDGER).extsloadBatch(slots);
-            uint48 first = uint48(uint256(w[1]));
-            if (w[0] != OS_TOPIC || first == 0 || first > admission) return;
-            if (mode == 1 && level != 0 && OS_PATHS) {
-                ps.append(
-                    FamilyId.wrap(F_OPEN_SCOPE_BELOW),
-                    _pk(0, 7, 0, Keys.openScope(Purpose.TAG, cur)),
-                    admission,
-                    0
+    /// SPIKE (tags-index2): the topic lists of one FIRST statement (FIRST_BIND or FIRST_MASK) — the only transitions
+    /// that ever append to them. A binding's ordinal is allocated once, at its first statement, and a head never
+    /// returns to UNSET, so a later REBIND, MASK, RESTORE or RELEASE (in any order, any number of times) appends
+    /// nothing: "newest first" in every list below means most recently FIRST-STATED, and no sequence of an
+    /// author's own later actions can move or duplicate their entry. Readers take liveness and the number from
+    /// the head.
+    ///   - family 20 position-authors (purpose in `allAuthors`): key = position; entry = this admission ordinal.
+    ///   - family 6 place (same purposes; only when the position is fresh, i.e. family 20 was empty): key =
+    ///     (purpose, subject); entry = this binding ordinal. One entry per distinct position.
+    ///   - family 19 per-author roll-up (TAG): key = (author, TAG, ancestor) per PROPER ancestor of the subject
+    ///     (the subject itself is the exact `scope` list, family 10); entry = this binding ordinal.
+    ///   - family 7 all-authors roll-up (TAG; only when the position is fresh): key = (TAG, ancestor) per proper
+    ///     ancestor; entry = this binding ordinal.
+    /// A publication has one principal, and a principal makes at most one first statement per position, so no
+    /// pending buffer entry can be under the position's family-20 key (`_settle` is still applied).
+    function _topicLists(Effect calldata e, Buf memory buf) private {
+        bytes32 purpose = e.purpose;
+        bool fresh;
+        if (purpose != 0 && (purpose == AP0 || purpose == AP1 || purpose == AP2 || purpose == AP3))
+        {
+            PostingKey pa = _pk(0, 20, 0, e.position);
+            _settle(buf, pa);
+            (uint64 c,,,) = IPostingStore(POSTING).postingHead(pa);
+            fresh = c == 0;
+            _push(buf, F_POSITION_AUTHORS, pa, e.admission);
+            if (fresh) {
+                _push(
+                    buf,
+                    F_OPEN_SCOPE,
+                    _pk(0, 6, 0, Keys.openScope(purpose, e.subject)),
+                    e.bindingOrdinal
                 );
             }
-            if (words) {
-                bytes32 word = w[3];
-                bool dup;
-                for (uint256 i; i < n; ++i) {
-                    if (seen[i] == word) dup = true;
-                }
-                if (!dup && word != 0) {
-                    seen[n++] = word;
-                    if (mode == 0) {
-                        ps.append(
-                            FamilyId.wrap(F_WORD_DIRECTORY), _pk(OS_TOPIC, 2, 0, word), admission, 0
-                        );
-                    } else {
-                        ps.append(
-                            FamilyId.wrap(F_OPEN_SCOPE_WORD),
-                            _pk(0, 9, 0, Keys.openScope(Purpose.TAG, word)),
-                            admission,
-                            0
-                        );
-                    }
-                }
+        }
+        bool all = fresh && OS_ALL_BELOW;
+        if (purpose == Purpose.TAG && (OS_MINE || all)) _walk(e, buf, all);
+    }
+
+    /// Walks the proper ancestors of a TAG subject. A record of PATH_T has parent = body word 0, a record of
+    /// WORD_T is the root; anything else (a home, any other subject) has no ancestors. Unless OS_TRUST, the subject
+    /// counts as a topic only when its record was first admitted at or before this statement, so a later replay,
+    /// which sees every record, folds what the live fold folded; its ancestors need no check, because the
+    /// kernel's reference law admitted each of them before the record that references it. One ledger
+    /// `extsloadBatch` per level: the record's Type word and body word 0 (and the subject's first admission).
+    function _walk(Effect calldata e, Buf memory buf, bool all) private {
+        ILedgerHot hot = ILedgerHot(LEDGER);
+        bytes32 cur = e.subject;
+        bytes32[] memory slots = new bytes32[](OS_TRUST ? 2 : 3);
+        uint256 cell = Layout.recordsCellsSlot(cur);
+        slots[0] = bytes32(cell);
+        slots[1] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
+        if (!OS_TRUST) slots[2] = bytes32(cell + 1);
+        bytes32[] memory w = hot.extsloadBatch(slots);
+        if (w[0] != PATH_T) return;
+        if (!OS_TRUST) {
+            uint48 first = uint48(uint256(w[2]));
+            if (first == 0 || first > e.admission) return;
+        }
+        slots = new bytes32[](2);
+        bool mine = OS_MINE;
+        while (true) {
+            cur = w[1];
+            cell = Layout.recordsCellsSlot(cur);
+            slots[0] = bytes32(cell);
+            slots[1] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
+            w = hot.extsloadBatch(slots);
+            bytes32 t = w[0];
+            if (t != PATH_T && t != WORD_T) return; // never listed: not a topic (unreachable for a sound PATH_T)
+            if (mine) {
+                _push(
+                    buf,
+                    F_SCOPE_BELOW,
+                    _pk(0, 19, 0, Keys.scopeBelow(e.principalId, Purpose.TAG, cur)),
+                    e.bindingOrdinal
+                );
             }
-            cur = w[2];
-            if (cur == 0) return;
+            if (all) {
+                _push(
+                    buf,
+                    F_OPEN_SCOPE_BELOW,
+                    _pk(0, 7, 0, Keys.openScope(Purpose.TAG, cur)),
+                    e.bindingOrdinal
+                );
+            }
+            if (t == WORD_T) return;
         }
     }
 
@@ -561,20 +669,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         returns (uint64)
     {
         if (msg.sender != address(this)) revert E_WRITER(msg.sender);
-        Progress storage p = _gen().progress;
-        uint64 expected = p.lastProcessed + 1;
-        uint256 refIndex;
-        for (uint256 i; i < effects.length; ++i) {
-            Effect calldata e = effects[i];
-            if (e.admission != expected) revert E_ORDER(expected, e.admission);
-            if (e.publication != publication) revert E_STAGED(publication, e.publication);
-            _fold(e, refs[refIndex:refIndex + e.refCount]);
-            refIndex += e.refCount;
-            ++expected;
-        }
-        p.lastProcessed = uint48(expected - 1);
-        p.lastPublication = uint48(publication);
-        _foldHooks(effects, refs, publication);
+        _foldAll(publication, effects, refs);
         return uint64(effects.length);
     }
 
