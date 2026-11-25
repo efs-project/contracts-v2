@@ -1321,6 +1321,19 @@
       "retryClass": "none",
       "meaning": null
     },
+    "0x16d4b9f7": {
+      "name": "E_TOPIC_REFUSED",
+      "signature": "E_TOPIC_REFUSED(uint8)",
+      "args": [
+        {
+          "type": "uint8",
+          "name": "code"
+        }
+      ],
+      "source": "src/profiles/TopicProfile.sol",
+      "retryClass": "none",
+      "meaning": "A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-7), `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24)."
+    },
     "0x7553e4f8": {
       "name": "E_TRANSITION",
       "signature": "E_TRANSITION(uint32,uint48)",

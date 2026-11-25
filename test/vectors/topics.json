@@ -1,0 +1,3322 @@
+{
+  "schema": "efs/vectors/topics/1",
+  "generator": "tools/topic-vectors.mjs via tools/release.mjs (viem encodeAbiParameters + keccak256; the grammars from the NatSpec of src/profiles/TopicProfile.sol)",
+  "spec": "docs/DESIGN.md §12.5; docs/TAG-DESIGN.md §1, §8; TopicProfile.wordRefusal / textRefusal; EfsTopics",
+  "grammar": {
+    "word": "1..255 bytes of strict UTF-8; no '/', no ASCII control, space or A-Z; no scalar of `refused`; not '.' or '..'; not starting with '~'; not '0x' and exactly 40 of 0-9a-f",
+    "wordCodes": {
+      "0": "admitted",
+      "1": "empty or longer than 255 bytes",
+      "2": "malformed UTF-8",
+      "3": "a forbidden ASCII byte",
+      "4": "'.' or '..'",
+      "5": "starts with '~'",
+      "6": "'0x' and 40 lowercase hex characters (an address)",
+      "7": "a refused scalar (any class of `refused`)"
+    },
+    "wordRuleCodes": {
+      "8": "refs present (checked before the grammar)"
+    },
+    "pathRuleCodes": {
+      "10": "not exactly two refs and headers",
+      "11": "body not exactly 64 bytes",
+      "12": "the parent is neither topic/1 nor topic-word/1",
+      "13": "the second ref is not a topic-word/1 record (the kernel refuses it first: E_REF code 2)"
+    },
+    "text": "1..255 bytes of strict UTF-8; no C0, DEL or C1 control; no scalar of `refused` classes 2 and 3; '/', spaces, uppercase, joiners, variation selectors and noncharacters admitted",
+    "textCodes": {
+      "0": "admitted",
+      "20": "empty or longer than 255 bytes",
+      "21": "malformed UTF-8",
+      "22": "a control character (C0, DEL, C1)",
+      "23": "a bidi control or an invisible scalar"
+    },
+    "textRuleCodes": {
+      "24": "refs present (checked before the grammar)"
+    },
+    "order": "the byte codes (2, 3, 7; 21, 22, 23) are the first found scanning from the start; the length code comes first and the whole-word shapes (4, 5, 6) last",
+    "error": "E_TOPIC_REFUSED(uint8 code) on a direct call; through the kernel E_REJECTED(leaf, typeId)",
+    "sdk": "fold (lowercase, NFC, the SDK's fold rule) and refuse before building a plan; the chain never normalizes"
+  },
+  "refused": {
+    "note": "fixed at the first lasting deployment of topic-word/1; may change until then (the SDK fold rule is not confirmed). Sorted, disjoint, inclusive ranges",
+    "classes": {
+      "1": "C1 control",
+      "2": "bidirectional control",
+      "3": "invisible (Cf, Zl, Zp, default-ignorable)",
+      "4": "joiner or variation selector",
+      "5": "noncharacter, object or replacement character"
+    },
+    "entries": [
+      {
+        "lo": 128,
+        "hi": 159,
+        "class": 1,
+        "what": "C1 controls"
+      },
+      {
+        "lo": 173,
+        "hi": 173,
+        "class": 3,
+        "what": "SOFT HYPHEN"
+      },
+      {
+        "lo": 847,
+        "hi": 847,
+        "class": 4,
+        "what": "COMBINING GRAPHEME JOINER"
+      },
+      {
+        "lo": 1536,
+        "hi": 1541,
+        "class": 3,
+        "what": "Arabic number signs (Cf)"
+      },
+      {
+        "lo": 1564,
+        "hi": 1564,
+        "class": 2,
+        "what": "ARABIC LETTER MARK"
+      },
+      {
+        "lo": 1757,
+        "hi": 1757,
+        "class": 3,
+        "what": "ARABIC END OF AYAH (Cf)"
+      },
+      {
+        "lo": 1807,
+        "hi": 1807,
+        "class": 3,
+        "what": "SYRIAC ABBREVIATION MARK (Cf)"
+      },
+      {
+        "lo": 2192,
+        "hi": 2193,
+        "class": 3,
+        "what": "Arabic pound and piastre marks above (Cf)"
+      },
+      {
+        "lo": 2274,
+        "hi": 2274,
+        "class": 3,
+        "what": "ARABIC DISPUTED END OF AYAH (Cf)"
+      },
+      {
+        "lo": 4447,
+        "hi": 4448,
+        "class": 3,
+        "what": "Hangul choseong and jungseong fillers"
+      },
+      {
+        "lo": 6068,
+        "hi": 6069,
+        "class": 3,
+        "what": "Khmer inherent vowels"
+      },
+      {
+        "lo": 6155,
+        "hi": 6157,
+        "class": 4,
+        "what": "Mongolian free variation selectors 1-3"
+      },
+      {
+        "lo": 6158,
+        "hi": 6158,
+        "class": 3,
+        "what": "MONGOLIAN VOWEL SEPARATOR"
+      },
+      {
+        "lo": 6159,
+        "hi": 6159,
+        "class": 4,
+        "what": "MONGOLIAN FREE VARIATION SELECTOR FOUR"
+      },
+      {
+        "lo": 8203,
+        "hi": 8203,
+        "class": 3,
+        "what": "ZERO WIDTH SPACE"
+      },
+      {
+        "lo": 8204,
+        "hi": 8205,
+        "class": 4,
+        "what": "ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER"
+      },
+      {
+        "lo": 8206,
+        "hi": 8207,
+        "class": 2,
+        "what": "LEFT-TO-RIGHT MARK, RIGHT-TO-LEFT MARK"
+      },
+      {
+        "lo": 8232,
+        "hi": 8233,
+        "class": 3,
+        "what": "LINE SEPARATOR, PARAGRAPH SEPARATOR"
+      },
+      {
+        "lo": 8234,
+        "hi": 8238,
+        "class": 2,
+        "what": "bidi embeddings and overrides"
+      },
+      {
+        "lo": 8288,
+        "hi": 8293,
+        "class": 3,
+        "what": "WORD JOINER, invisible operators, U+2065"
+      },
+      {
+        "lo": 8294,
+        "hi": 8297,
+        "class": 2,
+        "what": "bidi isolates"
+      },
+      {
+        "lo": 8298,
+        "hi": 8303,
+        "class": 3,
+        "what": "deprecated format characters"
+      },
+      {
+        "lo": 12644,
+        "hi": 12644,
+        "class": 3,
+        "what": "HANGUL FILLER"
+      },
+      {
+        "lo": 64976,
+        "hi": 65007,
+        "class": 5,
+        "what": "noncharacters"
+      },
+      {
+        "lo": 65024,
+        "hi": 65039,
+        "class": 4,
+        "what": "variation selectors 1-16"
+      },
+      {
+        "lo": 65279,
+        "hi": 65279,
+        "class": 3,
+        "what": "ZERO WIDTH NO-BREAK SPACE (BOM)"
+      },
+      {
+        "lo": 65440,
+        "hi": 65440,
+        "class": 3,
+        "what": "HALFWIDTH HANGUL FILLER"
+      },
+      {
+        "lo": 65520,
+        "hi": 65531,
+        "class": 3,
+        "what": "U+FFF0-FFF8 and the interlinear annotation characters"
+      },
+      {
+        "lo": 65532,
+        "hi": 65535,
+        "class": 5,
+        "what": "OBJECT and REPLACEMENT CHARACTER, U+FFFE, U+FFFF"
+      },
+      {
+        "lo": 69821,
+        "hi": 69821,
+        "class": 3,
+        "what": "KAITHI NUMBER SIGN (Cf)"
+      },
+      {
+        "lo": 69837,
+        "hi": 69837,
+        "class": 3,
+        "what": "KAITHI NUMBER SIGN ABOVE (Cf)"
+      },
+      {
+        "lo": 78896,
+        "hi": 78911,
+        "class": 3,
+        "what": "Egyptian hieroglyph format controls"
+      },
+      {
+        "lo": 113824,
+        "hi": 113827,
+        "class": 3,
+        "what": "shorthand format controls"
+      },
+      {
+        "lo": 119155,
+        "hi": 119162,
+        "class": 3,
+        "what": "musical symbol format controls"
+      },
+      {
+        "lo": 131070,
+        "hi": 131071,
+        "class": 5,
+        "what": "plane 1 noncharacters"
+      },
+      {
+        "lo": 196606,
+        "hi": 196607,
+        "class": 5,
+        "what": "plane 2 noncharacters"
+      },
+      {
+        "lo": 262142,
+        "hi": 262143,
+        "class": 5,
+        "what": "plane 3 noncharacters"
+      },
+      {
+        "lo": 327678,
+        "hi": 327679,
+        "class": 5,
+        "what": "plane 4 noncharacters"
+      },
+      {
+        "lo": 393214,
+        "hi": 393215,
+        "class": 5,
+        "what": "plane 5 noncharacters"
+      },
+      {
+        "lo": 458750,
+        "hi": 458751,
+        "class": 5,
+        "what": "plane 6 noncharacters"
+      },
+      {
+        "lo": 524286,
+        "hi": 524287,
+        "class": 5,
+        "what": "plane 7 noncharacters"
+      },
+      {
+        "lo": 589822,
+        "hi": 589823,
+        "class": 5,
+        "what": "plane 8 noncharacters"
+      },
+      {
+        "lo": 655358,
+        "hi": 655359,
+        "class": 5,
+        "what": "plane 9 noncharacters"
+      },
+      {
+        "lo": 720894,
+        "hi": 720895,
+        "class": 5,
+        "what": "plane 10 noncharacters"
+      },
+      {
+        "lo": 786430,
+        "hi": 786431,
+        "class": 5,
+        "what": "plane 11 noncharacters"
+      },
+      {
+        "lo": 851966,
+        "hi": 851967,
+        "class": 5,
+        "what": "plane 12 noncharacters"
+      },
+      {
+        "lo": 917502,
+        "hi": 917503,
+        "class": 5,
+        "what": "plane 13 noncharacters"
+      },
+      {
+        "lo": 917504,
+        "hi": 917759,
+        "class": 3,
+        "what": "tag characters and their block"
+      },
+      {
+        "lo": 917760,
+        "hi": 917999,
+        "class": 4,
+        "what": "variation selectors 17-256"
+      },
+      {
+        "lo": 918000,
+        "hi": 921599,
+        "class": 3,
+        "what": "the rest of the default-ignorable block"
+      },
+      {
+        "lo": 983038,
+        "hi": 983039,
+        "class": 5,
+        "what": "plane 14 noncharacters"
+      },
+      {
+        "lo": 1048574,
+        "hi": 1048575,
+        "class": 5,
+        "what": "plane 15 noncharacters"
+      },
+      {
+        "lo": 1114110,
+        "hi": 1114111,
+        "class": 5,
+        "what": "plane 16 noncharacters"
+      }
+    ],
+    "packed": "0x00008000009f010000ad0000ad0300034f00034f040006000006050300061c00061c020006dd0006dd0300070f00070f03000890000891030008e20008e20300115f001160030017b40017b50300180b00180d0400180e00180e0300180f00180f0400200b00200b0300200c00200d0400200e00200f020020280020290300202a00202e02002060002065030020660020690200206a00206f030031640031640300fdd000fdef0500fe0000fe0f0400feff00feff0300ffa000ffa00300fff000fffb0300fffc00ffff050110bd0110bd030110cd0110cd0301343001343f0301bca001bca30301d17301d17a0301fffe01ffff0502fffe02ffff0503fffe03ffff0504fffe04ffff0505fffe05ffff0506fffe06ffff0507fffe07ffff0508fffe08ffff0509fffe09ffff050afffe0affff050bfffe0bffff050cfffe0cffff050dfffe0dffff050e00000e00ff030e01000e01ef040e01f00e0fff030efffe0effff050ffffe0fffff0510fffe10ffff05"
+  },
+  "declarationKey": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "typeIds": {
+    "topic-word/1": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+    "topic/1": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+    "text/1": "0x746331ae3170a7155f6d6d3bba00bf3093eacc49ca52c1fdba6251b132157972"
+  },
+  "ids": {
+    "record": "Keys.record(typeId, body) = keccak256(abi.encode(keccak256(\"efs/record/1\"), typeId, keccak256(body)))",
+    "wordPage": "Keys.record(topic-word/1, word)",
+    "path": "n = 1: the word page; n >= 2: Keys.record(topic/1, abi.encode(pathId(first n-1 words), wordPage(last word)))",
+    "propertyKey": "keccak256(abi.encode(keccak256(\"efs/property-key/1\"), keccak256(key))); a label key is propertyKey(\"label:\" ‖ BCP 47 tag)"
+  },
+  "order": "register every word page and path record before use and strictly before the first statement on it (an earlier action of the same publication counts): pages first, then the path records from two words on, then the statements",
+  "purposes": {
+    "TAG": "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+    "PROPERTY": "0x2f6e2c067a273babd6f052511fa0fbbefd946138147520281191a783c01d2243",
+    "SAME": "0x8e965fe46a3481cd6db64a45fda63e6e7b7a8dbf42024371aab1f405f1fa861e",
+    "BROADER": "0xf064225e057dbfc2c1a00dc847d06a7486d76609e9e32838546890d91eeb3b97"
+  },
+  "words": [
+    {
+      "label": "one ASCII letter",
+      "hex": "0x61",
+      "length": 1,
+      "code": 0,
+      "word": "a",
+      "pageId": "0x350ba1db9d037676cb1471cf59bfd94d695e1543e6baf7bc4d2e9317793c01eb"
+    },
+    {
+      "label": "a lowercase word",
+      "hex": "0x7465736c61",
+      "length": 5,
+      "code": 0,
+      "word": "tesla",
+      "pageId": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65"
+    },
+    {
+      "label": "digits, '-', '_' and '.' inside",
+      "hex": "0x6d6f64656c2d335f76312e30",
+      "length": 12,
+      "code": 0,
+      "word": "model-3_v1.0",
+      "pageId": "0x332517e03b7fccc3baba58d9d2b9d4f8623de7cfb3467d1a08192f065cc81b87"
+    },
+    {
+      "label": "every admitted punctuation byte",
+      "hex": "0x2122232425262728292a2b2c2d2e3a3b3c3d3e3f405b5c5d5e5f607b7c7d7e78",
+      "length": 32,
+      "code": 0,
+      "word": "!\"#$%&'()*+,-.:;<=>?@[\\]^_`{|}~x",
+      "note": "'~' is admitted anywhere but first",
+      "pageId": "0xc91f5d5a10744bea1f907ba33edb62d68640fa3bacbdd906115ceb7b7c1ff319"
+    },
+    {
+      "label": "255 ASCII bytes",
+      "hex": "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161",
+      "length": 255,
+      "code": 0,
+      "note": "the longest word",
+      "pageId": "0xe79b05a76e972b61db498858cf4bf1ac1f1b1024fb1312ccff693545adeb522c"
+    },
+    {
+      "label": "Latin-1 letter (2 bytes)",
+      "hex": "0x636166c3a9",
+      "length": 5,
+      "code": 0,
+      "word": "café",
+      "pageId": "0xe5d6bb351e6e93c3a190c140038a01c569d27822e151e688c896e0f7a1a52fab"
+    },
+    {
+      "label": "CJK, 3 bytes each",
+      "hex": "0xe69db1e4baac",
+      "length": 6,
+      "code": 0,
+      "word": "東京",
+      "pageId": "0x6c24a5ff64a0a48a6f87af91c03097d4a73ccdc01d625b9ad9081514f841d4db"
+    },
+    {
+      "label": "255 bytes of CJK",
+      "hex": "0xe69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1",
+      "length": 255,
+      "code": 0,
+      "pageId": "0xdd0e0d5a15baf74052f34965e97ff5861a739c093e02297d1c35b6c73e7aa8a0"
+    },
+    {
+      "label": "an emoji (4 bytes)",
+      "hex": "0xf09f9a97",
+      "length": 4,
+      "code": 0,
+      "pageId": "0x6d1b7ec9817c78669d8669aa71919c068e7cd6dcdda114a583da8fdb99a60850"
+    },
+    {
+      "label": "U+10FFFD",
+      "hex": "0xf48fbfbd",
+      "length": 4,
+      "code": 0,
+      "note": "the last scalar a word admits (U+10FFFE and U+10FFFF are noncharacters)",
+      "pageId": "0x7352bbb545c71a3fd3eaedae3c2e28f922074a1d7c3aed6a47c656023834b62e"
+    },
+    {
+      "label": "U+00A0 NO-BREAK SPACE",
+      "hex": "0xc2a0",
+      "length": 2,
+      "code": 0,
+      "note": "admitted: a visible separator is a fold-rule question, not a chain one",
+      "pageId": "0x52557771d7f8224847c2f0afe843b8f7b5e5b83bfafefaf8af3f0953bd04c063"
+    },
+    {
+      "label": "U+00A9 COPYRIGHT SIGN",
+      "hex": "0xc2a9",
+      "length": 2,
+      "code": 0,
+      "pageId": "0x84b26c110383c490492900f7e40f9e5ed0a3ad446c555aec2184faac5033a0f4"
+    },
+    {
+      "label": "...",
+      "hex": "0x2e2e2e",
+      "length": 3,
+      "code": 0,
+      "word": "...",
+      "note": "only . and .. are refused",
+      "pageId": "0xd08cd182aecbb9f3ea86440bad998ac8379704e3325e20c7af0842767343aa2b"
+    },
+    {
+      "label": ".a",
+      "hex": "0x2e61",
+      "length": 2,
+      "code": 0,
+      "word": ".a",
+      "pageId": "0xa056e6297917c207f45a47238d7a6fad39a18bea227c9a88515b6bda82ea0944"
+    },
+    {
+      "label": "a.",
+      "hex": "0x612e",
+      "length": 2,
+      "code": 0,
+      "word": "a.",
+      "pageId": "0x62668daaa2e9571bef26f26c88e1826207a8db471985ddb054ac37fe31aa5bac"
+    },
+    {
+      "label": "a~",
+      "hex": "0x617e",
+      "length": 2,
+      "code": 0,
+      "word": "a~",
+      "pageId": "0x8693f091009e2ea9879398d3fc3e3a61caf31455d010d366a790702c43d17f39"
+    },
+    {
+      "label": "0x and 39 hex",
+      "hex": "0x3078666666666666666666666666666666666666666666666666666666666666666666666666666666",
+      "length": 41,
+      "code": 0,
+      "pageId": "0x34b0b52abaef5a82b9b6adb3920e0ed3d7c06314e93ede00fe0d8b5a1a19c8af"
+    },
+    {
+      "label": "0x and 41 hex",
+      "hex": "0x30786666666666666666666666666666666666666666666666666666666666666666666666666666666666",
+      "length": 43,
+      "code": 0,
+      "pageId": "0xaa52cff46141982666d0c356eac7703f12d102ab6401d1caebea958368873b58"
+    },
+    {
+      "label": "0x, 39 hex and a non-hex letter",
+      "hex": "0x307866666666666666666666666666666666666666666666666666666666666666666666666666666667",
+      "length": 42,
+      "code": 0,
+      "pageId": "0x712c7b573a361932f1df193dc4cf093f7a9300af036221147830627f21cd0189"
+    },
+    {
+      "label": "0y and 40 hex",
+      "hex": "0x307961616161616161616161616161616161616161616161616161616161616161616161616161616161",
+      "length": 42,
+      "code": 0,
+      "pageId": "0xa284b424a5802ece491f3216eccad0a290db8dcb13f86251004eeb6c3a802378"
+    },
+    {
+      "label": "0x alone",
+      "hex": "0x3078",
+      "length": 2,
+      "code": 0,
+      "word": "0x",
+      "note": "the two characters 0x",
+      "pageId": "0xed4f9f6a109dc196ef0196fa1051d4be6f6d153bdcc7320a714af9ab03121728"
+    },
+    {
+      "label": "empty",
+      "hex": "0x",
+      "length": 0,
+      "code": 1,
+      "note": "code 1"
+    },
+    {
+      "label": "256 ASCII bytes",
+      "hex": "0x61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161",
+      "length": 256,
+      "code": 1,
+      "note": "code 1"
+    },
+    {
+      "label": "255 bytes of CJK and one more byte",
+      "hex": "0xe69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db161",
+      "length": 256,
+      "code": 1,
+      "note": "code 1"
+    },
+    {
+      "label": "overlong 2-byte",
+      "hex": "0xc080",
+      "length": 2,
+      "code": 2,
+      "note": "code 2"
+    },
+    {
+      "label": "overlong 2-byte (C1)",
+      "hex": "0xc1bf",
+      "length": 2,
+      "code": 2
+    },
+    {
+      "label": "overlong 3-byte",
+      "hex": "0xe08080",
+      "length": 3,
+      "code": 2
+    },
+    {
+      "label": "overlong 4-byte",
+      "hex": "0xf0808080",
+      "length": 4,
+      "code": 2
+    },
+    {
+      "label": "surrogate U+D800",
+      "hex": "0xeda080",
+      "length": 3,
+      "code": 2
+    },
+    {
+      "label": "surrogate U+DFFF",
+      "hex": "0xedbfbf",
+      "length": 3,
+      "code": 2
+    },
+    {
+      "label": "above U+10FFFF",
+      "hex": "0xf4908080",
+      "length": 4,
+      "code": 2
+    },
+    {
+      "label": "lead byte F5",
+      "hex": "0xf5808080",
+      "length": 4,
+      "code": 2
+    },
+    {
+      "label": "truncated 3-byte",
+      "hex": "0xe282",
+      "length": 2,
+      "code": 2
+    },
+    {
+      "label": "truncated at the end",
+      "hex": "0x61e2",
+      "length": 2,
+      "code": 2
+    },
+    {
+      "label": "a stray continuation byte",
+      "hex": "0x80",
+      "length": 1,
+      "code": 2
+    },
+    {
+      "label": "a lone lead byte",
+      "hex": "0xc3",
+      "length": 1,
+      "code": 2
+    },
+    {
+      "label": "a lead byte then ASCII",
+      "hex": "0xc341",
+      "length": 2,
+      "code": 2
+    },
+    {
+      "label": "a slash",
+      "hex": "0x612f62",
+      "length": 3,
+      "code": 3,
+      "word": "a/b",
+      "note": "code 3"
+    },
+    {
+      "label": "only a slash",
+      "hex": "0x2f",
+      "length": 1,
+      "code": 3,
+      "word": "/"
+    },
+    {
+      "label": "a space",
+      "hex": "0x612062",
+      "length": 3,
+      "code": 3,
+      "word": "a b"
+    },
+    {
+      "label": "NUL",
+      "hex": "0x00",
+      "length": 1,
+      "code": 3
+    },
+    {
+      "label": "a tab",
+      "hex": "0x09",
+      "length": 1,
+      "code": 3
+    },
+    {
+      "label": "0x1f",
+      "hex": "0x611f",
+      "length": 2,
+      "code": 3
+    },
+    {
+      "label": "DEL",
+      "hex": "0x7f",
+      "length": 1,
+      "code": 3
+    },
+    {
+      "label": "uppercase first",
+      "hex": "0x5465736c61",
+      "length": 5,
+      "code": 3,
+      "word": "Tesla"
+    },
+    {
+      "label": "uppercase last",
+      "hex": "0x7465736c41",
+      "length": 5,
+      "code": 3,
+      "word": "teslA"
+    },
+    {
+      "label": "a byte refusal before a shape refusal",
+      "hex": "0x7e41",
+      "length": 2,
+      "code": 3,
+      "word": "~A",
+      "note": "code 3, not 5"
+    },
+    {
+      "label": "uppercase X in 0x",
+      "hex": "0x305861616161616161616161616161616161616161616161616161616161616161616161616161616161",
+      "length": 42,
+      "code": 3,
+      "note": "a byte refusal"
+    },
+    {
+      "label": "uppercase hex after 0x",
+      "hex": "0x307846464646464646464646464646464646464646464646464646464646464646464646464646464646",
+      "length": 42,
+      "code": 3,
+      "note": "a byte refusal"
+    },
+    {
+      "label": "a slash after a multi-byte scalar",
+      "hex": "0x65cc812f",
+      "length": 4,
+      "code": 3
+    },
+    {
+      "label": ".",
+      "hex": "0x2e",
+      "length": 1,
+      "code": 4,
+      "word": ".",
+      "note": "code 4"
+    },
+    {
+      "label": "..",
+      "hex": "0x2e2e",
+      "length": 2,
+      "code": 4,
+      "word": ".."
+    },
+    {
+      "label": "~",
+      "hex": "0x7e",
+      "length": 1,
+      "code": 5,
+      "word": "~",
+      "note": "code 5"
+    },
+    {
+      "label": "~efs",
+      "hex": "0x7e656673",
+      "length": 4,
+      "code": 5,
+      "word": "~efs"
+    },
+    {
+      "label": "~ then a word",
+      "hex": "0x7e7465736c61",
+      "length": 6,
+      "code": 5,
+      "word": "~tesla"
+    },
+    {
+      "label": "an address-shaped word",
+      "hex": "0x307830303131323233333434353536363737383839396161626263636464656566663030313132323333",
+      "length": 42,
+      "code": 6,
+      "word": "0x00112233445566778899aabbccddeeff00112233",
+      "note": "code 6"
+    },
+    {
+      "label": "40 f after 0x",
+      "hex": "0x307866666666666666666666666666666666666666666666666666666666666666666666666666666666",
+      "length": 42,
+      "code": 6
+    },
+    {
+      "label": "the zero address",
+      "hex": "0x307830303030303030303030303030303030303030303030303030303030303030303030303030303030",
+      "length": 42,
+      "code": 6
+    },
+    {
+      "label": "a refused scalar before a malformed byte",
+      "hex": "0x61e2808bc0",
+      "length": 5,
+      "code": 7,
+      "note": "code 7: the scan stops at the first refusal"
+    },
+    {
+      "label": "a malformed byte before a forbidden ASCII byte",
+      "hex": "0xc0412f",
+      "length": 3,
+      "code": 2,
+      "note": "code 2"
+    },
+    {
+      "label": "U+0080 (C1 controls)",
+      "hex": "0xc280",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+008F (C1 controls)",
+      "hex": "0xc28f",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+009F (C1 controls)",
+      "hex": "0xc29f",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+00AD (SOFT HYPHEN)",
+      "hex": "0xc2ad",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+034F (COMBINING GRAPHEME JOINER)",
+      "hex": "0xcd8f",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+0600 (Arabic number signs (Cf))",
+      "hex": "0xd880",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+0602 (Arabic number signs (Cf))",
+      "hex": "0xd882",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+0605 (Arabic number signs (Cf))",
+      "hex": "0xd885",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+061C (ARABIC LETTER MARK)",
+      "hex": "0xd89c",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+06DD (ARABIC END OF AYAH (Cf))",
+      "hex": "0xdb9d",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+070F (SYRIAC ABBREVIATION MARK (Cf))",
+      "hex": "0xdc8f",
+      "length": 2,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+0890 (Arabic pound and piastre marks above (Cf))",
+      "hex": "0xe0a290",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+0891 (Arabic pound and piastre marks above (Cf))",
+      "hex": "0xe0a291",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+08E2 (ARABIC DISPUTED END OF AYAH (Cf))",
+      "hex": "0xe0a3a2",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+115F (Hangul choseong and jungseong fillers)",
+      "hex": "0xe1859f",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1160 (Hangul choseong and jungseong fillers)",
+      "hex": "0xe185a0",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+17B4 (Khmer inherent vowels)",
+      "hex": "0xe19eb4",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+17B5 (Khmer inherent vowels)",
+      "hex": "0xe19eb5",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+180B (Mongolian free variation selectors 1-3)",
+      "hex": "0xe1a08b",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+180C (Mongolian free variation selectors 1-3)",
+      "hex": "0xe1a08c",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+180D (Mongolian free variation selectors 1-3)",
+      "hex": "0xe1a08d",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+180E (MONGOLIAN VOWEL SEPARATOR)",
+      "hex": "0xe1a08e",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+180F (MONGOLIAN FREE VARIATION SELECTOR FOUR)",
+      "hex": "0xe1a08f",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+200B (ZERO WIDTH SPACE)",
+      "hex": "0xe2808b",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+200C (ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER)",
+      "hex": "0xe2808c",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+200D (ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER)",
+      "hex": "0xe2808d",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+200E (LEFT-TO-RIGHT MARK, RIGHT-TO-LEFT MARK)",
+      "hex": "0xe2808e",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+200F (LEFT-TO-RIGHT MARK, RIGHT-TO-LEFT MARK)",
+      "hex": "0xe2808f",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2028 (LINE SEPARATOR, PARAGRAPH SEPARATOR)",
+      "hex": "0xe280a8",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2029 (LINE SEPARATOR, PARAGRAPH SEPARATOR)",
+      "hex": "0xe280a9",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+202A (bidi embeddings and overrides)",
+      "hex": "0xe280aa",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+202C (bidi embeddings and overrides)",
+      "hex": "0xe280ac",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+202E (bidi embeddings and overrides)",
+      "hex": "0xe280ae",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2060 (WORD JOINER, invisible operators, U+2065)",
+      "hex": "0xe281a0",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2062 (WORD JOINER, invisible operators, U+2065)",
+      "hex": "0xe281a2",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2065 (WORD JOINER, invisible operators, U+2065)",
+      "hex": "0xe281a5",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2066 (bidi isolates)",
+      "hex": "0xe281a6",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2067 (bidi isolates)",
+      "hex": "0xe281a7",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2069 (bidi isolates)",
+      "hex": "0xe281a9",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+206A (deprecated format characters)",
+      "hex": "0xe281aa",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+206C (deprecated format characters)",
+      "hex": "0xe281ac",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+206F (deprecated format characters)",
+      "hex": "0xe281af",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+3164 (HANGUL FILLER)",
+      "hex": "0xe385a4",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FDD0 (noncharacters)",
+      "hex": "0xefb790",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FDDF (noncharacters)",
+      "hex": "0xefb79f",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FDEF (noncharacters)",
+      "hex": "0xefb7af",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FE00 (variation selectors 1-16)",
+      "hex": "0xefb880",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FE07 (variation selectors 1-16)",
+      "hex": "0xefb887",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FE0F (variation selectors 1-16)",
+      "hex": "0xefb88f",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FEFF (ZERO WIDTH NO-BREAK SPACE (BOM))",
+      "hex": "0xefbbbf",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFA0 (HALFWIDTH HANGUL FILLER)",
+      "hex": "0xefbea0",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFF0 (U+FFF0-FFF8 and the interlinear annotation characters)",
+      "hex": "0xefbfb0",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFF5 (U+FFF0-FFF8 and the interlinear annotation characters)",
+      "hex": "0xefbfb5",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFFB (U+FFF0-FFF8 and the interlinear annotation characters)",
+      "hex": "0xefbfbb",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFFC (OBJECT and REPLACEMENT CHARACTER, U+FFFE, U+FFFF)",
+      "hex": "0xefbfbc",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFFD (OBJECT and REPLACEMENT CHARACTER, U+FFFE, U+FFFF)",
+      "hex": "0xefbfbd",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFFF (OBJECT and REPLACEMENT CHARACTER, U+FFFE, U+FFFF)",
+      "hex": "0xefbfbf",
+      "length": 3,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+110BD (KAITHI NUMBER SIGN (Cf))",
+      "hex": "0xf09182bd",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+110CD (KAITHI NUMBER SIGN ABOVE (Cf))",
+      "hex": "0xf091838d",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+13430 (Egyptian hieroglyph format controls)",
+      "hex": "0xf09390b0",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+13437 (Egyptian hieroglyph format controls)",
+      "hex": "0xf09390b7",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1343F (Egyptian hieroglyph format controls)",
+      "hex": "0xf09390bf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1BCA0 (shorthand format controls)",
+      "hex": "0xf09bb2a0",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1BCA1 (shorthand format controls)",
+      "hex": "0xf09bb2a1",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1BCA3 (shorthand format controls)",
+      "hex": "0xf09bb2a3",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1D173 (musical symbol format controls)",
+      "hex": "0xf09d85b3",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1D176 (musical symbol format controls)",
+      "hex": "0xf09d85b6",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1D17A (musical symbol format controls)",
+      "hex": "0xf09d85ba",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1FFFE (plane 1 noncharacters)",
+      "hex": "0xf09fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+1FFFF (plane 1 noncharacters)",
+      "hex": "0xf09fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2FFFE (plane 2 noncharacters)",
+      "hex": "0xf0afbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+2FFFF (plane 2 noncharacters)",
+      "hex": "0xf0afbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+3FFFE (plane 3 noncharacters)",
+      "hex": "0xf0bfbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+3FFFF (plane 3 noncharacters)",
+      "hex": "0xf0bfbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+4FFFE (plane 4 noncharacters)",
+      "hex": "0xf18fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+4FFFF (plane 4 noncharacters)",
+      "hex": "0xf18fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+5FFFE (plane 5 noncharacters)",
+      "hex": "0xf19fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+5FFFF (plane 5 noncharacters)",
+      "hex": "0xf19fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+6FFFE (plane 6 noncharacters)",
+      "hex": "0xf1afbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+6FFFF (plane 6 noncharacters)",
+      "hex": "0xf1afbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+7FFFE (plane 7 noncharacters)",
+      "hex": "0xf1bfbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+7FFFF (plane 7 noncharacters)",
+      "hex": "0xf1bfbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+8FFFE (plane 8 noncharacters)",
+      "hex": "0xf28fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+8FFFF (plane 8 noncharacters)",
+      "hex": "0xf28fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+9FFFE (plane 9 noncharacters)",
+      "hex": "0xf29fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+9FFFF (plane 9 noncharacters)",
+      "hex": "0xf29fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+AFFFE (plane 10 noncharacters)",
+      "hex": "0xf2afbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+AFFFF (plane 10 noncharacters)",
+      "hex": "0xf2afbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+BFFFE (plane 11 noncharacters)",
+      "hex": "0xf2bfbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+BFFFF (plane 11 noncharacters)",
+      "hex": "0xf2bfbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+CFFFE (plane 12 noncharacters)",
+      "hex": "0xf38fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+CFFFF (plane 12 noncharacters)",
+      "hex": "0xf38fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+DFFFE (plane 13 noncharacters)",
+      "hex": "0xf39fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+DFFFF (plane 13 noncharacters)",
+      "hex": "0xf39fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E0000 (tag characters and their block)",
+      "hex": "0xf3a08080",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E007F (tag characters and their block)",
+      "hex": "0xf3a081bf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E00FF (tag characters and their block)",
+      "hex": "0xf3a083bf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E0100 (variation selectors 17-256)",
+      "hex": "0xf3a08480",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E0177 (variation selectors 17-256)",
+      "hex": "0xf3a085b7",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E01EF (variation selectors 17-256)",
+      "hex": "0xf3a087af",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E01F0 (the rest of the default-ignorable block)",
+      "hex": "0xf3a087b0",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E08F7 (the rest of the default-ignorable block)",
+      "hex": "0xf3a0a3b7",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+E0FFF (the rest of the default-ignorable block)",
+      "hex": "0xf3a0bfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+EFFFE (plane 14 noncharacters)",
+      "hex": "0xf3afbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+EFFFF (plane 14 noncharacters)",
+      "hex": "0xf3afbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFFFE (plane 15 noncharacters)",
+      "hex": "0xf3bfbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+FFFFF (plane 15 noncharacters)",
+      "hex": "0xf3bfbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+10FFFE (plane 16 noncharacters)",
+      "hex": "0xf48fbfbe",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "U+10FFFF (plane 16 noncharacters)",
+      "hex": "0xf48fbfbf",
+      "length": 4,
+      "code": 7,
+      "note": "code 7"
+    },
+    {
+      "label": "ZWJ inside an emoji sequence",
+      "hex": "0xf09f91a8e2808df09f91a9",
+      "length": 11,
+      "code": 7,
+      "note": "code 7: joiners are refused in a word"
+    },
+    {
+      "label": "VS16 after a symbol",
+      "hex": "0xe29da4efb88f",
+      "length": 6,
+      "code": 7,
+      "note": "code 7: variation selectors are refused in a word"
+    },
+    {
+      "label": "the scalar before SOFT HYPHEN",
+      "hex": "0xc2ac",
+      "length": 2,
+      "code": 0,
+      "note": "U+00AC NOT SIGN: admitted",
+      "pageId": "0x3acdbcf66d337efe15fffd30f874ca43091b09ef0ddb107e968f327aedf250a7"
+    },
+    {
+      "label": "the scalar before the noncharacter block",
+      "hex": "0xefb78f",
+      "length": 3,
+      "code": 0,
+      "pageId": "0x0f0213bb1ab22d2c4c03edb986a584efa1e4f54b95b7f3c9232927a1b69b709b"
+    },
+    {
+      "label": "the scalar after the C1 range",
+      "hex": "0xc2a0",
+      "length": 2,
+      "code": 0,
+      "pageId": "0x52557771d7f8224847c2f0afe843b8f7b5e5b83bfafefaf8af3f0953bd04c063"
+    },
+    {
+      "label": "the scalar before U+200B",
+      "hex": "0xe2808a",
+      "length": 3,
+      "code": 0,
+      "note": "U+200A HAIR SPACE: admitted",
+      "pageId": "0x1ee311b8ccd9f3b507ffac73a431fdc2f5d7bb51b2211987bc0c5937fa969d25"
+    },
+    {
+      "label": "the scalar after U+206F",
+      "hex": "0xe281b0",
+      "length": 3,
+      "code": 0,
+      "pageId": "0xe82c6148fefd136ff9003d58c06440ebeb1990ef94d008bf8973b8ea5ca5edba"
+    },
+    {
+      "label": "the scalar after U+FE0F",
+      "hex": "0xefb890",
+      "length": 3,
+      "code": 0,
+      "pageId": "0x0ad5aa27382afa42ecc67a593e2bf37dd84cbdee70630f3ce0d5acf2ff100936"
+    },
+    {
+      "label": "the scalar before U+E0000",
+      "hex": "0xf39fbfbd",
+      "length": 4,
+      "code": 0,
+      "pageId": "0x97f84cffa473b28321da73cb00b87a2bb2347e25f68d886ba1e70eb13ffbfd04"
+    },
+    {
+      "label": "the scalar after U+E0FFF",
+      "hex": "0xf3a18080",
+      "length": 4,
+      "code": 0,
+      "pageId": "0x0d38c85296ff1e50d3bab407884bcdd357a598388ad0bf7cb31e7cad6bd86394"
+    }
+  ],
+  "texts": [
+    {
+      "label": "a label with a slash",
+      "hex": "0x41432f4443",
+      "length": 5,
+      "code": 0,
+      "text": "AC/DC",
+      "note": "'/', uppercase and spaces are admitted",
+      "recordId": "0xcfaac15d102509c7468b25a2e1d91921b72470b8e7cfb1161616c178288a28ff"
+    },
+    {
+      "label": "a sentence",
+      "hex": "0x54686520717569636b2062726f776e20666f782e",
+      "length": 20,
+      "code": 0,
+      "text": "The quick brown fox.",
+      "recordId": "0xd315dfe7905d292ef457386d0ac37209700cfe653ddcf4bb2b40d879982dc938"
+    },
+    {
+      "label": "one space",
+      "hex": "0x20",
+      "length": 1,
+      "code": 0,
+      "text": " ",
+      "recordId": "0x1ba212ffac098833ccbd27101ccc5512c79c2fd9ea7bac6adbba42044ef7c767"
+    },
+    {
+      "label": "255 bytes",
+      "hex": "0x787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+      "length": 255,
+      "code": 0,
+      "recordId": "0xaa6d2334d8770850eb52c640cea4778703c38df865dc5074ab3fd869dc0b3b0a"
+    },
+    {
+      "label": "CJK",
+      "hex": "0xe69db1e4baac",
+      "length": 6,
+      "code": 0,
+      "text": "東京",
+      "recordId": "0x9c7c514ca8b1705c371dab444434105144d1784669f7266bd27077492041635f"
+    },
+    {
+      "label": "an emoji ZWJ sequence",
+      "hex": "0xf09f91a8e2808df09f91a9",
+      "length": 11,
+      "code": 0,
+      "note": "joiners are admitted in a text",
+      "recordId": "0x6640d2a115ba27782c7df60fdcfbff8be4f6491d4b4c2cff85f2c8082df1f6cf"
+    },
+    {
+      "label": "a variation selector",
+      "hex": "0xe29da4efb88f",
+      "length": 6,
+      "code": 0,
+      "note": "variation selectors are admitted in a text",
+      "recordId": "0xcb82d8f8686ab3f71a522ba7f779b210138744660d7bf55660e6e1099dfd52b5"
+    },
+    {
+      "label": "a noncharacter",
+      "hex": "0xefb790",
+      "length": 3,
+      "code": 0,
+      "note": "noncharacters are admitted in a text",
+      "recordId": "0x61576c1d0c77ddf9cc88038bb73f4034004d551bf72314a6bbf6fac04d2b6d31"
+    },
+    {
+      "label": "the replacement character",
+      "hex": "0xefbfbd",
+      "length": 3,
+      "code": 0,
+      "recordId": "0x14c0daa885c9f32c1578b521cc79b27d6b3f4d0159315fa35fa95adffca7122e"
+    },
+    {
+      "label": "empty",
+      "hex": "0x",
+      "length": 0,
+      "code": 20,
+      "note": "code 20"
+    },
+    {
+      "label": "256 bytes",
+      "hex": "0x78787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+      "length": 256,
+      "code": 20,
+      "note": "code 20"
+    },
+    {
+      "label": "overlong",
+      "hex": "0xc0af",
+      "length": 2,
+      "code": 21,
+      "note": "code 21"
+    },
+    {
+      "label": "a surrogate",
+      "hex": "0xeda080",
+      "length": 3,
+      "code": 21,
+      "note": "code 21"
+    },
+    {
+      "label": "truncated",
+      "hex": "0x41e2",
+      "length": 2,
+      "code": 21,
+      "note": "code 21"
+    },
+    {
+      "label": "a newline",
+      "hex": "0x610a62",
+      "length": 3,
+      "code": 22,
+      "text": "a\nb",
+      "note": "code 22"
+    },
+    {
+      "label": "NUL",
+      "hex": "0x00",
+      "length": 1,
+      "code": 22,
+      "note": "code 22"
+    },
+    {
+      "label": "DEL",
+      "hex": "0x7f",
+      "length": 1,
+      "code": 22,
+      "note": "code 22"
+    },
+    {
+      "label": "a C1 control",
+      "hex": "0x61c285",
+      "length": 3,
+      "code": 22,
+      "note": "code 22"
+    },
+    {
+      "label": "RIGHT-TO-LEFT OVERRIDE",
+      "hex": "0x61e280ae62",
+      "length": 5,
+      "code": 23,
+      "note": "code 23"
+    },
+    {
+      "label": "ARABIC LETTER MARK",
+      "hex": "0xd89c",
+      "length": 2,
+      "code": 23,
+      "note": "code 23"
+    },
+    {
+      "label": "ZERO WIDTH SPACE",
+      "hex": "0xe2808b",
+      "length": 3,
+      "code": 23,
+      "note": "code 23"
+    },
+    {
+      "label": "SOFT HYPHEN",
+      "hex": "0xc2ad",
+      "length": 2,
+      "code": 23,
+      "note": "code 23"
+    },
+    {
+      "label": "BOM",
+      "hex": "0xefbbbf",
+      "length": 3,
+      "code": 23,
+      "note": "code 23"
+    },
+    {
+      "label": "a tag character",
+      "hex": "0xf3a08181",
+      "length": 4,
+      "code": 23,
+      "note": "code 23"
+    },
+    {
+      "label": "a control before a malformed byte",
+      "hex": "0x0ac0",
+      "length": 2,
+      "code": 22,
+      "note": "code 22: the scan stops at the first refusal"
+    }
+  ],
+  "flat": {
+    "words": {
+      "hex": [
+        "0x61",
+        "0x7465736c61",
+        "0x6d6f64656c2d335f76312e30",
+        "0x2122232425262728292a2b2c2d2e3a3b3c3d3e3f405b5c5d5e5f607b7c7d7e78",
+        "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161",
+        "0x636166c3a9",
+        "0xe69db1e4baac",
+        "0xe69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1",
+        "0xf09f9a97",
+        "0xf48fbfbd",
+        "0xc2a0",
+        "0xc2a9",
+        "0x2e2e2e",
+        "0x2e61",
+        "0x612e",
+        "0x617e",
+        "0x3078666666666666666666666666666666666666666666666666666666666666666666666666666666",
+        "0x30786666666666666666666666666666666666666666666666666666666666666666666666666666666666",
+        "0x307866666666666666666666666666666666666666666666666666666666666666666666666666666667",
+        "0x307961616161616161616161616161616161616161616161616161616161616161616161616161616161",
+        "0x3078",
+        "0x",
+        "0x61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161",
+        "0xe69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db1e69db161",
+        "0xc080",
+        "0xc1bf",
+        "0xe08080",
+        "0xf0808080",
+        "0xeda080",
+        "0xedbfbf",
+        "0xf4908080",
+        "0xf5808080",
+        "0xe282",
+        "0x61e2",
+        "0x80",
+        "0xc3",
+        "0xc341",
+        "0x612f62",
+        "0x2f",
+        "0x612062",
+        "0x00",
+        "0x09",
+        "0x611f",
+        "0x7f",
+        "0x5465736c61",
+        "0x7465736c41",
+        "0x7e41",
+        "0x305861616161616161616161616161616161616161616161616161616161616161616161616161616161",
+        "0x307846464646464646464646464646464646464646464646464646464646464646464646464646464646",
+        "0x65cc812f",
+        "0x2e",
+        "0x2e2e",
+        "0x7e",
+        "0x7e656673",
+        "0x7e7465736c61",
+        "0x307830303131323233333434353536363737383839396161626263636464656566663030313132323333",
+        "0x307866666666666666666666666666666666666666666666666666666666666666666666666666666666",
+        "0x307830303030303030303030303030303030303030303030303030303030303030303030303030303030",
+        "0x61e2808bc0",
+        "0xc0412f",
+        "0xc280",
+        "0xc28f",
+        "0xc29f",
+        "0xc2ad",
+        "0xcd8f",
+        "0xd880",
+        "0xd882",
+        "0xd885",
+        "0xd89c",
+        "0xdb9d",
+        "0xdc8f",
+        "0xe0a290",
+        "0xe0a291",
+        "0xe0a3a2",
+        "0xe1859f",
+        "0xe185a0",
+        "0xe19eb4",
+        "0xe19eb5",
+        "0xe1a08b",
+        "0xe1a08c",
+        "0xe1a08d",
+        "0xe1a08e",
+        "0xe1a08f",
+        "0xe2808b",
+        "0xe2808c",
+        "0xe2808d",
+        "0xe2808e",
+        "0xe2808f",
+        "0xe280a8",
+        "0xe280a9",
+        "0xe280aa",
+        "0xe280ac",
+        "0xe280ae",
+        "0xe281a0",
+        "0xe281a2",
+        "0xe281a5",
+        "0xe281a6",
+        "0xe281a7",
+        "0xe281a9",
+        "0xe281aa",
+        "0xe281ac",
+        "0xe281af",
+        "0xe385a4",
+        "0xefb790",
+        "0xefb79f",
+        "0xefb7af",
+        "0xefb880",
+        "0xefb887",
+        "0xefb88f",
+        "0xefbbbf",
+        "0xefbea0",
+        "0xefbfb0",
+        "0xefbfb5",
+        "0xefbfbb",
+        "0xefbfbc",
+        "0xefbfbd",
+        "0xefbfbf",
+        "0xf09182bd",
+        "0xf091838d",
+        "0xf09390b0",
+        "0xf09390b7",
+        "0xf09390bf",
+        "0xf09bb2a0",
+        "0xf09bb2a1",
+        "0xf09bb2a3",
+        "0xf09d85b3",
+        "0xf09d85b6",
+        "0xf09d85ba",
+        "0xf09fbfbe",
+        "0xf09fbfbf",
+        "0xf0afbfbe",
+        "0xf0afbfbf",
+        "0xf0bfbfbe",
+        "0xf0bfbfbf",
+        "0xf18fbfbe",
+        "0xf18fbfbf",
+        "0xf19fbfbe",
+        "0xf19fbfbf",
+        "0xf1afbfbe",
+        "0xf1afbfbf",
+        "0xf1bfbfbe",
+        "0xf1bfbfbf",
+        "0xf28fbfbe",
+        "0xf28fbfbf",
+        "0xf29fbfbe",
+        "0xf29fbfbf",
+        "0xf2afbfbe",
+        "0xf2afbfbf",
+        "0xf2bfbfbe",
+        "0xf2bfbfbf",
+        "0xf38fbfbe",
+        "0xf38fbfbf",
+        "0xf39fbfbe",
+        "0xf39fbfbf",
+        "0xf3a08080",
+        "0xf3a081bf",
+        "0xf3a083bf",
+        "0xf3a08480",
+        "0xf3a085b7",
+        "0xf3a087af",
+        "0xf3a087b0",
+        "0xf3a0a3b7",
+        "0xf3a0bfbf",
+        "0xf3afbfbe",
+        "0xf3afbfbf",
+        "0xf3bfbfbe",
+        "0xf3bfbfbf",
+        "0xf48fbfbe",
+        "0xf48fbfbf",
+        "0xf09f91a8e2808df09f91a9",
+        "0xe29da4efb88f",
+        "0xc2ac",
+        "0xefb78f",
+        "0xc2a0",
+        "0xe2808a",
+        "0xe281b0",
+        "0xefb890",
+        "0xf39fbfbd",
+        "0xf3a18080"
+      ],
+      "code": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5,
+        5,
+        6,
+        6,
+        6,
+        7,
+        2,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pageId": [
+        "0x350ba1db9d037676cb1471cf59bfd94d695e1543e6baf7bc4d2e9317793c01eb",
+        "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+        "0x332517e03b7fccc3baba58d9d2b9d4f8623de7cfb3467d1a08192f065cc81b87",
+        "0xc91f5d5a10744bea1f907ba33edb62d68640fa3bacbdd906115ceb7b7c1ff319",
+        "0xe79b05a76e972b61db498858cf4bf1ac1f1b1024fb1312ccff693545adeb522c",
+        "0xe5d6bb351e6e93c3a190c140038a01c569d27822e151e688c896e0f7a1a52fab",
+        "0x6c24a5ff64a0a48a6f87af91c03097d4a73ccdc01d625b9ad9081514f841d4db",
+        "0xdd0e0d5a15baf74052f34965e97ff5861a739c093e02297d1c35b6c73e7aa8a0",
+        "0x6d1b7ec9817c78669d8669aa71919c068e7cd6dcdda114a583da8fdb99a60850",
+        "0x7352bbb545c71a3fd3eaedae3c2e28f922074a1d7c3aed6a47c656023834b62e",
+        "0x52557771d7f8224847c2f0afe843b8f7b5e5b83bfafefaf8af3f0953bd04c063",
+        "0x84b26c110383c490492900f7e40f9e5ed0a3ad446c555aec2184faac5033a0f4",
+        "0xd08cd182aecbb9f3ea86440bad998ac8379704e3325e20c7af0842767343aa2b",
+        "0xa056e6297917c207f45a47238d7a6fad39a18bea227c9a88515b6bda82ea0944",
+        "0x62668daaa2e9571bef26f26c88e1826207a8db471985ddb054ac37fe31aa5bac",
+        "0x8693f091009e2ea9879398d3fc3e3a61caf31455d010d366a790702c43d17f39",
+        "0x34b0b52abaef5a82b9b6adb3920e0ed3d7c06314e93ede00fe0d8b5a1a19c8af",
+        "0xaa52cff46141982666d0c356eac7703f12d102ab6401d1caebea958368873b58",
+        "0x712c7b573a361932f1df193dc4cf093f7a9300af036221147830627f21cd0189",
+        "0xa284b424a5802ece491f3216eccad0a290db8dcb13f86251004eeb6c3a802378",
+        "0xed4f9f6a109dc196ef0196fa1051d4be6f6d153bdcc7320a714af9ab03121728",
+        "0x3acdbcf66d337efe15fffd30f874ca43091b09ef0ddb107e968f327aedf250a7",
+        "0x0f0213bb1ab22d2c4c03edb986a584efa1e4f54b95b7f3c9232927a1b69b709b",
+        "0x52557771d7f8224847c2f0afe843b8f7b5e5b83bfafefaf8af3f0953bd04c063",
+        "0x1ee311b8ccd9f3b507ffac73a431fdc2f5d7bb51b2211987bc0c5937fa969d25",
+        "0xe82c6148fefd136ff9003d58c06440ebeb1990ef94d008bf8973b8ea5ca5edba",
+        "0x0ad5aa27382afa42ecc67a593e2bf37dd84cbdee70630f3ce0d5acf2ff100936",
+        "0x97f84cffa473b28321da73cb00b87a2bb2347e25f68d886ba1e70eb13ffbfd04",
+        "0x0d38c85296ff1e50d3bab407884bcdd357a598388ad0bf7cb31e7cad6bd86394"
+      ]
+    },
+    "texts": {
+      "hex": [
+        "0x41432f4443",
+        "0x54686520717569636b2062726f776e20666f782e",
+        "0x20",
+        "0x787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+        "0xe69db1e4baac",
+        "0xf09f91a8e2808df09f91a9",
+        "0xe29da4efb88f",
+        "0xefb790",
+        "0xefbfbd",
+        "0x",
+        "0x78787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878",
+        "0xc0af",
+        "0xeda080",
+        "0x41e2",
+        "0x610a62",
+        "0x00",
+        "0x7f",
+        "0x61c285",
+        "0x61e280ae62",
+        "0xd89c",
+        "0xe2808b",
+        "0xc2ad",
+        "0xefbbbf",
+        "0xf3a08181",
+        "0x0ac0"
+      ],
+      "code": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        20,
+        21,
+        21,
+        21,
+        22,
+        22,
+        22,
+        22,
+        23,
+        23,
+        23,
+        23,
+        23,
+        23,
+        22
+      ],
+      "recordId": [
+        "0xcfaac15d102509c7468b25a2e1d91921b72470b8e7cfb1161616c178288a28ff",
+        "0xd315dfe7905d292ef457386d0ac37209700cfe653ddcf4bb2b40d879982dc938",
+        "0x1ba212ffac098833ccbd27101ccc5512c79c2fd9ea7bac6adbba42044ef7c767",
+        "0xaa6d2334d8770850eb52c640cea4778703c38df865dc5074ab3fd869dc0b3b0a",
+        "0x9c7c514ca8b1705c371dab444434105144d1784669f7266bd27077492041635f",
+        "0x6640d2a115ba27782c7df60fdcfbff8be4f6491d4b4c2cff85f2c8082df1f6cf",
+        "0xcb82d8f8686ab3f71a522ba7f779b210138744660d7bf55660e6e1099dfd52b5",
+        "0x61576c1d0c77ddf9cc88038bb73f4034004d551bf72314a6bbf6fac04d2b6d31",
+        "0x14c0daa885c9f32c1578b521cc79b27d6b3f4d0159315fa35fa95adffca7122e"
+      ]
+    }
+  },
+  "paths": [
+    {
+      "words": [
+        "tesla"
+      ],
+      "pageIds": [
+        "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65"
+      ],
+      "id": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+      "records": [
+        {
+          "words": 1,
+          "id": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65"
+        }
+      ]
+    },
+    {
+      "words": [
+        "cars",
+        "tesla"
+      ],
+      "pageIds": [
+        "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+        "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65"
+      ],
+      "id": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c",
+      "records": [
+        {
+          "words": 1,
+          "id": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457"
+        },
+        {
+          "words": 2,
+          "parent": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "wordPage": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+          "body": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457ee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+          "id": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c"
+        }
+      ]
+    },
+    {
+      "words": [
+        "cars",
+        "tesla",
+        "model_y"
+      ],
+      "pageIds": [
+        "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+        "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+        "0x400f21a6c30071cbcffe0146981113594dff8aaf85ab6f11a4724a9960da3292"
+      ],
+      "id": "0x257e91c4a7a0f07fec3fa4f1be2151bbdb33ff2faafd56655a5c62b3439b3ac6",
+      "records": [
+        {
+          "words": 1,
+          "id": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457"
+        },
+        {
+          "words": 2,
+          "parent": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "wordPage": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+          "body": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457ee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+          "id": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c"
+        },
+        {
+          "words": 3,
+          "parent": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c",
+          "wordPage": "0x400f21a6c30071cbcffe0146981113594dff8aaf85ab6f11a4724a9960da3292",
+          "body": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c400f21a6c30071cbcffe0146981113594dff8aaf85ab6f11a4724a9960da3292",
+          "id": "0x257e91c4a7a0f07fec3fa4f1be2151bbdb33ff2faafd56655a5c62b3439b3ac6"
+        }
+      ]
+    },
+    {
+      "words": [
+        "w0",
+        "w1",
+        "w2",
+        "w3",
+        "w4",
+        "w5",
+        "w6",
+        "w7",
+        "w8",
+        "w9",
+        "w10",
+        "w11",
+        "w12",
+        "w13",
+        "w14",
+        "w15",
+        "w16",
+        "w17",
+        "w18",
+        "w19",
+        "w20",
+        "w21",
+        "w22",
+        "w23",
+        "w24",
+        "w25",
+        "w26",
+        "w27",
+        "w28",
+        "w29",
+        "w30",
+        "w31",
+        "w32",
+        "w33",
+        "w34",
+        "w35",
+        "w36",
+        "w37",
+        "w38",
+        "w39",
+        "w40",
+        "w41",
+        "w42",
+        "w43",
+        "w44",
+        "w45",
+        "w46",
+        "w47",
+        "w48",
+        "w49",
+        "w50",
+        "w51",
+        "w52",
+        "w53",
+        "w54",
+        "w55",
+        "w56",
+        "w57",
+        "w58",
+        "w59",
+        "w60",
+        "w61",
+        "w62",
+        "w63"
+      ],
+      "pageIds": [
+        "0x82aa68a8ed09ee704bb4bd62f188706b8dac90a05e642a10af3cd6752de0a69a",
+        "0x2344cac59c44a7f958abff7faf89d49e8b66bd1b78e1bfc967ce826512e80077",
+        "0xcc2fdd483179240666c24542733d4b569cc15a16fc8cfa6677ac82c4afd12e93",
+        "0xce9d2dbb016bee6980afd6df734f174eb316a9f4aa50c44b82afc5b05edf958d",
+        "0xb4cdf304c4e8c746fc651930a6e3ce1b2c3df3e1da4f94c3dcd24d899548b685",
+        "0x6692ef519db35a0ee75e9b8a7fec979c653ee7fdb1beb2a039d6d553be2ac0d2",
+        "0x7e0088ef04ddebc9724ee4182be0127ad45ad4faf10cb1a2dd06e76ff52f4289",
+        "0x8861f9fee47398d1830154ba64f2939289a248893c5cfc8feef65c850a390f52",
+        "0x1804666801378cbf3131dd66ef15b07c657a902d6431ab124138eecb5cb290e7",
+        "0xe5cf8071d3f969ba0a1b4522a9926334e4f3d4bb4069fea76446fb8dbca1c313",
+        "0xae71858ee957fd0af24a3a25a55acd2f8fe4b3a1b02003d2a948248a9939ba84",
+        "0x1755b65dd0f1562cc0c8caa957207177c843b0eb6f79ec16de527df286cb8fd7",
+        "0x82d68f91b37a171c6338afd8f261535b5fa5f3d6511eddb1b91a994f65d1fe12",
+        "0xb4c3dc33388fded3bb69e0ce246544134faf592b9e947eac651b670edb1ecb2b",
+        "0x4e7934e6365565431003d3bcd6285b1fc9e9ad34351bab35b2e268b84a2bcbec",
+        "0xbcf032ca08f857502be6bc5ce8f350d9c57d53f45cb85479457b4e8cd1005dca",
+        "0xcba06a9f48427f1d3641b3fb122641996807643ffdfea77ce31ad3111012d15b",
+        "0xf2b58a6412914fe11603566fdcb39f39d6402225f24e8c059507b99b93ca0a1e",
+        "0xe15a6685cb0e907e181ecba4734b92a0f16c5cb282830ca7072cac60df70e5ce",
+        "0xde865557f4824c6d8cd5d9b9ce6ee15474da0153e06a39418b6a30a327264646",
+        "0xf90fbf2b6cd3f0f1f5b70e51764f313caa6959f86034fea1653be3f37f2d2202",
+        "0xd854a0e25d489fcd541fc6c1fd91f0df06e8d0068f9193334c20f5aa844b2344",
+        "0x892c00d5ce5f2d97aaaf616951ff930dc0019dbf2186417fd47ef04021ea0d61",
+        "0x9b0dbd1545294c51637bd947f6163f00c5ab5b425f9bc36d1a62c041386f0dc4",
+        "0xc85c79b08042b7ba538c3ddec523b3c487441aa51faf224dcd2c395c65715912",
+        "0x8fbde355772d062a3f5eec2f4f3e827893c7f96ad19f4efd83b4328574f5f7a1",
+        "0x90e0bdbb8459eaa16a7b1e2f36ba59c31b2793954dd08955b409b10052e25810",
+        "0x6370a915b53dd7a369d9e7231396cc5ccf46cde885539cde61001cfa2d79b3fa",
+        "0x062b86c72ac6dff2f76153b1248ed4e9c120aef185219c849a1e2814adc7adea",
+        "0x737d0aa77696aa113ccdb651631a7d00ebb1470da8e4ea863bae6b9a8c51a968",
+        "0x3eaccc42318e4ed77e1dc12f817f84aa4d0dfd1a5c8898319df5813d4202a551",
+        "0x7779643645e2c812910275617751a57132ca6d410001aac8ebb722e4915f91a0",
+        "0x75e6fdad7fb744cd5d3a5418f058d52691a7c30e4d43a66cdfed9d6944f884cd",
+        "0x23cef512d93174857aca3643cc9e77a7968ffb5f16804c3e37745e6afc15f6da",
+        "0xedeba9dd5775bc95e62ae35ab42cf08d7d24349ac2283a006317bf59b3fa51d0",
+        "0xeb4f1654afca64da087105319ea90beefa28c66a915f94aabb4c86f9e9e6f1b2",
+        "0xe0ce13899a397149e654b28b9e85ceba7c05b10d3891573f30c5141cc41c9b45",
+        "0x7d076ed89456c6d137fdb9b2aa1f35c2b86b72133063fd7886b78b98a5c1967f",
+        "0x99440cef2e89180029d85d7ce7d6884f1dcecbb542548ed7a045666ef54e4920",
+        "0xe659a6b6f4df6071dce77c75ced7f664120e6cee56f314e18a9b43c1e9896f9a",
+        "0x74c0dfcccc84f398b1b2873013901d1954b7a597b3d3c92589a13bac082c00c7",
+        "0xdf081723c6083612fd85dd5b23144d324d99d4b4cd0ec89ea6eb60138c8f0b2e",
+        "0x57a87f9b0a1e27cf369b935e551654d4353e809b530a81577f5762a611ba8f78",
+        "0xdb6dfcbafc170e7df464e27615fa128d407cbc90f3434c2cd5e2e4702e4771be",
+        "0x393e2c5cad818b4d87d1663653c9935c0956ffa9a3919eee1712d14dde711d07",
+        "0xf76f233aa513d25fe05f277157db6789d4681a4bc7c25c40d84f9931e3679874",
+        "0x1f28f8164a0adaf675bab0677a7d27f425622e6f58a16f371f42fd1441645c81",
+        "0xbd1fab85f2bd2be5ce4bbbc7c4d818de06b7f98f993a88c66572f2bd6bd5d22f",
+        "0xe79ddbee46673341c6d9b8394e44e704588916590b9ffdb2a981133fc85caba2",
+        "0x5b265e25af9d8870e8baac01b40ddf541f3910a8fab4b8b3f2f994a393d1d68c",
+        "0xf9422ec48b373e9c75f5166b3ce11b5f9c0322a65117d998670ad14ec4414d08",
+        "0x8cd842fed1050c9a994370be6889065aea8e6db399331b7588cd339f36b01987",
+        "0x4b8760f2098af9ddb645af664ab102fb2744253d800a94598bcd231f83923d4c",
+        "0xc4842c7ab4fd81a0cdde0139fb00c79b7bbaad300f1924afd48da30ed9ab9bb3",
+        "0x4cc944a5e4da66cc772ce40e69662bfed18cc0734761a1c6718a9e4dc153d047",
+        "0x7f210c7fd6bb225ca5ef28c5bc7572c2242293affb2bf182cea7f6f984336a27",
+        "0x38c853d409ae999e9c9df7902c36e3c592e8314363651d64673438996b0cbff4",
+        "0x8bde1a203b628469bd408da323d7716b71b0eabd6f85fd6dee20acf91a377bf4",
+        "0xc802bb12a3becf589b509ff56b632351a86b56be54783fdb8dd0f4e604950ef0",
+        "0x189a7713823a723b9ee36e9c4f3d0383f137533f87f29822c41c68817902d8b9",
+        "0x965bf7033836b249faf5a93ad2145953b4d7526ce440ee257af357d806506355",
+        "0x0f90311db383b98f6f99ea7511d5cf6cd213d6bab92a00d84868a07b687857ba",
+        "0x63c0ac43cd6d510f7109a7615998eb196e16c529808b5114598b39a7a4811b4e",
+        "0x7f79b13439e0a06f6622c63cebb0ce7cdcb45e0a6cab7f09eff924ce5dec5953"
+      ],
+      "id": "0x1d8c969fad07e8313a7d4284fd92d7eafbb5f2d2bceaffa042701e56800a8c0d",
+      "records": [
+        {
+          "words": 1,
+          "id": "0x82aa68a8ed09ee704bb4bd62f188706b8dac90a05e642a10af3cd6752de0a69a"
+        },
+        {
+          "words": 2,
+          "parent": "0x82aa68a8ed09ee704bb4bd62f188706b8dac90a05e642a10af3cd6752de0a69a",
+          "wordPage": "0x2344cac59c44a7f958abff7faf89d49e8b66bd1b78e1bfc967ce826512e80077",
+          "body": "0x82aa68a8ed09ee704bb4bd62f188706b8dac90a05e642a10af3cd6752de0a69a2344cac59c44a7f958abff7faf89d49e8b66bd1b78e1bfc967ce826512e80077",
+          "id": "0x36ab0e3e9d17c4fdd958f46b15daa1ca1f00614e4cd38cd23e19175d86cf0229"
+        },
+        {
+          "words": 3,
+          "parent": "0x36ab0e3e9d17c4fdd958f46b15daa1ca1f00614e4cd38cd23e19175d86cf0229",
+          "wordPage": "0xcc2fdd483179240666c24542733d4b569cc15a16fc8cfa6677ac82c4afd12e93",
+          "body": "0x36ab0e3e9d17c4fdd958f46b15daa1ca1f00614e4cd38cd23e19175d86cf0229cc2fdd483179240666c24542733d4b569cc15a16fc8cfa6677ac82c4afd12e93",
+          "id": "0xc0d75c440054e99a44f98d760637914f55c74a2b674339e02663c84d50e5544d"
+        },
+        {
+          "words": 4,
+          "parent": "0xc0d75c440054e99a44f98d760637914f55c74a2b674339e02663c84d50e5544d",
+          "wordPage": "0xce9d2dbb016bee6980afd6df734f174eb316a9f4aa50c44b82afc5b05edf958d",
+          "body": "0xc0d75c440054e99a44f98d760637914f55c74a2b674339e02663c84d50e5544dce9d2dbb016bee6980afd6df734f174eb316a9f4aa50c44b82afc5b05edf958d",
+          "id": "0x7f0e5ec096badc77b79ad7580a010bf5102497d2e52681318d5ddafd44aa213e"
+        },
+        {
+          "words": 5,
+          "parent": "0x7f0e5ec096badc77b79ad7580a010bf5102497d2e52681318d5ddafd44aa213e",
+          "wordPage": "0xb4cdf304c4e8c746fc651930a6e3ce1b2c3df3e1da4f94c3dcd24d899548b685",
+          "body": "0x7f0e5ec096badc77b79ad7580a010bf5102497d2e52681318d5ddafd44aa213eb4cdf304c4e8c746fc651930a6e3ce1b2c3df3e1da4f94c3dcd24d899548b685",
+          "id": "0xf6cdd579707ef9a6c46c07a3c2f9af60e017a8a3152b6b0aa1ad96b768d24050"
+        },
+        {
+          "words": 6,
+          "parent": "0xf6cdd579707ef9a6c46c07a3c2f9af60e017a8a3152b6b0aa1ad96b768d24050",
+          "wordPage": "0x6692ef519db35a0ee75e9b8a7fec979c653ee7fdb1beb2a039d6d553be2ac0d2",
+          "body": "0xf6cdd579707ef9a6c46c07a3c2f9af60e017a8a3152b6b0aa1ad96b768d240506692ef519db35a0ee75e9b8a7fec979c653ee7fdb1beb2a039d6d553be2ac0d2",
+          "id": "0xdfd8d040f0e9510946301bd61fa5299243fdec7663f19e73ce2a1d6d18b9a118"
+        },
+        {
+          "words": 7,
+          "parent": "0xdfd8d040f0e9510946301bd61fa5299243fdec7663f19e73ce2a1d6d18b9a118",
+          "wordPage": "0x7e0088ef04ddebc9724ee4182be0127ad45ad4faf10cb1a2dd06e76ff52f4289",
+          "body": "0xdfd8d040f0e9510946301bd61fa5299243fdec7663f19e73ce2a1d6d18b9a1187e0088ef04ddebc9724ee4182be0127ad45ad4faf10cb1a2dd06e76ff52f4289",
+          "id": "0x021ee926fb49315e7443ce0bf442ed360e52be3f6579d35ec91657e3e78e4f05"
+        },
+        {
+          "words": 8,
+          "parent": "0x021ee926fb49315e7443ce0bf442ed360e52be3f6579d35ec91657e3e78e4f05",
+          "wordPage": "0x8861f9fee47398d1830154ba64f2939289a248893c5cfc8feef65c850a390f52",
+          "body": "0x021ee926fb49315e7443ce0bf442ed360e52be3f6579d35ec91657e3e78e4f058861f9fee47398d1830154ba64f2939289a248893c5cfc8feef65c850a390f52",
+          "id": "0x1b7accbf00379e60738ed820c42d3edf566ad68436e005e3f7cc1cf75e55959d"
+        },
+        {
+          "words": 9,
+          "parent": "0x1b7accbf00379e60738ed820c42d3edf566ad68436e005e3f7cc1cf75e55959d",
+          "wordPage": "0x1804666801378cbf3131dd66ef15b07c657a902d6431ab124138eecb5cb290e7",
+          "body": "0x1b7accbf00379e60738ed820c42d3edf566ad68436e005e3f7cc1cf75e55959d1804666801378cbf3131dd66ef15b07c657a902d6431ab124138eecb5cb290e7",
+          "id": "0x86ff4e94d4991fdface9d9cce11b2a2a6cb08dc5c45cfec8a698e2908accd2e5"
+        },
+        {
+          "words": 10,
+          "parent": "0x86ff4e94d4991fdface9d9cce11b2a2a6cb08dc5c45cfec8a698e2908accd2e5",
+          "wordPage": "0xe5cf8071d3f969ba0a1b4522a9926334e4f3d4bb4069fea76446fb8dbca1c313",
+          "body": "0x86ff4e94d4991fdface9d9cce11b2a2a6cb08dc5c45cfec8a698e2908accd2e5e5cf8071d3f969ba0a1b4522a9926334e4f3d4bb4069fea76446fb8dbca1c313",
+          "id": "0xd52fbe92c549d617232f53e66d877c4eecb6dd0280d84d6f4eacddc45aa391d0"
+        },
+        {
+          "words": 11,
+          "parent": "0xd52fbe92c549d617232f53e66d877c4eecb6dd0280d84d6f4eacddc45aa391d0",
+          "wordPage": "0xae71858ee957fd0af24a3a25a55acd2f8fe4b3a1b02003d2a948248a9939ba84",
+          "body": "0xd52fbe92c549d617232f53e66d877c4eecb6dd0280d84d6f4eacddc45aa391d0ae71858ee957fd0af24a3a25a55acd2f8fe4b3a1b02003d2a948248a9939ba84",
+          "id": "0x51a376699a1e099d683360318439f6770ca34f5de8638b0b396754e1e1372ac5"
+        },
+        {
+          "words": 12,
+          "parent": "0x51a376699a1e099d683360318439f6770ca34f5de8638b0b396754e1e1372ac5",
+          "wordPage": "0x1755b65dd0f1562cc0c8caa957207177c843b0eb6f79ec16de527df286cb8fd7",
+          "body": "0x51a376699a1e099d683360318439f6770ca34f5de8638b0b396754e1e1372ac51755b65dd0f1562cc0c8caa957207177c843b0eb6f79ec16de527df286cb8fd7",
+          "id": "0xcf8e2e70d4adb40a456851ad17edbab4ad2d58fcb60cf3aa94c96268a4e659dc"
+        },
+        {
+          "words": 13,
+          "parent": "0xcf8e2e70d4adb40a456851ad17edbab4ad2d58fcb60cf3aa94c96268a4e659dc",
+          "wordPage": "0x82d68f91b37a171c6338afd8f261535b5fa5f3d6511eddb1b91a994f65d1fe12",
+          "body": "0xcf8e2e70d4adb40a456851ad17edbab4ad2d58fcb60cf3aa94c96268a4e659dc82d68f91b37a171c6338afd8f261535b5fa5f3d6511eddb1b91a994f65d1fe12",
+          "id": "0xdcaafa79a69d1253ad9857511b6ac11fe72f1ba735fa00300acad252457de53a"
+        },
+        {
+          "words": 14,
+          "parent": "0xdcaafa79a69d1253ad9857511b6ac11fe72f1ba735fa00300acad252457de53a",
+          "wordPage": "0xb4c3dc33388fded3bb69e0ce246544134faf592b9e947eac651b670edb1ecb2b",
+          "body": "0xdcaafa79a69d1253ad9857511b6ac11fe72f1ba735fa00300acad252457de53ab4c3dc33388fded3bb69e0ce246544134faf592b9e947eac651b670edb1ecb2b",
+          "id": "0x23bc054634342c6667ffdc42ca125e0338c7f9e99de436a5544a45adf5aa8d60"
+        },
+        {
+          "words": 15,
+          "parent": "0x23bc054634342c6667ffdc42ca125e0338c7f9e99de436a5544a45adf5aa8d60",
+          "wordPage": "0x4e7934e6365565431003d3bcd6285b1fc9e9ad34351bab35b2e268b84a2bcbec",
+          "body": "0x23bc054634342c6667ffdc42ca125e0338c7f9e99de436a5544a45adf5aa8d604e7934e6365565431003d3bcd6285b1fc9e9ad34351bab35b2e268b84a2bcbec",
+          "id": "0xc01b876dbd7ace6d98be1e8988f763e1e1b02bf16228a40ecb07f517420599da"
+        },
+        {
+          "words": 16,
+          "parent": "0xc01b876dbd7ace6d98be1e8988f763e1e1b02bf16228a40ecb07f517420599da",
+          "wordPage": "0xbcf032ca08f857502be6bc5ce8f350d9c57d53f45cb85479457b4e8cd1005dca",
+          "body": "0xc01b876dbd7ace6d98be1e8988f763e1e1b02bf16228a40ecb07f517420599dabcf032ca08f857502be6bc5ce8f350d9c57d53f45cb85479457b4e8cd1005dca",
+          "id": "0x4c6f7f3abaa0c0a4b419c6c7528a56aa2608fa406eedc003b5a331fe385240c6"
+        },
+        {
+          "words": 17,
+          "parent": "0x4c6f7f3abaa0c0a4b419c6c7528a56aa2608fa406eedc003b5a331fe385240c6",
+          "wordPage": "0xcba06a9f48427f1d3641b3fb122641996807643ffdfea77ce31ad3111012d15b",
+          "body": "0x4c6f7f3abaa0c0a4b419c6c7528a56aa2608fa406eedc003b5a331fe385240c6cba06a9f48427f1d3641b3fb122641996807643ffdfea77ce31ad3111012d15b",
+          "id": "0x86c8b48a0d57c1ab9596d1516dfdd7f4e2ac7ad08dd06063a6e7ead51a2a8263"
+        },
+        {
+          "words": 18,
+          "parent": "0x86c8b48a0d57c1ab9596d1516dfdd7f4e2ac7ad08dd06063a6e7ead51a2a8263",
+          "wordPage": "0xf2b58a6412914fe11603566fdcb39f39d6402225f24e8c059507b99b93ca0a1e",
+          "body": "0x86c8b48a0d57c1ab9596d1516dfdd7f4e2ac7ad08dd06063a6e7ead51a2a8263f2b58a6412914fe11603566fdcb39f39d6402225f24e8c059507b99b93ca0a1e",
+          "id": "0x9fa19fac65377699cd91ad34eef3b8f4c0c89eab1a784bfc119854c7859f8739"
+        },
+        {
+          "words": 19,
+          "parent": "0x9fa19fac65377699cd91ad34eef3b8f4c0c89eab1a784bfc119854c7859f8739",
+          "wordPage": "0xe15a6685cb0e907e181ecba4734b92a0f16c5cb282830ca7072cac60df70e5ce",
+          "body": "0x9fa19fac65377699cd91ad34eef3b8f4c0c89eab1a784bfc119854c7859f8739e15a6685cb0e907e181ecba4734b92a0f16c5cb282830ca7072cac60df70e5ce",
+          "id": "0x62569ff09118af48bfd0b65127ed86c544b6a804b81bd9494dd041171b47bcc7"
+        },
+        {
+          "words": 20,
+          "parent": "0x62569ff09118af48bfd0b65127ed86c544b6a804b81bd9494dd041171b47bcc7",
+          "wordPage": "0xde865557f4824c6d8cd5d9b9ce6ee15474da0153e06a39418b6a30a327264646",
+          "body": "0x62569ff09118af48bfd0b65127ed86c544b6a804b81bd9494dd041171b47bcc7de865557f4824c6d8cd5d9b9ce6ee15474da0153e06a39418b6a30a327264646",
+          "id": "0x564dd551fb456906d97a4ccdfe14108c7659f5e32c3a30974cdf53c737643596"
+        },
+        {
+          "words": 21,
+          "parent": "0x564dd551fb456906d97a4ccdfe14108c7659f5e32c3a30974cdf53c737643596",
+          "wordPage": "0xf90fbf2b6cd3f0f1f5b70e51764f313caa6959f86034fea1653be3f37f2d2202",
+          "body": "0x564dd551fb456906d97a4ccdfe14108c7659f5e32c3a30974cdf53c737643596f90fbf2b6cd3f0f1f5b70e51764f313caa6959f86034fea1653be3f37f2d2202",
+          "id": "0x696e01320a2fedb45d6e35342cb4a94c0e43b1da41dfc254090f52e8746c61ff"
+        },
+        {
+          "words": 22,
+          "parent": "0x696e01320a2fedb45d6e35342cb4a94c0e43b1da41dfc254090f52e8746c61ff",
+          "wordPage": "0xd854a0e25d489fcd541fc6c1fd91f0df06e8d0068f9193334c20f5aa844b2344",
+          "body": "0x696e01320a2fedb45d6e35342cb4a94c0e43b1da41dfc254090f52e8746c61ffd854a0e25d489fcd541fc6c1fd91f0df06e8d0068f9193334c20f5aa844b2344",
+          "id": "0x87c9e968268b30c71ddbc8c0ee91729d878922e6f08f60b395f66027a0553466"
+        },
+        {
+          "words": 23,
+          "parent": "0x87c9e968268b30c71ddbc8c0ee91729d878922e6f08f60b395f66027a0553466",
+          "wordPage": "0x892c00d5ce5f2d97aaaf616951ff930dc0019dbf2186417fd47ef04021ea0d61",
+          "body": "0x87c9e968268b30c71ddbc8c0ee91729d878922e6f08f60b395f66027a0553466892c00d5ce5f2d97aaaf616951ff930dc0019dbf2186417fd47ef04021ea0d61",
+          "id": "0x57959145a218aadf3ce6c30b25d594847fcac927435b8dbb89edfc232ae6cef9"
+        },
+        {
+          "words": 24,
+          "parent": "0x57959145a218aadf3ce6c30b25d594847fcac927435b8dbb89edfc232ae6cef9",
+          "wordPage": "0x9b0dbd1545294c51637bd947f6163f00c5ab5b425f9bc36d1a62c041386f0dc4",
+          "body": "0x57959145a218aadf3ce6c30b25d594847fcac927435b8dbb89edfc232ae6cef99b0dbd1545294c51637bd947f6163f00c5ab5b425f9bc36d1a62c041386f0dc4",
+          "id": "0x28661b7d8621dd7053218b26b886f16663d7f4a4912b4f8027f192936319600d"
+        },
+        {
+          "words": 25,
+          "parent": "0x28661b7d8621dd7053218b26b886f16663d7f4a4912b4f8027f192936319600d",
+          "wordPage": "0xc85c79b08042b7ba538c3ddec523b3c487441aa51faf224dcd2c395c65715912",
+          "body": "0x28661b7d8621dd7053218b26b886f16663d7f4a4912b4f8027f192936319600dc85c79b08042b7ba538c3ddec523b3c487441aa51faf224dcd2c395c65715912",
+          "id": "0x6244154b3e4311ff685350dbfa6f72c092d0f9ada4758ec62934a6225f33d0a1"
+        },
+        {
+          "words": 26,
+          "parent": "0x6244154b3e4311ff685350dbfa6f72c092d0f9ada4758ec62934a6225f33d0a1",
+          "wordPage": "0x8fbde355772d062a3f5eec2f4f3e827893c7f96ad19f4efd83b4328574f5f7a1",
+          "body": "0x6244154b3e4311ff685350dbfa6f72c092d0f9ada4758ec62934a6225f33d0a18fbde355772d062a3f5eec2f4f3e827893c7f96ad19f4efd83b4328574f5f7a1",
+          "id": "0x40fb5a7c193f322255bbe0dcf93e0a2d08573214d358fbb96f620505df7669c8"
+        },
+        {
+          "words": 27,
+          "parent": "0x40fb5a7c193f322255bbe0dcf93e0a2d08573214d358fbb96f620505df7669c8",
+          "wordPage": "0x90e0bdbb8459eaa16a7b1e2f36ba59c31b2793954dd08955b409b10052e25810",
+          "body": "0x40fb5a7c193f322255bbe0dcf93e0a2d08573214d358fbb96f620505df7669c890e0bdbb8459eaa16a7b1e2f36ba59c31b2793954dd08955b409b10052e25810",
+          "id": "0x6741ef08e84678857d235a637ad5a977192adff6d1b8607ebe112b7184130585"
+        },
+        {
+          "words": 28,
+          "parent": "0x6741ef08e84678857d235a637ad5a977192adff6d1b8607ebe112b7184130585",
+          "wordPage": "0x6370a915b53dd7a369d9e7231396cc5ccf46cde885539cde61001cfa2d79b3fa",
+          "body": "0x6741ef08e84678857d235a637ad5a977192adff6d1b8607ebe112b71841305856370a915b53dd7a369d9e7231396cc5ccf46cde885539cde61001cfa2d79b3fa",
+          "id": "0x58969965ce236ea47cd83c05bd518fd1c49ee07dcd7bd083e8e22d856b8a7241"
+        },
+        {
+          "words": 29,
+          "parent": "0x58969965ce236ea47cd83c05bd518fd1c49ee07dcd7bd083e8e22d856b8a7241",
+          "wordPage": "0x062b86c72ac6dff2f76153b1248ed4e9c120aef185219c849a1e2814adc7adea",
+          "body": "0x58969965ce236ea47cd83c05bd518fd1c49ee07dcd7bd083e8e22d856b8a7241062b86c72ac6dff2f76153b1248ed4e9c120aef185219c849a1e2814adc7adea",
+          "id": "0x85a0b2cc3227905a9897972c67b35fd3070c1fb078a480440835ceee047afb2f"
+        },
+        {
+          "words": 30,
+          "parent": "0x85a0b2cc3227905a9897972c67b35fd3070c1fb078a480440835ceee047afb2f",
+          "wordPage": "0x737d0aa77696aa113ccdb651631a7d00ebb1470da8e4ea863bae6b9a8c51a968",
+          "body": "0x85a0b2cc3227905a9897972c67b35fd3070c1fb078a480440835ceee047afb2f737d0aa77696aa113ccdb651631a7d00ebb1470da8e4ea863bae6b9a8c51a968",
+          "id": "0x0a195c2655c1325c7c74aae54984b52698a3a7e6bbd1e4155912f9e7ef0828a5"
+        },
+        {
+          "words": 31,
+          "parent": "0x0a195c2655c1325c7c74aae54984b52698a3a7e6bbd1e4155912f9e7ef0828a5",
+          "wordPage": "0x3eaccc42318e4ed77e1dc12f817f84aa4d0dfd1a5c8898319df5813d4202a551",
+          "body": "0x0a195c2655c1325c7c74aae54984b52698a3a7e6bbd1e4155912f9e7ef0828a53eaccc42318e4ed77e1dc12f817f84aa4d0dfd1a5c8898319df5813d4202a551",
+          "id": "0x4ac05777a5a1c417e3f422bdc3db2c84b8a1943ca00b27b7513bd09f1936e42f"
+        },
+        {
+          "words": 32,
+          "parent": "0x4ac05777a5a1c417e3f422bdc3db2c84b8a1943ca00b27b7513bd09f1936e42f",
+          "wordPage": "0x7779643645e2c812910275617751a57132ca6d410001aac8ebb722e4915f91a0",
+          "body": "0x4ac05777a5a1c417e3f422bdc3db2c84b8a1943ca00b27b7513bd09f1936e42f7779643645e2c812910275617751a57132ca6d410001aac8ebb722e4915f91a0",
+          "id": "0xf8bbb66101bac852a9878b12305352308f3619d4bc9a81f3200b1b39ad38cfe1"
+        },
+        {
+          "words": 33,
+          "parent": "0xf8bbb66101bac852a9878b12305352308f3619d4bc9a81f3200b1b39ad38cfe1",
+          "wordPage": "0x75e6fdad7fb744cd5d3a5418f058d52691a7c30e4d43a66cdfed9d6944f884cd",
+          "body": "0xf8bbb66101bac852a9878b12305352308f3619d4bc9a81f3200b1b39ad38cfe175e6fdad7fb744cd5d3a5418f058d52691a7c30e4d43a66cdfed9d6944f884cd",
+          "id": "0x0167d84bc8ec622f95de3d0893c9f8c2fb2518d5ea7e3ea65e9d3026f5b290cf"
+        },
+        {
+          "words": 34,
+          "parent": "0x0167d84bc8ec622f95de3d0893c9f8c2fb2518d5ea7e3ea65e9d3026f5b290cf",
+          "wordPage": "0x23cef512d93174857aca3643cc9e77a7968ffb5f16804c3e37745e6afc15f6da",
+          "body": "0x0167d84bc8ec622f95de3d0893c9f8c2fb2518d5ea7e3ea65e9d3026f5b290cf23cef512d93174857aca3643cc9e77a7968ffb5f16804c3e37745e6afc15f6da",
+          "id": "0xfd435e5a3813e67bcbd7df9f3e0ffcd9d0195d830ed8c4303b7edb5db1eea3f1"
+        },
+        {
+          "words": 35,
+          "parent": "0xfd435e5a3813e67bcbd7df9f3e0ffcd9d0195d830ed8c4303b7edb5db1eea3f1",
+          "wordPage": "0xedeba9dd5775bc95e62ae35ab42cf08d7d24349ac2283a006317bf59b3fa51d0",
+          "body": "0xfd435e5a3813e67bcbd7df9f3e0ffcd9d0195d830ed8c4303b7edb5db1eea3f1edeba9dd5775bc95e62ae35ab42cf08d7d24349ac2283a006317bf59b3fa51d0",
+          "id": "0x403e491ac4337534dea3ea51fd8714fbd3ceaf968fba7d054aaa6d595caf37c2"
+        },
+        {
+          "words": 36,
+          "parent": "0x403e491ac4337534dea3ea51fd8714fbd3ceaf968fba7d054aaa6d595caf37c2",
+          "wordPage": "0xeb4f1654afca64da087105319ea90beefa28c66a915f94aabb4c86f9e9e6f1b2",
+          "body": "0x403e491ac4337534dea3ea51fd8714fbd3ceaf968fba7d054aaa6d595caf37c2eb4f1654afca64da087105319ea90beefa28c66a915f94aabb4c86f9e9e6f1b2",
+          "id": "0xc155a297dbaca8532c9b3f440c0aaa39cb9e9cf1e192f382875a5051ad2313ed"
+        },
+        {
+          "words": 37,
+          "parent": "0xc155a297dbaca8532c9b3f440c0aaa39cb9e9cf1e192f382875a5051ad2313ed",
+          "wordPage": "0xe0ce13899a397149e654b28b9e85ceba7c05b10d3891573f30c5141cc41c9b45",
+          "body": "0xc155a297dbaca8532c9b3f440c0aaa39cb9e9cf1e192f382875a5051ad2313ede0ce13899a397149e654b28b9e85ceba7c05b10d3891573f30c5141cc41c9b45",
+          "id": "0xaddde2025091b748213328ea56237aa2e90e19822ab2abb06a1a9af7e335c569"
+        },
+        {
+          "words": 38,
+          "parent": "0xaddde2025091b748213328ea56237aa2e90e19822ab2abb06a1a9af7e335c569",
+          "wordPage": "0x7d076ed89456c6d137fdb9b2aa1f35c2b86b72133063fd7886b78b98a5c1967f",
+          "body": "0xaddde2025091b748213328ea56237aa2e90e19822ab2abb06a1a9af7e335c5697d076ed89456c6d137fdb9b2aa1f35c2b86b72133063fd7886b78b98a5c1967f",
+          "id": "0xa7a59b60f776fbe7095f470d1e3e2756075d69472e4412381c6d6e50818e91e0"
+        },
+        {
+          "words": 39,
+          "parent": "0xa7a59b60f776fbe7095f470d1e3e2756075d69472e4412381c6d6e50818e91e0",
+          "wordPage": "0x99440cef2e89180029d85d7ce7d6884f1dcecbb542548ed7a045666ef54e4920",
+          "body": "0xa7a59b60f776fbe7095f470d1e3e2756075d69472e4412381c6d6e50818e91e099440cef2e89180029d85d7ce7d6884f1dcecbb542548ed7a045666ef54e4920",
+          "id": "0x62d9cf501b5ff89c6cb4dd2c96d383d3a862f2b561de69b2e788686419f54462"
+        },
+        {
+          "words": 40,
+          "parent": "0x62d9cf501b5ff89c6cb4dd2c96d383d3a862f2b561de69b2e788686419f54462",
+          "wordPage": "0xe659a6b6f4df6071dce77c75ced7f664120e6cee56f314e18a9b43c1e9896f9a",
+          "body": "0x62d9cf501b5ff89c6cb4dd2c96d383d3a862f2b561de69b2e788686419f54462e659a6b6f4df6071dce77c75ced7f664120e6cee56f314e18a9b43c1e9896f9a",
+          "id": "0x081336881eb0d518d07d75553e82e3945b43d3665b4b683316f22e104432e8fc"
+        },
+        {
+          "words": 41,
+          "parent": "0x081336881eb0d518d07d75553e82e3945b43d3665b4b683316f22e104432e8fc",
+          "wordPage": "0x74c0dfcccc84f398b1b2873013901d1954b7a597b3d3c92589a13bac082c00c7",
+          "body": "0x081336881eb0d518d07d75553e82e3945b43d3665b4b683316f22e104432e8fc74c0dfcccc84f398b1b2873013901d1954b7a597b3d3c92589a13bac082c00c7",
+          "id": "0x009b6a7212deb8b54bcf6e2ec4c3ca67c823e64f3bdcd572d3d43fd42c0f1079"
+        },
+        {
+          "words": 42,
+          "parent": "0x009b6a7212deb8b54bcf6e2ec4c3ca67c823e64f3bdcd572d3d43fd42c0f1079",
+          "wordPage": "0xdf081723c6083612fd85dd5b23144d324d99d4b4cd0ec89ea6eb60138c8f0b2e",
+          "body": "0x009b6a7212deb8b54bcf6e2ec4c3ca67c823e64f3bdcd572d3d43fd42c0f1079df081723c6083612fd85dd5b23144d324d99d4b4cd0ec89ea6eb60138c8f0b2e",
+          "id": "0x8e534d8778b1711d89cf63b9a662f18d3b6a93d26231b79ecbdefc3b6d93688a"
+        },
+        {
+          "words": 43,
+          "parent": "0x8e534d8778b1711d89cf63b9a662f18d3b6a93d26231b79ecbdefc3b6d93688a",
+          "wordPage": "0x57a87f9b0a1e27cf369b935e551654d4353e809b530a81577f5762a611ba8f78",
+          "body": "0x8e534d8778b1711d89cf63b9a662f18d3b6a93d26231b79ecbdefc3b6d93688a57a87f9b0a1e27cf369b935e551654d4353e809b530a81577f5762a611ba8f78",
+          "id": "0xc0bf18a9ea0244e04690e960a91da1d45f10e5cb63f49cc5bef66fb0f5771fb3"
+        },
+        {
+          "words": 44,
+          "parent": "0xc0bf18a9ea0244e04690e960a91da1d45f10e5cb63f49cc5bef66fb0f5771fb3",
+          "wordPage": "0xdb6dfcbafc170e7df464e27615fa128d407cbc90f3434c2cd5e2e4702e4771be",
+          "body": "0xc0bf18a9ea0244e04690e960a91da1d45f10e5cb63f49cc5bef66fb0f5771fb3db6dfcbafc170e7df464e27615fa128d407cbc90f3434c2cd5e2e4702e4771be",
+          "id": "0x08e3369fd265a224f2d547fd3e149cc62b6cd4ddc416d45ddcc061bae4aa3f42"
+        },
+        {
+          "words": 45,
+          "parent": "0x08e3369fd265a224f2d547fd3e149cc62b6cd4ddc416d45ddcc061bae4aa3f42",
+          "wordPage": "0x393e2c5cad818b4d87d1663653c9935c0956ffa9a3919eee1712d14dde711d07",
+          "body": "0x08e3369fd265a224f2d547fd3e149cc62b6cd4ddc416d45ddcc061bae4aa3f42393e2c5cad818b4d87d1663653c9935c0956ffa9a3919eee1712d14dde711d07",
+          "id": "0x0cf9e7fd42f274048406672f30e52fb35d3aa77e8002443ce200c2aaae21e165"
+        },
+        {
+          "words": 46,
+          "parent": "0x0cf9e7fd42f274048406672f30e52fb35d3aa77e8002443ce200c2aaae21e165",
+          "wordPage": "0xf76f233aa513d25fe05f277157db6789d4681a4bc7c25c40d84f9931e3679874",
+          "body": "0x0cf9e7fd42f274048406672f30e52fb35d3aa77e8002443ce200c2aaae21e165f76f233aa513d25fe05f277157db6789d4681a4bc7c25c40d84f9931e3679874",
+          "id": "0xfc188a0ce4cc8e8208aa8a1b142eae4701a3839bbe73c1dce494f95fb9a3e267"
+        },
+        {
+          "words": 47,
+          "parent": "0xfc188a0ce4cc8e8208aa8a1b142eae4701a3839bbe73c1dce494f95fb9a3e267",
+          "wordPage": "0x1f28f8164a0adaf675bab0677a7d27f425622e6f58a16f371f42fd1441645c81",
+          "body": "0xfc188a0ce4cc8e8208aa8a1b142eae4701a3839bbe73c1dce494f95fb9a3e2671f28f8164a0adaf675bab0677a7d27f425622e6f58a16f371f42fd1441645c81",
+          "id": "0x0b384b30d7169e0a8f1a92f1e0c76e4df121f715ab80fc7e410d7925aaf173c6"
+        },
+        {
+          "words": 48,
+          "parent": "0x0b384b30d7169e0a8f1a92f1e0c76e4df121f715ab80fc7e410d7925aaf173c6",
+          "wordPage": "0xbd1fab85f2bd2be5ce4bbbc7c4d818de06b7f98f993a88c66572f2bd6bd5d22f",
+          "body": "0x0b384b30d7169e0a8f1a92f1e0c76e4df121f715ab80fc7e410d7925aaf173c6bd1fab85f2bd2be5ce4bbbc7c4d818de06b7f98f993a88c66572f2bd6bd5d22f",
+          "id": "0x5383dd1a7676267995d372a3afc6d0dccdb824aa92e8d5b9ccf4aedafbdbdf47"
+        },
+        {
+          "words": 49,
+          "parent": "0x5383dd1a7676267995d372a3afc6d0dccdb824aa92e8d5b9ccf4aedafbdbdf47",
+          "wordPage": "0xe79ddbee46673341c6d9b8394e44e704588916590b9ffdb2a981133fc85caba2",
+          "body": "0x5383dd1a7676267995d372a3afc6d0dccdb824aa92e8d5b9ccf4aedafbdbdf47e79ddbee46673341c6d9b8394e44e704588916590b9ffdb2a981133fc85caba2",
+          "id": "0x879093468c8ecbff08aacc4563770238afa60b4f3423341a57a02d44dc6d4709"
+        },
+        {
+          "words": 50,
+          "parent": "0x879093468c8ecbff08aacc4563770238afa60b4f3423341a57a02d44dc6d4709",
+          "wordPage": "0x5b265e25af9d8870e8baac01b40ddf541f3910a8fab4b8b3f2f994a393d1d68c",
+          "body": "0x879093468c8ecbff08aacc4563770238afa60b4f3423341a57a02d44dc6d47095b265e25af9d8870e8baac01b40ddf541f3910a8fab4b8b3f2f994a393d1d68c",
+          "id": "0x18e275566d5bae382a76bee9e6e3be28a464acc9503515b2faa078da73838c5f"
+        },
+        {
+          "words": 51,
+          "parent": "0x18e275566d5bae382a76bee9e6e3be28a464acc9503515b2faa078da73838c5f",
+          "wordPage": "0xf9422ec48b373e9c75f5166b3ce11b5f9c0322a65117d998670ad14ec4414d08",
+          "body": "0x18e275566d5bae382a76bee9e6e3be28a464acc9503515b2faa078da73838c5ff9422ec48b373e9c75f5166b3ce11b5f9c0322a65117d998670ad14ec4414d08",
+          "id": "0x33a40546d10c7780a21a3525e3a08c87a67acb1a107b206355bde72863b7819d"
+        },
+        {
+          "words": 52,
+          "parent": "0x33a40546d10c7780a21a3525e3a08c87a67acb1a107b206355bde72863b7819d",
+          "wordPage": "0x8cd842fed1050c9a994370be6889065aea8e6db399331b7588cd339f36b01987",
+          "body": "0x33a40546d10c7780a21a3525e3a08c87a67acb1a107b206355bde72863b7819d8cd842fed1050c9a994370be6889065aea8e6db399331b7588cd339f36b01987",
+          "id": "0x765388c23300992a7d3045335d94b6ff91cbb02a9605e5834d5ac1c96e400647"
+        },
+        {
+          "words": 53,
+          "parent": "0x765388c23300992a7d3045335d94b6ff91cbb02a9605e5834d5ac1c96e400647",
+          "wordPage": "0x4b8760f2098af9ddb645af664ab102fb2744253d800a94598bcd231f83923d4c",
+          "body": "0x765388c23300992a7d3045335d94b6ff91cbb02a9605e5834d5ac1c96e4006474b8760f2098af9ddb645af664ab102fb2744253d800a94598bcd231f83923d4c",
+          "id": "0xa616f15be252835626d1e11e4955ee33f1a4c8de964cf9011aad9b93d32dd31c"
+        },
+        {
+          "words": 54,
+          "parent": "0xa616f15be252835626d1e11e4955ee33f1a4c8de964cf9011aad9b93d32dd31c",
+          "wordPage": "0xc4842c7ab4fd81a0cdde0139fb00c79b7bbaad300f1924afd48da30ed9ab9bb3",
+          "body": "0xa616f15be252835626d1e11e4955ee33f1a4c8de964cf9011aad9b93d32dd31cc4842c7ab4fd81a0cdde0139fb00c79b7bbaad300f1924afd48da30ed9ab9bb3",
+          "id": "0xe36c5efd666f1781c63dd9abad519d4ea8a0f77ba8c21722adedc8e22ce3b3b3"
+        },
+        {
+          "words": 55,
+          "parent": "0xe36c5efd666f1781c63dd9abad519d4ea8a0f77ba8c21722adedc8e22ce3b3b3",
+          "wordPage": "0x4cc944a5e4da66cc772ce40e69662bfed18cc0734761a1c6718a9e4dc153d047",
+          "body": "0xe36c5efd666f1781c63dd9abad519d4ea8a0f77ba8c21722adedc8e22ce3b3b34cc944a5e4da66cc772ce40e69662bfed18cc0734761a1c6718a9e4dc153d047",
+          "id": "0x48cc75f8b8137b9f1aae71357d06415d8b249edd93f39bd0eba2bad13e239e81"
+        },
+        {
+          "words": 56,
+          "parent": "0x48cc75f8b8137b9f1aae71357d06415d8b249edd93f39bd0eba2bad13e239e81",
+          "wordPage": "0x7f210c7fd6bb225ca5ef28c5bc7572c2242293affb2bf182cea7f6f984336a27",
+          "body": "0x48cc75f8b8137b9f1aae71357d06415d8b249edd93f39bd0eba2bad13e239e817f210c7fd6bb225ca5ef28c5bc7572c2242293affb2bf182cea7f6f984336a27",
+          "id": "0xaa5dd0a93c2a3cb9a57f29ac75916c5f582c182db90fd042e79924ced17136c5"
+        },
+        {
+          "words": 57,
+          "parent": "0xaa5dd0a93c2a3cb9a57f29ac75916c5f582c182db90fd042e79924ced17136c5",
+          "wordPage": "0x38c853d409ae999e9c9df7902c36e3c592e8314363651d64673438996b0cbff4",
+          "body": "0xaa5dd0a93c2a3cb9a57f29ac75916c5f582c182db90fd042e79924ced17136c538c853d409ae999e9c9df7902c36e3c592e8314363651d64673438996b0cbff4",
+          "id": "0xa2cc44aed2dc55c3b6565eb7d1c3113d137e18c1b1c7ddfe6883d3588493940a"
+        },
+        {
+          "words": 58,
+          "parent": "0xa2cc44aed2dc55c3b6565eb7d1c3113d137e18c1b1c7ddfe6883d3588493940a",
+          "wordPage": "0x8bde1a203b628469bd408da323d7716b71b0eabd6f85fd6dee20acf91a377bf4",
+          "body": "0xa2cc44aed2dc55c3b6565eb7d1c3113d137e18c1b1c7ddfe6883d3588493940a8bde1a203b628469bd408da323d7716b71b0eabd6f85fd6dee20acf91a377bf4",
+          "id": "0x025e7b46d0afa9a7277441b417f303bdeb97c3a0d50b765fbde76bfcaa964fa1"
+        },
+        {
+          "words": 59,
+          "parent": "0x025e7b46d0afa9a7277441b417f303bdeb97c3a0d50b765fbde76bfcaa964fa1",
+          "wordPage": "0xc802bb12a3becf589b509ff56b632351a86b56be54783fdb8dd0f4e604950ef0",
+          "body": "0x025e7b46d0afa9a7277441b417f303bdeb97c3a0d50b765fbde76bfcaa964fa1c802bb12a3becf589b509ff56b632351a86b56be54783fdb8dd0f4e604950ef0",
+          "id": "0xf2b5a5939ec8c0bb5db21b562e9051d25f5bf83f17eaef54dd96da2313c7a60b"
+        },
+        {
+          "words": 60,
+          "parent": "0xf2b5a5939ec8c0bb5db21b562e9051d25f5bf83f17eaef54dd96da2313c7a60b",
+          "wordPage": "0x189a7713823a723b9ee36e9c4f3d0383f137533f87f29822c41c68817902d8b9",
+          "body": "0xf2b5a5939ec8c0bb5db21b562e9051d25f5bf83f17eaef54dd96da2313c7a60b189a7713823a723b9ee36e9c4f3d0383f137533f87f29822c41c68817902d8b9",
+          "id": "0x3a8ebd9927d0238f539a892a702bdd899064292f78eeda9b27b5738d2d1d8346"
+        },
+        {
+          "words": 61,
+          "parent": "0x3a8ebd9927d0238f539a892a702bdd899064292f78eeda9b27b5738d2d1d8346",
+          "wordPage": "0x965bf7033836b249faf5a93ad2145953b4d7526ce440ee257af357d806506355",
+          "body": "0x3a8ebd9927d0238f539a892a702bdd899064292f78eeda9b27b5738d2d1d8346965bf7033836b249faf5a93ad2145953b4d7526ce440ee257af357d806506355",
+          "id": "0xda6c1feb39cf85e5fcdc0d5be49e8adffa50fbcbc7f971f9048ad4b9e294639d"
+        },
+        {
+          "words": 62,
+          "parent": "0xda6c1feb39cf85e5fcdc0d5be49e8adffa50fbcbc7f971f9048ad4b9e294639d",
+          "wordPage": "0x0f90311db383b98f6f99ea7511d5cf6cd213d6bab92a00d84868a07b687857ba",
+          "body": "0xda6c1feb39cf85e5fcdc0d5be49e8adffa50fbcbc7f971f9048ad4b9e294639d0f90311db383b98f6f99ea7511d5cf6cd213d6bab92a00d84868a07b687857ba",
+          "id": "0x0350be094d48401572188ec3b2d2058259224ec4b8284f10827d8a4a80b8b8f7"
+        },
+        {
+          "words": 63,
+          "parent": "0x0350be094d48401572188ec3b2d2058259224ec4b8284f10827d8a4a80b8b8f7",
+          "wordPage": "0x63c0ac43cd6d510f7109a7615998eb196e16c529808b5114598b39a7a4811b4e",
+          "body": "0x0350be094d48401572188ec3b2d2058259224ec4b8284f10827d8a4a80b8b8f763c0ac43cd6d510f7109a7615998eb196e16c529808b5114598b39a7a4811b4e",
+          "id": "0xc86f4324468dc0b86a483dc6467998810aae6877ed14a5d9971831f3a32f45aa"
+        },
+        {
+          "words": 64,
+          "parent": "0xc86f4324468dc0b86a483dc6467998810aae6877ed14a5d9971831f3a32f45aa",
+          "wordPage": "0x7f79b13439e0a06f6622c63cebb0ce7cdcb45e0a6cab7f09eff924ce5dec5953",
+          "body": "0xc86f4324468dc0b86a483dc6467998810aae6877ed14a5d9971831f3a32f45aa7f79b13439e0a06f6622c63cebb0ce7cdcb45e0a6cab7f09eff924ce5dec5953",
+          "id": "0x1d8c969fad07e8313a7d4284fd92d7eafbb5f2d2bceaffa042701e56800a8c0d"
+        }
+      ]
+    }
+  ],
+  "propertyKeys": [
+    {
+      "key": "label:en",
+      "id": "0x28703bbe448488e14770b73db6c3d0f2facd83ade38f8691aaebd5bb96a219f6"
+    },
+    {
+      "key": "label:pt-br",
+      "id": "0xc720ae1e7a74126cc1f2635af0e2e554a203fd991649b57c44ca8cbdb6864d05"
+    },
+    {
+      "key": "definition",
+      "id": "0xff03f1aa44d96ad1dacf5de33437a012f0b3241fcbd9ceb8d7327f55b1142678"
+    },
+    {
+      "key": "moved-to",
+      "id": "0x3dd0baeeeb4c537f68d9b086314bc40e186d5f243ba33fb7a961c07a36616f9c"
+    }
+  ],
+  "inputs": {
+    "thing": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+    "home": "0x00000000000000000000000000000000000000000000000000000000000ba5ed"
+  },
+  "builders": [
+    {
+      "label": "register the word tesla",
+      "builder": "EfsTopics.registerWord(t, \"tesla\")",
+      "actions": [
+        {
+          "kind": 1,
+          "typeId": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+          "bodyHashOrRecordId": "0x1ae665ce4e7e214eb121a426c145630b5c5f6c39c4c0543c413902d3ddc35f96",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x7465736c61"
+      ],
+      "actionsHash": "0x4696c3f619c2e1a4e0c7540b3b2e5ced225e5486b4d76f59d6e13465d7cf1b59",
+      "bodiesHash": "0xfeb9ab2d6796f8925b39ebee3a4053ef554567b71615f7b2d50de9a27dd80a31",
+      "id": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65"
+    },
+    {
+      "label": "register /cars/tesla/model_y",
+      "builder": "EfsTopics.registerPath(t, [\"cars\", \"tesla\", \"model_y\"])",
+      "actions": [
+        {
+          "kind": 1,
+          "typeId": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+          "bodyHashOrRecordId": "0x0ee92a51567d02169526115460f55ddef86e734b94b947896e82d4532671fdf2",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+          "bodyHashOrRecordId": "0x1ae665ce4e7e214eb121a426c145630b5c5f6c39c4c0543c413902d3ddc35f96",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+          "bodyHashOrRecordId": "0xf2229e6ad5e08341bae5cc98fa7de3d88b8338012d9603b9864590c1e743c0b4",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+          "bodyHashOrRecordId": "0xd339e50165d285e2b0ae13e45229d30559c284319fb5d448e878ac17c709e04d",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+          "bodyHashOrRecordId": "0xb5d9130cfeaa673a33fdfc72daa85f4ca6fc70a1ca1e27ad2e2c4858364c8c47",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x63617273",
+        "0x7465736c61",
+        "0x6d6f64656c5f79",
+        "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457ee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+        "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c400f21a6c30071cbcffe0146981113594dff8aaf85ab6f11a4724a9960da3292"
+      ],
+      "actionsHash": "0x201e594c503b284acff3263ae5a2694072ffffa9be1e4ae4607e7f85e412a5cd",
+      "bodiesHash": "0x7684ebd4c34712ca131ab61858d013edb5fb0defee3661f46cd93ffcbdba1ec7",
+      "id": "0x257e91c4a7a0f07fec3fa4f1be2151bbdb33ff2faafd56655a5c62b3439b3ac6"
+    },
+    {
+      "label": "one new leaf /cars/tesla/model_3 with its page",
+      "builder": "EfsTopics.registerChild(t, pathId(/cars/tesla), \"model_3\", true)",
+      "actions": [
+        {
+          "kind": 1,
+          "typeId": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+          "bodyHashOrRecordId": "0x1b6e545b7becd90fb2d7234cc55df5f7c1278257fbd88ff7410e83a7fe6387a1",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 1,
+          "typeId": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+          "bodyHashOrRecordId": "0x4603a03aa8d88731d41d30af161e9f1ae969d6eb5ae69ff303dfadb4698fb167",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x6d6f64656c5f33",
+        "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c9d7ba8fc93146e4bc9f3f1bde07b182294146d44891b88c88af8f1b51f57dd43"
+      ],
+      "actionsHash": "0x301f714c4e95ec4a2c1ce67ca17f6725f30169ef60abc5b33a7251aca0ca3116",
+      "bodiesHash": "0x79214ee7219bf5f96e5bab1f0c777467c10d9f30f620412449af412d38b913e0",
+      "id": "0x967085c4771d5afe8f284b60ad20099e0b02379c8513b0bb08aee79fb2c43fb1"
+    },
+    {
+      "label": "one new leaf on an existing page",
+      "builder": "EfsTopics.registerChild(t, pathId(/cars), \"tesla\", false)",
+      "actions": [
+        {
+          "kind": 1,
+          "typeId": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+          "bodyHashOrRecordId": "0xd339e50165d285e2b0ae13e45229d30559c284319fb5d448e878ac17c709e04d",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457ee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65"
+      ],
+      "actionsHash": "0xe8ff0577bee54f66c81ce6e79cb95a126ecd0962a517e50af470c1b470f27131",
+      "bodiesHash": "0xc2b0d11d6a6d221f76603b99b5b467176205e4765c5919ddc650363f2dea8d21",
+      "id": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c"
+    },
+    {
+      "label": "tag a thing in /cars/tesla with +75",
+      "builder": "EfsTopics.tag(pathId(/cars/tesla), thing, 0, 75)",
+      "actions": [
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+          "subject": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c",
+          "role": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+          "target": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x000000000000000000000000000000000000000000000000000000000000004b"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0x2c4150afd48fb71d72eab385364787164a695e14b8498401d5699d2d77d5a9c3",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    },
+    {
+      "label": "tag a home with 0",
+      "builder": "EfsTopics.tag(home, thing, 0, 0)",
+      "actions": [
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+          "subject": "0x00000000000000000000000000000000000000000000000000000000000ba5ed",
+          "role": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+          "target": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0x678e228319320a522fe67aa5f819cb0bafd6052587371e8913577e3f8f6e7031",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    },
+    {
+      "label": "not this, a lone negative (-1)",
+      "builder": "EfsTopics.deny(pathId(/cars), thing, 0, 0)",
+      "actions": [
+        {
+          "kind": 4,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+          "subject": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "role": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0x71b183961171bf2523fc9dc094c9bbc165768d96a0f383725bdacefefb138b71",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    },
+    {
+      "label": "a negative change -1 -> -5 at revision 1",
+      "builder": "EfsTopics.deny(pathId(/cars), thing, 1, 4)",
+      "actions": [
+        {
+          "kind": 4,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+          "subject": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "role": "0xe839e17c61757bc8b969f11c02ef326ae078bea4af0df970fe5d82ee9b854f59",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "1",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000004"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0xef05f3549b759f3e52614c35ecbd66205d4f9b290829f99a493bfeb06273d87f",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    },
+    {
+      "label": "a property with an address value",
+      "builder": "EfsTopics.property(pathId(/cars), propertyKey(\"moved-to\"), home, 0)",
+      "actions": [
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x2f6e2c067a273babd6f052511fa0fbbefd946138147520281191a783c01d2243",
+          "subject": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "role": "0x3dd0baeeeb4c537f68d9b086314bc40e186d5f243ba33fb7a961c07a36616f9c",
+          "target": "0x00000000000000000000000000000000000000000000000000000000000ba5ed",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0xa4aa3967ad5574fe44c83dc869d1319715ff909085eaa958493e7cf7d044064f",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    },
+    {
+      "label": "label /cars/tesla in English",
+      "builder": "EfsTopics.label(t, pathId(/cars/tesla), \"en\", \"Tesla, Inc.\", 0)",
+      "actions": [
+        {
+          "kind": 1,
+          "typeId": "0x746331ae3170a7155f6d6d3bba00bf3093eacc49ca52c1fdba6251b132157972",
+          "bodyHashOrRecordId": "0x756e616d8a4e6fccc16ba1a21646643e5d79abdc7db772fb4afdb643dc2dd7c6",
+          "purpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "subject": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "role": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "target": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x2f6e2c067a273babd6f052511fa0fbbefd946138147520281191a783c01d2243",
+          "subject": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c",
+          "role": "0x28703bbe448488e14770b73db6c3d0f2facd83ade38f8691aaebd5bb96a219f6",
+          "target": "0x78b635c4c01d752f138944a6e9ae84845b02c84432b3b8a5d5059228455f81ea",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x5465736c612c20496e632e",
+        "0x"
+      ],
+      "actionsHash": "0x416ace49ee454f6cba790d899a474d09731ea6d9a4ef8249ce420ed7d64948df",
+      "bodiesHash": "0xa97935fe6c0f4dcb4dfade12cb78526bd560b08f56f63861854a1c99ccebd2f2",
+      "textRecord": "0x78b635c4c01d752f138944a6e9ae84845b02c84432b3b8a5d5059228455f81ea"
+    },
+    {
+      "label": "/cars/tesla is the same as /tesla",
+      "builder": "EfsTopics.same(pathId(/cars/tesla), pathId(/tesla), 0)",
+      "actions": [
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0x8e965fe46a3481cd6db64a45fda63e6e7b7a8dbf42024371aab1f405f1fa861e",
+          "subject": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c",
+          "role": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+          "target": "0xee2380307ccdaab7ac56f024d594bca8922bf02a2a231d54d43f6c6e85861d65",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0x3da9aa564151734f77f49c4be454c7db92f963f21883d2290035b527048c1931",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    },
+    {
+      "label": "/cars/tesla is narrower than /cars",
+      "builder": "EfsTopics.broader(pathId(/cars/tesla), pathId(/cars), 0)",
+      "actions": [
+        {
+          "kind": 3,
+          "typeId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "bodyHashOrRecordId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "purpose": "0xf064225e057dbfc2c1a00dc847d06a7486d76609e9e32838546890d91eeb3b97",
+          "subject": "0x1d577e0ac022888a4c4f721b26079454d56056afb1bf42f451873cd2c77d450c",
+          "role": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "target": "0xcbdd70edc59aa2480acc32d82a7a1ca9b0db12009b9db114b1ae5ad73f19e457",
+          "expectedRevision": "0",
+          "saltOrStrength": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "bodies": [
+        "0x"
+      ],
+      "actionsHash": "0x7730f8a0cbd706e33a22ebf3d53d831c66d80e8e44f42d0620f7440c2b6e7945",
+      "bodiesHash": "0xebb611f8f02714b897eb14151f4ccef2b79739f93ee4dd979a540f4b316e1bd6"
+    }
+  ]
+}

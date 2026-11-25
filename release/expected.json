@@ -3,7 +3,7 @@
   "seedVersion": "efs-fixture-seed/4",
   "chainId": 31337,
   "ledger": "0xfa6bfbcc66Ed4D97d00f1daa1f84B95010AE2476",
-  "executionSet": "0x5078878cd0911b35236939cccee1666df6e43ddd3fda3a89330c4a750bb9fc6a",
+  "executionSet": "0x8f30fccd17076cc91f5e2c220f2e829826161b80de725aded56cce55bb43fa99",
   "revision": 1,
   "root": {
     "directoryRecordId": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
@@ -93,9 +93,12 @@
     "files-external/1": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
     "directory-alias/1": "0x0c48b987487897968c6b3688da60e3c6db8e645aac2b481b3a1cc36789aecb61",
     "realm-notice/1": "0xc9efe343865f6f02915f75a1793e2a303b257cbe4bbd4a128ab936cc18cf5c24",
-    "files-span/1": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd"
+    "files-span/1": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd",
+    "topic-word/1": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+    "topic/1": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+    "text/1": "0x746331ae3170a7155f6d6d3bba00bf3093eacc49ca52c1fdba6251b132157972"
   },
-  "catalogCount": 10,
+  "catalogCount": 13,
   "heads": [
     {
       "key": "0xe4862101230a1818156ae6f9bedcf545bd95681a8e5813af50a04d6e639d455d",

@@ -1,7 +1,7 @@
 {
   "schema": "efs-deployment/1",
-  "releaseDigest": "0x88cf21435beb83c5621f3fb5c5f1ebb840ba0202da86a1c3f319ce51f31c609e",
-  "planHash": "0xc850b57bd7660027d3f801215a01f200a457144d743fd37a356f8c2752a8e137",
+  "releaseDigest": "0x7e3bbc0a7c71f94685f5f1911d9d6bb42527f95e907473f474aba0c3f4a3a939",
+  "planHash": "0x019aedf1a8c7f55deefca8dacbc7bd9d2740839b4c5198c75d17e4c3a23eb17e",
   "chainId": 31337,
   "realmId": "0x7816cf2aa8fb52ded9656ea805aad48383058a3b438ed5060c93b0cfb611abef",
   "realmOrigin": "0x77fe08ce664c96538b21e431dcebbd801e87c4c02952e51383538be92989383f",
@@ -21,15 +21,15 @@
       "registryProxy": 2,
       "ledgerProxy": 3
     },
-    "txHash": "0x5466ed9d5dd17039797bf570dbc3ca1eb5fe29fe9d374b6c3df964d65cc9e06f",
-    "blockNumber": 38,
-    "blockHash": "0xf1741824c9b33939790e102910820fa31d49dba176c0857f67066e3b389ba74c"
+    "txHash": "0x441453f71998b81d5d561dd939ae9240cd193b11eec81634a73b60a635ec31e1",
+    "blockNumber": 44,
+    "blockHash": "0xb01053a8aca145efc702f5539aa52cb8fa16e7651afb0ac8fd9c879af4a0757a"
   },
   "activation": {
     "revision": 1,
-    "executionSet": "0x5078878cd0911b35236939cccee1666df6e43ddd3fda3a89330c4a750bb9fc6a",
-    "txHash": "0x9e697429a23df9e3333d30161381fb1cd84fc8b463b2aaf507ad54d109d3990d",
-    "blockNumber": 40,
+    "executionSet": "0x8f30fccd17076cc91f5e2c220f2e829826161b80de725aded56cce55bb43fa99",
+    "txHash": "0xc10e27e49bba36ea387d776e7b8883598dc635e1feb59f8649a5b0401b698261",
+    "blockNumber": 46,
     "capabilities": 0,
     "acceptedChainId": 31337,
     "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -40,9 +40,9 @@
         "ledgerImplCodehash": "0x02145ceb14463f17fb334ca713bd68b790ece6be7da491500f24afae52a5ca6f",
         "registryImpl": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
         "registryImplCodehash": "0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3",
-        "index": "0x706055d55C7bB42ada38E5B894648926b2959E68",
-        "indexCodehash": "0x63c766f1d50c3127ed21a37c9f9ec19e94e46834fea2793aec6a394b026c8bb0",
-        "indexManifestHash": "0xc8f1333fe8601fedb118b3ba61400b84fc618d52624c555c25dd9fb7ee939d58",
+        "index": "0xC8Cf0a00d40617d0D9867698d1dBbCd439734c5c",
+        "indexCodehash": "0x624734085c03ef66137c04cf51b512791a2db3881052b16a5d4a0cb66790665c",
+        "indexManifestHash": "0xcd61f64df4da0349c9edc0319cf7ceb64fad56147e222931219a5cc195086a4a",
         "ingress": "0xEF2fF91E027aD98B5146F727efee42979E43d8C6",
         "ingressCodehash": "0x9a4040eb96c10230cbc71911af0696731bcd39adae10606de37359bbcfc36997",
         "applyDelegate": "0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343",
@@ -76,7 +76,7 @@
         "floorRewriteGas": 5000,
         "kernelTail": 20000
       },
-      "expectedExecutionSet": "0x5078878cd0911b35236939cccee1666df6e43ddd3fda3a89330c4a750bb9fc6a",
+      "expectedExecutionSet": "0x8f30fccd17076cc91f5e2c220f2e829826161b80de725aded56cce55bb43fa99",
       "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
       "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
       "migrationScope": [],
@@ -293,61 +293,85 @@
       "txHash": "0x883bc59cf51cc3e133005579b9891412054cd75a742e85fe8018513672c1c725",
       "blockNumber": 20
     },
+    "TopicWordRule": {
+      "address": "0x1Ac26C72A2B89873f4c4fB586E15b8f9DCbc44Ee",
+      "runtimeCodehash": "0xc29d63f806ac24592ecad65d370fe11465dc5ff13ee4151a6eb563cde24822ea",
+      "initcodeHash": "0xe8ead63ed5471951ac469cb8478e0d47bda786aee01ac6ee52b7629e8ff6fd38",
+      "step": "G10.10",
+      "txHash": "0x68b27a551cc8946b551a3e9abbe68ba82d33db122ab9bba2c35f1e84d645d5ff",
+      "blockNumber": 21
+    },
+    "TopicRule": {
+      "address": "0x00A673fA3382767133388d914555916A43F95931",
+      "runtimeCodehash": "0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a",
+      "initcodeHash": "0x8a2924ca00cfd043a17d92faf631618fcd3275f997c038f93cb282656db2e721",
+      "step": "G10.11",
+      "txHash": "0x34eadce9c03e1dff37f20f4599f079f5de371d49688dfb9d67c8110d41eb7c9b",
+      "blockNumber": 22
+    },
+    "TextRule": {
+      "address": "0x64D24D9353eAA57f9b7517de17DE383dFB5bD2a2",
+      "runtimeCodehash": "0x9d1ae5d5c3182f7a5f514e25d0a76cf07f4c0609257046416e01aa8711be6a76",
+      "initcodeHash": "0x0c28e8f2ac864dfbe79886b91e9a81a9a9b9997624170e513537a3f29e2e0ff7",
+      "step": "G10.12",
+      "txHash": "0xaf0d4e313c894d5fe8f54a704a78f1db67593676afa58dc99c0e00bc008222e1",
+      "blockNumber": 23
+    },
     "RefuseAllPolicy": {
       "address": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
       "runtimeCodehash": "0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44",
       "initcodeHash": "0xf1cc6fddd352b389b2d50d584edb19d25b7000795cedab66a3ae29b0b30eb418",
       "step": "G10.policy",
-      "txHash": "0xb1f3ac2340c06dfdbcdb0d585ae75d9de0d1b6a25174612ade241ba995c9f89e",
-      "blockNumber": 21
+      "txHash": "0x9d3ca55ca28ffe20b3905617ef8c31b170c8f22a8e47504a54557f95ee5adbcb",
+      "blockNumber": 24
     },
     "FilesFinalValidator": {
-      "address": "0xFddd648f3F527838bb591e7eF4A5b6085BdbBC7D",
-      "runtimeCodehash": "0x44dfccd2b469a31e2f8e237d465d0ff3f1d9f4447e9fdba6e17c3b0953ea64e7",
-      "initcodeHash": "0x0fe63958a9e15c33974204f11c336da628a6bb1a09522b4184060bcc07ec1088",
+      "address": "0x2d8FE894640566b44b88BFB724e9b9Ec26F8920e",
+      "runtimeCodehash": "0x8e8ff08b811751dd243b20f52a99c1ca4b252d1e64628fa73b33179917bf6f1c",
+      "initcodeHash": "0x8b150573e736d328d5aae23c32f48070459d72e140dfca73c594cf110f0ae868",
       "step": "G12",
-      "txHash": "0xbcdbc3243e67919e8f7069edc294c0bb6ac6103a9e26e956054b4f80a298f730",
-      "blockNumber": 32
+      "txHash": "0x838bb4dfd9e3a07ef330db4d1394acf5346db55d1a00ba30ebb527cde3b24033",
+      "blockNumber": 38
     },
     "LedgerCore": {
       "address": "0xc1C968a7d0E2B64547503868A0b8F47CeeD2cAd8",
       "runtimeCodehash": "0x02145ceb14463f17fb334ca713bd68b790ece6be7da491500f24afae52a5ca6f",
       "initcodeHash": "0xb3306305f4906de375fde4fc0b1643eaebaa304ad829ef64a3351ae1796c88b6",
       "step": "G13",
-      "txHash": "0x7551698d47365ceeccbd342eadbec582393402d39077cfce230f3ae4f67658e5",
-      "blockNumber": 33
+      "txHash": "0xb684be4f76410a53f98afe65ffbb81fc00567cd75f18784743329edad144671b",
+      "blockNumber": 39
     },
     "TypeRegistry": {
       "address": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
       "runtimeCodehash": "0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3",
       "initcodeHash": "0xf452df53e88ac4ca1922787ceea1b9108776a48f438bbc83cc48505d1ba9f696",
       "step": "G14",
-      "txHash": "0x7d487aeb7e162d4bf5fa3e4026a56107f990dac0c3f87c4ab686e69f7d3ba49d",
-      "blockNumber": 34
+      "txHash": "0xeae816fea52cdf2432e25a69cd5e2538168e7b6bc960664491b8bffaaec1001a",
+      "blockNumber": 40
     },
     "RealmGenesis": {
       "address": "0x15770F7fbDaB5422ce1d74f4127cDcbe23954029",
       "runtimeCodehash": "0xcf0301403ddb3047a1d548bfbd8bf93bf438c5dff5567f654be3fd657dec1b60",
       "initcodeHash": "0x81b8a2c025e03e7ca384c713be4ef6ba29ea3175ee2828eac93db07526058e79",
       "step": "G15",
-      "txHash": "0x5aa67dd8d6aacd255fd23ed2fdf045139c364d62d65a540d9674fdd242990fd5",
-      "blockNumber": 35
+      "txHash": "0x1f4b9039d77c7ef76ce700b11dd6edb195a47940d3f792a7a1e11f37213b9c73",
+      "blockNumber": 41
     },
     "PostingStore": {
       "address": "0xf8b8c4AcB952397AD00d784BE1766b10170f35B5",
       "runtimeCodehash": "0x899f698634e9c4ab1fd978c60e1c7cea44b99762d8a4f252ebb3a71f9acf7736",
       "initcodeHash": "0x5e2ba853930566371b8f2bb187d3db00c1802ef0cd1998eed91ceb82867032ad",
       "step": "G16",
-      "txHash": "0xf279b0065891e5734099c5f56a9c1c41bed99e2ae95e6901f2be2530665e76e3",
-      "blockNumber": 36
+      "txHash": "0x39a2640d57f82026475877222cac031fcfe2c759b6988ac6df1a2481097ff4c1",
+      "blockNumber": 42
     },
     "BitmapStore": {
       "address": "0x1Ae9C3183037104c03b2Ef6aaE603773F739dF31",
       "runtimeCodehash": "0xc8a44fb8a22193c830acbefaeef44bfe46bf1de127438789e23ffd0ca10666ca",
       "initcodeHash": "0xb1867282155a01b2d0b29de152e16516697a8854c6e334505002e454ce56e331",
       "step": "G17",
-      "txHash": "0x06cb636783c577231aff103845bb2d2b8826673dd49dc0580d7e9eff9d19b6b5",
-      "blockNumber": 37
+      "txHash": "0x6757ebb81c803ff8b63d3c734f33644e47a180d6236c0933ea38f9a73fd452fc",
+      "blockNumber": 43
     },
     "RealmController": {
       "address": "0x0664E5BB4a4Bec2F229cB7Bd37be05F6E7d6c3Df",
@@ -355,8 +379,8 @@
       "step": "G18",
       "creator": "0x15770F7fbDaB5422ce1d74f4127cDcbe23954029",
       "nonce": 1,
-      "txHash": "0x5466ed9d5dd17039797bf570dbc3ca1eb5fe29fe9d374b6c3df964d65cc9e06f",
-      "blockNumber": 38
+      "txHash": "0x441453f71998b81d5d561dd939ae9240cd193b11eec81634a73b60a635ec31e1",
+      "blockNumber": 44
     },
     "TypeRegistryProxy": {
       "address": "0x2816c14f172812C01e9fF362597E985aaAb8f17f",
@@ -364,8 +388,8 @@
       "step": "G18",
       "creator": "0x15770F7fbDaB5422ce1d74f4127cDcbe23954029",
       "nonce": 2,
-      "txHash": "0x5466ed9d5dd17039797bf570dbc3ca1eb5fe29fe9d374b6c3df964d65cc9e06f",
-      "blockNumber": 38
+      "txHash": "0x441453f71998b81d5d561dd939ae9240cd193b11eec81634a73b60a635ec31e1",
+      "blockNumber": 44
     },
     "LedgerProxy": {
       "address": "0xfa6bfbcc66Ed4D97d00f1daa1f84B95010AE2476",
@@ -373,8 +397,8 @@
       "step": "G18",
       "creator": "0x15770F7fbDaB5422ce1d74f4127cDcbe23954029",
       "nonce": 3,
-      "txHash": "0x5466ed9d5dd17039797bf570dbc3ca1eb5fe29fe9d374b6c3df964d65cc9e06f",
-      "blockNumber": 38
+      "txHash": "0x441453f71998b81d5d561dd939ae9240cd193b11eec81634a73b60a635ec31e1",
+      "blockNumber": 44
     },
     "RegistryProxyAdmin": {
       "address": "0xf29A07b5E6eAa7A676c3b60EbA1C680D0Fd7AFf0",
@@ -382,8 +406,8 @@
       "step": "G18",
       "creator": "0x2816c14f172812C01e9fF362597E985aaAb8f17f",
       "nonce": 1,
-      "txHash": "0x5466ed9d5dd17039797bf570dbc3ca1eb5fe29fe9d374b6c3df964d65cc9e06f",
-      "blockNumber": 38
+      "txHash": "0x441453f71998b81d5d561dd939ae9240cd193b11eec81634a73b60a635ec31e1",
+      "blockNumber": 44
     },
     "LedgerProxyAdmin": {
       "address": "0x62023aDa94dBdfE642A44eAC58ad39031d97635E",
@@ -391,55 +415,55 @@
       "step": "G18",
       "creator": "0xfa6bfbcc66Ed4D97d00f1daa1f84B95010AE2476",
       "nonce": 1,
-      "txHash": "0x5466ed9d5dd17039797bf570dbc3ca1eb5fe29fe9d374b6c3df964d65cc9e06f",
-      "blockNumber": 38
+      "txHash": "0x441453f71998b81d5d561dd939ae9240cd193b11eec81634a73b60a635ec31e1",
+      "blockNumber": 44
     },
     "RealmIndex": {
-      "address": "0x706055d55C7bB42ada38E5B894648926b2959E68",
-      "runtimeCodehash": "0x63c766f1d50c3127ed21a37c9f9ec19e94e46834fea2793aec6a394b026c8bb0",
-      "initcodeHash": "0x03d145ffc5b5081b88bf7c4f75f1bf44037b2e3d6a0fbefadeab1c389c201cf1",
+      "address": "0xC8Cf0a00d40617d0D9867698d1dBbCd439734c5c",
+      "runtimeCodehash": "0x624734085c03ef66137c04cf51b512791a2db3881052b16a5d4a0cb66790665c",
+      "initcodeHash": "0x789cb0e77aad50eb66e3e6f89ee9c2661ab9a0ea9f9b2e69d4c32a6869b3455d",
       "step": "G19",
-      "txHash": "0x435b88bc2982ba1f7dc16c36b5466187a1c452d780fd6cd4a84a1ff61a3df9ee",
-      "blockNumber": 39
+      "txHash": "0x5fca9eb421f58947f5f4e15ab5b0a8c3d71ce4dc3bbbba36627b6ea88aa477c8",
+      "blockNumber": 45
     },
     "KeysView": {
       "address": "0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F",
       "runtimeCodehash": "0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3",
       "initcodeHash": "0x5d8ab2b187f6b82bc79bd546045df19b3433dc09a81aaf37a80f9d35e1b69f94",
       "step": "R0",
-      "txHash": "0x340aa4b2163090c2a1cc41ebf4f82303c25e1c67f40c152caef55db62d94f1da",
-      "blockNumber": 41
+      "txHash": "0xce2e31714d776d11eb5c27ad769becc547c2b4a26ba85b2710a965dbfdc3318a",
+      "blockNumber": 47
     },
     "LensReader": {
       "address": "0xab72542d1E394780E2A06d3a8C1E0FF94456c59C",
       "runtimeCodehash": "0x76821b993adbc472b6618b1fd8be8bc0e19d65cb0163fcd40820faae2f77e066",
       "initcodeHash": "0x0ea00247f89ee4fa34d06091739ad50409af48ea2683d299fa7d98f197faf301",
       "step": "R1",
-      "txHash": "0xddd895101bf8fcc341227c01cd260aaf7958e0614572c67659594ea914252ab1",
-      "blockNumber": 42
+      "txHash": "0xd6ac4f952ccb3c7066da6f2e53c7bea53ab291e9a83489c69fafb9bbffe70232",
+      "blockNumber": 48
     },
     "FilesPageReader": {
       "address": "0x18f7B0c62a6A67b439C5a14e18cf8b5317504F37",
       "runtimeCodehash": "0x1b2ce0c8d0590de675011202ceec44a3b8c54ae5d75dd86067d7a9cbd9ea2d25",
       "initcodeHash": "0xf7cb6d0b55f4a97444d3358a41f9ae50ad1637fd78058fcfa2e57bf0bf330cf6",
       "step": "R2",
-      "txHash": "0x1324a9914124bbf13237409cf866e35ba48e79195269339eb73c581f5d41f8bc",
-      "blockNumber": 43
+      "txHash": "0xcfb4ffa5eaa9ba60f1b120c4972cad8bbc0ae9d6b08707d14f9616b60f0b853c",
+      "blockNumber": 49
     },
     "EfsWeb3Gateway": {
       "address": "0x7efc2aF28994ed11e283f25cBFFfBD5078BFAd00",
       "runtimeCodehash": "0xf40aef651132acc88114fe67e4ffc9602486150ee3e90800c217aacef6e3dfee",
       "initcodeHash": "0x5feefa105dde2814c891eba8aa4902c209f24fb86d1bc3bebc6180f795ef7c8e",
       "step": "R5",
-      "txHash": "0x704b5d53002a606389fdba143ee40540ecb9dfe20c4753a3c55cda94570f1a56",
-      "blockNumber": 56
+      "txHash": "0x0e759cb5c8cacb57062037022368afc461f2c673a76af84538f047457d793f35",
+      "blockNumber": 65
     }
   },
   "index": {
-    "address": "0x706055d55C7bB42ada38E5B894648926b2959E68",
+    "address": "0xC8Cf0a00d40617d0D9867698d1dBbCd439734c5c",
     "generation": 1,
-    "manifestHash": "0xc8f1333fe8601fedb118b3ba61400b84fc618d52624c555c25dd9fb7ee939d58",
-    "indexObligations": "0x4c75b34c532b83a4257bb10b7bda0650cfc4dbddeda63cfd50e2e66d96affff1",
+    "manifestHash": "0xcd61f64df4da0349c9edc0319cf7ceb64fad56147e222931219a5cc195086a4a",
+    "indexObligations": "0xfdfe0f261a4bc3f30b7b7e5c2ece69d63eb654019bb38737dc7122daaad1476c",
     "stores": {
       "posting": "0xf8b8c4AcB952397AD00d784BE1766b10170f35B5",
       "bitmap": "0x1Ae9C3183037104c03b2Ef6aaE603773F739dF31"
@@ -606,12 +630,12 @@
       {
         "foldHook": "0x0000000000000000000000000000000000000000",
         "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "finalHook": "0xFddd648f3F527838bb591e7eF4A5b6085BdbBC7D",
-        "finalCodehash": "0x44dfccd2b469a31e2f8e237d465d0ff3f1d9f4447e9fdba6e17c3b0953ea64e7",
+        "finalHook": "0x2d8FE894640566b44b88BFB724e9b9Ec26F8920e",
+        "finalCodehash": "0x8e8ff08b811751dd243b20f52a99c1ca4b252d1e64628fa73b33179917bf6f1c",
         "familyIds": [],
         "purposeFilter": "0x8316732a0c2362b6d10c2442783a1b6b974d8647b23379f9dee65b576fa4afcf",
         "hotAbiId": "0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0",
-        "identity": "0x3c8725a2d3894dc25691a70819fa65ba83ea25add88e24edcfe37d5d9ff342b5"
+        "identity": "0xc4be44bdb26a09208238f2569ecf78d4f944ad6bc01ea50a640ffdf3a303e2cf"
       }
     ],
     "digestSpecs": [
@@ -653,7 +677,10 @@
     "files-external/1": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
     "directory-alias/1": "0x0c48b987487897968c6b3688da60e3c6db8e645aac2b481b3a1cc36789aecb61",
     "realm-notice/1": "0xc9efe343865f6f02915f75a1793e2a303b257cbe4bbd4a128ab936cc18cf5c24",
-    "files-span/1": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd"
+    "files-span/1": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd",
+    "topic-word/1": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+    "topic/1": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+    "text/1": "0x746331ae3170a7155f6d6d3bba00bf3093eacc49ca52c1fdba6251b132157972"
   },
   "profile": [
     {
@@ -794,6 +821,48 @@
       "descriptorBytes": 652,
       "blob": "0xdF9b3445e6B7EcB82Bf9e8f2b77Ca75Ba2E4C200",
       "blobCodehash": "0x412a852e26c723a827cda0fb232b15fa6a28a1cc51e852ac63ce7541b9cd1047"
+    },
+    {
+      "type": "topic-word/1",
+      "typeId": "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87",
+      "rule": "TopicWordRule",
+      "instance": "0x1Ac26C72A2B89873f4c4fB586E15b8f9DCbc44Ee",
+      "ruleCodehash": "0xc29d63f806ac24592ecad65d370fe11465dc5ff13ee4151a6eb563cde24822ea",
+      "ruleInitcodeHash": "0xe8ead63ed5471951ac469cb8478e0d47bda786aee01ac6ee52b7629e8ff6fd38",
+      "refTypes": [],
+      "shape": "0x3c11a6f7f047cb98dae1ce719b3d7b015aa077190d2270c5af884a596dbc82f9",
+      "descriptorBytes": 392,
+      "blob": "0x2874881250E887c4d4689D0FB38fDB0398548B20",
+      "blobCodehash": "0x7e44c50e27cfc732db9592a1ad47c9df18ba70ecb8128ba3b736aaf90567fc50"
+    },
+    {
+      "type": "topic/1",
+      "typeId": "0xaca7734fae9c5460aea00d2887ae42169b40aaf41365bda64c478c6207dc79ab",
+      "rule": "TopicRule",
+      "instance": "0x00A673fA3382767133388d914555916A43F95931",
+      "ruleCodehash": "0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a",
+      "ruleInitcodeHash": "0x8a2924ca00cfd043a17d92faf631618fcd3275f997c038f93cb282656db2e721",
+      "refTypes": [
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x7da985fef9d03eca9da3868910e9d6a44e68354af479596d8749fbeae4879c87"
+      ],
+      "shape": "0x1e18155bff6a0e6b018550adc96cb979f2f21bc4aa191a9ea0e318a6b68b1bb1",
+      "descriptorBytes": 602,
+      "blob": "0x2E5466E75326AcEC43561E522E6492fDecCCc993",
+      "blobCodehash": "0x35248e59c6bfaf1b9c756b0139e38985beac9949e7ef1f357a3b1f268f90cc5b"
+    },
+    {
+      "type": "text/1",
+      "typeId": "0x746331ae3170a7155f6d6d3bba00bf3093eacc49ca52c1fdba6251b132157972",
+      "rule": "TextRule",
+      "instance": "0x64D24D9353eAA57f9b7517de17DE383dFB5bD2a2",
+      "ruleCodehash": "0x9d1ae5d5c3182f7a5f514e25d0a76cf07f4c0609257046416e01aa8711be6a76",
+      "ruleInitcodeHash": "0x0c28e8f2ac864dfbe79886b91e9a81a9a9b9997624170e513537a3f29e2e0ff7",
+      "refTypes": [],
+      "shape": "0x03f190cc20505c4896a9df5088aab45d1641ea57bc4fb1427337391df5dac240",
+      "descriptorBytes": 306,
+      "blob": "0x569cC47cB4a346a75b414ABfbe1aD01a3dcaeB56",
+      "blobCodehash": "0xc2084e1f3387de604c990013226e1659c467fdd62d53439fdfa45ad37fa9568f"
     }
   ],
   "privilegedRoles": {
@@ -817,7 +886,7 @@
       "views": "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
       "reads": "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
       "layoutId": "0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212",
-      "txHash": "0xddd895101bf8fcc341227c01cd260aaf7958e0614572c67659594ea914252ab1"
+      "txHash": "0xd6ac4f952ccb3c7066da6f2e53c7bea53ab291e9a83489c69fafb9bbffe70232"
     },
     "filesPageReader": {
       "address": "0x18f7B0c62a6A67b439C5a14e18cf8b5317504F37",
@@ -831,7 +900,7 @@
       "nameType": "0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a",
       "rootType": "0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c",
       "childType": "0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120",
-      "txHash": "0x1324a9914124bbf13237409cf866e35ba48e79195269339eb73c581f5d41f8bc"
+      "txHash": "0xcfb4ffa5eaa9ba60f1b120c4972cad8bbc0ae9d6b08707d14f9616b60f0b853c"
     },
     "listed": [
       {
@@ -865,7 +934,7 @@
       "views": "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
       "layoutId": "0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212",
       "seedUrl": "web3://0x7efc2aF28994ed11e283f25cBFFfBD5078BFAd00:31337/0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266/",
-      "txHash": "0x704b5d53002a606389fdba143ee40540ecb9dfe20c4753a3c55cda94570f1a56"
+      "txHash": "0x0e759cb5c8cacb57062037022368afc461f2c673a76af84538f047457d793f35"
     }
   },
   "seed": {
@@ -928,7 +997,7 @@
       {
         "id": "G22.root",
         "label": "seed root (PUBLISH files-directory/1)",
-        "txHash": "0x530169882e770f51491d5a2d4d1723fbc4342a67f7cabef5532df6ae9a1bf26e",
+        "txHash": "0x6790d3d02dfa7d67df9d39f0f87a992e6609ce51f53249454889eecabf40ffed",
         "publication": 1,
         "actions": [
           {
@@ -950,7 +1019,7 @@
       {
         "id": "G22.folder",
         "label": "seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)",
-        "txHash": "0xc2ca0ba841464c604a772db40e73d85e1ce359ba3e51c9bcc16b7fdaa51d169a",
+        "txHash": "0x4c34281157543d5f739222a6a67fbd7a0883241adf1e8c67263a3b3ebfa257f6",
         "publication": 2,
         "actions": [
           {
@@ -996,7 +1065,7 @@
       {
         "id": "G22.file",
         "label": "seed file docs/readme.txt (CREATE, PUBLISH root form 0, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0xd2af90aa3af6804a6533f5558fd2b1bd78edd3166e27a0f2443a9f8e1e6b7a05",
+        "txHash": "0x178d889a2bd13b66e2c521b81c49b4e94bac7553a6cb601f8ef36ba2c36b6633",
         "publication": 3,
         "actions": [
           {
@@ -1066,7 +1135,7 @@
       {
         "id": "G22.big.0",
         "label": "seed docs/big.bin publication 1/2 (2 actions, 16384 body bytes)",
-        "txHash": "0x09aea14cd50d3b12a17881e32d7510324a6d8e46acd888914a2d5e2b5e043649",
+        "txHash": "0x1ff1734dbab6af018d3eb9119866949c44b0c2ea535c0b5835f95213988633c5",
         "publication": 4,
         "actions": [
           {
@@ -1100,7 +1169,7 @@
       {
         "id": "G22.big.1",
         "label": "seed docs/big.bin publication 2/2 (9 actions, 4351 body bytes)",
-        "txHash": "0xba39679086b19e8a12704910429b527f5830acfecad632e8b9c3a6822d843fc3",
+        "txHash": "0xed2e2b65878f8c72e3bd64b5f14d3222248d264ba6b6ca899a65de7c35534c60",
         "publication": 5,
         "actions": [
           {
@@ -1218,7 +1287,7 @@
       {
         "id": "G22.remote",
         "label": "seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0x3224a9a32ba48107724aae7760eb880fdd2d25fe318a1c44efd097e36dba1f17",
+        "txHash": "0x25080cd943fc4d32fbec7d08228b7b4be3859f72892d79a3274cadefd891c2c6",
         "publication": 6,
         "actions": [
           {
@@ -1345,7 +1414,7 @@
   },
   "capabilities": {
     "filesSeed": "efs-fixture-seed/4",
-    "filesTypes": 10,
+    "filesTypes": 13,
     "seedFiles": [
       "readme.txt",
       "big.bin",
@@ -1371,7 +1440,7 @@
     "txGasCapEnforced": true,
     "txGasCapRule": "EIP-7825: a transaction whose gas limit exceeds the cap is rejected",
     "blockGasLimit": 30000000,
-    "atBlock": 62,
+    "atBlock": 71,
     "snapshot": "taken when the instance was deployed; read live values from the chain"
   },
   "rpc": {
