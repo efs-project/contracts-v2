@@ -102,10 +102,12 @@ export const FACTORY = {
 /** anvil's first default key: a public throwaway, the fixture's owner, declaration key and seed principal. */
 export const FIXTURE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 export const DEFAULTS = { chainId: 31337, realmSalt: h("efs/fixture/realm/1"), executionProfileId: 1 };
-/** The release hot-ABI id: keccak256("efs/ledger-hot/2") (the suites keep "efs/ledger-hot/2:test"). It is
- *  LedgerCore's HOT_ABI_ID immutable, IndexReads' HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
+/** The release hot-ABI id's name (the suites use the same rule under "efs/ledger-hot/2:test"). The id is LedgerCore's
+ *  HOT_ABI_ID immutable, IndexReads' HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
 export const HOT_ABI_ID_STRING = "efs/ledger-hot/2";
-export const HOT_ABI_ID = h(HOT_ABI_ID_STRING);
+/** keccak(name ‖ for each ILedgerHot function by selector: selector ‖ keccak(output tuple)) (tools/abi-id.mjs), from the
+ *  committed test/snapshots/abi/ILedgerHot.json; `pnpm abi:check` fails when this pin differs from the snapshot. */
+export const HOT_ABI_ID = "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856";
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
 export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1") };
 /** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values. */

@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import {FamilyId, ScopeKey} from "./Actions.sol";
 
 /// @title IBitmapStore — the per-Realm kind-10 scope lists and BITMAP family store (design §5.11, §4.6)
-/// @notice Same discipline as IPostingStore: STORE_ABI_ID = keccak("efs/bitmap-store/1" ‖ …) exposed by
+/// @notice Same discipline as IPostingStore: STORE_ABI_ID = the ABI id of this interface under "efs/bitmap-store/1" (design §5.3's rule) exposed by
 ///         storeAbiId(); this ABI is Etched.
 interface IBitmapStore {
     /// The kind-10 list: head (count, live, lastMutation, liveBits0, entry0) and entry word in one call on

@@ -19,6 +19,11 @@ contract StoresTest is Test {
     BitmapStore internal bitmap;
     address internal constant GEN = address(0xA11CE);
     address internal constant BUILDER = address(0xB0B);
+    /// The store ABI ids (tools/abi-id.mjs over the committed snapshots; `pnpm abi:check` recomputes both).
+    bytes32 internal constant POSTING_STORE_ABI_ID =
+        0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554;
+    bytes32 internal constant BITMAP_STORE_ABI_ID =
+        0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f;
 
     bytes32 internal BY_TYPE = Keys.familyId("by-type");
     bytes32 internal HISTORY = Keys.familyId("history");
@@ -458,8 +463,8 @@ contract StoresTest is Test {
         assertEq(posting.ledger(), address(ledger));
         assertEq(bitmap.ledger(), address(ledger));
         assertEq(posting.initialWriter(), address(0));
-        assertEq(posting.storeAbiId(), keccak256("efs/posting-store/1"));
-        assertEq(bitmap.storeAbiId(), keccak256("efs/bitmap-store/1"));
+        assertEq(posting.storeAbiId(), POSTING_STORE_ABI_ID);
+        assertEq(bitmap.storeAbiId(), BITMAP_STORE_ABI_ID);
         assertEq(posting.familyIds().length, 2);
         assertEq(bitmap.familyIds().length, 3);
         assertEq(bitmap.familyIds()[2], LIVE);

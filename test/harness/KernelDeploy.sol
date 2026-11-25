@@ -21,7 +21,10 @@ import {Vm} from "forge-std/Vm.sol";
 ///         The real deployer (`RealmGenesis`, design §8.2) replaces this at S1.4; the S1 limits are the
 ///         design's §4.2 values.
 library KernelDeploy {
-    bytes32 internal constant HOT_ABI_ID = keccak256("efs/ledger-hot/2:test");
+    /// The suites' hot-ABI id: the rule of tools/abi-id.mjs under the name "efs/ledger-hot/2:test" over the committed
+    /// ILedgerHot snapshot (`pnpm abi:check` recomputes it).
+    bytes32 internal constant HOT_ABI_ID =
+        0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0;
 
     struct Kernel {
         LedgerIngress ingress;

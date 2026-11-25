@@ -28,6 +28,7 @@ import { keccak256, toFunctionSelector } from "viem";
 import { mediaVectors } from "./media-vectors.mjs";
 import { numberVectors } from "./number-vectors.mjs";
 import { topicVectors } from "./topic-vectors.mjs";
+import { ABI_IDS, idFromSnapshot } from "./abi-id.mjs";
 import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-script", "check"]);
@@ -292,6 +293,8 @@ const gasModel = {
 };
 assert.equal(gasModel.envelope.prague.chunk.count, 2, "two 8 KB chunks per publication is the release's stated envelope today");
 
+const storeId = (name) => idFromSnapshot(root, ABI_IDS.find((e) => e.name === name));
+
 // ---- the manifest --------------------------------------------------------------------------------------------------
 const settings = artifact("LedgerCore").settings;
 const forgeVersion = (() => { try { return execFileSync("forge", ["--version"]).toString().split("\n")[0].trim(); } catch { return null; } })();
@@ -318,10 +321,11 @@ const manifest = {
     limits: plan.limits,
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
-    hotAbiIdPreimage: plan.hotAbiIdString,
+    hotAbiIdName: plan.hotAbiIdString,
     readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, web3Gateway: plan.gateway, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
     statusVocabularyId: constants.status.id,
-    storeAbiIds: { posting: keccak256(Buffer.from("efs/posting-store/1")), bitmap: keccak256(Buffer.from("efs/bitmap-store/1")) },
+    storeAbiIds: { posting: storeId("efs/posting-store/1"), bitmap: storeId("efs/bitmap-store/1") },
+    abiIdRule: "keccak(name ‖ for each function sorted by selector: selector ‖ keccak(canonical output tuple)) (tools/abi-id.mjs)",
     indexProfiles: { physical: keccak256(Buffer.from("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs")) },
     crossCheck: scriptCheck,
   },

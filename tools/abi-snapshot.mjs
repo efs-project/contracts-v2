@@ -3,7 +3,8 @@
 //
 //   node tools/abi-snapshot.mjs           write test/snapshots/abi/<Interface>.json   (pnpm abi:snapshot)
 //   node tools/abi-snapshot.mjs --check   exit 1 with a readable diff when the build    (pnpm abi:check)
-//                                         differs from the committed snapshot
+//                                         differs from the committed snapshot, or when a pinned ABI id
+//                                         (tools/abi-id.mjs) differs from its recomputation from the snapshot
 //
 // Each snapshot holds the interface's ABI items sorted by type and name, its method identifiers
 // (selector → signature), its error and event signatures with their keccak selectors and topics, and every
@@ -32,7 +33,7 @@ if (args.some((a) => a !== "--check")) {
 const check = args.includes("--check");
 
 import { keccak256 } from "./keccak.mjs";
-import { ABI_IDS, abiId, pinnedValue } from "./abi-id.mjs";
+import { ABI_IDS, checkPins, idFromSnapshot } from "./abi-id.mjs";
 
 // ---- sources ----
 const files = (dir) =>
@@ -271,3 +272,13 @@ if (lines.length > 0) {
   process.exit(1);
 }
 console.log(`abi-snapshot: ${expected.size} snapshots in ${SNAP}/ match the build`);
+
+// The ABI ids that commit to their functions (tools/abi-id.mjs): recomputed from the committed snapshots, every pin
+// must equal its id.
+const pinLines = checkPins(root);
+if (pinLines.length > 0) {
+  console.error(`abi-snapshot: ${pinLines.length} pinned ABI id(s) differ from the committed snapshots (tools/abi-id.mjs):`);
+  for (const l of pinLines) console.error(`  ${l}`);
+  process.exit(1);
+}
+console.log(`abi-snapshot: ${ABI_IDS.length} ABI ids recomputed; every pin matches (${ABI_IDS.map((e) => `${e.name} ${idFromSnapshot(root, e).slice(0, 10)}…`).join(", ")})`);

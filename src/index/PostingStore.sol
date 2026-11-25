@@ -15,7 +15,10 @@ import {E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 ///         of the tag design) is held as immutables, so a family check reads no storage; `familyIds()` keeps the
 ///         same ids in the same order in storage for readiness checks.
 contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
-    bytes32 public constant STORE_ABI_ID = keccak256("efs/posting-store/1");
+    /// keccak("efs/posting-store/1" ‖ for each IPostingStore function by selector: selector ‖ keccak(output tuple))
+    /// (tools/abi-id.mjs; `pnpm abi:check` recomputes it from the committed snapshot).
+    bytes32 public constant STORE_ABI_ID =
+        0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554;
 
     uint256 private constant MASK48 = (1 << 48) - 1;
     uint256 public constant FAMILY_CAPACITY = 16;
