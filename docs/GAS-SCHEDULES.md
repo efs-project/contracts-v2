@@ -66,3 +66,20 @@ Whole `execute` calls measured from the caller in `test/integration/FilesRecipes
 | Bytes + content + empty sentinel + external | 1,859,163 | 6,636,253 | — |
 
 `files-name/2` validation: 3,400 gas for a 10-byte name, 43,580 for 255 ASCII bytes, 113,077 for 255 bytes of CJK. `FilesFinalValidator`: ≈ 5.3k gas per additional FOLDER bind. `LedgerViews.publication()`: 118k–225k gas per call. The C1 closure rewrites design §14 with these rows and adds `gasStateUsed` and the two sides of 2^24.
+
+## Measured on 2026-11-25 (the single release: a folder is its creator's record; remove releases)
+
+The GasModel fixture (`test/integration/GasModel.t.sol` setUp: every account cooled before the measured `execute`, a
+principal that has written before, a steady folder scope), `gasleft()` delta around `execute`; main `49e606c`
+against this change. Create folder is `PUBLISH(files-directory/1, (creator, salt))`, `PUBLISH(files-name/2)`,
+`BIND(FOLDER)` (main: the same after a `CREATE`); "per extra" is `(x8 − x1) / 7` folders in one publication.
+
+| Step | prague main → now | amsterdam main → now |
+| --- | ---: | ---: |
+| Create folder, alone | 1,284,071 → 1,207,295 (−6.0 %) | 4,191,743 → 3,938,927 (−6.0 %) |
+| Create folder, per extra in one publication | 877,027 → 795,678 (−9.3 %) | 3,101,702 → 2,844,338 (−8.3 %) |
+| Remove (main: UNBIND; now: RELEASE) | 449,707 → 449,898 | 1,201,721 → 1,201,924 |
+| Hide (UNBIND, new recipe) | — → 449,707 | — → 1,201,733 |
+| Rename + move (main: UNBIND + BIND; now: RELEASE + BIND) | 1,080,214 → 1,080,393 | 3,371,522 → 3,371,725 |
+
+RELEASE and UNBIND write the same slots; RELEASE measures about 190 gas more. The recipe rows of `gas/report.json` carry the same operations as `FilesRecipes.t.sol` runs them.

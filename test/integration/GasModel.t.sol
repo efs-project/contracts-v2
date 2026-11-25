@@ -521,11 +521,11 @@ contract GasModelTest is FilesRecipesBase {
         // edit: PUBLISH child form 0 (18-byte document) + HEAD rebind
         (a, b,) = EfsFiles.edit(_types(), file, rootRec, "Meeting at 11:00.\n", 1);
         _exec("model validate edit", a, b);
-        // rename + move: PUBLISH name (9 B), UNBIND (d2, readme.txt), BIND (rootDir, notes.txt)
+        // rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE (d2, readme.txt), BIND (rootDir, notes.txt)
         a = new Action[](3);
         b = new bytes[](3);
         (a[0], b[0]) = _name("notes.txt");
-        a[1] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d2, keccak256("readme.txt"), 0, 1);
+        a[1] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d2, keccak256("readme.txt"), 0, 1);
         a[2] = _bind(Purpose.FOLDER, rootDir, keccak256("notes.txt"), file, 0);
         _exec("model validate rename move", a, b);
     }

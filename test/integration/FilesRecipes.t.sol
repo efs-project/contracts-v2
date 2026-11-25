@@ -24,7 +24,8 @@ import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 
 /// @notice The first-milestone recipes of design §12.2 on the native lane, end to end through the real kernel, the
 ///         real registry proxy and the real generation-1 index with `FilesFinalValidator` pinned: root seed, create
-///         folder, create file, edit (CAS on HEAD), rename + move (atomic), remove, restore, release; the index's
+///         folder, create file, edit (CAS on HEAD), rename + move (RELEASE + BIND, atomic), remove (RELEASE),
+///         restore, hide (UNBIND); the index's
 ///         folder-scope lists and live bits, backlinks and history after each step; the final hook refusing a FOLDER
 ///         bind with no name record (nothing lands); a stale CAS refused whole; Type ids identical across Realms and
 ///         chains. Revisions carry the `form` word of docs/LARGE-FILES.md (form 0 here; content by sha256, large
@@ -47,7 +48,7 @@ contract FilesRecipesTest is FilesRecipesBase {
         assertTrue(r.g.index.replayReadiness().ready);
     }
 
-    function test_recipes_folder_file_edit_move_remove_restore_release() public {
+    function test_recipes_folder_file_edit_move_remove_restore_hide() public {
         // ---- create folder: PUBLISH directory (p, salt), PUBLISH name, BIND(FOLDER, parent, keccak(name) → dir, 0)
         Action[] memory a = new Action[](3);
         bytes[] memory b = new bytes[](3);
@@ -106,11 +107,11 @@ contract FilesRecipesTest is FilesRecipesBase {
         (uint64 parents,) = _posting(F_REFERENCE, typeIds[T_CHILD], rootRec);
         assertEq(parents, 1, "the child's parent reference");
 
-        // ---- rename + move: PUBLISH name, UNBIND old FOLDER, BIND new FOLDER, atomically
+        // ---- rename + move: PUBLISH name, RELEASE old FOLDER, BIND new FOLDER, atomically
         a = new Action[](3);
         b = new bytes[](3);
         (a[0], b[0]) = _name("notes.txt");
-        a[1] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, docsDir, keccak256("readme.txt"), 0, 1);
+        a[1] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, docsDir, keccak256("readme.txt"), 0, 1);
         a[2] = _bind(Purpose.FOLDER, rootDir, keccak256("notes.txt"), file, 0);
         _exec("recipe rename + move", a, b);
         bytes32 notesKey = _key(Purpose.FOLDER, rootDir, keccak256("notes.txt"));
@@ -120,13 +121,15 @@ contract FilesRecipesTest is FilesRecipesBase {
         _assertHistory(readmeKey, 2);
         _assertHistory(notesKey, 1);
         (state,,) = _head(readmeKey);
-        assertEq(state, 2, "the old placement is masked");
+        assertEq(state, 3, "the old placement is released, not masked");
 
-        // ---- remove: UNBIND
+        // ---- remove: RELEASE (my entry falls through; it never hides a lower-ranked author's)
         a = new Action[](1);
         b = new bytes[](1);
-        a[0] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, rootDir, keccak256("notes.txt"), 0, 1);
+        a[0] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, rootDir, keccak256("notes.txt"), 0, 1);
         _exec("recipe remove", a, b);
+        (state,,) = _head(notesKey);
+        assertEq(state, 3, "released");
         _assertScope(rootDir, 2, 1, 1);
         _assertBacklink(file, 2, 0);
 
@@ -140,11 +143,11 @@ contract FilesRecipesTest is FilesRecipesBase {
         assertEq(rev, 3);
         assertEq(target, file);
 
-        // ---- stop claiming: RELEASE
-        a[0] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, rootDir, keccak256("notes.txt"), 0, 3);
-        _exec("recipe release", a, b);
+        // ---- hide: UNBIND (a mask: it stops a lens search at this place)
+        a[0] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, rootDir, keccak256("notes.txt"), 0, 3);
+        _exec("recipe hide", a, b);
         (state, rev,) = _head(notesKey);
-        assertEq(state, 3, "released");
+        assertEq(state, 2, "masked");
         assertEq(rev, 4);
         _assertScope(rootDir, 2, 1, 1);
         _assertBacklink(file, 3, 0);
@@ -169,10 +172,10 @@ contract FilesRecipesTest is FilesRecipesBase {
         a = new Action[](1);
         b = new bytes[](1);
         a[0] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, rootDir, keccak256("cycle.txt"), 0, 1);
-        _exec("recipe remove", a, b);
+        _exec("recipe hide", a, b);
         // RELEASE from MASKED: no live bit to clear twice, no backlink to release twice
         a[0] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, rootDir, keccak256("cycle.txt"), 0, 2);
-        _exec("recipe release a removed placement", a, b);
+        _exec("recipe release a hidden placement", a, b);
         (uint8 state, uint64 rev,) = _head(key);
         assertEq(state, 3);
         assertEq(rev, 3);
