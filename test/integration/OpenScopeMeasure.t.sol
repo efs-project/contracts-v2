@@ -463,7 +463,7 @@ abstract contract OpenScopeMeasureBase is FilesRecipesBase {
         uint256 c17 = _cost(small[16], c, deny, regularOnly);
         if (c17 == type(uint256).max) return; // regular-only rows exist on amsterdam only
         uint256 c33 = _cost(small[32], c, deny, regularOnly);
-        uint256 slope = (c33 - c17) / 16;
+        uint256 slope = c33 > c17 ? (c33 - c17) / 16 : 0;
         emit log_named_uint(_label(string.concat(row, " per level (estimate)")), slope);
         if (slope < 100) {
             emit log_named_uint(_label(string.concat(row, " depth-independent, tx at 33")), c33);
