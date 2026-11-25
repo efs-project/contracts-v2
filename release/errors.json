@@ -980,7 +980,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": "none",
-      "meaning": "1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin 10 the index's reads contract (its codehash is not the one the index recorded, or its manifest names another header, profile or ledger)"
+      "meaning": "1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin 10 the index's reads contract (its codehash is not the one the index recorded, or its manifest names another header, profile or ledger) 11 the index's topic Type ids (one of them zero, or nonzero without a final unit whose topicTypeId() and topicWordTypeId() equal them)"
     },
     "0x1b4fbe7a": {
       "name": "E_POLICY_REJECTED",

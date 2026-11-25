@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "cd0c9a807261d429bf055175adb85cb3e9e5b104",
-    "tree": "ded4ac9c1478b2badb52924410afd3a822b3fd34",
-    "dirty": 10,
+    "commit": "3c43a2976e9418b892e5c43ddbdd3f02cf351bd1",
+    "tree": "86480299abd1e8972941ff358b53eacaddc5d5ec",
+    "dirty": 5,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -41,19 +41,19 @@
     "src/core/layout/Layout.sol": "0x7d20b949922e092744c75bf42dd4f9b42bad6a9a91b164d03b187c86434bbcb4",
     "src/core/storage/LedgerStorage.sol": "0x4f6914894ee60e13645d6e1de6b697180c5f179f22d5981311400308d6ecb363",
     "src/interfaces/Actions.sol": "0x26e98f79e9a2a02f6622d67870c9619a861be81321e981aa25a0312eeb503990",
-    "src/interfaces/Errors.sol": "0xadf9c4feae51f634aaf976072cfe0c4a51c0c86c3172d6fa449a74b8a3b88138",
+    "src/interfaces/Errors.sol": "0xf0a9653a1838aa5480ec6d4935a6d3a384f02e7c230d0a9bcb8207cc41a49484",
     "src/interfaces/IAcceptor.sol": "0x7d6949f47c4a6213d8953aba8371f5bea1e07d98bde065550822ead75fd3d7e0",
-    "src/interfaces/IIndexReads.sol": "0x82975514e90bcef6272b42d928e8e7b7f64ccbb111146bd57b7e614f2284ff1c",
+    "src/interfaces/IIndexReads.sol": "0xc042e66807ee393cb29e89e5a16fc41431724bf303ce5cfc9a439120f63c02b1",
     "src/interfaces/ILedgerCommitments.sol": "0xc68f5f990320187ca0a6d30a417dd250e3c9188022cb938918769b9843120dc4",
     "src/interfaces/ILedgerHot.sol": "0x1b70d70b5656436f46ff9f388895376515aef3bb533d1bf8f3b79e29881b53b5",
-    "src/interfaces/IRealmIndex.sol": "0x64e4e6eb8c0cb40489e214d3440ddb22ca7d2fcaa695c0a73a312db3af0bc977",
+    "src/interfaces/IRealmIndex.sol": "0xa1d09a5cbdc988b1bfc8208b22cd936ce95cd36297d07ddfb529234230a367b4",
     "src/interfaces/ITypeRegistry.sol": "0x0f7323f9c6f9982c1e2d37fefb2792ee04dd5bb5e7853f7928986709d594eb1c",
     "src/interfaces/Index.sol": "0xe95d407db3b21fc156e9adb5ecbcbf9e26e0a985b09d5b845194a6c9e81297ba",
     "src/interfaces/Limits.sol": "0xb66538ac9546f5baf085c8e86a5a7033400240ece9ad4208e4ae054332af9d52",
     "src/interfaces/Results.sol": "0x7c2d00946fb9f082ef07e5c23cd9284060f51ae151fdddb742c9f840c364bf5e",
     "src/interfaces/internal/ILedgerIngress.sol": "0x025a4991d3a1f220bd162e7f5a8801109a628d5bde61426a508e5edb8d7e3a75",
     "src/lib/CodePins.sol": "0x242d70fb6037dec503ba3d29628bdde56bf61c158e4ff73b2edfe0473378ae4e",
-    "src/lib/Keys.sol": "0x32e432e909128e3a74dde8cbf8092073400901571027d8044b3be6a87e65969c",
+    "src/lib/Keys.sol": "0x506283f5d084771a1c5e3be3e5d4c6956ded71fbc8239adfa48200399b7b1775",
     "src/core/LedgerApply.sol": "0xa5700945c7f0872ffd21660b47cd0c7d090e194eccf18f47c25df1f6b6c41662",
     "src/interfaces/internal/ILedgerApply.sol": "0xadaf77f23f5342abd00c0b20085548cb9527c4ed2dacb85aa63cc71fd5d1278d",
     "src/core/LedgerControl.sol": "0x54fb20bc7868d3f77b2dc431c649d002d9ece868a8eb3d92b9d8c117d8431bde",
@@ -101,10 +101,10 @@
     "src/index/storage/StoreStorage.sol": "0x877abeede5118e91b28363d3861d0c3120a62d3487c784778a72eb5820c606dc",
     "src/index/BitmapStore.sol": "0x765958c34bb53539483032453ebae707a4f944f3953827158f676c982ef44e33",
     "src/interfaces/IBitmapStore.sol": "0x166385a251b94eac434cfa571fdf8a1cb2151f987bc3d9ff0ea00e3ee769d83b",
-    "src/index/IndexProfiles.sol": "0x424c0dc8cc06c7c8be6735e685f62e1344db0f08830a540ecfff08a04b828eb8",
-    "src/index/IndexReads.sol": "0x4d4ef18d05e0c54d46ffc42edbab0e5dfdf74a67065524f4efe1719ec0d01425",
-    "src/index/RealmIndex.sol": "0x4e8b83b75df6e89d7b1389c7bdae0293655ce9ded3f8fa0938f6b2206d1bccbb",
-    "src/index/storage/GenerationStorage.sol": "0x7c2bf6652d137615312c585bb22f880671b0d465bd0283219f7107135496adbd",
+    "src/index/IndexProfiles.sol": "0x491e06a7f71a825f9a8614810b36bcde559f05a3a18de7060f5ab86fedc2d7fd",
+    "src/index/IndexReads.sol": "0xf5977bc642eaf9be4ffcde29735cde5b5608bbdcb3b6fa4d441ab27c66269e26",
+    "src/index/RealmIndex.sol": "0x28f36f8e86f3798f25ba2dc13374486a13857c209238e3e398585ec519a6d9de",
+    "src/index/storage/GenerationStorage.sol": "0x41f833ac25103535f0a09c1206fc1c8bc2dc2516016b7175f13c3ec5724578ff",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
     "src/profiles/FilesFinalValidator.sol": "0xd330ae5491da169a328ef0aff6e96dffa4474127e99e78fd7c0e62ef681e87da",
     "src/profiles/FilesProfile.sol": "0xfe864d4a8ae265d23e2028b4d335662c02852fc0cdc47dd5c1af892da3b181cc",
@@ -693,10 +693,10 @@
     "PostingStore": {
       "source": "src/index/PostingStore.sol",
       "runtimeHash": "0x4445e7b54ea0e58ce8323422a4a0ae1a7bd854684cd6016a0a739c764ddcd3bf",
-      "deployedBytecodeHash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672",
+      "deployedBytecodeHash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b",
       "initcodeHash": "0x123d7a6896c357715bec8c67d0b47af6cc761697a01991ab1674032bf44e08de",
-      "initcodeWithArgsHash": "0xb3cbfee3ea4de4f0eff900202b6d2283c1ea299371f2ea25e991e8e416163ad8",
-      "address": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
+      "initcodeWithArgsHash": "0x5d64fdd0e2011bc915bad664148e66871e51fd3fe18df3707e3810b442007c77",
+      "address": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
       "realmSpecific": true,
       "planStep": "G16",
       "immutables": [
@@ -814,7 +814,7 @@
       "sizes": {
         "runtime": 6344,
         "initcode": 7667,
-        "initcodeWithArgs": 8115
+        "initcodeWithArgs": 8275
       },
       "budget": {
         "runtime": 19660,
@@ -894,66 +894,80 @@
     },
     "IndexReads": {
       "source": "src/index/IndexReads.sol",
-      "runtimeHash": "0x67ed623a257169e9a5306d1be2e040f001cbac9b7c1f7d475d88df12c0ec9619",
-      "deployedBytecodeHash": "0x023f5784e955c65ab4a5a05059d8ddf578984b9968f671037674296eb6aba524",
-      "initcodeHash": "0x805b444017b6eb5305beb0ca97baec25fda720c1cf926f7bf80afab113eecdbc",
-      "initcodeWithArgsHash": "0x1ffd4a8532323e2da3af263a63e60bf5c915e16711ab993c89fbef92ab5b1d3d",
-      "address": "0x5F3e5e3cD310b4718AE9AcCF674644aE63D9138D",
+      "runtimeHash": "0xf1e616d9a93614ddbb6b6d92fd9ed9e9710a806b15021f1e64e8e8b445851d4b",
+      "deployedBytecodeHash": "0xd57d239c180b5f9da37ebeb26c87fc2b643ad2038a2794d277f01b0be3bca54a",
+      "initcodeHash": "0xf4d63630d235e54db168c2556d1268b897acf683ac1828d1e73ae78d44bbd54e",
+      "initcodeWithArgsHash": "0x6583169fb53d03f9eee46afd8863df5e8d01b9ff507dc9ac5f7be4d7dc166761",
+      "address": "0xF3B30d04849D9819aC02db3C6365f4A1beeA2D8d",
       "realmSpecific": true,
       "planStep": "G19a",
       "immutables": [
         {
           "name": "BITMAP",
           "offsets": [
-            2634
+            2878
           ]
         },
         {
           "name": "F_BY_RECORD",
           "offsets": [
-            4665
+            4909
           ]
         },
         {
           "name": "F_DIGEST",
           "offsets": [
-            7100
+            7344
           ]
         },
         {
           "name": "HOT_ABI_ID",
           "offsets": [
-            921,
-            1376
+            1012,
+            1467
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
-            1222,
-            2862,
-            3732,
-            5060,
-            5780,
-            7355,
-            7583,
-            7716
+            1313,
+            3106,
+            3976,
+            5304,
+            6024,
+            7599,
+            7827,
+            7960
           ]
         },
         {
           "name": "POSTING",
           "offsets": [
-            3535,
-            4815,
-            5551,
-            7236
+            3779,
+            5059,
+            5795,
+            7480
+          ]
+        },
+        {
+          "name": "TOPIC_TYPE",
+          "offsets": [
+            821,
+            2561
+          ]
+        },
+        {
+          "name": "TOPIC_WORD_TYPE",
+          "offsets": [
+            2596,
+            2657
           ]
         }
       ],
       "sizes": {
-        "runtime": 8278,
-        "initcode": 16654,
-        "initcodeWithArgs": 17870
+        "runtime": 8522,
+        "initcode": 19581,
+        "initcodeWithArgs": 20861
       },
       "budget": {
         "runtime": 19660,
@@ -962,11 +976,11 @@
     },
     "RealmIndex": {
       "source": "src/index/RealmIndex.sol",
-      "runtimeHash": "0xd784030ce21f7274c25d7f12fb50f4d9650a4bb04e2367b6b1fd994d97415022",
-      "deployedBytecodeHash": "0x6963ebdc23c4cb421e6dd1c1b18aa1e26493de76773fa718417e3032c914c2a5",
-      "initcodeHash": "0x3996cfcabdeff7ba018b84f66bd03a276bfc1602952f5a69ffa19711b2a25bf6",
-      "initcodeWithArgsHash": "0xe68c308e64fb2f452f78268fe5fafc98af762f1546182387330dfed3e96d8e60",
-      "address": "0x1d813Bb7ec1f2AdecbfF4D1cc77Ad4093F5c422F",
+      "runtimeHash": "0xc102ec6844b8d9bd8cc576babc7c631ff6f5ff687942df059d731c44190df831",
+      "deployedBytecodeHash": "0xc4b54262754a0e1370ddce69e93a304fb84e1f9a1a4838d9f12a98466b4cfd4f",
+      "initcodeHash": "0x8a74a4c322dffde818a48cb1378946e885676608e39bf45fa1ecf574bd417c8c",
+      "initcodeWithArgsHash": "0xebdd54c1d25ce8d6dbfb5b064c4d1dcc1453a5185dcdbbb9e9e003aa5d93d387",
+      "address": "0x4183c08c162B04B666F3A62c42f5cb1F38344c2f",
       "realmSpecific": true,
       "planStep": "G19",
       "immutables": [
@@ -974,90 +988,120 @@
           "name": "BITMAP",
           "offsets": [
             451,
-            8322,
-            8445,
-            8753
+            8342,
+            8465,
+            8773
           ]
         },
         {
           "name": "DECODER",
           "offsets": [
             3306,
-            5924
+            5938
           ]
         },
         {
           "name": "F_BACKLINK",
           "offsets": [
-            9235,
-            9946
+            9310,
+            10030
           ]
         },
         {
           "name": "F_BY_AUTHOR",
           "offsets": [
-            7066,
-            10333
+            7086,
+            10460
           ]
         },
         {
           "name": "F_BY_RECORD",
           "offsets": [
-            7238,
-            7391,
-            11014,
-            11157
+            7258,
+            7411,
+            11141,
+            11284
           ]
         },
         {
           "name": "F_BY_TYPE",
           "offsets": [
-            6951,
-            10277
+            6971,
+            10404
           ]
         },
         {
           "name": "F_DIGEST",
           "offsets": [
-            10497
+            10624
           ]
         },
         {
           "name": "F_HISTORY",
           "offsets": [
-            8875
+            8896
           ]
         },
         {
           "name": "F_LIVE_SCOPE",
           "offsets": [
-            9304,
-            9666,
-            9797
+            9388,
+            9750,
+            9881
+          ]
+        },
+        {
+          "name": "F_PLACE",
+          "offsets": [
+            13181
+          ]
+        },
+        {
+          "name": "F_PLACE_BELOW",
+          "offsets": [
+            15547
+          ]
+        },
+        {
+          "name": "F_POSITION_AUTHORS",
+          "offsets": [
+            13037
           ]
         },
         {
           "name": "F_REFERENCE_POSITION",
           "offsets": [
-            10445
+            10572
+          ]
+        },
+        {
+          "name": "F_ROLE_PLACES",
+          "offsets": [
+            13261
           ]
         },
         {
           "name": "F_ROLE_SCOPE",
           "offsets": [
-            9149
+            9206
           ]
         },
         {
           "name": "F_SCOPE",
           "offsets": [
-            8995
+            9052
+          ]
+        },
+        {
+          "name": "F_SCOPE_BELOW",
+          "offsets": [
+            15481
           ]
         },
         {
           "name": "F_UNIQUE_BY_TYPE",
           "offsets": [
-            10406
+            10533
           ]
         },
         {
@@ -1066,10 +1110,11 @@
             997,
             1723,
             2455,
-            6021,
-            6724,
-            10531,
-            11086
+            6035,
+            6744,
+            10658,
+            11213,
+            15176
           ]
         },
         {
@@ -1082,11 +1127,12 @@
           "name": "POSTING",
           "offsets": [
             3238,
-            6878,
-            8202,
-            10014,
-            10939,
-            12598
+            6898,
+            8222,
+            10098,
+            11066,
+            12955,
+            13497
           ]
         },
         {
@@ -1094,7 +1140,7 @@
           "offsets": [
             3375,
             3478,
-            8085
+            8105
           ]
         },
         {
@@ -1103,12 +1149,25 @@
             3419,
             3548
           ]
+        },
+        {
+          "name": "TOPIC_T",
+          "offsets": [
+            13107,
+            15228
+          ]
+        },
+        {
+          "name": "WORD_T",
+          "offsets": [
+            15615
+          ]
         }
       ],
       "sizes": {
-        "runtime": 13690,
-        "initcode": 18664,
-        "initcodeWithArgs": 18760
+        "runtime": 15937,
+        "initcode": 21877,
+        "initcodeWithArgs": 21973
       },
       "budget": {
         "runtime": 19660,
@@ -1950,13 +2009,13 @@
     "wrappers": [],
     "index": {
       "generation": 1,
-      "address": "0x1d813Bb7ec1f2AdecbfF4D1cc77Ad4093F5c422F",
-      "runtimeCodehash": "0x6963ebdc23c4cb421e6dd1c1b18aa1e26493de76773fa718417e3032c914c2a5",
+      "address": "0x4183c08c162B04B666F3A62c42f5cb1F38344c2f",
+      "runtimeCodehash": "0xc4b54262754a0e1370ddce69e93a304fb84e1f9a1a4838d9f12a98466b4cfd4f",
       "reads": {
-        "address": "0x5F3e5e3cD310b4718AE9AcCF674644aE63D9138D",
-        "runtimeCodehash": "0x023f5784e955c65ab4a5a05059d8ddf578984b9968f671037674296eb6aba524"
+        "address": "0xF3B30d04849D9819aC02db3C6365f4A1beeA2D8d",
+        "runtimeCodehash": "0xd57d239c180b5f9da37ebeb26c87fc2b643ad2038a2794d277f01b0be3bca54a"
       },
-      "manifestHash": "0x2f70426136b519d4b26e5a5f0f2b39261bf03e830138aacb6a8d2f13e9ac8819",
+      "manifestHash": "0x5f8f4766150a9da41a09679308e97c481d8cdbef9d9d26c12225e8e3056f667f",
       "families": [
         {
           "familyId": "0x6e9951606fbc96e12b5da9d5c55cec8c09a145840b260cb897a2b8f4be21fca4",
@@ -1967,8 +2026,8 @@
           "liveSemantics": 2,
           "recipe": "0xff3a04d62b9cfe92e046e9050e5aee15c743934495b3715a3bd78e5c3ec8846d",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x560952b497304e11301908fe1bbe8ca18178a20d5bce17e0ec8da1c608a69237",
@@ -1979,8 +2038,8 @@
           "liveSemantics": 2,
           "recipe": "0xe239254463efc7c73f22255dab1c40d297c676c65524a071c9b1bb84d4c98838",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x5de43022a254f387c552254d6e5375271682998ee1cc4f17f444f299f902f31e",
@@ -1991,8 +2050,8 @@
           "liveSemantics": 3,
           "recipe": "0xf6a2ca712e033e9ee50967dd5dd306d26f1bdfaa5a76bd7c365b9ce10fa9fd42",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x7bd99cbefd8ad97668b4865fbe1068eea555b3bbd565088df08d3c4349675048",
@@ -2003,8 +2062,8 @@
           "liveSemantics": 1,
           "recipe": "0x5b4d1b59d59abf6fce3d1ce4b45ecd4d59f3cea81fa3443cf749506f6ea4a250",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x785d20da3fabd29416b11b5d7a7178f738ce04296b5b3dc16d60719df4411781",
@@ -2027,8 +2086,8 @@
           "liveSemantics": 1,
           "recipe": "0xe916f9a4af598bcd2438c173faa399f3497a6907ce4b79e702bead885b2263e1",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0xf0fdfb2a411a0a6c445888d6a34da36825ccf203fe7b21e34d447b38c970cde5",
@@ -2039,8 +2098,8 @@
           "liveSemantics": 2,
           "recipe": "0x9b11af34d3068c6d6dc9faefeed567accfc8a0afd8d5b2edf5199e45d0fa0f7d",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x88058113d0725ef3df2100c84d50c542bc76be3c3e9a3c844ea7c500771d2c1e",
@@ -2051,8 +2110,8 @@
           "liveSemantics": 1,
           "recipe": "0xadefae3329287b2bdde3aa2046f7c89ec7a6f613a274d0316dd4a516d807e0fb",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x94f3e0f72302096cb78037a199a0bc975964c6509ab700a2e7a1c12a487c4f7b",
@@ -2063,8 +2122,8 @@
           "liveSemantics": 1,
           "recipe": "0xe97d9312dc8487ffb1484668535d2974f4fbf78bcac0e25361953535779ffb92",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x34e61531e3e8c02ee4471e81c318661b5372716ad88f1d2aa1176c8b333ec547",
@@ -2075,8 +2134,8 @@
           "liveSemantics": 1,
           "recipe": "0xe690e9308fd6c4d830baa73cc00880e055dd4b45a69a6d96308c3b1e8f22c0bf",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x3f6c616797d01274636ac8a7e9ccd07da288ca143c35ef12db01dc76f8b6f0ea",
@@ -2087,8 +2146,8 @@
           "liveSemantics": 1,
           "recipe": "0xf35bbe1ea5561e7770d9d97388bf00606e9208608205aea4c9363a6e487e2e65",
           "fromAdmission": "1",
-          "store": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
-          "storeCodehash": "0x1edaf22bf8c84cf985c894e3795cf0a1ea6285f8ab9f1fa88328b5ed5eb8d672"
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         },
         {
           "familyId": "0x930992982a76179452d218203f2a3392e4da31222ac1a8f9ae247594a3b14000",
@@ -2113,6 +2172,66 @@
           "fromAdmission": "1",
           "store": "0x45E68cd877168670DedD0Ea599Bddcbff3bCE3B3",
           "storeCodehash": "0x9aa5136fbbddfaae4fddd6e48f99e7424457aaa3593082c8448fb2e3d5558634"
+        },
+        {
+          "familyId": "0x64f2802ca2cf5ba899f88d43de8d8eb830d1a71089795d6d9e9e5a80a226bc6a",
+          "kind": 6,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0xa3b65da14a9d82391a20a14abc14e9735931e40c4c88aec366ca2bc3914f8b46",
+          "fromAdmission": "1",
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
+        },
+        {
+          "familyId": "0x6ba31a5e97a75866345ec3d0dee5f3fa527b99d45799b00038ec0932cba3f7b2",
+          "kind": 7,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0xc77204476e166e2a79feaeb667e5269be5307ed9cad39f336648391c6d69e500",
+          "fromAdmission": "1",
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
+        },
+        {
+          "familyId": "0x4201126ed628afea054dd796c1fec72d9add0ba292ed6bc1347bb41d728f16b9",
+          "kind": 19,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0xe58b89a243d964f5173230c9af45448a5b65b2d7457aeb451e58469654cb9227",
+          "fromAdmission": "1",
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
+        },
+        {
+          "familyId": "0xc169b15288a6aef65707d0c30e1afa9d3465b8fafeea46aa760f057967bbde09",
+          "kind": 20,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0xba47c2b0c5e9cc7144e2c82571305882a84766ec410302e14f5a39d683f7beed",
+          "fromAdmission": "1",
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
+        },
+        {
+          "familyId": "0xca7c5d4aa35584ebeb752753db7d5aaefbb2b972642f2019cd3bc57bdb104247",
+          "kind": 21,
+          "universe": 4,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 1,
+          "recipe": "0x750bf6cd090aee63a56b1c863bae16bf3d5c9c2f106cf205fe6bebae18bb47cc",
+          "fromAdmission": "1",
+          "store": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
+          "storeCodehash": "0x937cb767cc1406bf651376d91b219bd113cfd12f1ad39367788da487bf5f043b"
         }
       ],
       "units": [
@@ -2156,7 +2275,7 @@
         "finalComputePerBind": 10000
       },
       "stores": {
-        "posting": "0x9335069CC84F8627963C714dc2F669BbC570f43d",
+        "posting": "0xD7fE3Ba87e0cD66450af42f1e2A8B50ec3F1001e",
         "bitmap": "0x45E68cd877168670DedD0Ea599Bddcbff3bCE3B3"
       }
     },
@@ -2377,7 +2496,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x69b191f122377805c9ee15965c1186806b26416fcd61adf0140eea02fa77c7e0",
+    "sha256": "0x74192e516ea42f51c40988545c70813ee9d28ee6d0513e086ff69e4399d87fa6",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2387,40 +2506,47 @@
           "osaka"
         ],
         "constants": {
-          "fixed": 321196,
+          "fixed": 322403,
           "perWord": 22729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 164378,
-            "files-span/1": 289392,
-            "files-content/1 carrier 0": 172796,
-            "files-content/1 carrier 2": 192403,
-            "files-external/1": 219762,
-            "files-directory/1": 164560,
-            "files-name/2": 151613,
-            "files-root/1 form 0": 148092,
-            "files-root/1 form 1": 174185,
-            "files-child/1 form 0": 227551,
-            "files-child/1 form 1": 253760,
-            "topic-word/1": 181241,
-            "topic/1": 210761,
-            "text/1": 181715
+            "files-bytes/1": 164645,
+            "files-span/1": 289837,
+            "files-content/1 carrier 0": 173310,
+            "files-content/1 carrier 2": 192917,
+            "files-external/1": 220252,
+            "files-directory/1": 164839,
+            "files-name/2": 151880,
+            "files-root/1 form 0": 148359,
+            "files-root/1 form 1": 174452,
+            "files-child/1 form 0": 227895,
+            "files-child/1 form 1": 254104,
+            "topic-word/1": 181520,
+            "topic/1": 211206,
+            "text/1": 181982
           },
-          "publishExisting": 175612,
-          "reuse": 179059,
+          "publishExisting": 175968,
+          "reuse": 179415,
           "create": 98400,
-          "bindHeadFresh": 330159,
-          "bindHeadRebind": 203359,
-          "bindFolderFreshFile": 359515,
-          "bindFolderFreshDirectory": 359296,
-          "bindFolderRebind": 205484,
-          "unbindFolder": 144429,
-          "releaseFolder": 141400,
-          "bindTagFresh": 329251,
-          "bindTagNumberChange": 192466,
-          "unbindTagLone": 260629,
+          "bindHeadFresh": 330891,
+          "bindHeadRebind": 203937,
+          "bindFolderFreshFile": 408273,
+          "bindFolderFreshDirectory": 408054,
+          "bindFolderRebind": 206086,
+          "unbindFolder": 144829,
+          "releaseFolder": 141800,
+          "bindTagFresh": 413130,
+          "bindTagSecondAuthor": 290991,
+          "bindTagNumberChange": 153453,
+          "unbindTagLone": 344359,
           "withdraw": 151521,
-          "firstWriteSurcharge": 11779
+          "firstWriteSurcharge": 11779,
+          "tagLevel": {
+            "mineNew": 36134,
+            "mineExisting": 24408,
+            "sharedNew": 25414,
+            "sharedExisting": 13659
+          }
         },
         "maxAbsErrorPercent": 5.36
       },
@@ -2430,78 +2556,92 @@
           "amsterdam"
         ],
         "constants": {
-          "fixed": 911716,
+          "fixed": 912923,
           "perWord": 110649,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 516458,
-            "files-span/1": 993542,
-            "files-content/1 carrier 0": 436858,
-            "files-content/1 carrier 2": 544497,
-            "files-external/1": 681128,
-            "files-directory/1": 516640,
-            "files-name/2": 342099,
-            "files-root/1 form 0": 412152,
-            "files-root/1 form 1": 526277,
-            "files-child/1 form 0": 755671,
-            "files-child/1 form 1": 869852,
-            "topic-word/1": 547487,
-            "topic/1": 591307,
-            "text/1": 547961
+            "files-bytes/1": 516725,
+            "files-span/1": 993987,
+            "files-content/1 carrier 0": 437348,
+            "files-content/1 carrier 2": 544987,
+            "files-external/1": 681630,
+            "files-directory/1": 516907,
+            "files-name/2": 342354,
+            "files-root/1 form 0": 412419,
+            "files-root/1 form 1": 526544,
+            "files-child/1 form 0": 756027,
+            "files-child/1 form 1": 870208,
+            "topic-word/1": 547754,
+            "topic/1": 591752,
+            "text/1": 548216
           },
-          "publishExisting": 534758,
-          "reuse": 538205,
+          "publishExisting": 535114,
+          "reuse": 538561,
           "create": 362360,
-          "bindHeadFresh": 1298121,
-          "bindHeadRebind": 591405,
-          "bindFolderFreshFile": 1415421,
-          "bindFolderFreshDirectory": 1415202,
-          "bindFolderRebind": 586330,
-          "unbindFolder": 342069,
-          "releaseFolder": 339040,
-          "bindTagFresh": 1297137,
-          "bindTagNumberChange": 566012,
-          "unbindTagLone": 964589,
+          "bindHeadFresh": 1298865,
+          "bindHeadRebind": 591995,
+          "bindFolderFreshFile": 1633019,
+          "bindFolderFreshDirectory": 1632800,
+          "bindFolderRebind": 586920,
+          "unbindFolder": 342469,
+          "releaseFolder": 339440,
+          "bindTagFresh": 1645088,
+          "bindTagSecondAuthor": 1016405,
+          "bindTagNumberChange": 431867,
+          "unbindTagLone": 1312345,
           "withdraw": 429847,
-          "firstWriteSurcharge": 85533
+          "firstWriteSurcharge": 85533,
+          "tagLevel": {
+            "mineNew": 124165,
+            "mineExisting": 38805,
+            "sharedNew": 113431,
+            "sharedExisting": 28071
+          }
         },
         "executionGas": {
-          "fixed": 293483,
+          "fixed": 292657,
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 124778,
-            "files-span/1": 210182,
-            "files-content/1 carrier 0": 143098,
-            "files-content/1 carrier 2": 152817,
-            "files-external/1": 191528,
-            "files-directory/1": 124960,
-            "files-name/2": 146259,
-            "files-root/1 form 0": 118392,
-            "files-root/1 form 1": 134597,
-            "files-child/1 form 0": 168151,
-            "files-child/1 form 1": 184412,
-            "topic-word/1": 155807,
-            "topic/1": 199627,
-            "text/1": 156281
+            "files-bytes/1": 125045,
+            "files-span/1": 210627,
+            "files-content/1 carrier 0": 143588,
+            "files-content/1 carrier 2": 153307,
+            "files-external/1": 192030,
+            "files-directory/1": 125227,
+            "files-name/2": 146514,
+            "files-root/1 form 0": 118659,
+            "files-root/1 form 1": 134864,
+            "files-child/1 form 0": 168507,
+            "files-child/1 form 1": 184768,
+            "topic-word/1": 156074,
+            "topic/1": 200072,
+            "text/1": 156536
           },
-          "publishExisting": 143078,
-          "reuse": 146525,
+          "publishExisting": 143434,
+          "reuse": 146881,
           "create": 68600,
-          "bindHeadFresh": 221001,
-          "bindHeadRebind": 199725,
-          "bindFolderFreshFile": 240381,
-          "bindFolderFreshDirectory": 240162,
-          "bindFolderRebind": 194650,
-          "unbindFolder": 146229,
-          "releaseFolder": 143200,
-          "bindTagFresh": 220017,
-          "bindTagNumberChange": 174332,
-          "unbindTagLone": 181229,
+          "bindHeadFresh": 221745,
+          "bindHeadRebind": 200315,
+          "bindFolderFreshFile": 262139,
+          "bindFolderFreshDirectory": 261920,
+          "bindFolderRebind": 195240,
+          "unbindFolder": 146629,
+          "releaseFolder": 143600,
+          "bindTagFresh": 274208,
+          "bindTagSecondAuthor": 233045,
+          "bindTagNumberChange": 138107,
+          "unbindTagLone": 235225,
           "withdraw": 136087,
-          "firstWriteSurcharge": -12387
+          "firstWriteSurcharge": -12387,
+          "tagLevel": {
+            "mineNew": 26245,
+            "mineExisting": 38805,
+            "sharedNew": 15511,
+            "sharedExisting": 28071
+          }
         },
-        "maxAbsErrorPercent": 8.1
+        "maxAbsErrorPercent": 8.15
       }
     },
     "envelope": {
@@ -2550,76 +2690,76 @@
         "editSmall": {
           "count": 23,
           "boundBy": "gas",
-          "gasEach": 592326,
-          "gasOfPublication": 13944689
+          "gasEach": 593248,
+          "gasOfPublication": 13967102
         },
         "edit1k": {
           "count": 11,
           "boundBy": "gas",
-          "gasEach": 1239641,
-          "gasOfPublication": 13957247
+          "gasEach": 1240563,
+          "gasOfPublication": 13968596
         },
         "createSmall": {
-          "count": 11,
+          "count": 10,
           "boundBy": "gas",
-          "gasEach": 1248959,
-          "gasOfPublication": 14059743
+          "gasEach": 1298983,
+          "gasOfPublication": 13312231
         },
         "create1k": {
           "count": 7,
           "boundBy": "gas",
-          "gasEach": 1896274,
-          "gasOfPublication": 13595114
+          "gasEach": 1946298,
+          "gasOfPublication": 13946489
         },
         "chunk": {
           "count": 2,
           "boundBy": "gas",
-          "gasEach": 6079668,
-          "gasOfPublication": 12480531
+          "gasEach": 6079935,
+          "gasOfPublication": 12482272
         },
         "spanNode": {
           "count": 38,
           "boundBy": "gas",
-          "gasEach": 358712,
-          "gasOfPublication": 13952244
+          "gasEach": 359157,
+          "gasOfPublication": 13970361
         }
       },
       "amsterdam": {
         "editSmall": {
           "count": 30,
           "boundBy": "gas",
-          "gasEach": 2123932,
-          "gasOfPublication": 64629670
+          "gasEach": 2124878,
+          "gasOfPublication": 64659257
         },
         "edit1k": {
           "count": 14,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 5233007,
-          "gasOfPublication": 74173814
+          "gasEach": 5233953,
+          "gasOfPublication": 74188265
         },
         "createSmall": {
           "count": 12,
           "boundBy": "maxActions",
-          "gasEach": 4606773,
-          "gasOfPublication": 56192990
+          "gasEach": 4825637,
+          "gasOfPublication": 58820565
         },
         "create1k": {
-          "count": 11,
+          "count": 10,
           "boundBy": "gas",
-          "gasEach": 7715848,
-          "gasOfPublication": 85786044
+          "gasEach": 7934712,
+          "gasOfPublication": 80260043
         },
         "chunk": {
           "count": 2,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 28939268,
-          "gasOfPublication": 58790251
+          "gasEach": 28939535,
+          "gasOfPublication": 58791992
         },
         "spanNode": {
           "count": 55,
           "boundBy": "gas",
-          "gasEach": 1326622,
-          "gasOfPublication": 73875915
+          "gasEach": 1327067,
+          "gasOfPublication": 73901597
         }
       }
     }
@@ -2649,7 +2789,7 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0x6531556a3e52e7d6718c1e8fd9cb3733d74faae5707e220d0839c93875403ced",
+    "sha256": "0x66b7f44e2ee0e3655c51636339e97313f0757883f86664568991645f8185e963",
     "count": 107
   },
   "abi": {
@@ -2658,7 +2798,7 @@
   },
   "vectors": {
     "vectors/layout.json": "0xfaf24b138bff4c623dafae929f45239458d909812d64ad0a436e5670bb9607e8",
-    "test/vectors/ids.json": "0x7ca0366b31234850ae5613332cb5e82607bb9290dba49fe4ad80bd147038389a",
+    "test/vectors/ids.json": "0xac54d538551b4ab207bff63ce0be068a156c6eb723965a2d536ebae77595c501",
     "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206",
     "test/vectors/numbers.json": "0x32239292bbf0733f1ef315d2407c9a772ebd6485803835269da5a82d81d67ccf",
     "test/vectors/topics.json": "0xfd758e3b4f99b47c7bd8bb0b4be50da2203b071b88c0b03ae28c2f44da673ca0"
