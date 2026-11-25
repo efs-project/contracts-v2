@@ -64,7 +64,7 @@ contract IndexDeployerTest is Test {
         assertEq(ix.bitmapStore(), address(bs));
         assertEq(ix.ledger(), address(ledger));
         assertEq(ix.HOT_ABI_ID(), HOT);
-        assertEq(ix.replayReadiness().families.length, 13);
+        assertEq(ix.replayReadiness().families.length, 17); // SPIKE (tags-index): + 6, 7, 9, 2
         vm.expectRevert(abi.encodeWithSelector(E_DEPLOYER.selector, uint8(0)));
         d.run(plan);
     }
