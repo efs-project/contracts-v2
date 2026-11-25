@@ -1,7 +1,8 @@
 # Tag options, with numbers
 
-**Status: options for a decision (2026-11-25). Nothing here is implemented, and nothing about tags, folders or
-names changes until James rules.** It answers the PM's ask: price the ways EFS could carry tags, so the decision is
+**Status: superseded (2026-11-25). James ruled on T-1 to T-5 and on the tag model; its identity recommendation
+("not path") was overruled. The design and its measured costs are in [TAG-DESIGN.md](TAG-DESIGN.md). This paper is
+kept as the record of the options that were priced.** It answers the PM's ask: price the ways EFS could carry tags, so the decision is
 made from real numbers. Measured figures are marked **(m)**; figures computed from measured constants are marked
 **(e)**. Recommendations are the contracts engineer's and are labelled as such.
 
