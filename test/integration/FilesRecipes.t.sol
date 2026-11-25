@@ -31,6 +31,9 @@ import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 ///         files and external locations are `FilesLargeFiles.t.sol`). Gas of every step is logged (gasleft delta
 ///         around `execute`, and the callee frame).
 contract FilesRecipesTest is FilesRecipesBase {
+    /// SPIKE (T-5 homes): was `bytes32(uint256(999))`, which is address-shaped and now a valid home parent.
+    bytes32 internal constant NOT_A_DIRECTORY = keccak256("files/not-a-directory");
+
     // ---- the recipes ---------------------------------------------------------------------------------------------
 
     function test_root_seed() public view {
@@ -228,7 +231,7 @@ contract FilesRecipesTest is FilesRecipesBase {
         bytes32 nameRec = _id(T_NAME, "entry");
         a = new Action[](1);
         b = new bytes[](1);
-        bytes32[5] memory parents = [bytes32(uint256(999)), file, nameRec, rootDir, rootDir];
+        bytes32[5] memory parents = [NOT_A_DIRECTORY, file, nameRec, rootDir, rootDir];
         bytes32[5] memory targets = [file, file, file, nameRec, rootDir];
         uint8[5] memory codes = [2, 2, 2, 5, 3];
         for (uint256 i; i < 5; ++i) {
@@ -252,9 +255,9 @@ contract FilesRecipesTest is FilesRecipesBase {
         Action[] memory a = new Action[](3);
         bytes[] memory b = new bytes[](3);
         a[0] = _create(keccak256("late"));
-        a[1] = _bind(Purpose.FOLDER, bytes32(uint256(999)), keccak256("late-name"), file, 0);
+        a[1] = _bind(Purpose.FOLDER, NOT_A_DIRECTORY, keccak256("late-name"), file, 0);
         (a[2], b[2]) = _name("late-name");
-        Snapshot memory before = _snapshot(bytes32(uint256(999)), file);
+        Snapshot memory before = _snapshot(NOT_A_DIRECTORY, file);
         Native memory c = _ctx(a);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -263,18 +266,18 @@ contract FilesRecipesTest is FilesRecipesBase {
             )
         );
         r.ledger.execute(a, b, c, "");
-        _assertSame(before, _snapshot(bytes32(uint256(999)), file));
+        _assertSame(before, _snapshot(NOT_A_DIRECTORY, file));
         (bytes32 t,,,,) = r.hot.recordHeader(_id(T_NAME, "late-name"));
         assertEq(t, 0, "the name did not leak");
         assertEq(r.hot.subjectCreatedAt(file), 0, "the subject did not leak");
-        (uint8 state,,) = _head(_key(Purpose.FOLDER, bytes32(uint256(999)), keccak256("late-name")));
+        (uint8 state,,) = _head(_key(Purpose.FOLDER, NOT_A_DIRECTORY, keccak256("late-name")));
         assertEq(state, 0, "the head did not leak");
         (, uint64 count,,,) = r.g.index
             .postingHeadOf(
                 FamilyId.wrap(F_HISTORY),
                 TypeId.wrap(0),
                 0,
-                _key(Purpose.FOLDER, bytes32(uint256(999)), keccak256("late-name"))
+                _key(Purpose.FOLDER, NOT_A_DIRECTORY, keccak256("late-name"))
             );
         assertEq(count, 0, "no history posting");
     }

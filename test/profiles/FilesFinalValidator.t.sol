@@ -134,7 +134,11 @@ contract FilesFinalValidatorTest is Test {
 
     // L FilesDirectory test_nonexistent_parent / test_file_subject_parent / test_unrelated_record_parent
     function test_the_parent_must_be_a_directory_record() public {
-        _bad(_list(_bind(0, bytes32(uint256(999)), ROLE, FILE, 2)), 2, 0);
+        // SPIKE (T-5 homes): was bytes32(uint256(999)), which is address-shaped and now a home (accepted below)
+        _bad(_list(_bind(0, keccak256("no such directory"), ROLE, FILE, 2)), 2, 0);
+        _bad(_list(_bind(0, bytes32(uint256(1) << 160), ROLE, FILE, 2)), 2, 0); // lowest non-address word
+        _ok(_list(_bind(0, bytes32(uint256(999)), ROLE, FILE, 2))); // a home: nothing about it is checked
+        _ok(_list(_bind(0, bytes32(uint256(type(uint160).max)), ROLE, FILE, 2)));
         _bad(_list(_bind(0, FILE, ROLE, CHILD_DIR, 1)), 2, 0); // a file subject is not a directory
         bytes32 unrelated = keccak256("forged-directory");
         ledger.setRecord(unrelated, OTHER_TYPE, 1, 32);

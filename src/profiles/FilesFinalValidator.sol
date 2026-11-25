@@ -31,9 +31,17 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      initcode ‖ ids) and the manifest pins its address and codehash, so the configuration is fixed by the
 ///      manifest hash. Two cold `SLOAD`s per publication with a FOLDER bind, none otherwise.
 ///      Refusal codes (`E_FILES_FINAL(code, leaf)`): 1 no `files-name/2` record for the role at or before the
-///      terminal admission, 2 the parent is not a directory record admitted by then, 3 self-link (target ==
+///      terminal admission, 2 the parent is neither a directory record admitted by then nor (SPIKE, T-5) an
+///      address-shaped home word, 3 self-link (target ==
 ///      parent), 4 a subject target not created by then, 5 a record target that is not a directory record admitted
 ///      by then, 6 an unknown target kind.
+///      SPIKE (T-5 homes): a FOLDER parent whose top 96 bits are zero is the home of that address
+///      (`bytes32(uint256(uint160(addr)))`, equal to `Keys.principal(addr)` for a key account). Nothing about the
+///      address is checked (no code, balance or admission needed); a precompile address 0x1..0xff is just an unowned
+///      home. The zero address is never a home: the kernel's shape law refuses `subject == 0` on every bind kind
+///      (`E_SHAPE(leaf, 1)`) before this hook runs. A directory record id and a minted subject id are keccak-256
+///      outputs (`Keys.record*`, `Keys.subject`), so producing one that is address-shaped (12 leading zero bytes)
+///      takes about 2^96 hash evaluations: the two parent forms cannot collide in practice.
 contract FilesFinalValidator is IIndexHook {
     /// The exact `files-name/2` Type id of the profile (constructor state, never rewritten).
     bytes32 public nameTypeId;
@@ -81,8 +89,12 @@ contract FilesFinalValidator is IIndexHook {
             if (!_record(hot, Keys.recordFromHash(nameType, e.role), nameType, terminal)) {
                 revert E_FILES_FINAL(1, e.leaf);
             }
-            // the parent: a directory record (the seed root is one)
-            if (!_record(hot, e.subject, directoryType, terminal)) revert E_FILES_FINAL(2, e.leaf);
+            // the parent: a directory record (the seed root is one) or, SPIKE (T-5 homes), an address-shaped word
+            // (top 96 bits zero: the address's home; nothing about the address is checked)
+            if (uint256(e.subject) >> 160 != 0 && !_record(hot, e.subject, directoryType, terminal))
+            {
+                revert E_FILES_FINAL(2, e.leaf);
+            }
             // the target: a file subject or another directory record, never the parent itself
             bytes32 target = e.target;
             if (target == e.subject) revert E_FILES_FINAL(3, e.leaf);
