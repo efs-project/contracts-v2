@@ -341,15 +341,79 @@ contract FilesFinalValidatorTest is Test {
         _ok(_list(e));
     }
 
-    /// Later transitions on an existing binding are never judged: an unregistered subject passes as a re-bind,
-    /// a mask, a release and a restore (an author can always mask or release; a re-assert on an existing position
-    /// creates nothing new).
+    /// Later transitions on an existing binding are never judged by the subject law: an unregistered subject
+    /// passes as a re-bind, a mask, a release and a restore (an author can always mask or release; a re-assert on an
+    /// existing position creates nothing new). The target law (code 14) still applies to the BINDs; `_stmt` targets
+    /// the role.
     function test_tag_later_transitions_are_never_judged() public {
         bytes32 nowhere = keccak256("never registered");
         _ok(_list(_stmt(Purpose.TAG, nowhere, FILE, ActionKind.BIND, 2)));
         _ok(_list(_stmt(Purpose.TAG, nowhere, FILE, ActionKind.UNBIND, 3)));
         _ok(_list(_stmt(Purpose.TAG, nowhere, FILE, ActionKind.RELEASE, 4)));
         _ok(_list(_stmt(Purpose.TAG, nowhere, FILE, ActionKind.BIND, 5)));
+    }
+
+    // ---- TAG: every BIND targets its own role (code 14) ---------------------------------------------------------
+
+    /// role != target is refused on a first bind (1), a re-bind (2) and a restore (5), on a topic and on a home.
+    function test_tag_target_must_be_the_role() public {
+        bytes32 home = bytes32(uint256(uint160(address(0xBEEF))));
+        bytes32[2] memory subjects = [WORD_A, home];
+        uint8[3] memory transitions = [uint8(1), 2, 5];
+        for (uint256 i; i < 2; ++i) {
+            for (uint256 j; j < 3; ++j) {
+                Effect memory e =
+                    _stmt(Purpose.TAG, subjects[i], FILE, ActionKind.BIND, transitions[j]);
+                e.target = OTHER_FILE;
+                _bad(_list(e), 14, 0);
+                e.target = bytes32(0); // a zero target is not the role either
+                _bad(_list(e), 14, 0);
+            }
+        }
+        // the subject law runs first on a first statement: an unregistered subject is still code 9
+        Effect memory f =
+            _stmt(Purpose.TAG, keccak256("never registered"), FILE, ActionKind.BIND, 1);
+        f.target = OTHER_FILE;
+        _bad(_list(f), 9, 0);
+        // the refusal names the offending leaf
+        Effect[] memory l = _list(_stmt(Purpose.TAG, WORD_A, FILE, ActionKind.BIND, 1));
+        Effect[] memory two = new Effect[](3);
+        two[0] = l[0];
+        two[1] = _stmt(Purpose.TAG, WORD_A, ROLE, ActionKind.BIND, 1);
+        two[1].leaf = 1;
+        two[1].admission = l[0].admission + 1;
+        two[1].target = FILE;
+        two[2] = l[1];
+        _bad(two, 14, 1);
+    }
+
+    /// role == target is admitted whatever the thing: a file subject, a record of any Type, an address.
+    function test_tag_target_equal_to_role_is_admitted() public {
+        bytes32 addr = bytes32(uint256(uint160(address(0xA11CE))));
+        bytes32[4] memory things = [FILE, CHILD_REV, PARENT, addr];
+        uint8[4] memory kinds = [uint8(2), 1, 1, 3]; // subject, record, record, address
+        uint8[3] memory transitions = [uint8(1), 2, 5];
+        for (uint256 i; i < 4; ++i) {
+            for (uint256 j; j < 3; ++j) {
+                Effect memory e =
+                    _stmt(Purpose.TAG, WORD_A, things[i], ActionKind.BIND, transitions[j]);
+                e.targetKind = kinds[i];
+                _ok(_list(e));
+            }
+        }
+    }
+
+    /// A mask, a release and a lone negative carry no target and are never judged by the target law.
+    function test_tag_masks_and_releases_are_not_judged_for_the_target() public {
+        Effect memory e = _stmt(Purpose.TAG, WORD_A, FILE, ActionKind.UNBIND, 3);
+        e.target = OTHER_FILE; // whatever the effect says, an UNBIND is not judged by it
+        _ok(_list(e));
+        e = _stmt(Purpose.TAG, WORD_A, FILE, ActionKind.RELEASE, 4);
+        e.target = OTHER_FILE;
+        _ok(_list(e));
+        e = _stmt(Purpose.TAG, WORD_A, FILE, ActionKind.UNBIND, 6);
+        e.target = OTHER_FILE;
+        _ok(_list(e));
     }
 
     // ---- SAME and BROADER --------------------------------------------------------------------------------------

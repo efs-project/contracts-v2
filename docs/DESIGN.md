@@ -1363,7 +1363,7 @@ Purposes `HEAD`, `FOLDER`, `TAG`, `PROPERTY`, `SAME` and `BROADER` are closure c
 - **Remove:** `RELEASE` (my claim stops; a lower-ranked author's same-named entry shows through). **Hide:** `UNBIND` (a mask, which stops a lens search: for a reader that ranks me first the name is absent whatever any lower-ranked author binds there; only an explicit hide masks). **Restore:** `BIND` (the kept target word makes a same-target restore a rewrite).
 - **Staged save:** one publication of ≤ `maxActions` leaves with CAS per head; the M1 supported maximum is published in `limits` after C1 — estimate ≈ 20 edits (≈ 8.3M today for the batch, ≈ 0.40M marginal per edit after the first, since the per-publication overhead inside the single-edit row's ≈ 0.76M is paid once; §14) or ≈ 9 file creates per publication, conservative against the 2^24 execution cap; larger saves are split by the SDK and **labelled non-atomic**; stage-then-commit (kinds 8/9, capability b9) is reserved for a later kernel upgrade.
 
-`FilesFinalValidator` (gen 1, `purposeFilter = FOLDER`): for every FOLDER bind, a valid `files-name/2` record whose id is `recordFromHash(nameType, role)` is admitted at or before the terminal admission, the parent is a validated directory record or a home (an address-shaped word, §12.5), the target (`Effect.target`/`targetKind`) is a file subject or directory record, no self-link (an ADDRESS target on a FOLDER bind is refused with code 6, an unknown target kind); for every BIND at HEAD, an ADDRESS target is refused with code 7 (it would confirm and never be readable) and any target that is not a revision of the bind's own file with code 8; a TAG, SAME or BROADER statement is judged as §12.5 says (codes 9–13); every other purpose, PROPERTY included, is not judged, whatever its target kind. Masks and releases of an existing binding are never refused. It reads only `recordHeader`, `bodyWord` and `subjectCreatedAt` on the ledger and the effects (write-once facts).
+`FilesFinalValidator` (gen 1, `purposeFilter = FOLDER`): for every FOLDER bind, a valid `files-name/2` record whose id is `recordFromHash(nameType, role)` is admitted at or before the terminal admission, the parent is a validated directory record or a home (an address-shaped word, §12.5), the target (`Effect.target`/`targetKind`) is a file subject or directory record, no self-link (an ADDRESS target on a FOLDER bind is refused with code 6, an unknown target kind); for every BIND at HEAD, an ADDRESS target is refused with code 7 (it would confirm and never be readable) and any target that is not a revision of the bind's own file with code 8; a TAG, SAME or BROADER statement is judged as §12.5 says (codes 9–14); every other purpose, PROPERTY included, is not judged, whatever its target kind. Masks and releases of an existing binding are never refused. It reads only `recordHeader`, `bodyWord` and `subjectCreatedAt` on the ledger and the effects (write-once facts).
 
 ### 12.3 The PM's first milestone, mapped, with acceptance rows
 
@@ -1398,9 +1398,9 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
 
 | Type | Body | Refs | Rule and refusal codes (`E_TOPIC_REFUSED(code)`) |
 |---|---|---|---|
-| `topic-word/1` | the word's bytes; the page of the word and the root-level topic `/<word>` | none | `TopicWordRule`: 8 refs present; then `TopicProfile.wordRefusal`: 1 empty or over 255 bytes; scanning in order, 2 malformed UTF-8 (overlong, surrogate, above U+10FFFF, stray continuation, truncated), 3 `/`, an ASCII control, space or `A`–`Z`, 7 a code point of `TopicProfile.REFUSED`; then 4 `.` or `..`, 5 a leading `~`, 6 `0x` and exactly 40 of `0-9a-f` |
+| `topic-word/1` | the word's bytes; the page of the word and the root-level topic `/<word>` | none | `TopicWordRule`: 8 refs present; then `TopicProfile.wordRefusal`: 1 empty or over 255 bytes; scanning in order, 2 malformed UTF-8 (overlong, surrogate, above U+10FFFF, stray continuation, truncated), 3 `/`, `\`, an ASCII control, space or `A`–`Z`, 7 a code point of `TopicProfile.REFUSED` (so no Unicode whitespace at all); then 4 `.` or `..`, 5 a leading `~`, 6 `0x` and exactly 40 of `0-9a-f` |
 | `topic/1` | `abi.encode(parent, wordPage)`, 64 B; a path of n ≥ 2 words is `[path of the first n − 1 words, page of the last]` | `[0 = ANY, topic-word/1]` | `TopicRule(wordTypeId)`: 10 not two refs, 11 not 64 bytes, 12 the parent is neither `topic/1` nor `topic-word/1`, 13 the second ref is not a `topic-word/1` record |
-| `text/1` | 1–255 B: a short display string; `/`, spaces and uppercase allowed | none | `TextRule`: 24 refs present; then `TopicProfile.textRefusal`: 20 length, 21 malformed UTF-8, 22 a control character (C0, DEL, C1), 23 a bidi control or an invisible code point |
+| `text/1` | 1–255 B: a short display string; `/`, spaces (U+0020 and the no-break and typographic spaces) and uppercase allowed | none | `TextRule`: 24 refs present; then `TopicProfile.textRefusal`: 20 length, 21 malformed UTF-8, 22 a control character (C0, DEL, C1), 23 a bidi control, an invisible code point (U+2028 and U+2029 among them) or a noncharacter |
 
 - **Identity.** A topic's id is its record id: `Keys.record(topic-word/1, word)` for one word, `Keys.record(topic/1,
   abi.encode(parentId, pageId))` above. It depends on neither author, Realm nor chain; anyone derives it from the words
@@ -1411,10 +1411,14 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
 - **The word rules run once per word**, on its page; a path record names pages by reference and never re-reads a word.
   Rules 5 and 6 apply to every word because every word has a root-level page. `TopicProfile.REFUSED` is one table of
   sorted ranges with a class each (1 C1 control, 2 bidi control, 3 invisible: `Cf`, `Zl`, `Zp`,
-  `Default_Ignorable_Code_Point`, 4 joiner or variation selector, 5 noncharacter, object or replacement character): at
-  least everything `files-name/2` refuses beyond ASCII, plus the joiners and variation selectors a folded word never
-  contains. It is fixed at the first lasting deployment and may change until then, with the SDK's fold rule; the SDK
-  folds and refuses before planning, and the chain never normalizes. A text refuses classes 1–3 only.
+  `Default_Ignorable_Code_Point`, 4 joiner or variation selector, 5 noncharacter, object or replacement character, 6
+  Unicode `White_Space` a text admits: U+00A0, U+1680, U+2000–U+200A, U+202F, U+205F, U+3000): at least everything
+  `files-name/2` refuses beyond ASCII, plus the joiners, variation selectors and whitespace a folded word never
+  contains (every fold rule turns whitespace into `_`; U+0085 stays class 1 and U+2028/U+2029 class 3, one class per
+  scalar, and ASCII whitespace is the byte rule's). It is fixed at the first lasting deployment and may change until
+  then, with the SDK's fold rule; the SDK folds and refuses before planning, and the chain never normalizes. A text
+  refuses classes 1, 2, 3 and 5 (22 for class 1, 23 for the others) and admits joiners, variation selectors and
+  class 6.
 - **Registration order.** Every page and path record a statement needs is admitted before it, parents first; an
   earlier action of the same publication counts (`EfsTopics.registerPath` then `tag` is one publication). Registering
   an existing record again is a new occurrence, never a refusal.
@@ -1429,7 +1433,7 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
 
 | Purpose | Position | Target | `FilesFinalValidator` |
 |---|---|---|---|
-| `TAG` (`efs/purpose/tag/1`) | (topic, role = thing) | the thing: any record or created subject of any Type, or an address (kind 3); the number rides `saltOrStrength` (§6.4) | first statement: the subject is a home or a `topic/1`/`topic-word/1` record first admitted strictly before the statement's own admission, else code 9 (a topic registered later in the same publication is refused: the index walks a topic's ancestors at the tag's own admission) |
+| `TAG` (`efs/purpose/tag/1`) | (topic, role = thing) | the thing: any record or created subject of any Type, or an address (kind 3); the number rides `saltOrStrength` (§6.4) | first statement: the subject is a home or a `topic/1`/`topic-word/1` record first admitted strictly before the statement's own admission, else code 9 (a topic registered later in the same publication is refused: the index walks a topic's ancestors at the tag's own admission); every BIND (first, re-bind, restore): target = role, else code 14 (the role names the thing for both signs, since an UNBIND has no target; the lists and the `Bound` filter find a thing's statements by role and "what points at this" by target, so the two must be the same thing; the thing's Type is not judged) |
 | `PROPERTY` (`efs/purpose/property/1`) | (any subject, key = `EfsTopics.propertyKey(k)` = `keccak256(abi.encode(keccak256("efs/property-key/1"), keccak256(k)))` for an ASCII key such as `label:en`, `definition`, `moved-to`) | a value record (a `text/1` for a label), a file subject or an address; one value per author per key | not judged |
 | `SAME` (`efs/purpose/same/1`) | (topic, role = other topic) | the other topic | first statement: subject (10) and role (11) each a topic registered strictly before it, and different (12); every BIND: target = role (13) |
 | `BROADER` (`efs/purpose/broader/1`) | (topic, role = parent topic) | the parent topic | as `SAME` |
@@ -1444,7 +1448,7 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
 - **Validator identity.** `FilesFinalValidator(name, directory, root, child, topic, topic-word)`, all six constructor
   state and inside `identity()` in that order; the manifest unit is unchanged otherwise (`purposeFilter = FOLDER`).
   Full code list: 1–6 FOLDER (§12.2), 7 HEAD to an address, 8 HEAD not a revision of its own file, 9 TAG subject,
-  10–13 SAME/BROADER.
+  10–13 SAME/BROADER, 14 TAG target is not the role.
 - **Adoption.** A Realm deployed before this release has no Topics Types and a validator that judges neither HEAD nor
   TAG subjects: tags written there on arbitrary subjects stay readable by position but are not topics, and a bad HEAD
   already on chain is still reported `INVALID` by the readers. Moving to these laws is a new generation with this

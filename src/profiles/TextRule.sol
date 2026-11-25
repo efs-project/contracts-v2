@@ -8,7 +8,8 @@ import {TopicProfile, E_TOPIC_REFUSED} from "./TopicProfile.sol";
 /// @title TextRule — the mandatory rule of `text/1` (design §12.5; docs/TAG-DESIGN.md §8)
 /// @notice A short display string, the value a `PROPERTY` statement names for a label (`label:en` → a `text/1`
 ///         record). The body is the text's bytes, no refs: 1 to 255 bytes of well-formed UTF-8 with no control
-///         character and no bidirectional or invisible code point (`TopicProfile.textRefusal`). `/`, spaces and
+///         character and no bidirectional, invisible or noncharacter code point (`TopicProfile.textRefusal`). `/`,
+///         spaces (U+0020 and the no-break and typographic spaces; never U+2028 or U+2029: a label is one line) and
 ///         uppercase are admitted (`files-name/2` refuses `/`, so a name cannot hold "AC/DC").
 /// @dev Pure over calldata. Refusal codes (`E_TOPIC_REFUSED`): 24 refs present (checked first), else
 ///      `TopicProfile.textRefusal`'s code 20-23.

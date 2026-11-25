@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
+import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
-import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
+import {Action, ActionKind, FamilyId, Purpose, TypeId} from "../../src/interfaces/Actions.sol";
+import {AcceptContext, IAcceptor, RefHeader} from "../../src/interfaces/IAcceptor.sol";
+import {Coverage} from "../../src/interfaces/Results.sol";
 import {E_REF, E_REJECTED} from "../../src/interfaces/Errors.sol";
 import {TopicTypes} from "../../src/profiles/TopicTypes.sol";
 
@@ -175,6 +178,81 @@ contract TopicsTest is FilesRecipesBase {
         _refuse(a, b, abi.encodeWithSelector(E_REF.selector, uint8(0), uint8(1), uint8(2)));
         // and the one encoding that remains is the one pathId names
         assertEq(ct, EfsTopics.pathId(tt, _w("cars", "tesla")));
+    }
+
+    // ---- the refs the rule judges are the body words ----------------------------------------------------------
+
+    function _refCount(uint8 ordinal, bytes32 value) internal view returns (uint64 count) {
+        Coverage c;
+        (c, count,,,) = r.g.index
+            .postingHeadOf(FamilyId.wrap(F_REFERENCE), TypeId.wrap(tt.topic), ordinal, value);
+        assertEq(uint8(c), uint8(Coverage.COMPLETE), "honest coverage");
+    }
+
+    function _tail(bytes memory data) internal pure returns (bytes memory out) {
+        out = new bytes(data.length - 4);
+        for (uint256 i; i < out.length; ++i) {
+            out[i] = data[i + 4];
+        }
+    }
+
+    /// An `Action` carries no refs: the kernel (`LedgerIngress._resolveRefs`) reads reference i from body word i of
+    /// the bytes it hashes and stores, and hands that same body and those refs to `TopicRule.accept`. Recorded here
+    /// on the real kernel: the one `accept` call for `topic/1` carries refs equal to the body's two words, and the
+    /// stored record's words and its reference-position index entries are exactly those two records. The swapped
+    /// body is a different record with swapped entries, so no `topic/1` record exists whose words differ from what
+    /// the rule judged.
+    function test_the_judged_refs_are_the_body_words() public {
+        bytes32 cars = _register(alice, _w("cars"));
+        bytes32 tesla = _register(alice, _w("tesla"));
+        (Action memory x, bytes memory body) = _pathRecord(cars, tesla);
+        (Action[] memory a, bytes[] memory b) = _one(x, body);
+        vm.startStateDiffRecording();
+        _execAs(alice, a, b);
+        Vm.AccountAccess[] memory acc = vm.stopAndReturnStateDiff();
+        uint256 calls;
+        for (uint256 i; i < acc.length; ++i) {
+            bytes memory data = acc[i].data;
+            if (data.length < 4 || bytes4(data) != IAcceptor.accept.selector) continue;
+            (
+                AcceptContext memory ctx,
+                bytes memory seen,
+                bytes32[] memory refs,
+                RefHeader[] memory h
+            ) = abi.decode(_tail(data), (AcceptContext, bytes, bytes32[], RefHeader[]));
+            if (ctx.typeId != tt.topic) continue;
+            ++calls;
+            assertEq(seen, body, "the rule sees the published body");
+            assertEq(refs.length, 2);
+            assertEq(refs[0], cars, "ref 0 is body word 0");
+            assertEq(refs[1], tesla, "ref 1 is body word 1");
+            assertEq(h[0].typeId, tt.word);
+            assertEq(h[1].typeId, tt.word);
+        }
+        assertEq(calls, 1, "one accept call for the topic/1 record");
+        bytes32 id = Keys.record(tt.topic, body);
+        assertEq(id, EfsTopics.pathId(tt, _w("cars", "tesla")));
+        (bytes32 word, bytes32 parent) = _pathOf(id);
+        assertEq(parent, cars, "stored word 0");
+        assertEq(word, tesla, "stored word 1");
+        assertEq(_refCount(0, cars), 1, "slot 0 entry: the parent");
+        assertEq(_refCount(1, tesla), 1, "slot 1 entry: the word page");
+        assertEq(_refCount(0, tesla), 0);
+        assertEq(_refCount(1, cars), 0);
+        // the swapped body [tesla, cars] is /tesla/cars: another record, with the entries swapped
+        (x, body) = _pathRecord(tesla, cars);
+        (a, b) = _one(x, body);
+        _execAs(alice, a, b);
+        (word, parent) = _pathOf(Keys.record(tt.topic, body));
+        assertEq(abi.encode(parent, word), abi.encode(tesla, cars));
+        assertEq(_refCount(0, tesla), 1);
+        assertEq(_refCount(1, cars), 1);
+        assertEq(_refCount(0, cars), 1, "unchanged");
+        assertEq(_refCount(1, tesla), 1, "unchanged");
+        // a body word that is not a record is refused by the reference law before any rule runs
+        (x, body) = _pathRecord(cars, keccak256("not a record"));
+        (a, b) = _one(x, body);
+        _refuse(a, b, abi.encodeWithSelector(E_REF.selector, uint8(0), uint8(1), uint8(1)));
     }
 
     function test_a_file_revision_is_not_a_parent() public {

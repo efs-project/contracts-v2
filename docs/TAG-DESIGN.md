@@ -71,9 +71,10 @@ What this gives, with no new kernel code:
   word's page shows. No new index code, and no per-word list of items (measured in round one: it cost as much again
   as the roll-up lists).
 
-**Word rules, checked once per word, on the word page:** 1 to 255 bytes of well-formed UTF-8; no `/`, no ASCII
-control byte, no ASCII space, no ASCII `A`–`Z`; not `.` or `..`; not starting with `~`; not `0x` followed by 40 hex
-digits. The last two apply to every word, not only the first in a path, because every word has a root-level page.
+**Word rules, checked once per word, on the word page:** 1 to 255 bytes of well-formed UTF-8; no `/` or `\`, no
+ASCII control byte, no ASCII `A`–`Z`, no Unicode whitespace at all (every fold rule turns whitespace into `_`, so
+`tesla` followed by a no-break space could only be a look-alike); not `.` or `..`; not starting with `~`; not `0x`
+followed by 40 hex digits. The last two apply to every word, not only the first in a path, because every word has a root-level page.
 An address belongs in a tag as its target: tag the USDC contract's address under `/tokens/usdc`, never
 `/tokens/0xa0b8…`. The check costs 121 to 208 gas per byte. Everything else about folding (Unicode case, look-alike
 letters, normalisation) stays in the SDK; the chain cannot check it. The spike's rule does not yet refuse C1

@@ -20,11 +20,12 @@ const bytesOf = (hex) => Buffer.from(hex.slice(2), "hex");
 
 export const PURPOSES = { TAG: h("efs/purpose/tag/1"), PROPERTY: h("efs/purpose/property/1"), SAME: h("efs/purpose/same/1"), BROADER: h("efs/purpose/broader/1") };
 export const KIND = { PUBLISH: 1, BIND: 3, UNBIND: 4 };
-export const CLASSES = { 1: "C1 control", 2: "bidirectional control", 3: "invisible (Cf, Zl, Zp, default-ignorable)", 4: "joiner or variation selector", 5: "noncharacter, object or replacement character" };
+export const CLASSES = { 1: "C1 control", 2: "bidirectional control", 3: "invisible (Cf, Zl, Zp, default-ignorable)", 4: "joiner or variation selector", 5: "noncharacter, object or replacement character", 6: "whitespace a text admits (Unicode White_Space minus ASCII, U+0085 and U+2028-2029)" };
 
 /** The refused code points of word rule 7 (`TopicProfile.REFUSED`): [lo, hi, class, what], sorted and disjoint. */
 export const REFUSED = [
   [0x80, 0x9f, 1, "C1 controls"],
+  [0xa0, 0xa0, 6, "NO-BREAK SPACE"],
   [0xad, 0xad, 3, "SOFT HYPHEN"],
   [0x34f, 0x34f, 4, "COMBINING GRAPHEME JOINER"],
   [0x600, 0x605, 3, "Arabic number signs (Cf)"],
@@ -34,18 +35,23 @@ export const REFUSED = [
   [0x890, 0x891, 3, "Arabic pound and piastre marks above (Cf)"],
   [0x8e2, 0x8e2, 3, "ARABIC DISPUTED END OF AYAH (Cf)"],
   [0x115f, 0x1160, 3, "Hangul choseong and jungseong fillers"],
+  [0x1680, 0x1680, 6, "OGHAM SPACE MARK"],
   [0x17b4, 0x17b5, 3, "Khmer inherent vowels"],
   [0x180b, 0x180d, 4, "Mongolian free variation selectors 1-3"],
   [0x180e, 0x180e, 3, "MONGOLIAN VOWEL SEPARATOR"],
   [0x180f, 0x180f, 4, "MONGOLIAN FREE VARIATION SELECTOR FOUR"],
+  [0x2000, 0x200a, 6, "EN QUAD .. HAIR SPACE"],
   [0x200b, 0x200b, 3, "ZERO WIDTH SPACE"],
   [0x200c, 0x200d, 4, "ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER"],
   [0x200e, 0x200f, 2, "LEFT-TO-RIGHT MARK, RIGHT-TO-LEFT MARK"],
   [0x2028, 0x2029, 3, "LINE SEPARATOR, PARAGRAPH SEPARATOR"],
   [0x202a, 0x202e, 2, "bidi embeddings and overrides"],
+  [0x202f, 0x202f, 6, "NARROW NO-BREAK SPACE"],
+  [0x205f, 0x205f, 6, "MEDIUM MATHEMATICAL SPACE"],
   [0x2060, 0x2065, 3, "WORD JOINER, invisible operators, U+2065"],
   [0x2066, 0x2069, 2, "bidi isolates"],
   [0x206a, 0x206f, 3, "deprecated format characters"],
+  [0x3000, 0x3000, 6, "IDEOGRAPHIC SPACE"],
   [0x3164, 0x3164, 3, "HANGUL FILLER"],
   [0xfdd0, 0xfdef, 5, "noncharacters"],
   [0xfe00, 0xfe0f, 4, "variation selectors 1-16"],
@@ -99,7 +105,7 @@ export function wordRefusal(hex) {
   for (let i = 0; i < n;) {
     const c = b[i];
     if (c < 0x80) {
-      if (c <= 0x20 || c === 0x7f || c === 0x2f || (c >= 0x41 && c <= 0x5a)) return 3;
+      if (c <= 0x20 || c === 0x7f || c === 0x2f || c === 0x5c || (c >= 0x41 && c <= 0x5a)) return 3;
       i++;
     } else {
       const [s, w] = scalar(b, i);
@@ -115,7 +121,8 @@ export function wordRefusal(hex) {
 }
 
 /** The `text/1` grammar (`TopicProfile.textRefusal`, hex in): 0 admitted, else 20 length; scanning in order 21
- *  malformed UTF-8, 22 a control character (C0, DEL, C1), 23 a bidi control or an invisible scalar. */
+ *  malformed UTF-8, 22 a control character (C0, DEL, C1), 23 a bidi control, an invisible scalar or a noncharacter
+ *  (classes 2, 3 and 5). */
 export function textRefusal(hex) {
   const b = bytesOf(hex);
   const n = b.length;
@@ -130,7 +137,7 @@ export function textRefusal(hex) {
       if (w === 0) return 21;
       const k = refusedClass(s);
       if (k === 1) return 22;
-      if (k === 2 || k === 3) return 23;
+      if (k === 2 || k === 3 || k === 5) return 23;
       i += w;
     }
   }
@@ -150,14 +157,14 @@ const WORDS = [
   ["one ASCII letter", "a", ""],
   ["a lowercase word", "tesla", ""],
   ["digits, '-', '_' and '.' inside", "model-3_v1.0", ""],
-  ["every admitted punctuation byte", "!\"#$%&'()*+,-.:;<=>?@[\\]^_`{|}~x", "'~' is admitted anywhere but first"],
+  ["every admitted punctuation byte", "!\"#$%&'()*+,-.:;<=>?@[]^_`{|}~x", "'~' is admitted anywhere but first; '/' and '\\' are not"],
   ["255 ASCII bytes", rep("a", 255), "the longest word"],
   ["Latin-1 letter (2 bytes)", "café", ""],
   ["CJK, 3 bytes each", "東京", ""],
   ["255 bytes of CJK", rep(cp(0x6771), 85), ""],
   ["an emoji (4 bytes)", cp(0x1f697), ""],
   ["U+10FFFD", cp(0x10fffd), "the last scalar a word admits (U+10FFFE and U+10FFFF are noncharacters)"],
-  ["U+00A0 NO-BREAK SPACE", cp(0xa0), "admitted: a visible separator is a fold-rule question, not a chain one"],
+  ["tesla and a NO-BREAK SPACE", cat("tesla", cp(0xa0)), "code 7: a look-alike of tesla; every fold rule turns whitespace into _"],
   ["U+00A9 COPYRIGHT SIGN", cp(0xa9), ""],
   ["...", "...", "only . and .. are refused"],
   [".a", ".a", ""],
@@ -186,6 +193,8 @@ const WORDS = [
   ["a lead byte then ASCII", x("0xc341"), ""],
   ["a slash", "a/b", "code 3"],
   ["only a slash", "/", ""],
+  ["a backslash", "a\\b", "code 3: it reads as a path separator too"],
+  ["only a backslash", "\\", ""],
   ["a space", "a b", ""],
   ["NUL", x("0x00"), ""],
   ["a tab", x("0x09"), ""],
@@ -217,8 +226,16 @@ WORDS.push(["ZWJ inside an emoji sequence", cat(cp(0x1f468), cp(0x200d), cp(0x1f
 WORDS.push(["VS16 after a symbol", cat(cp(0x2764), cp(0xfe0f)), "code 7: variation selectors are refused in a word"]);
 WORDS.push(["the scalar before SOFT HYPHEN", cp(0xac), "U+00AC NOT SIGN: admitted"]);
 WORDS.push(["the scalar before the noncharacter block", cp(0xfdcf), ""]);
-WORDS.push(["the scalar after the C1 range", cp(0xa0), ""]);
-WORDS.push(["the scalar before U+200B", cp(0x200a), "U+200A HAIR SPACE: admitted"]);
+WORDS.push(["the scalar after U+00A0", cp(0xa1), "U+00A1 INVERTED EXCLAMATION MARK: admitted"]);
+WORDS.push(["the scalar before U+1680", cp(0x167f), ""]);
+WORDS.push(["the scalar after U+1680", cp(0x1681), ""]);
+WORDS.push(["the scalar before U+2000", cp(0x1fff), ""]);
+WORDS.push(["the scalar after U+202F", cp(0x2030), "U+2030 PER MILLE SIGN: admitted"]);
+WORDS.push(["the scalar before U+205F", cp(0x205e), ""]);
+WORDS.push(["the scalar before U+3000", cp(0x2fff), ""]);
+WORDS.push(["the scalar after U+3000", cp(0x3001), "U+3001 IDEOGRAPHIC COMMA: admitted"]);
+WORDS.push(["ASCII whitespace", x("0x0a"), "code 3: U+0009-000D and U+0020 are the byte rule's (see also a tab, a space)"]);
+WORDS.push(["U+000D", cat("a", x("0x0d")), "code 3"]);
 WORDS.push(["the scalar after U+206F", cp(0x2070), ""]);
 WORDS.push(["the scalar after U+FE0F", cp(0xfe10), ""]);
 WORDS.push(["the scalar before U+E0000", cp(0xdffff - 2), ""]);
@@ -233,8 +250,7 @@ const TEXTS = [
   ["CJK", "東京", ""],
   ["an emoji ZWJ sequence", cat(cp(0x1f468), cp(0x200d), cp(0x1f469)), "joiners are admitted in a text"],
   ["a variation selector", cat(cp(0x2764), cp(0xfe0f)), "variation selectors are admitted in a text"],
-  ["a noncharacter", cp(0xfdd0), "noncharacters are admitted in a text"],
-  ["the replacement character", cp(0xfffd), ""],
+  ["a backslash", "C:\\x", "admitted in a text"],
   ["empty", x("0x"), "code 20"],
   ["256 bytes", rep("x", 256), "code 20"],
   ["overlong", x("0xc0af"), "code 21"],
@@ -251,7 +267,26 @@ const TEXTS = [
   ["BOM", cp(0xfeff), "code 23"],
   ["a tag character", cp(0xe0041), "code 23"],
   ["a control before a malformed byte", x("0x0ac0"), "code 22: the scan stops at the first refusal"],
+  ["a tab", "a\tb", "code 22: U+0009-000D are C0 controls"],
+  ["NEXT LINE (U+0085)", cat("a", cp(0x85), "b"), "code 22: a C1 control, whitespace or not"],
+  ["LINE SEPARATOR", cat("a", cp(0x2028), "b"), "code 23: a label is one line"],
+  ["PARAGRAPH SEPARATOR", cat("a", cp(0x2029), "b"), "code 23"],
+  ["a noncharacter", cp(0xfdd0), "code 23: noncharacters never belong in display text"],
+  ["the last of U+FDD0-FDEF", cat("a", cp(0xfdef)), "code 23"],
+  ["OBJECT REPLACEMENT CHARACTER", cp(0xfffc), "code 23"],
+  ["the replacement character", cp(0xfffd), "code 23"],
+  ["U+FFFF", cp(0xffff), "code 23"],
+  ["a plane 1 noncharacter", cat("a", cp(0x1fffe)), "code 23"],
+  ["U+10FFFF", cp(0x10ffff), "code 23"],
+  ["the scalar before U+FDD0", cp(0xfdcf), "admitted"],
+  ["U+FFFB, before the object character", cp(0xfffb), "code 23: an interlinear annotation character (invisible)"],
+  ["U+10FFFD", cp(0x10fffd), "admitted"],
 ];
+// whitespace a word refuses and a text admits (class 6): no-break and typographic spaces, each between two letters
+for (const [lo, hi, cls, what] of REFUSED) {
+  if (cls !== 6) continue;
+  for (const s of [...new Set([lo, hi])]) TEXTS.push([`a U+${s.toString(16).toUpperCase().padStart(4, "0")} (${what}) inside`, cat("a", cp(s), "b"), "admitted in a text"]);
+}
 
 const jsonAction = (a) => ({ ...a, expectedRevision: a.expectedRevision.toString() });
 const act = (o) => ({ kind: 0, typeId: ZERO, bodyHashOrRecordId: ZERO, purpose: ZERO, subject: ZERO, role: ZERO, target: ZERO, expectedRevision: 0n, saltOrStrength: ZERO, ...o });
@@ -359,12 +394,12 @@ export function topicVectors(plan) {
     generator: "tools/topic-vectors.mjs via tools/release.mjs (viem encodeAbiParameters + keccak256; the grammars from the NatSpec of src/profiles/TopicProfile.sol)",
     spec: "docs/DESIGN.md §12.5; docs/TAG-DESIGN.md §1, §8; TopicProfile.wordRefusal / textRefusal; EfsTopics",
     grammar: {
-      word: "1..255 bytes of strict UTF-8; no '/', no ASCII control, space or A-Z; no scalar of `refused`; not '.' or '..'; not starting with '~'; not '0x' and exactly 40 of 0-9a-f",
+      word: "1..255 bytes of strict UTF-8; no '/' or '\\', no ASCII control, space or A-Z; no scalar of `refused` (so no Unicode whitespace); not '.' or '..'; not starting with '~'; not '0x' and exactly 40 of 0-9a-f",
       wordCodes: { 0: "admitted", 1: "empty or longer than 255 bytes", 2: "malformed UTF-8", 3: "a forbidden ASCII byte", 4: "'.' or '..'", 5: "starts with '~'", 6: "'0x' and 40 lowercase hex characters (an address)", 7: "a refused scalar (any class of `refused`)" },
       wordRuleCodes: { 8: "refs present (checked before the grammar)" },
       pathRuleCodes: { 10: "not exactly two refs and headers", 11: "body not exactly 64 bytes", 12: "the parent is neither topic/1 nor topic-word/1", 13: "the second ref is not a topic-word/1 record (the kernel refuses it first: E_REF code 2)" },
-      text: "1..255 bytes of strict UTF-8; no C0, DEL or C1 control; no scalar of `refused` classes 2 and 3; '/', spaces, uppercase, joiners, variation selectors and noncharacters admitted",
-      textCodes: { 0: "admitted", 20: "empty or longer than 255 bytes", 21: "malformed UTF-8", 22: "a control character (C0, DEL, C1)", 23: "a bidi control or an invisible scalar" },
+      text: "1..255 bytes of strict UTF-8; no C0, DEL or C1 control; no scalar of `refused` classes 2, 3 and 5; '/', '\\', U+0020, class 6 (no-break and typographic spaces), uppercase, joiners and variation selectors admitted",
+      textCodes: { 0: "admitted", 20: "empty or longer than 255 bytes", 21: "malformed UTF-8", 22: "a control character (C0, DEL, C1)", 23: "a bidi control, an invisible scalar or a noncharacter (classes 2, 3, 5)" },
       textRuleCodes: { 24: "refs present (checked before the grammar)" },
       order: "the byte codes (2, 3, 7; 21, 22, 23) are the first found scanning from the start; the length code comes first and the whole-word shapes (4, 5, 6) last",
       error: "E_TOPIC_REFUSED(uint8 code) on a direct call; through the kernel E_REJECTED(leaf, typeId)",

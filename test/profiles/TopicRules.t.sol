@@ -121,13 +121,16 @@ contract TopicRulesTest is Test {
 
     function test_word_forbidden_ascii() public view {
         for (uint256 c; c < 0x80; ++c) {
-            bool bad = c <= 0x20 || c == 0x7f || c == 0x2f || (c >= 0x41 && c <= 0x5a);
+            bool bad = c <= 0x20 || c == 0x7f || c == 0x2f || c == 0x5c || (c >= 0x41 && c <= 0x5a);
             uint256 code = _code(abi.encodePacked(bytes1(uint8(c)), "x"));
             if (c == 0x7e) assertEq(code, 5, "~x"); // admitted byte, refused shape
             else assertEq(code == 3, bad, "every ASCII byte");
         }
         assertEq(_code("~A"), 3, "a byte refusal comes before the shape refusals");
         assertEq(_code("e\xcc\x81\x2f"), 3, "a / after a multi-byte scalar");
+        assertEq(_code("a\\b"), 3, "a backslash reads as a path separator");
+        assertEq(_code("\\"), 3, "only a backslash");
+        assertEq(_text("C:\\x"), 0, "a text admits a backslash");
     }
 
     // ---- word: 4, 5, 6 whole-word shapes ------------------------------------------------------------------------
@@ -170,7 +173,20 @@ contract TopicRulesTest is Test {
             assertEq(_code(bytes.concat("a", _utf8(refused[i]))), 7);
         }
         // the neighbours of the entries are admitted
-        uint256[6] memory ok = [uint256(0xa0), 0x200a, 0x2070, 0xfe10, 0xe1000, 0x10fffd];
+        uint256[12] memory ok = [
+            uint256(0xa1),
+            0x167f,
+            0x1681,
+            0x1fff,
+            0x2030,
+            0x205e,
+            0x2fff,
+            0x3001,
+            0x2070,
+            0xfe10,
+            0xe1000,
+            0x10fffd
+        ];
         for (uint256 i; i < ok.length; ++i) {
             assertEq(_code(_utf8(ok[i])), 0);
         }
@@ -188,7 +204,7 @@ contract TopicRulesTest is Test {
             assertLe(lo, hi);
             if (i != 0) assertGt(lo, prevHi, "sorted, disjoint");
             prevHi = hi;
-            assertTrue(cls >= 1 && cls <= 5);
+            assertTrue(cls >= 1 && cls <= 6);
             assertGe(lo, 0x80, "ASCII is the byte rules' business");
             assertLe(hi, 0x10ffff);
             for (uint256 s = lo; s <= hi; s += (hi - lo) / 2 + 1) {
@@ -196,10 +212,145 @@ contract TopicRulesTest is Test {
                 if (s >= 0xd800 && s <= 0xdfff) continue;
                 assertEq(_code(_utf8(s)), 7);
                 uint256 tc = _text(_utf8(s));
-                assertEq(tc, cls == 1 ? 22 : cls <= 3 ? 23 : 0);
+                assertEq(tc, cls == 1 ? 22 : (cls <= 3 || cls == 5) ? 23 : 0);
             }
             assertEq(probe.refusedClass(hi), cls);
         }
+    }
+
+    // ---- whitespace: none at all in a word; spaces but no line breaks in a text ----------------------------------
+
+    /// `tesla` followed by U+00A0 NO-BREAK SPACE looks like `tesla`: refused (code 7, class 6).
+    function test_word_with_a_no_break_space_is_refused() public view {
+        assertEq(_code("tesla"), 0);
+        assertEq(_code(bytes.concat("tesla", _utf8(0xa0))), 7);
+        assertEq(_code(bytes.concat(_utf8(0xa0), "tesla")), 7);
+        assertEq(_code(bytes.concat("tes", _utf8(0xa0), "la")), 7);
+    }
+
+    function _whitespaceWord(uint256 s) internal view {
+        assertEq(probe.refusedClass(s), TopicProfile.CLASS_WHITESPACE, "class 6");
+        assertEq(_code(_utf8(s)), 7, "alone");
+        assertEq(_code(bytes.concat("a", _utf8(s), "b")), 7, "inside");
+        assertEq(_text(bytes.concat("a", _utf8(s), "b")), 0, "a text admits it");
+    }
+
+    function test_whitespace_u00a0() public view {
+        _whitespaceWord(0xa0);
+    }
+
+    function test_whitespace_u1680() public view {
+        _whitespaceWord(0x1680);
+    }
+
+    function test_whitespace_u2000_first_of_range() public view {
+        _whitespaceWord(0x2000);
+    }
+
+    function test_whitespace_u200a_last_of_range() public view {
+        _whitespaceWord(0x200a);
+        for (uint256 s = 0x2001; s < 0x200a; ++s) {
+            _whitespaceWord(s);
+        }
+        assertEq(probe.refusedClass(0x1fff), 0, "U+1FFF is not refused");
+        assertEq(probe.refusedClass(0x200b), TopicProfile.CLASS_INVISIBLE, "U+200B keeps its class");
+    }
+
+    function test_whitespace_u202f() public view {
+        _whitespaceWord(0x202f);
+    }
+
+    function test_whitespace_u205f() public view {
+        _whitespaceWord(0x205f);
+    }
+
+    function test_whitespace_u3000() public view {
+        _whitespaceWord(0x3000);
+    }
+
+    /// The White_Space members already refused by another class keep it (one class per scalar), so a text still
+    /// refuses them: U+0085 is a C1 control (22), U+2028 and U+2029 are invisible (23). A word refuses them (7).
+    function test_whitespace_with_an_earlier_class() public view {
+        assertEq(probe.refusedClass(0x85), TopicProfile.CLASS_C1);
+        assertEq(probe.refusedClass(0x2028), TopicProfile.CLASS_INVISIBLE);
+        assertEq(probe.refusedClass(0x2029), TopicProfile.CLASS_INVISIBLE);
+        assertEq(_code(bytes.concat("a", _utf8(0x85), "b")), 7);
+        assertEq(_code(bytes.concat("a", _utf8(0x2028), "b")), 7);
+        assertEq(_code(bytes.concat("a", _utf8(0x2029), "b")), 7);
+        assertEq(_text(bytes.concat("a", _utf8(0x85), "b")), 22);
+        assertEq(_text(bytes.concat("a", _utf8(0x2028), "b")), 23);
+        assertEq(_text(bytes.concat("a", _utf8(0x2029), "b")), 23);
+    }
+
+    /// ASCII White_Space (U+0009-000D, U+0020) is the byte rule's: code 3 in a word; a text admits only U+0020.
+    function test_ascii_whitespace() public view {
+        uint8[6] memory ws = [0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x20];
+        for (uint256 i; i < ws.length; ++i) {
+            bytes memory w = abi.encodePacked("a", bytes1(ws[i]), "b");
+            assertEq(_code(w), 3, "word");
+            assertEq(_text(w), ws[i] == 0x20 ? 0 : 22, "text");
+        }
+    }
+
+    /// Every Unicode 15.1 `White_Space` code point is refused in a word (PropList.txt, 25 code points).
+    function test_every_white_space_is_refused_in_a_word() public view {
+        uint24[25] memory ws = [
+            uint24(0x09),
+            0x0a,
+            0x0b,
+            0x0c,
+            0x0d,
+            0x20,
+            0x85,
+            0xa0,
+            0x1680,
+            0x2000,
+            0x2001,
+            0x2002,
+            0x2003,
+            0x2004,
+            0x2005,
+            0x2006,
+            0x2007,
+            0x2008,
+            0x2009,
+            0x200a,
+            0x2028,
+            0x2029,
+            0x202f,
+            0x205f,
+            0x3000
+        ];
+        for (uint256 i; i < ws.length; ++i) {
+            uint256 code = _code(bytes.concat("a", _utf8(ws[i]), "b"));
+            assertEq(code, ws[i] < 0x80 ? 3 : 7);
+        }
+    }
+
+    // ---- noncharacters in a text ----------------------------------------------------------------------------
+
+    /// Class 5 (noncharacters, U+FFFC, U+FFFD) is refused in a text with code 23, as bidi and invisible are.
+    function test_text_refuses_noncharacters() public view {
+        uint24[10] memory nc = [
+            uint24(0xfdd0),
+            0xfdef,
+            0xfffc,
+            0xfffd,
+            0xfffe,
+            0xffff,
+            0x1fffe,
+            0x1ffff,
+            0x10fffe,
+            0x10ffff
+        ];
+        for (uint256 i; i < nc.length; ++i) {
+            assertEq(probe.refusedClass(nc[i]), TopicProfile.CLASS_NONCHARACTER);
+            assertEq(_text(_utf8(nc[i])), 23);
+            assertEq(_text(bytes.concat("label ", _utf8(nc[i]))), 23);
+        }
+        assertEq(_text(_utf8(0xfdcf)), 0, "the scalar before U+FDD0");
+        assertEq(_text(_utf8(0xfdf0)), 0, "the scalar after U+FDEF");
+        assertEq(_text(_utf8(0x10fffd)), 0, "U+10FFFD");
     }
 
     /// Every non-ASCII scalar `files-name/2` refuses, a word refuses too ("at least as strictly as names").
@@ -254,6 +405,14 @@ contract TopicRulesTest is Test {
             bytes.concat("0x", _repeat("a", 40)),
             bytes.concat("a", _utf8(0x200d))
         ];
+        // a word with a trailing no-break space, through the rule
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(7)));
+        wordRule.accept(
+            _ctx(WORD_TYPE),
+            bytes.concat("tesla", _utf8(0xa0)),
+            new bytes32[](0),
+            new RefHeader[](0)
+        );
         for (uint256 i; i < 7; ++i) {
             vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(i + 1)));
             wordRule.accept(_ctx(WORD_TYPE), bad[i], new bytes32[](0), new RefHeader[](0));
@@ -273,6 +432,25 @@ contract TopicRulesTest is Test {
             vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(20 + i)));
             textRule.accept(_ctx(TEXT_TYPE), bad[i], new bytes32[](0), new RefHeader[](0));
         }
+        // spaces a label may hold, and what it may not
+        assertEq(
+            textRule.accept(
+                _ctx(TEXT_TYPE),
+                bytes.concat("Tesla", _utf8(0xa0), "Inc."),
+                new bytes32[](0),
+                new RefHeader[](0)
+            ),
+            IAcceptor.accept.selector
+        );
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(23)));
+        textRule.accept(
+            _ctx(TEXT_TYPE),
+            bytes.concat("a", _utf8(0x2028), "b"),
+            new bytes32[](0),
+            new RefHeader[](0)
+        );
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(23)));
+        textRule.accept(_ctx(TEXT_TYPE), _utf8(0xfffd), new bytes32[](0), new RefHeader[](0));
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(24)));
         textRule.accept(_ctx(TEXT_TYPE), "a", new bytes32[](1), new RefHeader[](1));
     }

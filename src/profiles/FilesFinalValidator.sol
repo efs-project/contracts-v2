@@ -43,13 +43,18 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///           every bind kind before this hook runs. A directory record id and a minted subject id are keccak-256
 ///           outputs (`Keys.record*`, `Keys.subject`), so producing one that is address-shaped (12 leading zero
 ///           bytes) takes about 2^96 hash evaluations: the two parent forms cannot be confused in practice.
-///         - TAG (first statements only): the subject is a home or a registered topic: a `topic/1` or `topic-word/1`
-///           record first admitted STRICTLY BEFORE the statement's own admission (`first != 0 && first <
-///           e.admission`). A topic registered later in the same publication is refused: the index walks a topic's
-///           ancestors at the tag's own admission, so accepting it would silently drop the tag's list entries.
-///           An earlier action of the same publication counts. Any record or subject of any Type, or an address,
-///           may be the thing tagged; the target is not judged. A withdrawal by a topic's first registrant lowers an
-///           occurrence count and keeps `firstAdmission`, so a withdrawn registration still registers the topic.
+///         - TAG: position (topic, role = thing) → the thing. On a first statement (either sign) the subject is a
+///           home or a registered topic: a `topic/1` or `topic-word/1` record first admitted STRICTLY BEFORE the
+///           statement's own admission (`first != 0 && first < e.admission`). A topic registered later in the same
+///           publication is refused: the index walks a topic's ancestors at the tag's own admission, so accepting
+///           it would silently drop the tag's list entries. An earlier action of the same publication counts. A
+///           withdrawal by a topic's first registrant lowers an occurrence count and keeps `firstAdmission`, so a
+///           withdrawn registration still registers the topic. On every BIND (first bind, re-bind, restore) the
+///           target equals the role: the role is what names the thing for both signs (an UNBIND carries no
+///           target), the tag lists and the `Bound` filter find statements about a thing by role, and "what points
+///           at this" uses the target, so a tag whose role and target differed would be about one thing by one read
+///           and another by the other. The Type of the thing is not judged: any record or subject of any Type, or
+///           an address (target kind 3, with the left-padded address as the role), may be the thing tagged.
 ///         - SAME and BROADER: position (topic, role = other topic) → the other topic. On a first statement the
 ///           subject and the role are each a topic registered strictly before the statement, and differ. On every
 ///           BIND the target equals the role. Reading rule (design §12.5): `same` between two word pages is the
@@ -82,7 +87,8 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      10 SAME/BROADER first statement: the subject is not a topic registered strictly before it;
 ///      11 SAME/BROADER first statement: the role is not a topic registered strictly before it;
 ///      12 SAME/BROADER first statement: the subject and the role are the same topic;
-///      13 SAME/BROADER BIND: the target is not the role.
+///      13 SAME/BROADER BIND: the target is not the role;
+///      14 TAG BIND (first bind, re-bind or restore): the target is not the role.
 contract FilesFinalValidator is IIndexHook {
     /// The exact Type ids of the profile (constructor state, never rewritten).
     bytes32 public nameTypeId;
@@ -163,6 +169,9 @@ contract FilesFinalValidator is IIndexHook {
                         && !_topic(l, e.subject, e.admission)
                 ) {
                     revert E_FILES_FINAL(9, e.leaf);
+                }
+                if (e.kind == ActionKind.BIND && e.target != e.role) {
+                    revert E_FILES_FINAL(14, e.leaf);
                 }
             } else if (purpose == Purpose.SAME || purpose == Purpose.BROADER) {
                 _relation(l, e);

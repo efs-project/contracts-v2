@@ -73,15 +73,11 @@ contract BoundEventTest is FilesRecipesBase {
             new bytes[](1)
         );
 
+        // an address thing: role = target = the left-padded address, target kind 3
+        bytes32 addr2 = bytes32(uint256(uint160(makeAddr("events/addr2"))));
         vm.expectEmit(true, true, true, true, address(r.ledger));
-        emit ILedger.Bound(
-            _next(), Purpose.TAG, TOPIC, keccak256("other-role"), addr, ActionKind.BIND, 0, 1, 3
-        );
-        _execAs(
-            address(this),
-            _one(_bind(Purpose.TAG, TOPIC, keccak256("other-role"), addr, 0)),
-            new bytes[](1)
-        );
+        emit ILedger.Bound(_next(), Purpose.TAG, TOPIC, addr2, addr2, ActionKind.BIND, 0, 1, 3);
+        _execAs(address(this), _one(_bind(Purpose.TAG, TOPIC, addr2, addr2, 0)), new bytes[](1));
     }
 
     /// Exactly one `Bound` per bind-kind admission and none for record or subject kinds; its log is 3 indexed
@@ -122,7 +118,8 @@ contract BoundEventTest is FilesRecipesBase {
         a = new Action[](3);
         a[0] = EfsFiles.bindWithStrength(Purpose.TAG, TOPIC, thing, thing, 0, 3);
         a[1] = EfsFiles.loneNegative(Purpose.TAG, other, thing, 9);
-        a[2] = _bind(Purpose.TAG, TOPIC, keccak256("bound-event/role/2"), thing, 0);
+        bytes32 another = bytes32(uint256(uint160(makeAddr("bound-event/another")))); // another thing
+        a[2] = _bind(Purpose.TAG, TOPIC, another, another, 0);
         vm.recordLogs();
         _execAs(address(this), a, new bytes[](3));
         Vm.Log[] memory logs = vm.getRecordedLogs();

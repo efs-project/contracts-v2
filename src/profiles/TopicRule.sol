@@ -12,6 +12,15 @@ import {E_TOPIC_REFUSED} from "./TopicProfile.sol";
 ///         reference law only that the parent is a `topic/1` (`ctx.typeId`) or `topic-word/1` record and the exact
 ///         length.
 ///
+///         The references this rule judges ARE the body's two words. The caller never supplies refs: an `Action`
+///         has no refs field, and the kernel (`LedgerIngress._resolveRefs`) reads declared reference i from body
+///         word i of the very bytes it hashes into the record id and stores, then passes that same body, those refs
+///         and their headers to `accept`. So `refs[0]` is body word 0 (the parent) and `refs[1]` body word 1 (the
+///         word page), and a stored `topic/1` record whose words differ from what this rule judged cannot exist;
+///         the rule needs no comparison of its own (`test/integration/Topics.t.sol`,
+///         `test_the_judged_refs_are_the_body_words`). A direct call with refs that do not match the body is
+///         judged on its headers alone, but no admission takes that path.
+///
 ///         Identity. A topic's id is its record id, `Keys.record(topic/1, abi.encode(parent, wordPage))` (a word page's
 ///         is `Keys.record(topic-word/1, word)`): a hash of the Type and the body only, so it depends on neither the
 ///         author, the Realm nor the chain. Anyone computes it from the words with no chain read

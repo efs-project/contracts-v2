@@ -185,8 +185,9 @@ contract TopicTagsTest is FilesRecipesBase {
         assertEq(uint8(q.status), uint8(Status.PRESENT));
     }
 
-    /// Later transitions on an existing binding are never refused: the validator judges only the first statement
-    /// (mask, re-assert, release and restore below are not looked at again).
+    /// Later transitions on an existing binding are never refused by the subject law: the validator judges the
+    /// subject only on a first statement (mask, re-assert, release and restore below are not looked at again; the
+    /// builder's BINDs target their role, so the target law, code 14, admits them).
     function test_later_transitions_are_not_judged() public {
         bytes32 topic = _registerWord("cars");
         _execAs(address(this), _one(EfsTopics.tag(topic, thing, 0, 0)), new bytes[](1));
@@ -200,6 +201,29 @@ contract TopicTagsTest is FilesRecipesBase {
         _execAs(address(this), _one(EfsTopics.tag(topic, thing, 4, 1)), new bytes[](1));
         (uint8 st, uint64 rev,) = _head(_key(Purpose.TAG, topic, thing));
         assertEq(abi.encode(st, rev), abi.encode(uint8(1), uint64(5)));
+    }
+
+    /// A TAG bind whose target is not its role is refused (code 14) on a first bind, a re-bind and a restore,
+    /// through the real kernel; a mask and a release are never judged, and the builder cannot produce the mismatch.
+    function test_tag_target_must_be_the_role() public {
+        bytes32 topic = _registerWord("roles");
+        bytes32 other = Keys.subject(p, keccak256("topic-tags/other"));
+        _execAs(address(this), _one(_create(keccak256("topic-tags/other"))), new bytes[](1));
+        _refused(_one(_bind(Purpose.TAG, topic, thing, other, 0)), new bytes[](1), 14, 0); // first bind
+        _execAs(address(this), _one(EfsTopics.tag(topic, thing, 0, 0)), new bytes[](1)); // revision 1
+        _refused(_one(_bind(Purpose.TAG, topic, thing, other, 1)), new bytes[](1), 14, 0); // re-bind
+        _execAs(address(this), _one(EfsTopics.deny(topic, thing, 1, 0)), new bytes[](1)); // a mask: revision 2
+        _refused(_one(_bind(Purpose.TAG, topic, thing, other, 2)), new bytes[](1), 14, 0); // restore
+        _execAs(address(this), _one(EfsTopics.tag(topic, thing, 2, 0)), new bytes[](1)); // restore, role = target
+        _execAs(
+            address(this),
+            _one(_bindKind(ActionKind.RELEASE, Purpose.TAG, topic, thing, 0, 3)),
+            new bytes[](1)
+        );
+        (, uint64 rev,) = _head(_key(Purpose.TAG, topic, thing));
+        assertEq(rev, 4, "first bind, mask, restore, release: the refusals landed nothing");
+        Action memory t = EfsTopics.tag(topic, other, 0, 0);
+        assertEq(t.role, t.target, "the builder names the thing once");
     }
 
     // ---- what can be tagged ------------------------------------------------------------------------------------
