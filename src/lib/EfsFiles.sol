@@ -39,7 +39,11 @@ library EfsFiles {
         bytes32 span;
     }
 
-    /// The 11-word (352-byte) `files-content/1` body (design §12.1; `media` is the one media-domain word, ≤ 2).
+    /// The `files-content/1` body (docs/LARGE-FILES.md): ten words, then the `media` bytes (their length is the
+    /// body's beyond 320; a MIME media type: empty for unknown, else a lowercase RFC 6838 `type/subtype` with
+    /// optional `;` parameters, at most 255 bytes; `FilesProfile.mediaTypeRefusal` is the law). The media bytes are
+    /// the rest of the body, so nothing can follow them. These encoders do not validate it: an SDK lowercases the
+    /// type and subtype and refuses an invalid string before it builds the plan.
     struct Content {
         bytes32 bytesRef;
         uint256 version;
@@ -47,11 +51,11 @@ library EfsFiles {
         uint256 hashAlg;
         uint256 length;
         bytes32 sha256Digest;
-        uint256 media;
         uint256 cipher;
         bytes32 nonce12;
         uint256 plaintextLength;
         bytes32 plaintextSha256OrZero;
+        bytes media;
     }
 
     bytes32 internal constant DOM_RECORD = keccak256("efs/record/1");
@@ -188,11 +192,12 @@ library EfsFiles {
         return abi.encode(left, right, length);
     }
 
-    /// `files-content/1`: the 11 words in order.
+    /// `files-content/1`: the ten words in order, then the media bytes (320 + media.length bytes).
     function contentBody(Content memory c) internal pure returns (bytes memory) {
         return bytes.concat(
             abi.encode(c.bytesRef, c.version, c.carrier, c.hashAlg, c.length, c.sha256Digest),
-            abi.encode(c.media, c.cipher, c.nonce12, c.plaintextLength, c.plaintextSha256OrZero)
+            abi.encode(c.cipher, c.nonce12, c.plaintextLength, c.plaintextSha256OrZero),
+            c.media
         );
     }
 
@@ -204,7 +209,7 @@ library EfsFiles {
         uint256 carrier,
         uint256 length,
         bytes32 digest,
-        uint256 media
+        bytes memory media
     ) internal pure returns (bytes memory) {
         return contentBody(
             Content({
@@ -223,13 +228,15 @@ library EfsFiles {
         );
     }
 
-    /// `files-external/1`: `[emptyBytesRef, 2, 2, 1, length, sha256, locatorLength] ‖ locator`; `locator` is any
-    /// URI (1..2,048 printable ASCII bytes with an RFC 3986 scheme: `ar://…`, `ipfs://…`, `web3://…`, `https://…`).
+    /// `files-external/1`: `[emptyBytesRef, 2, 2, 1, length, sha256, locatorLength] ‖ locator ‖ media`;
+    /// `locator` is any URI (1..2,048 printable ASCII bytes with an RFC 3986 scheme: `ar://…`, `ipfs://…`,
+    /// `web3://…`, `https://…`); `media` is the media type as in `Content` (empty for unknown).
     function externalBody(
         bytes32 emptyBytesRef,
         uint256 length,
         bytes32 sha256Digest,
-        bytes memory locator
+        bytes memory locator,
+        bytes memory media
     ) internal pure returns (bytes memory) {
         return bytes.concat(
             abi.encode(
@@ -241,7 +248,8 @@ library EfsFiles {
                 sha256Digest,
                 locator.length
             ),
-            locator
+            locator,
+            media
         );
     }
 
@@ -605,13 +613,15 @@ library EfsFiles {
     }
 
     /// Store `payload` on chain: `chunk` with `t.bytes_`/`t.span`, then `PUBLISH(files-content/1)` describing it
-    /// (plaintext; carrier 2 over the span root, or carrier 0 over the one chunk). Returns the actions, bodies and
+    /// (plaintext; carrier 2 over the span root, or carrier 0 over the one chunk; `media` its media type, empty for
+    /// unknown). Returns the actions, bodies and
     /// the descriptor record id a form-1 revision names (`createFileRef`, `editRef`).
-    function storeContent(Types memory t, bytes memory payload, uint256 chunkPayload, uint256 media)
-        internal
-        pure
-        returns (Action[] memory a, bytes[] memory b, bytes32 descriptor)
-    {
+    function storeContent(
+        Types memory t,
+        bytes memory payload,
+        uint256 chunkPayload,
+        bytes memory media
+    ) internal pure returns (Action[] memory a, bytes[] memory b, bytes32 descriptor) {
         (Action[] memory ca, bytes[] memory cb, bytes32 root, bool isSpan) =
             chunk(t.bytes_, t.span, payload, chunkPayload);
         (a, b) = _alloc(ca.length + 1);

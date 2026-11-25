@@ -36,6 +36,11 @@ an AST build (`out/release-ast`, locally) immutable names are read from that bui
 the committed manifest's, their offsets are checked against the build, and the fixture tests that follow read every
 named immutable from a deployed instance.
 
+`gas/report.json` is not covered by `release:check` or any digest (only `verify` validates it against its schema), so
+regenerate it by hand with `pnpm gas:report -- --fixture <n>` (or `--fixture-state <journal>`) after the last step,
+from a committed tree so its `measurement.dirtyFiles` is 0, whenever the kernel, the index, a Files rule, a body
+layout or the fixture seed changes.
+
 `up` copies `sha256(release/release.json)` into the deployment document and `verify` re-hashes the file, so
 regenerating `release.json` after `up` makes `verify` fail until the next `up`.
 
@@ -110,7 +115,7 @@ With `--json`, a failure prints `{"ok": false, "command": "...", "error": {"code
 actual `port` and `rpcUrl` (also when the port was allocated from the range) and `verified: {skipped: false, ok, checks,
 failures, ms, coldPin}`. If a check fails, `up` tears the instance down (its own anvil, its lease) and exits 1 with an
 error object listing the failures; with `--keep-on-fail` the instance stays leased in state `failed`. Measured cost of
-the in-`up` verify: about 0.8 s for 371 checks (the big file is re-assembled node by node); a whole `up` takes about
+the in-`up` verify: about 0.8 s for 373 checks (the big file is re-assembled node by node); a whole `up` takes about
 4–5 s. `--no-verify` skips it (`verified: {skipped: true}`). Both failure paths were exercised by hand against a stale
 `deploy/plan.json` (one mismatch): the default tore the instance down and removed its lease; `--keep-on-fail` left it
 leased in state `failed`.
@@ -129,7 +134,7 @@ leased in state `failed`.
   "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x38Bd…bC4a" },
   "root": { "directoryRecordId": "0xde49…a430", "subjectId": "0x2494…4951", "principalId": "0x…f39f…2266" },
   "seed": {
-    "version": "efs-fixture-seed/2", "root": { "…": "as above" },
+    "version": "efs-fixture-seed/3", "root": { "…": "as above" },
     "folder": { "name": "docs", "directoryRecordId": "0x6be2…f06e", "subjectId": "0x7ba4…1c20" },
     "file": { "name": "readme.txt", "subjectId": "0xb77c…4065", "headRecordId": "0xbd3d…9e8d", "headRevision": 1 },
     "files": [
@@ -142,11 +147,11 @@ leased in state `failed`.
   },
   "typeIds": { "files-root/1": "0x…", "…": "one per Files Type" },
   "signerCapable": true,
-  "capabilities": { "filesSeed": "efs-fixture-seed/2", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
+  "capabilities": { "filesSeed": "efs-fixture-seed/3", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
   "planHash": "0xdacd…38db", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
-  "verified": { "skipped": false, "ok": true, "checks": 371, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
+  "verified": { "skipped": false, "ok": true, "checks": 373, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
 ```
 
@@ -358,6 +363,7 @@ equal; see HARNESS-BUG below).
 | `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the ten rules, `RefuseAllPolicy` and `FilesFinalValidator` through the factory in forge's EVM and returns `FilesTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
 | `deploy/plan.json` | `efs-deploy-plan/1`: 61 steps (F0, G1–G20, R0–R4, G21, R5 the `web3://` gateway, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the ten Type ids and descriptors, the seed and `planHash`. |
 | `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (33/33 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 86 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (ten Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, `constants` (action kinds, capability bits, the three purpose ids with their preimages, the Status and Coverage codes, and the Files form, carrier, hash, alias and target-kind codes with the chunk payload: all parsed from the Solidity sources, so a consumer never types a protocol string), the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
+| `test/vectors/media.json` | `efs/vectors/media/1`, written by `tools/release.mjs` (or alone by `node tools/media-vectors.mjs`) and compared byte for byte by `release:check`: `files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty media strings with the grammar's code and each rule's refusal code (`docs/LARGE-FILES.md` "Media types"). `test/profiles/FilesMediaType.t.sol` asserts it against the rules, `EfsFiles`, `Keys` and `script/Genesis.s.sol`'s Type ids. |
 | `release/errors.json` | `efs-errors/1`: 106 file-level errors from `src/`, each with selector, signature, args, source, retry class (the first word of the trailing comment; required, the generator refuses an error without one) and meaning (the rest of that comment, else the `///` lines above the error). Every selector in `test/snapshots/abi/Errors.json` is reproduced. |
 | `artifacts/<Unit>.json` | `efs-artifact/1` per deployable unit: ABI, method identifiers, creation and runtime bytecode, named immutable offsets. `LedgerCore.json`'s ABI is the union of the kernel ABI with the events and errors of `LedgerApply`, `LedgerIngress` and `LedgerControl`. Interface ABIs are not copied: `abi.interfaces` points at `test/snapshots/abi/` (tools/abi-snapshot.mjs), and storage layouts at `test/snapshots/layout/`. |
 | `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids, plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, subjectId, principalId}`; `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
@@ -369,7 +375,7 @@ equal; see HARNESS-BUG below).
 
 ## What `verify` reproduces
 
-371 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
+373 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
 build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested and fails.
 
 1. **Documents.** `planHash` (recomputed, and equal to `deploy/plan.json`), the ledger address, the execution set, the
@@ -397,10 +403,12 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
 9. **The seed.** Thirteen record headers, seven heads (state, revision, target), five subjects created, the fixture
    principal's nonce of 6 (one per publication), the root scope (1 entry, 1 live) and the `docs/` scope (3, 3).
    For each file, from its HEAD revision through `LedgerReads.record`: `readme.txt` (form 0) has the expected length
-   and sha256; `big.bin` (form 1) names its `files-content/1` record (carrier 2, the span root, length, sha256), and
+   and sha256; `big.bin` (form 1) names its `files-content/1` record (carrier 2, the span root, length, sha256, the
+   media length word and the media bytes), and
    its span tree is re-assembled node by node (each chunk against its own word-0 sha256, each span against its
    length) into 20,000 bytes with the descriptor's sha256, 3 chunks and 2 spans; `remote.txt` (form 1) names its
-   `files-external/1` record (the empty sentinel, version 2, carrier 2, sha256, length, the locator byte for byte),
+   `files-external/1` record (the empty sentinel, version 2, carrier 2, sha256, length, the locator and the media
+   type byte for byte),
    and the sentinel is the empty `files-bytes/1` record. `KeysView` reproduces the readme's subject, root record,
    HEAD binding key and the `docs/` scope key.
 10. **The readers.** `LensReader`'s `ledger()`, `VIEWS`, `READS` and `layoutId()`; `FilesPageReader`'s `LEDGER`,
@@ -412,9 +420,10 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
     of that root record must return PRESENT with the right Type, word 0 and body.
 11. **The `web3://` gateway.** `resolveMode()` is `"5219"` and its fourteen immutables are the planned ones. Then
     the seed is read through `request` the way a `web3://` client does it: `docs/readme.txt` by principal id and by
-    account address (same bytes, sha256, `text/plain`); `docs/big.bin` chunk by chunk following `web3-next-chunk`
-    until the header is absent (three chunks, 20,000 bytes, the seed's sha256); `docs/remote.txt` as `307` with the
-    seed's locator; `docs` as a complete JSON listing of the three files; and `404`, `400` and `416` for a missing
+    account address (same bytes, sha256, `text/plain` from the extension, no `X-Content-Type-Options`);
+    `docs/big.bin` chunk by chunk following `web3-next-chunk` until the header is absent (three chunks, 20,000 bytes,
+    the seed's sha256, each with the declared `Content-Type: application/octet-stream` and `nosniff`);
+    `docs/remote.txt` as `307` with the seed's locator and `x-efs-media-type`; `docs` as a complete JSON listing of the three files; and `404`, `400` and `416` for a missing
     name, a malformed principal and an offset at the end.
 12. **Cold pin.** What an SDK holding only `release.json` and `efs-deployment.json` does on first contact.
 
@@ -442,7 +451,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0x5440a17bac803bdcd97568ccffe1d4f3becb0b28ccafaa63932f651fd2be9d44`.
+  `0x9c4692dc8db33e573d80dc6e90bb1cc50e17cacd6a9355556a69ae7f3c8d53a0`.
 
 ## The planning model (`gas/model.json`)
 
@@ -454,7 +463,11 @@ states what one atomic publication realistically holds, as the smallest of the g
 for intrinsic gas, calldata and the model's error, less the fixed cost) and the two Realm limits, for six named
 shapes: a small and a 1 KB edit, a small and a 1 KB create, an 8 KB chunk and a span node. It is for user-facing
 messages ("this save is too large to be atomic"); a planner uses the constants and confirms with `eth_estimateGas`.
-Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`.
+Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`. Media
+types: a descriptor's media type is the tail of its body (no length word), so a planner prices a content or external
+body by its byte length with the ordinary `perWord`/`perByte` terms and no special case (measured on `test/integration/MediaTypeMeasure.t.sol`: for 9-, 24- and 71-byte types on a small on-chain file and an
+external file, the model's predicted change is low by 0.9k-6.4k gas, at most 0.28% of the file on prague and 0.08% on
+amsterdam; the residual is the grammar's own validation, about 87 gas a byte against `perByte` 11.8).
 
 `pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
 rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
@@ -580,14 +593,17 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
     `acceptanceProfileOf`) and recorded in `efs-deployment.json` `seed.transactions` and `expected.json`.
 13. **Placement of `release.json`.** `schemas/` named no path, so the manifest is `release/release.json`. The six
     schemas are new, unreviewed drafts.
-14. **Seed (`efs-fixture-seed/2`).** The root, `docs/`, and three files in `docs/`: `readme.txt` (form 0, the bytes
+14. **Seed (`efs-fixture-seed/3`).** The root, `docs/`, and three files in `docs/`: `readme.txt` (form 0, the bytes
     inline after `abi.encode(file, 0)`), `big.bin` (20,000 deterministic bytes, word i = keccak256(abi.encode(
     keccak256("efs-fixture/big.bin"), i)), chunked by `efs/chunking/1` into 8,160-byte chunks, chunks in order then
-    spans in post-order, a `files-content/1` carrier-2 descriptor, a form-1 revision; split by `EfsFiles.split`'s
+    spans in post-order, a `files-content/1` carrier-2 descriptor declaring `application/octet-stream`, a form-1
+    revision; split by `EfsFiles.split`'s
     greedy rule under 64 actions / 16,384 body bytes into two publications) and `remote.txt` (the empty
     `files-bytes/1` sentinel, a `files-external/1` record with locator
-    `web3://0x0000000000000000000000000000000000000000:31337/remote.txt` and the length and sha256 of a 51-byte
-    text, a form-1 revision). It produces 29 admissions, **17 records**, 7 bindings and 6 publications (CREATE leaves
+    `web3://0x0000000000000000000000000000000000000000:31337/remote.txt`, media type `text/plain; charset=utf-8` and
+    the length and sha256 of a 51-byte text, a form-1 revision). `readme.txt` is inline and has no descriptor, so no
+    media type: the gateway's extension fallback. Version 3 (was 2) because the seed's descriptor bodies now carry
+    media types a consumer can observe (`Content-Type`, `X-Content-Type-Options`, `x-efs-media-type`). It produces 29 admissions, **17 records**, 7 bindings and 6 publications (CREATE leaves
     are subjects, not records). The JS seed encoder mirrors `EfsFiles` (`chunk`, `split`, `storeContent`,
     `createFileRef`, `externalBody`).
 

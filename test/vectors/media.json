@@ -1,0 +1,585 @@
+{
+  "schema": "efs/vectors/media/1",
+  "generator": "tools/media-vectors.mjs via tools/release.mjs (viem encodeAbiParameters + keccak256; grammar from tools/deploy-plan.mjs mediaTypeRefusal)",
+  "spec": "docs/LARGE-FILES.md \"Media types\"; FilesProfile.mediaTypeRefusal",
+  "grammar": {
+    "empty": "admitted: the media type is unknown",
+    "form": "type \"/\" subtype [\";\" parameters], at most 255 bytes; the rest of the body after the head (content: 320 bytes; external: 224 + locatorLength), so no length word is stored and nothing can follow it",
+    "name": "RFC 6838 restricted-name, lowercase only: 1..127 bytes, first a-z or 0-9, then a-z 0-9 ! # $ & - ^ _ . +",
+    "parameters": "every byte from the first ';' to the end in 0x20..0x7e; not parsed further",
+    "grammarCodes": {
+      "0": "admitted",
+      "1": "longer than 255 bytes",
+      "2": "no valid type name at the start",
+      "3": "the type is not followed by '/'",
+      "4": "no valid subtype name after '/'",
+      "5": "the subtype is followed by a byte other than ';'",
+      "6": "a byte outside 0x20..0x7e after the first ';'"
+    },
+    "contentRuleCodes": {
+      "2": "the body is shorter than the ten words (320 bytes)",
+      "11": "the media bytes are longer than 255 (body above 575 bytes)",
+      "12": "the media bytes are not a media type"
+    },
+    "externalRuleCodes": {
+      "5": "the body is shorter than 224 + locatorLength (or locatorLength outside 1..2,048)",
+      "8": "the media bytes are longer than 255",
+      "9": "the media bytes are not a media type"
+    },
+    "sdk": "normalize (lowercase type and subtype) and refuse an invalid string when building the plan, so a bad media type is never an on-chain revert"
+  },
+  "declarationKey": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "typeIds": {
+    "files-bytes/1": "0x9e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0",
+    "files-content/1": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
+    "files-external/1": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386"
+  },
+  "encoding": [
+    {
+      "label": "empty media",
+      "type": "files-content/1",
+      "inputs": {
+        "bytesRef": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b6713",
+        "carrier": 0,
+        "length": 18,
+        "sha256": "0x0e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6",
+        "media": "",
+        "mediaHex": "0x"
+      },
+      "body": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b671300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6",
+      "bodyLength": 320,
+      "typeId": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
+      "recordId": "0xcafa98d529a736570f8c8db386bfa625914103612b1e690cb65bea90bbe31cea"
+    },
+    {
+      "label": "image/png",
+      "type": "files-content/1",
+      "inputs": {
+        "bytesRef": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b6713",
+        "carrier": 0,
+        "length": 18,
+        "sha256": "0x0e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6",
+        "media": "image/png",
+        "mediaHex": "0x696d6167652f706e67"
+      },
+      "body": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b671300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6696d6167652f706e67",
+      "bodyLength": 329,
+      "typeId": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
+      "recordId": "0xb7f496e68839a96ff6c32673efb610ca4efd5941f8ca482aa0fa1d4eec10408f"
+    },
+    {
+      "label": "with a parameter",
+      "type": "files-content/1",
+      "inputs": {
+        "bytesRef": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b6713",
+        "carrier": 0,
+        "length": 18,
+        "sha256": "0x0e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6",
+        "media": "text/html; charset=utf-8",
+        "mediaHex": "0x746578742f68746d6c3b20636861727365743d7574662d38"
+      },
+      "body": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b671300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6746578742f68746d6c3b20636861727365743d7574662d38",
+      "bodyLength": 344,
+      "typeId": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
+      "recordId": "0x6eb4d43524122bd81fed6bd67cbb754beda79499b35b7f123c5a9c80b4d0fe72"
+    },
+    {
+      "label": "255-byte maximum",
+      "type": "files-content/1",
+      "inputs": {
+        "bytesRef": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b6713",
+        "carrier": 0,
+        "length": 18,
+        "sha256": "0x0e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6",
+        "media": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "mediaHex": "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262"
+      },
+      "body": "0xe0589fd45f857e3a2b192fd7798983ddb1e16a4dcff426620f5f148c453b671300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000120e7b6c96dd4c55acd72317a3dddbab9ba81d61f49e784ce2f08076f002cc6df6616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262",
+      "bodyLength": 575,
+      "typeId": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
+      "recordId": "0x2e6206e0b18e90aaee787837b08b96a41f63782a3b4f3408ccc7bea888f252e5"
+    },
+    {
+      "label": "locator, empty media",
+      "type": "files-external/1",
+      "inputs": {
+        "sentinel": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb52",
+        "length": 1234,
+        "sha256": "0xef5b05d59f845d9ff61cb77aed339c6e8ccb9fe6381c7d9684e4e9c1118ae49f",
+        "locator": "ar://bNbA3TEQVL60xlgCcqdz4ZPHFZ711cZ3hmkpGttDt_U",
+        "media": "",
+        "mediaHex": "0x"
+      },
+      "body": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb5200000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000004d2ef5b05d59f845d9ff61cb77aed339c6e8ccb9fe6381c7d9684e4e9c1118ae49f000000000000000000000000000000000000000000000000000000000000003061723a2f2f624e624133544551564c3630786c67436371647a345a5048465a373131635a33686d6b7047747444745f55",
+      "bodyLength": 272,
+      "typeId": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
+      "recordId": "0xbef1ed0712c7f32fabf9ef804b7c5506901d8b38703f4b82d248ef5e3b07b87a"
+    },
+    {
+      "label": "locator and a media type",
+      "type": "files-external/1",
+      "inputs": {
+        "sentinel": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb52",
+        "length": 1234,
+        "sha256": "0xef5b05d59f845d9ff61cb77aed339c6e8ccb9fe6381c7d9684e4e9c1118ae49f",
+        "locator": "ar://bNbA3TEQVL60xlgCcqdz4ZPHFZ711cZ3hmkpGttDt_U",
+        "media": "text/html; charset=utf-8",
+        "mediaHex": "0x746578742f68746d6c3b20636861727365743d7574662d38"
+      },
+      "body": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb5200000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000004d2ef5b05d59f845d9ff61cb77aed339c6e8ccb9fe6381c7d9684e4e9c1118ae49f000000000000000000000000000000000000000000000000000000000000003061723a2f2f624e624133544551564c3630786c67436371647a345a5048465a373131635a33686d6b7047747444745f55746578742f68746d6c3b20636861727365743d7574662d38",
+      "bodyLength": 296,
+      "typeId": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
+      "recordId": "0xd8d5968363877a547d581e3ce86b9d68bc3f434b2d99a25a552f68962c2820b1"
+    },
+    {
+      "label": "locator and the 255-byte maximum",
+      "type": "files-external/1",
+      "inputs": {
+        "sentinel": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb52",
+        "length": 1234,
+        "sha256": "0xef5b05d59f845d9ff61cb77aed339c6e8ccb9fe6381c7d9684e4e9c1118ae49f",
+        "locator": "ar://bNbA3TEQVL60xlgCcqdz4ZPHFZ711cZ3hmkpGttDt_U",
+        "media": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "mediaHex": "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262"
+      },
+      "body": "0xbf5a2dbc18a9610675e00c4fad0055677102632721f9d2f87d3c1ae3ea2fcb5200000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000004d2ef5b05d59f845d9ff61cb77aed339c6e8ccb9fe6381c7d9684e4e9c1118ae49f000000000000000000000000000000000000000000000000000000000000003061723a2f2f624e624133544551564c3630786c67436371647a345a5048465a373131635a33686d6b7047747444745f55616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262",
+      "bodyLength": 527,
+      "typeId": "0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386",
+      "recordId": "0xf008362ea9aef3967903f5661f0e8a465a8873832545f1086c3d869cfe438a83"
+    }
+  ],
+  "rules": [
+    {
+      "label": "empty",
+      "mediaHex": "0x",
+      "length": 0,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "",
+      "note": "unknown media type: a reader falls back to the name's extension"
+    },
+    {
+      "label": "plain type",
+      "mediaHex": "0x696d6167652f706e67",
+      "length": 9,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "image/png"
+    },
+    {
+      "label": "with a parameter",
+      "mediaHex": "0x746578742f68746d6c3b20636861727365743d7574662d38",
+      "length": 24,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "text/html; charset=utf-8",
+      "note": "the canonical form: one space after ';'"
+    },
+    {
+      "label": "parameter without a space",
+      "mediaHex": "0x746578742f68746d6c3b636861727365743d7574662d38",
+      "length": 23,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "text/html;charset=utf-8"
+    },
+    {
+      "label": "vendor tree, 71 bytes",
+      "mediaHex": "0x6170706c69636174696f6e2f766e642e6f70656e786d6c666f726d6174732d6f6666696365646f63756d656e742e776f726470726f63657373696e676d6c2e646f63756d656e74",
+      "length": 71,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    },
+    {
+      "label": "quoted parameter with spaces and uppercase",
+      "mediaHex": "0x766964656f2f6d70343b20636f646563733d22617663312e3432453031452c206d7034612e34302e3222",
+      "length": 42,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "video/mp4; codecs=\"avc1.42E01E, mp4a.40.2\"",
+      "note": "the chain never normalizes parameters: their case and spaces are kept"
+    },
+    {
+      "label": "x. tree with a structured suffix",
+      "mediaHex": "0x6170706c69636174696f6e2f782e666f6f2b6a736f6e",
+      "length": 22,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "application/x.foo+json"
+    },
+    {
+      "label": "every name byte",
+      "mediaHex": "0x6130212324262d5e5f2e2b2f7a39212324262d5e5f2e2b",
+      "length": 23,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "a0!#$&-^_.+/z9!#$&-^_.+",
+      "note": "RFC 6838 restricted-name characters after the first"
+    },
+    {
+      "label": "digits first",
+      "mediaHex": "0x336770702f31642d696e7465726c65617665642d706172697479666563",
+      "length": 29,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "3gpp/1d-interleaved-parityfec",
+      "note": "a name may start with a digit"
+    },
+    {
+      "label": "127-byte type",
+      "mediaHex": "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62",
+      "length": 129,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/b",
+      "note": "the longest name"
+    },
+    {
+      "label": "255-byte maximum",
+      "mediaHex": "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262",
+      "length": 255,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "note": "127 + 1 + 127 bytes"
+    },
+    {
+      "label": "a slash after ';'",
+      "mediaHex": "0x746578742f706c61696e3b20783d612f62",
+      "length": 17,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "text/plain; x=a/b",
+      "note": "only the first '/' (before the first ';') separates type and subtype"
+    },
+    {
+      "label": "trailing ';' with nothing after it",
+      "mediaHex": "0x746578742f706c61696e3b",
+      "length": 11,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "text/plain;",
+      "note": "ADMITTED: everything from the first ';' is printable ASCII and is not parsed further (RFC 9110 allows an empty parameter list after ';' with optional whitespace)"
+    },
+    {
+      "label": "';' then spaces only",
+      "mediaHex": "0x746578742f706c61696e3b2020",
+      "length": 13,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "text/plain;  ",
+      "note": "admitted for the same reason"
+    },
+    {
+      "label": "0x7e after ';'",
+      "mediaHex": "0x746578742f706c61696e3b20613d7e",
+      "length": 15,
+      "accepted": true,
+      "grammarCode": 0,
+      "contentRuleCode": 0,
+      "externalRuleCode": 0,
+      "media": "text/plain; a=~",
+      "note": "0x7e is the last admitted byte"
+    },
+    {
+      "label": "uppercase in the type",
+      "mediaHex": "0x546578742f706c61696e",
+      "length": 10,
+      "accepted": false,
+      "grammarCode": 2,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "Text/plain",
+      "note": "the chain never lowercases; an SDK must"
+    },
+    {
+      "label": "uppercase in the subtype",
+      "mediaHex": "0x746578742f48544d4c",
+      "length": 9,
+      "accepted": false,
+      "grammarCode": 4,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/HTML",
+      "note": "the chain never lowercases; an SDK must"
+    },
+    {
+      "label": "no slash",
+      "mediaHex": "0x74657874706c61696e",
+      "length": 9,
+      "accepted": false,
+      "grammarCode": 3,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "textplain"
+    },
+    {
+      "label": "missing subtype",
+      "mediaHex": "0x746578742f",
+      "length": 5,
+      "accepted": false,
+      "grammarCode": 4,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/"
+    },
+    {
+      "label": "missing type",
+      "mediaHex": "0x2f706c61696e",
+      "length": 6,
+      "accepted": false,
+      "grammarCode": 2,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "/plain"
+    },
+    {
+      "label": "two slashes before ';'",
+      "mediaHex": "0x746578742f706c61696e2f78",
+      "length": 12,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/plain/x",
+      "note": "'/' is not a name byte"
+    },
+    {
+      "label": "two slashes, no parameters",
+      "mediaHex": "0x612f622f63",
+      "length": 5,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "a/b/c"
+    },
+    {
+      "label": "leading space",
+      "mediaHex": "0x20746578742f706c61696e",
+      "length": 11,
+      "accepted": false,
+      "grammarCode": 2,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": " text/plain"
+    },
+    {
+      "label": "space before ';'",
+      "mediaHex": "0x746578742f706c61696e203b20636861727365743d7574662d38",
+      "length": 26,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/plain ; charset=utf-8",
+      "note": "stricter than RFC 9110 (which allows OWS before ';'): the canonical form has none"
+    },
+    {
+      "label": "tab before ';'",
+      "mediaHex": "0x746578742f706c61696e093b20636861727365743d7574662d38",
+      "length": 26,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/plain\t; charset=utf-8",
+      "note": "stricter than RFC 9110 (OWS may be a tab)"
+    },
+    {
+      "label": "tab after ';'",
+      "mediaHex": "0x746578742f706c61696e3b09636861727365743d7574662d38",
+      "length": 25,
+      "accepted": false,
+      "grammarCode": 6,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/plain;\tcharset=utf-8",
+      "note": "stricter than RFC 9110: a tab is a control byte, never admitted (the gateway emits the string in a header)"
+    },
+    {
+      "label": "trailing space, no ';'",
+      "mediaHex": "0x746578742f706c61696e20",
+      "length": 11,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/plain ",
+      "note": "a space is not a name byte"
+    },
+    {
+      "label": "wildcard subtype",
+      "mediaHex": "0x746578742f2a",
+      "length": 6,
+      "accepted": false,
+      "grammarCode": 4,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/*",
+      "note": "stricter than RFC 9110 Accept syntax: '*' is not a restricted-name byte; a descriptor names one type"
+    },
+    {
+      "label": "wildcard type",
+      "mediaHex": "0x2a2f2a",
+      "length": 3,
+      "accepted": false,
+      "grammarCode": 2,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "*/*",
+      "note": "as above"
+    },
+    {
+      "label": "first byte not alphanumeric",
+      "mediaHex": "0x2d746578742f706c61696e",
+      "length": 11,
+      "accepted": false,
+      "grammarCode": 2,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "-text/plain",
+      "note": "a restricted-name starts with a letter or digit"
+    },
+    {
+      "label": "subtype starting with '+'",
+      "mediaHex": "0x746578742f2b6a736f6e",
+      "length": 10,
+      "accepted": false,
+      "grammarCode": 4,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/+json"
+    },
+    {
+      "label": "a byte RFC 6838 forbids in a name",
+      "mediaHex": "0x746578742f706c3d61696e",
+      "length": 11,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "text/pl=ain",
+      "note": "'=' is a token byte (RFC 9110) but not a restricted-name byte"
+    },
+    {
+      "label": "CR LF after ';'",
+      "mediaHex": "0x746578742f706c61696e3b0d0a782d783a2079",
+      "length": 19,
+      "accepted": false,
+      "grammarCode": 6,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "note": "header injection: a control byte after ';'"
+    },
+    {
+      "label": "NUL after ';'",
+      "mediaHex": "0x746578742f706c61696e3b00",
+      "length": 12,
+      "accepted": false,
+      "grammarCode": 6,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9
+    },
+    {
+      "label": "0x7f after ';'",
+      "mediaHex": "0x746578742f706c61696e3b7f",
+      "length": 12,
+      "accepted": false,
+      "grammarCode": 6,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "note": "DEL is not printable"
+    },
+    {
+      "label": "0x80 after ';'",
+      "mediaHex": "0x746578742f706c61696e3b80",
+      "length": 12,
+      "accepted": false,
+      "grammarCode": 6,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "note": "a byte at or above 0x80"
+    },
+    {
+      "label": "UTF-8 after ';'",
+      "mediaHex": "0x746578742f706c61696e3b20743dc3a9",
+      "length": 16,
+      "accepted": false,
+      "grammarCode": 6,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "note": "non-ASCII parameter values are refused (RFC 8187 encoding is the author's job)"
+    },
+    {
+      "label": "0xff in the subtype",
+      "mediaHex": "0x746578742f706cff",
+      "length": 8,
+      "accepted": false,
+      "grammarCode": 5,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9
+    },
+    {
+      "label": "128-byte type",
+      "mediaHex": "0x61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f62",
+      "length": 130,
+      "accepted": false,
+      "grammarCode": 2,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/b",
+      "note": "one byte over the 127-byte name limit"
+    },
+    {
+      "label": "128-byte subtype",
+      "mediaHex": "0x612f6262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262",
+      "length": 130,
+      "accepted": false,
+      "grammarCode": 4,
+      "contentRuleCode": 12,
+      "externalRuleCode": 9,
+      "media": "a/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    {
+      "label": "256 bytes",
+      "mediaHex": "0x616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161612f626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262623b",
+      "length": 256,
+      "accepted": false,
+      "grammarCode": 1,
+      "contentRuleCode": 11,
+      "externalRuleCode": 8,
+      "media": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;",
+      "note": "one byte over the 255-byte limit (the length word refuses it before the grammar)"
+    }
+  ]
+}

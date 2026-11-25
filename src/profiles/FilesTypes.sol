@@ -190,7 +190,7 @@ library FilesTypes {
     function contentSpec() internal pure returns (Spec memory s) {
         s.name = "files-content/1";
         s.description =
-            "11 words [bytesRef, version, carrier, hashAlg, length, sha256, media, cipher, nonce12, plaintextLength, plaintextSHA256OrZero]; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64";
+            "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes";
         s.dependencyClass = 1;
         s.refHeaderWords = 3;
         s.fields = refField(FIELD_BYTES, SEMANTIC_CARRIER, REF_ANY);
@@ -200,7 +200,7 @@ library FilesTypes {
     function externalSpec(bytes32 bytesTypeId) internal pure returns (Spec memory s) {
         s.name = "files-external/1";
         s.description =
-            "7 words [bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist";
+            "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1, the rest of the body";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
         s.fields = refField(FIELD_BYTES, SEMANTIC_CARRIER, bytesTypeId);

@@ -58,8 +58,8 @@ const words = (n) => Math.ceil(n / 32);
 const BYTES_SIZES = [64, 100, 1000, 1024, 4096, 8192];
 const SHAPES = {
   "files-span/1": [["pub span", 96]],
-  "files-content/1 carrier 0": [["pub content c0", 352]],
-  "files-content/1 carrier 2": [["pub content c2", 352]],
+  "files-content/1 carrier 0": [["pub content c0", 320]],
+  "files-content/1 carrier 2": [["pub content c2", 320]],
   "files-external/1": [["pub external 40", 264], ["pub external 400", 624]],
   "files-directory/1": [["pub directory", 32]],
   "files-name/2": [["pub name 12", 12], ["pub name 200", 200]],
@@ -94,7 +94,7 @@ const VALIDATION = [
   { key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
     actions: [pub("files-bytes/1", 8192), pub("files-bytes/1", 8192)] },
   { key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-    actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 352), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
+    actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
 ];
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */

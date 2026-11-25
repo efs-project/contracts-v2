@@ -70,12 +70,12 @@ contract FilesCarrierRulesTest is FilesUnitBase {
 
     // ---- files-content/1 ---------------------------------------------------------------------------------------
 
-    /// The 11 words for `raw`: inline (carrier 0), remote (carrier 1) or span (carrier 2), plaintext.
+    /// The 10 words for `raw`: inline (carrier 0), remote (carrier 1) or span (carrier 2), plaintext.
     function _descriptor(bytes memory raw, uint256 carrier) internal pure returns (bytes memory) {
         return _claim(raw.length, sha256(raw), carrier);
     }
 
-    /// The 11 words of a plaintext descriptor claiming `length` bytes hashing to `digest`.
+    /// The 10 words of a plaintext descriptor claiming `length` bytes hashing to `digest` (no media type).
     function _claim(uint256 length, bytes32 digest, uint256 carrier)
         internal
         pure
@@ -88,7 +88,6 @@ contract FilesCarrierRulesTest is FilesUnitBase {
             uint256(1),
             length,
             digest,
-            uint256(0),
             uint256(0),
             bytes32(0),
             length,
@@ -120,12 +119,14 @@ contract FilesCarrierRulesTest is FilesUnitBase {
         _content(_descriptor(new bytes(20_000), 0), _bytesHeader(new bytes(20_000)), 0);
     }
 
-    // L test_descriptor_extra_missing_length_rejected
+    // L test_descriptor_extra_missing_length_rejected: the ten words are the minimum; bytes past them are the media
+    // type (FilesMediaType.t.sol), so a stray trailing byte is judged by the media grammar
     function test_content_exact_length() public {
         bytes memory d = _descriptor(hex"ff", 0);
-        _content(bytes.concat(d, hex"00"), _bytesHeader(hex"ff"), 2);
-        bytes memory short = new bytes(320);
-        for (uint256 i; i < 320; ++i) {
+        assertEq(d.length, 320);
+        _content(bytes.concat(d, hex"00"), _bytesHeader(hex"ff"), 12);
+        bytes memory short = new bytes(319);
+        for (uint256 i; i < 319; ++i) {
             short[i] = d[i];
         }
         _content(short, _bytesHeader(hex"ff"), 2);
@@ -135,13 +136,14 @@ contract FilesCarrierRulesTest is FilesUnitBase {
         _content(d, _bytesHeader(hex"ff"), 3); // word 0 is the checked reference
     }
 
-    // L test_unsupported_algorithm_carrier_media_rejected (+ version, cipher, bounds, nonce domain)
+    // L test_unsupported_algorithm_carrier_media_rejected (+ version, cipher, bounds, nonce domain); the media
+    // type is the body's tail now, refused by its own codes (FilesMediaType.t.sol, test_content_media_tail below)
     function test_content_unsupported_domains() public {
-        uint256[7] memory word = [uint256(1), 2, 3, 4, 6, 7, 9];
-        uint8[7] memory bad = [2, 3, 2, 0x11, 3, 2, 0x11];
+        uint256[6] memory word = [uint256(1), 2, 3, 4, 6, 8];
+        uint8[6] memory bad = [2, 3, 2, 0x11, 2, 0x11];
         for (uint256 i; i < word.length; ++i) {
             bytes memory d = _descriptor(hex"ff", 0);
-            if (word[i] == 4 || word[i] == 9) {
+            if (word[i] == 4 || word[i] == 8) {
                 // length / plaintextLength above 2^64 - 1
                 bytes32 big = bytes32(U64 + 1);
                 for (uint256 j; j < 32; ++j) {
@@ -153,8 +155,16 @@ contract FilesCarrierRulesTest is FilesUnitBase {
             _content(d, _bytesHeader(hex"ff"), 4);
         }
         bytes memory n = _descriptor(hex"ff", 0);
-        n[8 * 32 + 12] = 0x01; // a nonce byte past the 12 left-aligned bytes
+        n[7 * 32 + 12] = 0x01; // a nonce byte past the 12 left-aligned bytes
         _content(n, _bytesHeader(hex"ff"), 4);
+    }
+
+    function test_content_media_tail() public {
+        // the media type is whatever follows the ten words
+        bytes memory d = _descriptor(hex"ff", 0);
+        _content(bytes.concat(d, "a/b"), _bytesHeader(hex"ff"), 0);
+        _content(bytes.concat(d, "A/b"), _bytesHeader(hex"ff"), 12);
+        _content(bytes.concat(d, new bytes(256)), _bytesHeader(hex"ff"), 11);
     }
 
     // L test_inline_target_length_hash_and_type_rejected (the Type half is the kernel's exact-ref check)
@@ -222,7 +232,6 @@ contract FilesCarrierRulesTest is FilesUnitBase {
             uint256(1),
             uint256(100_016),
             keccak256("ciphertext digest"),
-            uint256(0),
             uint256(1),
             bytes32(bytes12(keccak256("nonce"))),
             uint256(100_000),
@@ -241,7 +250,6 @@ contract FilesCarrierRulesTest is FilesUnitBase {
             uint256(1),
             cipherText.length,
             sha256(cipherText),
-            uint256(0),
             uint256(1),
             bytes32(bytes12(keccak256("nonce"))),
             plainLength,
@@ -254,20 +262,20 @@ contract FilesCarrierRulesTest is FilesUnitBase {
         RefHeader[] memory h = _bytesHeader(new bytes(17));
         _content(_encrypted(1), h, 0);
         bytes memory d = _encrypted(1);
-        d[9 * 32 + 31] = bytes1(uint8(2)); // plaintextLength + 16 != length
+        d[8 * 32 + 31] = bytes1(uint8(2)); // plaintextLength + 16 != length
         _content(d, h, 5);
         d = _encrypted(1);
-        d[10 * 32 + 31] = 0x01; // a public plaintext fingerprint
+        d[9 * 32 + 31] = 0x01; // a public plaintext fingerprint
         _content(d, h, 5);
         d = _encrypted(1);
-        d[8 * 32 + 24] = 0x01; // nonce wider than 12 bytes
+        d[7 * 32 + 24] = 0x01; // nonce wider than 12 bytes
         _content(d, h, 4);
         // plaintext with a nonce, or with a fingerprint that is not the digest
         d = _descriptor(hex"ff", 0);
-        d[8 * 32] = 0x01;
+        d[7 * 32] = 0x01;
         _content(d, _bytesHeader(hex"ff"), 5);
         d = _descriptor(hex"ff", 0);
-        d[10 * 32] = bytes1(uint8(d[10 * 32]) ^ 1);
+        d[9 * 32] = bytes1(uint8(d[9 * 32]) ^ 1);
         _content(d, _bytesHeader(hex"ff"), 5);
     }
 

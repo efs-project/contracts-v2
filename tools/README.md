@@ -20,6 +20,16 @@ Writes the golden identity vectors for `src/lib/Keys.sol` to `test/vectors/ids.j
 reads the file, and the SDK's `Keys` twin must reproduce it bit for bit. Commit the regenerated file with any
 change to a derivation. The output line names the file, the number of outputs and the vector `typeId`.
 
+## media-vectors.mjs
+
+Media-type vectors for the two content descriptors (`test/vectors/media.json`, `efs/vectors/media/1`): encoded
+`files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty
+media strings with the grammar's code and each rule's refusal code. Computed in JS (viem, and the grammar written from
+the NatSpec in `deploy-plan.mjs` `mediaTypeRefusal`). `pnpm release` writes it, `pnpm release:check` compares it byte
+for byte, and `test/profiles/FilesMediaType.t.sol` asserts every vector against the rules, `EfsFiles` and `Keys`;
+`node tools/media-vectors.mjs` writes it alone from the current build. The Type ids are the release's, so the file
+changes whenever a Files rule's code does.
+
 ## attrib.mjs
 
 Attributes a compiled contract's runtime bytes to source functions, selector wrappers and overhead, using

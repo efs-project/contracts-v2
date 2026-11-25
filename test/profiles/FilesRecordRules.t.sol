@@ -38,7 +38,7 @@ contract FilesRecordRulesTest is FilesUnitBase {
         alias_ = new DirectoryAliasRule(DIR_TYPE);
         stub.setSubject(FILE, 10);
         stub.setSubject(OTHER_FILE, 11);
-        stub.setRecord(CONTENT_REC, CONTENT_TYPE, 5, 352);
+        stub.setRecord(CONTENT_REC, CONTENT_TYPE, 5, 320);
         stub.setRecord(EXTERNAL_REC, EXTERNAL_TYPE, 6, 240);
         stub.setRecord(DIR_REC, DIR_TYPE, 6, 32);
     }
@@ -90,7 +90,7 @@ contract FilesRecordRulesTest is FilesUnitBase {
         _refuses(root, _ctx(), _rootRef(FILE, bytes32(0)), _none(), _noHeaders(), 7);
         // a descriptor Type's header with no admission (never stored) is not admitted
         bytes32 ghost = keccak256("ghost");
-        stub.setRecord(ghost, CONTENT_TYPE, 0, 352);
+        stub.setRecord(ghost, CONTENT_TYPE, 0, 320);
         _refuses(root, _ctx(), _rootRef(FILE, ghost), _none(), _noHeaders(), 7);
         // form 1 is exactly three words
         _refuses(root, _ctx(), abi.encode(FILE, uint256(1)), _none(), _noHeaders(), 6);

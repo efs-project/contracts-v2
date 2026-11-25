@@ -53,14 +53,20 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         chunk holding byte `offset` (found by descending the span tree by its lengths, O(depth) record reads),
 ///         served from `offset` to the chunk's end, with `web3-next-chunk: /<path>?offset=<next>[&lens=…]` unless it
 ///         reaches the end; carrier 1 (remote sentinel) is 404. Form 1 naming `files-external/1`: 307 with
-///         `Location: <locator>`. A directory: with a page reader, 200 `application/json`
+///         `Location: <locator>` (and `x-efs-media-type` when the location declares one). A directory: with a page reader, 200 `application/json`
 ///         `{"entries":[{"name":…,"kind":"file"|"directory"}…],"complete":bool}` from one page of at most
 ///         `LISTING_LIMIT` rows and `x-efs-listing: complete|partial`; without one, 200 `directory`.
 ///
-///         Headers: `Content-Type` (by the final name's extension; listings JSON; refusals text), `Content-Length`
-///         (the whole file's length), `x-efs-record` (the revision record, or the directory record), `x-efs-sha256`
-///         (a descriptor's digest: the author's claim for carrier 2 and external locations, verify after reading),
-///         `x-efs-cipher` (a nonzero cipher word: the stored ciphertext is served).
+///         Headers: `Content-Type` (a `files-content/1` descriptor's declared media type when it has one, else by
+///         the final name's extension; listings JSON; refusals text), `X-Content-Type-Options: nosniff` (only with
+///         a declared media type, so a browser cannot upgrade an author's `text/plain` to HTML; the extension path
+///         sends none), `Content-Length` (the whole file's length), `x-efs-record` (the revision record, or the
+///         directory record), `x-efs-sha256` (a descriptor's digest: the author's claim for carrier 2 and external
+///         locations, verify after reading), `x-efs-cipher` (a nonzero cipher word: the stored ciphertext is
+///         served), `x-efs-media-type` (a `files-external/1` location's declared media type, on the 307, so a
+///         client that does not follow the redirect still learns it). A media type is the rest of a descriptor's
+///         body; a descriptor shorter than its words, or a location whose locator length is 0 or runs past the
+///         body, is a 500.
 ///
 ///         Statuses (never a revert for anything a URL can cause): 200 served; 307 external location; 400 malformed
 ///         URL; 404 not found, removed (masked), file used as a folder, or remote-only content; 416 `offset` at or
@@ -289,25 +295,34 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     {
         (bytes32 typeId,, uint32 length,,) = ILedgerHot(LEDGER).recordHeader(d);
         if (typeId == EXTERNAL_TYPE) {
-            // [sentinel, 2, 2, 1, length, sha256, locatorLength] ‖ locator
+            // [sentinel, 2, 2, 1, length, sha256, locatorLength] ‖ locator ‖ media (the rest of the body)
             if (length <= 224) _fail(500, "malformed location");
             bytes memory b = _slice(d, 0, length);
-            if (224 + uint256(_word(b, 192)) != length) _fail(500, "malformed location");
+            uint256 locator = uint256(_word(b, 192));
+            if (locator == 0 || locator > length - 224) _fail(500, "malformed location");
             _add(q, "x-efs-sha256", _hex(_word(b, 160)));
-            _add(q, "Location", string(_tail(b, 224)));
+            _add(q, "Location", string(_cut(b, 224, locator)));
+            if (224 + locator < length) {
+                _add(q, "x-efs-media-type", string(_tail(b, 224 + locator)));
+            }
             return (307, "", _headers(q));
         }
-        if (typeId != CONTENT_TYPE || length != 352) _fail(500, "revision names no descriptor");
-        // [bytesRef, version, carrier, hashAlg, length, sha256, media, cipher, …]
-        bytes32[] memory w = _words(d, 0, 8);
+        if (typeId != CONTENT_TYPE || length < 320) _fail(500, "revision names no descriptor");
+        // [bytesRef, version, carrier, hashAlg, length, sha256, cipher, …] ‖ media (the rest of the body)
+        bytes32[] memory w = _words(d, 0, 7);
         uint256 carrier = uint256(w[2]);
         uint256 size = uint256(w[4]);
         if (carrier == CARRIER_REMOTE) _fail(404, "not found: remote-only content");
         if (carrier > CARRIER_SPAN) _fail(500, "unknown carrier");
         _range(q.offset, size);
+        if (length > 320) {
+            // the declared media type replaces the extension's guess (Content-Type is always header 0)
+            q.h[0].value = string(_slice(d, 320, length - 320));
+            _add(q, "X-Content-Type-Options", "nosniff");
+        }
         _add(q, "Content-Length", _dec(size));
         _add(q, "x-efs-sha256", _hex(w[5]));
-        if (w[7] != 0) _add(q, "x-efs-cipher", _dec(uint256(w[7])));
+        if (w[6] != 0) _add(q, "x-efs-cipher", _dec(uint256(w[6])));
         bytes memory chunk = _chunk(w[0], carrier == CARRIER_SPAN, size, q.offset);
         uint256 next = q.offset + chunk.length;
         if (next < size) _add(q, "web3-next-chunk", _nextUrl(q, resource, next));
@@ -658,9 +673,12 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     }
 
     /// `b[from:]` (empty when `from` is at or past the end).
-    function _tail(bytes memory b, uint256 from) private pure returns (bytes memory out) {
-        if (from >= b.length) return out;
-        uint256 n = b.length - from;
+    function _tail(bytes memory b, uint256 from) private pure returns (bytes memory) {
+        return from >= b.length ? bytes("") : _cut(b, from, b.length - from);
+    }
+
+    /// `b[from:from + n]` (the caller keeps it inside `b`).
+    function _cut(bytes memory b, uint256 from, uint256 n) private pure returns (bytes memory out) {
         out = new bytes(n);
         assembly ("memory-safe") {
             mcopy(add(out, 32), add(add(b, 32), from), n)

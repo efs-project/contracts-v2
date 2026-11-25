@@ -7,7 +7,7 @@ import {FilesUnitBase} from "./FilesUnitBase.sol";
 
 /// @notice `files-external/1` (docs/LARGE-FILES.md): the structural locator law — a URI of 1..2,048 printable ASCII
 ///         bytes starting with an RFC 3986 scheme and at least one byte after the colon, with no scheme allowlist —
-///         the 7-word head, the empty-sentinel reference and the context check; a fuzzed differential against a
+///         the 7-word head (the media type, the body's tail, is `FilesMediaType.t.sol`), the empty-sentinel reference and the context check; a fuzzed differential against a
 ///         byte-at-a-time reference of the law.
 contract FilesExternalRuleTest is FilesUnitBase {
     FilesExternalContentRule internal ext;
@@ -166,8 +166,17 @@ contract FilesExternalRuleTest is FilesUnitBase {
 
     function test_the_first_colon_in_every_lane() public {
         // "a" + "b"s + ":" + "x"s: valid iff the colon is not the last byte; a second colon never matters
+        // each case's memory is released before the next (nothing outlives it): about 7,000 calls would otherwise
+        // grow memory past the test's gas
+        uint256 free;
+        assembly ("memory-safe") {
+            free := mload(0x40)
+        }
         for (uint256 n = 2; n <= 70; ++n) {
             for (uint256 c = 1; c < n; ++c) {
+                assembly ("memory-safe") {
+                    mstore(0x40, free)
+                }
                 bytes memory u = new bytes(n);
                 for (uint256 i; i < n; ++i) {
                     u[i] = i == 0
@@ -265,11 +274,17 @@ contract FilesExternalRuleTest is FilesUnitBase {
         _ext(v1, 4);
     }
 
-    function test_external_locator_length_is_the_body_tail() public {
+    function test_external_locator_length_and_the_media_tail() public {
         bytes memory b = _external(5, bytes(AR));
-        _ext(bytes.concat(b, "x"), 5); // a trailing byte the length word does not cover
+        // bytes after the locator are the media type, judged by its grammar ("x" has no "/")
+        _ext(bytes.concat(b, "x"), 9);
+        _ext(bytes.concat(b, "text/plain"), 0);
+        // a locator length past the body
         b[223] = bytes1(uint8(b[223]) + 1);
         _ext(b, 5);
+        // a shorter locator length leaves the locator's last byte ("A") as the media type: refused
+        b[223] = bytes1(uint8(b[223]) - 2);
+        _ext(b, 9);
         _ext(new bytes(223), 2);
         // a length word claiming a 2,049-byte locator that is present
         _ext(_external(5, bytes.concat(_long(2_048), "x")), 5);

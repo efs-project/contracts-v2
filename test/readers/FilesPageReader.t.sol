@@ -403,7 +403,7 @@ contract FilesPageReaderTest is FilesPageHarness {
         b[0] = EfsFiles.bytesBody("");
         a[0] = EfsFiles.publish(t.bytes_, b[0]);
         bytes32 sentinel = EfsFiles.recordId(t.bytes_, b[0]);
-        b[1] = EfsFiles.externalBody(sentinel, payload.length, sha256(payload), locator);
+        b[1] = EfsFiles.externalBody(sentinel, payload.length, sha256(payload), locator, "");
         a[1] = EfsFiles.publish(t.external_, b[1]);
         bytes32 ext = EfsFiles.recordId(t.external_, b[1]);
         (Action[] memory fa, bytes[] memory fb, bytes32 file, bytes32 rev) =
@@ -449,17 +449,32 @@ contract FilesPageReaderTest is FilesPageHarness {
         assertEq(EfsFiles.directoryRecord(t.directory, Keys.subject(p, keccak256("docs"))), docs);
         assertEq(EfsFiles.bytesBody("x"), bytes.concat(sha256("x"), "x"));
         EfsFiles.Content memory c;
-        assertEq(EfsFiles.contentBody(c).length, 352);
-        assertEq(EfsFiles.externalBody(0, 1, 0, "ar://x").length, 7 * 32 + 6);
+        assertEq(EfsFiles.contentBody(c).length, 320);
+        c.media = "image/png";
+        c.cipher = 1;
+        assertEq(EfsFiles.contentBody(c).length, 320 + 9, "the media type is the rest of the body");
+        assertEq(uint256(bytes32(_slice(EfsFiles.contentBody(c), 192))), 1, "word 6 is the cipher");
+        assertEq(EfsFiles.externalBody(0, 1, 0, "ar://x", "").length, 7 * 32 + 6);
+        bytes memory x = EfsFiles.externalBody(0, 1, 0, "ar://x", "image/png");
+        assertEq(x.length, 7 * 32 + 6 + 9);
+        assertEq(uint256(bytes32(_slice(x, 192))), 6, "word 6 is the locator length");
     }
 
     function test_efs_files_revision_and_span_encoders() public view {
-        assertEq(EfsFiles.contentBody(0, 2, 5, 0, 0).length, 352);
+        assertEq(EfsFiles.contentBody(0, 2, 5, 0, "").length, 320);
+        assertEq(EfsFiles.contentBody(0, 2, 5, 0, "text/plain").length, 330);
         assertEq(EfsFiles.rootBody(fileA, "d"), bytes.concat(abi.encode(fileA, uint256(0)), "d"));
         assertEq(EfsFiles.rootRefBody(fileA, docs), abi.encode(fileA, uint256(1), docs));
         assertEq(
             EfsFiles.childRefBody(docs, fileA, docs), abi.encode(docs, fileA, uint256(1), docs)
         );
         assertEq(EfsFiles.spanBody(docs, docs, 9), abi.encode(docs, docs, uint256(9)));
+    }
+
+    /// The 32 bytes of `b` at `at`.
+    function _slice(bytes memory b, uint256 at) internal pure returns (bytes32 w) {
+        assembly ("memory-safe") {
+            w := mload(add(add(b, 32), at))
+        }
     }
 }

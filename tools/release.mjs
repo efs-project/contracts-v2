@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 // The release manifest of design §13 (`efs-contracts-release/1`), generated from the identity build in out/, the
 // auxiliary AST build in out/release-ast (immutable names; its bytecode must equal out/'s, the double-build check)
-// and the chain-free plan facts of tools/deploy-plan.mjs. It also writes release/errors.json (the error catalog)
-// and artifacts/<Unit>.json (ABI union, bytecode, immutables, method identifiers) and cross-checks the JS Files
+// and the chain-free plan facts of tools/deploy-plan.mjs. It also writes release/errors.json (the error catalog),
+// artifacts/<Unit>.json (ABI union, bytecode, immutables, method identifiers) and test/vectors/media.json (the
+// media-type vectors of tools/media-vectors.mjs for the release Type ids) and cross-checks the JS Files
 // twin against the Solidity FilesTypes through `forge script script/Genesis.s.sol --sig "profile(address)"`.
 //
 //   node tools/release.mjs [--skip-script 1] [--check 1]
 //
 // `--check 1` writes nothing: it regenerates every document in memory and fails when a committed file differs
-// (release/errors.json, artifacts/*.json and deploy/plan.json byte for byte; release/release.json without the facts
+// (release/errors.json, artifacts/*.json, test/vectors/media.json and deploy/plan.json byte for byte; release/release.json without the facts
 // of the machine and the moment: source commit, forge and node versions, build platform, the double-build count and
 // the script cross-check record). CI runs it after the suites, so a push whose snapshot is stale against its own
 // sources cannot merge. Without an AST build (CI) the immutable names are the manifest's and their offsets are checked
@@ -22,6 +23,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { arch, platform, release as osRelease } from "node:os";
 import { join, relative } from "node:path";
 import { keccak256, toFunctionSelector } from "viem";
+import { mediaVectors } from "./media-vectors.mjs";
 import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-script", "check"]);
@@ -129,6 +131,9 @@ for (const name of Object.keys(UNITS)) {
 // artifacts/index.json: what a deploy from artifacts/ alone needs besides the units (tools/deploy-plan.mjs "release" layout)
 emit("artifacts/index.json", toJSON({ schema: "efs-artifacts-index/1", layoutId: plan.layoutId, hotAbiId: plan.hotAbiId, hotAbiIdString: plan.hotAbiIdString, units: Object.keys(UNITS), manifest: "release/release.json", note: "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`" }));
 
+// ---- test/vectors/media.json: media-type encodings and grammar verdicts for the release Type ids -------------------
+emit("test/vectors/media.json", toJSON(mediaVectors(plan)));
+
 // ---- cross-check: the JS Files twin against the Solidity FilesTypes ------------------------------------------------
 let scriptCheck = { ran: false };
 if (!o["skip-script"]) {
@@ -190,6 +195,7 @@ const constants = {
     // fixed by each rule's law, not a named constant: FilesContentRule / FilesExternalContentRule refusal code 4
     contentVersion: 1, externalVersion: 2,
     chunking: { id: "efs/chunking/1", chunkPayload: efsFiles.CHUNK_PAYLOAD, spec: "docs/LARGE-FILES.md" },
+    mediaType: { maxLength: filesProfile.MEDIA_MAX, empty: "unknown", spec: "docs/LARGE-FILES.md \"Media types\"", vectors: "test/vectors/media.json" },
   },
 };
 for (const [k, n] of [["actionKinds", 9], ["capabilities", 10], ["purposes", 3]]) assert.equal(Object.keys(constants[k]).length, n, `constants.${k}: expected ${n} entries`);
@@ -294,7 +300,7 @@ const manifest = {
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
   errors: { path: "release/errors.json", sha256: sha256(Buffer.from(generated.get("release/errors.json"))), count: Object.keys(errors).length },
   abi: { interfaces: "test/snapshots/abi/", units: "artifacts/" },
-  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json"].map((p) => [p, sha256(readFileSync(join(root, p)))])),
+  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
   dependencyRoot: null,
   deployPlan: { path: "deploy/plan.json", genesis: plan.addresses.genesis, factory: plan.factory },
 };
@@ -321,7 +327,7 @@ if (CHECK) {
     console.error(`release: the committed snapshot does not match this build (${drift.length}):\n  ${drift.join("\n  ")}\nRegenerate it in the same push: forge build, the AST build, \`pnpm run release\`, \`pnpm run plan\` (tools/RELEASE.md).`);
     process.exit(1);
   }
-  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json${scriptCheck.ran ? "; FilesTypes twin == forge script" : ""})`);
+  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json, test/vectors/media.json${scriptCheck.ran ? "; FilesTypes twin == forge script" : ""})`);
   process.exit(0);
 }
 const digest = sha256(readFileSync(join(root, "release/release.json")));

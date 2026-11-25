@@ -147,7 +147,7 @@ contract GasModelTest is FilesRecipesBase {
         }
         for (uint256 i; i < 6; ++i) {
             (a[3 + i], b[3 + i]) =
-                _publish(T_CONTENT, EfsFiles.contentBody(c[34 + i], 0, 32, cDigest[34 + i], 0));
+                _publish(T_CONTENT, EfsFiles.contentBody(c[34 + i], 0, 32, cDigest[34 + i], ""));
             desc[i] = _id(T_CONTENT, b[3 + i]);
         }
         (a[9], b[9]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(s[0]));
@@ -290,8 +290,8 @@ contract GasModelTest is FilesRecipesBase {
     function test_model_publish_content_carrier0() public {
         bytes[3] memory bodies;
         for (uint256 i; i < 3; ++i) {
-            bodies[i] = EfsFiles.contentBody(c[6 + i], 0, 32, cDigest[6 + i], 0);
-            assertEq(bodies[i].length, 352);
+            bodies[i] = EfsFiles.contentBody(c[6 + i], 0, 32, cDigest[6 + i], "");
+            assertEq(bodies[i].length, 320);
         }
         _publishPair("pub content c0", T_CONTENT, bodies);
     }
@@ -299,7 +299,7 @@ contract GasModelTest is FilesRecipesBase {
     function test_model_publish_content_carrier2() public {
         bytes[3] memory bodies;
         for (uint256 i; i < 3; ++i) {
-            bodies[i] = EfsFiles.contentBody(sp[i], 2, 64, _salt("claim", i), 0);
+            bodies[i] = EfsFiles.contentBody(sp[i], 2, 64, _salt("claim", i), "");
         }
         _publishPair("pub content c2", T_CONTENT, bodies);
     }
@@ -312,7 +312,7 @@ contract GasModelTest is FilesRecipesBase {
         }
         bytes[3] memory bodies;
         for (uint256 i; i < 3; ++i) {
-            bodies[i] = EfsFiles.externalBody(sentinel, 1000 + i, _salt("ext", i), locator);
+            bodies[i] = EfsFiles.externalBody(sentinel, 1000 + i, _salt("ext", i), locator, "");
             assertEq(bodies[i].length, 224 + len);
         }
         _publishPair(string.concat("pub external ", vm.toString(len)), T_EXTERNAL, bodies);
@@ -542,7 +542,7 @@ contract GasModelTest is FilesRecipesBase {
         EfsFiles.Types memory t = _types();
         bytes memory payload = _payload(40_000, "large file");
         (Action[] memory a, bytes[] memory b, bytes32 descriptor) =
-            EfsFiles.storeContent(t, payload, 8160, 0);
+            EfsFiles.storeContent(t, payload, 8160, "");
         (Action[] memory fa, bytes[] memory fb,,) =
             EfsFiles.createFileRef(t, p, rootDir, keccak256("big.bin"), "big.bin", descriptor, true);
         (a, b) = EfsFiles.concat(a, b, fa, fb);

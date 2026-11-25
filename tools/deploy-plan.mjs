@@ -305,8 +305,8 @@ const SPECS = [
   { description: "abi.encode(seedSubject); a directory is this record, seeded by a created subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel", dependencyClass: 1, refHeaderWords: 1, fields: [] },
-  { description: "11 words [bytesRef, version, carrier, hashAlg, length, sha256, media, cipher, nonce12, plaintextLength, plaintextSHA256OrZero]; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
-  { description: "7 words [bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
+  { description: "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
+  { description: "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1, the rest of the body", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
   { description: "abi.encode(targetObjectId, kind); kind 1 a files-directory/1 record, 2 a created file subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(bytes32 kind, uint256 revision, bytes note); kind frozen | successor | migration", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(left, right, length); each child a files-bytes/1 record with a nonempty payload or a files-span/1 record; length is the sum of the children payload lengths, below 2^64", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_LEFT, SEMANTIC_SPAN_CHILD, () => REF_ANY], [FIELD_RIGHT, SEMANTIC_SPAN_CHILD, () => REF_ANY]] },
@@ -646,13 +646,48 @@ export function splitPublications(bodies, maxActions, maxBodyBytes) {
   return ends;
 }
 
+/** `files-content/1` (EfsFiles.contentBody, plaintext): the ten words, then the media bytes as the rest of the body
+ *  (docs/LARGE-FILES.md). `media` is a string, already valid (`mediaTypeRefusal(media) === 0`). */
+export function filesContentBody({ bytesRef: ref, carrier, length, sha256: digest, media = "" }) {
+  const m = stringToHex(media);
+  assert.equal(mediaTypeRefusal(m), 0, `invalid media type ${JSON.stringify(media)}`);
+  return concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256", "bytes32", "uint256", "bytes32"], [ref, 1n, BigInt(carrier), 1n, BigInt(length), digest, 0n, ZERO, BigInt(length), digest]), m]);
+}
+/** `files-external/1` (EfsFiles.externalBody): seven words, then the locator, then the media bytes (the rest). */
+export function filesExternalBody({ sentinel, length, sha256: digest, locator, media = "" }) {
+  const l = stringToHex(locator);
+  const m = stringToHex(media);
+  assert.equal(mediaTypeRefusal(m), 0, `invalid media type ${JSON.stringify(media)}`);
+  return concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256"], [sentinel, 2n, 2n, 1n, BigInt(length), digest, BigInt(size(l))]), l, m]);
+}
+/** The media-type grammar of `FilesProfile.mediaTypeRefusal` (hex in): 0 valid (empty is valid: unknown), else the
+ *  first refusal: 1 longer than 255 bytes, 2 a bad type name, 3 no "/" after the type, 4 a bad subtype name, 5 the
+ *  subtype is followed by a byte other than ";", 6 a parameter byte outside 0x20..0x7e. A name is an RFC 6838
+ *  restricted-name in lowercase: 1..127 bytes, first a-z or 0-9, then a-z 0-9 ! # $ & - ^ _ . +. */
+export function mediaTypeRefusal(hex) {
+  const b = Buffer.from(hex.slice(2), "hex");
+  if (b.length === 0) return 0;
+  if (b.length > 255) return 1;
+  const first = (c) => (c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39);
+  const rest = (c) => first(c) || "!#$&-^_.+".includes(String.fromCharCode(c));
+  const name = (i) => { if (i >= b.length || !first(b[i])) return -1; let j = i + 1; while (j < b.length && rest(b[j])) j++; return j - i > 127 ? -1 : j; };
+  const t = name(0);
+  if (t < 0) return 2;
+  if (t >= b.length || b[t] !== 0x2f) return 3;
+  const s = name(t + 1);
+  if (s < 0) return 4;
+  if (s === b.length) return 0;
+  if (b[s] !== 0x3b) return 5;
+  for (let i = s + 1; i < b.length; i++) if (b[i] < 0x20 || b[i] > 0x7e) return 6;
+  return 0;
+}
 /** The canonical chunk payload of efs/chunking/1 (EfsFiles.CHUNK_PAYLOAD). */
 export const CHUNK_PAYLOAD = 8160;
-export const SEED_VERSION = "efs-fixture-seed/2";
+export const SEED_VERSION = "efs-fixture-seed/3";
 /** The seed's big file: about 20 KB of deterministic bytes (three chunks, two span nodes). */
-export const BIG_FILE = { name: "big.bin", length: 20_000, seed: h("efs-fixture/big.bin") };
+export const BIG_FILE = { name: "big.bin", length: 20_000, seed: h("efs-fixture/big.bin"), media: "application/octet-stream" };
 /** The seed's remote file: a files-external/1 record naming a web3:// locator for a short known text. */
-export const REMOTE_FILE = { name: "remote.txt", text: "This file lives at its locator, not on the ledger.\n", locator: "web3://0x0000000000000000000000000000000000000000:31337/remote.txt" };
+export const REMOTE_FILE = { name: "remote.txt", text: "This file lives at its locator, not on the ledger.\n", locator: "web3://0x0000000000000000000000000000000000000000:31337/remote.txt", media: "text/plain; charset=utf-8" };
 
 /**
  * The seed of design §12.2 (G22) and docs/LARGE-FILES.md, as the fixture principal: the root; the folder docs/;
@@ -702,7 +737,7 @@ export function seedPlan({ ids, principalId, limits = LIMITS }) {
   const bigPayload = fixturePayload(BIG_FILE.length, BIG_FILE.seed);
   const tree = chunkPayload(ids, bigPayload);
   const bigSha = sha256(bigPayload);
-  const contentBody = enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256", "uint256", "bytes32", "uint256", "bytes32"], [tree.root, 1n, tree.isSpan ? 2n : 0n, 1n, BigInt(BIG_FILE.length), bigSha, 0n, 0n, ZERO, BigInt(BIG_FILE.length), bigSha]);
+  const contentBody = filesContentBody({ bytesRef: tree.root, carrier: tree.isSpan ? 2 : 0, length: BIG_FILE.length, sha256: bigSha, media: BIG_FILE.media });
   const contentId = keys.record(ids[T.CONTENT], contentBody);
   const big = fileIn("big.bin", BIG_FILE.name, 1, enc(["bytes32"], [contentId]));
   const bigList = [...tree.bodies.map((x) => publish(x.typeId, x.body)), publish(ids[T.CONTENT], contentBody), ...big.actions];
@@ -723,7 +758,7 @@ export function seedPlan({ ids, principalId, limits = LIMITS }) {
   const sentinelBody = concat([sha256("0x"), "0x"]);
   const sentinelId = keys.record(ids[T.BYTES], sentinelBody);
   const locator = stringToHex(REMOTE_FILE.locator);
-  const externalBody = concat([enc(["bytes32", "uint256", "uint256", "uint256", "uint256", "bytes32", "uint256"], [sentinelId, 2n, 2n, 1n, BigInt(size(text)), sha256(text), BigInt(size(locator))]), locator]);
+  const externalBody = filesExternalBody({ sentinel: sentinelId, length: size(text), sha256: sha256(text), locator: REMOTE_FILE.locator, media: REMOTE_FILE.media });
   const externalId = keys.record(ids[T.EXTERNAL], externalBody);
   const remote = fileIn("remote.txt", REMOTE_FILE.name, 1, enc(["bytes32"], [externalId]));
   steps.push(step("G22.remote", "seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)", [publish(ids[T.BYTES], sentinelBody), publish(ids[T.EXTERNAL], externalBody), ...remote.actions], { subject: remote.file }, "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"));
@@ -750,8 +785,8 @@ export function seedPlan({ ids, principalId, limits = LIMITS }) {
       file,
       files: [
         { ...readme.ids, length: size(readmeText), sha256: sha256(readmeText) },
-        { ...big.ids, contentRecordId: contentId, spanRootId: tree.root, length: BIG_FILE.length, sha256: bigSha, chunkCount: tree.chunks.length, spanCount: tree.spans.length, chunkPayload: CHUNK_PAYLOAD, payloadSeed: BIG_FILE.seed, publications: ends.length },
-        { ...remote.ids, externalRecordId: externalId, sentinelRecordId: sentinelId, locator: REMOTE_FILE.locator, length: size(text), sha256: sha256(text), text: REMOTE_FILE.text },
+        { ...big.ids, contentRecordId: contentId, media: BIG_FILE.media, spanRootId: tree.root, length: BIG_FILE.length, sha256: bigSha, chunkCount: tree.chunks.length, spanCount: tree.spans.length, chunkPayload: CHUNK_PAYLOAD, payloadSeed: BIG_FILE.seed, publications: ends.length },
+        { ...remote.ids, externalRecordId: externalId, sentinelRecordId: sentinelId, locator: REMOTE_FILE.locator, media: REMOTE_FILE.media, length: size(text), sha256: sha256(text), text: REMOTE_FILE.text },
       ],
       counts: { admissions, records: records.size, bindings: bindings.size, publications: steps.length },
     },
