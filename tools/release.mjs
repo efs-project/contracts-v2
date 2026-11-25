@@ -293,6 +293,8 @@ const gasModel = {
   },
   planning: model.planning,
   tagLists: model.tagLists,
+  // the topic readers' call bounds (gas/model.json `reads`; the terms and rows stay in the model)
+  reads: { callGasCap: model.reads.callGasCap, marginPercent: model.reads.marginPercent, recommended: Object.fromEntries(Object.entries(model.reads.schedules).map(([k, v]) => [k, v.recommended])) },
   envelope: {
     what: "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",
     txGasCap: TX_GAS_CAP, txGasCapRule: "EIP-7825", headroomPercent: HEADROOM_PERCENT,
