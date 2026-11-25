@@ -387,6 +387,8 @@ equal; see HARNESS-BUG below).
 | `gas/report.json` | `efs-gas-report/1` (below). |
 | `schemas/*.schema.json` | JSON Schemas (draft 2020-12) for the six documents above and the lease (`efs-fixture-lease-1`). `verify` validates every document present against them, using the subset in `deploy-plan.mjs validate`. They are drafts: `schemas/README.md` says release schemas land after review. |
 
+**Provisional Topics Type ids.** The Type ids of `topic-word/1`, `topic/1` and `text/1` are PROVISIONAL until a committed generator produces the refused code point table (and its JS copy and the SDK's vectors) from one pinned Unicode version, because that table is part of the word and text rules' code and so of those Type ids; this must be closed before any lasting deployment.
+
 ## What `verify` reproduces
 
 408 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
@@ -588,13 +590,17 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 7. **G17: `BitmapStore` gets three families, not two.** The design lists `[scope, live-scope]`; the code and
    `test/harness/IndexDeploy.sol` use `[scope, roster, live-scope]` (roster is `NOT_MAINTAINED`). The plan follows
    the code.
-8. **G19: `RealmIndex`' constructor differs from the design.** It is `(ledger, hotAbiId, decoder, posting, bitmap,
-   units, specs, work)`, with no `layoutId` (a constant) and no build arguments, and it reads nothing from the ledger
-   (§8.2 says it reads `counts()` and `layoutId()`). The plan passes the real G7 decoder; the suites pass
-   `address(0)`.
+8. **G19a/G19: the index is two contracts (step 3a).** **G19a** deploys `IndexReads(ledger, hotAbiId, posting, bitmap,
+   units, specs, work)`, which holds the manifest and answers the forwarded reads; **G19** deploys
+   `RealmIndex(ledger, decoder, reads)`, which copies units, specs and work model from it and folds its address and
+   codehash into the manifest hash (header `efs/index-manifest/2`). Neither takes a `layoutId` (a constant) or build
+   arguments, and neither reads the ledger at construction (§8.2 says it reads `counts()` and `layoutId()`). The plan
+   passes the real G7 decoder; the suites pass `address(0)`. `efs-deployment.json` records `index.runtimeCodehash` and
+   `index.reads {address, runtimeCodehash}`; `verify` checks both codehashes on chain and `readsContract()`.
 9. **Work model.** `src/` has no release work model, so the index uses
-   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()`. Limits come from `KernelDeploy.s1Limits()`
-   (the §4.2 values).
+   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (re-measured at step 3a, design §10.4).
+   Limits come from `KernelDeploy.s1Limits()` (the §4.2 values; under `FOUNDRY_PROFILE=amsterdam` the fresh-slot floor
+   price is the Glamsterdam execution-gas 12,100, `GLAMSTERDAM_FLOOR` in `tools/deploy-plan.mjs`).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;
     they are not "generated for layoutId" by argument.
 11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20. The facets `LedgerReads` and
