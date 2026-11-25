@@ -6,7 +6,7 @@
   "required": ["schema", "seedVersion", "chainId", "ledger", "executionSet", "revision", "root", "folder", "file", "counts", "typeIds", "catalogCount", "heads", "records"],
   "properties": {
     "schema": { "const": "efs-fixture-expected/1" },
-    "root": { "type": "object", "required": ["directoryRecordId", "subjectId", "principalId"] },
+    "root": { "type": "object", "required": ["directoryRecordId", "principalId"] },
     "counts": { "type": "object", "required": ["admissions", "records", "bindings", "publications"] },
     "heads": { "type": "array", "items": { "type": "object", "required": ["key", "state", "revision", "target"] } },
     "records": { "type": "array", "items": { "type": "object", "required": ["id", "typeId"] } }

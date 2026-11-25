@@ -36,8 +36,11 @@ contract FilesRecipesTest is FilesRecipesBase {
     function test_root_seed() public view {
         (bytes32 t, uint64 first,,,) = r.hot.recordHeader(rootDir);
         assertEq(t, typeIds[T_DIRECTORY]);
-        assertEq(first, 2);
-        assertEq(r.hot.subjectCreatedAt(rootSubject), 1);
+        assertEq(first, 1, "one PUBLISH, no CREATE");
+        assertEq(r.hot.subjectCreatedAt(rootDir), 0, "a folder is a record, never a subject");
+        (uint64 admissions, uint64 records,,) = r.hot.counts();
+        assertEq(admissions, 1);
+        assertEq(records, 1);
         _assertScope(rootDir, 0, 0, 0);
         (uint64 count,) = _posting(F_BY_TYPE, typeIds[T_DIRECTORY], 0);
         assertEq(count, 1);
@@ -45,15 +48,13 @@ contract FilesRecipesTest is FilesRecipesBase {
     }
 
     function test_recipes_folder_file_edit_move_remove_restore_release() public {
-        // ---- create folder: CREATE, PUBLISH directory, PUBLISH name, BIND(FOLDER, parent, keccak(name) → dir, 0)
-        bytes32 docsSubject = Keys.subject(p, keccak256("docs"));
-        Action[] memory a = new Action[](4);
-        bytes[] memory b = new bytes[](4);
-        a[0] = _create(keccak256("docs"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(docsSubject));
-        bytes32 docsDir = _id(T_DIRECTORY, b[1]);
-        (a[2], b[2]) = _name("docs");
-        a[3] = _bind(Purpose.FOLDER, rootDir, keccak256("docs"), docsDir, 0);
+        // ---- create folder: PUBLISH directory (p, salt), PUBLISH name, BIND(FOLDER, parent, keccak(name) → dir, 0)
+        Action[] memory a = new Action[](3);
+        bytes[] memory b = new bytes[](3);
+        (a[0], b[0]) = _publish(T_DIRECTORY, _dirBody(p, keccak256("docs")));
+        bytes32 docsDir = _id(T_DIRECTORY, b[0]);
+        (a[1], b[1]) = _name("docs");
+        a[2] = _bind(Purpose.FOLDER, rootDir, keccak256("docs"), docsDir, 0);
         _exec("recipe create folder", a, b);
         bytes32 docsKey = _key(Purpose.FOLDER, rootDir, keccak256("docs"));
         _assertScope(rootDir, 1, 1, 1);
@@ -281,20 +282,18 @@ contract FilesRecipesTest is FilesRecipesBase {
 
     // L FilesDirectory test_release_nonempty_directory_placement_preserves_children_and_other_placement
     function test_release_of_a_nonempty_directory_placement_keeps_its_children() public {
-        bytes32 childSubject = Keys.subject(p, keccak256("child"));
         bytes32 file = Keys.subject(p, keccak256("file"));
-        Action[] memory a = new Action[](9);
-        bytes[] memory b = new bytes[](9);
-        a[0] = _create(keccak256("child"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(childSubject));
-        bytes32 childDir = _id(T_DIRECTORY, b[1]);
-        (a[2], b[2]) = _name("child");
-        (a[3], b[3]) = _name("other");
-        a[4] = _bind(Purpose.FOLDER, rootDir, keccak256("child"), childDir, 0);
-        a[5] = _bind(Purpose.FOLDER, rootDir, keccak256("other"), childDir, 0);
-        a[6] = _create(keccak256("file"));
-        (a[7], b[7]) = _name("file");
-        a[8] = _bind(Purpose.FOLDER, childDir, keccak256("file"), file, 0);
+        Action[] memory a = new Action[](8);
+        bytes[] memory b = new bytes[](8);
+        (a[0], b[0]) = _publish(T_DIRECTORY, _dirBody(p, keccak256("child")));
+        bytes32 childDir = _id(T_DIRECTORY, b[0]);
+        (a[1], b[1]) = _name("child");
+        (a[2], b[2]) = _name("other");
+        a[3] = _bind(Purpose.FOLDER, rootDir, keccak256("child"), childDir, 0);
+        a[4] = _bind(Purpose.FOLDER, rootDir, keccak256("other"), childDir, 0);
+        a[5] = _create(keccak256("file"));
+        (a[6], b[6]) = _name("file");
+        a[7] = _bind(Purpose.FOLDER, childDir, keccak256("file"), file, 0);
         _exec("recipe a folder at two names with a file inside", a, b);
         a = new Action[](1);
         b = new bytes[](1);
@@ -310,16 +309,15 @@ contract FilesRecipesTest is FilesRecipesBase {
 
     // L FilesDirectory test_withdrawn_descriptor_remains_valid_and_bind_before_name_parent_publish_is_atomic
     function test_bind_before_its_parent_and_name_then_a_withdrawn_parent_stays_valid() public {
-        bytes32 seed = Keys.subject(p, keccak256("later-dir"));
-        bytes32 parent = _id(T_DIRECTORY, abi.encode(seed));
+        bytes memory dirBody = _dirBody(p, keccak256("later-dir"));
+        bytes32 parent = _id(T_DIRECTORY, dirBody);
         bytes32 target = Keys.subject(p, keccak256("later-file"));
-        Action[] memory a = new Action[](5);
-        bytes[] memory b = new bytes[](5);
-        a[0] = _create(keccak256("later-dir"));
-        a[1] = _create(keccak256("later-file"));
-        a[2] = _bind(Purpose.FOLDER, parent, keccak256("later"), target, 0);
-        (a[3], b[3]) = _publish(T_DIRECTORY, abi.encode(seed));
-        (a[4], b[4]) = _name("later");
+        Action[] memory a = new Action[](4);
+        bytes[] memory b = new bytes[](4);
+        a[0] = _create(keccak256("later-file"));
+        a[1] = _bind(Purpose.FOLDER, parent, keccak256("later"), target, 0);
+        (a[2], b[2]) = _publish(T_DIRECTORY, dirBody);
+        (a[3], b[3]) = _name("later");
         _exec("recipe bind before its parent and name publish", a, b);
         (, uint64 first,, uint64 occurrences,) = r.hot.recordHeader(parent);
         assertEq(occurrences, 1);
@@ -384,9 +382,12 @@ contract FilesRecipesTest is FilesRecipesBase {
         Native memory c = _ctx(a);
         vm.expectRevert(abi.encodeWithSelector(E_REF.selector, uint8(0), uint8(0), uint8(1)));
         r.ledger.execute(a, b, c, "");
-        // an unrelated Type whose word0 is the file (a directory record seeded by the file subject)
-        bytes32 unrelated = _id(T_DIRECTORY, abi.encode(file));
-        (a[0], b[0]) = _publish(T_DIRECTORY, abi.encode(file));
+        // an unrelated Type whose word0 is the file (a directory-alias/1 record naming the file)
+        bytes32 unrelated = _id(T_ALIAS, abi.encode(file, uint256(2)));
+        (a[0], b[0]) = _publish(T_ALIAS, abi.encode(file, uint256(2)));
+        _exec("recipe publish alias", a, b);
+        // a steady 1-leaf PUBLISH of a folder (64-byte body)
+        (a[0], b[0]) = _publish(T_DIRECTORY, _dirBody(p, keccak256("steady")));
         _exec("recipe publish directory", a, b);
         (a[0], b[0]) = _publish(T_CHILD, bytes.concat(abi.encode(unrelated, file, uint256(0)), "x"));
         c = _ctx(a);
@@ -454,14 +455,13 @@ contract FilesRecipesTest is FilesRecipesBase {
             assertEq(r.registry.typeInfo(ids[t]).ruleId, other.registry.typeInfo(ids[t]).ruleId);
         }
         // and the other Realm runs the same recipe under the same ids
-        bytes32 seed = Keys.subject(other.principal, keccak256("root"));
-        Action[] memory a = new Action[](2);
-        bytes[] memory b = new bytes[](2);
-        a[0] = _create(keccak256("root"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(seed));
+        bytes memory body = _dirBody(other.principal, keccak256("root"));
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        (a[0], b[0]) = _publish(T_DIRECTORY, body);
         Native memory c;
         other.ledger.execute(a, b, c, "");
-        (bytes32 t_,,,,) = other.hot.recordHeader(Keys.record(ids[T_DIRECTORY], abi.encode(seed)));
+        (bytes32 t_,,,,) = other.hot.recordHeader(Keys.record(ids[T_DIRECTORY], body));
         assertEq(t_, ids[T_DIRECTORY]);
         Readiness memory rd = other.g.index.replayReadiness();
         assertTrue(rd.ready);

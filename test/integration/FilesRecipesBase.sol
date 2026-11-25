@@ -29,7 +29,6 @@ abstract contract FilesRecipesBase is FilesFixture {
     bytes32 internal F_DIGEST = Keys.familyId("digest");
     bytes32 internal F_REFERENCE = Keys.familyId("reference-position");
 
-    bytes32 internal rootSubject;
     bytes32 internal rootDir;
 
     function setUp() public virtual {
@@ -37,20 +36,23 @@ abstract contract FilesRecipesBase is FilesFixture {
         r = _realm(keccak256("files/realm-a"));
         _register(r);
         p = r.principal;
-        // Root (the seed, once per Realm): CREATE(rootSalt), PUBLISH(files-directory/1, rootSubject); no FOLDER bind
-        rootSubject = Keys.subject(p, keccak256("root"));
-        Action[] memory a = new Action[](2);
-        bytes[] memory b = new bytes[](2);
-        a[0] = _create(keccak256("root"));
-        (a[1], b[1]) = _publish(T_DIRECTORY, abi.encode(rootSubject));
-        rootDir = _id(T_DIRECTORY, b[1]);
-        _exec("recipe root seed (CREATE + PUBLISH directory)", a, b);
+        // Root (the seed, once per Realm): PUBLISH(files-directory/1, (p, rootSalt)); no CREATE, no FOLDER bind
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        (a[0], b[0]) = _publish(T_DIRECTORY, _dirBody(p, keccak256("root")));
+        rootDir = _id(T_DIRECTORY, b[0]);
+        _exec("recipe root seed (PUBLISH directory)", a, b);
     }
 
     // ---- builders -----------------------------------------------------------------------------------------------
 
     function _id(uint8 t, bytes memory body) internal view returns (bytes32) {
         return Keys.record(typeIds[t], body);
+    }
+
+    /// `files-directory/1`: `abi.encode(creatorPrincipal, salt)`.
+    function _dirBody(bytes32 creator, bytes32 salt) internal pure returns (bytes memory) {
+        return abi.encode(creator, salt);
     }
 
     function _create(bytes32 salt) internal pure returns (Action memory a) {

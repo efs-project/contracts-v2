@@ -302,7 +302,7 @@ const refField = (id, semantic, ref) => encodePacked(["bytes32", "bytes32", "uin
 const SPECS = [
   { description: "abi.encode(fileSubject, form) || rest; the first revision of a created file subject; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(parentRecord, fileSubject, form) || rest; parent is files-root/1 or files-child/1 of the same file; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 2, fields: [[FIELD_PARENT, SEMANTIC_REVISION, () => REF_ANY]] },
-  { description: "abi.encode(seedSubject); a directory is this record, seeded by a created subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
+  { description: "abi.encode(bytes32 creatorPrincipal, bytes32 salt); a folder is this record, admitted only when the publishing principal is the creator word and the salt is nonzero", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
@@ -681,9 +681,15 @@ export function mediaTypeRefusal(hex) {
   for (let i = s + 1; i < b.length; i++) if (b[i] < 0x20 || b[i] > 0x7e) return 6;
   return 0;
 }
+/** `files-directory/1` (EfsFiles.directoryBody): abi.encode(creatorPrincipal, salt), 64 bytes; FilesDirectoryRule
+ *  admits it only from the creator principal and with a nonzero salt. */
+export function filesDirectoryBody(creatorPrincipal, salt) {
+  assert.notEqual(BigInt(salt), 0n, "a folder salt is nonzero");
+  return enc(["bytes32", "bytes32"], [creatorPrincipal, salt]);
+}
 /** The canonical chunk payload of efs/chunking/1 (EfsFiles.CHUNK_PAYLOAD). */
 export const CHUNK_PAYLOAD = 8160;
-export const SEED_VERSION = "efs-fixture-seed/3";
+export const SEED_VERSION = "efs-fixture-seed/4";
 /** The seed's big file: about 20 KB of deterministic bytes (three chunks, two span nodes). */
 export const BIG_FILE = { name: "big.bin", length: 20_000, seed: h("efs-fixture/big.bin"), media: "application/octet-stream" };
 /** The seed's remote file: a files-external/1 record naming a web3:// locator for a short known text. */
@@ -703,17 +709,17 @@ export function seedPlan({ ids, principalId, limits = LIMITS }) {
   const step = (id, label, list, marker, postCheck) => ({ id, label, actions: list.map((x) => x.a), bodies: list.map((x) => x.b), marker, postCheck });
   const bindingKey = (purpose, subject, role) => keys.binding(principalId, keys.position(purpose, subject, role));
 
+  // a folder is the files-directory/1 record abi.encode(creatorPrincipal, salt), published by its creator; no CREATE
   const rootSalt = h("root");
-  const rootSubject = keys.subject(principalId, rootSalt);
-  const rootBody = enc(["bytes32"], [rootSubject]);
+  const rootBody = filesDirectoryBody(principalId, rootSalt);
   const rootDir = keys.record(ids[T.DIRECTORY], rootBody);
-  const docsSubject = keys.subject(principalId, h("docs"));
-  const docsBody = enc(["bytes32"], [docsSubject]);
+  const docsSalt = h("docs");
+  const docsBody = filesDirectoryBody(principalId, docsSalt);
   const docsDir = keys.record(ids[T.DIRECTORY], docsBody);
   const docsName = stringToHex("docs");
   const steps = [
-    step("G22.root", "seed root (CREATE + PUBLISH files-directory/1)", [create(rootSalt), publish(ids[T.DIRECTORY], rootBody)], { subject: rootSubject }, "recordHeader(root).typeId == files-directory/1; subjectCreatedAt(rootSubject) != 0"),
-    step("G22.folder", "seed folder docs/ (CREATE, PUBLISH directory, PUBLISH name, BIND FOLDER)", [create(h("docs")), publish(ids[T.DIRECTORY], docsBody), publish(ids[T.NAME], docsName), bind(PURPOSE.FOLDER, rootDir, keccak256(docsName), docsDir)], { subject: docsSubject }, "head(FOLDER root/docs) BOUND → docs directory"),
+    step("G22.root", "seed root (PUBLISH files-directory/1)", [publish(ids[T.DIRECTORY], rootBody)], { record: rootDir }, "recordHeader(root).typeId == files-directory/1"),
+    step("G22.folder", "seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)", [publish(ids[T.DIRECTORY], docsBody), publish(ids[T.NAME], docsName), bind(PURPOSE.FOLDER, rootDir, keccak256(docsName), docsDir)], { record: docsDir }, "head(FOLDER root/docs) BOUND → docs directory"),
   ];
   // a file created in docs/ whose first revision is `rest` after abi.encode(file, form)
   const fileIn = (salt, name, form, rest) => {
@@ -780,8 +786,8 @@ export function seedPlan({ ids, principalId, limits = LIMITS }) {
     expected: {
       version: SEED_VERSION,
       principalId,
-      root: { directoryRecordId: rootDir, subjectId: rootSubject, principalId },
-      folder: { name: "docs", directoryRecordId: docsDir, subjectId: docsSubject, nameRecordId: keys.record(ids[T.NAME], docsName), bindingKey: bindingKey(PURPOSE.FOLDER, rootDir, keccak256(docsName)), scopeKey: keys.scope(principalId, PURPOSE.FOLDER, rootDir) },
+      root: { directoryRecordId: rootDir, principalId },
+      folder: { name: "docs", directoryRecordId: docsDir, nameRecordId: keys.record(ids[T.NAME], docsName), bindingKey: bindingKey(PURPOSE.FOLDER, rootDir, keccak256(docsName)), scopeKey: keys.scope(principalId, PURPOSE.FOLDER, rootDir) },
       file,
       files: [
         { ...readme.ids, length: size(readmeText), sha256: sha256(readmeText) },

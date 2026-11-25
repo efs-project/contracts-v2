@@ -60,7 +60,7 @@ contract LargeDirectoryTest is FilesPageHarness {
             (Action[] memory x, bytes[] memory y,) =
                 EfsFiles.createFolder(t, p, big, keccak256(n), n, true);
             (a, b) = EfsFiles.concat(a, b, x, y);
-            if (a.length == 40) {
+            if ((i + 1) % 10 == 0 || i + 1 == FOLDERS) {
                 _exec(a, b);
                 a = new Action[](0);
                 b = new bytes[](0);

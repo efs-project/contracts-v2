@@ -446,7 +446,12 @@ contract FilesPageReaderTest is FilesPageHarness {
         );
         assertEq(EfsFiles.headPosition(fileA), Keys.position(Purpose.HEAD, fileA, 0));
         assertEq(EfsFiles.folderScope(p, rootDir), Keys.scope(p, Purpose.FOLDER, rootDir));
-        assertEq(EfsFiles.directoryRecord(t.directory, Keys.subject(p, keccak256("docs"))), docs);
+        assertEq(EfsFiles.directoryRecord(t.directory, p, keccak256("docs")), docs);
+        assertEq(
+            EfsFiles.directoryRecord(t.directory, p, keccak256("docs")),
+            Keys.record(t.directory, abi.encode(p, keccak256("docs")))
+        );
+        assertEq(EfsFiles.directoryBody(p, keccak256("docs")), abi.encode(p, keccak256("docs")));
         assertEq(EfsFiles.bytesBody("x"), bytes.concat(sha256("x"), "x"));
         EfsFiles.Content memory c;
         assertEq(EfsFiles.contentBody(c).length, 320);

@@ -48,9 +48,9 @@ function run(profile, suite = SUITE) {
 
 // §14 rows with the suite's step that measures each (conditions are the suite's, recorded per row)
 const ROWS = [
-  { row: "Root seed (CREATE + PUBLISH files-directory/1), first write of the principal", test: "test_root_seed()", label: "recipe root seed (CREATE + PUBLISH directory)", design: null },
-  { row: "Native 1-leaf PUBLISH, steady", test: "test_child_parents_through_the_kernel()", label: "recipe publish directory", design: { prague: "≈ 0.50M", amsterdam: "≈ 1.66M" }, conditions: "files-directory/1, 32-byte body (the design row is 41 B / 2 words); the author has published before" },
-  { row: "M1 create folder (CREATE, PUBLISH dir, PUBLISH name, BIND FOLDER), native", test: "test_recipes_folder_file_edit_move_remove_restore_release()", label: "recipe create folder", design: { prague: "≈ 1.2M", amsterdam: "≈ 4.0M" }, conditions: "first placement in the root folder (a fresh scope, not steady)" },
+  { row: "Root seed (PUBLISH files-directory/1), first write of the principal", test: "test_root_seed()", label: "recipe root seed (PUBLISH directory)", design: null },
+  { row: "Native 1-leaf PUBLISH, steady", test: "test_child_parents_through_the_kernel()", label: "recipe publish directory", design: { prague: "≈ 0.50M", amsterdam: "≈ 1.66M" }, conditions: "files-directory/1, 64-byte body (two words, as the design row's 41 B / 2 words); the author has published before" },
+  { row: "M1 create folder (PUBLISH dir, PUBLISH name, BIND FOLDER), native", test: "test_recipes_folder_file_edit_move_remove_restore_release()", label: "recipe create folder", design: { prague: "≈ 1.2M", amsterdam: "≈ 4.0M" }, conditions: "first placement in the root folder (a fresh scope, not steady)" },
   { row: "M1 create file (5 leaves), native, no guard", test: "test_recipes_folder_file_edit_move_remove_restore_release()", label: "recipe create file", design: { prague: "≈ 1.5M", amsterdam: "≈ 5.4M" }, conditions: "first placement in a fresh folder; 18-byte inline document" },
   { row: "Edit (PUBLISH child + BIND HEAD rebind)", test: "test_recipes_folder_file_edit_move_remove_restore_release()", label: "recipe edit", design: { prague: "≈ 0.76M", amsterdam: "≈ 2.45M" } },
   { row: "Rename / move (PUBLISH name + UNBIND + BIND), native", test: "test_recipes_folder_file_edit_move_remove_restore_release()", label: "recipe rename + move", design: { prague: "≈ 1.0M", amsterdam: "≈ 3.2M" } },

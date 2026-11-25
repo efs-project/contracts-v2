@@ -219,4 +219,32 @@ contract KeysTest is Test {
     function testFuzzRecordDerivationsAgree(bytes32 typeId, bytes memory body) public pure {
         assertEq(Keys.record(typeId, body), Keys.recordFromHash(typeId, keccak256(body)));
     }
+
+    /// Record ids (`Keys.record`, domain `efs/record/1`) and subject ids (`Keys.subject`, domain `efs/subject/1`)
+    /// are keccak outputs of three-word preimages whose first word is a different domain tag, so no id is both a
+    /// record and a subject short of a keccak collision. That is what makes the Files routing rule sound: a folder
+    /// is a `files-directory/1` record, a file is a created subject, and the kind of a target is a property of its
+    /// id ("a directory record of this profile's Type, else a created subject, else absent").
+    function testRecordAndSubjectIdsAreSeparateDomains() public pure {
+        assertEq(Keys.DOM_RECORD, keccak256("efs/record/1"));
+        assertEq(Keys.DOM_SUBJECT, keccak256("efs/subject/1"));
+        assertTrue(Keys.DOM_RECORD != Keys.DOM_SUBJECT);
+        // the same two trailing words under the two domains: different preimages, different ids
+        bytes32 x = keccak256("creator");
+        bytes32 y = keccak256("salt");
+        assertTrue(Keys.recordFromHash(x, y) != Keys.subject(x, y));
+        assertEq(Keys.recordFromHash(x, y), keccak256(abi.encode(Keys.DOM_RECORD, x, y)));
+        assertEq(Keys.subject(x, y), keccak256(abi.encode(Keys.DOM_SUBJECT, x, y)));
+    }
+
+    function testFuzzRecordAndSubjectIdsNeverCoincide(bytes32 a, bytes32 b, bytes32 c, bytes32 d)
+        public
+        pure
+    {
+        assertTrue(Keys.recordFromHash(a, b) != Keys.subject(a, b));
+        assertTrue(Keys.recordFromHash(a, b) != Keys.subject(c, d));
+        // a folder record (creator, salt) is never the subject the same creator mints with the same salt
+        bytes32 dirType = keccak256("test/files/directory-type");
+        assertTrue(Keys.record(dirType, abi.encode(a, b)) != Keys.subject(a, b));
+    }
 }

@@ -30,9 +30,9 @@ contract GasModelTest is FilesRecipesBase {
     bytes32 internal sentinel; // the empty files-bytes/1 record
     bytes32[3] internal sp; // files-span/1 records over c[30..36)
     bytes32[6] internal desc; // files-content/1 carrier 0 over c[34..40)
-    bytes32 internal d1; // a folder (directory of s[0])
-    bytes32 internal d2; // a second folder (directory of s[4])
-    bytes32[3] internal dt; // directories of s[1..4), FOLDER targets
+    bytes32 internal d1; // a folder of p (salt "d" 0)
+    bytes32 internal d2; // a second folder of p (salt "d" 4)
+    bytes32[3] internal dt; // folders of p (salts "d" 1..4), FOLDER targets
     bytes32[17] internal roots; // files-root/1 form 0 of s[5..17) at roots[5..17)
     bytes32[11] internal kids; // files-child/1 of roots[8..11) at kids[8..11) (HEAD rebind targets)
 
@@ -150,13 +150,14 @@ contract GasModelTest is FilesRecipesBase {
                 _publish(T_CONTENT, EfsFiles.contentBody(c[34 + i], 0, 32, cDigest[34 + i], ""));
             desc[i] = _id(T_CONTENT, b[3 + i]);
         }
-        (a[9], b[9]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(s[0]));
+        (a[9], b[9]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt("d", 0)));
         d1 = _id(T_DIRECTORY, b[9]);
         for (uint256 i; i < 3; ++i) {
-            (a[10 + i], b[10 + i]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(s[1 + i]));
+            (a[10 + i], b[10 + i]) =
+                _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt("d", 1 + i)));
             dt[i] = _id(T_DIRECTORY, b[10 + i]);
         }
-        (a[13], b[13]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(s[4]));
+        (a[13], b[13]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt("d", 4)));
         d2 = _id(T_DIRECTORY, b[13]);
         _do(a, b);
         // P4: 15 bind names, roots of s[5..17)
@@ -329,7 +330,8 @@ contract GasModelTest is FilesRecipesBase {
     function test_model_publish_directory() public {
         bytes[3] memory bodies;
         for (uint256 i; i < 3; ++i) {
-            bodies[i] = EfsFiles.directoryBody(s[23 + i]);
+            bodies[i] = EfsFiles.directoryBody(p, _salt("pub-d", i));
+            assertEq(bodies[i].length, 64);
         }
         _publishPair("pub directory", T_DIRECTORY, bodies);
     }
@@ -487,12 +489,11 @@ contract GasModelTest is FilesRecipesBase {
 
     // ---- 6. first write ---------------------------------------------------------------------------------------------
 
-    /// CREATE + PUBLISH(files-directory/1) of `who`'s own subject, measured under `label`.
+    /// CREATE(salt) + PUBLISH(files-directory/1, (who, salt)) by `who`, measured under `label`.
     function _seedAs(string memory label, address who, bytes32 salt) internal {
         bytes32 saved = p;
         p = Keys.principalFor(who, r.hot.realmOrigin());
-        (Action memory x1, bytes memory y1) =
-            _publish(T_DIRECTORY, EfsFiles.directoryBody(Keys.subject(p, salt)));
+        (Action memory x1, bytes memory y1) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, salt));
         (Action[] memory a, bytes[] memory b) = _two(_create(salt), "", x1, y1);
         sender = who;
         _exec(label, a, b);

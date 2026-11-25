@@ -40,7 +40,7 @@ contract FilesRecordRulesTest is FilesUnitBase {
         stub.setSubject(OTHER_FILE, 11);
         stub.setRecord(CONTENT_REC, CONTENT_TYPE, 5, 320);
         stub.setRecord(EXTERNAL_REC, EXTERNAL_TYPE, 6, 240);
-        stub.setRecord(DIR_REC, DIR_TYPE, 6, 32);
+        stub.setRecord(DIR_REC, DIR_TYPE, 6, 64);
     }
 
     /// Form 0 (INLINE): `[file, 0] ‖ document`.
@@ -389,31 +389,81 @@ contract FilesRecordRulesTest is FilesUnitBase {
 
     // ---- files-directory/1 ------------------------------------------------------------------------------------
 
-    function test_directory_accepts_a_seed_created_at_or_before_the_admission() public {
-        _accepts(directory, _ctx(), abi.encode(FILE), _none(), _noHeaders());
-        bytes32 seed = keccak256("same-admission seed");
-        stub.setSubject(seed, ADMISSION);
-        _accepts(directory, _ctx(), abi.encode(seed), _none(), _noHeaders());
+    /// `files-directory/1` is `abi.encode(creatorPrincipal, salt)`: the creator is the publishing principal.
+    function _dir(bytes32 creator, bytes32 salt) internal pure returns (bytes memory) {
+        return abi.encode(creator, salt);
     }
 
-    // L FilesDirectory test_missing_zero_and_wrong_length_directory_seeds_rejected,
-    // test_directory_exact_body_length_required
-    function test_directory_missing_zero_wrong_length_and_late_seeds_refused() public {
-        _refuses(directory, _ctx(), abi.encode(bytes32(0)), _none(), _noHeaders(), 3);
-        _refuses(directory, _ctx(), abi.encode(bytes32(uint256(999))), _none(), _noHeaders(), 4);
-        _refuses(directory, _ctx(), bytes("x"), _none(), _noHeaders(), 2);
-        _refuses(
-            directory, _ctx(), bytes.concat(abi.encode(FILE), hex"ff"), _none(), _noHeaders(), 2
+    function test_directory_accepts_the_creator_with_any_nonzero_salt() public {
+        AcceptContext memory c = _ctx();
+        _accepts(directory, c, _dir(c.principalId, keccak256("docs")), _none(), _noHeaders());
+        _accepts(directory, c, _dir(c.principalId, bytes32(uint256(1))), _none(), _noHeaders());
+        _accepts(
+            directory, c, _dir(c.principalId, bytes32(type(uint256).max)), _none(), _noHeaders()
         );
-        _refuses(directory, _ctx(), abi.encode(FILE, FILE), _none(), _noHeaders(), 2);
-        bytes32 late = keccak256("created after this admission");
-        stub.setSubject(late, ADMISSION + 1);
-        _refuses(directory, _ctx(), abi.encode(late), _none(), _noHeaders(), 4);
-        _refuses(directory, _ctx(), abi.encode(FILE), _one(PARENT), _noHeaders(), 1);
+        // the rule reads nothing from the ledger: a creator word that is also a created subject changes nothing
+        c.principalId = FILE;
+        _accepts(directory, c, _dir(FILE, keccak256("docs")), _none(), _noHeaders());
+    }
+
+    /// The spoof: a principal other than the creator word publishes `(alice, salt)`.
+    function test_directory_refuses_a_creator_word_that_is_not_the_publisher() public {
+        bytes32 alice = keccak256("alice");
+        AcceptContext memory c = _ctx();
+        _refuses(directory, c, _dir(alice, keccak256("docs")), _none(), _noHeaders(), 4);
+        // nor can it name someone's FILE subject (or any id) as the creator
+        _refuses(directory, c, _dir(FILE, keccak256("docs")), _none(), _noHeaders(), 4);
+        _refuses(directory, c, _dir(bytes32(0), keccak256("docs")), _none(), _noHeaders(), 4);
+        // Alice herself is admitted
+        c.principalId = alice;
+        _accepts(directory, c, _dir(alice, keccak256("docs")), _none(), _noHeaders());
+    }
+
+    function testFuzz_directory_admits_exactly_the_creators_two_words(
+        bytes32 principal,
+        bytes calldata body
+    ) public {
+        AcceptContext memory c = _ctx();
+        c.principalId = principal;
+        bool ok = body.length == 64 && bytes32(body[32:64]) != 0 && bytes32(body[0:32]) == principal;
+        if (ok) {
+            _accepts(directory, c, body, _none(), _noHeaders());
+        } else {
+            uint8 code = body.length != 64 ? 2 : bytes32(body[32:64]) == 0 ? 3 : 4;
+            _refuses(directory, c, body, _none(), _noHeaders(), code);
+        }
+    }
+
+    // L FilesDirectory test_directory_exact_body_length_required (the body is now exactly two words)
+    function test_directory_zero_salt_wrong_length_and_refs_refused() public {
+        bytes32 me = _ctx().principalId;
+        _refuses(directory, _ctx(), _dir(me, 0), _none(), _noHeaders(), 3);
+        _refuses(directory, _ctx(), abi.encode(me), _none(), _noHeaders(), 2); // the old one-word body
+        _refuses(directory, _ctx(), bytes("x"), _none(), _noHeaders(), 2);
+        _refuses(directory, _ctx(), "", _none(), _noHeaders(), 2);
+        _refuses(
+            directory,
+            _ctx(),
+            bytes.concat(_dir(me, keccak256("d")), hex"ff"),
+            _none(),
+            _noHeaders(),
+            2
+        );
+        _refuses(directory, _ctx(), abi.encode(me, keccak256("d"), me), _none(), _noHeaders(), 2);
+        _refuses(directory, _ctx(), _dir(me, keccak256("d")), _one(PARENT), _noHeaders(), 1);
     }
 
     function test_directory_context_is_authenticated() public {
-        _contextIsAuthenticated(directory, abi.encode(FILE), _none(), _noHeaders());
+        _contextIsAuthenticated(
+            directory, _dir(_ctx().principalId, keccak256("d")), _none(), _noHeaders()
+        );
+    }
+
+    /// A folder's id is a record, never a created subject: a `files-root/1` whose file word is a folder record
+    /// is refused (code 4, the subject was never created), so nobody can give a folder a HEAD revision.
+    function test_root_refuses_a_folder_record_as_its_file() public {
+        _refuses(root, _ctx(), _root(DIR_REC, "x"), _none(), _noHeaders(), 4);
+        _refuses(root, _ctx(), _rootRef(DIR_REC, CONTENT_REC), _none(), _noHeaders(), 4);
     }
 
     // ---- directory-alias/1 ------------------------------------------------------------------------------------

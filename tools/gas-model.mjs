@@ -61,7 +61,7 @@ const SHAPES = {
   "files-content/1 carrier 0": [["pub content c0", 320]],
   "files-content/1 carrier 2": [["pub content c2", 320]],
   "files-external/1": [["pub external 40", 264], ["pub external 400", 624]],
-  "files-directory/1": [["pub directory", 32]],
+  "files-directory/1": [["pub directory", 64]],
   "files-name/2": [["pub name 12", 12], ["pub name 200", 200]],
   "files-root/1 form 0": [["pub root f0", 164]],
   "files-root/1 form 1": [["pub root f1", 96]],
