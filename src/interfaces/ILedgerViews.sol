@@ -59,8 +59,8 @@ interface ILedgerViews {
         );
 
     /// The lens rule over list entries (binding ordinals): each entry's position and cell, the first of
-    /// `principals[0..authors[i]]` with a stance there (`decider`, 255 when none; `decided`, its head state) and the
-    /// entry author's own head.
+    /// `principals[0..authors[i]]` with a stance there (`decider`, 255 when none; `decided`, its head state;
+    /// `strength`, its strength) and the entry author's own head.
     function lensRule(
         address ledger,
         bytes32[] calldata principals,
@@ -75,6 +75,7 @@ interface ILedgerViews {
             Coordinate[] memory cells,
             uint8[] memory decider,
             uint8[] memory decided,
+            uint16[] memory strength,
             Head[] memory own,
             BasisCommit memory
         );

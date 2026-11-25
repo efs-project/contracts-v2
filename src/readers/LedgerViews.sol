@@ -357,8 +357,9 @@ contract LedgerViews is ILedgerViews {
     /// @dev Three batched rounds: every ordinal's position, every position's cell, then the heads the lens rule
     ///      needs: the first word (the state) of `principals[k]`'s head for every k < `authors[i]` and the whole head
     ///      of `principals[authors[i]]`. `decider[i]` is the first k <= `authors[i]` whose head is BOUND or MASKED
-    ///      (255 when none is) and `decided[i]` that head's state (1 BOUND, 2 MASKED; 0 when none); `own[i]` is the
-    ///      author's head. Per entry PRESENT, ABSENT_PROVEN (zero cell, no heads
+    ///      (255 when none is), `decided[i]` that head's state (1 BOUND, 2 MASKED; 0 when none) and `strength[i]` its
+    ///      strength (0 when none; with the state, the decider's signed number), all from the state word already
+    ///      read; `own[i]` is the author's head. Per entry PRESENT, ABSENT_PROVEN (zero cell, no heads
     ///      read) for an ordinal that names no binding, UNSUPPORTED when a reserved head state is met before the
     ///      decision; INVALID for every entry when an author index is not below `principals.length`. Blanket
     ///      statuses as `bindingCells`, LIMIT_EXCEEDED also past `limits.maxReadIds` principals.
@@ -376,12 +377,14 @@ contract LedgerViews is ILedgerViews {
             Coordinate[] memory cells,
             uint8[] memory decider,
             uint8[] memory decided,
+            uint16[] memory strength,
             Head[] memory own,
             BasisCommit memory b
         )
     {
         uint256 n = ordinals.length;
         decided = new uint8[](n);
+        strength = new uint16[](n);
         Status all = _blanket(ledger, n > principals.length ? n : principals.length);
         (, b) = LedgerRows.gateBasis(ledger);
         st = new Status[](n);
@@ -395,7 +398,7 @@ contract LedgerViews is ILedgerViews {
             if (authors[i] >= principals.length) all = Status.INVALID;
             slots += uint256(authors[i]) + 2;
         }
-        if (_fill(st, all)) return (st, positions, cells, decider, decided, own, b);
+        if (_fill(st, all)) return (st, positions, cells, decider, decided, strength, own, b);
         (st, positions, cells) = _cells(ledger, ordinals);
         bytes32[] memory s = new bytes32[](slots);
         slots = 0;
@@ -419,7 +422,7 @@ contract LedgerViews is ILedgerViews {
             if (st[i] != Status.PRESENT) continue;
             uint256 j = authors[i];
             for (uint256 k; k <= j; ++k) {
-                (uint8 state,,,,,,,) = Layout.unpackHeadRowWord0(w[slots + k]);
+                (uint8 state,,,,,,, uint16 sg) = Layout.unpackHeadRowWord0(w[slots + k]);
                 if (state > 3) {
                     st[i] = Status.UNSUPPORTED;
                     break;
@@ -427,6 +430,7 @@ contract LedgerViews is ILedgerViews {
                 if (state == 1 || state == 2) {
                     decider[i] = uint8(k);
                     decided[i] = state;
+                    strength[i] = sg;
                     break;
                 }
             }
