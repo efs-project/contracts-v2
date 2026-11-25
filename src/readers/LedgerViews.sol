@@ -33,7 +33,7 @@ import {E_READSET_SHAPE, E_RESERVED} from "../interfaces/Errors.sol";
 ///         publication still being applied, a binding row that does not name its coordinate, or no code at
 ///         `ledger`: no ledger at this block, every value zero), UNSUPPORTED on code that is not the layout this
 ///         facet was generated for (`LedgerRows.probe`). Views whose return carries no `Status` (`heads`,
-///         `headSnapshots`) revert `E_LAYOUT` instead (`have` 0 without a ledger).
+///         `headStates`, `headSnapshots`) revert `E_LAYOUT` instead (`have` 0 without a ledger).
 contract LedgerViews is ILedgerViews {
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_REBIND = 2;
@@ -249,6 +249,32 @@ contract LedgerViews is ILedgerViews {
         if (keys.length > maxReadIds) revert E_RESERVED(LedgerRows.READ_IDS, keys.length);
         b = LedgerRows.basis(ledger);
         return (_heads(ledger, keys), b);
+    }
+
+    /// @inheritdoc ILedgerViews
+    /// @dev The first word of each head row only (`Layout.unpackHeadRowWord0`'s low byte), in one batched round:
+    ///      the topic readers' viewed-place check needs whether a head is MASKED and nothing else. A reserved state
+    ///      is returned as stored. Gate and bound as `heads`: `E_LAYOUT` on a foreign layout or without a ledger,
+    ///      more than `limits.maxReadIds` keys revert `E_RESERVED(31, length)`.
+    function headStates(address ledger, bytes32[] calldata keys)
+        external
+        view
+        returns (uint8[] memory states, BasisCommit memory b)
+    {
+        LedgerRows.requireLayout(ledger);
+        (uint16 maxReadIds,,) = LedgerRows.readBounds(ledger);
+        uint256 n = keys.length;
+        if (n > maxReadIds) revert E_RESERVED(LedgerRows.READ_IDS, n);
+        b = LedgerRows.basis(ledger);
+        bytes32[] memory s = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            s[i] = bytes32(Layout.bindingsHeadsSlot(keys[i]));
+        }
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
+        states = new uint8[](n);
+        for (uint256 i; i < n; ++i) {
+            states[i] = uint8(uint256(w[i])); // the state is the row's low byte
+        }
     }
 
     /// @inheritdoc ILedgerViews
