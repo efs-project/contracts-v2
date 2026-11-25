@@ -142,6 +142,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_ABOUT, thing, sample));
         List memory l = List(F_ROLE_PLACES, Purpose.TAG, 0, thing, 0, 0, 0, 0);
         (Status st, Coverage cov) = _openList(r, expected, continuation, l, info);
+        info.positionsEver = l.live;
         if (st != Status.PRESENT) {
             info.q.status = st;
             return (info, rows);

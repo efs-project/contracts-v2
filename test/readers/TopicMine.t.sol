@@ -121,29 +121,35 @@ contract TopicMineTest is TopicReadersBase {
 
     // ---- below, and one row per (topic, thing) --------------------------------------------------------------
 
-    function test_below_shows_a_thing_once_per_topic_and_once_per_position() public {
+    function test_below_shows_a_thing_once_per_page_and_once_per_position() public {
         _tag(alice, tesla, things[0]);
-        _tag(alice, ford, things[0]); // the same thing under two child topics: two rows
-        _tag(bob, tesla, things[0]); // a second lens author at the same position: still one row
+        _tag(alice, ford, things[0]); // the same thing under two child topics: one row, the newest filing
+        _tag(bob, tesla, things[0]); // a second lens author at the same position: no second row
         _tag(alice, cars[0], things[1]); // exact at the place itself
         (TopicPageInfo memory info, MineRow[] memory rows) =
             _mine(_lens2(alice, bob), cars[0], true, "", 0);
         _ok(info);
-        assertEq(rows.length, 3);
+        assertEq(rows.length, 2);
         assertEq(rows[0].thing, things[1]);
         assertEq(rows[0].topic, cars[0]);
-        assertEq(rows[1].topic, ford);
-        assertEq(rows[2].topic, tesla);
-        assertEq(rows[2].decider, 0, "alice decides; bob's entry yields no second row");
-        for (uint256 i; i < rows.length; ++i) {
-            for (uint256 j; j < i; ++j) {
-                assertTrue(rows[i].position != rows[j].position, "no position twice");
-            }
-        }
+        assertEq(rows[1].thing, things[0]);
+        assertEq(rows[1].topic, ford, "the newest filing that the lens shows");
+        assertEq(info.repeatsSkipped, 1, "the tesla filing of the same thing");
+        assertTrue(info.dedupWithinPageOnly);
         // exact only: the place itself
         (info, rows) = _mine(_lens2(alice, bob), cars[0], false, "", 0);
         assertEq(rows.length, 1);
         assertEq(rows[0].thing, things[1]);
+        // a page of one entry each: the thing recurs across pages, which the consumer removes
+        bytes memory cont;
+        uint256 total;
+        while (true) {
+            (info, rows) = _mine(_lens2(alice, bob), cars[0], true, cont, 1);
+            total += rows.length;
+            if (info.next.length == 0) break;
+            cont = info.next;
+        }
+        assertEq(total, 3, "things[1] and things[0] twice (under ford and under tesla)");
     }
 
     function test_below_reaches_a_deep_descendant() public {

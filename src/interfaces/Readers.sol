@@ -210,15 +210,20 @@ interface IReaderDirectory {
 
 /// The page laws of every topic view: `q.status` PRESENT for a served page, UNKNOWN when a list the view needs has
 /// coverage UNKNOWN (no rows: an UNKNOWN is never empty), BASIS_STALE / UNSUPPORTED / LIMIT_EXCEEDED / INVALID as
-/// refusals with no rows. `listingCoverage` COMPLETE only when `completeFromOrigin` (origin-started, exhausted, every
-/// list COMPLETE); a page from a continuation is at most PARTIAL. `scanStatus` 1 EXHAUSTED 2 LIMIT 3 GAS (0 when
-/// no scan ran). `scanned`: list entries consumed on this page; `rawTotal`: the entries of every list at this page's
-/// read; `selectedSoFar`: rows returned so far in the listing. `next`: the continuation (empty when exhausted),
-/// bound to the query hash, the basis and the origin. `repeatsSkipped`: list entries this page left out because a
-/// row for the same position was already on this page. `dedupWithinPageOnly`: true for every view whose lists can
-/// name one position more than once (`place` and `place-below` carry a later author's first yes; a lens author's
-/// row can move between pages when a head changes): repeats are removed within this page only, since a reader keeps
-/// no state between calls, so a consumer removes repeats across pages by `position`.
+/// refusals with no rows. A page's work is bounded by the list entries it reads (`limit`, 0 = only the gas reserve),
+/// never by the rows it returns: repeats, hidden and unaffirmed entries return nothing, so a page may hold fewer rows
+/// than `limit`, or none, while entries remain. The list is finished only when `scanStatus` is 1 EXHAUSTED (and `next`
+/// is empty); 2 LIMIT (`limit` entries read) and 3 GAS (`gasReserve` stop) always carry `next`, the place to resume.
+/// `listingCoverage` COMPLETE only when `completeFromOrigin` (origin-started, exhausted, every list COMPLETE); a page
+/// from a continuation is at most PARTIAL. `scanned`: list entries read on this page; `rawTotal`: the entries
+/// (filings) of every list at this page's read; `positionsEver`: for the place-list views (`everyone`, `about`), the
+/// lists' `live` counts, the distinct positions ever stated (an "about" figure, never a row count; 0 for other views);
+/// `selectedSoFar`: rows returned so far in the listing. `next` is bound to the query hash, the basis and the origin.
+/// `repeatsSkipped`: entries this page left out because a row for the same thing was already on it.
+/// `dedupWithinPageOnly`: true for every view whose lists can name one thing more than once (a place list's later
+/// first yeses, a thing filed under two topics of a roll-up, a lens row that moved between pages): repeats are
+/// removed within this page only (by thing; at one place, a thing is a position), since a reader keeps no state
+/// between calls, so a consumer removes repeats across pages.
 struct TopicPageInfo {
     Qualified q;
     Coverage listingCoverage;
@@ -228,6 +233,7 @@ struct TopicPageInfo {
     bool dedupWithinPageOnly;
     uint64 scanned;
     uint64 rawTotal;
+    uint64 positionsEver;
     uint64 selectedSoFar;
     uint64 repeatsSkipped;
     bytes next;

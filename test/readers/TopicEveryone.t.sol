@@ -169,6 +169,62 @@ contract TopicEveryoneTest is TopicReadersBase {
         assertEq(total, 3);
     }
 
+    function test_an_unaffirmed_newer_filing_does_not_hide_an_affirmed_older_one() public {
+        _tag(alice, ford, things[10]); // older filing, someone says yes
+        _deny(carol, tesla, things[10]); // newer filing (a fresh position), nobody says yes there
+        (TopicPageInfo memory info, PlaceRow[] memory rows) =
+            _everyone(cars[0], true, new bytes32[](0), false, 0, "", 0);
+        _ok(info);
+        (bool has, PlaceRow memory x) = _has(rows, ford, things[10]);
+        assertTrue(has, "the thing shows through its older, affirmed filing");
+        assertEq(x.yes, 1);
+        (has,) = _has(rows, tesla, things[10]);
+        assertFalse(has);
+        assertEq(info.repeatsSkipped, 0, "the unaffirmed filing was not marked seen");
+        // raw shows both filings, by thing once per page: the newer one
+        (info, rows) = _everyone(cars[0], true, new bytes32[](0), true, 0, "", 0);
+        (has,) = _has(rows, tesla, things[10]);
+        assertTrue(has);
+        (has,) = _has(rows, ford, things[10]);
+        assertFalse(has, "raw removes the repeat of the thing within the page");
+        assertEq(info.repeatsSkipped, 1);
+        assertEq(info.positionsEver, 2);
+        assertEq(info.rawTotal, 2, "filings");
+    }
+
+    function test_a_short_page_is_not_the_end() public {
+        bytes32[] memory xs = _things(41);
+        for (uint256 i; i < 41; ++i) {
+            if (i == 20) _tag(alice, cars[0], xs[i]);
+            else _deny(carol, cars[0], xs[i]); // lone negatives at real things
+        }
+        bytes memory cont;
+        uint256 pages;
+        uint256 rowsSeen;
+        uint256 entries;
+        while (true) {
+            (TopicPageInfo memory info, PlaceRow[] memory rows) =
+                _everyone(cars[0], false, new bytes32[](0), false, 0, cont, 4);
+            _ok(info);
+            ++pages;
+            entries += info.scanned;
+            assertLe(info.scanned, 4, "work bounded by entries read");
+            rowsSeen += rows.length;
+            if (rows.length != 0) assertEq(rows[0].thing, xs[20]);
+            if (info.next.length == 0) {
+                assertEq(info.scanStatus, SCAN_EXHAUSTED);
+                break;
+            }
+            assertEq(
+                info.scanStatus, SCAN_LIMIT, "a short or empty page carries the place to resume"
+            );
+            cont = info.next;
+        }
+        assertEq(rowsSeen, 1, "the real tag is reached across calls");
+        assertEq(entries, 41, "every entry read once");
+        assertGe(pages, 11);
+    }
+
     // ---- paging, about, homes, no topic lists -----------------------------------------------------------------
 
     function test_everyone_pages_newest_first_with_a_gas_stop() public {

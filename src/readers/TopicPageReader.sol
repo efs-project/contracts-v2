@@ -31,15 +31,18 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         resolved in batches of up to 16 by one `LedgerViews.lensRule` call, which reads the state word of each
 ///         earlier author's head and the whole head of the candidate's author. A row is produced only by the
 ///         deciding author's own entry, so each (topic filed under, thing) appears once in a listing read at one
-///         block and never twice within a page; heads are read at each page's own block, so a stance changed
-///         between pages can move a row, and a caller removes repeats across pages by `position`
-///         (`dedupWithinPageOnly`).
+///         block; with `below`, a thing filed under two topics is shown once per page, through its newest filing that
+///         the lens shows (`repeatsSkipped` counts the rest). Heads are read at each page's own block, so a stance
+///         changed between pages can move a row, and a caller removes repeats across pages (`dedupWithinPageOnly`).
 ///
 ///         `everyone(query, lens)`: the place list `Keys.placeList(purpose, place)` (family 6; TAG or FOLDER) and,
 ///         with `below` (TAG), the roll-up `Keys.placeBelowList(TAG, place)` (family 7), merged newest first. A
 ///         position can be listed more than once (the first statement at a fresh position and every later author's
-///         first yes): the newest occurrence is kept and later ones on the page are skipped (`repeatsSkipped`); a
-///         caller removes repeats across pages (`dedupWithinPageOnly`). Per row one head read of the position's
+///         first yes), and below one thing can be filed under two child topics: a page shows each thing once, through
+///         its newest filing that shows, and skips later filings of a thing already shown (`repeatsSkipped`; at one
+///         place a thing is a position). A filing nobody says yes to, or one the lens hides there, does not mark its
+///         thing as seen, so an older filing of the same thing that someone affirms still shows. A caller removes
+///         repeats across pages (`dedupWithinPageOnly`). Per row one head read of the position's
 ///         authors (`Keys.positionAuthorsList`, family 20): `statements` = its count, `yes` = its live count (the
 ///         authors who say yes now). A row nobody says yes to (`yes == 0`) is left out; `raw` returns it. A row is
 ///         hidden only by a lens author: when the lens rule (the first lens author with a stance, from the window's
@@ -53,9 +56,11 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///
 ///         Page laws as `TopicPageInfo` states them: a Realm whose index keeps no topic roll-ups (families 7 and 19
 ///         `NOT_MAINTAINED`) answers a below view UNKNOWN with no rows, never empty; any list or author head of
-///         UNKNOWN coverage makes the page UNKNOWN. `limit` 0 means no row limit; `gasReserve` is checked before
-///         each batch (`mine`) or list entry (`everyone`) and must cover one batch of 16 rows and the return encoding
-///         (scan status 3 GAS, with a continuation).
+///         UNKNOWN coverage makes the page UNKNOWN. `limit` bounds the list entries a page reads (0: only the gas
+///         reserve), never the rows it returns: a page can hold fewer rows than `limit`, or none, while entries remain,
+///         and only scan status 1 EXHAUSTED ends the listing. `gasReserve` is checked before each batch (`mine`) or
+///         list entry (`everyone`) and must cover one batch of 16 rows and the return encoding (scan status 3 GAS,
+///         with a continuation).
 contract TopicPageReader is TopicReaderBase, ITopicPageReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-page/query/1");
     uint8 internal constant VIEW_MINE = 1;
@@ -80,8 +85,6 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         bool below;
         bool raw;
         uint16 sample;
-        bytes32[] seen;
-        uint256 seenCount;
     }
 
     /// @param ledger_ the ledger proxy this reader serves (its layout is pinned here: `layoutId()`)
@@ -242,13 +245,13 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
             (uint256 best,) = _front(r, s, limit);
             if (best == type(uint256).max) return (SCAN_EXHAUSTED, got);
             // a stop leaves the cursor at this candidate (a refill reads, it never consumes)
-            if (limit != 0 && got == limit) return (SCAN_LIMIT, got);
+            // the page's work is bounded by list entries read (`limit`), never by rows returned
+            if (limit != 0 && info.scanned == limit) return (SCAN_LIMIT, got);
             if (got == rows.length || gasleft() < gasReserve) return (SCAN_GAS, got);
             uint256 room = rows.length - got;
-            if (limit != 0 && limit - got < room) room = limit - got;
             if (room > WINDOW) room = WINDOW;
             uint256 n;
-            while (n < room) {
+            while (n < room && (limit == 0 || info.scanned < limit)) {
                 uint64 o;
                 (best, o) = _front(r, s, limit);
                 if (best == type(uint256).max) break;
@@ -261,7 +264,7 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
                 src[n] = best;
                 ++n;
             }
-            if (n != 0) got = _resolve(r, s, lens, place, ord, src, n, rows, got);
+            if (n != 0) got = _resolve(r, s, lens, place, ord, src, n, rows, got, info);
         }
         return (SCAN_EXHAUSTED, got); // unreachable: the loop returns
     }
@@ -296,7 +299,8 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         uint256[] memory src,
         uint256 n,
         MineRow[] memory rows,
-        uint256 got
+        uint256 got,
+        TopicPageInfo memory info
     ) private view returns (uint256) {
         uint64[] memory o = new uint64[](n);
         uint8[] memory who = new uint8[](n);
@@ -318,6 +322,10 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
                 revert E_TOPIC_INCONSISTENT(4); // the entry is the author's binding; a live bit means BOUND
             }
             if (x.decider[i] != j || h.state != 1) continue; // decided by a higher author, hidden, or released
+            if (_mineShown(rows, got, c.role)) {
+                ++info.repeatsSkipped; // the same thing filed under another topic: once per page
+                continue;
+            }
             (, int32 number) = BindingNumber.numberOf(h.state, h.strength);
             rows[got++] = MineRow({
                 position: x.positions[i],
@@ -391,16 +399,8 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
     ) external view returns (TopicPageInfo memory info, PlaceRow[] memory rows) {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_EVERYONE, query, lens));
-        Place memory p = Place(
-            VIEW_EVERYONE,
-            query.purpose,
-            query.place,
-            query.below,
-            query.raw,
-            query.sample,
-            new bytes32[](0),
-            0
-        );
+        Place memory p =
+            Place(VIEW_EVERYONE, query.purpose, query.place, query.below, query.raw, query.sample);
         // below = the place itself (family 6) and every topic under it (family 7), merged newest first
         List[] memory ls = new List[](query.below ? 2 : 1);
         ls[0] = List(F_PLACE, query.purpose, 0, query.place, 0, 0, 0, 0);
@@ -430,6 +430,7 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
             List memory l = ls[i];
             cov = _join(cov, _listHead(r, l));
             info.rawTotal += l.count;
+            info.positionsEver += l.live;
             if (r.resumed) {
                 if (cursor[i] > l.count) st = Status.INVALID;
                 else l.hi = cursor[i];
@@ -447,9 +448,6 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
             mstore(rows, cap)
             mstore(0x40, add(rows, mul(add(cap, 1), 32)))
         }
-        // the positions met on this page (kept or not), bounded by what the page can read
-        if (gasleft() / 5_000 < left) left = gasleft() / 5_000;
-        p.seen = new bytes32[](left);
         uint8 scan;
         uint256 got;
         (scan, got, cov) = _scanPlace(r, p, ls, lens, rows, limit, gasReserve, info, cov);
@@ -492,12 +490,13 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         // the lens decides at each entry's own position; without one the facet is asked about nobody
         bytes32[] memory pr = deny ? lens : new bytes32[](1);
         for (;;) {
-            uint256 m = limit == 0 || limit - got > WINDOW ? WINDOW : limit - got;
+            // the page's work is bounded by list entries read (`limit`), never by rows returned
+            uint256 m = limit == 0 || limit - info.scanned > WINDOW ? WINDOW : limit - info.scanned;
             // a below window's viewed-place heads are one `heads` call: at most MAX_KEYS of them
             if (deny && p.below && m * lens.length > MAX_KEYS) m = MAX_KEYS / lens.length;
             (uint64[] memory e, uint8[] memory src) = _window(r, ls, m == 0 ? 1 : m);
             if (e.length == 0) return (SCAN_EXHAUSTED, got, cov);
-            if (limit != 0 && got == limit) return (SCAN_LIMIT, got, cov);
+            if (limit != 0 && info.scanned == limit) return (SCAN_LIMIT, got, cov);
             if (got == rows.length || gasleft() < gasReserve) return (SCAN_GAS, got, cov);
             uint8[] memory au = new uint8[](e.length);
             for (uint256 k; k < e.length; ++k) {
@@ -507,19 +506,17 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
             Head[] memory hs;
             if (deny && p.below) hs = _viewedHeads(r, p, lens, x.cells);
             for (uint256 k; k < e.length; ++k) {
-                if (limit != 0 && got == limit) return (SCAN_LIMIT, got, cov);
-                if (got == rows.length || p.seenCount == p.seen.length || gasleft() < gasReserve) {
-                    return (SCAN_GAS, got, cov);
-                }
+                if (got == rows.length || gasleft() < gasReserve) return (SCAN_GAS, got, cov);
                 --ls[src[k]].hi;
                 ++info.scanned;
-                bytes32 position = x.positions[k];
                 Coordinate memory c = x.cells[k];
                 _checkCell(p, c, src[k] == 0);
-                if (_seen(p, position)) {
+                // repeats by thing: a thing already shown on this page (exactly: the same position)
+                if (_shown(rows, got, c.role)) {
                     ++info.repeatsSkipped;
                     continue;
                 }
+                // hidden or unaffirmed filings are not marked seen: an older filing of the thing may still show
                 if (deny && x.decided[k] == 2) continue; // a lens author's no at the filed position
                 if (hs.length != 0 && c.subject != p.place) {
                     // below: a lens author's no for the same thing at the viewed place hides it here too
@@ -529,7 +526,7 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
                 }
                 Coverage rc;
                 bool shown;
-                (shown, rc) = _placeRow(r, p, position, c, e[k], row);
+                (shown, rc) = _placeRow(r, p, x.positions[k], c, e[k], row);
                 cov = _join(cov, rc);
                 if (shown) {
                     rows[got] = row;
@@ -598,12 +595,27 @@ contract TopicPageReader is TopicReaderBase, ITopicPageReader {
         }
     }
 
-    /// True when `position` was already met on this page; records it otherwise.
-    function _seen(Place memory p, bytes32 position) private pure returns (bool) {
-        for (uint256 i; i < p.seenCount; ++i) {
-            if (p.seen[i] == position) return true;
+    /// True when one of the first `got` rows of `mine` is about `thing`.
+    function _mineShown(MineRow[] memory rows, uint256 got, bytes32 thing)
+        private
+        pure
+        returns (bool)
+    {
+        for (uint256 i; i < got; ++i) {
+            if (rows[i].thing == thing) return true;
         }
-        p.seen[p.seenCount++] = position;
+        return false;
+    }
+
+    /// True when one of the first `got` rows is about `thing`.
+    function _shown(PlaceRow[] memory rows, uint256 got, bytes32 thing)
+        private
+        pure
+        returns (bool)
+    {
+        for (uint256 i; i < got; ++i) {
+            if (rows[i].thing == thing) return true;
+        }
         return false;
     }
 
