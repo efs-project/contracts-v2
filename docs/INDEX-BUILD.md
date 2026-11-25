@@ -8,6 +8,10 @@ Where the code and `docs/DESIGN.md` disagree, this document follows the code and
 Figures are marked **measured** (with the file they come from) or **estimated** (with how). No figure here was
 measured for this document.
 
+Reviewed on 2026-11-25 by the integration owner and by the tag design session; both accepted the shape and the
+recommendations of §9 (question 9 waits on QUESTIONS Q3). Their follow-ups are in §2.2 (what a built list
+inherits), §2.6 (the planning rule), §4.3 (an example) and §6.2 (the price of adding a list later).
+
 ---
 
 ## 0. The answer first
@@ -161,6 +165,15 @@ It reads nothing but the effect. A trace, live and built alike: Alice creates `n
 300 (release: live 1); Alice restores at 400 (retain: live 2). End state, both ways: count 2, live 2, last 200,
 entries [100, 200].
 
+**A built list inherits history as it was admitted.** A build folds every admitted statement, and a later
+validator cannot refuse a statement after the fact. So a rule that keeps junk out of a list has to be in the
+validator before the statements are made, not in the generation that later lists them. One case exists today: a
+first "not this" at HEAD (an UNBIND with no earlier statement) is not judged, so anyone can make one about an id
+that names no file. Nothing lists it now. A `head-authors` build would give that id a list with one uncounted
+entry. The fix is the rule code 15 already applies to TAG and FOLDER (`FilesFinalValidator`): a first mask at HEAD
+must name a created subject. It costs one read on a rare action, and it has the same deadline as any validator
+change: before the first lasting deployment. It is scheduled with the next release.
+
 ### 2.3 (c) Add a BITMAP family
 
 Example: `roster` (kind 17), reserved in generation 1 as `NOT_MAINTAINED` with CURRENT_STATE semantics
@@ -204,6 +217,11 @@ exists today for a generation-1-shaped generation (§1.1). What it lacks is a te
 | (d) digest spec | yes, same machinery | Once (b) can put any manifest family in a fresh store, (d) is (b) for family 15. Its test can follow. |
 | (e) full replay | exists; add the busy-Realm test | The code is there; the race and transition procedure are not tested. |
 | (c) BITMAP family | **no**, except the `openCoverage` fix | No BITMAP family is planned (`roster` is reserved, Q16's codec-2 families are later). The fix is the only part with a deadline, because the genesis `BitmapStore` is lasting. |
+
+**Planning rule: batch later lists into one generation.** One walk builds every built family, and the walk is
+most of the cost (§6.2). Two lists added in two generations pay for two walks of the whole history; added together
+they pay for one. So a Realm should collect the lists it wants and add them in a single generation, and a request
+for one more list is a request to schedule it with the next batch.
 
 ---
 
@@ -394,6 +412,10 @@ new family that needs "was this TAG position fresh at admission k?" (k being a f
 carried family 20's entry 0, the admission of the position's first statement: fresh at k exactly when entry 0 is k.
 Its `live` cannot be read that way.
 
+The other direction, as an example of what the rule forbids: a later family that needs "how many things apply at
+this place now, as of admission k" cannot read family 20's yes-count, which holds the count at the frontier. It
+has to keep its own per-position count and rebuild it in the same walk.
+
 `head-authors` reads nothing but the effect, so it needs none of this.
 
 ### 4.4 The only other writer
@@ -517,13 +539,35 @@ Second, the storage part is what keeping the list from genesis would have cost a
 writers (QUESTIONS Q52: about 36k per file today and 124k after Glamsterdam). Deferring is cheaper only if the list
 is never wanted.
 
+**The price of "add it later" (all estimated, from the table above).** Per file, for this list:
+
+| | prague | amsterdam |
+|---|---:|---:|
+| kept from genesis (the storage rows above; Q52 quotes 36k and 124k) | ≈ 31k | ≈ 128k |
+| built later, generic decoder | ≈ 290k | ≈ 390k |
+| built later, filtered decoder (§9, Q7) | ≈ 130k | ≈ 230k |
+| later against genesis | 8× to 9× (≈ 4× filtered) | ≈ 3× (≈ 1.8× filtered) |
+
+The ratio depends on how much of the history the new list does not care about: here 7 of 11 leaves. The walk is
+paid per admission in the Realm's whole history, not per entry in the new list, so a list that touches a small
+share of a long history is the dearest kind to add later. The storage part is the same either way; what "later"
+adds is the walk, paid by one operator at once instead of by each writer as they go.
+
+**The rule this gives.** Adding an on-chain list later is affordable for a small or young Realm and not for a
+large one. At about 290k gas per file, 10,000 files cost about 2.9B gas (some 170 transactions, 2.9 ETH at
+1 gwei); a million files cost about 290B. For a large Realm the realistic route to a list nobody kept is an
+indexer, or a new Realm that keeps it from genesis. So "we can add it later" is true and has a price that grows
+with every admission made before the list is added. These figures stay estimates until test 11 of §8 measures a
+build.
+
 For comparison, a full replay (case (e)) re-materializes every posting at the fresh-slot price (design §10.6: about
 110k per re-materialized posting on amsterdam, an estimate there).
 
 ### 6.3 Who pays
 
 Whoever calls `build`. Nothing on chain repays it, and no user's write pays anything extra during a build. In
-practice the Realm's operator pays, and should plan the build like a deployment. After activation every new file
+practice the Realm's operator pays, and should plan the build like a deployment: every list wanted goes into the
+same generation, because one walk builds them all (§2.6). After activation every new file
 pays the new list's live price through the new work model (a new manifest hash, so signed plans bound to the old
 set are refused, QUESTIONS Q11).
 
