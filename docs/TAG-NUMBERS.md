@@ -245,3 +245,95 @@ Per registered topic, added at registration (≈ one new list head, priced as ta
   lone negative (336,123 against 350,410 on prague; on amsterdam 1,190,931 against 1,273,824 all, 256,101 against
   244,134 execution); the `place` list's `live` (distinct positions) does not move, so a reader that counts positions
   is not misled, and readers remove the duplicate rows by position.
+
+## Reads (step 4) *(measured)*
+
+The topic readers of design §5.13 and §11 (`TopicPageReader`, `TopicLookupReader`) on the real Realm of the reader
+suites (the step-3c lists, `FilesFinalValidator`, the Topics Types). Measured at commit `b50fcde` (the readers' and the
+facets' source of the release; later commits are docs and generated files), Foundry 1.8.3, solc 0.8.37 via-IR. Every
+figure is one cold `view` call: every account the call can touch is cooled first (`vm.cool`), and the figure is the
+call frame's gas (`vm.lastCallGas().gasTotalUsed`; no intrinsic 21,000, no calldata). Setups run with gas metering
+paused. Reads are not repriced on amsterdam: every row is within 0.1% of prague (about +4k, the cold accounts).
+`page` is `limit`, the list entries read; in these setups every entry read is a row.
+
+```sh
+FOUNDRY_GAS_LIMIT=100000000000 perl -e 'alarm 5400; exec @ARGV' \
+  forge test --match-path test/integration/TopicReadMeasure.t.sol -vv | grep ' tr '
+FOUNDRY_GAS_LIMIT=100000000000 FOUNDRY_PROFILE=amsterdam FOUNDRY_OUT=out/amsterdam FOUNDRY_CACHE_PATH=cache/amsterdam \
+  perl -e 'alarm 9000; exec @ARGV' forge test --match-path test/integration/TopicReadMeasure.t.sol -vv | grep ' tr '
+```
+
+**`mine`, exact plus below.** 50 things filed by the lens round-robin (thing i by lens author i mod L, so the newest
+rows come from the highest lens indices that have entries), at depth 1 (the place itself) or under the deepest topic
+of an 8- or 64-word path, read from its first word. Depth 8 and 64 cost the same to the gas: a read never walks a path.
+
+| lens | depth | page 10, prague | page 10, amsterdam | page 50, prague | page 50, amsterdam |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 554,659 | 558,859 | 2,255,532 | 2,260,332 |
+| 1 | 8 | 535,511 | 539,711 | 2,290,225 | 2,295,025 |
+| 1 | 64 | 535,511 | 539,711 | 2,290,225 | 2,295,025 |
+| 8 | 1 | 1,019,633 | 1,023,833 | 3,464,110 | 3,468,910 |
+| 8 | 8 | 1,066,349 | 1,070,549 | 3,506,674 | 3,511,474 |
+| 8 | 64 | 1,066,349 | 1,070,549 | 3,506,674 | 3,511,474 |
+| 32 | 1 | 2,470,789 | 2,474,989 | 7,407,346 | 7,412,146 |
+| 32 | 8 | 2,254,060 | 2,258,260 | 7,335,260 | 7,340,060 |
+| 32 | 64 | 2,254,060 | 2,258,260 | 7,335,260 | 7,340,060 |
+| 64 | 1 | 5,234,267 | 5,238,467 | 12,107,508 | 12,112,308 |
+| 64 | 8 | 4,686,038 | 4,690,238 | 11,544,029 | 11,548,829 |
+| 64 | 64 | 4,686,038 | 4,690,238 | 11,544,029 | 11,548,829 |
+
+**`everyone` and `raw`.** 60 things filed by one author at a one-word place's child; the exact view reads the child,
+the below view the parent (the place list and the roll-up merged). The lens is 8 authors none of whom said anything,
+so every lens head is read; `raw` reads no lens.
+
+| view | page 10, prague | page 10, amsterdam | page 50, prague | page 50, amsterdam |
+|---|---:|---:|---:|---:|
+| everyone, exact, lens of 8 | 942,999 | 946,799 | 4,350,544 | 4,354,944 |
+| everyone, below, lens of 8 | 1,979,494 | 1,983,494 | 9,459,056 | 9,464,056 |
+| raw, exact | 660,150 | 663,950 | 2,931,255 | 2,935,655 |
+| raw, below | 741,316 | 745,116 | 3,156,327 | 3,160,727 |
+
+**Point reads and directories.**
+
+| read | prague | amsterdam |
+|---|---:|---:|
+| `byName`, 300 authors at one FOLDER position of a home, page of 10 | 363,398 | 367,198 |
+| `byName`, the same, page of 50 | 1,273,351 | 1,277,151 |
+| `about`, a thing filed under 20 places, page of 10 | 471,663 | 475,463 |
+| `about`, page of 20 | 798,316 | 802,116 |
+| `about`, page of 10 with a sample of 4 authors per row | 1,163,664 | 1,169,464 |
+| `placeCount`, a place of 2,000 positions | 84,897 | 88,097 |
+| `authorCount`, a position of 300 authors | 84,920 | 88,120 |
+| `entryCount`, an author's 2,000 exact entries | 82,917 | 86,117 |
+| `wordPage`, 1 place (the root place) | 151,512 | 154,812 |
+| `wordPage`, 5 places | 355,125 | 358,825 |
+| `wordPage`, 20 places (one page) | 1,066,420 | 1,071,620 |
+| `children`, 16 child topics | 894,812 | 899,712 |
+| `children`, a page of 1 | 185,687 | 189,087 |
+
+**Bounded whatever the spam** (`test/readers/TopicLookup.t.sol`): `byName` page 1 at a position of 300 authors costs
+within 0.5% of the same page at 3 authors (the larger ordinals' calldata), and `placeCount` and `byName` in a place of
+2,000 positions cost the same to the gas as in a place of 3. A place padded with lone negatives around one real tag is
+read in pages of 4 entries, each page `LIMIT` with a continuation, until the tag (`test/readers/TopicEveryone.t.sol`).
+
+**Per row** *(computed from the page 10 / page 50 differences and the lens-size series; the head term is the fitted
+slope of the four lens sizes)*:
+
+- `mine`: an opening of about 190k + 28k per lens author (240k + 19k when the roll-ups hold entries), then per row
+  about 37k + 6.6k·(j + 1) + 0.1k·(rows already on the page), j the row's deciding lens index (a candidate decided by a
+  higher lens author costs the same as a row). The worst case is every row decided by the last lens author: about
+  37k + 6.6k·L per row.
+- `everyone`, exact: about 57k per entry without a lens (`raw`), 3.5k more per lens author; below, about 16k more per
+  lens author per entry (the viewed-place heads, one `heads` round per window of at most 64 / L entries); an opening of
+  about 90k.
+- `byName` about 23k per row after an opening of about 140k; `about` about 33k per row (69k more with a sample of 4);
+  `wordPage` and `children` about 48k per place after about 105k.
+
+**Call size.** At a 10M cap per read call, by the worst case: `mine` fits about 18 rows at lens 64, 36 at lens 32,
+100 at lens 8 and 175 at lens 1. **The largest page × lens product that keeps one `mine` call under 10M whatever the
+order of the lens is about 800** (800 at lens 8, 1,150 at lens 32 and 64); keep a page at 150 entries at most. In the
+round-robin case measured above, lens 32 fits a page of 50 (7.3M) and lens 64 does not (11.5M; about 30 fit).
+`everyone` below with a lens of 8 fits about 50 entries (9.5M measured), exact about 110. A consumer splits a read by
+these terms (`limit`, and a `gasReserve` that covers one batch of 16 rows) so that no lens fails as one call too big;
+a page cut by the reserve is a `GAS` page with a continuation, never an empty or `UNKNOWN` one.
+
