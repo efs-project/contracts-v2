@@ -34,6 +34,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
     uint8 private constant STATE_RELEASED = 3;
     uint8 private constant TARGET_RECORD = 1;
     uint8 private constant TARGET_SUBJECT = 2;
+    uint8 private constant TARGET_ADDRESS = 3; // SPIKE (tags/topics, Part C)
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_REBIND = 2;
     uint8 private constant T_MASK = 3;
@@ -198,6 +199,10 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         bytes32 target = action.target;
         if (_records().cells[target].typeId != 0) targetKind = TARGET_RECORD;
         else if (_subjects().cells[target].createAdmission != 0) targetKind = TARGET_SUBJECT;
+        // SPIKE (tags/topics, Part C): a nonzero address-shaped word (top 96 bits zero) that is neither a record
+        // nor a subject is an ADDRESS target, for every purpose: an address that never transacted can be tagged.
+        // Record and subject ids are keccak outputs, so neither is address-shaped in practice (~2^96 work).
+        else if (uint256(target) >> 160 == 0) targetKind = TARGET_ADDRESS;
         else revert E_TARGET_MISSING(effect.leaf, target);
 
         prevAdmission = head.admission;

@@ -151,7 +151,7 @@ abstract contract LedgerStorage {
         uint8 withdrawn;
         uint16 policyRow;
         uint16 roleRow;
-        uint8 targetKind; // BIND rows: 1 RECORD 2 SUBJECT, so the decoder rebuilds oldTarget without shadow heads
+        uint8 targetKind; // BIND rows: 1 RECORD 2 SUBJECT 3 ADDRESS (SPIKE), so the decoder rebuilds oldTarget without shadow heads
         bytes32 a;
     }
 
@@ -230,7 +230,7 @@ abstract contract LedgerStorage {
         uint8 state; // 0 UNSET 1 BOUND 2 MASKED 3 RELEASED
         uint48 revision;
         uint48 admission;
-        uint8 targetKind; // 0 NONE 1 RECORD 2 SUBJECT
+        uint8 targetKind; // 0 NONE 1 RECORD 2 SUBJECT 3 ADDRESS (SPIKE, tags/topics Part C)
         uint48 prevAdmission;
         uint48 bindingOrdinal;
         uint40 notAfter; // reserved zero; the "stale not dead" seam
