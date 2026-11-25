@@ -21,11 +21,11 @@
         "perByte": 11.8,
         "publishNew": {
           "files-bytes/1": 174925,
-          "files-span/1": 315083,
+          "files-span/1": 315107,
           "files-content/1 carrier 0": 199875,
           "files-content/1 carrier 2": 219482,
           "files-external/1": 246845,
-          "files-directory/1": 179150,
+          "files-directory/1": 175107,
           "files-name/2": 158911,
           "files-root/1 form 0": 158605,
           "files-root/1 form 1": 184686,
@@ -37,13 +37,13 @@
         "create": 96918,
         "bindHeadFresh": 329855,
         "bindHeadRebind": 195124,
-        "bindFolderFreshFile": 367163,
+        "bindFolderFreshFile": 367175,
         "bindFolderFreshDirectory": 366921,
-        "bindFolderRebind": 205284,
+        "bindFolderRebind": 205272,
         "unbindFolder": 135821,
         "releaseFolder": 134043,
         "withdraw": 151865,
-        "firstWriteSurcharge": 11767
+        "firstWriteSurcharge": 11779
       },
       "fit": {
         "publishNewBaseBySize": {
@@ -63,12 +63,12 @@
           "pub bytes 1024": 339273,
           "pub bytes 4096": 338009,
           "pub bytes 8192": 335603,
-          "pub span": 301737,
+          "pub span": 301701,
           "pub content c0": 349473,
           "pub content c2": 349485,
           "pub external 40": 382295,
           "pub external 400": 382251,
-          "pub directory": 339539,
+          "pub directory": 339534,
           "pub name 12": 407939,
           "pub name 200": 407905,
           "pub root f0": 339475,
@@ -80,9 +80,9 @@
           "create": 267793,
           "bind head fresh": 301034,
           "bind head rebind": 305358,
-          "bind folder fresh file": 308110,
-          "bind folder fresh dir": 308135,
-          "bind folder rebind": 317258,
+          "bind folder fresh file": 308098,
+          "bind folder fresh dir": 308147,
+          "bind folder rebind": 317270,
           "unbind folder": 310149,
           "release folder": 314118,
           "withdraw": 301927
@@ -100,14 +100,14 @@
         {
           "key": "bind folder fresh dir k1",
           "test": "test_model_bind_folder_fresh_dir()",
-          "gas": 678797,
-          "frameGas": 675056
+          "gas": 678809,
+          "frameGas": 675068
         },
         {
           "key": "bind folder fresh dir k2",
           "test": "test_model_bind_folder_fresh_dir()",
-          "gas": 1046276,
-          "frameGas": 1041977
+          "gas": 1046288,
+          "frameGas": 1041989
         },
         {
           "key": "bind folder fresh file k1",
@@ -118,8 +118,8 @@
         {
           "key": "bind folder fresh file k2",
           "test": "test_model_bind_folder_fresh_file()",
-          "gas": 1046735,
-          "frameGas": 1042436
+          "gas": 1046747,
+          "frameGas": 1042448
         },
         {
           "key": "bind folder rebind k1",
@@ -130,8 +130,8 @@
         {
           "key": "bind folder rebind k2",
           "test": "test_model_bind_folder_rebind()",
-          "gas": 732125,
-          "frameGas": 727826
+          "gas": 732113,
+          "frameGas": 727814
         },
         {
           "key": "bind head fresh k1",
@@ -172,14 +172,14 @@
         {
           "key": "first write fresh",
           "test": "test_model_first_write()",
-          "gas": 669266,
-          "frameGas": 664960
+          "gas": 690201,
+          "frameGas": 685888
         },
         {
           "key": "first write warm",
           "test": "test_model_first_write()",
-          "gas": 657503,
-          "frameGas": 653193
+          "gas": 678426,
+          "frameGas": 674109
         },
         {
           "key": "pub bytes 100 k1",
@@ -304,14 +304,14 @@
         {
           "key": "pub directory k1",
           "test": "test_model_publish_directory()",
-          "gas": 545540,
-          "frameGas": 541795
+          "gas": 564606,
+          "frameGas": 560853
         },
         {
           "key": "pub directory k2",
           "test": "test_model_publish_directory()",
-          "gas": 748361,
-          "frameGas": 744051
+          "gas": 786497,
+          "frameGas": 782172
         },
         {
           "key": "pub existing k1",
@@ -400,14 +400,14 @@
         {
           "key": "pub span k1",
           "test": "test_model_publish_span()",
-          "gas": 689896,
-          "frameGas": 686138
+          "gas": 689884,
+          "frameGas": 686126
         },
         {
           "key": "pub span k2",
           "test": "test_model_publish_span()",
-          "gas": 1074876,
-          "frameGas": 1070539
+          "gas": 1074888,
+          "frameGas": 1070551
         },
         {
           "key": "release folder k1",
@@ -466,8 +466,8 @@
         {
           "key": "validate rename move",
           "test": "test_model_validate_recipes()",
-          "gas": 1076319,
-          "frameGas": 1071442
+          "gas": 1076534,
+          "frameGas": 1071657
         },
         {
           "key": "validate two chunks",
@@ -493,7 +493,7 @@
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
           "measured": 1635771,
-          "predicted": 1539053,
+          "predicted": 1539065,
           "errorPercent": -5.91
         },
         {
@@ -505,10 +505,10 @@
         },
         {
           "key": "validate rename move",
-          "what": "rename + move: PUBLISH name (9 B), UNBIND FOLDER, BIND FOLDER fresh (another folder)",
-          "measured": 1071442,
-          "predicted": 1020332,
-          "errorPercent": -4.77
+          "what": "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
+          "measured": 1071657,
+          "predicted": 1018566,
+          "errorPercent": -4.95
         },
         {
           "key": "validate two chunks",
@@ -521,7 +521,7 @@
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
           "measured": 9169803,
-          "predicted": 9065805,
+          "predicted": 9065913,
           "errorPercent": -1.13
         }
       ],
@@ -538,11 +538,11 @@
           "files-span/1": 1019133,
           "files-content/1 carrier 0": 463825,
           "files-content/1 carrier 2": 571464,
-          "files-external/1": 708135,
-          "files-directory/1": 531130,
+          "files-external/1": 708123,
+          "files-directory/1": 527087,
           "files-name/2": 349285,
-          "files-root/1 form 0": 422553,
-          "files-root/1 form 1": 536666,
+          "files-root/1 form 0": 422565,
+          "files-root/1 form 1": 536678,
           "files-child/1 form 0": 773672,
           "files-child/1 form 1": 887862
         },
@@ -551,13 +551,13 @@
         "create": 360878,
         "bindHeadFresh": 1297741,
         "bindHeadRebind": 583082,
-        "bindFolderFreshFile": 1422969,
+        "bindFolderFreshFile": 1422981,
         "bindFolderFreshDirectory": 1422715,
-        "bindFolderRebind": 586018,
-        "unbindFolder": 333349,
-        "releaseFolder": 331571,
+        "bindFolderRebind": 586030,
+        "unbindFolder": 333361,
+        "releaseFolder": 331583,
         "withdraw": 430225,
-        "firstWriteSurcharge": 85487
+        "firstWriteSurcharge": 85499
       },
       "split": {
         "executionGas": {
@@ -569,11 +569,11 @@
             "files-span/1": 235773,
             "files-content/1 carrier 0": 170065,
             "files-content/1 carrier 2": 179784,
-            "files-external/1": 218535,
-            "files-directory/1": 139450,
+            "files-external/1": 218523,
+            "files-directory/1": 135407,
             "files-name/2": 153445,
-            "files-root/1 form 0": 128793,
-            "files-root/1 form 1": 144986,
+            "files-root/1 form 0": 128805,
+            "files-root/1 form 1": 144998,
             "files-child/1 form 0": 186152,
             "files-child/1 form 1": 202422
           },
@@ -582,13 +582,13 @@
           "create": 67118,
           "bindHeadFresh": 220621,
           "bindHeadRebind": 191402,
-          "bindFolderFreshFile": 247929,
+          "bindFolderFreshFile": 247941,
           "bindFolderFreshDirectory": 247675,
-          "bindFolderRebind": 194338,
-          "unbindFolder": 137509,
-          "releaseFolder": 135731,
+          "bindFolderRebind": 194350,
+          "unbindFolder": 137521,
+          "releaseFolder": 135743,
           "withdraw": 136465,
-          "firstWriteSurcharge": -12433
+          "firstWriteSurcharge": -12421
         },
         "stateGas": {
           "fixed": 587520,
@@ -625,8 +625,8 @@
       "fit": {
         "publishNewBaseBySize": {
           "files-external/1": {
-            "264": 706600,
-            "624": 709670
+            "264": 706588,
+            "624": 709658
           },
           "files-name/2": {
             "12": 333977,
@@ -643,13 +643,13 @@
           "pub span": 716181,
           "pub content c0": 939993,
           "pub content c2": 939993,
-          "pub external 40": 1186787,
-          "pub external 400": 1186683,
-          "pub directory": 930059,
+          "pub external 40": 1186811,
+          "pub external 400": 1186707,
+          "pub directory": 930054,
           "pub name 12": 1321671,
           "pub name 200": 1321637,
-          "pub root f0": 930007,
-          "pub root f1": 932060,
+          "pub root f0": 929995,
+          "pub root f1": 932048,
           "pub child f0": 714088,
           "pub child f1": 716118,
           "pub existing": 898042,
@@ -658,7 +658,7 @@
           "bind head fresh": 774734,
           "bind head rebind": 852666,
           "bind folder fresh file": 781798,
-          "bind folder fresh dir": 781847,
+          "bind folder fresh dir": 781859,
           "bind folder rebind": 871778,
           "unbind folder": 864635,
           "release folder": 868604,
@@ -677,43 +677,43 @@
         {
           "key": "bind folder fresh dir k1",
           "test": "test_model_bind_folder_fresh_dir()",
-          "gas": 2208303,
-          "frameGas": 539922,
+          "gas": 2208315,
+          "frameGas": 539934,
           "frameStateGas": 1664640
         },
         {
           "key": "bind folder fresh dir k2",
           "test": "test_model_bind_folder_fresh_dir()",
-          "gas": 3631577,
-          "frameGas": 787597,
+          "gas": 3631589,
+          "frameGas": 787609,
           "frameStateGas": 2839680
         },
         {
           "key": "bind folder fresh file k1",
           "test": "test_model_bind_folder_fresh_file()",
-          "gas": 2208508,
-          "frameGas": 540127,
+          "gas": 2208520,
+          "frameGas": 540139,
           "frameStateGas": 1664640
         },
         {
           "key": "bind folder fresh file k2",
           "test": "test_model_bind_folder_fresh_file()",
-          "gas": 3632036,
-          "frameGas": 788056,
+          "gas": 3632060,
+          "frameGas": 788080,
           "frameStateGas": 2839680
         },
         {
           "key": "bind folder rebind k1",
           "test": "test_model_bind_folder_rebind()",
-          "gas": 1461537,
-          "frameGas": 478596,
+          "gas": 1461549,
+          "frameGas": 478608,
           "frameStateGas": 979200
         },
         {
           "key": "bind folder rebind k2",
           "test": "test_model_bind_folder_rebind()",
-          "gas": 2048114,
-          "frameGas": 672934,
+          "gas": 2048138,
+          "frameGas": 672958,
           "frameStateGas": 1370880
         },
         {
@@ -761,16 +761,16 @@
         {
           "key": "first write fresh",
           "test": "test_model_first_write()",
-          "gas": 2118053,
-          "frameGas": 547026,
-          "frameStateGas": 1566720
+          "gas": 2226906,
+          "frameGas": 557954,
+          "frameStateGas": 1664640
         },
         {
           "key": "first write warm",
           "test": "test_model_first_write()",
-          "gas": 2032570,
-          "frameGas": 559459,
-          "frameStateGas": 1468800
+          "gas": 2141413,
+          "frameGas": 570375,
+          "frameStateGas": 1566720
         },
         {
           "key": "pub bytes 100 k1",
@@ -915,16 +915,16 @@
         {
           "key": "pub directory k1",
           "test": "test_model_publish_directory()",
-          "gas": 1575960,
-          "frameGas": 495095,
-          "frameStateGas": 1077120
+          "gas": 1682946,
+          "frameGas": 504153,
+          "frameStateGas": 1175040
         },
         {
           "key": "pub directory k2",
           "test": "test_model_publish_directory()",
-          "gas": 2218681,
-          "frameGas": 647651,
-          "frameStateGas": 1566720
+          "gas": 2432657,
+          "frameGas": 665772,
+          "frameStateGas": 1762560
         },
         {
           "key": "pub existing k1",
@@ -943,8 +943,8 @@
         {
           "key": "pub external 40 k1",
           "test": "test_model_publish_external_40()",
-          "gas": 2896141,
-          "frameGas": 640177,
+          "gas": 2896153,
+          "frameGas": 640189,
           "frameStateGas": 2252160
         },
         {
@@ -957,8 +957,8 @@
         {
           "key": "pub external 400 k1",
           "test": "test_model_publish_external_400()",
-          "gas": 4120567,
-          "frameGas": 787403,
+          "gas": 4120579,
+          "frameGas": 787415,
           "frameStateGas": 3329280
         },
         {
@@ -1006,8 +1006,8 @@
         {
           "key": "pub root f0 k2",
           "test": "test_model_publish_root_form0()",
-          "gas": 3111149,
-          "frameGas": 756683,
+          "gas": 3111161,
+          "frameGas": 756695,
           "frameStateGas": 2350080
         },
         {
@@ -1020,8 +1020,8 @@
         {
           "key": "pub root f1 k2",
           "test": "test_model_publish_root_form1()",
-          "gas": 2675885,
-          "frameGas": 713148,
+          "gas": 2675897,
+          "frameGas": 713160,
           "frameStateGas": 1958400
         },
         {
@@ -1041,15 +1041,15 @@
         {
           "key": "release folder k1",
           "test": "test_model_release_folder()",
-          "gas": 1203915,
-          "frameGas": 416815,
+          "gas": 1203927,
+          "frameGas": 416827,
           "frameStateGas": 783360
         },
         {
           "key": "release folder k2",
           "test": "test_model_release_folder()",
-          "gas": 1536044,
-          "frameGas": 552546,
+          "gas": 1536068,
+          "frameGas": 552570,
           "frameStateGas": 979200
         },
         {
@@ -1069,22 +1069,22 @@
         {
           "key": "unbind folder k1",
           "test": "test_model_unbind_folder()",
-          "gas": 1201724,
-          "frameGas": 414624,
+          "gas": 1201736,
+          "frameGas": 414636,
           "frameStateGas": 783360
         },
         {
           "key": "unbind folder k2",
           "test": "test_model_unbind_folder()",
-          "gas": 1535631,
-          "frameGas": 552133,
+          "gas": 1535655,
+          "frameGas": 552157,
           "frameStateGas": 979200
         },
         {
           "key": "validate 40kb last publication",
           "test": "test_model_validate_40kb_last_publication()",
-          "gas": 38884916,
-          "frameGas": 5973831,
+          "gas": 38884928,
+          "frameGas": 5973843,
           "frameStateGas": 32901120
         },
         {
@@ -1104,8 +1104,8 @@
         {
           "key": "validate rename move",
           "test": "test_model_validate_recipes()",
-          "gas": 3367597,
-          "frameGas": 914720,
+          "gas": 3367800,
+          "frameGas": 914923,
           "frameStateGas": 2448000
         },
         {
@@ -1135,10 +1135,10 @@
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
           "measured": 5599183,
-          "predicted": 5223227,
+          "predicted": 5223251,
           "errorPercent": -6.71,
           "measuredExecutionGas": 1290703,
-          "predictedExecutionGas": 1194342,
+          "predictedExecutionGas": 1194366,
           "measuredStateGas": 4308480,
           "predictedStateGas": 4014720
         },
@@ -1155,12 +1155,12 @@
         },
         {
           "key": "validate rename move",
-          "what": "rename + move: PUBLISH name (9 B), UNBIND FOLDER, BIND FOLDER fresh (another folder)",
-          "measured": 3362720,
-          "predicted": 3142480,
-          "errorPercent": -6.55,
-          "measuredExecutionGas": 914720,
-          "predictedExecutionGas": 876155,
+          "what": "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
+          "measured": 3362923,
+          "predicted": 3140726,
+          "errorPercent": -6.61,
+          "measuredExecutionGas": 914923,
+          "predictedExecutionGas": 874401,
           "measuredStateGas": 2448000,
           "predictedStateGas": 2252160
         },
@@ -1178,11 +1178,11 @@
         {
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-          "measured": 38874951,
-          "predicted": 38601933,
+          "measured": 38874963,
+          "predicted": 38601957,
           "errorPercent": -0.7,
-          "measuredExecutionGas": 5973831,
-          "predictedExecutionGas": 5784568,
+          "measuredExecutionGas": 5973843,
+          "predictedExecutionGas": 5784592,
           "measuredStateGas": 32901120,
           "predictedStateGas": 32803200
         }
@@ -1192,9 +1192,9 @@
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "ce81a2f386e398320def8027d0e732574b1e6389",
-    "dirtyFiles": 21,
-    "date": "2026-11-25T06:58:07.852Z",
+    "commit": "31e719f6ca30e7772e86782749d3f9616a91ae12",
+    "dirtyFiles": 0,
+    "date": "2026-11-25T10:33:06.343Z",
     "foundry": "forge Version: 1.8.3"
   }
 }
