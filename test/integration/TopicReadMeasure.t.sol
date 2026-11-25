@@ -6,7 +6,14 @@ import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Action, Purpose} from "../../src/interfaces/Actions.sol";
 import {Status} from "../../src/interfaces/Results.sol";
-import {AuthorRow, MineRow, PlaceCount, TopicPageInfo} from "../../src/interfaces/Readers.sol";
+import {
+    AuthorRow,
+    ITopicPageReader,
+    MineRow,
+    PlaceCount,
+    PlaceRow,
+    TopicPageInfo
+} from "../../src/interfaces/Readers.sol";
 
 /// @notice What each topic read costs a caller (docs/TAG-NUMBERS.md "Reads"): one cold `view` call per row (every
 ///         account it can touch is cooled), the call frame's gas (`vm.lastCallGas`, no intrinsic 21,000). Setups run
@@ -96,6 +103,69 @@ contract TopicReadMeasureTest is TopicReadersBase {
 
     function test_mine_lens64_depth64() public {
         _mineCase(64, 64);
+    }
+
+    // ---- everyone, raw, about --------------------------------------------------------------------------------
+
+    function _everyoneGas(bytes32 place, bool below, bytes32[] memory lens, bool raw, uint32 limit)
+        internal
+        returns (uint256 g)
+    {
+        _cool();
+        (TopicPageInfo memory info, PlaceRow[] memory rows) = pager.everyone(
+            ITopicPageReader.PlaceQuery(Purpose.TAG, place, below, raw, 0),
+            lens,
+            _unbound(),
+            "",
+            limit,
+            0
+        );
+        g = vm.lastCallGas().gasTotalUsed;
+        assertEq(uint8(info.q.status), uint8(Status.PRESENT));
+        assertEq(rows.length, limit, "a full page");
+    }
+
+    /// 60 things filed at a one-word place (exact) and under its child (below) by one author; a lens of 8 authors
+    /// none of whom said anything (every lens head is read), and raw.
+    function test_everyone_and_raw() public {
+        vm.pauseGasMetering();
+        bytes32 top = _regPath("ev", 1)[0];
+        bytes32 kid = _child(top, "kid", true);
+        _tagMany(alice, top, _things(60));
+        _tagMany(alice, kid, _things(60));
+        address[] memory a = _authorsN("evlens", 8);
+        vm.resumeGasMetering();
+        bytes32[] memory lens = _lensOf(a);
+        for (uint32 n = 10; n <= 50; n += 40) {
+            string memory k = string.concat(" page=", vm.toString(n));
+            _log(
+                string.concat("everyone exact lens=8", k), _everyoneGas(kid, false, lens, false, n)
+            );
+            _log(string.concat("everyone below lens=8", k), _everyoneGas(top, true, lens, false, n));
+            _log(string.concat("raw exact", k), _everyoneGas(kid, false, new bytes32[](0), true, n));
+            _log(string.concat("raw below", k), _everyoneGas(top, true, new bytes32[](0), true, n));
+        }
+    }
+
+    function test_about() public {
+        vm.pauseGasMetering();
+        bytes32 thing = things[0];
+        for (uint256 i; i < 20; ++i) {
+            bytes32 place = _regPath(string.concat("ab", vm.toString(i)), 1)[0];
+            _tag(alice, place, thing);
+        }
+        vm.resumeGasMetering();
+        for (uint16 n = 10; n <= 20; n += 10) {
+            _cool();
+            (TopicPageInfo memory info, PlaceRow[] memory rows) =
+                lookup.about(thing, 0, _unbound(), "", n);
+            _log(string.concat("about page=", vm.toString(n)), vm.lastCallGas().gasTotalUsed);
+            assertEq(uint8(info.q.status), uint8(Status.PRESENT));
+            assertEq(rows.length, n);
+        }
+        _cool();
+        lookup.about(thing, 4, _unbound(), "", 10);
+        _log("about page=10 sample=4", vm.lastCallGas().gasTotalUsed);
     }
 
     // ---- byName, counts ---------------------------------------------------------------------------------------

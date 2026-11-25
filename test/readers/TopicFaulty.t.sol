@@ -14,7 +14,14 @@ import {
 import {Keys} from "../../src/lib/Keys.sol";
 import {Purpose} from "../../src/interfaces/Actions.sol";
 import {Coverage, Status} from "../../src/interfaces/Results.sol";
-import {AuthorRow, MineRow, PlaceCount, TopicPageInfo} from "../../src/interfaces/Readers.sol";
+import {
+    AuthorRow,
+    ITopicPageReader,
+    MineRow,
+    PlaceCount,
+    PlaceRow,
+    TopicPageInfo
+} from "../../src/interfaces/Readers.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../../src/interfaces/ILedgerReads.sol";
 import {ILedgerViews} from "../../src/interfaces/ILedgerViews.sol";
@@ -304,6 +311,39 @@ contract TopicFaultyTest is TopicReadersBase {
         _set(fr, ILedgerReads.admission.selector, M_SET_WORD, 1, 3);
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 8));
         fk.children(t[0], _unbound(), "", 0);
+    }
+
+    // ---- everyone: the author head decides "someone says yes"; UNKNOWN is never a no -------------------------
+
+    function _everyoneF() internal view returns (TopicPageInfo memory, PlaceRow[] memory) {
+        return fp.everyone(
+            ITopicPageReader.PlaceQuery(Purpose.TAG, t[0], false, false, 0),
+            _lens1(alice),
+            _unbound(),
+            "",
+            0,
+            0
+        );
+    }
+
+    function test_an_unknown_author_head_is_an_unknown_page() public {
+        (, PlaceRow[] memory want) = _everyoneF();
+        assertGt(want.length, 0);
+        fi.setFault(
+            IIndexReads.postingHeadOf.selector,
+            FaultyReads.Fault(M_SET_WORD, 0, true, F_POSITION_AUTHORS, uint8(Coverage.UNKNOWN))
+        );
+        (TopicPageInfo memory info, PlaceRow[] memory rows) = _everyoneF();
+        _unknownAsData(info, rows.length);
+    }
+
+    function test_a_yes_count_past_the_statements_is_inconsistent() public {
+        fi.setFault(
+            IIndexReads.postingHeadOf.selector,
+            FaultyReads.Fault(M_SET_WORD, 2, true, F_POSITION_AUTHORS, 99)
+        );
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 1));
+        _everyoneF();
     }
 
     // ---- refusals as data ------------------------------------------------------------------------------------
