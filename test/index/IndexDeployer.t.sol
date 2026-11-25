@@ -17,7 +17,7 @@ import {E_DEPLOYER} from "../../src/interfaces/Errors.sol";
 ///         every prediction is asserted, the plan is pinned by hash, and a second run reverts.
 contract IndexDeployerTest is Test {
     LedgerStub internal ledger;
-    bytes32 internal constant HOT = keccak256("efs2/ledger-hot/1:test");
+    bytes32 internal constant HOT = keccak256("efs/ledger-hot/1:test");
 
     function setUp() public {
         ledger = new LedgerStub();

@@ -64,7 +64,7 @@ contract KeysView is IKeysView {
     /// The §10.2 kind number of a family id: the first eight bytes of each id (test/vectors/ids.json), packed
     /// in declaration order, and the matching kinds; reverts for an unknown family.
     bytes private constant FAMILY_PREFIXES =
-        hex"e4f7cc7ff76622e1d674025fa1091f86f564f360d1f5b65ade538e29eab736631fd035d41e55e58529d3bea0a01e3e2603b682942778e8b977b478e9ae9182faef3758cffd687b169f7b888d291c8c4ce84f1b109238a09c04369382b4c38d708433e20c283016a6";
+        hex"6e9951606fbc96e1560952b497304e115de43022a254f3877bd99cbefd8ad976785d20da3fabd294e01d4c32df6ffe58f0fdfb2a411a0a6c88058113d0725ef394f3e0f72302096c34e61531e3e8c02e3f6c616797d01274930992982a761794fa1f2b56a78c1724";
     bytes private constant FAMILY_KINDS = hex"010405080a0b0c0d0e0f101112";
 
     function _kindOf(FamilyId family) private pure returns (uint8) {

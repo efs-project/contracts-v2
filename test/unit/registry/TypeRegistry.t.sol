@@ -742,7 +742,7 @@ contract TypeRegistryTest is Test {
     }
 
     function testRoleExpectationsAppend() public {
-        bytes32 purpose = keccak256("efs2/purpose/folder/1");
+        bytes32 purpose = keccak256("efs/purpose/folder/1");
         bytes32 role = keccak256("name");
         (bytes32 t, uint16 r) = registry.roleExpectation(purpose, role);
         assertEq(t, 0);

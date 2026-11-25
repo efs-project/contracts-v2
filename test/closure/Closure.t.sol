@@ -64,9 +64,9 @@ contract ClosureTest {
         require(abi.encode(effect).length == 768, "Effect/3 is 24 static words");
         Head memory head;
         require(abi.encode(head).length == 8 * 32, "Head is 8 static words");
-        require(EXHAUSTED == keccak256("efs2/acceptor/2/exhausted"), "EXHAUSTED");
-        require(STATUS_VOCABULARY_ID == keccak256("efs2/status-vocabulary/1"), "vocabulary");
-        require(Keys.DOM_RECORD == keccak256("efs2/record/1"), "DOM_RECORD");
+        require(EXHAUSTED == keccak256("efs/acceptor/2/exhausted"), "EXHAUSTED");
+        require(STATUS_VOCABULARY_ID == keccak256("efs/status-vocabulary/1"), "vocabulary");
+        require(Keys.DOM_RECORD == keccak256("efs/record/1"), "DOM_RECORD");
         require(ActionKind.RELEASE == 7, "RELEASE");
         require(ClosureConstants.DESCRIPTOR_MAX == 4_096, "DESCRIPTOR_MAX");
     }

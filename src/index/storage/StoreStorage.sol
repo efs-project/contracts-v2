@@ -21,7 +21,7 @@ abstract contract PostingStoreStorage {
         uint16 flags; // reserved zero
     }
 
-    /// @custom:storage-location erc7201:efs.index.v2.store.posting
+    /// @custom:storage-location erc7201:efs.index.store.posting
     struct PostingStorage {
         mapping(bytes32 postingKey => PostingHead) heads;
         mapping(bytes32 postingKey => mapping(uint256 wordIndex => uint256)) words;
@@ -31,7 +31,7 @@ abstract contract PostingStoreStorage {
     }
 
     bytes32 internal constant POSTING_ROOT =
-        0xafadaed06cad87ccf20afccb1a44eec86b687f3eab1409e879b2ae8416b40a00;
+        0x17a0279c1971e9724be0233d1b0c8d1806af2df4a8793066d7d0fc0644d5e600;
 
     function _posting() internal pure returns (PostingStorage storage $) {
         assembly ("memory-safe") {
@@ -59,7 +59,7 @@ abstract contract BitmapStoreStorage {
         uint8 state; // 1 OPEN 2 COMPLETE 3 RETIRED
     }
 
-    /// @custom:storage-location erc7201:efs.index.v2.store.bitmap
+    /// @custom:storage-location erc7201:efs.index.store.bitmap
     struct BitmapStorage {
         mapping(bytes32 scope => ScopeHead) scopeHeads;
         mapping(bytes32 scope => mapping(uint256 wordIndex => uint256)) scopeEntries; // five u48 per word, entries >= 1
@@ -73,7 +73,7 @@ abstract contract BitmapStoreStorage {
     }
 
     bytes32 internal constant BITMAP_ROOT =
-        0x4640202bf0ab6387cbfef29b92cbbb784eceffe554551be074390efd2b65b600;
+        0x55e8a600ede9d478e75d626d97b87f5ed8831fef1cffb5713a957d8e20572700;
 
     function _bitmap() internal pure returns (BitmapStorage storage $) {
         assembly ("memory-safe") {

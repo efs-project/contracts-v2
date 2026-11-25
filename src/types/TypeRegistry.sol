@@ -51,7 +51,7 @@ contract TypeRegistry is ITypeRegistry, Initializable, RegistryStorage {
     );
     bytes32 public constant DECLARATION_TYPEHASH = keccak256("TypeDeclaration(bytes32 typeId)");
     bytes32 public constant BINDING_TYPEHASH = keccak256("TypeBinding(bytes32 bindingId)");
-    bytes32 public constant BINDING_DOMAIN = keccak256("efs2/described-binding/1");
+    bytes32 public constant BINDING_DOMAIN = keccak256("efs/described-binding/1");
     uint8 private constant CUSTOM_ABI_NESTED = 1;
     uint256 private constant SECP256K1_HALF_ORDER =
         0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;

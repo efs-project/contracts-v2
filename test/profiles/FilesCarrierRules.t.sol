@@ -7,7 +7,7 @@ import {FilesContentRule} from "../../src/profiles/FilesContentRule.sol";
 import {FilesUnitBase} from "./FilesUnitBase.sol";
 
 /// @notice `files-bytes/1` and `files-content/1`: the rule-level cases of the prototype's `FilesCarrierProfile.t.sol`
-///         rewritten for the v2 layouts, the large-file laws of docs/LARGE-FILES.md (no bytes cap, the `ANY`
+///         rewritten for these layouts, the large-file laws of docs/LARGE-FILES.md (no bytes cap, the `ANY`
 ///         reference checked by carrier, carrier 2 over a `files-span/1` root, 64-bit lengths), plus context checks.
 ///         `files-external/1` is `FilesExternalRule.t.sol`, `files-span/1` is `FilesSpanRule.t.sol`.
 contract FilesCarrierRulesTest is FilesUnitBase {

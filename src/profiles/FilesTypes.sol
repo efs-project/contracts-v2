@@ -6,7 +6,7 @@ import {Keys} from "../lib/Keys.sol";
 /// @title FilesTypes — the codec-1 descriptors and Type ids of the Files profile (design §12.1, §9.2;
 ///        docs/LARGE-FILES.md)
 /// @notice One builder per Type of §12.1 and docs/LARGE-FILES.md (ten Types). Every descriptor is NATIVE (grade 3),
-///         `ruleMode` 1 (STATICCALL), namespace `keccak256("efs2/files/1")`, `ruleCodehash` = the deployed rule
+///         `ruleMode` 1 (STATICCALL), namespace `keccak256("efs/files/1")`, `ruleCodehash` = the deployed rule
 ///         instance's codehash, `ruleInitcodeHash` = keccak of the instance's initcode (its creation code ‖
 ///         constructor arguments); the instance is CREATE2(0x4e59…956C, salt 0, initcode), which the registry checks. The declaration key is a parameter: the
 ///         fixture principal signs the declarations at genesis (§8.2 G21), and the ten ids are identical on every
@@ -30,7 +30,7 @@ import {Keys} from "../lib/Keys.sol";
 /// @dev Internal and pure/view only, so it compiles into its callers; the release generates the ids (design §5.14
 ///      `EfsFiles`: "Type ids come from `profiles/FilesTypes.sol` (generated from the release) or the caller").
 library FilesTypes {
-    bytes32 internal constant NAMESPACE = keccak256("efs2/files/1");
+    bytes32 internal constant NAMESPACE = keccak256("efs/files/1");
     uint8 internal constant GRADE_NATIVE = 3;
     uint8 internal constant KIND_REF32 = 1;
     uint256 internal constant HEADER = 134;
@@ -38,14 +38,13 @@ library FilesTypes {
     /// `refTypes` sentinel: any Type.
     bytes32 internal constant REF_ANY = bytes32(0);
 
-    bytes32 internal constant FIELD_PARENT = keccak256("efs2/files/field/parent/1");
-    bytes32 internal constant FIELD_BYTES = keccak256("efs2/files/field/bytes/1");
-    bytes32 internal constant FIELD_LEFT = keccak256("efs2/files/field/left/1");
-    bytes32 internal constant FIELD_RIGHT = keccak256("efs2/files/field/right/1");
-    bytes32 internal constant SEMANTIC_REVISION =
-        keccak256("efs2/files/semantic/parent-revision/1");
-    bytes32 internal constant SEMANTIC_CARRIER = keccak256("efs2/files/semantic/bytes-carrier/1");
-    bytes32 internal constant SEMANTIC_SPAN_CHILD = keccak256("efs2/files/semantic/span-child/1");
+    bytes32 internal constant FIELD_PARENT = keccak256("efs/files/field/parent/1");
+    bytes32 internal constant FIELD_BYTES = keccak256("efs/files/field/bytes/1");
+    bytes32 internal constant FIELD_LEFT = keccak256("efs/files/field/left/1");
+    bytes32 internal constant FIELD_RIGHT = keccak256("efs/files/field/right/1");
+    bytes32 internal constant SEMANTIC_REVISION = keccak256("efs/files/semantic/parent-revision/1");
+    bytes32 internal constant SEMANTIC_CARRIER = keccak256("efs/files/semantic/bytes-carrier/1");
+    bytes32 internal constant SEMANTIC_SPAN_CHILD = keccak256("efs/files/semantic/span-child/1");
 
     struct Spec {
         bytes name;

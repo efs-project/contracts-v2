@@ -21,7 +21,7 @@ import {
 
 /// @title LedgerApply — the per-leaf writing delegate (design §3.1 row 2, §6.4)
 /// @notice Runs only by DELEGATECALL in the kernel's context, under its transient lock, and writes only
-///         `efs.ledger.v2.{records,subjects,admissions,bindings}` plus the record and binding counters.
+///         `efs.ledger.{records,subjects,admissions,bindings}` plus the record and binding counters.
 ///         Makes no external call. The kernel has already run the shape law, loaded `info`, checked the
 ///         body and run the acceptors (through `LedgerIngress.validateLeaf`) before calling it. Its codehash
 ///         is an immutable of the kernel implementation, re-verified on every publication.

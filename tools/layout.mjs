@@ -20,37 +20,37 @@ const PROBES = {
   LedgerLayoutProbe: {
     section: "ledger",
     fields: {
-      probe_realm: "efs.ledger.v2.realm",
-      probe_counters: "efs.ledger.v2.counters",
-      probe_records: "efs.ledger.v2.records",
-      probe_subjects: "efs.ledger.v2.subjects",
-      probe_admissions: "efs.ledger.v2.admissions",
-      probe_publications: "efs.ledger.v2.publications",
-      probe_bindings: "efs.ledger.v2.bindings",
-      probe_principals: "efs.ledger.v2.principals",
-      probe_revisions: "efs.ledger.v2.revisions",
+      probe_realm: "efs.ledger.realm",
+      probe_counters: "efs.ledger.counters",
+      probe_records: "efs.ledger.records",
+      probe_subjects: "efs.ledger.subjects",
+      probe_admissions: "efs.ledger.admissions",
+      probe_publications: "efs.ledger.publications",
+      probe_bindings: "efs.ledger.bindings",
+      probe_principals: "efs.ledger.principals",
+      probe_revisions: "efs.ledger.revisions",
     },
   },
   RegistryLayoutProbe: {
     section: "registry",
     fields: {
-      probe_types: "efs.registry.v2.types",
-      probe_declarations: "efs.registry.v2.declarations",
-      probe_policy: "efs.registry.v2.policy",
-      probe_roles: "efs.registry.v2.roles",
-      probe_bindings: "efs.registry.v2.bindings",
-      probe_wrappers: "efs.registry.v2.wrappers",
-      probe_catalog: "efs.registry.v2.catalog",
-      probe_control: "efs.registry.v2.control",
+      probe_types: "efs.registry.types",
+      probe_declarations: "efs.registry.declarations",
+      probe_policy: "efs.registry.policy",
+      probe_roles: "efs.registry.roles",
+      probe_bindings: "efs.registry.bindings",
+      probe_wrappers: "efs.registry.wrappers",
+      probe_catalog: "efs.registry.catalog",
+      probe_control: "efs.registry.control",
     },
   },
-  PostingStoreLayoutProbe: { section: "index", fields: { probe_posting: "efs.index.v2.store.posting" } },
-  BitmapStoreLayoutProbe: { section: "index", fields: { probe_bitmap: "efs.index.v2.store.bitmap" } },
-  GenerationLayoutProbe: { section: "index", fields: { probe_gen: "efs.index.v2.gen" } },
+  PostingStoreLayoutProbe: { section: "index", fields: { probe_posting: "efs.index.store.posting" } },
+  BitmapStoreLayoutProbe: { section: "index", fields: { probe_bitmap: "efs.index.store.bitmap" } },
+  GenerationLayoutProbe: { section: "index", fields: { probe_gen: "efs.index.gen" } },
 };
 // Reserved ledger namespaces and the transient lock have no struct; they are part of the manifest.
-const RESERVED = { "efs.ledger.v2.source": "reserved (S4 SourceEvidence)", "efs.ledger.v2.staging": "reserved (stage-then-commit)" };
-const LOCK = "efs.ledger.v2.lock";
+const RESERVED = { "efs.ledger.source": "reserved (S4 SourceEvidence)", "efs.ledger.staging": "reserved (stage-then-commit)" };
+const LOCK = "efs.ledger.lock";
 
 const erc7201 = (id) => {
   const h = BigInt(keccak256(stringToHex(id)));
@@ -110,7 +110,7 @@ function flatten(typeKey, types, prefix = "", baseSlot = 0n) {
   return out;
 }
 
-const manifest = { schema: "efs2/layout/1", namespaces: {} };
+const manifest = { schema: "efs/layout/1", namespaces: {} };
 const raw = {};
 for (const [probe, spec] of Object.entries(PROBES)) {
   const layout = inspect(probe);
@@ -129,15 +129,15 @@ manifest.namespaces[LOCK] = { section: "ledger", root: hex32(erc7201(LOCK)), tra
   { name: "phase", slot: 0, offset: 0, bytes: 1, type: "uint8" }, { name: "stagedPublication", slot: 0, offset: 1, bytes: 6, type: "uint48" },
   { name: "admissionFrontier", slot: 0, offset: 7, bytes: 6, type: "uint48" }, { name: "mutationsSnapshot", slot: 0, offset: 13, bytes: 6, type: "uint48" } ] };
 
-// layoutId: keccak("efs2/ledger-layout/1" ‖ canonical JSON of the ledger section) — the identity the
+// layoutId: keccak("efs/ledger-layout/1" ‖ canonical JSON of the ledger section) — the identity the
 // kernel implementation carries as LAYOUT_ID and every revision row records.
 const canonical = (v) => JSON.stringify(v, (_, x) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x));
 const ledgerSection = Object.fromEntries(Object.entries(manifest.namespaces).filter(([, v]) => v.section === "ledger"));
-manifest.layoutId = keccak256(stringToHex("efs2/ledger-layout/1" + canonical(ledgerSection)));
+manifest.layoutId = keccak256(stringToHex("efs/ledger-layout/1" + canonical(ledgerSection)));
 
 // ---- Solidity emission ---------------------------------------------------------------------------------
-const C = (id) => id.replace(/^efs\./, "").replace(/\./g, "_").replace(/v2_/, "").toUpperCase(); // efs.ledger.v2.realm -> LEDGER_REALM
-const fn = (id, name) => { const ns = id.replace(/^efs\.(ledger|registry|index)\.v2\.(store\.)?/, "").replace(/\./g, "_"); return ns + name[0].toUpperCase() + name.slice(1).replace(/\./g, "_"); };
+const C = (id) => id.replace(/^efs\./, "").replace(/\./g, "_").toUpperCase(); // efs.ledger.realm -> LEDGER_REALM
+const fn = (id, name) => { const ns = id.replace(/^efs\.(ledger|registry|index)\.(store\.)?/, "").replace(/\./g, "_"); return ns + name[0].toUpperCase() + name.slice(1).replace(/\./g, "_"); };
 const keyType = (k) => (k === "address" ? "address" : k);
 const castOut = (f) => {
   const shift = f.offset * 8;
@@ -213,7 +213,7 @@ for (const [id, ns] of Object.entries(manifest.namespaces)) {
   for (const a of ns.arrays || []) if (a.elem) emitStructUnpackers(a.elemType, a.elem);
 }
 // the transient lock word
-P("    // efs.ledger.v2.lock: phase at bit 0 | stagedPublication at 8 | admissionFrontier at 56 | mutationsSnapshot at 104");
+P("    // efs.ledger.lock: phase at bit 0 | stagedPublication at 8 | admissionFrontier at 56 | mutationsSnapshot at 104");
 P("    function unpackLock(bytes32 w) internal pure returns (uint8 phase, uint48 stagedPublication, uint48 admissionFrontier, uint48 mutationsSnapshot) {");
 P("        uint256 x = uint256(w);");
 P("        phase = uint8(x);");

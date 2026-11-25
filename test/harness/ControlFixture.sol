@@ -51,7 +51,7 @@ abstract contract ControlFixture is Test {
     bytes32 internal constant INITIALIZABLE_SLOT =
         0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
 
-    bytes32 internal constant REALM_SALT = keccak256("efs2/test/control/salt");
+    bytes32 internal constant REALM_SALT = keccak256("efs/test/control/salt");
 
     /// A decoded revision row (design §4.3, 25 words).
     struct Rev {

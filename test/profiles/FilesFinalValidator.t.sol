@@ -182,7 +182,7 @@ contract FilesFinalValidatorTest is Test {
         assertEq(v.directoryTypeId(), DIR_TYPE);
         assertEq(
             v.identity(),
-            keccak256(abi.encode(keccak256("efs2/unit/files-final/1"), NAME_TYPE, DIR_TYPE))
+            keccak256(abi.encode(keccak256("efs/unit/files-final/1"), NAME_TYPE, DIR_TYPE))
         );
         Effect memory e;
         assertEq(v.fold(e, new bytes32[](0), 1), IIndexHook.fold.selector);

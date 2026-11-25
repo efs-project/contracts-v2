@@ -29,8 +29,8 @@ abstract contract ConsumerFixture is Test {
     using Descriptors for Descriptors.Params;
 
     uint256 internal constant DECLARATION_PK = 0xA11CE;
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
-    bytes32 internal constant ROLE = keccak256("efs2/test/consumer/role/name");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
+    bytes32 internal constant ROLE = keccak256("efs/test/consumer/role/name");
 
     KernelDeploy.Kernel internal k;
     IndexDeploy.Gen1 internal g;
@@ -62,7 +62,7 @@ abstract contract ConsumerFixture is Test {
                 )
             )
         );
-        k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs2/test/consumer"));
+        k = KernelDeploy.deploy(address(this), address(registry), keccak256("efs/test/consumer"));
         require(k.proxy == predictedLedger, "ledger prediction");
         ledger = ILedger(k.proxy);
         hot = ILedgerHot(k.proxy);

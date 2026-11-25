@@ -13,7 +13,7 @@ import {EfsNative} from "../../../src/lib/EfsNative.sol";
 contract ConstructorWriter {
     constructor(ILedger ledger) {
         Action[] memory actions = new Action[](1);
-        actions[0] = EfsNative.createAction(keccak256("efs2/test/consumer/constructor-writer"));
+        actions[0] = EfsNative.createAction(keccak256("efs/test/consumer/constructor-writer"));
         Native memory ctx;
         EfsNative.execute(ledger, actions, new bytes[](1), ctx);
     }
@@ -45,7 +45,7 @@ contract ReaderDouble is IReader {
         returns (bytes32[] memory callbackProfiles, bytes32[] memory physicalProfiles)
     {
         callbackProfiles = new bytes32[](1);
-        callbackProfiles[0] = keccak256("efs2/test/callback-profile");
+        callbackProfiles[0] = keccak256("efs/test/callback-profile");
         physicalProfiles = _physical;
     }
 }
@@ -65,7 +65,7 @@ contract RawProfilesReader {
     }
 
     function layoutId() external pure returns (bytes32) {
-        return keccak256("efs2/test/layout");
+        return keccak256("efs/test/layout");
     }
 
     function supportedProfiles() external view returns (bytes32[] memory, bytes32[] memory) {

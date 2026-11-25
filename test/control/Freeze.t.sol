@@ -19,7 +19,7 @@ import {
 ///         side of the ceremony — pre-checks 2, 3 and 9, the canaries, renouncing both ProxyAdmins,
 ///         `owner := 0` and the `Frozen` event — needs a RealmController and is not covered here.
 contract FreezeTest is ControlFixture {
-    bytes32 internal constant DEPS = keccak256("efs2/test/control/dependency-root");
+    bytes32 internal constant DEPS = keccak256("efs/test/control/dependency-root");
 
     /// The terminal set: the live components at revision + 1 with a nonzero dependency root.
     function _finalSet() internal view returns (ActivationSet memory set) {

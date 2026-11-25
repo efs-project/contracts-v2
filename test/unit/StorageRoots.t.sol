@@ -69,18 +69,18 @@ contract StorageRootsTest is Test {
     function testLedgerRoots() public view {
         bytes32[12] memory r = x.roots();
         string[12] memory ids = [
-            "efs.ledger.v2.realm",
-            "efs.ledger.v2.counters",
-            "efs.ledger.v2.records",
-            "efs.ledger.v2.subjects",
-            "efs.ledger.v2.admissions",
-            "efs.ledger.v2.publications",
-            "efs.ledger.v2.bindings",
-            "efs.ledger.v2.principals",
-            "efs.ledger.v2.revisions",
-            "efs.ledger.v2.source",
-            "efs.ledger.v2.staging",
-            "efs.ledger.v2.lock"
+            "efs.ledger.realm",
+            "efs.ledger.counters",
+            "efs.ledger.records",
+            "efs.ledger.subjects",
+            "efs.ledger.admissions",
+            "efs.ledger.publications",
+            "efs.ledger.bindings",
+            "efs.ledger.principals",
+            "efs.ledger.revisions",
+            "efs.ledger.source",
+            "efs.ledger.staging",
+            "efs.ledger.lock"
         ];
         for (uint256 i; i < 12; ++i) {
             assertEq(r[i], root(ids[i]), ids[i]);
@@ -90,14 +90,14 @@ contract StorageRootsTest is Test {
     function testRegistryRoots() public view {
         bytes32[8] memory r = y.roots();
         string[8] memory ids = [
-            "efs.registry.v2.types",
-            "efs.registry.v2.declarations",
-            "efs.registry.v2.policy",
-            "efs.registry.v2.roles",
-            "efs.registry.v2.bindings",
-            "efs.registry.v2.wrappers",
-            "efs.registry.v2.catalog",
-            "efs.registry.v2.control"
+            "efs.registry.types",
+            "efs.registry.declarations",
+            "efs.registry.policy",
+            "efs.registry.roles",
+            "efs.registry.bindings",
+            "efs.registry.wrappers",
+            "efs.registry.catalog",
+            "efs.registry.control"
         ];
         for (uint256 i; i < 8; ++i) {
             assertEq(r[i], root(ids[i]), ids[i]);
@@ -106,9 +106,9 @@ contract StorageRootsTest is Test {
 
     function testIndexRoots() public view {
         bytes32[3] memory r = z.roots();
-        assertEq(r[0], root("efs.index.v2.store.posting"));
-        assertEq(r[1], root("efs.index.v2.store.bitmap"));
-        assertEq(r[2], root("efs.index.v2.gen"));
+        assertEq(r[0], root("efs.index.store.posting"));
+        assertEq(r[1], root("efs.index.store.bitmap"));
+        assertEq(r[2], root("efs.index.gen"));
     }
 
     function testAllRootsDistinctAndLowByteZero() public view {

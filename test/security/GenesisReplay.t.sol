@@ -30,7 +30,7 @@ import {E_GENESIS} from "../../src/interfaces/Errors.sol";
 contract GenesisReplayTest is Test {
     address internal constant OWNER = address(0x0A11CE);
     address internal constant STRANGER = address(0x0BEEF);
-    bytes32 internal constant SALT = keccak256("efs2/test/security/genesis/create2-salt");
+    bytes32 internal constant SALT = keccak256("efs/test/security/genesis/create2-salt");
 
     KernelDeploy.Kernel internal k;
     TypeRegistry internal registryImpl;
@@ -49,12 +49,12 @@ contract GenesisReplayTest is Test {
                 owner_,
                 address(k.implementation),
                 address(registryImpl),
-                keccak256("efs2/test/security/genesis/realm-salt"),
+                keccak256("efs/test/security/genesis/realm-salt"),
                 uint16(1),
                 keccak256(abi.encode(limits)),
                 address(0),
                 address(0),
-                keccak256("efs2/test/security/genesis/notice"),
+                keccak256("efs/test/security/genesis/notice"),
                 keccak256(type(RealmController).creationCode),
                 keccak256(type(TransparentUpgradeableProxy).creationCode)
             )

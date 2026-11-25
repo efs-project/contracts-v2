@@ -35,7 +35,7 @@ import {
 import {Keys} from "./Keys.sol";
 
 /// @title EfsNative — the native-lane consumer library (design §5.14, §3.1 row L4)
-/// @notice For a contract that writes to an EFS v2 ledger as itself. The author of a native publication is the
+/// @notice For a contract that writes to an EFS ledger as itself. The author of a native publication is the
 ///         caller of `execute` (`msg.sender` at the ledger): a contract using this library writes as
 ///         `Keys.principalFor(address(this), realmOrigin)` — its own contract principal — never as the EOA or
 ///         contract that called it. Every write carries an explicit nonce (each plan has its own

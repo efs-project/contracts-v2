@@ -111,7 +111,7 @@ contract RealmNoticeRuleTest is FilesUnitBase {
         _refuses(
             rule,
             _as(controllerPrincipal),
-            _notice(keccak256("efs2/notice/other/1"), 1, ""),
+            _notice(keccak256("efs/notice/other/1"), 1, ""),
             _none(),
             _noHeaders(),
             3

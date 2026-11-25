@@ -46,7 +46,7 @@ constructor state of the rules, like the existing sibling ids.
   for an external location; the verified commitment is the span root id, and a reader checks the sha256 after
   reading.
 
-Canonical chunking for SDKs (`efs2/chunking/1`, a convention, never enforced): fixed chunk payloads of 8,160 bytes
+Canonical chunking for SDKs (`efs/chunking/1`, a convention, never enforced): fixed chunk payloads of 8,160 bytes
 (a body of 8,192) except the last; the tree over `n` chunks is the chunk itself for `n = 1`, else
 `span(tree(first k), tree(rest))` with `k` the largest power of two below `n`. Children are published before
 their parents; a publication may carry several levels.
@@ -67,7 +67,7 @@ The locator is a URI of 1..2,048 bytes, every byte printable ASCII (0x21..0x7e),
 allowlist**: `ar://`, `ipfs://`, `bzz://`, `web3://`, `https://` and schemes that do not exist yet are all
 admitted. A scheme list on an immutable rule is not a security boundary (rendering safety lives in the client),
 is trivially evaded and cannot anticipate new schemes; this is the v1 ruling of 2026-06-19 (ADR-0056) carried
-into v2. `length` is bounded by `2^64 − 1`. No remote proof is taken at admission; readers verify the sha256.
+over. `length` is bounded by `2^64 − 1`. No remote proof is taken at admission; readers verify the sha256.
 
 ## `web3://`
 

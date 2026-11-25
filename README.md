@@ -1,6 +1,6 @@
-# EFS v2 contracts
+# EFS contracts
 
-The EFS v2 core contracts: the Ledger kernel, its delegates, the Type registry, the required
+The EFS core contracts: the Ledger kernel, its delegates, the Type registry, the required
 index, the control plane, the read facets and the consumer closure, built from
 [docs/DESIGN.md](docs/DESIGN.md) in the order of [docs/IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md).
 The product choices the design leaves open are in [docs/QUESTIONS-FOR-JAMES.md](docs/QUESTIONS-FOR-JAMES.md).

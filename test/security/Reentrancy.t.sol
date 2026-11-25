@@ -108,7 +108,7 @@ contract ReenteringIndex is BaseIndexDouble {
 contract ReentrancyTest is Test, IRelay {
     error Bypassed();
 
-    bytes32 internal constant NOTICE = keccak256("efs2/test/security/reentrancy/notice");
+    bytes32 internal constant NOTICE = keccak256("efs/test/security/reentrancy/notice");
 
     KernelDeploy.Kernel internal k;
     TypeRegistry internal registryImpl;
@@ -138,7 +138,7 @@ contract ReentrancyTest is Test, IRelay {
             address(this),
             address(k.implementation),
             address(registryImpl),
-            keccak256("efs2/test/security/reentrancy/salt"),
+            keccak256("efs/test/security/reentrancy/salt"),
             1,
             keccak256(abi.encode(limits)),
             address(0),
@@ -217,13 +217,13 @@ contract ReentrancyTest is Test, IRelay {
     {
         ActivationSet memory next = _set(2, address(controller));
         ActivationSet memory terminal = _set(2, address(controller));
-        terminal.dependencyRoot = keccak256("efs2/test/security/reentrancy/dependency-root");
+        terminal.dependencyRoot = keccak256("efs/test/security/reentrancy/dependency-root");
         terminal.expectedExecutionSet = ExecutionSets.executionSet(terminal, k.proxy);
         RealmController successor =
             new RealmController(address(this), k.proxy, address(registry), NOTICE);
         ActivationSet memory migration = _set(2, address(successor));
         controller.transferOwnership(address(this)); // so acceptOwnershipAndActivate reaches its body
-        bytes32 typeId = keccak256("efs2/test/security/reentrancy/type");
+        bytes32 typeId = keccak256("efs/test/security/reentrancy/type");
         address wrapper = address(new AcceptAll());
         bytes32 roster = Keys.familyId("roster");
         bytes32 byAuthor = Keys.familyId("by-author");
@@ -332,7 +332,7 @@ contract ReentrancyTest is Test, IRelay {
         bytes32 es = hot.executionSet();
         Action[] memory actions = new Action[](1);
         actions[0].kind = ActionKind.CREATE;
-        actions[0].salt = keccak256("efs2/test/security/reentrancy/outer");
+        actions[0].salt = keccak256("efs/test/security/reentrancy/outer");
         Native memory ctx;
         (uint64 publication,) = ledger.execute(actions, new bytes[](1), ctx, "");
         assertEq(publication, 1, "the outer publication landed");

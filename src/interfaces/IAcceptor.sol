@@ -49,4 +49,4 @@ interface IAcceptor {
 }
 
 // The one reserved 32-byte reply that is neither success nor refusal: nested exhaustion (mapped to E_ACCEPTOR_GAS).
-bytes32 constant EXHAUSTED = keccak256("efs2/acceptor/2/exhausted");
+bytes32 constant EXHAUSTED = keccak256("efs/acceptor/2/exhausted");

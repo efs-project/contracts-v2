@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.37;
 
-/// @notice Builders for codec `efs2/described/1` descriptors (design §9.2) used by the registry suites.
+/// @notice Builders for codec `efs/described/1` descriptors (design §9.2) used by the registry suites.
 library Descriptors {
     struct Params {
         uint8 wrapperVersion;

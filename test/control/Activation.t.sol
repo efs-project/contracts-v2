@@ -42,7 +42,7 @@ import {
 ///         its exact error, one success per step, and the activation family's effects on the revision row,
 ///         the realm words and pending plans (the §16.4 C2-gate cells reachable without a RealmController).
 contract ActivationTest is ControlFixture {
-    bytes32 internal constant OTHER = keccak256("efs2/test/control/other");
+    bytes32 internal constant OTHER = keccak256("efs/test/control/other");
 
     // =============================================================================================
     // 5a — the ordinal
@@ -371,7 +371,7 @@ contract ActivationTest is ControlFixture {
     function test_new_index_manifest_mismatch_E_INDEX_NOT_READY_6() public {
         PrefixAgreement idx = newIndexDouble(OTHER);
         Readiness memory r = liveReadiness(idx);
-        r.manifestHash = keccak256("efs2/test/control/stale-manifest");
+        r.manifestHash = keccak256("efs/test/control/stale-manifest");
         idx.setReadiness(r);
         expectActivateRevert(
             withIndex(nextSet(), address(idx)),
@@ -405,7 +405,7 @@ contract ActivationTest is ControlFixture {
         PrefixAgreement idx = newIndexDouble(OTHER);
         Readiness memory r = liveReadiness(idx);
         r.families = new FamilyEntry[](1);
-        r.families[0].familyId = keccak256("efs2/family/by-type/1");
+        r.families[0].familyId = keccak256("efs/family/by-type/1");
         r.families[0].shape = 1; // APPEND_ORDERED
         r.families[0].fromAdmission = 2;
         idx.setReadiness(r);
@@ -422,7 +422,7 @@ contract ActivationTest is ControlFixture {
         PrefixAgreement idx = newIndexDouble(OTHER);
         Readiness memory r = liveReadiness(idx);
         r.families = new FamilyEntry[](1);
-        r.families[0].familyId = keccak256("efs2/family/scope/1");
+        r.families[0].familyId = keccak256("efs/family/scope/1");
         r.families[0].shape = 2; // BITMAP: no from == 1 rule
         r.families[0].fromAdmission = 1;
         r.families[0].store = address(registry); // real code, not the pinned codehash

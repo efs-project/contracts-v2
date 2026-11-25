@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-/// @title Keys — the EFS v2 identity derivations
+/// @title Keys — the EFS identity derivations
 /// @notice Every permanent id the kernel mints is derived here and nowhere else. The domain tags, the
 ///         argument order and the ABI encoding are the prototype's (lab-b `src/Keys.sol`, itself copied
 ///         from the c0-core model) and are one-way doors: changing any of them changes every id ever
@@ -12,50 +12,50 @@ pragma solidity ^0.8.27;
 ///      `test/vectors/ids.json` and are produced by an independent implementation (`tools/vectors.mjs`).
 library Keys {
     // Record id: keccak256(abi.encode(DOM_RECORD, typeId, keccak256(body)))
-    bytes32 internal constant DOM_RECORD = keccak256("efs2/record/1");
+    bytes32 internal constant DOM_RECORD = keccak256("efs/record/1");
     // Position: keccak256(abi.encode(DOM_POSITION, purpose, subject, role))
-    bytes32 internal constant DOM_POSITION = keccak256("efs2/position/1");
+    bytes32 internal constant DOM_POSITION = keccak256("efs/position/1");
     // Binding key: keccak256(abi.encode(DOM_BINDING, principal, position))
-    bytes32 internal constant DOM_BINDING = keccak256("efs2/binding/1");
+    bytes32 internal constant DOM_BINDING = keccak256("efs/binding/1");
     // Scope key: keccak256(abi.encode(DOM_SCOPE, principal, purpose, subject))
-    bytes32 internal constant DOM_SCOPE = keccak256("efs2/vk/binding-scope/1");
+    bytes32 internal constant DOM_SCOPE = keccak256("efs/vk/binding-scope/1");
     // Posting key: keccak256(abi.encode(DOM_POSTING, typeId, uint256(kind), uint256(ordinal), valueKey))
-    bytes32 internal constant DOM_POSTING = keccak256("efs2/pk/1");
+    bytes32 internal constant DOM_POSTING = keccak256("efs/pk/1");
     // Subject id: keccak256(abi.encode(DOM_SUBJECT, creatorPrincipal, creatorSalt)) — depends only on the
     // creating principal and its salt, never on chain state, so the same create yields the same subject
     // id on every deployment.
-    bytes32 internal constant DOM_SUBJECT = keccak256("efs2/subject/1");
+    bytes32 internal constant DOM_SUBJECT = keccak256("efs/subject/1");
     // Contract principal: keccak256(abi.encode(DOM_PRINCIPAL, uint256(2), realmOrigin, address)). A contract
     // address is not unique across Realms; a key is, so key principals stay the left-padded address.
-    bytes32 internal constant DOM_PRINCIPAL = keccak256("efs2/principal/1");
+    bytes32 internal constant DOM_PRINCIPAL = keccak256("efs/principal/1");
     // Exact Type id: keccak256(abi.encode(DOM_TYPE, shape, keccak256(abi.encode(refTypes)), ruleId)).
     // The id commits to the Type's descriptor shape, its checked-reference Types in order and its
     // declared rule identity, so the same descriptor yields the same id on every Realm and a changed
     // descriptor is a different Type, never a re-registration.
-    bytes32 internal constant DOM_TYPE = keccak256("efs2/type/1");
+    bytes32 internal constant DOM_TYPE = keccak256("efs/type/1");
     // Role-scope key: keccak256(abi.encode(DOM_ROLE_SCOPE, principal, purpose, role)) — the index family 16 key
-    bytes32 internal constant DOM_ROLE_SCOPE = keccak256("efs2/vk/role-scope/1");
+    bytes32 internal constant DOM_ROLE_SCOPE = keccak256("efs/vk/role-scope/1");
     // Realm origin: keccak256(abi.encode(DOM_REALM_ORIGIN, genesisChainId, coreAddress, realmSalt)) — the one
     // identity input that names a chain and an address; it qualifies contract principals (design §1.2 row 12)
-    bytes32 internal constant DOM_REALM_ORIGIN = keccak256("efs2/realm-origin/1");
+    bytes32 internal constant DOM_REALM_ORIGIN = keccak256("efs/realm-origin/1");
     // Realm id: keccak256(abi.encode(DOM_REALM, realmOrigin, genesisExecutionProfileId))
-    bytes32 internal constant DOM_REALM = keccak256("efs2/realm/1");
+    bytes32 internal constant DOM_REALM = keccak256("efs/realm/1");
     // Publication id: keccak256(abi.encode(DOM_PUBLICATION, principalId, intentDigest)) — emitted, never stored
-    bytes32 internal constant DOM_PUBLICATION = keccak256("efs2/publication/1");
+    bytes32 internal constant DOM_PUBLICATION = keccak256("efs/publication/1");
     // Native intent digest (design §5.8): keccak256(abi.encode(DOM_NATIVE_INTENT, realmId, principalId, nonce,
     // deadline, expectedExecutionSet, expectedAcceptanceProfile, guardHash, actionsHash)) — the retry key
-    bytes32 internal constant DOM_NATIVE_INTENT = keccak256("efs2/native-intent/1");
+    bytes32 internal constant DOM_NATIVE_INTENT = keccak256("efs/native-intent/1");
     // Signed intent digest (chain-free retry key): keccak256(abi.encode(DOM_SIGNED_INTENT, hashStruct(intent), actionsHash))
-    bytes32 internal constant DOM_SIGNED_INTENT = keccak256("efs2/signed-intent/1");
+    bytes32 internal constant DOM_SIGNED_INTENT = keccak256("efs/signed-intent/1");
     // Acceptance profile fold seed: keccak256(abi.encode(DOM_PROFILE, executionSet)), folded per leaf (design §6.2)
-    bytes32 internal constant DOM_PROFILE = keccak256("efs2/acceptance-profile/1");
+    bytes32 internal constant DOM_PROFILE = keccak256("efs/acceptance-profile/1");
     // Descriptor shape: keccak256(abi.encode(DOM_DESCRIBED_SHAPE, descriptorBytes))
-    bytes32 internal constant DOM_DESCRIBED_SHAPE = keccak256("efs2/described-shape/1");
+    bytes32 internal constant DOM_DESCRIBED_SHAPE = keccak256("efs/described-shape/1");
     // Registry role key: keccak256(abi.encode(DOM_ROLE_KEY, purpose, role))
-    bytes32 internal constant DOM_ROLE_KEY = keccak256("efs2/role-key/1");
+    bytes32 internal constant DOM_ROLE_KEY = keccak256("efs/role-key/1");
     // Execution set (design §8.1): keccak256(abi.encode(DOM_EXECUTION_SET, layoutId, domainSeparator, ComponentSet,
     // revisionOrdinal, executionProfileId, capabilities, acceptedChainId, limitsProfileId))
-    bytes32 internal constant DOM_EXECUTION_SET = keccak256("efs2/execution-set/1");
+    bytes32 internal constant DOM_EXECUTION_SET = keccak256("efs/execution-set/1");
 
     // Posting-list kinds. 2, 3, 6, 7, 9 are reserved (never minted).
     uint8 internal constant KIND_BY_TYPE = 1;
@@ -142,9 +142,9 @@ library Keys {
         return keccak256(abi.encode(DOM_DESCRIBED_SHAPE, descriptor));
     }
 
-    /// Index family id: keccak256("efs2/family/<name>/1") (design §10.2).
+    /// Index family id: keccak256("efs/family/<name>/1") (design §10.2).
     function familyId(string memory name) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked("efs2/family/", name, "/1"));
+        return keccak256(abi.encodePacked("efs/family/", name, "/1"));
     }
 
     /// Exact Type id from its descriptor commitment, checked-reference Types and rule identity.

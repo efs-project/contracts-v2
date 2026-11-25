@@ -41,9 +41,9 @@ contract KeysTest is Test {
         assertEq(Keys.DOM_ROLE_KEY, b32(".domains.roleKey"));
         assertEq(Keys.DOM_EXECUTION_SET, b32(".domains.executionSet"));
         // The literal tags, so a change to the string shows up here and not only as a hash mismatch.
-        assertEq(Keys.DOM_RECORD, keccak256("efs2/record/1"));
-        assertEq(Keys.DOM_SCOPE, keccak256("efs2/vk/binding-scope/1"));
-        assertEq(Keys.DOM_POSTING, keccak256("efs2/pk/1"));
+        assertEq(Keys.DOM_RECORD, keccak256("efs/record/1"));
+        assertEq(Keys.DOM_SCOPE, keccak256("efs/vk/binding-scope/1"));
+        assertEq(Keys.DOM_POSTING, keccak256("efs/pk/1"));
     }
 
     function testIdentityVectors() public view {
@@ -147,7 +147,7 @@ contract KeysTest is Test {
         for (uint256 i; i < names.length; ++i) {
             assertEq(Keys.familyId(names[i]), b32(string.concat(".families.", names[i])), names[i]);
             assertEq(
-                Keys.familyId(names[i]), keccak256(abi.encodePacked("efs2/family/", names[i], "/1"))
+                Keys.familyId(names[i]), keccak256(abi.encodePacked("efs/family/", names[i], "/1"))
             );
         }
     }

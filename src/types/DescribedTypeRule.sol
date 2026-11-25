@@ -42,9 +42,9 @@ import {
 ///      exhaustion is not a refusal: the reply is the reserved word `EXHAUSTED` (`E_ACCEPTOR_GAS`, resubmit).
 contract DescribedTypeRule is IDescribedWrapper {
     /// The grammar profile this build implements (read once by `activateWrapper`).
-    bytes32 internal constant GRAMMAR_PROFILE = keccak256("efs2/described-grammar/1");
+    bytes32 internal constant GRAMMAR_PROFILE = keccak256("efs/described-grammar/1");
     /// The registry's binding preimage domain (`TypeRegistry.BINDING_DOMAIN`, design §9.3).
-    bytes32 internal constant BINDING_DOMAIN = keccak256("efs2/described-binding/1");
+    bytes32 internal constant BINDING_DOMAIN = keccak256("efs/described-binding/1");
     /// `customAbi` 1: the predicate is an IAcceptor/2 called with the wrapper's context unchanged.
     uint256 internal constant CUSTOM_ABI_NESTED = 1;
     /// Gas kept back from every nested call, on top of the 1/64 the EVM keeps, to classify and reply.

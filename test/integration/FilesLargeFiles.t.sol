@@ -18,7 +18,7 @@ import {RecordHeader} from "../../src/interfaces/Views.sol";
 import {E_REF, E_REJECTED} from "../../src/interfaces/Errors.sol";
 
 /// @notice Large files end to end (docs/LARGE-FILES.md) through the real kernel, registry and index: content found
-///         by sha256 (inline and external); a ~40 KB payload cut by the canonical chunker (`efs2/chunking/1`,
+///         by sha256 (inline and external); a ~40 KB payload cut by the canonical chunker (`efs/chunking/1`,
 ///         `EfsFiles.chunk`) into 8,160-byte chunks across several publications under the S1 limits, described by
 ///         `files-content/1` carrier 2 over the span root, named by a `files-root/1` form-1 revision with HEAD and
 ///         FOLDER binds, then READ BACK by walking the span tree through `LedgerReads.record` and checked against

@@ -12,7 +12,7 @@ import {E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 ///         entry of a key lives in the head word (`last`) until a second append materializes word 0, so a
 ///         singleton list costs one slot. Writes come only through the authorization of `StoreBase`.
 contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
-    bytes32 public constant STORE_ABI_ID = keccak256("efs2/posting-store/1");
+    bytes32 public constant STORE_ABI_ID = keccak256("efs/posting-store/1");
 
     uint256 private constant MASK48 = (1 << 48) - 1;
 

@@ -55,7 +55,7 @@ contract RealIndexTest is Test {
     ILedgerHot internal hot;
 
     bytes32 internal constant TYPE_OK = keccak256("test/type/ok");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
     bytes32 internal constant NAME = keccak256("name");
     uint8 internal constant SHA256_ALG = 1;
     bytes32 internal principal;

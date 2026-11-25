@@ -36,7 +36,7 @@ contract MigrationSuccessorTest is Test {
     TypeRegistry internal registry;
     RealmController internal controller;
     ILedgerHot internal hot;
-    bytes32 internal constant NOTICE = keccak256("efs2/test/security/migration/notice");
+    bytes32 internal constant NOTICE = keccak256("efs/test/security/migration/notice");
 
     function setUp() public {
         k = KernelDeploy.deployImplementations();
@@ -46,7 +46,7 @@ contract MigrationSuccessorTest is Test {
             address(this),
             address(k.implementation),
             address(registryImpl),
-            keccak256("efs2/test/security/migration/salt"),
+            keccak256("efs/test/security/migration/salt"),
             1,
             keccak256(abi.encode(limits)),
             address(0),
@@ -109,7 +109,7 @@ contract MigrationSuccessorTest is Test {
         _refuse(clone, abi.encodeWithSelector(E_CODE_SHAPE.selector, clone, uint8(5)));
         // an honest successor whose codehash the set does not pin
         ActivationSet memory set = _set(2, address(honest));
-        set.components.controllerCodehash = keccak256("efs2/test/security/migration/other");
+        set.components.controllerCodehash = keccak256("efs/test/security/migration/other");
         set.expectedExecutionSet = ExecutionSets.executionSet(set, k.proxy);
         vm.expectRevert(abi.encodeWithSelector(E_SUCCESSOR.selector, uint8(1)));
         controller.migrate(address(honest), set);

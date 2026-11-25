@@ -37,7 +37,7 @@ contract KernelTest is Test {
 
     bytes32 internal constant TYPE_OK = keccak256("test/type/ok");
     bytes32 internal constant TYPE_REJECT = keccak256("test/type/reject");
-    bytes32 internal constant FOLDER = keccak256("efs2/purpose/folder/1");
+    bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
     bytes32 internal principal;
 
     function setUp() public {

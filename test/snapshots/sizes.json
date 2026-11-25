@@ -1,5 +1,5 @@
 {
-  "schema": "efs2/sizes/1",
+  "schema": "efs/sizes/1",
   "source": "docs/DESIGN.md \u00a73.1 (units), \u00a73.3 (gate), \u00a715 (size table)",
   "note": "Budgets gate CI (test/size/Budgets.t.sol). nominal/pessimistic are the design estimates (status \"estimate\"), never measurements; pessimistic = nominal +15 %. argsEstimate is the constructor-argument allowance added to the bare initcode until each unit is deployed with real arguments (status \"estimate\"). measured stays null until a release regenerates this file; Budgets.t.sol logs the live measurement on every run.",
   "limits": {

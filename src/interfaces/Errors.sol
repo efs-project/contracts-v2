@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-// @title Errors — the EFS v2 error catalog (design §5.6)
+// @title Errors — the EFS error catalog (design §5.6)
 // @notice Every revert is a custom error with arguments; the release bundle ships `errors.json`
 //         with selector, meaning and retry class. The design names the arguments of every write-path
 //         error; where it lists an activation, registry, index or controller error by name only, the

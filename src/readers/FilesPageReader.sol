@@ -104,14 +104,14 @@ contract FilesPageReader is IFilesPageReader {
     uint256 internal constant SELECTED_NONE = 255;
     uint256 internal constant CONTINUATION_VERSION = 1;
     uint256 internal constant CONTINUATION_BYTES = 9 * 32;
-    bytes32 internal constant FAMILY_LIVE_SCOPE = keccak256("efs2/family/live-scope/1");
-    bytes32 internal constant DOM_QUERY = keccak256("efs2/files-page/query/1");
-    bytes32 internal constant DOM_PIN = keccak256("efs2/files-page/inventory/1");
+    bytes32 internal constant FAMILY_LIVE_SCOPE = keccak256("efs/family/live-scope/1");
+    bytes32 internal constant DOM_QUERY = keccak256("efs/files-page/query/1");
+    bytes32 internal constant DOM_PIN = keccak256("efs/files-page/inventory/1");
     /// The one physical and callback profile served (generation 1, `RealmIndex`).
     bytes32 internal constant PHYSICAL_PROFILE =
-        keccak256("efs2/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
+        keccak256("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head");
     bytes32 internal constant CALLBACK_PROFILE =
-        keccak256("efs2/index-callback/3:ordered-prefix:static-final:effect-24:refs");
+        keccak256("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs");
 
     address public immutable LEDGER;
     address public immutable VIEWS;

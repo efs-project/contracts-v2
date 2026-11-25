@@ -187,7 +187,7 @@ abstract contract DescribedRealm is Test {
     {
         return keccak256(
             abi.encode(
-                keccak256("efs2/described-binding/1"),
+                keccak256("efs/described-binding/1"),
                 address(rule).codehash,
                 block.chainid,
                 address(x.registry),

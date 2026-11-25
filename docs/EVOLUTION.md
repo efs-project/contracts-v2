@@ -8,7 +8,7 @@ Maintained copy of [DESIGN.md](DESIGN.md) §19: every class of change the contra
 | E2 | New descriptor codec or wrapper build | `codecVersion` and `ruleCodehash` in the header; `activateWrapper` appends; old Types keep their pinned wrapper | no | no | no | permissionless registration; controller activation |
 | E3 | New developer predicate semantics | new Type; `RefuseAllPolicy` on the old; supersession evidence | no | no | no | anyone / controller |
 | E4 | New index family or physical layout | new generation re-pinning the stores and adding a fresh store per new family set (created with it by `IndexDeployer`); APPEND families built ascending into it before attachment; BITMAP families hooked at declaration with per-scope backfill by `liveSemantics`; never a re-materialization of untouched families | no | no | no | controller / steward |
-| E5 | New action kind (incl. stage-then-commit) | kernel upgrade + new callback profile + new generation; kinds 8/9 and `efs.ledger.v2.staging` reserved | implementation, not selector | no | no | controller / frozen |
+| E5 | New action kind (incl. stage-then-commit) | kernel upgrade + new callback profile + new generation; kinds 8/9 and `efs.ledger.staging` reserved | implementation, not selector | no | no | controller / frozen |
 | E6 | New reader or Lens algorithm | immutable contracts over the facets; listed in `ReaderDirectory`; never in the execution set; readers resolve the live index per call | no | no | no | anyone, before and after freeze |
 | E7 | New profile (tags, lists, homes) | Types + a unit (new generation only if families change) + readers | no | no | no | anyone / controller |
 | E8 | Larger bodies and carriers | `carrierKind`; `limits.maxBody`; `BodyStore` behind b6 | no | no | no | controller |

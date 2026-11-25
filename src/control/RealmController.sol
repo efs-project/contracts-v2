@@ -263,7 +263,7 @@ contract RealmController is IRealmController {
             rs.principals[0] = principal;
             rs.positions = new bytes32[](1);
             rs.positions[0] =
-                Keys.position(Purpose.HEAD, keccak256("efs2/notice/canary/1"), bytes32(0));
+                Keys.position(Purpose.HEAD, keccak256("efs/notice/canary/1"), bytes32(0));
             rs.expectedHeads = new bytes32[](1);
             rs.expectedHeads[0] =
                 ILedgerCommitments(hot.ingress()).headSnapshotHash(0, 0, 0, bytes32(0));

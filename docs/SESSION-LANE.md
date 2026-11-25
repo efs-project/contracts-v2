@@ -245,8 +245,8 @@ background instead of approved one by one.
    service). *Recommend the funded key first; it needs nothing run by anyone.* This is Q9 again.
 6. **Q5 (witness retention)** decides whether contract wallets' session grants and ERC-1271 writes can be verified
    on another chain. Signed grants from key principals are portable either way.
-7. **Q2 (the signing domain)** and **Q43 (the `efs2` strings, and whether the EIP-712 version stays "2")** both
-   enter what Alice's wallet shows when she signs a grant. They must be settled before the first grant is signed.
+7. **Q2 (the signing domain)** enters what Alice's wallet shows when she signs a grant and must be settled before
+   the first grant is signed. Q43 is closed: the ledger domain is `(name = "EFS", version = "1")`.
 
 Q6 (declaration signatures) is not on this path.
 

@@ -22,7 +22,7 @@ import {
 } from "../../../src/interfaces/Errors.sol";
 
 // The twenty `DescribedTypeProfile` cases (prototype `L/test/DescribedTypeProfile.t.sol`, design §16.3
-// unit/registry) → v2. "this file" is test/unit/registry/DescribedTypeRule.t.sol; "Custom" is
+// unit/registry) → these suites. "this file" is test/unit/registry/DescribedTypeRule.t.sol; "Custom" is
 // DescribedTypeRuleCustom.t.sol beside it; "S14" is test/security/WrapperContext.t.sol.
 //   1 unknown_publish_and_reuse_refuse_initial_profile       → this file test_unregistered_or_retained_only_type_is_unknown
 //   2 public_registration_retains_bytes_and_requires_structure → this file test_structural_registration_and_body_law
@@ -31,12 +31,12 @@ import {
 //   5 direct_forged_context_and_fake_ledger_cannot_impersonate → S14 test_ctx_ledger_must_be_the_caller,
 //                                                               test_lookalike_coordinator_*
 //   6 custom_bad_bool_oversized_return_exhaustion_and_code_drift_refuse (L:120) → Custom test_hostile_predicates_through_the_kernel
-//                                                               (v2 change: exhaustion is E_ACCEPTOR_GAS, not a refusal)
+//                                                               (changed from the prototype: exhaustion is E_ACCEPTOR_GAS, not a refusal)
 //   7 descriptor_canonicality_and_body_negative_matrix       → this file test_text_body_negative_matrix (body half; the
 //                                                               descriptor half is TypeRegistry.t.sol testHeaderRefusals)
 //   8 public_relayer_wrong_signature_zero_custom_fields_and_opaque_boundary → this file
 //                                                               test_relayed_registration_and_the_declarer_is_no_administrator
-//                                                               (the opaque `register(shape, rule, refs)` path does not exist in v2)
+//                                                               (the opaque `register(shape, rule, refs)` path does not exist here)
 //   9 portable_destination_unchanged_declaration_and_custom_retention_only → Custom test_portable_identity_across_realms
 //  10 unknown_future_leaf_refuses_before_callback_registration → not applicable: index-callback ordering (a Type registered
 //                                                               from a callback), owned by integration/atomicity; no wrapper path
@@ -60,7 +60,7 @@ import {
 //                                                               test_binding_selects_the_instance_not_the_code; chain scope: S14
 //                                                               test_binding_id_is_recomputed
 //  20 descriptor_code_and_bounded_registry_return_are_rechecked → this file test_blob_and_wrapper_code_are_rechecked
-//                                                               (the v2 wrapper reads no registry, so the bounded-return half is moot)
+//                                                               (this wrapper reads no registry, so the bounded-return half is moot)
 
 /// @notice `DescribedTypeRule/1` (design §5.10, §9.1–9.2) through the real kernel, registry and index: grade-1
 ///         Types over every field kind, valid bodies that land and fold `by-type`, invalid bodies refused
@@ -90,7 +90,7 @@ contract DescribedTypeRuleTest is DescribedRealm {
         assertEq(impl, address(rule));
         assertEq(codehash, address(rule).codehash);
         assertEq(codec, 1);
-        assertEq(grammar, keccak256("efs2/described-grammar/1"));
+        assertEq(grammar, keccak256("efs/described-grammar/1"));
         assertEq(rule.codecVersion(), 1);
         assertEq(rule.grammarProfile(), grammar);
     }
