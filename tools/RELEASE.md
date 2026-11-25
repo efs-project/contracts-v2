@@ -130,7 +130,7 @@ leased in state `failed`.
   "stateDir": "<home>/instances/<name>", "deployment": "<stateDir>/efs-deployment.json",
   "expected": "<stateDir>/expected.json", "journal": "<stateDir>/fixture.json", "log": "<stateDir>/anvil.log",
   "ledger": "0x870a…0c1c", "registry": "0x…", "controller": "0x…", "keysView": "0x50dE…757F",
-  "web3Gateway": "0x38Bd…bC4a", "web3Url": "web3://0x38Bd…bC4a:31337/0x0000…f39f…2266/",
+  "web3Gateway": "0x38Bd…bC4a", "web3Url": "web3://0x38Bd…bC4a:31337/~efs/o/0xf754…c037/",
   "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x38Bd…bC4a" },
   "root": { "directoryRecordId": "0xf754…c037", "principalId": "0x…f39f…2266" },
   "seed": {
@@ -147,7 +147,7 @@ leased in state `failed`.
   },
   "typeIds": { "files-root/1": "0x…", "…": "one per Files Type" },
   "signerCapable": true,
-  "capabilities": { "filesSeed": "efs-fixture-seed/4", "filesTypes": 13, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
+  "capabilities": { "filesSeed": "efs-fixture-seed/4", "filesTypes": 13, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1", "efs/reader/topic-mine/1", "efs/reader/topic-everyone/1", "efs/reader/topic-lookup/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
   "planHash": "0xdacd…38db", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
@@ -343,10 +343,19 @@ files-child/1)` are CREATE2 steps **R1** and **R2**. Their constructors read `la
 they follow G18; they run after the genesis activation (G20). **R3** and **R4** list them permissionlessly in the
 `ReaderDirectory` under the kind labels `keccak256("efs/reader/lens/1")` and
 `keccak256("efs/reader/files-page/1")` (the strings `test/periphery/ReaderDirectory.t.sol` uses; the directory does
-not interpret them). **R6** `TopicPageReader(ledger, views, reads)` and **R7** `TopicLookupReader(ledger, views,
-reads, topic/1, topic-word/1)` follow the gateway (R5); **R8** and **R9** list them under
-`keccak256("efs/reader/topic-page/1")` and `keccak256("efs/reader/topic-lookup/1")`. Every reader is realm-specific,
-because its immutables name the ledger proxy.
+not interpret them). **R6** `TopicMineReader(ledger, views, reads)` (the lens view), **R7**
+`TopicEveryoneReader(ledger, views, reads)` (the public views) and **R8** `TopicLookupReader(ledger, views, reads,
+topic/1, topic-word/1)` follow the gateway (R5); **R9**, **R10** and **R11** list them under
+`keccak256("efs/reader/topic-mine/1")`, `keccak256("efs/reader/topic-everyone/1")` and
+`keccak256("efs/reader/topic-lookup/1")`. Every reader is realm-specific, because its immutables name the ledger
+proxy.
+
+**Reader features are size-bound.** Every reader and facet is held to the 19,660 B runtime budget (`forge build
+--sizes`; budgets are never edited to fit), so a reader feature costs bytes another feature cannot have: the step-4
+amendment split the old `TopicPageReader` (465 B of headroom) into the lens and the public view. Headroom at this
+release: `TopicMineReader` 4,304 B (15,356 B), `TopicEveryoneReader` 3,359 B (16,301 B), `TopicLookupReader` 3,114 B (16,546 B),
+`LedgerViews` 1,337 B (18,323 B), `EfsWeb3Gateway` 76 B (19,584 B) (the gateway's link forms took most of its room: a further
+gateway feature needs bytes found first).
 
 ### The fixture key
 
@@ -377,7 +386,7 @@ equal; see HARNESS-BUG below).
 | `tools/release.mjs` | Writes `release/release.json`, `release/errors.json` and `artifacts/`. |
 | `tools/gas-report.mjs` | Writes `gas/report.json`. |
 | `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the thirteen rules, `RefuseAllPolicy` and `FilesFinalValidator` (six Type ids: name, directory, root, child, topic, topic-word) through the factory in forge's EVM and returns `FilesTypes`' and `TopicTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
-| `deploy/plan.json` | `efs-deploy-plan/1`: 75 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, R0–R4, thirteen G21 registrations, R5 the `web3://` gateway, R6–R9 the topic readers and their listings, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
+| `deploy/plan.json` | `efs-deploy-plan/1`: 77 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, R0–R4, thirteen G21 registrations, R5 the `web3://` gateway, R6–R11 the three topic readers and their listings, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
 | `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (36/36 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 90 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (thirteen Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, `constants` (action kinds, capability bits, the three purpose ids with their preimages, the Status and Coverage codes, and the Files form, carrier, hash, alias and target-kind codes with the chunk payload: all parsed from the Solidity sources, so a consumer never types a protocol string), the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
 | `test/vectors/media.json` | `efs/vectors/media/1`, written by `tools/release.mjs` (or alone by `node tools/media-vectors.mjs`) and compared byte for byte by `release:check`: `files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty media strings with the grammar's code and each rule's refusal code (`docs/LARGE-FILES.md` "Media types"). `test/profiles/FilesMediaType.t.sol` asserts it against the rules, `EfsFiles`, `Keys` and `script/Genesis.s.sol`'s Type ids. |
 | `test/vectors/topics.json` | `efs/vectors/topics/1`, written by `tools/release.mjs` (or alone by `node tools/topic-vectors.mjs`) and compared byte for byte by `release:check`: the `topic-word/1` and `text/1` verdicts with their codes, the refused code point table (`TopicProfile.REFUSED`), path ids for 1, 2, 3 and 64 words, `PROPERTY` keys, the purposes and the `EfsTopics` builder encodings, for the release Type ids. `test/profiles/TopicVectors.t.sol` asserts every vector. |
@@ -434,19 +443,23 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
 10. **The readers.** `LensReader`'s `ledger()`, `VIEWS`, `READS` and `layoutId()`; `FilesPageReader`'s `LEDGER`,
     `VIEWS`, `READS`, `LAYOUT`, `NAME_TYPE`, `ROOT_TYPE` and `CHILD_TYPE`. For each kind label, the directory's
     `readers(ledger, kind)` must be exactly that reader with its codehash, `layoutId` and the generation-1 physical
-    profile, and the deployment document must list it. `TopicPageReader`'s and `TopicLookupReader`'s `LEDGER`, `VIEWS`,
-    `READS` and `LAYOUT` (and the lookup reader's `TOPIC_TYPE` and `WORD_TYPE`) equal the plan's, and both are listed
-    under their kinds. One page of `docs/` through `listDirectory` must be PRESENT
+    profile, and the deployment document must list it. `TopicMineReader`'s, `TopicEveryoneReader`'s and
+    `TopicLookupReader`'s `LEDGER`, `VIEWS`, `READS` and `LAYOUT` (and the lookup reader's `TOPIC_TYPE` and
+    `WORD_TYPE`) equal the plan's, and all three are listed under their kinds. One page of `docs/` through `listDirectory` must be PRESENT
     and `COMPLETE` with exactly three rows in bind order (`readme.txt`, `big.bin`, `remote.txt`, each → its file
     subject, HEAD → its root record). `LedgerReads.record`
     of that root record must return PRESENT with the right Type, word 0 and body.
 11. **The `web3://` gateway.** `resolveMode()` is `"5219"` and its fourteen immutables are the planned ones. Then
-    the seed is read through `request` the way a `web3://` client does it: `docs/readme.txt` by principal id and by
-    account address (same bytes, sha256, `text/plain` from the extension, no `X-Content-Type-Options`);
+    the seed is read through `request` the way a `web3://` client does it, from the seed root by its folder id
+    (`/~efs/o/<root directoryRecordId>/docs/…`, the root's creator as the default lens): `docs/readme.txt` with the
+    default lens and with `?lens=<fixture account>` (same bytes, sha256, `text/plain` from the extension, no
+    `X-Content-Type-Options`);
     `docs/big.bin` chunk by chunk following `web3-next-chunk` until the header is absent (three chunks, 20,000 bytes,
     the seed's sha256, each with the declared `Content-Type: application/octet-stream` and `nosniff`);
-    `docs/remote.txt` as `307` with the seed's locator and `x-efs-media-type`; `docs` as a complete JSON listing of the three files; and `404`, `400` and `416` for a missing
-    name, a malformed principal and an offset at the end.
+    `docs/remote.txt` as `307` with the seed's locator and `x-efs-media-type`; `docs` as a complete JSON listing of the three files; `404` and `416` for a missing
+    name and an offset at the end; and the link forms: `/docs/readme.txt` (a plain word: a topic path) `501`,
+    `/~home/…` and a principal id as the first segment `400`, a record that is not a folder by id `404`, and the
+    fixture account's own home `/0x<address>/` a complete listing named by `x-efs-home`.
 12. **Cold pin.** What an SDK holding only `release.json` and `efs-deployment.json` does on first contact.
 
 ### Cold-pin call count (observed)
@@ -512,6 +525,16 @@ by four `tag level` rows (`(k2 − k1) / 4` of a first statement on a 2-word and
 so each is one level: "all" rows a first tag at a fresh position, "mine" rows a first no at an existing position), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
 these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
+
+**Read terms (`reads`, step 4).** Every run also measures the topic readers (`tools/gas-reads.mjs` over
+`test/integration/TopicReadMeasure.t.sol`, one cold view call per row, on both schedules) and writes `reads`, a
+top-level section of its own: per schedule the measured `rows`, the fitted `terms` (`mine` exact and below: an opening,
+a per-lens-author opening term, a per-row base and a per-row term per lens index up to the decider; `everyone` exact
+and below: an opening, a per-row base, a per-lens-author term and the cost of a skipped entry at lenses of 1, 8 and
+64; `raw`, `byName`, `about`, `wordPage`, `children`: an opening and a per-row cost), the `bounds` per lens size (the
+most worst-case rows, and skipped entries, one call reads under `callGasCap` less `marginPercent`) and
+`recommended` (`pageTimesLens` per view, `maxRows`, `limitEntries`). The SDK sizes `limit` and `maxRows` from them;
+`--check 1` compares the measured rows exactly, like the publication rows.
 
 `pnpm gas:model:check` (`node tools/gas-model.mjs --check 1 --skip-amsterdam 1`) writes nothing: it re-measures the
 prague profile, refits, and exits 1 when a validation composite is off by more than 15% or when any fitted constant
@@ -620,8 +643,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    price is the Glamsterdam execution-gas 12,100, `GLAMSTERDAM_FLOOR` in `tools/deploy-plan.mjs`).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;
     they are not "generated for layoutId" by argument.
-11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20 and R6–R9 (the topic readers, step 4) after
-    R5. The facets `LedgerReads` and `LedgerViews` are not `IReader`s and are not listed; only the four readers are. **R0** deploys `KeysView` (the
+11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20 and R6–R11 (the topic readers, step 4)
+    after R5. The facets `LedgerReads` and `LedgerViews` are not `IReader`s and are not listed; only the five readers
+    are. **R0** deploys `KeysView` (the
     pure `Keys` derivations as a view, outside the execution set; the eight key helpers left `ILedgerCommitments`); its
     address is `keysView` in the deployment document and the `up` result.
 12. **§13 `fixture/`.** There is no `fixture/` directory, no forge-script-encoded seed transactions, no
@@ -654,8 +678,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
   need a state-diff pass. `tx.gas` below and above 2^24 is not varied, and there are no amsterdam fixture receipts:
   release bytes under `anvil --hardfork amsterdam` would need the reservoir and `tx.gas` above 2^24 for the genesis
   code deposit.
-- **Remaining read rows.** Confirm/recovery reads, `LensReader.headsAt` at 64 principals, and read rows on
-  amsterdam (reads are not repriced, so they are prague only).
+- **Remaining read rows.** Confirm/recovery reads and `LensReader.headsAt` at 64 principals in the report, and
+  report read rows on amsterdam (reads are not repriced, so they are prague only there; the topic readers' read terms
+  are measured on both schedules in `gas/model.json` `reads`).
 - **`vectors/execution-set.json`, `manifest.json`, `hot-abi.json`, `names.json` and the other §13 vectors.** These are
   generator work for `tools/vectors.mjs`'s owner. `release.json` hashes the two vector files that exist.
 - **The wrapper, the signed lane, guards, freeze and upgrades.** Out of S1b.3.
