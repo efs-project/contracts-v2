@@ -1083,9 +1083,10 @@ G5   DescriptorStore;  G6  DescribedTypeRule/1;  G7  IndexReplayDecoder(layoutId
 G9   IndexBuild/1 (per layoutId and callbackProfile; SELF; holds no generation address)                         CREATE2
 G10  the nine NATIVE rule instances of §12.1 at CREATE2(FACTORY, salt 0, ruleInitcode): FilesRootRule, FilesChildRule, FilesDirectoryRule,
      FilesNameRule (files-name/2), FilesBytesRule, FilesContentRule, FilesExternalContentRule, DirectoryAliasRule, RealmNoticeRule; plus RefuseAllPolicy
+     (the release also has FilesSpanRule, and the three Topics rules of §12.5 after them: TopicWordRule, TopicRule(wordTypeId), TextRule)
      post-check: each address equals the descriptor header's ruleInitcodeHash prediction and extcodehash == header.ruleCodehash
 G11  the nine descriptor blobs through DescriptorStore.put (CREATE2 by the store; idempotent)
-G12  FilesFinalValidator (no caller pin)                                                                         CREATE2
+G12  FilesFinalValidator(name, directory, root, child, topic, topic-word Type ids; no caller pin)               CREATE2
 G13  LedgerCore implementation (immutables: INGRESS, INGRESS_CODEHASH, APPLY, APPLY_CODEHASH, LAYOUT_ID, PREDECESSOR_LAYOUT_ID = 0, HOT_ABI_ID,
      SUPPORTED_HOT_ABI_IDS = [HOT_ABI_ID], SELF; constructor calls _disableInitializers)                        CREATE2
 G14  TypeRegistry implementation (SELF; _disableInitializers)                                                   CREATE2
@@ -1108,7 +1109,7 @@ G19  RealmIndex/1(ledgerProxy, layoutId, decoder, [postingStore], bitmapStore, b
 G20  controller.activate(genesisSet{revision 1, components, capabilities = 0, acceptedChainId = genesis, limits, noticePrincipal, expected})
        -> fresh-genesis readiness (frontier 0 == admissions 0; stores empty; every manifest family in its store's FAMILY_IDS), installs the index, records
           revision 1, clears the transition (lastTarget stays 0), caches executionSet; post-check: ledger.executionSet() == plan.expectedExecutionSet
-G21  permissionless registerDescribed for the nine §12.1 Types (idempotent by construction: NATIVE instances are deterministic, §9.3)
+G21  permissionless registerDescribed for the §12.1 and §12.5 Types (idempotent by construction: NATIVE instances are deterministic, §9.3)
 G22  the seed (§12.2 Root, then the sample folder and file) by the fixture principal; post-check: expected.json
 ```
 
@@ -1346,8 +1347,11 @@ Generic core + a constructor-fixed list of codehash-pinned units `{foldHook, fin
 | `files-external/1` | NATIVE | `[bytesRef, version (= 2), carrier (= 2), hashAlg (1 sha256), length (≤ 2^64 − 1), sha256, locatorLength] ‖ locator ‖ media`; the locator any RFC 3986 URI of 1..2,048 printable ASCII bytes, no scheme allowlist; the media type as `files-content/1`, the rest of the body after the locator (no length word; docs/LARGE-FILES.md), so nothing can ever be appended after it: a further field needs a new Type | `[files-bytes/1]` (1) | `FilesExternalContentRule`: `refs[0]` is the empty-sentinel bytes record (`refHeaders[0]`: `length == 32 && word0 == sha256("")`), locator and media grammar, no remote proof at admission; word 5 feeds the digest family through the second gen-1 `DigestSpec` |
 | `directory-alias/1` | NATIVE | `abi.encode(targetObjectId, kind)` | none | id-targeted alias |
 | `realm-notice/1` | NATIVE | `abi.encode(kind, revision, note)` | none | `RealmNoticeRule`: `kind ∈ {frozen, successor, migration}`; `frozen`/`migration` require `ctx.principalId == Keys.contractPrincipal(realmOrigin(), controller())`, `successor` requires `ctx.principalId == noticePrincipal() != 0` (all hot reads on `ctx.ledger`); the freeze canaries and the only successor evidence |
+| `topic-word/1` | NATIVE (namespace `efs/topics/1`) | the word's bytes: a word's page and the root-level topic `/<word>` (§12.5) | none | `TopicWordRule`: `TopicProfile.wordRefusal`, codes 1–7 (§12.5); refs present 8 |
+| `topic/1` | NATIVE (namespace `efs/topics/1`) | `abi.encode(parent, wordPage)`, exactly 64 B: a path of two or more words | `[0 = ANY, topic-word/1]` (1) | `TopicRule(wordTypeId)`: two refs (10), 64 bytes (11), parent a `topic/1` or `topic-word/1` record (12), second ref a `topic-word/1` record (13; the declared ref Type refuses it first) |
+| `text/1` | NATIVE (namespace `efs/topics/1`) | 1–255 B of UTF-8: a short display string (a label's value) | none | `TextRule`: `TopicProfile.textRefusal`, codes 20–23; refs present 24 |
 
-Purposes `HEAD`, `FOLDER`, `TAG` are closure constants. No role expectation rows exist at genesis: a `→ ANY` row is the same as no row, and `roleKey = keccak(DOM_ROLE_KEY, purpose, role)` cannot express a wildcard. FOLDER target validity is enforced by `FilesFinalValidator`; HEAD target validity (the target is a `files-root/1` or `files-child/1` record whose file word is the HEAD's subject) is enforced reader-side — `FilesPageReader` and `LensReader.resolveRecord` report such a head `INVALID` — because the gen-1 validator's `purposeFilter` is FOLDER. A folder is a `files-directory/1` record (`Keys.record`, domain `efs/record/1`) and a file is a created subject (`Keys.subject`, domain `efs/subject/1`): the two ids are keccak outputs over different domain tags, so no id is both short of a hash collision, the kind of a target is a property of its id, and "a directory record of this profile's Type, else a created subject, else absent" is the routing rule; a `files-root/1` naming a folder's id is refused (it is not a created subject); placement validity is a final-hook check; names are a profile obligation enforced by `FilesFinalValidator` on every FOLDER bind, signed or native.
+Purposes `HEAD`, `FOLDER`, `TAG`, `PROPERTY`, `SAME` and `BROADER` are closure constants (§12.5 for the last four). No role expectation rows exist at genesis: a `→ ANY` row is the same as no row, and `roleKey = keccak(DOM_ROLE_KEY, purpose, role)` cannot express a wildcard. FOLDER target validity is enforced by `FilesFinalValidator`; HEAD target validity (the target is a `files-root/1` record whose word 0, or a `files-child/1` record whose word 1, is the HEAD's subject) is enforced by `FilesFinalValidator` at admission on every BIND at HEAD (code 8, §12.5; the unit's `purposeFilter` selects fold hooks only, the final hook sees every effect) and still checked reader-side as defence in depth — `FilesPageReader`, the gateway and `LensReader.resolveRecord` report such a head `INVALID` on a Realm without the validator. A folder is a `files-directory/1` record (`Keys.record`, domain `efs/record/1`) and a file is a created subject (`Keys.subject`, domain `efs/subject/1`): the two ids are keccak outputs over different domain tags, so no id is both short of a hash collision, the kind of a target is a property of its id, and "a directory record of this profile's Type, else a created subject, else absent" is the routing rule; a `files-root/1` naming a folder's id is refused (it is not a created subject); placement validity is a final-hook check; names are a profile obligation enforced by `FilesFinalValidator` on every FOLDER bind, signed or native.
 
 ### 12.2 Operations as action sequences (the measured recipes)
 
@@ -1359,7 +1363,7 @@ Purposes `HEAD`, `FOLDER`, `TAG` are closure constants. No role expectation rows
 - **Remove:** `RELEASE` (my claim stops; a lower-ranked author's same-named entry shows through). **Hide:** `UNBIND` (a mask, which stops a lens search: for a reader that ranks me first the name is absent whatever any lower-ranked author binds there; only an explicit hide masks). **Restore:** `BIND` (the kept target word makes a same-target restore a rewrite).
 - **Staged save:** one publication of ≤ `maxActions` leaves with CAS per head; the M1 supported maximum is published in `limits` after C1 — estimate ≈ 20 edits (≈ 8.3M today for the batch, ≈ 0.40M marginal per edit after the first, since the per-publication overhead inside the single-edit row's ≈ 0.76M is paid once; §14) or ≈ 9 file creates per publication, conservative against the 2^24 execution cap; larger saves are split by the SDK and **labelled non-atomic**; stage-then-commit (kinds 8/9, capability b9) is reserved for a later kernel upgrade.
 
-`FilesFinalValidator` (gen 1, `purposeFilter = FOLDER`): for every FOLDER bind, a valid `files-name/2` record whose id is `recordFromHash(nameType, role)` is admitted at or before the terminal admission, the parent is a validated directory record, the target (`Effect.target`/`targetKind`) is a file subject or directory record, no self-link (an ADDRESS target on a FOLDER bind is refused with code 6, an unknown target kind); and for every HEAD BIND whose target kind is 3 ADDRESS, a refusal with code 7. This profile's readers cannot serve a HEAD or a folder entry that points at an address (it would confirm and never be readable), so those two purposes refuse it; TAG may point at an address, and the validator judges only the purposes it names, so another app's own purpose (or the `property` purpose a later profile adds) may point at an address unjudged. UNBIND and RELEASE carry no target and are never refused. It reads only `recordHeader`/`subjectCreatedAt` on the ledger and the effects (write-once facts).
+`FilesFinalValidator` (gen 1, `purposeFilter = FOLDER`): for every FOLDER bind, a valid `files-name/2` record whose id is `recordFromHash(nameType, role)` is admitted at or before the terminal admission, the parent is a validated directory record or a home (an address-shaped word, §12.5), the target (`Effect.target`/`targetKind`) is a file subject or directory record, no self-link (an ADDRESS target on a FOLDER bind is refused with code 6, an unknown target kind); for every BIND at HEAD, an ADDRESS target is refused with code 7 (it would confirm and never be readable) and any target that is not a revision of the bind's own file with code 8; a TAG, SAME or BROADER statement is judged as §12.5 says (codes 9–13); every other purpose, PROPERTY included, is not judged, whatever its target kind. Masks and releases of an existing binding are never refused. It reads only `recordHeader`, `bodyWord` and `subjectCreatedAt` on the ledger and the effects (write-once facts).
 
 ### 12.3 The PM's first milestone, mapped, with acceptance rows
 
@@ -1374,7 +1378,7 @@ Purposes `HEAD`, `FOLDER`, `TAG` are closure constants. No role expectation rows
 | tiny external Solidity consumer | `examples/NativeApp.sol`: registers a NATIVE Type at its deterministic instance, publishes, binds, reads back, reverts its own state on `E_REJECTED` | atomicity both directions; forwarding writer becomes the author; proxy-hosted app; two composing apps |
 | then: AR/IPFS reference | `files-external/1` (§12.1; S1b, inside C2) with its gen-1 `DigestSpec` | 1 call per descriptor read; `coverageOfDigest(sha256)` `COMPLETE`; `occurrencesOf`/digest lookup finds the file by sha256 whether its bytes are inline (`files-content/1`) or external |
 | two-author Lens fallback | `LensReader` ordered principals | `headsAt` 64 principals in one call |
-| tags | **deferred to S3, outside C2:** the concept Type (D-B folding), the stance carrier (D-C) and a tag family shape priced against D-E are not designed here (Q32) | — |
+| tags | the topic Types, the tag subject law, homes, the text Type and the three statement purposes (§12.5; docs/TAG-DESIGN.md §12 step 2); the tag lists, their readers and the gateway's home start are later steps of that order | `TopicMeasure.t.sol` rows on both schedules; `test/vectors/topics.json` |
 | populated upgrade (behavior 5) | the C2 subset of §16.4 | seed the Files fixture; activate a new `LedgerCore` with a new ingress/apply pin; the `StateDigest` outside the migration scope is unchanged; directory and file reads are identical through both readers before and after; a bound stale plan is refused with its nonce intact; a new write lands; the pre-upgrade publication retried → `AlreadyAdmitted` |
 | large directory | `FilesPageReader.listDirectory` over a 1,000-entry filtered folder | pages, calls, gas per page and returndata bytes recorded as a regression bound (the prototype needed 199 calls); cold versus warm |
 | root and home | the seed root (§12.2), `efs-deployment/1.root`, `defaultLensPrincipals` | a cold client lists the root `COMPLETE` from the manifest alone, with no prompt |
@@ -1382,7 +1386,69 @@ Purposes `HEAD`, `FOLDER`, `TAG` are closure constants. No role expectation rows
 
 ### 12.4 Deferred from M1 and why
 
-Signed lanes and guards (S2); ERC-1271 (S2b); tags (S3: the concept Type, the stance carrier and the D-E budget, Q32); `PlanV1` tiers; stateful rules (b4); import (S4); codec-2 specs; `ROSTER` writes; `BodyStore`; stage-then-commit (b9); substring search; the lease library and the six-command fixture CLI. AR/IPFS references are **not** deferred: `files-external/1` is an S1b Type.
+Signed lanes and guards (S2); ERC-1271 (S2b); the tag lists, tag readers and a `web3://` home start (docs/TAG-DESIGN.md §12 steps 3–4; the Types, laws and purposes are §12.5); `PlanV1` tiers; stateful rules (b4); import (S4); codec-2 specs; `ROSTER` writes; `BodyStore`; stage-then-commit (b9); substring search; the lease library and the six-command fixture CLI. AR/IPFS references are **not** deferred: `files-external/1` is an S1b Type.
+
+### 12.5 Topics, homes and statements about things (docs/TAG-DESIGN.md §1–§3, §8)
+
+Three NATIVE Types registered at genesis after the ten Files Types (§8.2 G10–G12, G21), declared by the same key under
+namespace `efs/topics/1` (`profiles/TopicTypes.sol`, `profiles/TopicProfile.sol`). Each descriptor carries its header
+byte 133 (`flags`) in one place per Type; all three are zero in this release.
+
+| Type | Body | Refs | Rule and refusal codes (`E_TOPIC_REFUSED(code)`) |
+|---|---|---|---|
+| `topic-word/1` | the word's bytes; the page of the word and the root-level topic `/<word>` | none | `TopicWordRule`: 8 refs present; then `TopicProfile.wordRefusal`: 1 empty or over 255 bytes; scanning in order, 2 malformed UTF-8 (overlong, surrogate, above U+10FFFF, stray continuation, truncated), 3 `/`, an ASCII control, space or `A`–`Z`, 7 a code point of `TopicProfile.REFUSED`; then 4 `.` or `..`, 5 a leading `~`, 6 `0x` and exactly 40 of `0-9a-f` |
+| `topic/1` | `abi.encode(parent, wordPage)`, 64 B; a path of n ≥ 2 words is `[path of the first n − 1 words, page of the last]` | `[0 = ANY, topic-word/1]` | `TopicRule(wordTypeId)`: 10 not two refs, 11 not 64 bytes, 12 the parent is neither `topic/1` nor `topic-word/1`, 13 the second ref is not a `topic-word/1` record |
+| `text/1` | 1–255 B: a short display string; `/`, spaces and uppercase allowed | none | `TextRule`: 24 refs present; then `TopicProfile.textRefusal`: 20 length, 21 malformed UTF-8, 22 a control character (C0, DEL, C1), 23 a bidi control or an invisible code point |
+
+- **Identity.** A topic's id is its record id: `Keys.record(topic-word/1, word)` for one word, `Keys.record(topic/1,
+  abi.encode(parentId, pageId))` above. It depends on neither author, Realm nor chain; anyone derives it from the words
+  (`EfsTopics.pathId`, twin in `tools/topic-vectors.mjs`). The kernel's reference law (§6.2) gives parent before child,
+  page before use and permanence (a WITHDRAW lowers an occurrence count, never the first admission). One sequence of
+  words has one record: a one-word `topic/1` needs a zero parent (`E_REF` 3), a parent of any other Type is refused
+  (12), a body of another length is refused (11). Depth is not stored (it would need a depth law to stay unique).
+- **The word rules run once per word**, on its page; a path record names pages by reference and never re-reads a word.
+  Rules 5 and 6 apply to every word because every word has a root-level page. `TopicProfile.REFUSED` is one table of
+  sorted ranges with a class each (1 C1 control, 2 bidi control, 3 invisible: `Cf`, `Zl`, `Zp`,
+  `Default_Ignorable_Code_Point`, 4 joiner or variation selector, 5 noncharacter, object or replacement character): at
+  least everything `files-name/2` refuses beyond ASCII, plus the joiners and variation selectors a folded word never
+  contains. It is fixed at the first lasting deployment and may change until then, with the SDK's fold rule; the SDK
+  folds and refuses before planning, and the chain never normalizes. A text refuses classes 1–3 only.
+- **Registration order.** Every page and path record a statement needs is admitted before it, parents first; an
+  earlier action of the same publication counts (`EfsTopics.registerPath` then `tag` is one publication). Registering
+  an existing record again is a new occurrence, never a refusal.
+- **Homes.** A home is an address, left-padded (`bytes32(uint256(uint160(addr)))`, which is `Keys.principal(addr)` for
+  a key account; a contract's principal id is Realm-qualified, so "the owner's entries" for a contract home use the
+  contract principal). A FOLDER bind may name a home as its parent with no check on the address (no code, balance or
+  history; a precompile is an ordinary home; the zero address is refused by the shape law). A record or subject id is
+  a keccak output, so an address-shaped one costs about 2^96 hash evaluations: the two parent forms cannot be confused.
+  `FilesPageReader` and `LensReader` list a home unchanged.
+- **Statements.** One bind each, at the purposes below. The validator judges a first statement (FIRST_BIND or
+  FIRST_MASK) and every BIND; it never judges a mask or a release of an existing binding.
+
+| Purpose | Position | Target | `FilesFinalValidator` |
+|---|---|---|---|
+| `TAG` (`efs/purpose/tag/1`) | (topic, role = thing) | the thing: any record or created subject of any Type, or an address (kind 3); the number rides `saltOrStrength` (§6.4) | first statement: the subject is a home or a `topic/1`/`topic-word/1` record first admitted strictly before the statement's own admission, else code 9 (a topic registered later in the same publication is refused: the index walks a topic's ancestors at the tag's own admission) |
+| `PROPERTY` (`efs/purpose/property/1`) | (any subject, key = `EfsTopics.propertyKey(k)` = `keccak256(abi.encode(keccak256("efs/property-key/1"), keccak256(k)))` for an ASCII key such as `label:en`, `definition`, `moved-to`) | a value record (a `text/1` for a label), a file subject or an address; one value per author per key | not judged |
+| `SAME` (`efs/purpose/same/1`) | (topic, role = other topic) | the other topic | first statement: subject (10) and role (11) each a topic registered strictly before it, and different (12); every BIND: target = role (13) |
+| `BROADER` (`efs/purpose/broader/1`) | (topic, role = parent topic) | the parent topic | as `SAME` |
+
+- **Reading `same`.** Between two word pages it is the word-level synonym: it applies to every path that uses either
+  word and makes the two root places the same. Between two path records it joins those two places only. Between a word
+  page and a path record it joins that root place and that one path and has no word-level effect. Cycles in `same` and
+  `broader` cannot be prevented at admission and need not be: readers bound their hops (docs/TAG-DESIGN.md §10).
+- **Builders** (`lib/EfsTopics.sol`, consumer closure; JS twins and encodings in `test/vectors/topics.json`):
+  `registerWord`, `registerPath`, `registerChild`, `tag`, `deny` (a lone negative at revision 0), `property`, `label`,
+  `same`, `broader`.
+- **Validator identity.** `FilesFinalValidator(name, directory, root, child, topic, topic-word)`, all six constructor
+  state and inside `identity()` in that order; the manifest unit is unchanged otherwise (`purposeFilter = FOLDER`).
+  Full code list: 1–6 FOLDER (§12.2), 7 HEAD to an address, 8 HEAD not a revision of its own file, 9 TAG subject,
+  10–13 SAME/BROADER.
+- **Adoption.** A Realm deployed before this release has no Topics Types and a validator that judges neither HEAD nor
+  TAG subjects: tags written there on arbitrary subjects stay readable by position but are not topics, and a bad HEAD
+  already on chain is still reported `INVALID` by the readers. Moving to these laws is a new generation with this
+  validator (§10.6) or a new Realm; nothing already admitted is rejudged. Writers adopt by registering pages and paths
+  before their first statement (the SDK plans this from the words) and by keying tags (topic, thing), never (thing,
+  topic), which is now refused.
 
 ---
 
@@ -1391,7 +1457,7 @@ Signed lanes and guards (S2); ERC-1271 (S2b); tags (S3: the concept Type, the st
 - **`release.json`** (`efs-contracts-release/1`): schema, version, source commit + tree hash + standard-JSON input hash, toolchain pins **including `bytecode_hash = "none"`**, a `BuildPlatformDescriptor` and the reproducible-build attestation (the two clean-rebuild hash sets of §16.6), `files{path → sha256}`, per contract `{runtimeHash, deployedBytecodeHash, initcodeHash, immutableReferences (must be empty for every `profiles/` contract), sizes, budget, dependencyClass}`, `profiles{typeIds with shape preimages and descriptor bytes, ruleIds, instance addresses (deterministic), acceptor codehashes, wrapper versions and codehashes, index manifest + hash + work model + digest specs, families with store addresses, limits, layoutId, hotAbiId, statusVocabularyId}`, `consumer{pragmaFloor, tested solc×EVM, remapping}`, `privilegedRoles`, `errors{selector → name, args, meaning, retryClass}`, `dependencyRoot` (the write-path closure the freeze checklist enumerates). Digest = `sha256(release.json)`.
 - **`artifacts/<Name>.json`**: ABI incl. errors/events (the union of kernel + apply + ingress fragments), bytecode, immutable refs, storage and transient layouts, method identifiers.
 - **`interfaces/` + `lib/`**: the consumer closure, `examples/NativeApp.sol`, `lib/QueryAccumulator.sol`; `profiles/FilesTypes.sol` generated.
-- **`vectors/`**: `ids.json` (every `Keys` derivation at a fixed mock address, every domain string, every family name and id), `layout.json`, `intent.json` (S2), `native-intent.json` (digest preimages incl. bound and unbound cases and the recovery classifier cases), `effects.json` (an `Effect/3` with every field nonzero, its ABI encoding and `effectsHash`), `names.json`, `described-v1.json` (incl. the 4,097-byte negative), `execution-set.json`, `manifest.json`, `hot-abi.json`, one matched rollback control with exact error bytes. Generated by a forge script and checked by a pinned Node verifier that imports no contract code.
+- **`vectors/`**: `ids.json` (every `Keys` derivation at a fixed mock address, every domain string, every family name and id), `test/vectors/topics.json` (`efs/vectors/topics/1`: the word and text grammars' verdicts, the refused code point table, path ids for 1, 2, 3 and 64 words, property keys, the purposes and the `EfsTopics` builder encodings, for the release Type ids; written by `pnpm release` and compared by `release:check`), `layout.json`, `intent.json` (S2), `native-intent.json` (digest preimages incl. bound and unbound cases and the recovery classifier cases), `effects.json` (an `Effect/3` with every field nonzero, its ABI encoding and `effectsHash`), `names.json`, `described-v1.json` (incl. the 4,097-byte negative), `execution-set.json`, `manifest.json`, `hot-abi.json`, one matched rollback control with exact error bytes. Generated by a forge script and checked by a pinned Node verifier that imports no contract code.
 - **`deploy/plan.json`**: ordered steps, CREATE2 factory + salts, `RealmGenesis` initcode hash and nonce-derived addresses, post-checks; the deployer journals and resumes idempotently.
 - **`fixture/`**: seed version; the fixture principal (an EOA key published with the fixture; a sealed code-governed seed principal is Q29); pre-encoded seed transactions — the root `files-directory/1` (no CREATE), then the sample folder and file — produced by a forge script using `EfsNative`/`EfsFiles`; `expected.json` (incl. `root`); `EfsFixture.sol`; `efs-fixture.mjs up / verify / down` with `--chain-id --realm-salt --state-dir --hardfork`; `Multicall3` etched; only owned `--anvil` runs.
 - **`efs-deployment/1`** manifest: release digest, chain id, `realmId`/`realmOrigin`/`realmSalt`, factory, genesis address and nonces, every address with runtime hash, proxy implementation + actual `ProxyAdmin` + `owner()` + immutable-reference offsets, initializer data, tx/block hashes, execution set + revision, index manifest + generation + stores, capabilities, limits, `noticePrincipal`, privileged roles, readers listed, seed version, `root {directoryRecordId, principalId}` (a folder has no subject id), `defaultLensPrincipals[]`, actor addresses, RPC hints, evidence grade.

@@ -20,6 +20,17 @@ Writes the golden identity vectors for `src/lib/Keys.sol` to `test/vectors/ids.j
 reads the file, and the SDK's `Keys` twin must reproduce it bit for bit. Commit the regenerated file with any
 change to a derivation. The output line names the file, the number of outputs and the vector `typeId`.
 
+## topic-vectors.mjs
+
+Topics vectors (`test/vectors/topics.json`, `efs/vectors/topics/1`): the `topic-word/1` and `text/1` grammars' verdicts on
+about 200 words and 25 texts (every refusal code, the boundaries, multi-byte words and the first, middle and last code
+point of every range of the refused table), the refused table itself (entries and the packed bytes of
+`TopicProfile.REFUSED`), the ids of paths of 1, 2, 3 and 64 words with every record on the way, the `PROPERTY` key
+derivation, the purposes, and the ABI encodings (`actionsHash`, `bodiesHash`) of every `EfsTopics` builder. Computed in JS
+(viem, and the grammars written from the NatSpec of `src/profiles/TopicProfile.sol`). `pnpm release` writes it,
+`pnpm release:check` compares it byte for byte, and `test/profiles/TopicVectors.t.sol` asserts every vector against the
+rules, `TopicProfile`, `EfsTopics` and `Keys`; `node tools/topic-vectors.mjs` writes it alone from the current build.
+
 ## media-vectors.mjs
 
 Media-type vectors for the two content descriptors (`test/vectors/media.json`, `efs/vectors/media/1`): encoded
@@ -80,7 +91,7 @@ The deployment and release surface the SDK consumes (design §13), documented st
 `artifacts/` from the identity build; `pnpm plan` computes `deploy/plan.json` offline (every address, initcode hash
 and post-check). `pnpm fixture:up -- --json` starts a **named instance**: it leases a free port in the machine-wide
 registry (`$EFS_FIXTURE_HOME`, else `~/.local/state/efs/fixtures`), starts its own anvil under a TTL watchdog, runs the
-plan with locally signed transactions, registers the ten Files Types, seeds the root, a folder and three files (inline, a chunked large file, an external locator), runs every
+plan with locally signed transactions, registers the thirteen Types (ten Files, three Topics), seeds the root, a folder and three files (inline, a chunked large file, an external locator), runs every
 verify check, and prints one JSON object with its name, port, RPC URL, addresses and seed ids. Any number of instances,
 from any number of checkouts, run at once; each keeps its pid, log, journal and documents in its own state directory,
 never in a tracked file. `pnpm fixture:verify -- --name N` re-derives every address, runtime, `describe()` field,
