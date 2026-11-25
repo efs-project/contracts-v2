@@ -199,6 +199,13 @@ rule, never from `indexFloor`.
 - **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
   16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
 
+**16. A gap in CI, now closed (it predates this release).** `pnpm check` ran only before the build in CI, so its
+artifact checks were reported as pending and never ran there: the opcode lint that the ingress writes nothing, the
+opcode lint that the apply delegate calls nothing, and the rule that profile rules carry no immutables. They pass on
+this release's tree. CI now runs `pnpm check --built` after the build, which fails when any of them did not run. A
+consumer that relied on "CI is green" for those three properties in earlier commits should know they were checked
+locally, not by CI.
+
 ### The identity table (this release against `cc59d0c`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
