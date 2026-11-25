@@ -88,7 +88,7 @@ contract IndexReads {
         _declare("place", 6, 3, SHAPE_APPEND, 1, posting, live);
         _declare("place-below", 7, 3, SHAPE_APPEND, 1, posting, topics);
         _declare("scope-below", 19, 3, SHAPE_APPEND, 1, posting, topics);
-        _declare("position-authors", 20, 3, SHAPE_APPEND, 1, posting, live);
+        _declare("position-authors", 20, 3, SHAPE_APPEND, 3, posting, live); // HEADS: live = the yes-count
         _declare("role-places", 21, 4, SHAPE_APPEND, 1, posting, live);
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);

@@ -61,7 +61,7 @@ revision row; the transient lock word.
 | Descriptor blob | runtime `0x00 ‖ descriptor ‖ declarationSig`, SSTORE2 prologue, salt 0 | `DescriptorStore.predict` |
 | Codec | `efs/described/1`: 134-byte header, 164-byte field rows, refTypes sentinels 0 ANY / 1 SELF / ≥ 2^16 exact | `DescribedCodec` |
 | Hot ABI id | `HOT_ABI_ID` of the ledger implementation: the ABI id (design §5.3: `keccak(name ‖ per function by selector: selector ‖ keccak(output tuple))`, `tools/abi-id.mjs`) of `ILedgerHot` under `efs/ledger-hot/2` (release) or `efs/ledger-hot/2:test` (suites) | readiness tuple, units, the deploy plan; `pnpm abi:check` |
-| Store ABI ids | the same rule over `IPostingStore` under `efs/posting-store/1` and `IBitmapStore` under `efs/bitmap-store/1` | `storeAbiId()`; `pnpm abi:check` |
+| Store ABI ids | the same rule over `IPostingStore` under `efs/posting-store/2` (step 3b amended: `retain` and the UNCOUNTED append tag) and `IBitmapStore` under `efs/bitmap-store/1` | `storeAbiId()`; `pnpm abi:check` |
 | Index profiles | physical `keccak("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")`, callback `keccak("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs")`, manifest header `keccak("efs/index-manifest/2")` (the manifest hash also folds the reads contract's address and codehash) | `RealmIndex` constants; inside `MANIFEST_HASH` |
 | Family ids | `keccak("efs/family/<name>/1")`, thirteen names | `Keys.familyId` |
 | Purposes | `keccak("efs/purpose/{head,folder,tag}/1")` | `Purpose` (Actions.sol) |

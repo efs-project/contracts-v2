@@ -421,7 +421,7 @@ const FAMILY_TABLE = [
   ["live-scope", 18, 3, 2, 2, "bitmap", 1n],
   // the first-statement lists (design §10.2); the two topic roll-ups are maintained because the Topics Types are in the release
   ["place", 6, 3, 1, 1, "posting", 1n], ["place-below", 7, 3, 1, 1, "posting", 1n], ["scope-below", 19, 3, 1, 1, "posting", 1n],
-  ["position-authors", 20, 3, 1, 1, "posting", 1n], ["role-places", 21, 4, 1, 1, "posting", 1n],
+  ["position-authors", 20, 3, 1, 3, "posting", 1n], ["role-places", 21, 4, 1, 1, "posting", 1n],
 ];
 
 // ---- the plan ------------------------------------------------------------------------------------------------------

@@ -325,7 +325,7 @@ inputs are covered by the selector, events and errors are not part of the id. Co
 | --- | --- | --- | --- | --- |
 | hot (release) | `efs/ledger-hot/2` | `ILedgerHot.json` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | `0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` |
 | hot (suites) | `efs/ledger-hot/2:test` | `ILedgerHot.json` | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | `0xb9163fed951b51bb8d2d13b3bd410b5de236799b79c7b1f86b9699d1d90dc603` |
-| posting store | `efs/posting-store/1` | `IPostingStore.json` | `0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554` | `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229` |
+| posting store | `efs/posting-store/2` | `IPostingStore.json` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` (step 3b amended: `retain` added; `efs/posting-store/1` was `0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554`) | `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229` (under `/1`) |
 | bitmap store | `efs/bitmap-store/1` | `IBitmapStore.json` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425` |
 
 The release hot-ABI id is `HOT_ABI_ID` in `tools/deploy-plan.mjs` (name `HOT_ABI_ID_STRING`): `LedgerCore`'s
@@ -497,13 +497,14 @@ a 40 KB file, a first tag on a fresh 6-word path) and exits 1 if a prague predic
 
 **First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
 the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author
-has stated anything at its position, `bindTagSecondAuthor` when the position exists, plus, for each of the topic's
-`n − 1` proper ancestors, `tagLevel.mineNew` or `tagLevel.mineExisting` (the author's `scope-below` list at that
-ancestor is empty or not) and, on a fresh position only, `tagLevel.sharedNew` or `tagLevel.sharedExisting` (the
-`place-below` list at that ancestor). The SDK reads those list heads (`postingHeadOf`) when it plans; a list holding
+has stated anything at its position, `bindTagSecondAuthor` when the position exists (measured as a later author's first yes, an upper bound for a
+first no there), plus, for each of the topic's `n − 1` proper ancestors, `tagLevel.mineNew` or
+`tagLevel.mineExisting` (the author's `scope-below` list at that ancestor is empty or not) and, at every filing (a
+fresh position of either sign, or a later author's first yes; a later author's first no files nothing),
+`tagLevel.sharedNew` or `tagLevel.sharedExisting` (the `place-below` list at that ancestor). The SDK reads those list heads (`postingHeadOf`) when it plans; a list holding
 exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new (it costs one slot rewrite more than a new list, inside the model's headroom; not separately measured). The terms are measured
-by four `tag level` rows (`(k2 − k1) / 4` of a tag on a 2-word and on a 6-word topic from the same state, so each is
-one level), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
+by four `tag level` rows (`(k2 − k1) / 4` of a first statement on a 2-word and on a 6-word topic from the same state,
+so each is one level: "all" rows a first tag at a fresh position, "mine" rows a first no at an existing position), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
 these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
 

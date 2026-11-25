@@ -76,7 +76,7 @@ test("the committed pins match, and the gate names a pin that differs", async ()
     writeFileSync(join(tmp, "test/snapshots/abi/IPostingStore.json"), JSON.stringify(snap));
     const lines = checkPins(tmp);
     assert.equal(lines.length, 2, "both posting-store pins are named");
-    assert.ok(lines.every((l) => l.startsWith("efs/posting-store/1:")));
+    assert.ok(lines.every((l) => l.startsWith("efs/posting-store/2:")));
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

@@ -416,6 +416,70 @@ contract FilesFinalValidatorTest is Test {
         _ok(_list(e));
     }
 
+    // ---- a first "not this" names something that exists (codes 15, 1, 2) ----------------------------------------------
+
+    /// TAG first mask: the role is a record first admitted strictly before, a subject created strictly before, or an
+    /// address-shaped word; zero, a random word, and anything first seen at or after the statement are refused (15).
+    function test_tag_first_mask_names_something_that_exists() public {
+        bytes32 addr = bytes32(uint256(uint160(address(0xA11CE))));
+        // admitted: a file subject, a record of any Type (a revision, a directory, a topic), an address, a precompile
+        bytes32[6] memory ok = [FILE, CHILD_REV, PARENT, PATH_AB, addr, bytes32(uint256(1))];
+        for (uint256 i; i < ok.length; ++i) {
+            _ok(_list(_stmt(Purpose.TAG, WORD_A, ok[i], ActionKind.UNBIND, 6)));
+        }
+        // refused: zero, a random word, a record or a subject first seen at the statement's admission or later (only
+        // a stub can show a subject at or after it; a record later in the same publication is the real case)
+        bytes32 laterRecord = keccak256("a record published later in the same publication");
+        ledger.setRecord(laterRecord, OTHER_TYPE, TERMINAL - 4, 10);
+        bytes32 sameRecord = keccak256("a record published by the same admission");
+        ledger.setRecord(sameRecord, OTHER_TYPE, TERMINAL - 5, 10);
+        bytes32 laterSubject = keccak256("a subject created later");
+        ledger.setSubject(laterSubject, TERMINAL - 4);
+        bytes32[5] memory bad =
+            [bytes32(0), keccak256("a random word"), laterRecord, sameRecord, laterSubject];
+        for (uint256 i; i < bad.length; ++i) {
+            _bad(_list(_stmt(Purpose.TAG, WORD_A, bad[i], ActionKind.UNBIND, 6)), 15, 0);
+        }
+        // the subject law runs first
+        _bad(_list(_stmt(Purpose.TAG, keccak256("nowhere"), 0, ActionKind.UNBIND, 6)), 9, 0);
+        // a later mask or release of an existing binding is never judged, whatever the role
+        for (uint256 i; i < bad.length; ++i) {
+            _ok(_list(_stmt(Purpose.TAG, WORD_A, bad[i], ActionKind.UNBIND, 3)));
+            _ok(_list(_stmt(Purpose.TAG, WORD_A, bad[i], ActionKind.RELEASE, 4)));
+        }
+        // one admission later the record counts
+        Effect memory e = _stmt(Purpose.TAG, WORD_A, laterRecord, ActionKind.UNBIND, 6);
+        e.admission = TERMINAL - 3;
+        _ok(_list(e));
+    }
+
+    /// FOLDER first mask: the name law (1) and the parent law (2) apply; the target laws do not (a mask has none).
+    function test_folder_first_mask_names_a_real_entry_place() public {
+        bytes32 home = bytes32(uint256(uint160(address(0xBEEF))));
+        _ok(_list(_stmt(Purpose.FOLDER, PARENT, ROLE, ActionKind.UNBIND, 6)));
+        _ok(_list(_stmt(Purpose.FOLDER, home, ROLE, ActionKind.UNBIND, 6)));
+        Effect memory e = _stmt(Purpose.FOLDER, CHILD_DIR, ROLE, ActionKind.UNBIND, 6);
+        e.target = CHILD_DIR; // whatever the effect says, a mask is not judged by a target
+        _ok(_list(e));
+        // a made-up name, under a directory and under a home
+        _bad(_list(_stmt(Purpose.FOLDER, PARENT, keccak256("made up"), ActionKind.UNBIND, 6)), 1, 0);
+        _bad(_list(_stmt(Purpose.FOLDER, home, keccak256("made up"), ActionKind.UNBIND, 6)), 1, 0);
+        _bad(_list(_stmt(Purpose.FOLDER, PARENT, 0, ActionKind.UNBIND, 6)), 1, 0);
+        // a non-folder subject: a file, a name record, a random word, a directory admitted later
+        bytes32 lateDir = keccak256("a directory admitted later");
+        ledger.setRecord(lateDir, DIR_TYPE, TERMINAL + 1, 32);
+        bytes32[4] memory notFolders =
+            [FILE, Keys.recordFromHash(NAME_TYPE, ROLE), keccak256("random"), lateDir];
+        for (uint256 i; i < notFolders.length; ++i) {
+            _bad(_list(_stmt(Purpose.FOLDER, notFolders[i], ROLE, ActionKind.UNBIND, 6)), 2, 0);
+        }
+        // a lone hide of another author's real entry (a first mask at a real place) is admitted, and a mask or a
+        // release of an existing binding is never judged, wherever it stands
+        _ok(_list(_stmt(Purpose.FOLDER, PARENT, ROLE, ActionKind.UNBIND, 6)));
+        _ok(_list(_stmt(Purpose.FOLDER, FILE, keccak256("made up"), ActionKind.UNBIND, 3)));
+        _ok(_list(_stmt(Purpose.FOLDER, FILE, keccak256("made up"), ActionKind.RELEASE, 4)));
+    }
+
     // ---- SAME and BROADER --------------------------------------------------------------------------------------
 
     function test_relations_admitted_between_topics() public {

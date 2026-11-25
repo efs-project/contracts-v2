@@ -15,12 +15,14 @@ import {E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 ///         of the tag design) is held as immutables, so a family check reads no storage; `familyIds()` keeps the
 ///         same ids in the same order in storage for readiness checks.
 contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
-    /// keccak("efs/posting-store/1" ‖ for each IPostingStore function by selector: selector ‖ keccak(output tuple))
+    /// keccak("efs/posting-store/2" ‖ for each IPostingStore function by selector: selector ‖ keccak(output tuple))
     /// (tools/abi-id.mjs; `pnpm abi:check` recomputes it from the committed snapshot).
     bytes32 public constant STORE_ABI_ID =
-        0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554;
+        0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a;
 
     uint256 private constant MASK48 = (1 << 48) - 1;
+    /// Bit 63 of an appended ordinal: append the entry without raising `live` (`IPostingStore.append`).
+    uint64 public constant UNCOUNTED = uint64(1) << 63;
     uint256 public constant FAMILY_CAPACITY = 16;
 
     bytes32 private immutable F0;
@@ -150,11 +152,25 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
         return h.live;
     }
 
-    function _append(bytes32 key, uint64 ordinal, uint16 flagsOr) private returns (uint64) {
+    /// @inheritdoc IPostingStore
+    function retain(FamilyId family, PostingKey key, uint64 n) external returns (uint64 live) {
+        (uint8 mode,) = _authorize(FamilyId.unwrap(family));
+        if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        PostingHead storage h = _posting().heads[PostingKey.unwrap(key)];
+        uint64 raised = uint64(h.live) + n;
+        if (raised > h.count) revert E_ORDER(h.count, raised);
+        h.live = uint48(raised);
+        return raised;
+    }
+
+    /// One entry: `tagged` is the ordinal with bit 63 (`UNCOUNTED`) set when `live` is not raised; the entry itself
+    /// is the low 63 bits, which must fit the 48-bit entry (`E_ORDER(last, entry)` otherwise).
+    function _append(bytes32 key, uint64 tagged, uint16 flagsOr) private returns (uint64) {
         PostingStorage storage $ = _posting();
         PostingHead storage h = $.heads[key];
         uint48 c = h.count;
-        if (c != 0 && ordinal <= h.last) revert E_ORDER(h.last, ordinal);
+        uint64 ordinal = tagged & ~UNCOUNTED;
+        if (ordinal > MASK48 || (c != 0 && ordinal <= h.last)) revert E_ORDER(h.last, ordinal);
         if (c == 1) {
             // the second append materializes word 0 with the inline first entry and this one
             $.words[key][0] = uint256(h.last) | (uint256(ordinal) << 48);
@@ -164,7 +180,7 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
             $.words[key][w] |= uint256(ordinal) << shift;
         }
         h.count = c + 1;
-        h.live += 1;
+        if (tagged & UNCOUNTED == 0) h.live += 1;
         h.last = uint48(ordinal);
         if (flagsOr != 0) h.flags |= flagsOr;
         return c + 1;

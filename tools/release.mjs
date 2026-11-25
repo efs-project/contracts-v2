@@ -324,7 +324,7 @@ const manifest = {
     hotAbiIdName: plan.hotAbiIdString,
     readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, web3Gateway: plan.gateway, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
     statusVocabularyId: constants.status.id,
-    storeAbiIds: { posting: storeId("efs/posting-store/1"), bitmap: storeId("efs/bitmap-store/1") },
+    storeAbiIds: { posting: storeId("efs/posting-store/2"), bitmap: storeId("efs/bitmap-store/1") },
     abiIdRule: "keccak(name ‖ for each function sorted by selector: selector ‖ keccak(canonical output tuple)) (tools/abi-id.mjs)",
     indexProfiles: { physical: keccak256(Buffer.from("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs")) },
     crossCheck: scriptCheck,

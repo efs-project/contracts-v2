@@ -11,7 +11,8 @@
 //   cost(BIND TAG number change) (a REBIND to the same target with a new strength), cost(UNBIND TAG lone) (a first mask),
 //   cost(WITHDRAW), plus firstWriteSurcharge once for a principal that has never written
 //   cost(first TAG on an n-word topic) = bindTagFresh | bindTagSecondAuthor (fresh | existing position)
-//     + Σ over the n − 1 proper ancestors: tagLevel.mine{New|Existing} + (fresh position ? tagLevel.shared{New|Existing} : 0)
+//     + Σ over the n − 1 proper ancestors: tagLevel.mine{New|Existing}
+//       + (fresh position or a first yes ? tagLevel.shared{New|Existing} : 0)
 //
 // and predicts the suite's validation composites (never fitted). Exit 1 when a prague validation error exceeds 15%.
 //
@@ -224,7 +225,7 @@ function profile(rows, name) {
   return out;
 }
 
-const TAG_LEVELS_METHOD = `a first TAG statement (either sign) on an n-word topic = bindTagFresh (no author has stated anything at the position) or bindTagSecondAuthor (the position exists) + Σ over its n − 1 proper ancestors of tagLevel.mineNew | mineExisting (the author's scope-below list at that ancestor is empty | not) + (fresh position only) tagLevel.sharedNew | sharedExisting (the place-below list at that ancestor is empty | not); a list with exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new. Measured: (k2 − k1) / ${LEVEL_SPAN} of a tag on a 2-word and on a 6-word topic from the same state (rows "tag level all new | all existing | mine new | mine existing"); shared = all − mine`;
+const TAG_LEVELS_METHOD = `a first TAG statement (either sign) on an n-word topic = bindTagFresh (no author has stated anything at the position) or bindTagSecondAuthor (the position exists; measured as a first yes, which files one place entry, so it is an upper bound for a first no there) + Σ over its n − 1 proper ancestors of tagLevel.mineNew | mineExisting (the author's scope-below list at that ancestor is empty | not) + (a fresh position, either sign, or a first yes at an existing position: every filing) tagLevel.sharedNew | sharedExisting (the place-below list at that ancestor is empty | not); a list with exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new. Measured: (k2 − k1) / ${LEVEL_SPAN} of a first statement on a 2-word and on a 6-word topic from the same state (rows "tag level all new | all existing": a first tag at a fresh position; "mine new | mine existing": a first no at an existing position, which files nothing below); shared = all − mine`;
 const prague = profile(run("default"), "prague");
 const amsterdam = o["skip-amsterdam"] ? null : profile(run("amsterdam"), "amsterdam");
 

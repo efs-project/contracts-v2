@@ -50,7 +50,7 @@ export const ABI_IDS = [
   },
   { name: "efs/ledger-hot/2:test", snapshot: "test/snapshots/abi/ILedgerHot.json", pins: HOT_PINS_TEST },
   {
-    name: "efs/posting-store/1",
+    name: "efs/posting-store/2",
     snapshot: "test/snapshots/abi/IPostingStore.json",
     pins: [
       { file: "src/index/PostingStore.sol", pattern: /STORE_ABI_ID\s*=\s*(0x[0-9a-fA-F]{64})/ },

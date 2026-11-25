@@ -59,19 +59,35 @@ contract TopicListsTest is TopicListsBase {
         _tag(alice, t[n - 1], thing);
         uint64 o = _ordinal(alice, Purpose.TAG, t[n - 1], thing);
         _assertRollups(t, alice, thing, _list1(o), string.concat("n ", vm.toString(n)));
-        // a second author on the same (now existing) position: their own roll-ups, the shared ones unchanged
+        // a second author's first no on the same (now existing) position: their own roll-ups, the shared ones
+        // unchanged
         _deny(bob, t[n - 1], thing);
         _assertRollups(t, bob, thing, _list1(o), string.concat("second author n ", vm.toString(n)));
-        _eq(_place(Purpose.TAG, t[n - 1]), _list1(o), "one place entry");
+        _eq(_place(Purpose.TAG, t[n - 1]), _list1(o), "a later first no files nothing");
+        // a third author's first yes is filed again, at the place and at every proper ancestor
+        _tag(carol, t[n - 1], thing);
+        uint64 oc = _ordinal(carol, Purpose.TAG, t[n - 1], thing);
+        _assertRollups(
+            t, carol, thing, _list2(o, oc), string.concat("third author n ", vm.toString(n))
+        );
+        _eq(_place(Purpose.TAG, t[n - 1]), _list2(o, oc), "a later first yes is filed");
+        (uint64 c, uint64 l) = _head(F_PLACE, Purpose.TAG, t[n - 1]);
+        assertEq(abi.encode(c, l), abi.encode(uint64(2), uint64(1)), "two filings, one position");
         _eq(
             _authors(Purpose.TAG, t[n - 1], thing),
-            _list2(
+            _list3(
                 _admission(alice, Purpose.TAG, t[n - 1], thing),
-                _admission(bob, Purpose.TAG, t[n - 1], thing)
+                _admission(bob, Purpose.TAG, t[n - 1], thing),
+                _admission(carol, Purpose.TAG, t[n - 1], thing)
             ),
-            "two authors"
+            "three authors"
         );
         _eq(_rolePlaces(Purpose.TAG, thing), _list1(o), "one role-places entry");
+    }
+
+    function _list3(uint64 a, uint64 b, uint64 c) internal pure returns (uint64[] memory x) {
+        x = new uint64[](3);
+        (x[0], x[1], x[2]) = (a, b, c);
     }
 
     function test_every_first_tag_has_n_minus_one_entries_at_depths_1_2_3_8_64() public {
@@ -159,12 +175,13 @@ contract TopicListsTest is TopicListsBase {
         _deny(bob, topic, thing);
         Lists memory bobs = _lists(t, bob, thing);
         assertEq(bobs.authors.length, 2, "bob's first statement adds his one entry");
-        _eq(bobs.place, first.place, "the position was not fresh");
+        _eq(bobs.place, first.place, "a later author's first no files nothing");
         _eq(bobs.rolePlaces, first.rolePlaces, "the position was not fresh");
         _release(bob, topic, thing);
         _same(_lists(t, bob, thing), bobs, "bob release");
         _deny(bob, topic, thing);
         _same(_lists(t, bob, thing), bobs, "bob lone negative again");
+        // bob's yes after his first no files nothing either (a deliberate limit: design §10.2)
         _tag(bob, topic, thing);
         _deny(bob, topic, thing);
         _same(_lists(t, bob, thing), bobs, "bob assert, mask");
@@ -176,7 +193,8 @@ contract TopicListsTest is TopicListsBase {
     }
 
     /// A FOLDER position: release then bind again and a re-bind elsewhere add nothing to `place` or
-    /// `position-authors`; a second author adds one author entry and no place entry.
+    /// `position-authors`; a second author's first yes adds one author entry and one place filing (a second person's
+    /// `notes.txt` at the same home shows as new), and the place still counts one distinct position.
     function test_folder_positions_record_first_statements_only() public {
         bytes32 role = keccak256("notes.txt");
         Action[] memory a = new Action[](1);
@@ -205,7 +223,13 @@ contract TopicListsTest is TopicListsBase {
         _eq(_authors(Purpose.FOLDER, home, role), authors, "authors unchanged");
         _act(bob, _bind(Purpose.FOLDER, home, role, things[3], 0));
         assertEq(_authors(Purpose.FOLDER, home, role).length, 2, "bob is the second author");
-        _eq(_place(Purpose.FOLDER, home), _list1(o), "the position was not fresh");
+        _eq(
+            _place(Purpose.FOLDER, home),
+            _list2(o, _ordinal(bob, Purpose.FOLDER, home, role)),
+            "bob's first yes is filed"
+        );
+        (uint64 c, uint64 l) = _head(F_PLACE, Purpose.FOLDER, home);
+        assertEq(abi.encode(c, l), abi.encode(uint64(2), uint64(1)), "one distinct position");
         // FOLDER keeps no role-places list and no topic roll-ups
         assertEq(_rolePlaces(Purpose.FOLDER, role).length, 0);
     }
@@ -288,7 +312,8 @@ contract TopicListsTest is TopicListsBase {
         assertEq(uint8(st), uint8(Status.PRESENT), "the ordinal names a binding");
     }
 
-    /// A position whose only statements are lone negatives is in every all-authors list.
+    /// A position whose only statements are lone negatives is in every all-authors list (through the fresh rule),
+    /// with a yes-count of zero.
     function test_a_position_with_only_negatives_is_in_every_all_authors_list() public {
         bytes32[] memory t = _regPath("negonly", 3);
         bytes32 thing = things[10];
@@ -300,6 +325,15 @@ contract TopicListsTest is TopicListsBase {
         _eq(_placeBelow(t[1]), _list1(o), "place-below of the middle");
         _eq(_rolePlaces(Purpose.TAG, thing), _list1(o), "role-places");
         assertEq(_authors(Purpose.TAG, t[2], thing).length, 2, "position-authors");
+        (uint64 count, uint64 yes) =
+            _head(F_POSITION_AUTHORS, 0, Keys.position(Purpose.TAG, t[2], thing));
+        assertEq(
+            abi.encode(count, yes), abi.encode(uint64(2), uint64(0)), "two authors, nobody says yes"
+        );
+        (count, yes) = _head(F_PLACE, Purpose.TAG, t[2]);
+        assertEq(
+            abi.encode(count, yes), abi.encode(uint64(1), uint64(1)), "one filing, one position"
+        );
         _eq(_scopeBelow(bob, t[0]), _list1(_ordinal(bob, Purpose.TAG, t[2], thing)), "bob's own");
         (uint64 c,) = _head(F_BACKLINK, Purpose.TAG, thing);
         assertEq(c, 0, "no backlink: nothing asserted");
@@ -307,7 +341,7 @@ contract TopicListsTest is TopicListsBase {
 
     // ---- counts are one read -------------------------------------------------------------------------------------
 
-    function test_a_places_count_is_its_positions_and_a_positions_count_its_authors() public {
+    function test_a_places_live_is_its_positions_and_a_positions_count_its_authors() public {
         bytes32[] memory t = _regPath("counts", 2);
         address[3] memory who = [alice, bob, carol];
         for (uint256 i; i < 4; ++i) {
@@ -316,15 +350,20 @@ contract TopicListsTest is TopicListsBase {
                 else _deny(who[j], t[1], things[i]);
             }
         }
-        (uint64 places,) = _head(F_PLACE, Purpose.TAG, t[1]);
-        assertEq(places, 4, "four distinct positions");
-        (uint64 below,) = _head(F_PLACE_BELOW, Purpose.TAG, t[0]);
-        assertEq(below, 4, "four positions below the root");
+        // positions 0..3: alice yes; alice yes, bob no; alice yes, bob no, carol yes; alice yes
+        (uint64 places, uint64 distinct) = _head(F_PLACE, Purpose.TAG, t[1]);
+        assertEq(places, 5, "five filings: four fresh positions and carol's later first yes");
+        assertEq(distinct, 4, "four distinct positions");
+        (uint64 below, uint64 belowDistinct) = _head(F_PLACE_BELOW, Purpose.TAG, t[0]);
+        assertEq(below, 5, "five filings below the root");
+        assertEq(belowDistinct, 4, "four positions below the root");
         uint64[4] memory expected = [uint64(1), 2, 3, 1];
+        uint64[4] memory yes = [uint64(1), 1, 2, 1];
         for (uint256 i; i < 4; ++i) {
-            (uint64 authors,) =
+            (uint64 authors, uint64 saying) =
                 _head(F_POSITION_AUTHORS, 0, Keys.position(Purpose.TAG, t[1], things[i]));
             assertEq(authors, expected[i], "authors at the position");
+            assertEq(saying, yes[i], "authors saying yes at the position");
             (uint64 rp,) = _head(F_ROLE_PLACES, Purpose.TAG, things[i]);
             assertEq(rp, 1, "one place per thing");
         }

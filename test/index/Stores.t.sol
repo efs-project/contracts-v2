@@ -21,7 +21,7 @@ contract StoresTest is Test {
     address internal constant BUILDER = address(0xB0B);
     /// The store ABI ids (tools/abi-id.mjs over the committed snapshots; `pnpm abi:check` recomputes both).
     bytes32 internal constant POSTING_STORE_ABI_ID =
-        0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554;
+        0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a;
     bytes32 internal constant BITMAP_STORE_ABI_ID =
         0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f;
 
@@ -234,6 +234,65 @@ contract StoresTest is Test {
         (uint64 count, uint64 live2,,) = posting.postingHead(KEY);
         assertEq(count, 2, "release never removes entries");
         assertEq(live2, 1);
+    }
+
+    /// `retain` raises `live` without an entry, bounded by `count`, under the writer and family rules of `release`;
+    /// an ordinal tagged UNCOUNTED (bit 63) is appended as its low bits without raising `live`, in `append` and per
+    /// entry in `appendBatch`, and an entry beyond 48 bits is refused.
+    function testRetainAndUncountedAppendsKeepLiveWithinCount() public {
+        uint64 u = posting.UNCOUNTED();
+        assertEq(u, uint64(1) << 63);
+        vm.prank(GEN);
+        posting.append(FamilyId.wrap(BY_TYPE), KEY, 1 | u, 0);
+        (uint64 count, uint64 live, uint64 last,) = posting.postingHead(KEY);
+        assertEq(abi.encode(count, live, last), abi.encode(uint64(1), uint64(0), uint64(1)));
+        assertEq(posting.postingAt(KEY, 0), 1, "the tag is not stored");
+        // the order law reads the untagged entry
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(1), uint64(1)));
+        posting.append(FamilyId.wrap(BY_TYPE), KEY, 1, 0);
+        vm.prank(GEN);
+        assertEq(posting.retain(FamilyId.wrap(BY_TYPE), KEY, 1), 1);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(1), uint64(2)));
+        posting.retain(FamilyId.wrap(BY_TYPE), KEY, 1);
+        // a batch selects per entry
+        FamilyId[] memory fam = new FamilyId[](3);
+        PostingKey[] memory keys = new PostingKey[](3);
+        uint64[] memory ords = new uint64[](3);
+        for (uint256 i; i < 3; ++i) {
+            fam[i] = FamilyId.wrap(BY_TYPE);
+            keys[i] = KEY;
+        }
+        (ords[0], ords[1], ords[2]) = (2 | u, 3, 9 | u);
+        vm.prank(GEN);
+        posting.appendBatch(fam, keys, ords);
+        (count, live, last,) = posting.postingHead(KEY);
+        assertEq(abi.encode(count, live, last), abi.encode(uint64(4), uint64(2), uint64(9)));
+        uint64[] memory slice = posting.postingSlice(KEY, 0, 4);
+        assertEq(abi.encode(slice[0], slice[1], slice[2], slice[3]), abi.encode(uint64(1), 2, 3, 9));
+        vm.prank(GEN);
+        assertEq(posting.retain(FamilyId.wrap(BY_TYPE), KEY, 2), 4);
+        vm.prank(GEN);
+        assertEq(posting.release(FamilyId.wrap(BY_TYPE), KEY, 4), 0);
+        // an entry beyond 48 bits, tagged or not
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(9), uint64(1) << 48));
+        posting.append(FamilyId.wrap(BY_TYPE), KEY, uint64(1) << 48, 0);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_ORDER.selector, uint64(9), uint64(1) << 48));
+        posting.append(FamilyId.wrap(BY_TYPE), KEY, (uint64(1) << 48) | u, 0);
+        // the writer and family rules
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
+        posting.retain(FamilyId.wrap(BY_TYPE), KEY, 1);
+        bytes32 other = Keys.familyId("by-author");
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_FAMILY.selector, other));
+        posting.retain(FamilyId.wrap(other), KEY, 1);
+        _idle(3);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, GEN));
+        posting.retain(FamilyId.wrap(BY_TYPE), KEY, 1);
     }
 
     function testAppendBatchWritesEveryEntryUnderTheWriterRule() public {

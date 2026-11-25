@@ -25,7 +25,8 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///         exists, and no validator may refuse that. A validator may refuse an action that asserts something (any
 ///         BIND) and an action that creates a new position for its author (a first statement of either sign). So
 ///         every check below runs on a BIND-kind effect (FIRST_BIND, REBIND, RESTORE) or on a first statement
-///         (transition FIRST_BIND or FIRST_MASK), and never on a mask or a release of an existing binding.
+///         (transition FIRST_BIND or FIRST_MASK), and never on a mask or a release of an existing binding (a MASK or
+///         RELEASE transition): those are admitted whatever they name.
 ///
 ///         The laws, by purpose:
 ///         - HEAD (every BIND): the target is a revision of this profile naming the bind's own subject: a
@@ -35,7 +36,10 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///           and a HEAD whose subject is a folder's record id is always refused (no revision can name one: a root
 ///           names a created subject and a child inherits its parent's file). An ADDRESS target is refused first.
 ///           The readers still check the HEAD law themselves (defence in depth, and for Realms without this unit).
-///         - FOLDER (every BIND): the name, parent and target laws of §12.2 above. The parent is a directory record
+///         - FOLDER: on every BIND the name, parent and target laws of §12.2 above; on a first mask (FIRST_MASK)
+///           the name and parent laws only (a mask has no target), so a first "not this" can only be said about an
+///           entry that could exist: a real name under a directory or a home. A mask or release of an existing
+///           binding is never judged, so anyone can still hide another author's real entry. The parent is a directory record
 ///           (the seed root is one) or a HOME: an address-shaped word (top 96 bits zero), the left-padded address
 ///           `bytes32(uint256(uint160(addr)))`, which equals `Keys.principal(addr)` for a key account. Nothing about
 ///           the address is checked (no code, balance or history needed; a precompile 0x1..0xff is an ordinary
@@ -54,7 +58,11 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///           target), the tag lists and the `Bound` filter find statements about a thing by role, and "what points
 ///           at this" uses the target, so a tag whose role and target differed would be about one thing by one read
 ///           and another by the other. The Type of the thing is not judged: any record or subject of any Type, or
-///           an address (target kind 3, with the left-padded address as the role), may be the thing tagged.
+///           an address (target kind 3, with the left-padded address as the role), may be the thing tagged. On a
+///           first mask (FIRST_MASK, which carries no target) the role must name something that exists: nonzero, and
+///           a record first admitted strictly before the statement, a subject created strictly before it, or an
+///           address-shaped word (code 15; a first bind has the same through "target equals role" and the kernel's
+///           target check). Code 9 runs first.
 ///         - SAME and BROADER: position (topic, role = other topic) → the other topic. On a first statement the
 ///           subject and the role are each a topic registered strictly before the statement, and differ. On every
 ///           BIND the target equals the role. Reading rule (design §12.5): `same` between two word pages is the
@@ -88,7 +96,10 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      11 SAME/BROADER first statement: the role is not a topic registered strictly before it;
 ///      12 SAME/BROADER first statement: the subject and the role are the same topic;
 ///      13 SAME/BROADER BIND: the target is not the role;
-///      14 TAG BIND (first bind, re-bind or restore): the target is not the role.
+///      14 TAG BIND (first bind, re-bind or restore): the target is not the role;
+///      15 TAG first mask: the role is zero, or neither a record first admitted nor a subject created strictly before
+///         it, nor address-shaped.
+///      Codes 1 and 2 also apply to a FOLDER first mask.
 contract FilesFinalValidator is IIndexHook {
     /// The exact Type ids of the profile (constructor state, never rewritten).
     bytes32 public nameTypeId;
@@ -173,11 +184,20 @@ contract FilesFinalValidator is IIndexHook {
                 if (e.kind == ActionKind.BIND && e.target != e.role) {
                     revert E_FILES_FINAL(14, e.leaf);
                 }
+                if (e.transitionKind == T_FIRST_MASK && !_thing(l, e.role, e.admission)) {
+                    revert E_FILES_FINAL(15, e.leaf);
+                }
             } else if (purpose == Purpose.SAME || purpose == Purpose.BROADER) {
                 _relation(l, e);
-            } else if (e.kind == ActionKind.BIND) {
-                if (purpose == Purpose.HEAD) _head(l, e, terminal);
-                else if (purpose == Purpose.FOLDER) _folder(l, e, terminal);
+            } else if (purpose == Purpose.FOLDER) {
+                if (e.kind == ActionKind.BIND) {
+                    _folderPlace(l, e, terminal);
+                    _folderTarget(l, e, terminal);
+                } else if (e.transitionKind == T_FIRST_MASK) {
+                    _folderPlace(l, e, terminal);
+                }
+            } else if (e.kind == ActionKind.BIND && purpose == Purpose.HEAD) {
+                _head(l, e, terminal);
             }
         }
         return IIndexHook.validate.selector;
@@ -223,8 +243,20 @@ contract FilesFinalValidator is IIndexHook {
         revert E_FILES_FINAL(8, e.leaf);
     }
 
-    /// FOLDER: the §12.2 laws, with a home as a valid parent.
-    function _folder(Loaded memory l, Effect calldata e, uint64 terminal) private view {
+    /// A TAG first "not this" names something that exists: a nonzero role that is a record first admitted strictly
+    /// before the statement, a subject created strictly before it, or an address-shaped word (top 96 bits zero).
+    function _thing(Loaded memory l, bytes32 role, uint64 admission) private view returns (bool) {
+        if (role == 0) return false;
+        if (uint256(role) >> 160 == 0) return true;
+        ILedgerHot hot = _hot(l);
+        (, uint64 first,,,) = hot.recordHeader(role);
+        if (first != 0 && first < admission) return true;
+        uint64 created = hot.subjectCreatedAt(role);
+        return created != 0 && created < admission;
+    }
+
+    /// FOLDER, on every BIND and on a first mask: the name and parent laws of §12.2, with a home as a valid parent.
+    function _folderPlace(Loaded memory l, Effect calldata e, uint64 terminal) private view {
         ILedgerHot hot = _hot(l);
         if (l.name == 0) {
             l.name = nameTypeId;
@@ -238,6 +270,11 @@ contract FilesFinalValidator is IIndexHook {
         if (uint256(e.subject) >> 160 != 0 && !_record(hot, e.subject, l.directory, terminal)) {
             revert E_FILES_FINAL(2, e.leaf);
         }
+    }
+
+    /// FOLDER, on every BIND: the target laws of §12.2.
+    function _folderTarget(Loaded memory l, Effect calldata e, uint64 terminal) private view {
+        ILedgerHot hot = _hot(l);
         // the target: a file subject or another directory record, never the parent itself
         bytes32 target = e.target;
         if (target == e.subject) revert E_FILES_FINAL(3, e.leaf);

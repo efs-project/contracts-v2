@@ -128,6 +128,32 @@ contract TopicTagsTest is FilesRecipesBase {
         _refused(_one(EfsTopics.deny(keccak256("concept"), thing, 0, 7)), new bytes[](1), 9, 0);
     }
 
+    /// A first "not this" must name something that exists (validator code 15): zero, a made-up word, or a record
+    /// published later in the same publication is refused on the real Realm; a subject, a record and an address are
+    /// admitted.
+    function test_a_first_lone_negative_names_something_that_exists() public {
+        bytes32 topic = _registerWord("exists");
+        _refused(_one(EfsTopics.deny(topic, 0, 0, 0)), new bytes[](1), 15, 0);
+        _refused(_one(EfsTopics.deny(topic, keccak256("made up"), 0, 0)), new bytes[](1), 15, 0);
+        // the id of a record published by a later action of the same publication
+        Action[] memory a = new Action[](2);
+        bytes[] memory b = new bytes[](2);
+        (Action[] memory w, bytes[] memory wb, bytes32 later) =
+            EfsTopics.registerWord(tt, "later-word");
+        a[0] = EfsTopics.deny(topic, later, 0, 0);
+        (a[1], b[1]) = (w[0], wb[0]);
+        _refused(a, b, 15, 0);
+        // admitted: a file subject, a record (the root directory), an address with no history
+        _execAs(address(this), _one(EfsTopics.deny(topic, thing, 0, 0)), new bytes[](1));
+        _execAs(address(this), _one(EfsTopics.deny(topic, rootDir, 0, 0)), new bytes[](1));
+        bytes32 addr = bytes32(uint256(uint160(makeAddr("topic-tags/no-history"))));
+        _execAs(address(this), _one(EfsTopics.deny(topic, addr, 0, 0)), new bytes[](1));
+        // the same publication, record first: admitted
+        (a[0], b[0]) = (w[0], wb[0]);
+        (a[1], b[1]) = (EfsTopics.deny(topic, later, 0, 0), "");
+        _execAs(address(this), a, b);
+    }
+
     function test_refusal_names_the_leaf() public {
         (Action[] memory a, bytes[] memory b, bytes32 cars) = EfsTopics.registerWord(tt, "cars");
         (a, b) = _then(a, b, EfsTopics.tag(cars, thing, 0, 0));
@@ -179,7 +205,7 @@ contract TopicTagsTest is FilesRecipesBase {
         bytes32 home = bytes32(uint256(uint160(makeAddr("topic-tags/home"))));
         Action[] memory a = new Action[](2);
         a[0] = EfsTopics.tag(home, thing, 0, 0);
-        a[1] = EfsTopics.deny(home, keccak256("other"), 0, 0);
+        a[1] = EfsTopics.deny(home, bytes32(uint256(uint160(makeAddr("topic-tags/other")))), 0, 0);
         _execAs(address(this), a, new bytes[](2));
         (Qualified memory q,) = _read(Purpose.TAG, home, thing);
         assertEq(uint8(q.status), uint8(Status.PRESENT));

@@ -521,8 +521,9 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("bind tag fresh", x);
     }
 
-    /// A first tag by a second author on positions that exist (another author tagged them first): no `place` or
-    /// `role-places` entry, one `position-authors` entry on an existing list. The author has written before.
+    /// A first tag by a second author on positions that exist (another author tagged them first): one `place` filing
+    /// (appended UNCOUNTED to an existing list), no `role-places` entry, one `position-authors` entry on an existing
+    /// list. The author has written before.
     function test_model_bind_tag_second_author() public {
         _tagged();
         address second = makeAddr("gas-model second author");
@@ -599,25 +600,28 @@ contract GasModelTest is FilesRecipesBase {
         }
     }
 
-    /// k1 = `who` tags t[1] about `thing`, k2 = `who` tags t[5] about it, each from the current state.
-    function _levelPair(string memory key, address who, bytes32[] memory t, bytes32 thing)
-        internal
-    {
+    /// k1 = `who` states t[1] about `thing`, k2 = `who` states t[5] about it, each from the current state: a first
+    /// tag, or (`deny`) a first lone negative.
+    function _levelPair(
+        string memory key,
+        address who,
+        bytes32[] memory t,
+        bytes32 thing,
+        bool deny
+    ) internal {
         _as(who);
         uint256 snap = vm.snapshotState();
-        _exec(
-            string.concat("model ", key, " k1"),
-            _one1(_bind(Purpose.TAG, t[1], thing, thing, 0)),
-            new bytes[](1)
-        );
+        _exec(string.concat("model ", key, " k1"), _one1(_first(t[1], thing, deny)), new bytes[](1));
         vm.revertToState(snap);
-        _exec(
-            string.concat("model ", key, " k2"),
-            _one1(_bind(Purpose.TAG, t[5], thing, thing, 0)),
-            new bytes[](1)
-        );
+        _exec(string.concat("model ", key, " k2"), _one1(_first(t[5], thing, deny)), new bytes[](1));
         vm.revertToState(snap);
         _as(address(0));
+    }
+
+    function _first(bytes32 topic, bytes32 thing, bool deny) internal pure returns (Action memory) {
+        return deny
+            ? EfsFiles.loneNegative(Purpose.TAG, topic, thing, 0)
+            : _bind(Purpose.TAG, topic, thing, thing, 0);
     }
 
     address internal constant LEVEL_A = address(0xA11CE);
@@ -635,7 +639,7 @@ contract GasModelTest is FilesRecipesBase {
     function test_model_tag_level_all_new() public {
         bytes32[] memory t = _levelPath("lvl-a");
         _levelAuthors(t);
-        _levelPair("tag level all new", LEVEL_A, t, s[20]);
+        _levelPair("tag level all new", LEVEL_A, t, s[20], false);
     }
 
     /// Fresh position, every list existing (two or four entries, so the append rewrites an existing word).
@@ -644,10 +648,12 @@ contract GasModelTest is FilesRecipesBase {
         _levelAuthors(t);
         _tagAll(LEVEL_A, t[1], _things2(21));
         _tagAll(LEVEL_A, t[5], _things2(21));
-        _levelPair("tag level all existing", LEVEL_A, t, s[20]);
+        _levelPair("tag level all existing", LEVEL_A, t, s[20], false);
     }
 
-    /// Existing position (another author's), this author's roll-ups new: per level, a new per-author entry only.
+    /// Existing position (another author's), this author's roll-ups new: per level, a new per-author entry only. The
+    /// measured statement is a first no, which files nothing in `place-below` (a later author's first yes also files
+    /// there, which the composition rule prices with the shared terms).
     function test_model_tag_level_mine_new() public {
         bytes32[] memory t = _levelPath("lvl-c");
         _levelAuthors(t);
@@ -655,10 +661,11 @@ contract GasModelTest is FilesRecipesBase {
         one[0] = s[20];
         _tagAll(LEVEL_A, t[1], one);
         _tagAll(LEVEL_A, t[5], one);
-        _levelPair("tag level mine new", LEVEL_B, t, s[20]);
+        _levelPair("tag level mine new", LEVEL_B, t, s[20], true);
     }
 
-    /// Existing position, this author's roll-ups existing: per level, an existing per-author entry only.
+    /// Existing position, this author's roll-ups existing: per level, an existing per-author entry only (a first no,
+    /// as above).
     function test_model_tag_level_mine_existing() public {
         bytes32[] memory t = _levelPath("lvl-d");
         _levelAuthors(t);
@@ -668,7 +675,7 @@ contract GasModelTest is FilesRecipesBase {
         _tagAll(LEVEL_A, t[5], one);
         _tagAll(LEVEL_B, t[1], _things2(21));
         _tagAll(LEVEL_B, t[5], _things2(21));
-        _levelPair("tag level mine existing", LEVEL_B, t, s[20]);
+        _levelPair("tag level mine existing", LEVEL_B, t, s[20], true);
     }
 
     /// Composite (never fitted): a first tag on a fresh 6-word path, every list new.
@@ -744,12 +751,13 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("bind tag number change", x);
     }
 
-    /// A lone negative: UNBIND at a fresh position of an existing scope (FIRST_MASK), strength 4 (-5).
+    /// A lone negative: UNBIND at a fresh position of an existing scope (FIRST_MASK), strength 4 (-5), about a file
+    /// subject (the validator's most expensive admitted role: no record at the id, then the subject's creation).
     function test_model_unbind_tag_lone() public {
         _tagged();
         Action[3] memory x;
         for (uint256 i; i < 3; ++i) {
-            x[i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, keccak256(abi.encode("lone", i)), 4);
+            x[i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, s[30 + i], 4);
         }
         _actionPair("unbind tag lone", x);
     }
