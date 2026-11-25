@@ -6,7 +6,10 @@ import {Coverage} from "./Results.sol";
 import {DigestSpec, FamilyEntry, Unit, WorkModel} from "./Index.sol";
 
 /// @title IIndexReads — coverage and family reads of an index generation (design §5.11, §10.5)
-/// @notice Acceptors may read coverage and postings here (prefix-COMPLETE inside the publication).
+/// @notice Acceptors may read coverage and postings here (prefix-COMPLETE inside the publication). Every function is
+///         answered at the generation's address: `manifestHash`, `workModel`, `digestSpecCount`, `progress`,
+///         `ledger`, the two store getters and `readsContract` by the generation itself, the rest by its reads
+///         contract through the generation's fallback (`STATICCALL`, calldata unchanged; design §10.1).
 interface IIndexReads {
     function manifestHash() external view returns (bytes32);
 
@@ -86,4 +89,7 @@ interface IIndexReads {
     function bitmapStore() external view returns (address);
 
     function buildDelegate() external view returns (address);
+    /// The contract that answers this generation's forwarded reads and holds its manifest, and that contract's
+    /// codehash as the generation recorded it at construction; the manifest hash folds both.
+    function readsContract() external view returns (address reads, bytes32 codehash);
 }

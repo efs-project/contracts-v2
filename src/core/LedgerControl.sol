@@ -18,6 +18,7 @@ import {
 } from "../interfaces/ILedgerControl.sol";
 import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
 import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
+import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {IPostingStore} from "../interfaces/IPostingStore.sol";
 import {FamilyEntry, Readiness, Unit} from "../interfaces/Index.sol";
 import {ILedgerControlDelegate} from "../interfaces/internal/ILedgerControlDelegate.sol";
@@ -285,6 +286,13 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             return;
         }
         CodeScan.requirePlainRuntime(index);
+        // the reads contract answers the index's forwarded reads (design §10.1): the index's own codehash pins its
+        // address and the codehash it recorded, and the manifest hash folds both; here its code must still be that
+        // code and plain
+        (address reads, bytes32 readsCodehash) = IIndexReads(index).readsContract();
+        CodePins.requireRealCode(reads);
+        if (reads.codehash != readsCodehash) revert E_PIN(reads, 10);
+        CodeScan.requirePlainRuntime(reads);
         Readiness memory r = IRealmIndex(index).replayReadiness();
         if (r.ledger != address(this)) revert E_INDEX_NOT_READY(3);
         if (r.layoutId != set.layoutId) revert E_INDEX_NOT_READY(4);

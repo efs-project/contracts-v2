@@ -3,12 +3,13 @@ pragma solidity 0.8.37;
 
 import {Test} from "forge-std/Test.sol";
 import {LedgerStub} from "../harness/doubles/LedgerStub.sol";
-import {IndexDeploy} from "../harness/IndexDeploy.sol";
+import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
 import {IndexDeployer} from "../../src/control/IndexDeployer.sol";
 import {PostingStore} from "../../src/index/PostingStore.sol";
 import {BitmapStore} from "../../src/index/BitmapStore.sol";
 import {RealmIndex} from "../../src/index/RealmIndex.sol";
+import {IndexReads} from "../../src/index/IndexReads.sol";
 import {DigestSpec, Unit} from "../../src/interfaces/Index.sol";
 import {E_DEPLOYER} from "../../src/interfaces/Errors.sol";
 
@@ -17,7 +18,8 @@ import {E_DEPLOYER} from "../../src/interfaces/Errors.sol";
 ///         every prediction is asserted, the plan is pinned by hash, and a second run reverts.
 contract IndexDeployerTest is Test {
     LedgerStub internal ledger;
-    bytes32 internal constant HOT = keccak256("efs/ledger-hot/2:test");
+    bytes32 internal constant HOT =
+        0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0;
 
     function setUp() public {
         ledger = new LedgerStub();
@@ -36,6 +38,7 @@ contract IndexDeployerTest is Test {
         if (freshBitmap) p.bitmapInitcode = type(BitmapStore).creationCode;
         p.bitmapFamilies = IndexDeploy.bitmapFamilies();
         p.bitmap = bitmap;
+        p.readsInitcode = type(IndexReads).creationCode;
         p.generationInitcode = type(RealmIndex).creationCode;
         p.units = new Unit[](0);
         p.specs = new DigestSpec[](0);
@@ -58,11 +61,11 @@ contract IndexDeployerTest is Test {
         assertFalse(ps.attached());
         assertEq(ps.familyIds().length, 10);
         assertEq(bs.familyIds().length, 3);
-        RealmIndex ix = RealmIndex(gen);
+        IGeneration1 ix = IGeneration1(gen);
         assertEq(ix.postingStore(), address(ps));
         assertEq(ix.bitmapStore(), address(bs));
         assertEq(ix.ledger(), address(ledger));
-        assertEq(ix.HOT_ABI_ID(), HOT);
+        assertEq(ix.replayReadiness().hotAbiId, HOT);
         assertEq(ix.replayReadiness().families.length, 13);
         vm.expectRevert(abi.encodeWithSelector(E_DEPLOYER.selector, uint8(0)));
         d.run(plan);
@@ -77,7 +80,7 @@ contract IndexDeployerTest is Test {
         d.run(other);
         address gen = d.run(plan);
         assertEq(gen, d.predictGeneration(plan));
-        assertEq(RealmIndex(gen).postingStore(), address(g1.posting), "re-pinned, not recreated");
+        assertEq(IGeneration1(gen).postingStore(), address(g1.posting), "re-pinned, not recreated");
         assertEq(d.postingStore(), address(g1.posting));
         assertTrue(d.bitmapStore() != address(g1.bitmap));
         assertEq(BitmapStore(d.bitmapStore()).initialWriter(), gen);

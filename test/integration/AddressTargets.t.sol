@@ -71,7 +71,7 @@ contract AddressTargetsTest is FilesRecipesBase {
         (uint8 st,,, uint8 kind,,, bytes32 got, uint16 strength) =
             r.hot.head(_key(Purpose.TAG, TOPIC, target));
         assertEq(abi.encode(st, kind, got, strength), abi.encode(uint8(1), uint8(3), target, 3));
-        _assertBacklink(target, 1, 1);
+        _assertBacklink(Purpose.TAG, target, 1, 1);
 
         // a lone negative on the same address under another topic (no target: role = address)
         _execAs(
@@ -81,8 +81,8 @@ contract AddressTargetsTest is FilesRecipesBase {
         );
         (st,,, kind,,,,) = r.hot.head(_key(Purpose.TAG, TRUSTED, target));
         assertEq(abi.encode(st, kind), abi.encode(uint8(2), uint8(0)));
-        // the backlink list is keyed by target, and a lone negative has none
-        _assertBacklink(target, 1, 1);
+        // the backlink list is keyed by (purpose, target), and a lone negative has none
+        _assertBacklink(Purpose.TAG, target, 1, 1);
 
         // LensReader reads the ADDRESS head as PRESENT and the lone negative as MASKED
         bytes32[] memory l = new bytes32[](1);
@@ -117,7 +117,7 @@ contract AddressTargetsTest is FilesRecipesBase {
         _execAs(address(this), _one(_bind(Purpose.TAG, TOPIC, target, target, 2)), new bytes[](1));
         (uint8 st, uint64 rev,, uint8 kind,,,,) = r.hot.head(_key(Purpose.TAG, TOPIC, target));
         assertEq(abi.encode(st, rev, kind), abi.encode(uint8(1), uint64(3), uint8(3)));
-        _assertBacklink(target, 2, 1);
+        _assertBacklink(Purpose.TAG, target, 2, 1);
     }
 
     /// A FOLDER bind to an address target is still refused: `FilesFinalValidator` code 6 (an unknown target kind).
@@ -181,6 +181,41 @@ contract AddressTargetsTest is FilesRecipesBase {
         _execAs(address(this), a, b);
         (uint8 st,,, uint8 kind,,, bytes32 got,) = r.hot.head(_key(Purpose.TAG, TOPIC, revision));
         assertEq(abi.encode(st, kind, got), abi.encode(uint8(1), uint8(1), revision));
-        _assertBacklink(revision, 1, 1);
+        _assertBacklink(Purpose.TAG, revision, 1, 1);
+    }
+
+    /// Family 5 is keyed by (purpose, target): a revision's HEAD placement and a tag on it are two lists with two
+    /// live counts; a RELEASE lowers only its own purpose's count, a re-BIND raises it again.
+    function test_backlink_is_keyed_by_purpose() public {
+        bytes32 file = Keys.subject(p, keccak256("address-targets/keyed"));
+        Action[] memory a = new Action[](4);
+        bytes[] memory b = new bytes[](4);
+        a[0] = _create(keccak256("address-targets/keyed"));
+        (a[1], b[1]) = _publish(T_ROOT, abi.encodePacked(abi.encode(file, uint256(0)), "v1"));
+        bytes32 revision = Keys.record(typeIds[T_ROOT], b[1]);
+        a[2] = _bind(Purpose.HEAD, file, 0, revision, 0);
+        a[3] = _bind(Purpose.TAG, TOPIC, revision, revision, 0);
+        _execAs(address(this), a, b);
+        _assertBacklink(Purpose.HEAD, revision, 1, 1);
+        _assertBacklink(Purpose.TAG, revision, 1, 1);
+        _execAs(
+            address(this),
+            _one(_bindKind(ActionKind.RELEASE, Purpose.TAG, TOPIC, revision, 0, 1)),
+            new bytes[](1)
+        );
+        _assertBacklink(Purpose.TAG, revision, 1, 0);
+        _assertBacklink(Purpose.HEAD, revision, 1, 1);
+        _execAs(
+            address(this), _one(_bind(Purpose.TAG, TOPIC, revision, revision, 2)), new bytes[](1)
+        );
+        _assertBacklink(Purpose.TAG, revision, 2, 1);
+        _assertBacklink(Purpose.HEAD, revision, 1, 1);
+        _execAs(
+            address(this),
+            _one(_bindKind(ActionKind.UNBIND, Purpose.TAG, TOPIC, revision, 0, 3)),
+            new bytes[](1)
+        );
+        _assertBacklink(Purpose.TAG, revision, 2, 0);
+        _assertBacklink(Purpose.HEAD, revision, 1, 1);
     }
 }

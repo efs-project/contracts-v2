@@ -4,7 +4,7 @@ pragma solidity 0.8.37;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
-import {IndexDeploy} from "../harness/IndexDeploy.sol";
+import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
 import {AcceptAll} from "../harness/doubles/Acceptors.sol";
@@ -14,6 +14,7 @@ import {IndexReplayDecoder} from "../../src/index/IndexReplayDecoder.sol";
 import {PostingStore} from "../../src/index/PostingStore.sol";
 import {BitmapStore} from "../../src/index/BitmapStore.sol";
 import {RealmIndex} from "../../src/index/RealmIndex.sol";
+import {IndexReads} from "../../src/index/IndexReads.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {
     Action,
@@ -191,11 +192,11 @@ contract ReplayTest is Test {
 
     // ---- the second generation -------------------------------------------------------------------------------
 
-    function _gen2() internal returns (IndexDeployer d, RealmIndex ix) {
+    function _gen2() internal returns (IndexDeployer d, IGeneration1 ix) {
         return _gen2With(new Unit[](0));
     }
 
-    function _gen2With(Unit[] memory units) internal returns (IndexDeployer d, RealmIndex ix) {
+    function _gen2With(Unit[] memory units) internal returns (IndexDeployer d, IGeneration1 ix) {
         IndexDeployer.Plan memory plan;
         plan.hotAbiId = KernelDeploy.HOT_ABI_ID;
         plan.decoder = address(new IndexReplayDecoder());
@@ -203,15 +204,16 @@ contract ReplayTest is Test {
         plan.postingFamilies = IndexDeploy.postingFamilies();
         plan.bitmapInitcode = type(BitmapStore).creationCode;
         plan.bitmapFamilies = IndexDeploy.bitmapFamilies();
+        plan.readsInitcode = type(IndexReads).creationCode;
         plan.generationInitcode = type(RealmIndex).creationCode;
         plan.units = units;
         plan.specs = _specs();
         plan.work = IndexDoubleDefaults.workModel();
         d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
-        ix = RealmIndex(d.run(plan));
+        ix = IGeneration1(d.run(plan));
     }
 
-    function _replayAll(RealmIndex ix) internal returns (uint256 publications) {
+    function _replayAll(IGeneration1 ix) internal returns (uint256 publications) {
         while (ix.replayNextPublication(64) != 0) {
             ++publications;
         }
@@ -224,8 +226,8 @@ contract ReplayTest is Test {
         keys[2] = PostingKey.wrap(Keys.uniqueByTypeList(TYPE_OK));
         keys[3] = PostingKey.wrap(Keys.byRecordList(recordId));
         keys[4] = PostingKey.wrap(Keys.historyList(bindingKey));
-        keys[5] = PostingKey.wrap(Keys.backlinkList(recordId));
-        keys[6] = PostingKey.wrap(Keys.backlinkList(otherId));
+        keys[5] = PostingKey.wrap(Keys.backlinkList(FOLDER, recordId));
+        keys[6] = PostingKey.wrap(Keys.backlinkList(FOLDER, otherId));
         keys[7] = PostingKey.wrap(Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, NAME)));
         keys[8] = PostingKey.wrap(
             Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, keccak256("second")))
@@ -280,7 +282,7 @@ contract ReplayTest is Test {
         (uint64 c,, uint64 last,) = g.posting.postingHead(PostingKey.wrap(Keys.byTypeList(TYPE_OK)));
         assertEq(c, 3);
         assertEq(last, 7);
-        (IndexDeployer d, RealmIndex ix) = _gen2();
+        (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(ix.decoder(), ix.decoder());
         assertEq(_replayAll(ix), 8);
         (uint64 processed, uint64 publication, bool gapped) = ix.progress();
@@ -366,7 +368,7 @@ contract ReplayTest is Test {
         // the live generation has no decoder and is not fresh
         vm.expectRevert(abi.encodeWithSelector(E_REPLAY.selector, uint8(5)));
         g.index.replayNextPublication(64);
-        (, RealmIndex ix) = _gen2();
+        (, IGeneration1 ix) = _gen2();
         vm.expectRevert(abi.encodeWithSelector(E_REPLAY.selector, uint8(6)));
         ix.replayNextPublication(0);
         vm.expectRevert(abi.encodeWithSelector(E_REPLAY.selector, uint8(6)));
@@ -444,7 +446,7 @@ contract ReplayTest is Test {
         (e,) = dec.decode(k.proxy, 11);
         assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(5, 0));
 
-        (IndexDeployer d, RealmIndex ix) = _gen2();
+        (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(_replayAll(ix), 11);
         IPostingStore p2 = IPostingStore(d.postingStore());
         IBitmapStore b2 = IBitmapStore(d.bitmapStore());
@@ -456,7 +458,7 @@ contract ReplayTest is Test {
         keys[2] = PostingKey.wrap(
             Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, second)))
         );
-        keys[3] = PostingKey.wrap(Keys.backlinkList(recordId));
+        keys[3] = PostingKey.wrap(Keys.backlinkList(FOLDER, recordId));
         keys[4] = PostingKey.wrap(Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, second)));
         for (uint256 i; i < keys.length; ++i) {
             (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(keys[i]);
@@ -495,10 +497,10 @@ contract ReplayTest is Test {
         );
         (e,) = dec.decode(k.proxy, 10);
         assertEq(abi.encode(e[0].oldTargetKind, e[0].oldTarget), abi.encode(3, addr));
-        (IndexDeployer d, RealmIndex ix) = _gen2();
+        (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(_replayAll(ix), 10);
         PostingKey[] memory keys = new PostingKey[](2);
-        keys[0] = PostingKey.wrap(Keys.backlinkList(addr));
+        keys[0] = PostingKey.wrap(Keys.backlinkList(FOLDER, addr));
         keys[1] = PostingKey.wrap(
             Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, role)))
         );
@@ -540,7 +542,7 @@ contract ReplayTest is Test {
         IndexReplayDecoder dec = new IndexReplayDecoder();
         (Effect[] memory e,) = dec.decode(k.proxy, 10);
         assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(3, 0), "MASK");
-        (IndexDeployer d, RealmIndex ix) = _gen2();
+        (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(_replayAll(ix), 10);
         (uint64 x1, uint64 y1, uint64 z1, uint48 w1,, uint64 v1) =
             g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
@@ -595,7 +597,7 @@ contract ReplayTest is Test {
             assertEq(e[0].transitionKind, kinds[i], "transition");
             assertEq(keccak256(abi.encode(e)), emitted, "decoded effects == live effects");
         }
-        (IndexDeployer d, RealmIndex ix) = _gen2();
+        (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(_replayAll(ix), 17);
         IPostingStore p2 = IPostingStore(d.postingStore());
         IBitmapStore b2 = IBitmapStore(d.bitmapStore());
@@ -609,9 +611,9 @@ contract ReplayTest is Test {
                 Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, roles[i]))
             );
         }
-        keys[10] = PostingKey.wrap(Keys.backlinkList(addr));
-        keys[11] = PostingKey.wrap(Keys.backlinkList(recordId));
-        keys[12] = PostingKey.wrap(Keys.backlinkList(otherId));
+        keys[10] = PostingKey.wrap(Keys.backlinkList(FOLDER, addr));
+        keys[11] = PostingKey.wrap(Keys.backlinkList(FOLDER, recordId));
+        keys[12] = PostingKey.wrap(Keys.backlinkList(FOLDER, otherId));
         for (uint256 i; i < keys.length; ++i) {
             (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(keys[i]);
             (uint64 c2, uint64 l2, uint64 last2, uint16 f2) = p2.postingHead(keys[i]);
@@ -656,7 +658,7 @@ contract ReplayTest is Test {
         a.bodyHashOrRecordId = keccak256(other);
         _one(a, other); // admission 4, no scope mutation
         assertEq(g.bitmap.lastMutation(ScopeKey.wrap(scopeKey)), 3);
-        (IndexDeployer d, RealmIndex ix) = _gen2();
+        (IndexDeployer d, IGeneration1 ix) = _gen2();
         assertEq(_replayAll(ix), 2);
         assertEq(
             IBitmapStore(d.bitmapStore()).lastMutation(ScopeKey.wrap(scopeKey)), 3, "replayed stamp"
@@ -678,7 +680,7 @@ contract ReplayTest is Test {
             hotAbiId: KernelDeploy.HOT_ABI_ID,
             identity: keccak256("test/reentering-hook/1")
         });
-        (, RealmIndex ix) = _gen2With(units);
+        (, IGeneration1 ix) = _gen2With(units);
         assertEq(_replayAll(ix), 8);
         assertFalse(hook.reentered(), "the nested replay was refused");
         assertEq(bytes4(hook.lastError()), E_REPLAY.selector);

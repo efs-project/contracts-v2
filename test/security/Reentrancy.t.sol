@@ -6,7 +6,7 @@ import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
-import {IndexDeploy} from "../harness/IndexDeploy.sol";
+import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {BaseIndexDouble, IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
 import {AcceptAll} from "../harness/doubles/Acceptors.sol";
@@ -17,6 +17,7 @@ import {IndexReplayDecoder} from "../../src/index/IndexReplayDecoder.sol";
 import {PostingStore} from "../../src/index/PostingStore.sol";
 import {BitmapStore} from "../../src/index/BitmapStore.sol";
 import {RealmIndex} from "../../src/index/RealmIndex.sol";
+import {IndexReads} from "../../src/index/IndexReads.sol";
 import {TypeRegistry} from "../../src/types/TypeRegistry.sol";
 import {DescriptorStore} from "../../src/types/DescriptorStore.sol";
 import {Keys} from "../../src/lib/Keys.sol";
@@ -117,7 +118,7 @@ contract ReentrancyTest is Test, IRelay {
     ReenteringIndex internal attack;
     ILedger internal ledger;
     ILedgerHot internal hot;
-    RealmIndex internal candidate;
+    IGeneration1 internal candidate;
     PostingStore internal candidatePosting;
     BitmapStore internal candidateBitmap;
 
@@ -190,12 +191,13 @@ contract ReentrancyTest is Test, IRelay {
         plan.postingFamilies = IndexDeploy.postingFamilies();
         plan.bitmapInitcode = type(BitmapStore).creationCode;
         plan.bitmapFamilies = IndexDeploy.bitmapFamilies();
+        plan.readsInitcode = type(IndexReads).creationCode;
         plan.generationInitcode = type(RealmIndex).creationCode;
         plan.units = new Unit[](0);
         plan.specs = new DigestSpec[](0);
         plan.work = IndexDoubleDefaults.workModel();
         IndexDeployer d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
-        candidate = RealmIndex(d.run(plan));
+        candidate = IGeneration1(d.run(plan));
         candidatePosting = PostingStore(d.postingStore());
         candidateBitmap = BitmapStore(d.bitmapStore());
     }

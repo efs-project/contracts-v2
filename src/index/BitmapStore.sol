@@ -14,17 +14,31 @@ import {E_BACKFILL, E_COVERAGE, E_ORDER, E_WRITER} from "../interfaces/Errors.so
 ///         `lastMutation`. The live-scope family (18) keeps its first 48 bits in the head word; every further
 ///         bit, and every other BITMAP family's bits, live in `bits[scope][family][word]` at bit index `entry`.
 contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
-    bytes32 public constant STORE_ABI_ID = keccak256("efs/bitmap-store/1");
+    /// keccak("efs/bitmap-store/1" ‖ for each IBitmapStore function by selector: selector ‖ keccak(output tuple))
+    /// (tools/abi-id.mjs; `pnpm abi:check` recomputes it from the committed snapshot).
+    bytes32 public constant STORE_ABI_ID =
+        0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f;
     uint256 private constant MASK48 = (1 << 48) - 1;
     uint8 private constant COVERAGE_OPEN = 1;
     uint8 private constant COVERAGE_COMPLETE = 2;
     uint8 private constant COVERAGE_RETIRED = 3;
 
+    uint256 public constant FAMILY_CAPACITY = 4;
+
     bytes32 private immutable FAMILY_LIVE_SCOPE;
+    bytes32 private immutable F0;
+    bytes32 private immutable F1;
+    bytes32 private immutable F2;
+    bytes32 private immutable F3;
 
     constructor(address ledger_, address initialWriter_, bytes32[] memory families)
         StoreBase(ledger_, initialWriter_)
     {
+        _checkFamilies(families, FAMILY_CAPACITY);
+        F0 = _familyAt(families, 0);
+        F1 = _familyAt(families, 1);
+        F2 = _familyAt(families, 2);
+        F3 = _familyAt(families, 3);
         BitmapStorage storage $ = _bitmap();
         for (uint256 i; i < families.length; ++i) {
             $.familyIds.push(families[i]);
@@ -36,6 +50,11 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
 
     function _familyIds() internal view override returns (bytes32[] storage) {
         return _bitmap().familyIds;
+    }
+
+    /// The family set (at most `FAMILY_CAPACITY`: scope, roster, live-scope and one more) as immutables.
+    function _isFamily(bytes32 f) internal view override returns (bool) {
+        return f != 0 && (f == F0 || f == F1 || f == F2 || f == F3);
     }
 
     function _writers() internal view override returns (WriterRange[] storage) {

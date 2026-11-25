@@ -314,14 +314,27 @@ viem local account and submitted with `eth_sendRawTransaction`; the fixture's RP
   no `out/` and reproduces the committed plan hash there: the tree a consumer's CI vendors. `fixture-gas-cap.test.mjs`
   is described under "The chain's rules".
 
-### The hot-ABI id
+### The ABI ids (hot interface and stores)
 
-The release hot-ABI id is **`keccak256("efs/ledger-hot/2")`** (`/2` since `head` returns the strength) =
-`0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
-It is `LedgerCore`'s `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `RealmIndex`'s
-`hotAbiId` constructor argument and the `FilesFinalValidator` unit's `hotAbiId`. The suites keep
-`keccak256("efs/ledger-hot/2:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
-`profiles.hotAbiId` with `hotAbiIdPreimage`, and `efs-deployment.json` as `hotAbiId` and `hotAbiIdString`.
+Every ABI id follows one rule (design §5.3, `tools/abi-id.mjs`):
+`id = keccak256(bytes(name) ‖ for each function sorted by selector ascending: selector (4 bytes) ‖
+keccak256(bytes(canonical output tuple type string)))`, the output tuple with tuples expanded (`(uint8,uint64,bytes32)`);
+inputs are covered by the selector, events and errors are not part of the id. Computed from the committed snapshots:
+
+| id | name | snapshot | value (step 3a) | before step 3a (`keccak(name)` alone) |
+| --- | --- | --- | --- | --- |
+| hot (release) | `efs/ledger-hot/2` | `ILedgerHot.json` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | `0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` |
+| hot (suites) | `efs/ledger-hot/2:test` | `ILedgerHot.json` | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | `0xb9163fed951b51bb8d2d13b3bd410b5de236799b79c7b1f86b9699d1d90dc603` |
+| posting store | `efs/posting-store/1` | `IPostingStore.json` | `0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554` | `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229` |
+| bitmap store | `efs/bitmap-store/1` | `IBitmapStore.json` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425` |
+
+The release hot-ABI id is `HOT_ABI_ID` in `tools/deploy-plan.mjs` (name `HOT_ABI_ID_STRING`): `LedgerCore`'s
+`HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `IndexReads`' `hotAbiId` constructor argument
+and the `FilesFinalValidator` unit's `hotAbiId`. The suites' id is `KernelDeploy.HOT_ABI_ID` (and
+`test/index/IndexDeployer.t.sol`); the store ids are the `STORE_ABI_ID` constants (and `test/index/Stores.t.sol`).
+`pnpm abi:check` recomputes every id from the committed snapshot and fails when any of these pins differs.
+`release.json` records `profiles.hotAbiId` with `hotAbiIdName`, `profiles.storeAbiIds` and `profiles.abiIdRule`;
+`efs-deployment.json` records `hotAbiId` and `hotAbiIdString`.
 
 ### The readers
 
@@ -373,6 +386,8 @@ equal; see HARNESS-BUG below).
 | `artifacts/index.json` | `efs-artifacts-index/1`: `layoutId`, `hotAbiId`, the unit list; lets `artifacts/` deploy alone. |
 | `gas/report.json` | `efs-gas-report/1` (below). |
 | `schemas/*.schema.json` | JSON Schemas (draft 2020-12) for the six documents above and the lease (`efs-fixture-lease-1`). `verify` validates every document present against them, using the subset in `deploy-plan.mjs validate`. They are drafts: `schemas/README.md` says release schemas land after review. |
+
+**Provisional Topics Type ids.** The Type ids of `topic-word/1`, `topic/1` and `text/1` are PROVISIONAL until a committed generator produces the refused code point table (and its JS copy and the SDK's vectors) from one pinned Unicode version, because that table is part of the word and text rules' code and so of those Type ids; this must be closed before any lasting deployment.
 
 ## What `verify` reproduces
 
@@ -566,9 +581,8 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 3. **G9: `IndexBuild/1` does not exist.** `RealmIndex` takes no build, `Readiness.build` is 0, and the plan has no G9.
 4. **G13.** `LAYOUT_ID` is a compiled constant, not an immutable. `PREDECESSOR_LAYOUT_ID` is on `LedgerControl`.
    `SUPPORTED_HOT_ABI_IDS` is computed as `[HOT_ABI_ID]`. `LedgerCore` has no `SELF` immutable.
-5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs/ledger-hot/2" ‖ sorted selectors ‖ return layouts)`), but
-   neither `src/` nor `vectors/` commits one. On the coordinator's instruction the release uses the plain string id
-   `keccak256("efs/ledger-hot/2")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
+5. **HOT_ABI_ID.** Resolved at step 3a: the hot and store ids are the selector-and-return-layout fold of §5.3
+   (above), gated by `pnpm abi:check`. No `vectors/hot-abi.json` table exists; `SUPPORTED_HOT_ABI_IDS` is `[HOT_ABI_ID]`.
 6. **G15: `RealmGenesis`' constructor differs from the design.** It is `(owner, ledgerImpl, registryImpl, realmSalt,
    executionProfileId, limitsHash, readerDirectory, wrapperV1, noticeType, controllerInitcodeHash, proxyInitcodeHash)`.
    It reads the implementation codehashes itself, takes the limits only as a hash, and receives the controller and
@@ -576,13 +590,17 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 7. **G17: `BitmapStore` gets three families, not two.** The design lists `[scope, live-scope]`; the code and
    `test/harness/IndexDeploy.sol` use `[scope, roster, live-scope]` (roster is `NOT_MAINTAINED`). The plan follows
    the code.
-8. **G19: `RealmIndex`' constructor differs from the design.** It is `(ledger, hotAbiId, decoder, posting, bitmap,
-   units, specs, work)`, with no `layoutId` (a constant) and no build arguments, and it reads nothing from the ledger
-   (§8.2 says it reads `counts()` and `layoutId()`). The plan passes the real G7 decoder; the suites pass
-   `address(0)`.
+8. **G19a/G19: the index is two contracts (step 3a).** **G19a** deploys `IndexReads(ledger, hotAbiId, posting, bitmap,
+   units, specs, work)`, which holds the manifest and answers the forwarded reads; **G19** deploys
+   `RealmIndex(ledger, decoder, reads)`, which copies units, specs and work model from it and folds its address and
+   codehash into the manifest hash (header `efs/index-manifest/2`). Neither takes a `layoutId` (a constant) or build
+   arguments, and neither reads the ledger at construction (§8.2 says it reads `counts()` and `layoutId()`). The plan
+   passes the real G7 decoder; the suites pass `address(0)`. `efs-deployment.json` records `index.runtimeCodehash` and
+   `index.reads {address, runtimeCodehash}`; `verify` checks both codehashes on chain and `readsContract()`.
 9. **Work model.** `src/` has no release work model, so the index uses
-   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()`. Limits come from `KernelDeploy.s1Limits()`
-   (the §4.2 values).
+   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (re-measured at step 3a, design §10.4).
+   Limits come from `KernelDeploy.s1Limits()` (the §4.2 values; under `FOUNDRY_PROFILE=amsterdam` the fresh-slot floor
+   price is the Glamsterdam execution-gas 12,100, `GLAMSTERDAM_FLOOR` in `tools/deploy-plan.mjs`).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;
     they are not "generated for layoutId" by argument.
 11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20. The facets `LedgerReads` and

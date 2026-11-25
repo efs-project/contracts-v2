@@ -11,7 +11,8 @@ import {E_FAMILY, E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 ///         write (lazy attachment: the first live write opens g's writers range and sets `attached`);
 ///         (2) msg.sender == g and phase == IDLE: backfill only (BitmapStore); (3) msg.sender == INITIAL_WRITER
 ///         != 0, not attached, phase IDLE: build or replay writes. Nothing else writes. Family membership is
-///         checked on every write (E_FAMILY).
+///         checked on every write and every batch entry (E_FAMILY) against the store's constructor-fixed family
+///         set, held as immutables by the concrete store (`_isFamily`), so the check reads no storage.
 abstract contract StoreBase {
     address public immutable LEDGER;
     address public immutable INITIAL_WRITER;
@@ -26,6 +27,9 @@ abstract contract StoreBase {
     }
 
     function _familyIds() internal view virtual returns (bytes32[] storage);
+    /// Whether `family` is in the constructor's family set (exact; never true for 0). The concrete store answers
+    /// from immutables.
+    function _isFamily(bytes32 family) internal view virtual returns (bool);
     function _writers() internal view virtual returns (WriterRange[] storage);
     function _attached() internal view virtual returns (bool);
     function _setAttached() internal virtual;
@@ -33,6 +37,13 @@ abstract contract StoreBase {
     /// Returns the mode the caller is allowed to write in and the current admission frontier.
     function _authorize(bytes32 family) internal returns (uint8 mode, uint48 admission) {
         _requireFamily(family);
+        return _authorizeWriter();
+    }
+
+    /// The writer rule alone (no family): three hot reads of the ledger, and the lazy attachment of a live writer.
+    /// Within one call none of its inputs changes after the first answer (the ledger is not re-entered and the
+    /// attachment is idempotent), so a batch asks it once.
+    function _authorizeWriter() internal returns (uint8 mode, uint48 admission) {
         ILedgerHot hot = ILedgerHot(LEDGER);
         address g = hot.index();
         (uint8 phase,,,) = hot.phase();
@@ -81,11 +92,20 @@ abstract contract StoreBase {
     }
 
     function _requireFamily(bytes32 family) internal view {
-        bytes32[] storage ids = _familyIds();
-        for (uint256 i; i < ids.length; ++i) {
-            if (ids[i] == family) return;
+        if (!_isFamily(family)) revert E_FAMILY(family);
+    }
+
+    /// The constructor's family list as the store holds it: at most `capacity` ids, none zero (`E_FAMILY`), so
+    /// the zero padding of unused immutables never matches a family.
+    function _checkFamilies(bytes32[] memory families, uint256 capacity) internal pure {
+        if (families.length > capacity) revert E_FAMILY(bytes32(families.length));
+        for (uint256 i; i < families.length; ++i) {
+            if (families[i] == 0) revert E_FAMILY(0);
         }
-        revert E_FAMILY(family);
+    }
+
+    function _familyAt(bytes32[] memory families, uint256 i) internal pure returns (bytes32) {
+        return i < families.length ? families[i] : bytes32(0);
     }
 
     function _writersView()

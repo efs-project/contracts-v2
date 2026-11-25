@@ -10,15 +10,56 @@ import {E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 /// @title PostingStore — append-ordered posting lists that outlive index generations (design §4.6, §10.1)
 /// @notice One per Realm and family set. Entries are strictly increasing ordinals, five per word; the first
 ///         entry of a key lives in the head word (`last`) until a second append materializes word 0, so a
-///         singleton list costs one slot. Writes come only through the authorization of `StoreBase`.
+///         singleton list costs one slot. Writes come only through the authorization of `StoreBase`. The family
+///         set (at most `FAMILY_CAPACITY` ids: the ten generation-1 APPEND families with room for the five lists
+///         of the tag design) is held as immutables, so a family check reads no storage; `familyIds()` keeps the
+///         same ids in the same order in storage for readiness checks.
 contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
-    bytes32 public constant STORE_ABI_ID = keccak256("efs/posting-store/1");
+    /// keccak("efs/posting-store/1" ‖ for each IPostingStore function by selector: selector ‖ keccak(output tuple))
+    /// (tools/abi-id.mjs; `pnpm abi:check` recomputes it from the committed snapshot).
+    bytes32 public constant STORE_ABI_ID =
+        0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554;
 
     uint256 private constant MASK48 = (1 << 48) - 1;
+    uint256 public constant FAMILY_CAPACITY = 16;
+
+    bytes32 private immutable F0;
+    bytes32 private immutable F1;
+    bytes32 private immutable F2;
+    bytes32 private immutable F3;
+    bytes32 private immutable F4;
+    bytes32 private immutable F5;
+    bytes32 private immutable F6;
+    bytes32 private immutable F7;
+    bytes32 private immutable F8;
+    bytes32 private immutable F9;
+    bytes32 private immutable F10;
+    bytes32 private immutable F11;
+    bytes32 private immutable F12;
+    bytes32 private immutable F13;
+    bytes32 private immutable F14;
+    bytes32 private immutable F15;
 
     constructor(address ledger_, address initialWriter_, bytes32[] memory families)
         StoreBase(ledger_, initialWriter_)
     {
+        _checkFamilies(families, FAMILY_CAPACITY);
+        F0 = _familyAt(families, 0);
+        F1 = _familyAt(families, 1);
+        F2 = _familyAt(families, 2);
+        F3 = _familyAt(families, 3);
+        F4 = _familyAt(families, 4);
+        F5 = _familyAt(families, 5);
+        F6 = _familyAt(families, 6);
+        F7 = _familyAt(families, 7);
+        F8 = _familyAt(families, 8);
+        F9 = _familyAt(families, 9);
+        F10 = _familyAt(families, 10);
+        F11 = _familyAt(families, 11);
+        F12 = _familyAt(families, 12);
+        F13 = _familyAt(families, 13);
+        F14 = _familyAt(families, 14);
+        F15 = _familyAt(families, 15);
         PostingStorage storage $ = _posting();
         for (uint256 i; i < families.length; ++i) {
             $.familyIds.push(families[i]);
@@ -29,6 +70,26 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
 
     function _familyIds() internal view override returns (bytes32[] storage) {
         return _posting().familyIds;
+    }
+
+    function _isFamily(bytes32 f) internal view override returns (bool) {
+        return f != 0
+            && (f == F0
+                || f == F1
+                || f == F2
+                || f == F3
+                || f == F4
+                || f == F5
+                || f == F6
+                || f == F7
+                || f == F8
+                || f == F9
+                || f == F10
+                || f == F11
+                || f == F12
+                || f == F13
+                || f == F14
+                || f == F15);
     }
 
     function _writers() internal view override returns (WriterRange[] storage) {
@@ -56,14 +117,25 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
     }
 
     /// @inheritdoc IPostingStore
+    /// @dev Equivalent to `append(families[i], keys[i], ordinals[i], 0)` for each i in order, with the writer rule
+    ///      asked once: entry 0's family is checked before it (the error a lone append would raise first), every
+    ///      entry's family and order law are checked as `append` checks them, and an empty batch writes nothing and
+    ///      attaches nothing. Arrays of different lengths revert `E_ORDER(keys.length, other length)`.
     function appendBatch(
         FamilyId[] calldata families,
         PostingKey[] calldata keys,
         uint64[] calldata ordinals
     ) external {
-        for (uint256 i; i < keys.length; ++i) {
-            (uint8 mode,) = _authorize(FamilyId.unwrap(families[i]));
-            if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        uint256 n = keys.length;
+        if (families.length != n) revert E_ORDER(uint64(n), uint64(families.length));
+        if (ordinals.length != n) revert E_ORDER(uint64(n), uint64(ordinals.length));
+        if (n == 0) return;
+        _requireFamily(FamilyId.unwrap(families[0]));
+        (uint8 mode,) = _authorizeWriter();
+        if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender); // append-ordered lists are never backfilled
+        _append(PostingKey.unwrap(keys[0]), ordinals[0], 0);
+        for (uint256 i = 1; i < n; ++i) {
+            _requireFamily(FamilyId.unwrap(families[i]));
             _append(PostingKey.unwrap(keys[i]), ordinals[i], 0);
         }
     }

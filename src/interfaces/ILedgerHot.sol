@@ -2,8 +2,9 @@
 pragma solidity ^0.8.27;
 
 /// @title ILedgerHot — the Etched kernel reads (design §5.3)
-/// @notice One SLOAD each, no stipends, no struct encoders. `HOT_ABI_ID = keccak("efs/ledger-hot/2" ‖ sorted
-///         selectors ‖ return layouts)` is an implementation immutable exposed by `hotAbiId()` and snapshot-tested
+/// @notice One SLOAD each, no stipends, no struct encoders. `HOT_ABI_ID` is the ABI id of this interface under the
+///         name "efs/ledger-hot/2" (design §5.3: keccak(name ‖ per function by selector: selector ‖ keccak(output
+///         tuple)); tools/abi-id.mjs) and an implementation immutable exposed by `hotAbiId()` and snapshot-tested
 ///         across releases. A kernel upgrade may add selectors (a new `HOT_ABI_ID`) and never changes or removes
 ///         one; acceptors and units may call these getters on `ctx.ledger`/`LEDGER` forever. `extsload*` are the
 ///         proof-able raw floor for the facets, the index, the replay decoder, the SDK and the oracle; they are

@@ -206,8 +206,10 @@ library Keys {
         return posting(bytes32(0), KIND_BY_AUTHOR, 0, principalId);
     }
 
-    function backlinkList(bytes32 target) internal pure returns (bytes32) {
-        return posting(bytes32(0), KIND_BACKLINK, 0, target);
+    /// Family 5 is keyed by (purpose, target), the purpose in the key's first word: a file's folder placements and
+    /// its tags are two lists with two live counts (design §10.2).
+    function backlinkList(bytes32 purpose, bytes32 target) internal pure returns (bytes32) {
+        return posting(purpose, KIND_BACKLINK, 0, target);
     }
 
     function historyList(bytes32 bindingKey) internal pure returns (bytes32) {

@@ -183,8 +183,12 @@ abstract contract FilesRecipesBase is FilesFixture {
         assertEq(b, bits, "scope live bits");
     }
 
-    function _assertBacklink(bytes32 target, uint64 count, uint64 live) internal view {
-        (uint64 c, uint64 l) = _posting(F_BACKLINK, 0, target);
+    /// Family 5 is keyed by (purpose, target): the purpose rides in the key's first word.
+    function _assertBacklink(bytes32 purpose, bytes32 target, uint64 count, uint64 live)
+        internal
+        view
+    {
+        (uint64 c, uint64 l) = _posting(F_BACKLINK, purpose, target);
         assertEq(c, count, "backlink entries");
         assertEq(l, live, "backlink live");
     }
@@ -206,6 +210,7 @@ abstract contract FilesRecipesBase is FilesFixture {
         uint64 scopeCount;
         uint64 scopeLive;
         uint64 backlinks;
+        uint64 headBacklinks;
     }
 
     function _snapshot(bytes32 dir, bytes32 target) internal view returns (Snapshot memory s) {
@@ -213,7 +218,8 @@ abstract contract FilesRecipesBase is FilesFixture {
         (s.nonce,) = r.hot.nonceOf(p);
         (s.processed,,) = r.g.index.progress();
         (s.scopeCount, s.scopeLive,,) = _scope(dir);
-        (s.backlinks,) = _posting(F_BACKLINK, 0, target);
+        (s.backlinks,) = _posting(F_BACKLINK, Purpose.FOLDER, target);
+        (s.headBacklinks,) = _posting(F_BACKLINK, Purpose.HEAD, target);
     }
 
     function _assertSame(Snapshot memory x, Snapshot memory y) internal pure {

@@ -28,6 +28,7 @@ import { keccak256, toFunctionSelector } from "viem";
 import { mediaVectors } from "./media-vectors.mjs";
 import { numberVectors } from "./number-vectors.mjs";
 import { topicVectors } from "./topic-vectors.mjs";
+import { ABI_IDS, idFromSnapshot } from "./abi-id.mjs";
 import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-script", "check"]);
@@ -57,7 +58,7 @@ const budgetOf = (name) => sizes.units.find((u) => u.name === name) ?? null;
 // ---- per-unit facts ------------------------------------------------------------------------------------------------
 const stepOf = (name) => plan.steps.find((s) => s.kind === "CREATE2" && s.contract === name);
 const createdOf = (label) => plan.steps.find((s) => s.id === "G18").creates.find((c) => c.label === label);
-const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "EfsWeb3Gateway"]);
+const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "IndexReads", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "EfsWeb3Gateway"]);
 const contracts = {};
 let reproducible = 0;
 for (const name of Object.keys(UNITS)) {
@@ -126,11 +127,30 @@ const union = (names) => {
   }
   return [...seen.values()];
 };
+// RealmIndex answers every IIndexReads function at its address, the ones it does not implement through its fallback
+// (forwarded to IndexReads by STATICCALL, design §10.1), so its artifact lists them too: callers see one ABI.
+function withForwardedReads(abi, methodIdentifiers) {
+  // the snapshot maps "0x<selector>" -> signature; solc's methodIdentifiers map signature -> "<selector>"
+  const reads = JSON.parse(readFileSync(join(root, "test/snapshots/abi/IIndexReads.json"), "utf8"));
+  const sigOf = (i) => `${i.name}(${(i.inputs ?? []).map((p) => p.type).join(",")})`;
+  const ids = { ...methodIdentifiers };
+  const extra = [];
+  for (const item of reads.abi.filter((i) => i.type === "function")) {
+    const sel = Object.entries(reads.methodIdentifiers).find(([, sig]) => sig === sigOf(item))?.[0];
+    assert.ok(sel, `IIndexReads.${item.name}: no selector in the snapshot`);
+    if (Object.values(methodIdentifiers).includes(sel.slice(2))) continue;
+    extra.push(item);
+    ids[sigOf(item)] = sel.slice(2);
+  }
+  return { abi: [...abi, ...extra], methodIdentifiers: Object.fromEntries(Object.entries(ids).sort(([x], [y]) => (x < y ? -1 : 1))) };
+}
 for (const name of Object.keys(UNITS)) {
   const a = artifact(name);
   const raw = JSON.parse(readFileSync(join(OUT, `${UNITS[name]}.sol`, `${name}.json`), "utf8"));
-  const abi = name === "LedgerCore" ? union(["LedgerCore", "LedgerApply", "LedgerIngress", "LedgerControl"]) : a.abi;
-  emit(`artifacts/${name}.json`, toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers: raw.methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
+  let abi = name === "LedgerCore" ? union(["LedgerCore", "LedgerApply", "LedgerIngress", "LedgerControl"]) : a.abi;
+  let methodIdentifiers = raw.methodIdentifiers;
+  if (name === "RealmIndex") ({ abi, methodIdentifiers } = withForwardedReads(abi, methodIdentifiers));
+  emit(`artifacts/${name}.json`, toJSON({ schema: "efs-artifact/1", name, source: a.source, abi, methodIdentifiers, bytecode: a.bytecode, deployedBytecode: a.runtime, immutables: contracts[name].immutables, storageLayout: "test/snapshots/layout/", interfaces: "test/snapshots/abi/" }));
 }
 // artifacts/index.json: what a deploy from artifacts/ alone needs besides the units (tools/deploy-plan.mjs "release" layout)
 emit("artifacts/index.json", toJSON({ schema: "efs-artifacts-index/1", layoutId: plan.layoutId, hotAbiId: plan.hotAbiId, hotAbiIdString: plan.hotAbiIdString, units: Object.keys(UNITS), manifest: "release/release.json", note: "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`" }));
@@ -273,6 +293,8 @@ const gasModel = {
 };
 assert.equal(gasModel.envelope.prague.chunk.count, 2, "two 8 KB chunks per publication is the release's stated envelope today");
 
+const storeId = (name) => idFromSnapshot(root, ABI_IDS.find((e) => e.name === name));
+
 // ---- the manifest --------------------------------------------------------------------------------------------------
 const settings = artifact("LedgerCore").settings;
 const forgeVersion = (() => { try { return execFileSync("forge", ["--version"]).toString().split("\n")[0].trim(); } catch { return null; } })();
@@ -295,14 +317,15 @@ const manifest = {
     types: plan.profile.map(({ declarationSig, ...p }) => ({ ...p, declarationSig, grade: "NATIVE", wrapperVersion: 0 })),
     acceptors: { RefuseAllPolicy: { address: plan.addresses.refuseAllPolicy, codehash: contracts.RefuseAllPolicy.deployedBytecodeHash } },
     wrappers: [],
-    index: { generation: 1, manifestHash: plan.index.manifestHash, families: plan.index.families, units: plan.index.units, digestSpecs: plan.index.specs, workModel: plan.workModel, stores: { posting: plan.addresses.postingStore, bitmap: plan.addresses.bitmapStore } },
+    index: { generation: 1, address: plan.index.address, runtimeCodehash: plan.index.runtimeCodehash, reads: plan.index.reads, manifestHash: plan.index.manifestHash, families: plan.index.families, units: plan.index.units, digestSpecs: plan.index.specs, workModel: plan.workModel, stores: { posting: plan.addresses.postingStore, bitmap: plan.addresses.bitmapStore } },
     limits: plan.limits,
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
-    hotAbiIdPreimage: plan.hotAbiIdString,
+    hotAbiIdName: plan.hotAbiIdString,
     readers: { lens: plan.readers.lens, filesPage: plan.readers.filesPage, web3Gateway: plan.gateway, directory: plan.addresses.readerDirectory, facets: { ledgerReads: plan.addresses.ledgerReads, ledgerViews: plan.addresses.ledgerViews } },
     statusVocabularyId: constants.status.id,
-    storeAbiIds: { posting: keccak256(Buffer.from("efs/posting-store/1")), bitmap: keccak256(Buffer.from("efs/bitmap-store/1")) },
+    storeAbiIds: { posting: storeId("efs/posting-store/1"), bitmap: storeId("efs/bitmap-store/1") },
+    abiIdRule: "keccak(name ‖ for each function sorted by selector: selector ‖ keccak(canonical output tuple)) (tools/abi-id.mjs)",
     indexProfiles: { physical: keccak256(Buffer.from("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")), callback: keccak256(Buffer.from("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs")) },
     crossCheck: scriptCheck,
   },

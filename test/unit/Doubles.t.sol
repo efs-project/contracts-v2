@@ -829,11 +829,11 @@ contract DoublesTest is Test {
         assertEq(w.rwPerBind, 40);
         assertEq(w.freshPerRef, 10);
         assertEq(w.freshPerDigestSpec, 10);
-        assertEq(w.computeBase, 60_000);
-        assertEq(w.computePerAction, 25_000);
-        assertEq(w.computePerHookEffect, 60_000);
-        assertEq(w.finalComputeBase, 60_000);
-        assertEq(w.finalComputePerBind, 120_000);
+        assertEq(w.computeBase, 150_000);
+        assertEq(w.computePerAction, 10_000);
+        assertEq(w.computePerHookEffect, 30_000);
+        assertEq(w.finalComputeBase, 220_000);
+        assertEq(w.finalComputePerBind, 10_000);
 
         FamilyId family = FamilyId.wrap(Keys.familyId("by-type"));
         ScopeKey scope = ScopeKey.wrap(keccak256("scope"));

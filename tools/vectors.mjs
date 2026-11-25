@@ -59,7 +59,7 @@ export const keys = {
 const zero = pad("0x", { size: 32 });
 keys.byTypeList = (t) => keys.posting(t, KIND.byType, 0, zero);
 keys.byAuthorList = (p) => keys.posting(zero, KIND.byAuthor, 0, p);
-keys.backlinkList = (target) => keys.posting(zero, KIND.backlink, 0, target);
+keys.backlinkList = (purpose, target) => keys.posting(purpose, KIND.backlink, 0, target);
 keys.historyList = (bk) => keys.posting(zero, KIND.history, 0, bk);
 keys.scopeList = (sk) => keys.posting(zero, KIND.scope, 0, sk);
 keys.referenceList = (t, ordinal, target) => keys.posting(t, KIND.referencePosition, ordinal, target);
@@ -117,7 +117,7 @@ const vectors = {
     scopeKey,
     byTypeList: keys.byTypeList(typeId),
     byAuthorList: keys.byAuthorList(eoaPrincipal),
-    backlinkList: keys.backlinkList(recordId),
+    backlinkList: keys.backlinkList(inputs.purpose, recordId),
     historyList: keys.historyList(bindingKey),
     scopeList: keys.scopeList(scopeKey),
     referenceList: keys.referenceList(typeId, inputs.ordinal, recordId),

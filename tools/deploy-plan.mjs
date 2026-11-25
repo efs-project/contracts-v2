@@ -102,10 +102,12 @@ export const FACTORY = {
 /** anvil's first default key: a public throwaway, the fixture's owner, declaration key and seed principal. */
 export const FIXTURE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 export const DEFAULTS = { chainId: 31337, realmSalt: h("efs/fixture/realm/1"), executionProfileId: 1 };
-/** The release hot-ABI id: keccak256("efs/ledger-hot/2") (the suites keep "efs/ledger-hot/2:test"). It is
- *  LedgerCore's HOT_ABI_ID immutable, RealmIndex's HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
+/** The release hot-ABI id's name (the suites use the same rule under "efs/ledger-hot/2:test"). The id is LedgerCore's
+ *  HOT_ABI_ID immutable, IndexReads' HOT_ABI_ID and the FilesFinalValidator unit's hotAbiId. */
 export const HOT_ABI_ID_STRING = "efs/ledger-hot/2";
-export const HOT_ABI_ID = h(HOT_ABI_ID_STRING);
+/** keccak(name ‖ for each ILedgerHot function by selector: selector ‖ keccak(output tuple)) (tools/abi-id.mjs), from the
+ *  committed test/snapshots/abi/ILedgerHot.json; `pnpm abi:check` fails when this pin differs from the snapshot. */
+export const HOT_ABI_ID = "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856";
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
 export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1") };
 /** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values. */
@@ -115,12 +117,19 @@ export const LIMITS = {
   maxBodyBytesPerPublication: 16384, maxFreshSlotsPerPublication: 600, maxReadIds: 64, maxReadCount: 256,
   floorFreshGas: 22100, floorRewriteGas: 5000, kernelTail: 20000,
 };
-/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel() — no release work model exists in src/. */
+/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): the design's slot counts (×10) with compute
+ *  terms measured at step 3a (test/integration/IndexFloor.t.sol, both schedules) plus a margin; no release work model
+ *  exists in src/. */
 export const WORK_MODEL = {
   formulaVersion: 1, freshPerPublication: 2, rwPerPublication: 10, freshPerPublishFresh: 10, rwPerPublish: 50,
-  freshPerBindFresh: 30, rwPerBind: 40, freshPerRef: 10, freshPerDigestSpec: 10, computeBase: 60000,
-  computePerAction: 25000, computePerHookEffect: 60000, finalComputeBase: 60000, finalComputePerBind: 120000,
+  freshPerBindFresh: 30, rwPerBind: 40, freshPerRef: 10, freshPerDigestSpec: 10, computeBase: 150000,
+  computePerAction: 10000, computePerHookEffect: 30000, finalComputeBase: 220000, finalComputePerBind: 10000,
 };
+/** The floor prices a Realm on a Glamsterdam (EIP-8037/8038) chain activates: execution-gas prices only, because the GAS
+ *  opcode never sees the state-gas reservoir (design §10.4): the regular 12,100 of a fresh slot, never the all-in
+ *  ≈ 110,020. `KernelDeploy.s1Limits()` uses them under FOUNDRY_PROFILE=amsterdam. The fixture's chains (osaka,
+ *  prague) use LIMITS. */
+export const GLAMSTERDAM_FLOOR = { floorFreshGas: 12100, floorRewriteGas: 5000, kernelTail: 20000 };
 export const DOM = {
   type: h("efs/type/1"), describedShape: h("efs/described-shape/1"), executionSet: h("efs/execution-set/1"),
   realmOrigin: h("efs/realm-origin/1"), realm: h("efs/realm/1"), record: h("efs/record/1"),
@@ -201,7 +210,7 @@ export const UNITS = {
   LedgerIngress: "LedgerIngress", LedgerApply: "LedgerApply", LedgerControl: "LedgerControl", LedgerCore: "LedgerCore",
   LedgerReads: "LedgerReads", LedgerViews: "LedgerViews", DescriptorStore: "DescriptorStore", IndexReplayDecoder: "IndexReplayDecoder",
   ReaderDirectory: "ReaderDirectory", TypeRegistry: "TypeRegistry", RealmGenesis: "RealmGenesis", RealmController: "RealmController",
-  PostingStore: "PostingStore", BitmapStore: "BitmapStore", RealmIndex: "RealmIndex", FilesFinalValidator: "FilesFinalValidator",
+  PostingStore: "PostingStore", BitmapStore: "BitmapStore", IndexReads: "IndexReads", RealmIndex: "RealmIndex", FilesFinalValidator: "FilesFinalValidator",
   FilesRootRule: "FilesRootRule", FilesChildRule: "FilesChildRule", FilesDirectoryRule: "FilesDirectoryRule", FilesNameRule: "FilesNameRule",
   FilesBytesRule: "FilesBytesRule", FilesContentRule: "FilesContentRule", FilesExternalContentRule: "FilesExternalContentRule",
   DirectoryAliasRule: "DirectoryAliasRule", RealmNoticeRule: "RealmNoticeRule", RefuseAllPolicy: "RefuseAllPolicy",
@@ -388,21 +397,22 @@ export function executionSet(set, ledger) {
     [DOM.executionSet, set.layoutId, domainSeparator(set.acceptedChainId, ledger), set.components, BigInt(set.revision), set.executionProfileId, set.capabilities, BigInt(set.acceptedChainId), limitsProfileId(set.limits)],
   ));
 }
-/** RealmIndex's MANIFEST_HASH: keccak(abi.encode(MANIFEST_HEADER, families, units, specs, work, PHYSICAL, CALLBACK)). */
-export function manifestHash(families, units, specs, work) {
-  const ri = artifact("RealmIndex").abi;
-  const readiness = ri.find((i) => i.name === "replayReadiness").outputs[0];
-  const ctor = ctorInputs(ri);
+/** RealmIndex's MANIFEST_HASH: keccak(abi.encode(MANIFEST_HEADER, families, units, specs, work, PHYSICAL, CALLBACK, reads,
+ *  readsCodehash)), the first seven being IndexReads.manifest() and the last two RealmIndex.readsContract(). */
+export function manifestHash(families, units, specs, work, reads, readsCodehash) {
+  const ir = artifact("IndexReads").abi;
+  const out = ir.find((i) => i.name === "manifest").outputs;
   return keccak256(encodeAbiParameters(
-    [{ type: "bytes32" }, component(readiness.components, "families"), component(ctor, "units"), component(ctor, "specs"), component(ctor, "work"), { type: "bytes32" }, { type: "bytes32" }],
-    [h("efs/index-manifest/1"), families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback],
+    [{ type: "bytes32" }, component(out, "families"), component(out, "units"), component(out, "specs"), component(out, "work"), { type: "bytes32" }, { type: "bytes32" }, { type: "address" }, { type: "bytes32" }],
+    [MANIFEST_HEADER, families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback, reads, readsCodehash],
   ));
 }
+export const MANIFEST_HEADER = h("efs/index-manifest/2");
 export const MANIFEST_PROFILES = {
   physical: h("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"),
   callback: h("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs"),
 };
-/** RealmIndex's constructor `_declare` table: (name, kind, universe, shape, liveSemantics, store, fromAdmission). */
+/** IndexReads' constructor `_declare` table: (name, kind, universe, shape, liveSemantics, store, fromAdmission). */
 const FAMILY_TABLE = [
   ["by-type", 1, 1, 1, 2, "posting", 1n], ["by-author", 4, 2, 1, 2, "posting", 1n], ["backlink", 5, 4, 1, 3, "posting", 1n],
   ["history", 8, 3, 1, 1, "posting", 1n], ["scope", 10, 3, 1, 1, "bitmap", 1n], ["reference-position", 11, 1, 1, 1, "posting", 1n],
@@ -523,8 +533,10 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   }, { nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } });
 
   // G16–G17: the stores name the predicted ledger proxy, INITIAL_WRITER = 0
-  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress });
-  const bitmap = add("G17", "BitmapStore", [ledgerProxy, zeroAddress, BITMAP_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, FAMILY_LIVE_SCOPE: familyId("live-scope") });
+  // each store also holds its family set as immutables F0.. (zero padding beyond the set; PostingStore 16, BitmapStore 4)
+  const familySlots = (names, capacity) => Object.fromEntries(Array.from({ length: capacity }, (_, i) => [`F${i}`, i < names.length ? familyId(names[i]) : ZERO]));
+  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, ...familySlots(POSTING_FAMILIES, 16) });
+  const bitmap = add("G17", "BitmapStore", [ledgerProxy, zeroAddress, BITMAP_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, FAMILY_LIVE_SCOPE: familyId("live-scope"), ...familySlots(BITMAP_FAMILIES, 4) });
 
   // G18: RealmGenesis.run — the controller, the registry proxy, the ledger proxy (each initialized in its creation)
   const controllerRuntime = runtimeOf("RealmController", { LEDGER: ledgerProxy, REGISTRY: registryProxy, LEDGER_ADMIN: ledgerAdmin, REGISTRY_ADMIN: registryAdmin, NOTICE_TYPE: ids[T.NOTICE] });
@@ -550,11 +562,13 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     familyId: familyId(n), kind, universe, shape, mandatory: from === 1n, liveSemantics: live, recipe: keccak256(encodePacked(["string", "uint8"], ["efs/family-recipe/", kind])),
     fromAdmission: from, store: s === "posting" ? posting.address : bitmap.address, storeCodehash: s === "posting" ? posting.runtimeCodehash : bitmap.runtimeCodehash,
   }));
-  const mHash = manifestHash(families, unitsList, specs, WORK_MODEL);
   const F = Object.fromEntries(FAMILY_TABLE.map(([n]) => [`F_${n.toUpperCase().replace(/-/g, "_")}`, familyId(n)]));
-  const indexImm = { LEDGER: ledgerProxy, LAYOUT_ID: layoutId, HOT_ABI_ID, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, MANIFEST_HASH: mHash, ...F };
+  // G19a: the generation's IndexReads (its manifest and read side), built over the stores before the generation
+  const indexReads = add("G19a", "IndexReads", [ledgerProxy, HOT_ABI_ID, posting.address, bitmap.address, unitsList, specs, WORK_MODEL], { LEDGER: ledgerProxy, HOT_ABI_ID, POSTING: posting.address, BITMAP: bitmap.address, F_BY_RECORD: F.F_BY_RECORD, F_DIGEST: F.F_DIGEST });
+  const mHash = manifestHash(families, unitsList, specs, WORK_MODEL, indexReads.address, indexReads.runtimeCodehash);
+  const indexImm = { LEDGER: ledgerProxy, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, READS: indexReads.address, READS_CODEHASH: indexReads.runtimeCodehash, MANIFEST_HASH: mHash, ...F };
   const referenced = new Set(immutableLayout("RealmIndex").map((l) => l.name));
-  const index = add("G19", "RealmIndex", [ledgerProxy, HOT_ABI_ID, decoder.address, posting.address, bitmap.address, unitsList, specs, WORK_MODEL], Object.fromEntries(Object.entries(indexImm).filter(([k]) => referenced.has(k))), { manifestHash: mHash });
+  const index = add("G19", "RealmIndex", [ledgerProxy, decoder.address, indexReads.address], Object.fromEntries(Object.entries(indexImm).filter(([k]) => referenced.has(k))), { manifestHash: mHash });
 
   // G20: the genesis activation through the controller
   const components = {
@@ -600,11 +614,11 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     chainId, realmSalt, owner, fixturePrincipal: owner, declarationKey: owner, factory: FACTORY.address,
     hotAbiId: HOT_ABI_ID, layoutId, executionProfileId, limits: LIMITS, workModel: WORK_MODEL,
     genesis: { address: G, nonces: { controller: 1, registryProxy: 2, ledgerProxy: 3 } },
-    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address, web3Gateway: gateway.address },
+    addresses: { ingress: ingress.address, apply: apply.address, control: control.address, ledgerReads: reads.address, ledgerViews: views.address, descriptorStore: store.address, indexReplayDecoder: decoder.address, readerDirectory: directory.address, filesFinalValidator: validator.address, refuseAllPolicy: refuseAll.address, ledgerImpl: core.address, registryImpl: registryImpl.address, genesis: G, controller, registryProxy, ledgerProxy, ledgerAdmin, registryAdmin, postingStore: posting.address, bitmapStore: bitmap.address, indexReads: indexReads.address, index: index.address, lensReader: lens.address, filesPageReader: page.address, keysView: keysView.address, web3Gateway: gateway.address },
     readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs/reader/files-page/1", runtimeCodehash: page.runtimeCodehash } },
     gateway: { address: gateway.address, runtimeCodehash: gateway.runtimeCodehash, resolveMode: "5219", rootDirectory, pager: page.address, urlBase: `web3://${gateway.address}:${chainId}/` },
     hotAbiIdString: HOT_ABI_ID_STRING,
-    realm, activation: set, index: { address: index.address, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
+    realm, activation: set, index: { address: index.address, runtimeCodehash: index.runtimeCodehash, reads: { address: indexReads.address, runtimeCodehash: indexReads.runtimeCodehash }, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
     profile, seed: seed.expected, units, steps,
     local: {
       artifacts: artifactSource(),

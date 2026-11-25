@@ -52,7 +52,7 @@ contract GenesisTest is ControlFixture {
         );
     }
 
-    function _init(bytes32 salt) internal pure returns (RealmInit memory) {
+    function _init(bytes32 salt) internal view returns (RealmInit memory) {
         return RealmInit({
             realmSalt: salt,
             controller: address(0xC0FFEE),

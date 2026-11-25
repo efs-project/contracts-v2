@@ -68,7 +68,7 @@ error E_REVISION(uint32 expected, uint32 have); // reprepare: a set or a transit
 error E_IMPLEMENTATION(address expected, address live); // none
 error E_LAYOUT(bytes32 expected, bytes32 have); // none
 error E_REGISTRY(uint8 field); // none: 1 activeRevision 2 ledger 3 implementation 4 codehash
-error E_PIN(address target, uint8 which); // none: 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin
+error E_PIN(address target, uint8 which); // none: 1 ingress 2 apply 3 index 4 controller codehash 5 unit 6 store 7 build 8 the ERC-1967 admin slot is not the proxy's first creation 9 the controller does not own that ProxyAdmin 10 the index's reads contract (its codehash is not the one the index recorded, or its manifest names another header, profile or ledger)
 error E_INDEX_NOT_READY(uint8 reason); // none
 error E_EXPECTED_SET(bytes32 expected, bytes32 live); // reprepare: the set names an execution set other than the one the live components hash to
 error E_FROZEN(); // none: the Realm is frozen
@@ -116,7 +116,7 @@ error E_SUCCESSOR(uint8 code); // none: 1 codehash 2 controller field 3 owner 4 
 error E_RETIRED(); // none
 error E_CANARY(uint8 lane); // none
 error E_GENESIS(uint8 step); // none: 0 already run 1 limits hash 2 controller address 3 registry proxy address 4 ledger proxy address 5..8 post-checks 9 implementation codehash 10 initcode hash 11 creation failed
-error E_DEPLOYER(uint8 step); // none: 0 already run 1 plan hash 2 store address 3 generation address 4 generation ledger
+error E_DEPLOYER(uint8 step); // none: 0 already run 1 plan hash 2 store or reads-contract address 3 generation address 4 generation ledger
 
 // ---- reader directory (design §5.13) ----------------------------------------------------------------------
 error E_READER(address reader, uint8 code); // none: 1 already listed 2 names another ledger 3 malformed reply 4 list full
