@@ -44,6 +44,16 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         a repeated parameter's last value wins. A trailing empty segment (a trailing slash) is dropped; any other
 ///         empty segment is 400. At most 32 names, each 1..255 bytes.
 ///
+///         Home start: `/~home/0x<40 hex>[/<name>…][/][?lens=…]` resolves the names from the address's place (its
+///         home, `bytes32(uint256(uint160(address)))`, design §12.5) instead of the root folder. `~` opens no
+///         principal and no topic word (`~` first segments are reserved for the system, and a word never starts with
+///         one), so the form cannot be read as another URL. The address is `0x` + exactly 40 hex digits, either case
+///         (else 400). The lens is the `lens` parameter alone when one is given; otherwise the address's own author
+///         identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's
+///         contract principal of a contract (a Safe's home shows the Safe's own entries). Another author's entry is
+///         served only when the lens names that author. The home directory itself is named `x-efs-home: 0x<40 hex>`
+///         (lowercase) in place of `x-efs-record`: a home is an address, never a record.
+///
 ///         Resolution: each name is one FOLDER position `(FOLDER, directoryRecord, keccak256(name))`, read for each
 ///         principal in order through `ILedgerHot.head(Keys.binding(principal, position))`: the first BOUND head
 ///         wins, a MASKED head stops (mask beats fall-through), UNSET and RELEASED fall through. A directory target
@@ -133,6 +143,8 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         uint256 last;
         KeyValue[] h;
         uint256 n;
+        uint256 start;
+        bytes32 home;
     }
 
     /// @param pager_ a `FilesPageReader` bound to `ledger_`, or zero for no listings
@@ -219,8 +231,8 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     {
         Req memory q = _parse(resource, params);
         if (ILedgerHot(LEDGER).layoutId() != LAYOUT) _fail(503, "foreign ledger layout");
-        bytes32 dir = ROOT_DIRECTORY;
-        for (uint256 i = 1; i < q.last; ++i) {
+        bytes32 dir = q.home != 0 ? q.home : ROOT_DIRECTORY;
+        for (uint256 i = q.start; i < q.last; ++i) {
             (uint8 state, uint8 kind, bytes32 target) =
                 _select(q.lens, Keys.position(Purpose.FOLDER, dir, keccak256(bytes(resource[i]))));
             if (state == MASKED) _fail(404, "not found: removed");
@@ -372,7 +384,12 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         view
         returns (uint16, bytes memory, KeyValue[] memory)
     {
-        _add(q, "x-efs-record", _hex(dir));
+        // a home is an address, not a record: it is named as such
+        if (dir == q.home) {
+            _add(q, "x-efs-home", string(bytes.concat("0x", _cut(bytes(_hex(dir)), 26, 40))));
+        } else {
+            _add(q, "x-efs-record", _hex(dir));
+        }
         if (PAGER == address(0)) {
             _add(q, "Content-Type", TEXT);
             return (200, "directory", _headers(q));
@@ -445,32 +462,47 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         uint256 last = resource.length;
         if (last > 1 && bytes(resource[last - 1]).length == 0) --last; // a trailing slash
         if (last == 0) _fail(400, "missing principal");
-        if (last - 1 > MAX_NAMES) _fail(400, "too many segments");
-        for (uint256 i = 1; i < last; ++i) {
+        // `/~home/0x<40 hex>/…`: the names start at the address's place
+        bool home = keccak256(bytes(resource[0])) == keccak256("~home");
+        q.start = home ? 2 : 1;
+        if (last < q.start) _fail(400, "missing home address");
+        if (last - q.start > MAX_NAMES) _fail(400, "too many segments");
+        for (uint256 i = q.start; i < last; ++i) {
             uint256 n = bytes(resource[i]).length;
             if (n == 0) _fail(400, "empty segment");
             if (n > MAX_NAME_BYTES) _fail(400, "name over 255 bytes");
         }
         q.last = last;
         q.h = new KeyValue[](MAX_HEADERS);
-        bytes32 first = _principal(bytes(resource[0]));
+        bytes32 first;
+        if (home) {
+            bytes calldata a = bytes(resource[1]);
+            if (a.length != 42 || a[0] != "0" || a[1] != "x") _fail(400, "malformed home address");
+            q.home = bytes32(_hexValue(a[2:]));
+            first = Keys.principalFor(
+                address(uint160(uint256(q.home))), ILedgerHot(LEDGER).realmOrigin()
+            );
+        } else {
+            first = _principal(bytes(resource[0]));
+        }
         bytes calldata lens = msg.data[0:0];
         for (uint256 i; i < params.length; ++i) {
             bytes32 key = keccak256(bytes(params[i].key));
             if (key == keccak256("lens")) lens = bytes(params[i].value);
             else if (key == keccak256("offset")) q.offset = _uint(bytes(params[i].value));
         }
-        uint256 count = 1;
+        // a home's lens is the `lens` parameter alone when one is given, else the address's own principal
+        uint256 k = home && lens.length != 0 ? 0 : 1;
+        uint256 count = k;
         for (uint256 i; i < lens.length; ++i) {
             if (lens[i] == ",") ++count;
         }
         if (lens.length != 0) ++count;
         if (count > MAX_PRINCIPALS) _fail(400, "too many principals");
         q.lens = new bytes32[](count);
-        q.lens[0] = first;
+        if (k == 1) q.lens[0] = first;
         q.lensParam = lens;
         uint256 from = 0;
-        uint256 k = 1;
         for (uint256 i = 0; i <= lens.length && lens.length != 0; ++i) {
             if (i == lens.length || lens[i] == ",") {
                 q.lens[k++] = _principal(lens[from:i]);
