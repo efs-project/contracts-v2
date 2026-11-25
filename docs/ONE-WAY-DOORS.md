@@ -33,7 +33,7 @@ adoption note 25), so no id equals the prototype's.
 
 Pending vectors (added with the unit that defines them): the EIP-712 `Intent` typehash and domain
 (`name = "EFS", version = "1"`, S2), the declaration domain (`"EFS Type Declaration"`, `"1"`), the
-callback profile id (`efs/index-callback/3:…`), the hot-ABI id (`efs/ledger-hot/1`), the store ABI
+callback profile id (`efs/index-callback/4:…`), the hot-ABI id (`efs/ledger-hot/2`), the store ABI
 ids, the status vocabulary id (`efs/status-vocabulary/1`, `src/interfaces/Results.sol`).
 
 ## Layout
@@ -60,9 +60,9 @@ revision row; the transient lock word.
 | NATIVE instance | `CREATE2(0x4e59b44847b379578588920cA78FbF26c0B4956C, salt 0, header.ruleInitcodeHash)` | `TypeRegistry.predictInstance` |
 | Descriptor blob | runtime `0x00 ‖ descriptor ‖ declarationSig`, SSTORE2 prologue, salt 0 | `DescriptorStore.predict` |
 | Codec | `efs/described/1`: 134-byte header, 164-byte field rows, refTypes sentinels 0 ANY / 1 SELF / ≥ 2^16 exact | `DescribedCodec` |
-| Hot ABI id | `HOT_ABI_ID` of the ledger implementation: release builds `keccak("efs/ledger-hot/1")`, test builds `keccak("efs/ledger-hot/1:test")` | readiness tuple, units, the deploy plan |
+| Hot ABI id | `HOT_ABI_ID` of the ledger implementation: release builds `keccak("efs/ledger-hot/2")`, test builds `keccak("efs/ledger-hot/2:test")` | readiness tuple, units, the deploy plan |
 | Store ABI ids | `keccak("efs/posting-store/1")`, `keccak("efs/bitmap-store/1")` | `storeAbiId()` |
-| Index profiles | physical `keccak("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")`, callback `keccak("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs")`, manifest header `keccak("efs/index-manifest/1")` | `RealmIndex` constants; inside `MANIFEST_HASH` |
+| Index profiles | physical `keccak("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head")`, callback `keccak("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs")`, manifest header `keccak("efs/index-manifest/1")` | `RealmIndex` constants; inside `MANIFEST_HASH` |
 | Family ids | `keccak("efs/family/<name>/1")`, thirteen names | `Keys.familyId` |
 | Purposes | `keccak("efs/purpose/{head,folder,tag}/1")` | `Purpose` (Actions.sol) |
 | Notice kinds | `keccak("efs/notice/{frozen,successor,migration}/1")`; body `abi.encode(kind, uint256 revision, bytes note)` | `ClosureConstants`; the freeze canary |

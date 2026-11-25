@@ -26,7 +26,15 @@ contracts shifts or masks a storage word by hand. Where the design's §4.3 drew 
 `uint8`, and the reserved bits shrink accordingly; the design's byte offsets are otherwise the
 compiler's. Widths: 48-bit admission, record, binding and publication ordinals and counters in storage
 (`uint64` in every ABI; saturation threshold 2^48 − 64), 32-bit revisions, 48-bit block numbers in the
-transition word, 64-bit chain ids and deadlines, 40-bit timestamps.
+transition word, 64-bit chain ids and deadlines, 40-bit timestamps (the revision row's activation time), and in the
+head row a 32-bit `notAfter` (reserved zero; unix seconds to 2106) beside the 16-bit `strength`.
+
+Two words are full to the last bit and say so in the generated layout: the head row's meta word (`state u8 | revision
+u48 | admission u48 | targetKind u8 | prevAdmission u48 | bindingOrdinal u48 | notAfter u32 | strength u16`) and the
+admission row's meta word (`kind u8 | leaf u8 | publication u48 | bindingOrdinal u48 | expectedRevision u48 |
+prevAdmission u48 | withdrawn u8 | policyRowOrStrength u16 | roleRow u16 | targetKind u8`). `policyRowOrStrength` is
+one field with two uses by kind (the policy row of a PUBLISH/REUSE row, the strength of a BIND/UNBIND/RELEASE row; the
+two never share a row), so the binding number took no slot and no bit from `withdrawn`.
 
 The realm namespace lands on the design's eighteen slots (identity +0..+2, control +3, authority +4,
 registry +5, index +6, executionSet +7, layoutId +8, domainSeparator +9, indexObligations +10, steward
@@ -52,6 +60,26 @@ vectors/layout.json)` is the implementation's `LAYOUT_ID` immutable, a realm wor
 field (design §4.1). `test/unit/Layout.t.sol` pins the current value; a change means a one-way door
 moved and must be deliberate: a layout change before genesis re-versions the id, a layout change
 after genesis is an additive upgrade with `PREDECESSOR_LAYOUT_ID` and a second replay decoder.
+
+## Width-bearing identities and what the binding number moved
+
+Design §4.3 lists the identities that are re-versioned when a width changes. The number on every binding (the head
+row's `notAfter` narrowed from 40 to 32 bits and `strength u16@240` added; the admission row's `policyRow` renamed
+`policyRowOrStrength` and given the strength on bind rows; target kind 3 ADDRESS; transition kind 6 FIRST_MASK)
+moved these, before genesis, so each is simply a new value:
+
+| Identity | Moved? | Why |
+| --- | --- | --- |
+| `Layout.LAYOUT_ID` | yes | the head row's fields and the admission row's field name are in the canonical manifest |
+| `HOT_ABI_ID` (`efs/ledger-hot/2`) | yes | `ILedgerHot.head` returns `strength` as an eighth word |
+| callback profile (`efs/index-callback/4:…`) | yes | `Effect/3` carries transition kind 6 and target kind 3 (same 24 words) |
+| the replay decoder's bit offsets | regenerated | it reads every packed word through `Layout`; no offset of an existing field moved |
+| head-snapshot profile (`headSnapshotHash`, read-set preimages) | no | it hashes `(state, revision, admission, canonical target)`; a number change bumps the revision |
+| index physical profile, manifest header guard, store ABI ids | no | no index or store storage changed |
+| `LedgerReads.head` / `admission` hand-encoded lengths | yes | 10 and 13 words (a `Head` is nine words, an `AdmissionRow` twelve) |
+
+The facet-layout rule (design §5.7) follows from `LAYOUT_ID`: every facet, reader and decoder built against the old id
+returns `UNSUPPORTED` against a ledger with the new one.
 
 ## Initializer versions
 

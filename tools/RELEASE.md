@@ -316,11 +316,11 @@ viem local account and submitted with `eth_sendRawTransaction`; the fixture's RP
 
 ### The hot-ABI id
 
-The release hot-ABI id is **`keccak256("efs/ledger-hot/1")`** =
-`0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
+The release hot-ABI id is **`keccak256("efs/ledger-hot/2")`** (`/2` since `head` returns the strength) =
+`0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` (`HOT_ABI_ID_STRING` in `tools/deploy-plan.mjs`).
 It is `LedgerCore`'s `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `RealmIndex`'s
 `hotAbiId` constructor argument and the `FilesFinalValidator` unit's `hotAbiId`. The suites keep
-`keccak256("efs/ledger-hot/1:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
+`keccak256("efs/ledger-hot/2:test")` (`test/harness/KernelDeploy.sol`). `release.json` records it as
 `profiles.hotAbiId` with `hotAbiIdPreimage`, and `efs-deployment.json` as `hotAbiId` and `hotAbiIdString`.
 
 ### The readers
@@ -565,9 +565,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
 3. **G9: `IndexBuild/1` does not exist.** `RealmIndex` takes no build, `Readiness.build` is 0, and the plan has no G9.
 4. **G13.** `LAYOUT_ID` is a compiled constant, not an immutable. `PREDECESSOR_LAYOUT_ID` is on `LedgerControl`.
    `SUPPORTED_HOT_ABI_IDS` is computed as `[HOT_ABI_ID]`. `LedgerCore` has no `SELF` immutable.
-5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs/ledger-hot/1" ‖ sorted selectors ‖ return layouts)`), but
+5. **HOT_ABI_ID.** §5.3 names a derivation (`keccak("efs/ledger-hot/2" ‖ sorted selectors ‖ return layouts)`), but
    neither `src/` nor `vectors/` commits one. On the coordinator's instruction the release uses the plain string id
-   `keccak256("efs/ledger-hot/1")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
+   `keccak256("efs/ledger-hot/2")`, not the selector-and-layout fold. No `vectors/hot-abi.json` table exists.
 6. **G15: `RealmGenesis`' constructor differs from the design.** It is `(owner, ledgerImpl, registryImpl, realmSalt,
    executionProfileId, limitsHash, readerDirectory, wrapperV1, noticeType, controllerInitcodeHash, proxyInitcodeHash)`.
    It reads the implementation codehashes itself, takes the limits only as a hash, and receives the controller and
