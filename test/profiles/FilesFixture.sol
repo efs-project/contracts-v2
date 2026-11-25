@@ -245,8 +245,21 @@ abstract contract FilesFixture is Test {
     }
 
     /// §8.2 G11 + G21: the thirteen blobs, then permissionless registration (by a stranger) of the thirteen Types.
+    /// When set before `_register`, only the ten Files Types are registered; `_registerTopics` adds the three Topics
+    /// Types later (GasModel.t.sol: its `setUp` has no headroom under the amsterdam per-transaction cap).
+    bool internal filesTypesOnly;
+
     function _register(Realm memory r) internal {
-        for (uint8 t; t < TYPE_COUNT; ++t) {
+        _registerRange(r, 0, filesTypesOnly ? T_TOPIC_WORD : TYPE_COUNT);
+    }
+
+    /// The three Topics Types, for a Realm registered with `filesTypesOnly`.
+    function _registerTopics(Realm memory r) internal {
+        _registerRange(r, T_TOPIC_WORD, TYPE_COUNT);
+    }
+
+    function _registerRange(Realm memory r, uint8 from, uint8 to) internal {
+        for (uint8 t = from; t < to; ++t) {
             bytes memory sig = _declare(r.registry, typeIds[t]);
             r.store.put(descriptors[t], sig);
             vm.prank(address(0xCAFE));

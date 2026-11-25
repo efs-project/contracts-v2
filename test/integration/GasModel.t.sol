@@ -41,6 +41,7 @@ contract GasModelTest is FilesRecipesBase {
     // ---- setup ----------------------------------------------------------------------------------------------------
 
     function setUp() public override {
+        filesTypesOnly = true; // the Topics Types are registered inside the rows that use them
         super.setUp();
         // the deployed Realm by name, then every account the setUp publications touch (recording the deployments
         // too would return their code and exhaust memory under the amsterdam cap)
@@ -479,9 +480,15 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("release folder", x);
     }
 
-    /// The Topics rule instances join the cooled set inside the rows that publish topics (`setUp` has no headroom
+    bool internal _topicsRegistered;
+
+    /// Registers the Topics Types (once), and their rule instances join the cooled set inside the rows that publish topics (`setUp` has no headroom
     /// for more state under the amsterdam cap, and the k1 row would otherwise warm them for k2).
     function _rememberTopics() internal {
+        if (!_topicsRegistered) {
+            _registerTopics(r);
+            _topicsRegistered = true;
+        }
         _remember(instances[T_TOPIC_WORD]);
         _remember(instances[T_TOPIC]);
         _remember(instances[T_TEXT]);
