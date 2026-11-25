@@ -90,7 +90,7 @@ library StateDigest {
         for (uint256 i; i < k.bindingKeys.length; ++i) {
             uint256 s = Layout.bindingsHeadsSlot(k.bindingKeys[i]);
             bytes32 meta = raw(a, s);
-            (uint8 state,,,,,,) = Layout.unpackHeadRowWord0(meta);
+            (uint8 state,,,,,,,) = Layout.unpackHeadRowWord0(meta);
             bytes32 target = state == 1 ? raw(a, s + 1) : bytes32(0); // canonical projection
             h = keccak256(abi.encode(h, meta, target));
         }

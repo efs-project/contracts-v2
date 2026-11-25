@@ -460,7 +460,11 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             if (kind == ActionKind.BIND ? a.target == 0 : a.target != 0) {
                 revert E_SHAPE(leaf, kind == ActionKind.BIND ? 1 : 2);
             }
-            if (a.typeId != 0 || a.bodyHashOrRecordId != 0 || a.salt != 0) revert E_SHAPE(leaf, 2);
+            // SPIKE (T-4 number): BIND/UNBIND carry a strength 0..255 in `salt`; RELEASE keeps salt == 0
+            if (
+                a.typeId != 0 || a.bodyHashOrRecordId != 0
+                    || uint256(a.salt) > (kind == ActionKind.RELEASE ? 0 : 255)
+            ) revert E_SHAPE(leaf, 2);
             if (bodyLen != 0) revert E_SHAPE(leaf, 3);
         } else if (kind == ActionKind.CREATE) {
             if (a.salt == 0) revert E_SHAPE(leaf, 1);

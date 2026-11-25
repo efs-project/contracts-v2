@@ -826,6 +826,13 @@
                 "type": "uint40"
               },
               {
+                "name": "strength",
+                "slot": 0,
+                "offset": 31,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
                 "name": "target",
                 "slot": 1,
                 "offset": 0,
@@ -2193,5 +2200,5 @@
       ]
     }
   },
-  "layoutId": "0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb"
+  "layoutId": "0x6f2ac9d428a4ba7f938ff277edcba2f8f316fbba440184112a48728a74ce1288"
 }

@@ -481,6 +481,41 @@ contract ReplayTest is Test {
     // ---- review findings -------------------------------------------------------------------------------------
 
     /// A replayed store stamps the mutating admission, not the frontier at replay time.
+    /// SPIKE (T-4 number): MASKED → MASKED (a negative number changed, -1 → -5) folds as a MASK on an already-clear
+    /// live bit: the live count is unchanged, a history entry is appended, and replay rebuilds the same stores.
+    function testReplayFoldsAMaskOfAMask() public {
+        _history();
+        bytes32 third = keccak256("third");
+        assertEq(_one(_bindKind(ActionKind.UNBIND, third, 0, 0), ""), 9); // first mask, -1
+        (uint64 sc, uint64 sl,, uint48 bits,,) = g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
+        Action memory again = _bindKind(ActionKind.UNBIND, third, 0, 1);
+        again.salt = bytes32(uint256(4)); // -5
+        assertEq(_one(again, ""), 10);
+        (uint64 sc2, uint64 sl2,, uint48 bits2,,) = g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
+        assertEq(
+            abi.encode(sc, sl, bits), abi.encode(sc2, sl2, bits2), "the mask of a mask moves no bit"
+        );
+        PostingKey hist = PostingKey.wrap(
+            Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, third)))
+        );
+        (uint64 hc,,,) = g.posting.postingHead(hist);
+        assertEq(hc, 2, "two history entries");
+        IndexReplayDecoder dec = new IndexReplayDecoder();
+        (Effect[] memory e,) = dec.decode(k.proxy, 10);
+        assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(3, 0), "MASK");
+        (IndexDeployer d, RealmIndex ix) = _gen2();
+        assertEq(_replayAll(ix), 10);
+        (uint64 x1, uint64 y1, uint64 z1, uint48 w1,, uint64 v1) =
+            g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
+        (uint64 x2, uint64 y2, uint64 z2, uint48 w2,, uint64 v2) =
+            IBitmapStore(d.bitmapStore()).scopeHead(ScopeKey.wrap(scopeKey));
+        assertEq(abi.encode(x1, y1, z1, w1, v1), abi.encode(x2, y2, z2, w2, v2), "scope head");
+        (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(hist);
+        (uint64 c2, uint64 l2, uint64 last2, uint16 f2) =
+            IPostingStore(d.postingStore()).postingHead(hist);
+        assertEq(abi.encode(c1, l1, last1, f1), abi.encode(c2, l2, last2, f2), "history head");
+    }
+
     function testReplayStampsTheMutatingAdmission() public {
         Action[] memory actions = new Action[](3);
         actions[0].kind = ActionKind.CREATE;

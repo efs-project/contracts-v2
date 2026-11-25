@@ -432,8 +432,8 @@ contract KindsTest is KernelFixture {
         assertEq(abi.encode(row.kind, row.a, row.prevAdmission), abi.encode(4, 0, 2));
     }
 
-    /// SPIKE (T-4): UNBIND stands on a silent head (UNSET, RELEASED); RELEASE still needs a written head and
-    /// MASKED → MASKED is still refused.
+    /// SPIKE (T-4): UNBIND stands on a silent head (UNSET, RELEASED) and on a masked one; RELEASE still needs
+    /// a written head.
     function test_unbind_and_release_refusals() public {
         bytes32 r = _land("kinds/mask/refusals");
         bytes32 key = _key(principal, FOLDER, SA, ROLE);
@@ -454,25 +454,25 @@ contract KindsTest is KernelFixture {
             abi.encodeWithSelector(E_CAS.selector, key, uint64(5), uint64(1))
         );
         _exec(_acts(_unbind(FOLDER, SA, ROLE, 1)), _bodies(1));
+        // SPIKE (T-4 number): MASKED → MASKED is admitted (it changes the negative number); its CAS still applies
         _refuse1(
-            _unbind(FOLDER, SA, ROLE, 2),
+            _unbind(FOLDER, SA, ROLE, 1),
             "",
-            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(2))
+            abi.encodeWithSelector(E_CAS.selector, key, uint64(1), uint64(2))
         );
-        _exec(_acts(_release(FOLDER, SA, ROLE, 2)), _bodies(1));
+        _exec(_acts(_unbind(FOLDER, SA, ROLE, 2)), _bodies(1));
+        _exec(_acts(_release(FOLDER, SA, ROLE, 3)), _bodies(1));
         _refuse1(
-            _release(FOLDER, SA, ROLE, 3),
+            _release(FOLDER, SA, ROLE, 4),
             "",
             abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(3))
         );
-        // a first mask, then a second mask of the same head, is refused as before
+        // a first mask, then a second mask of the same head, is admitted
         bytes32 key2 = _key(principal, FOLDER, SB, ROLE);
         _exec(_acts(_unbind(FOLDER, SB, ROLE, 0)), _bodies(1));
-        _refuse1(
-            _unbind(FOLDER, SB, ROLE, 1),
-            "",
-            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key2, uint8(2))
-        );
+        _exec(_acts(_unbind(FOLDER, SB, ROLE, 1)), _bodies(1));
+        assertEq(_head(key2).state, 2);
+        assertEq(_head(key2).revision, 2);
     }
 
     /// SPIKE (T-4): UNBIND from UNSET allocates the position as a first BIND does, with no target.

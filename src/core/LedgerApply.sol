@@ -84,10 +84,12 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
             (row.prevAdmission, row.targetKind) = _applyBind(action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal);
             row.expectedRevision = uint48(action.expectedRevision);
+            row.withdrawn = _strength(action); // SPIKE (T-4 number): the strength byte of a bind row
         } else if (kind == ActionKind.UNBIND || kind == ActionKind.RELEASE) {
             row.prevAdmission = _applyMaskOrRelease(kind, action, principalId, admission, effect);
             row.bindingOrdinal = uint48(effect.bindingOrdinal); // names the position through bindingPosition[ordinal]
             row.expectedRevision = uint48(action.expectedRevision);
+            row.withdrawn = _strength(action); // SPIKE (T-4 number): 0 for RELEASE (shape law)
         } else if (kind == ActionKind.CREATE) {
             row.a = action.salt;
             _applyCreate(action, principalId, principalKind, admission, effect);
@@ -216,6 +218,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         head.admission = uint48(admission);
         head.targetKind = targetKind;
         head.prevAdmission = prevAdmission;
+        head.strength = _strength(action); // SPIKE (T-4 number): a new strength on the same target is a REBIND
         if (head.target != target) head.target = target;
 
         effect.bindingOrdinal = ordinal;
@@ -227,6 +230,11 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.prevAdmission = prevAdmission;
         effect.targetKind = targetKind;
         effect.target = target;
+    }
+
+    /// SPIKE (T-4 number): a bind kind's strength is its `salt` word, 0..255 by the shape law (kernel `_checkShape`).
+    function _strength(Action calldata action) private pure returns (uint8) {
+        return uint8(uint256(action.salt));
     }
 
     /// The first transition of a binding: a fresh binding ordinal, its position, the position cell if new.
@@ -263,9 +271,10 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         bytes32 key = Keys.binding(principalId, position);
         HeadRow storage head = _bindings().heads[key];
         uint8 state = head.state;
-        // SPIKE (T-4): a mask may also stand on a silent head (UNSET or RELEASED); MASKED → MASKED stays refused
+        // SPIKE (T-4): a mask may also stand on a silent head (UNSET or RELEASED) and, with a number, on a masked
+        // one (MASKED → MASKED changes -1 - strength)
         bool live = kind == ActionKind.UNBIND
-            ? state != STATE_MASKED && state <= STATE_RELEASED
+            ? state <= STATE_RELEASED
             : state == STATE_BOUND || state == STATE_MASKED;
         if (!live) revert E_NOT_LIVE(effect.leaf, key, state);
         if (head.revision != action.expectedRevision) {
@@ -287,6 +296,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         head.revision = newRevision;
         head.admission = uint48(admission);
         head.prevAdmission = prevAdmission; // the target word is KEPT (design §4.3)
+        head.strength = _strength(action); // SPIKE (T-4 number): RELEASE carries salt 0, so it writes 0
 
         effect.bindingOrdinal = head.bindingOrdinal;
         effect.position = position;

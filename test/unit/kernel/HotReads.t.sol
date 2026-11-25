@@ -156,7 +156,7 @@ contract HotReadsTest is KernelFixture {
         bytes32[3] memory keys = [boundKey, maskedKey, keccak256("hot/unset")];
         for (uint256 i; i < 3; ++i) {
             uint256 s = Layout.bindingsHeadsSlot(keys[i]);
-            (uint8 st, uint48 rv, uint48 ad, uint8 tk, uint48 pa, uint48 bo,) =
+            (uint8 st, uint48 rv, uint48 ad, uint8 tk, uint48 pa, uint48 bo,,) =
                 Layout.unpackHeadRowWord0(_raw(s));
             bytes32 canonical = st == 1 ? _raw(s + 1) : bytes32(0);
             (uint8 hs, uint64 hrv, uint64 had, uint8 htk, uint64 hpa, uint64 hbo, bytes32 ht) =

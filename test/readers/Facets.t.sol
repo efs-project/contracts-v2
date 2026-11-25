@@ -695,7 +695,7 @@ abstract contract FacetSuite is FacetFixture {
             _assertHead(h, _hotHead(keys[i]), "head() vs hot.head");
             _assertHead(hs[i], h, "heads() vs head()");
             uint256 slot = Layout.bindingsHeadsSlot(keys[i]);
-            (uint8 state,,,,,, uint40 notAfter) =
+            (uint8 state,,,,,, uint40 notAfter,) =
                 Layout.unpackHeadRowWord0(vm.load(k.proxy, bytes32(slot)));
             assertEq(h.state, state, "raw state");
             assertEq(h.notAfter, notAfter, "raw notAfter");

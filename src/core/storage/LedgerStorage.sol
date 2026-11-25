@@ -146,7 +146,9 @@ abstract contract LedgerStorage {
         uint48 bindingOrdinal;
         uint48 expectedRevision;
         uint48 prevAdmission;
-        uint8 withdrawn; // 0 or 1
+        // PUBLISH/REUSE rows: 0 or 1. SPIKE (T-4 number): BIND/UNBIND/RELEASE rows carry the action's strength
+        // (its `salt`, 0..255) here; the byte is otherwise dead in bind rows (WITHDRAW refuses them, E_WITHDRAW 1)
+        uint8 withdrawn;
         uint16 policyRow;
         uint16 roleRow;
         uint8 targetKind; // BIND rows: 1 RECORD 2 SUBJECT, so the decoder rebuilds oldTarget without shadow heads
@@ -232,6 +234,9 @@ abstract contract LedgerStorage {
         uint48 prevAdmission;
         uint48 bindingOrdinal;
         uint40 notAfter; // reserved zero; the "stale not dead" seam
+        // SPIKE (T-4 number): the head's strength (0..255; RELEASE writes 0); number = strength when BOUND,
+        // -1 - strength when MASKED, none otherwise
+        uint8 strength;
         bytes32 target;
     }
 

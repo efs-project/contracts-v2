@@ -5,7 +5,7 @@
       "label": "probe_posting",
       "offset": 0,
       "slot": "0",
-      "type": "t_struct(PostingStorage)629_storage"
+      "type": "t_struct(PostingStorage)631_storage"
     }
   ],
   "types": {
@@ -20,11 +20,11 @@
       "numberOfBytes": "32",
       "base": "t_bytes32"
     },
-    "t_array(t_struct(WriterRange)597_storage)dyn_storage": {
+    "t_array(t_struct(WriterRange)599_storage)dyn_storage": {
       "encoding": "dynamic_array",
       "label": "struct WriterRange[]",
       "numberOfBytes": "32",
-      "base": "t_struct(WriterRange)597_storage"
+      "base": "t_struct(WriterRange)599_storage"
     },
     "t_bytes32": {
       "encoding": "inplace",
@@ -38,12 +38,12 @@
       "numberOfBytes": "32",
       "value": "t_mapping(t_uint256,t_uint256)"
     },
-    "t_mapping(t_bytes32,t_struct(PostingHead)607_storage)": {
+    "t_mapping(t_bytes32,t_struct(PostingHead)609_storage)": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => struct PostingStoreStorage.PostingHead)",
       "numberOfBytes": "32",
-      "value": "t_struct(PostingHead)607_storage"
+      "value": "t_struct(PostingHead)609_storage"
     },
     "t_mapping(t_uint256,t_uint256)": {
       "encoding": "mapping",
@@ -52,13 +52,13 @@
       "numberOfBytes": "32",
       "value": "t_uint256"
     },
-    "t_struct(PostingHead)607_storage": {
+    "t_struct(PostingHead)609_storage": {
       "encoding": "inplace",
       "label": "struct PostingStoreStorage.PostingHead",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 600,
+          "astId": 602,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "count",
           "offset": 0,
@@ -66,7 +66,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 602,
+          "astId": 604,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "live",
           "offset": 6,
@@ -74,7 +74,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 604,
+          "astId": 606,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "last",
           "offset": 12,
@@ -82,7 +82,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 606,
+          "astId": 608,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "flags",
           "offset": 18,
@@ -91,21 +91,21 @@
         }
       ]
     },
-    "t_struct(PostingStorage)629_storage": {
+    "t_struct(PostingStorage)631_storage": {
       "encoding": "inplace",
       "label": "struct PostingStoreStorage.PostingStorage",
       "numberOfBytes": "160",
       "members": [
         {
-          "astId": 613,
+          "astId": 615,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "heads",
           "offset": 0,
           "slot": "0",
-          "type": "t_mapping(t_bytes32,t_struct(PostingHead)607_storage)"
+          "type": "t_mapping(t_bytes32,t_struct(PostingHead)609_storage)"
         },
         {
-          "astId": 619,
+          "astId": 621,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "words",
           "offset": 0,
@@ -113,15 +113,15 @@
           "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_uint256))"
         },
         {
-          "astId": 623,
+          "astId": 625,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "writers",
           "offset": 0,
           "slot": "2",
-          "type": "t_array(t_struct(WriterRange)597_storage)dyn_storage"
+          "type": "t_array(t_struct(WriterRange)599_storage)dyn_storage"
         },
         {
-          "astId": 625,
+          "astId": 627,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "attached",
           "offset": 0,
@@ -129,7 +129,7 @@
           "type": "t_uint8"
         },
         {
-          "astId": 628,
+          "astId": 630,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "familyIds",
           "offset": 0,
@@ -138,13 +138,13 @@
         }
       ]
     },
-    "t_struct(WriterRange)597_storage": {
+    "t_struct(WriterRange)599_storage": {
       "encoding": "inplace",
       "label": "struct WriterRange",
       "numberOfBytes": "32",
       "members": [
         {
-          "astId": 592,
+          "astId": 594,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "generation",
           "offset": 0,
@@ -152,7 +152,7 @@
           "type": "t_address"
         },
         {
-          "astId": 594,
+          "astId": 596,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "fromAdmission",
           "offset": 20,
@@ -160,7 +160,7 @@
           "type": "t_uint48"
         },
         {
-          "astId": 596,
+          "astId": 598,
           "contract": "test/harness/LayoutProbe.sol:PostingStoreLayoutProbe",
           "label": "toAdmission",
           "offset": 26,

@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {Layout} from "../core/layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
+import {ActionKind} from "../interfaces/Actions.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ILedgerReads} from "../interfaces/ILedgerReads.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
@@ -307,7 +308,8 @@ library LedgerRows {
             h.targetKind,
             h.prevAdmission,
             h.bindingOrdinal,
-            h.notAfter
+            h.notAfter,
+            // SPIKE (T-4 number): the strength is not served by the Head ABI in the spike
         ) = Layout.unpackHeadRowWord0(meta);
         if (h.state == 1) h.target = target;
     }
@@ -335,7 +337,8 @@ library LedgerRows {
             r.roleRow,
             r.targetKind
         ) = Layout.unpackAdmissionRowWord0(meta);
-        r.withdrawn = withdrawn != 0;
+        // SPIKE (T-4 number): the byte is a bind row's strength, so only a record row reads it as withdrawn
+        r.withdrawn = withdrawn != 0 && r.kind <= ActionKind.REUSE;
         r.a = a;
     }
 

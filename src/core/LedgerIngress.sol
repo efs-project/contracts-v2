@@ -140,7 +140,7 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         returns (uint8 state, uint48 revision, uint48 admission, bytes32 target)
     {
         uint256 s = Layout.bindingsHeadsSlot(key);
-        (state, revision, admission,,,,) = Layout.unpackHeadRowWord0(_load(ledger, s));
+        (state, revision, admission,,,,,) = Layout.unpackHeadRowWord0(_load(ledger, s));
         if (state == 1) target = _load(ledger, s + 1);
     }
 
