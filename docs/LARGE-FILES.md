@@ -165,11 +165,24 @@ Two directions, both in the core design:
   `web3-next-chunk` header carries the URL of the next one, so an ERC-7617 client streams the whole file.
 - At most 32 names of 1..255 bytes. A trailing slash is ignored.
 
+**Home start** (step 4 of docs/TAG-DESIGN.md §12): `web3://<gateway>:<chainId>/~home/0x<40 hex>[/<name>…][/][?lens=…][&offset=<n>]`
+resolves the names from an address's place (its home, `bytes32(uint256(uint160(address)))`, design §12.5) instead of
+the root folder. A first segment that starts with `~` is reserved for the system (a topic word and a principal can never
+be one), so `~home` cannot be read as another URL; the spec's bare `/0x<40 hex>/…` form already means "a key account's
+principal from the root" here, which is why the marker is needed. The address is exactly `0x` + 40 hex digits, either
+case (anything else is `400`). Without `lens` the lens is the address's own author identity,
+`Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's contract principal of a
+contract (a Safe's home shows the Safe's own entries); with `lens` it is exactly the listed principals, so another
+author's entry at a home is served only when the lens names that author (`?lens=<them>,<owner>` puts them first). The
+home directory itself carries `x-efs-home: 0x<40 hex>` (lowercase) instead of `x-efs-record`: a home is an address,
+never a record; folders below it carry `x-efs-record` as before. `web3-next-chunk` keeps the `~home/…` path. Measured
+in `test/periphery/EfsWeb3GatewayHome.t.sol`; the gateway runtime is 18,971 B (+946 B for the home start).
+
 | Status | When |
 |---|---|
 | 200 | a file's bytes or one chunk of them; a directory as JSON `{"entries":[{"name","kind"}…],"complete":bool}` |
 | 307 | the file is a `files-external/1` location; `Location` carries the URI, `x-efs-media-type` its declared media type |
-| 400 | malformed principal, lens or offset; an empty name; too many names or principals |
+| 400 | malformed principal, home address, lens or offset; an empty name; too many names or principals |
 | 404 | no such name, a hidden (masked) name, a file used as a folder, no revision, remote-only content |
 | 416 | `offset` at or past the end (offset 0 of an empty file is `200`) |
 | 500 | a broken Files invariant (wrong Type or length, a missing tree node) or a failed listing |
@@ -190,8 +203,9 @@ Measured in the suites (cold storage): an inline file 0.13M gas, an 8,160-byte c
 ready `seedUrl`) and `verify` reads the three seed files back through it, following `web3-next-chunk`.
 
 **Open, with the directory questions:** the gateway is bound to one root `files-directory/1` record at construction
-(the fixture's seed root). What a principal's root is (a shared Realm root, a home per principal) is not ruled; the
-answer changes the gateway's constructor argument or its first path segment, and nothing in the kernel.
+(the fixture's seed root), and `/~home/…` starts at any address's home. Whether a principal's default root should be its
+home rather than the shared Realm root is not ruled; the answer changes the gateway's first path segment's default and
+nothing in the kernel.
 
 ## What a size costs on chain (measured 2026-11-24)
 
