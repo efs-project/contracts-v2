@@ -21,6 +21,7 @@ import {
     Native,
     PostingKey,
     Purpose,
+    ScopeKey,
     TypeId
 } from "../../src/interfaces/Actions.sol";
 import {Coverage} from "../../src/interfaces/Results.sol";
@@ -30,10 +31,13 @@ import {ILedgerControl} from "../../src/interfaces/ILedgerControl.sol";
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
 import {DigestSpec, OpenScopeConfig, Unit} from "../../src/interfaces/Index.sol";
 import {IPostingStore} from "../../src/interfaces/IPostingStore.sol";
+import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 
-/// @notice SPIKE (tags-index): the all-authors families 6 (open-scope), 7 (open-scope-below), 9 (open-scope-word)
-///         and 2 (word-directory) on a mock-registry kernel: list semantics, the replay rule for topic stand-ins
-///         registered after a tag, replay equals live over a mixed history, and the spike page reader.
+/// @notice SPIKE (tags-index2): the topic lists on a mock-registry kernel — family 6 (place), 20 (position-authors),
+///         19 (per-author roll-up), 7 (all-authors roll-up) — over word-page and path stand-in Types of the owner-
+///         ruled shapes (a word page: body = the word's bytes; a path: body exactly `[parent, wordPage]`, both
+///         declared references, so family 11 is written). List semantics, the restore law (no transition after a
+///         first statement appends), the family-11 directories, rebuild equals live, and the spike reader views.
 contract OpenScopeIndexTest is Test {
     KernelDeploy.Kernel internal k;
     MockRegistry internal registry;
@@ -41,23 +45,30 @@ contract OpenScopeIndexTest is Test {
     ILedger internal ledger;
     ILedgerHot internal hot;
     OpenScopeReader internal reader;
-    /// SPIKE stand-in: a topic is a record of this Type, body word 0 = parent topic id, word 1 = word id.
-    bytes32 internal constant TOPIC = keccak256("test/type/topic-stand-in");
+    bytes32 internal constant WORD = keccak256("test/type/word-page-stand-in");
+    bytes32 internal constant PATH = keccak256("test/type/path-stand-in");
     bytes32 internal constant THING = keccak256("test/type/thing");
     bytes32 internal constant TAG = Purpose.TAG;
     address internal alice = address(0xA11CE);
     address internal bob = address(0xB0B);
+    address internal carol = address(0xCA201);
     bytes32 internal me;
     mapping(address => uint64) internal nonces;
     bytes32[] internal things;
 
-    function _config() internal pure virtual returns (OpenScopeConfig memory os) {
-        os.exact = true;
-        os.topicTypeId = TOPIC;
-        os.depthCap = 64;
-        os.paths = true;
-        os.words = true;
-        os.directory = true;
+    function _trust() internal pure virtual returns (bool) {
+        return false;
+    }
+
+    function _config() internal pure returns (OpenScopeConfig memory os) {
+        os.wordTypeId = WORD;
+        os.pathTypeId = PATH;
+        os.scopeBelow = true;
+        os.allAuthors = new bytes32[](2);
+        os.allAuthors[0] = TAG;
+        os.allAuthors[1] = Purpose.FOLDER;
+        os.allBelow = true;
+        os.trustRegistered = _trust();
     }
 
     function setUp() public {
@@ -85,11 +96,15 @@ contract OpenScopeIndexTest is Test {
         info.ruleId = address(acceptAll).codehash;
         info.policyRows = 1;
         info.policyRow = 1;
-        registry.setType(TOPIC, info, new bytes32[](0));
+        registry.setType(WORD, info, new bytes32[](0));
         registry.setType(THING, info, new bytes32[](0));
+        info.refCount = 2;
+        bytes32[] memory refTypes = new bytes32[](2);
+        refTypes[0] = 0; // ANY: a word page or a path
+        refTypes[1] = WORD;
+        registry.setType(PATH, info, refTypes);
         me = Keys.principalFor(address(this), hot.realmOrigin());
         reader = new OpenScopeReader();
-        // ten things to tag (records of THING)
         Action[] memory a = new Action[](10);
         bytes[] memory b = new bytes[](10);
         for (uint256 i; i < 10; ++i) {
@@ -134,58 +149,115 @@ contract OpenScopeIndexTest is Test {
         return _one(who, _act(ActionKind.BIND, topic, things[thing], things[thing], 0));
     }
 
-    function _topicBody(bytes32 parent, bytes32 word) internal pure returns (bytes memory) {
-        return bytes.concat(abi.encode(parent, word), "topic stand-in");
+    function _deny(address who, bytes32 topic, uint256 thing) internal returns (uint64) {
+        return _one(who, _act(ActionKind.UNBIND, topic, things[thing], 0, 0));
     }
 
-    function _topicId(bytes32 parent, bytes32 word) internal pure returns (bytes32) {
-        return Keys.recordFromHash(TOPIC, keccak256(_topicBody(parent, word)));
+    function _wordBody(string memory w) internal pure returns (bytes memory) {
+        return bytes(w);
     }
 
-    function _register(bytes32 parent, bytes32 word) internal returns (bytes32 id) {
+    function _wordId(string memory w) internal pure returns (bytes32) {
+        return Keys.record(WORD, _wordBody(w));
+    }
+
+    function _pathId(bytes32 parent, bytes32 wordPage) internal pure returns (bytes32) {
+        return Keys.record(PATH, abi.encode(parent, wordPage));
+    }
+
+    function _publish(bytes32 t, bytes memory body) internal returns (bytes32) {
         Action[] memory a = new Action[](1);
         bytes[] memory b = new bytes[](1);
-        b[0] = _topicBody(parent, word);
+        b[0] = body;
         a[0].kind = ActionKind.PUBLISH;
-        a[0].typeId = TOPIC;
-        a[0].bodyHashOrRecordId = keccak256(b[0]);
+        a[0].typeId = t;
+        a[0].bodyHashOrRecordId = keccak256(body);
         _exec(address(this), a, b);
-        return _topicId(parent, word);
+        return Keys.record(t, body);
     }
 
-    function _list(IPostingStore s, uint8 kind, bytes32 value)
+    function _word(string memory w) internal returns (bytes32) {
+        bytes32 id = _wordId(w);
+        (, uint64 first,,,) = hot.recordHeader(id);
+        if (first != 0) return id;
+        return _publish(WORD, _wordBody(w));
+    }
+
+    function _path(bytes32 parent, string memory w) internal returns (bytes32) {
+        return _publish(PATH, abi.encode(parent, _word(w)));
+    }
+
+    /// `/w0/w1/.../w(n-1)`: returns the topic of every prefix (index 0 the word page w0).
+    function _chain(string memory name, uint256 n) internal returns (bytes32[] memory t) {
+        t = new bytes32[](n);
+        t[0] = _word(string.concat(name, "0"));
+        for (uint256 i = 1; i < n; ++i) {
+            t[i] = _path(t[i - 1], string.concat(name, vm.toString(i)));
+        }
+    }
+
+    // ---- list probes ------------------------------------------------------------------------------------------
+
+    function _pk(uint8 kind, bytes32 value) internal pure returns (PostingKey) {
+        return PostingKey.wrap(Keys.posting(0, kind, 0, value));
+    }
+
+    function _place(bytes32 purpose, bytes32 subject) internal pure returns (PostingKey) {
+        return _pk(6, Keys.openScope(purpose, subject));
+    }
+
+    function _allBelow(bytes32 ancestor) internal pure returns (PostingKey) {
+        return _pk(7, Keys.openScope(TAG, ancestor));
+    }
+
+    function _mineBelow(bytes32 principal, bytes32 ancestor) internal pure returns (PostingKey) {
+        return _pk(19, Keys.scopeBelow(principal, TAG, ancestor));
+    }
+
+    function _authorsKey(bytes32 purpose, bytes32 subject, bytes32 role)
+        internal
+        pure
+        returns (PostingKey)
+    {
+        return _pk(20, Keys.position(purpose, subject, role));
+    }
+
+    function _count(PostingKey pk) internal view returns (uint64 n) {
+        (n,,,) = g.posting.postingHead(pk);
+    }
+
+    function _entries(PostingKey pk) internal view returns (uint64[] memory) {
+        return g.posting.postingSlice(pk, 0, 512);
+    }
+
+    function _ordinal(address who, bytes32 subject, uint256 thing)
         internal
         view
-        returns (uint64 count, uint64[] memory entries)
+        returns (uint64 o)
     {
-        PostingKey pk = PostingKey.wrap(Keys.posting(0, kind, 0, Keys.openScope(TAG, value)));
-        (count,,,) = s.postingHead(pk);
-        entries = s.postingSlice(pk, 0, 256);
+        bytes32 principal = who == address(this) ? me : Keys.principal(who);
+        (,,,,, o,) = hot.head(Keys.binding(principal, Keys.position(TAG, subject, things[thing])));
     }
 
-    function _exactKey(bytes32 purpose, bytes32 subject) internal pure returns (PostingKey) {
-        return PostingKey.wrap(Keys.posting(0, 6, 0, Keys.openScope(purpose, subject)));
-    }
+    // ---- the place and position-authors lists (families 6, 20) ------------------------------------------------
 
-    function _kindKey(uint8 kind, bytes32 value) internal pure returns (PostingKey) {
-        return PostingKey.wrap(Keys.posting(0, kind, 0, Keys.openScope(TAG, value)));
-    }
-
-    function _dirKey(bytes32 word) internal pure returns (PostingKey) {
-        return PostingKey.wrap(Keys.posting(TOPIC, 2, 0, word));
-    }
-
-    // ---- family 6 ---------------------------------------------------------------------------------------------
-
-    function testTwoAuthorsOnOneTopicShareOneList() public {
-        bytes32 x = keccak256("topic/x");
-        (uint64 a1,,,) = hot.counts();
+    function testPlaceListHasOneEntryPerPosition() public {
+        bytes32 x = _word("x");
         _tag(address(this), x, 0);
-        _tag(alice, x, 0);
+        (uint64 a1,,,) = hot.counts();
+        _tag(alice, x, 0); // the same position: no place entry
+        (uint64 a2,,,) = hot.counts();
         _tag(alice, x, 1);
-        (uint64 n, uint64[] memory e) = _list(g.posting, 6, x);
-        assertEq(n, 3);
-        assertEq(abi.encode(e[0], e[1], e[2]), abi.encode(a1 + 1, a1 + 2, a1 + 3));
+        assertEq(_count(_place(TAG, x)), 2, "two positions");
+        uint64[] memory e = _entries(_place(TAG, x));
+        assertEq(
+            e[0], _ordinal(address(this), x, 0), "entry = the first statement's binding ordinal"
+        );
+        assertEq(e[1], _ordinal(alice, x, 1));
+        PostingKey pa = _authorsKey(TAG, x, things[0]);
+        assertEq(_count(pa), 2, "two authors at thing 0");
+        e = _entries(pa);
+        assertEq(abi.encode(e[0], e[1]), abi.encode(a1, a2), "entry = the admission ordinal");
         (Coverage c, uint64 count,,,) = g.index
             .postingHeadOf(
                 FamilyId.wrap(Keys.familyId("open-scope")),
@@ -194,165 +266,281 @@ contract OpenScopeIndexTest is Test {
                 Keys.openScope(TAG, x)
             );
         assertEq(uint8(c), uint8(Coverage.COMPLETE));
-        assertEq(count, 3);
+        assertEq(count, 2);
     }
 
-    function testEveryPurposeIsListed() public {
+    function testFolderHasTwoLevelsAndHeadNone() public {
         bytes32 folder = keccak256("some folder");
-        Action memory a = _act(ActionKind.BIND, folder, keccak256("name"), things[0], 0);
-        a.purpose = Purpose.FOLDER;
-        _one(alice, a);
-        (uint64 n,,,) = g.posting.postingHead(_exactKey(Purpose.FOLDER, folder));
-        assertEq(n, 1);
+        Action memory f = _act(ActionKind.BIND, folder, keccak256("pet.jpg"), things[0], 0);
+        f.purpose = Purpose.FOLDER;
+        _one(alice, f);
+        _one(bob, f);
+        assertEq(_count(_place(Purpose.FOLDER, folder)), 1);
+        assertEq(_count(_authorsKey(Purpose.FOLDER, folder, keccak256("pet.jpg"))), 2);
+        Action memory h = _act(ActionKind.BIND, things[1], 0, things[2], 0);
+        h.purpose = Purpose.HEAD;
+        _one(alice, h);
+        assertEq(_count(_place(Purpose.HEAD, things[1])), 0, "HEAD is not listed");
+        assertEq(_count(_authorsKey(Purpose.HEAD, things[1], 0)), 0);
     }
 
-    function testAFirstMaskLandsInTheList() public {
-        bytes32 x = keccak256("topic/x");
-        uint64 p = _one(bob, _act(ActionKind.UNBIND, x, things[2], 0, 0));
-        assertGt(p, 0);
-        (uint64 n, uint64[] memory e) = _list(g.posting, 6, x);
-        assertEq(n, 1);
-        (uint64 adm,,,) = hot.counts();
-        assertEq(e[0], adm);
+    function testALoneNegativeIsAFirstStatement() public {
+        bytes32 x = _word("x");
+        _deny(bob, x, 2);
+        assertEq(_count(_place(TAG, x)), 1);
+        assertEq(_count(_authorsKey(TAG, x, things[2])), 1);
     }
 
-    function testLaterTransitionsAppendNothing() public {
-        bytes32 x = keccak256("topic/x");
-        _tag(alice, x, 0); // FIRST_BIND, rev 1
-        _one(alice, _act(ActionKind.BIND, x, things[0], things[1], 1)); // REBIND, rev 2
-        _one(alice, _act(ActionKind.UNBIND, x, things[0], 0, 2)); // MASK, rev 3
-        _one(alice, _act(ActionKind.BIND, x, things[0], things[0], 3)); // RESTORE, rev 4
-        _one(alice, _act(ActionKind.RELEASE, x, things[0], 0, 4)); // RELEASE, rev 5
-        _one(alice, _act(ActionKind.UNBIND, x, things[0], 0, 5)); // MASK from RELEASED
-        (uint64 n,) = _list(g.posting, 6, x);
-        assertEq(n, 1, "one entry per (author, position)");
-    }
+    // ---- the roll-ups (families 19, 7) ------------------------------------------------------------------------
 
-    // ---- families 7, 9, 2 and the replay rule ------------------------------------------------------------------
-
-    function testRollUpAndWordsFollowRegisteredTopics() public {
-        bytes32 wCars = keccak256("word/cars");
-        bytes32 wTesla = keccak256("word/tesla");
-        bytes32 cars = _register(0, wCars);
-        bytes32 tesla = _register(cars, wTesla);
-        uint64 t = _tag(alice, tesla, 0);
-        t;
-        (uint64 adm,,,) = hot.counts();
-        (uint64 n, uint64[] memory e) = _list(g.posting, 7, cars);
-        assertEq(n, 1, "listed below /cars");
-        assertEq(e[0], adm);
-        (n,) = _list(g.posting, 7, tesla);
-        assertEq(n, 0, "the exact path is kind 6, not 7");
-        (n,) = _list(g.posting, 6, tesla);
-        assertEq(n, 1);
-        (n,) = _list(g.posting, 9, wCars);
-        assertEq(n, 1);
-        (n,) = _list(g.posting, 9, wTesla);
-        assertEq(n, 1);
-        (uint64 d1,,,) = g.posting.postingHead(_dirKey(wCars));
-        (uint64 d2,,,) = g.posting.postingHead(_dirKey(wTesla));
-        assertEq(abi.encode(d1, d2), abi.encode(2, 1), "cars lists both paths, tesla one");
-    }
-
-    function testARepeatedWordIsListedOnce() public {
-        bytes32 w = keccak256("word/again");
-        bytes32 a = _register(0, w);
-        bytes32 b = _register(a, keccak256("word/middle"));
-        bytes32 c = _register(b, w);
-        _tag(alice, c, 0);
-        (uint64 n,) = _list(g.posting, 9, w);
-        assertEq(n, 1);
-        (uint64 d,,,) = g.posting.postingHead(_dirKey(w));
-        assertEq(d, 3, "a, b and c are each listed once under w (c's path repeats it)");
-    }
-
-    function testATagBeforeItsTopicIsRegisteredRollsUpNothing() public {
-        bytes32 wCars = keccak256("word/cars");
-        bytes32 cars = _register(0, wCars);
-        bytes32 later = _topicId(cars, keccak256("word/later"));
-        _tag(alice, later, 0); // the topic record does not exist yet
-        _register(cars, keccak256("word/later"));
-        (uint64 n,) = _list(g.posting, 7, cars);
-        assertEq(n, 0, "no roll-up for a tag admitted before its topic");
-        _tag(bob, later, 0); // after registration: rolls up
-        (n,) = _list(g.posting, 7, cars);
-        assertEq(n, 1);
-        (n,) = _list(g.posting, 6, later);
-        assertEq(n, 2);
-    }
-
-    function testDepth64AndTheCap() public {
-        bytes32 cur;
-        for (uint256 i; i < 64; ++i) {
-            cur = _register(cur, keccak256(abi.encode("w", i)));
+    function testRollUpsListProperAncestorsOnly() public {
+        bytes32[] memory t = _chain("r", 3); // /r0, /r0/r1, /r0/r1/r2
+        _tag(alice, t[2], 0);
+        bytes32 pa = Keys.principal(alice);
+        uint64 o = _ordinal(alice, t[2], 0);
+        for (uint256 i; i < 2; ++i) {
+            assertEq(_count(_mineBelow(pa, t[i])), 1, "alice below each proper ancestor");
+            assertEq(_entries(_mineBelow(pa, t[i]))[0], o);
+            assertEq(_count(_allBelow(t[i])), 1, "all-authors below each proper ancestor");
+            assertEq(_entries(_allBelow(t[i]))[0], o);
         }
-        _tag(alice, cur, 0);
-        (uint64 n,) = _list(g.posting, 9, keccak256(abi.encode("w", 0)));
-        assertEq(n, 1, "the root word is reached at depth 64");
-        n = 0;
-        bytes32 c;
+        assertEq(_count(_mineBelow(pa, t[2])), 0, "the topic itself is the exact scope list");
+        assertEq(_count(_allBelow(t[2])), 0);
+        // a second author on the same position: her own roll-up, no all-authors entry (the position exists)
+        _tag(bob, t[2], 0);
+        assertEq(_count(_mineBelow(Keys.principal(bob), t[0])), 1);
+        assertEq(_count(_allBelow(t[0])), 1);
+        // a new position by bob: both
+        _tag(bob, t[2], 1);
+        assertEq(_count(_mineBelow(Keys.principal(bob), t[0])), 2);
+        assertEq(_count(_allBelow(t[0])), 2);
+    }
+
+    function testAWordPageAndAHomeHaveNoAncestors() public {
+        bytes32 w = _word("solo");
+        _tag(alice, w, 0);
+        bytes32 home = bytes32(uint256(uint160(address(0xBEEF))));
+        _tag(alice, home, 1);
+        assertEq(_count(_mineBelow(Keys.principal(alice), w)), 0);
+        assertEq(_count(_allBelow(w)), 0);
+        assertEq(_count(_place(TAG, home)), 1, "a home is a place");
+    }
+
+    function testATagBeforeItsPathIsRegisteredRollsUpNothing() public {
+        if (_trust()) return; // the trusted build relies on a validator this mock realm does not have
+        bytes32 cars = _word("cars");
+        bytes32 later = _pathId(cars, _word("later"));
+        _tag(alice, later, 0); // the path record does not exist yet
+        _path(cars, "later");
+        assertEq(_count(_allBelow(cars)), 0, "no roll-up for a tag admitted before its path");
+        assertEq(_count(_mineBelow(Keys.principal(alice), cars)), 0);
+        _tag(bob, later, 1);
+        assertEq(_count(_allBelow(cars)), 1);
+    }
+
+    function testDepth64() public {
+        bytes32[] memory t = _chain("d", 64);
+        _tag(alice, t[63], 0);
+        uint256 n;
+        uint256 m;
         for (uint256 i; i < 63; ++i) {
-            c = _topicId(c, keccak256(abi.encode("w", i)));
-            (uint64 m,) = _list(g.posting, 7, c);
-            n += m;
+            n += _count(_allBelow(t[i]));
+            m += _count(_mineBelow(Keys.principal(alice), t[i]));
         }
-        assertEq(n, 63, "63 ancestor paths");
+        assertEq(abi.encode(n, m), abi.encode(63, 63), "63 proper ancestors each");
     }
 
-    // ---- replay equals live over a mixed history --------------------------------------------------------------
+    /// Word pages keep no item list: a topic's children and the topics that use a word are family 11.
+    function testFamily11AnswersBothDirectories() public {
+        bytes32 cars = _word("cars");
+        bytes32 red = _word("red");
+        bytes32 carsRed = _path(cars, "red");
+        bytes32 carsBlue = _path(cars, "blue");
+        bytes32 carsRedRed = _path(carsRed, "red");
+        PostingKey children = PostingKey.wrap(Keys.referenceList(PATH, 0, cars));
+        PostingKey usesRed = PostingKey.wrap(Keys.referenceList(PATH, 1, red));
+        assertEq(_count(children), 2, "cars/red and cars/blue");
+        assertEq(_count(usesRed), 2, "cars/red and cars/red/red");
+        uint64[] memory e = g.posting.postingSlice(children, 0, 8);
+        (, uint64 f1,,,) = hot.recordHeader(carsRed);
+        (, uint64 f2,,,) = hot.recordHeader(carsBlue);
+        assertEq(abi.encode(e[0], e[1]), abi.encode(f1, f2), "entries are the paths' admissions");
+        e = g.posting.postingSlice(usesRed, 0, 8);
+        (, uint64 f3,,,) = hot.recordHeader(carsRedRed);
+        assertEq(abi.encode(e[0], e[1]), abi.encode(f1, f3));
+        assertEq(_count(PostingKey.wrap(Keys.referenceList(PATH, 0, carsRed))), 1);
+    }
 
-    bytes32[] internal touched6;
-    bytes32[] internal touched7;
-    bytes32[] internal touched9;
-    bytes32[] internal touchedDir;
+    // ---- the restore law: no transition after a first statement appends anywhere --------------------------------
+
+    function _snap(PostingKey[] memory keys) internal view returns (bytes memory out) {
+        for (uint256 i; i < keys.length; ++i) {
+            (uint64 c, uint64 l, uint64 x, uint16 f) = g.posting.postingHead(keys[i]);
+            out = bytes.concat(out, abi.encode(c, l, x, f, g.posting.postingSlice(keys[i], 0, 64)));
+        }
+    }
+
+    function _lawKeys(bytes32[] memory t, address who, uint256 thing)
+        internal
+        view
+        returns (PostingKey[] memory keys)
+    {
+        bytes32 p = who == address(this) ? me : Keys.principal(who);
+        keys = new PostingKey[](6);
+        keys[0] = _mineBelow(p, t[0]);
+        keys[1] = _mineBelow(p, t[1]);
+        keys[2] = _place(TAG, t[2]);
+        keys[3] = _authorsKey(TAG, t[2], things[thing]);
+        keys[4] = _allBelow(t[0]);
+        keys[5] = _allBelow(t[1]);
+    }
+
+    function _scopeSnap(bytes32[] memory t, address who) internal view returns (bytes memory) {
+        bytes32 p = who == address(this) ? me : Keys.principal(who);
+        ScopeKey s = ScopeKey.wrap(Keys.scope(p, TAG, t[2]));
+        (uint64 c,,,,, uint64 e0) = g.bitmap.scopeHead(s);
+        return abi.encode(c, e0, g.bitmap.scopeSlice(s, 0, 64));
+    }
+
+    function testRemoveAndAddBackAppendsNothing() public {
+        bytes32[] memory t = _chain("law", 3);
+        bytes32 x = t[2];
+        // assert, release, assert again (RELEASE then RESTORE)
+        _tag(alice, x, 0);
+        PostingKey[] memory keys = _lawKeys(t, alice, 0);
+        bytes memory before = _snap(keys);
+        bytes memory sb = _scopeSnap(t, alice);
+        _one(alice, _act(ActionKind.RELEASE, x, things[0], 0, 1));
+        _one(alice, _act(ActionKind.BIND, x, things[0], things[0], 2));
+        assertEq(_snap(keys), before, "assert, release, assert");
+        // assert, mask, assert again (MASK then RESTORE)
+        _one(alice, _act(ActionKind.UNBIND, x, things[0], 0, 3));
+        _one(alice, _act(ActionKind.BIND, x, things[0], things[0], 4));
+        assertEq(_snap(keys), before, "assert, mask, assert");
+        assertEq(_scopeSnap(t, alice), sb, "the exact scope list too");
+        // lone negative, release, lone negative again (FIRST_MASK, RELEASE, MASK)
+        _deny(alice, x, 1);
+        keys = _lawKeys(t, alice, 1);
+        before = _snap(keys);
+        _one(alice, _act(ActionKind.RELEASE, x, things[1], 0, 1));
+        _one(alice, _act(ActionKind.UNBIND, x, things[1], 0, 2));
+        assertEq(_snap(keys), before, "negative, release, negative");
+        // a second author on the same positions, the same three sequences
+        _tag(bob, x, 0);
+        keys = _lawKeys(t, bob, 0);
+        before = _snap(keys);
+        _one(bob, _act(ActionKind.RELEASE, x, things[0], 0, 1));
+        _one(bob, _act(ActionKind.BIND, x, things[0], things[0], 2));
+        _one(bob, _act(ActionKind.UNBIND, x, things[0], 0, 3));
+        _one(bob, _act(ActionKind.BIND, x, things[0], things[0], 4));
+        assertEq(_snap(keys), before, "second author: release and mask round trips");
+        _deny(bob, x, 1);
+        keys = _lawKeys(t, bob, 1);
+        before = _snap(keys);
+        _one(bob, _act(ActionKind.RELEASE, x, things[1], 0, 1));
+        _one(bob, _act(ActionKind.UNBIND, x, things[1], 0, 2));
+        assertEq(_snap(keys), before, "second author: negative, release, negative");
+        assertEq(_count(_authorsKey(TAG, x, things[0])), 2, "one entry per author");
+        assertEq(_count(_place(TAG, x)), 2, "one entry per position");
+    }
+
+    // ---- rebuild equals live over a mixed history -------------------------------------------------------------
+
+    PostingKey[] internal touched;
+    ScopeKey[] internal touchedScopes;
+
+    function _touch(PostingKey k_) internal {
+        touched.push(k_);
+    }
 
     function _mixedHistory() internal {
-        bytes32 wA = keccak256("word/a");
-        bytes32 wB = keccak256("word/b");
-        bytes32 wD = keccak256("word/d");
-        bytes32 wU = keccak256("word/u");
-        bytes32 tA = _register(0, wA);
-        bytes32 tB = _register(tA, wB);
-        bytes32 tC = _register(tB, wA); // the word of A again
-        bytes32 tD = _register(tC, wD);
-        bytes32 tU = _topicId(tA, wU);
-        bytes32 loose = keccak256("unregistered, never a record");
-        _tag(address(this), tD, 0);
-        _tag(alice, tD, 0);
-        _tag(alice, tD, 1);
-        _tag(bob, tC, 2);
-        _tag(alice, tU, 3); // before U exists
-        _register(tA, wU);
-        _tag(bob, tU, 3); // after
-        _tag(bob, loose, 4);
-        _one(bob, _act(ActionKind.UNBIND, tD, things[5], 0, 0)); // lone negative
-        _one(alice, _act(ActionKind.UNBIND, tB, things[6], 0, 0)); // lone negative on B
-        _one(alice, _act(ActionKind.BIND, tD, things[0], things[7], 1)); // rebind
-        _one(alice, _act(ActionKind.UNBIND, tD, things[1], 0, 1)); // mask
-        _one(alice, _act(ActionKind.BIND, tD, things[1], things[1], 2)); // restore
-        _one(bob, _act(ActionKind.RELEASE, tC, things[2], 0, 1)); // release
-        _one(bob, _act(ActionKind.BIND, tD, things[5], things[5], 1)); // restore over a first mask
+        // registrations at several depths, out of order across publications
+        bytes32 a = _word("a");
+        bytes32 b = _word("b");
+        bytes32 ab = _path(a, "b");
+        bytes32 abc = _path(ab, "c");
+        bytes32 ba = _path(b, "a");
+        bytes32 abcd = _path(abc, "d");
+        bytes32 later = _pathId(ab, _word("z")); // tagged before it exists
+        bytes32 home = bytes32(uint256(uint160(address(0xBEEF))));
+        _tag(address(this), abcd, 0);
+        _tag(alice, abcd, 0); // a second author on an existing position
+        _tag(alice, abcd, 1);
+        _tag(bob, abc, 2);
+        _tag(alice, later, 3); // before its path exists
+        _path(ab, "z");
+        _tag(bob, later, 3); // after
+        _tag(bob, home, 4); // a home as subject
+        _tag(carol, ba, 5);
+        _deny(bob, abcd, 5); // lone negative
+        _deny(alice, ab, 6); // lone negative on a middle topic
+        _one(alice, _act(ActionKind.BIND, abcd, things[0], things[7], 1)); // rebind
+        _one(alice, _act(ActionKind.UNBIND, abcd, things[1], 0, 1)); // mask
+        _one(alice, _act(ActionKind.BIND, abcd, things[1], things[1], 2)); // restore
+        _one(bob, _act(ActionKind.RELEASE, abc, things[2], 0, 1)); // release
+        _one(bob, _act(ActionKind.BIND, abcd, things[5], things[5], 1)); // restore over a first mask
+        _one(bob, _act(ActionKind.BIND, abc, things[2], things[2], 2)); // restore after release
         Action memory f = _act(ActionKind.BIND, keccak256("folder"), keccak256("n"), things[8], 0);
         f.purpose = Purpose.FOLDER;
         _one(alice, f);
-        touched6 = [tA, tB, tC, tD, tU, loose];
-        touched7 = [tA, tB, tC, tD, tU];
-        touched9 = [wA, wB, wD, wU];
-        touchedDir = [wA, wB, wD, wU];
+        _one(bob, f);
+        _one(carol, f);
+        // a batch: one publication, several first statements on one topic
+        Action[] memory batch = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            batch[i] = _act(ActionKind.BIND, abc, things[6 + i], things[6 + i], 0);
+        }
+        _exec(carol, batch, new bytes[](3));
+        bytes32[8] memory topics = [a, b, ab, abc, ba, abcd, later, home];
+        address[4] memory who = [address(this), alice, bob, carol];
+        for (uint256 i; i < topics.length; ++i) {
+            _touch(_place(TAG, topics[i]));
+            _touch(_allBelow(topics[i]));
+            _touch(PostingKey.wrap(Keys.referenceList(PATH, 0, topics[i])));
+            _touch(PostingKey.wrap(Keys.referenceList(PATH, 1, topics[i])));
+            for (uint256 j; j < who.length; ++j) {
+                bytes32 p = j == 0 ? me : Keys.principal(who[j]);
+                _touch(_mineBelow(p, topics[i]));
+                touchedScopes.push(ScopeKey.wrap(Keys.scope(p, TAG, topics[i])));
+                for (uint256 th; th < 10; ++th) {
+                    _touch(_authorsKey(TAG, topics[i], things[th]));
+                    _touch(
+                        PostingKey.wrap(
+                            Keys.historyList(
+                                Keys.binding(p, Keys.position(TAG, topics[i], things[th]))
+                            )
+                        )
+                    );
+                }
+            }
+        }
+        _touch(_place(Purpose.FOLDER, keccak256("folder")));
+        _touch(_authorsKey(Purpose.FOLDER, keccak256("folder"), keccak256("n")));
+        _touch(PostingKey.wrap(Keys.byTypeList(PATH)));
+        _touch(PostingKey.wrap(Keys.byTypeList(WORD)));
+        _touch(PostingKey.wrap(Keys.uniqueByTypeList(PATH)));
+        for (uint256 th; th < 10; ++th) {
+            _touch(PostingKey.wrap(Keys.backlinkList(things[th])));
+        }
+        for (uint256 j; j < who.length; ++j) {
+            bytes32 p = j == 0 ? me : Keys.principal(who[j]);
+            _touch(PostingKey.wrap(Keys.byAuthorList(p)));
+        }
     }
 
-    function _assertSame(IPostingStore a, IPostingStore b, PostingKey pk) internal view {
-        (uint64 c1, uint64 l1, uint64 x1, uint16 f1) = a.postingHead(pk);
-        (uint64 c2, uint64 l2, uint64 x2, uint16 f2) = b.postingHead(pk);
+    function _assertSame(IPostingStore x, IPostingStore y, PostingKey pk) internal view {
+        (uint64 c1, uint64 l1, uint64 x1, uint16 f1) = x.postingHead(pk);
+        (uint64 c2, uint64 l2, uint64 x2, uint16 f2) = y.postingHead(pk);
         assertEq(abi.encode(c1, l1, x1, f1), abi.encode(c2, l2, x2, f2), "posting head");
         assertEq(
-            keccak256(abi.encode(a.postingSlice(pk, 0, 256))),
-            keccak256(abi.encode(b.postingSlice(pk, 0, 256))),
+            keccak256(abi.encode(x.postingSlice(pk, 0, 512))),
+            keccak256(abi.encode(y.postingSlice(pk, 0, 512))),
             "posting entries"
         );
     }
 
-    function testReplayEqualsLiveForEveryNewFamily() public {
+    function testRebuildEqualsLive() public {
+        if (_trust()) return; // a trusted build replays equal only behind its validator
         _mixedHistory();
         IndexDeployer.Plan memory plan;
         plan.hotAbiId = KernelDeploy.HOT_ABI_ID;
@@ -371,111 +559,184 @@ contract OpenScopeIndexTest is Test {
         while (ix.replayNextPublication(64) != 0) {}
         assertTrue(ix.replayReadiness().ready);
         IPostingStore p2 = IPostingStore(d.postingStore());
+        IBitmapStore b2 = IBitmapStore(d.bitmapStore());
         uint256 nonEmpty;
-        for (uint256 i; i < touched6.length; ++i) {
-            _assertSame(g.posting, p2, _exactKey(TAG, touched6[i]));
-            (uint64 c,,,) = g.posting.postingHead(_exactKey(TAG, touched6[i]));
+        for (uint256 i; i < touched.length; ++i) {
+            _assertSame(g.posting, p2, touched[i]);
+            (uint64 c,,,) = g.posting.postingHead(touched[i]);
             if (c != 0) ++nonEmpty;
         }
-        _assertSame(g.posting, p2, _exactKey(Purpose.FOLDER, keccak256("folder")));
-        for (uint256 i; i < touched7.length; ++i) {
-            _assertSame(g.posting, p2, _kindKey(7, touched7[i]));
+        for (uint256 i; i < touchedScopes.length; ++i) {
+            ScopeKey s = touchedScopes[i];
+            (uint64 c1, uint64 l1, uint64 m1, uint48 b1,, uint64 e1) = g.bitmap.scopeHead(s);
+            (uint64 c2, uint64 l2, uint64 m2, uint48 bb2,, uint64 e2) = b2.scopeHead(s);
+            assertEq(abi.encode(c1, l1, m1, b1, e1), abi.encode(c2, l2, m2, bb2, e2), "scope head");
+            assertEq(abi.encode(g.bitmap.scopeSlice(s, 0, 64)), abi.encode(b2.scopeSlice(s, 0, 64)));
         }
-        for (uint256 i; i < touched9.length; ++i) {
-            _assertSame(g.posting, p2, _kindKey(9, touched9[i]));
-            _assertSame(g.posting, p2, _dirKey(touchedDir[i]));
-        }
-        assertEq(nonEmpty, 5, "A has no direct tag");
-        // A's below list: the first statements on B, C, D and U's late tag; U's early tag never rolled up
-        (uint64 n,) = _list(p2, 7, touched7[0]);
-        assertEq(n, 7, "D: me, alice x2, bob's negative; C: bob; B: alice's negative; U: bob");
-        (uint64 dA,,,) = p2.postingHead(_dirKey(touchedDir[0]));
-        assertEq(dA, 5, "word a lists A, B, C, D and U (each has a on its path)");
+        assertGt(nonEmpty, 40, "the history touched the lists");
+        // spot checks on the rebuilt store
+        bytes32 a = _wordId("a");
+        bytes32 ab = _pathId(a, _wordId("b"));
+        // positions below /a: abcd x2 (thing 0, 1), abcd thing 5 (bob's negative), abc thing 2, abc 6..8,
+        // ab thing 6 (alice's negative) = 8. NOT `later` thing 3: its position was first stated (by alice) before
+        // the path existed, so it was never fresh again when bob tagged it after registration — a position whose
+        // first statement predates its topic is missing from the all-authors roll-up for good.
+        (uint64 n,,,) = p2.postingHead(_allBelow(a));
+        assertEq(n, 8, "all-authors below /a");
+        (n,,,) = p2.postingHead(_mineBelow(Keys.principal(alice), a));
+        assertEq(n, 3, "alice below /a: abcd 0, abcd 1, ab 6 (her early tag on z never rolled up)");
+        (n,,,) = p2.postingHead(_mineBelow(Keys.principal(alice), ab));
+        assertEq(n, 2, "alice below /a/b: abcd 0 and 1 (ab itself is exact)");
+        (n,,,) = p2.postingHead(_authorsKey(Purpose.FOLDER, keccak256("folder"), keccak256("n")));
+        assertEq(n, 3, "three authors on the folder name");
     }
 
-    // ---- the spike reader --------------------------------------------------------------------------------------
+    // ---- the spike reader ---------------------------------------------------------------------------------------
 
-    function _q(uint8 kind, bytes32 key, uint64 from, uint16 count, bool newest, bool dead)
+    function _lens2(bytes32 x, bytes32 y) internal pure returns (bytes32[] memory l) {
+        l = new bytes32[](2);
+        l[0] = x;
+        l[1] = y;
+    }
+
+    function _mineQ(bytes32[] memory lens, bytes32 topic, bool below, uint16 count)
         internal
         pure
-        returns (OpenScopeReader.Query memory q)
+        returns (OpenScopeReader.MineQuery memory q)
     {
-        q.kind = kind;
-        q.purpose = TAG;
-        q.key = key;
-        q.from = from;
+        q.lens = lens;
+        q.topic = topic;
+        q.below = below;
         q.count = count;
-        q.newestFirst = newest;
-        q.minNumber = type(int16).min;
-        q.includeDead = dead;
     }
 
-    function testReaderOrderPagingAndDeadEntries() public {
-        bytes32 x = keccak256("topic/x");
-        address[3] memory who = [address(this), alice, bob];
-        uint64[] memory adm = new uint64[](12);
-        for (uint256 i; i < 12; ++i) {
-            if (i % 4 == 3) {
-                _one(who[i % 3], _act(ActionKind.UNBIND, x, things[i % 10], 0, 0)); // dead (masked)
-            } else {
-                _tag(who[i % 3], x, i % 10);
-            }
-            (adm[i],,,) = hot.counts();
-        }
-        (uint64 len, uint64 next, OpenScopeReader.Row[] memory rows) =
-            reader.page(address(ledger), _q(6, x, 0, 5, false, false));
-        assertEq(len, 12);
-        assertEq(rows.length, 5);
-        assertEq(rows[0].admission, adm[0]);
-        assertEq(rows[3].admission, adm[4], "entry 3 (masked) skipped");
-        assertEq(next, 6);
-        assertEq(rows[1].principalId, Keys.principal(alice));
-        assertEq(rows[0].principalId, me);
-        assertEq(rows[0].state, 1);
-        assertEq(rows[0].target, things[0]);
-        assertEq(rows[0].role, things[0]);
-        // newest first from the end
-        (len, next, rows) = reader.page(address(ledger), _q(6, x, 0, 4, true, false));
-        assertEq(rows[0].admission, adm[10]);
-        assertEq(rows[1].admission, adm[9]);
-        assertEq(rows[2].admission, adm[8]);
-        assertEq(rows[3].admission, adm[6]);
-        assertEq(next, 6);
-        // continue from the cursor
-        (len, next, rows) = reader.page(address(ledger), _q(6, x, next, 20, true, false));
-        assertEq(rows.length, 5);
-        assertEq(rows[4].admission, adm[0]);
-        assertEq(next, 12);
-        // dead entries included, with their number
-        (len, next, rows) = reader.page(address(ledger), _q(6, x, 0, 12, false, true));
-        assertEq(rows.length, 12);
-        assertEq(rows[3].state, 2);
-        assertEq(rows[3].number, -1);
-        assertEq(rows[3].target, 0);
-        // minNumber 0 drops the masked rows even with includeDead
-        OpenScopeReader.Query memory q = _q(6, x, 0, 12, false, true);
-        q.minNumber = 0;
-        (,, rows) = reader.page(address(ledger), q);
-        assertEq(rows.length, 9);
+    function testMineMergesNewestFirstAppliesTheLensAndDedupes() public {
+        bytes32[] memory t = _chain("m", 2); // /m0, /m0/m1
+        bytes32 pa = Keys.principal(alice);
+        bytes32 pb = Keys.principal(bob);
+        _tag(alice, t[0], 0); // exact
+        _tag(alice, t[1], 1); // below
+        _tag(bob, t[0], 2); // exact, bob
+        _tag(bob, t[1], 0); // thing 0 again, below: a duplicate by thing
+        _deny(alice, t[0], 3); // alice denies thing 3 ...
+        _tag(bob, t[0], 3); // ... which bob asserts
+        _tag(alice, t[0], 4);
+        _one(alice, _act(ActionKind.UNBIND, t[0], things[4], 0, 1)); // later masked: hidden for alice
+        // lens [alice, bob], exact + below
+        (OpenScopeReader.MineRow[] memory rows,) =
+            reader.mine(address(ledger), _mineQ(_lens2(pa, pb), t[0], true, 20));
+        // newest first by first statement: bob/3, alice deny 3, alice 4 (masked), bob below 0, bob 2, alice
+        // below 1, alice 0. Lens decides: thing 3 -> alice negative -> hidden; thing 4 -> alice masked -> hidden;
+        // bob below 0 -> alice has no stance at (t1, thing0) -> bob shows 0 under t1; bob 2 -> shown; alice 1
+        // under t1; alice 0 under t0 -> a duplicate of thing 0 -> dropped.
+        assertEq(rows.length, 3);
+        assertEq(rows[0].thing, things[0]);
+        assertEq(rows[0].topic, t[1]);
+        assertEq(rows[0].decider, 1, "bob decided");
+        assertEq(rows[1].thing, things[2]);
+        assertEq(rows[2].thing, things[1]);
+        assertEq(rows[2].topic, t[1]);
+        // lens [bob, alice]: bob's assertion of thing 3 wins (the denial hides it only behind alice)
+        (rows,) = reader.mine(address(ledger), _mineQ(_lens2(pb, pa), t[0], true, 20));
+        assertEq(rows.length, 4, "3, 0 (t1), 2, 1");
+        assertEq(rows[0].thing, things[3]);
+        assertEq(rows[0].decider, 0);
+        // exact only, lens [alice]
+        bytes32[] memory l1 = new bytes32[](1);
+        l1[0] = pa;
+        (rows,) = reader.mine(address(ledger), _mineQ(l1, t[0], false, 20));
+        assertEq(rows.length, 1, "thing 0 only: 3 denied, 4 masked");
+        assertEq(rows[0].thing, things[0]);
+        // paging: one row at a time continues from the cursor
+        OpenScopeReader.MineQuery memory q = _mineQ(_lens2(pb, pa), t[0], true, 1);
+        uint64[] memory next;
+        (rows, next) = reader.mine(address(ledger), q);
+        assertEq(rows[0].thing, things[3]);
+        q.cursor = next;
+        (rows, next) = reader.mine(address(ledger), q);
+        // duplicates are removed within a page only: alice's denial of thing 3 is the next candidate and bob
+        // (first in the lens) decides it, so the same position shows again on the next page
+        assertEq(rows[0].thing, things[3]);
+        assertEq(rows[0].bindingOrdinal, _ordinal(alice, t[0], 3));
+        q.cursor = next;
+        (rows, next) = reader.mine(address(ledger), q);
+        assertEq(rows[0].thing, things[0]);
     }
 
-    function testReaderBelowListCarriesTheSubject() public {
-        bytes32 a = _register(0, keccak256("w/a"));
-        bytes32 b = _register(a, keccak256("w/b"));
-        bytes32 c = _register(a, keccak256("w/c"));
-        _tag(alice, b, 0);
-        _tag(bob, c, 1);
-        (uint64 len,, OpenScopeReader.Row[] memory rows) =
-            reader.page(address(ledger), _q(7, a, 0, 10, true, false));
-        assertEq(len, 2);
-        assertEq(rows[0].subject, c);
-        assertEq(rows[1].subject, b);
-        (len,, rows) = reader.page(address(ledger), _q(9, keccak256("w/a"), 0, 10, false, false));
-        assertEq(len, 2);
-        assertEq(rows[0].subject, b);
-        (uint64 dl, bytes32[] memory topics,) =
-            reader.directory(address(ledger), TOPIC, keccak256("w/a"), 0, 10, false);
-        assertEq(dl, 3);
-        assertEq(abi.encode(topics[0], topics[1], topics[2]), abi.encode(a, b, c));
+    function _everyQ(bytes32 topic, bool below, uint16 count, bytes32[] memory lens, bool raw)
+        internal
+        pure
+        returns (OpenScopeReader.EveryoneQuery memory q)
+    {
+        q.purpose = TAG;
+        q.topic = topic;
+        q.below = below;
+        q.count = count;
+        q.lens = lens;
+        q.raw = raw;
+    }
+
+    function testEveryoneHidesOnlyForLensAuthorsAndCountsAuthors() public {
+        bytes32[] memory t = _chain("e", 2);
+        bytes32 x = t[1];
+        _tag(alice, x, 0);
+        _tag(bob, x, 0);
+        _tag(carol, x, 0); // three authors, newest carol
+        _tag(alice, x, 1);
+        _deny(bob, x, 1); // bob denies thing 1
+        _tag(alice, x, 2);
+        bytes32[] memory lensBob = new bytes32[](1);
+        lensBob[0] = Keys.principal(bob);
+        (uint64 len,, OpenScopeReader.PlaceRow[] memory rows) =
+            reader.everyone(address(ledger), _everyQ(x, false, 10, lensBob, false));
+        assertEq(len, 3);
+        assertEq(rows.length, 2, "thing 1 hidden behind bob");
+        assertEq(rows[0].thing, things[2]);
+        assertEq(rows[1].thing, things[0]);
+        assertEq(rows[1].authors, 3);
+        assertEq(rows[1].newestAuthor, Keys.principal(carol));
+        assertEq(rows[1].state, 1);
+        assertEq(rows[1].topic, x);
+        bytes32[] memory lensCarol = new bytes32[](1);
+        lensCarol[0] = Keys.principal(carol);
+        (,, rows) = reader.everyone(address(ledger), _everyQ(x, false, 10, lensCarol, false));
+        assertEq(rows.length, 3, "carol has no stance on thing 1");
+        assertEq(rows[1].newestAuthor, Keys.principal(bob));
+        assertEq(rows[1].number, -1, "bob's lone negative is the newest statement");
+        (,, rows) = reader.everyone(address(ledger), _everyQ(x, false, 10, lensBob, true));
+        assertEq(rows.length, 3, "raw");
+        // below the parent: the same three positions
+        (len,, rows) = reader.everyone(address(ledger), _everyQ(t[0], true, 2, lensBob, true));
+        assertEq(len, 3);
+        assertEq(rows.length, 2);
+        assertEq(rows[0].thing, things[2]);
+        assertEq(rows[0].topic, x);
+        assertEq(reader.places(address(ledger), TAG, x), 3);
+        assertEq(reader.authors(address(ledger), Keys.position(TAG, x, things[0])), 3);
+    }
+
+    function testByNameNewestFirst() public {
+        bytes32 x = _word("pets");
+        _tag(alice, x, 0);
+        _tag(bob, x, 0);
+        _deny(carol, x, 0);
+        (uint64 len, OpenScopeReader.AuthorRow[] memory rows) =
+            reader.byName(address(ledger), Keys.position(TAG, x, things[0]), 0, 2);
+        assertEq(len, 3);
+        assertEq(rows.length, 2);
+        assertEq(rows[0].principalId, Keys.principal(carol));
+        assertEq(rows[0].number, -1);
+        assertEq(rows[1].principalId, Keys.principal(bob));
+        assertEq(rows[1].target, things[0]);
+        (, rows) = reader.byName(address(ledger), Keys.position(TAG, x, things[0]), 2, 2);
+        assertEq(rows.length, 1);
+        assertEq(rows[0].principalId, Keys.principal(alice));
+    }
+}
+
+/// The same suite with `trustRegistered` on (the rebuild and before-registration cases are skipped there).
+contract OpenScopeIndexTrustedTest is OpenScopeIndexTest {
+    function _trust() internal pure override returns (bool) {
+        return true;
     }
 }
