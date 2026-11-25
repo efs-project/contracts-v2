@@ -7,7 +7,9 @@ import {AdmissionRow, Description, Evidence, Head, RecordHeader, Revision} from 
 /// @title ILedgerReads — the exact-row ledger facet (design §5.7)
 /// @notice An immutable facet at its own address; every function takes `address ledger`; statuses, never zero
 ///         sentinels; basis echoed. Every facet checks `ILedgerHot(ledger).layoutId()` against the layouts it
-///         was generated for and returns UNSUPPORTED otherwise (the facet-layout rule).
+///         was generated for and returns UNSUPPORTED otherwise (the facet-layout rule). The gate is three-way:
+///         UNKNOWN (every value zero) when there is no code at `ledger` at this block, UNSUPPORTED when there is
+///         code that is not this layout, so a read before the ledger exists is an answer, never a revert.
 interface ILedgerReads {
     /// The realm namespace, current revision row, implementation slot and counters through one extsloadBatch.
     function describe(address ledger) external view returns (Description memory);

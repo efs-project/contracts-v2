@@ -40,8 +40,8 @@ named immutable from a deployed instance.
 regenerating `release.json` after `up` makes `verify` fail until the next `up`.
 
 pnpm scripts: `release`, `release:check`, `plan`, `fixture:up`, `fixture:verify`, `fixture:status`, `fixture:list`, `fixture:down`,
-`fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report`, `gas:model` and `test:tools` (the tooling tests; pass options after
-`--`, e.g. `pnpm fixture:up -- --name mine --json`).
+`fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report`, `gas:model`, `gas:model:check` and `test:tools` (the
+tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --json`).
 
 ## The fixture: many instances at once
 
@@ -125,8 +125,8 @@ leased in state `failed`.
   "stateDir": "<home>/instances/<name>", "deployment": "<stateDir>/efs-deployment.json",
   "expected": "<stateDir>/expected.json", "journal": "<stateDir>/fixture.json", "log": "<stateDir>/anvil.log",
   "ledger": "0x870a…0c1c", "registry": "0x…", "controller": "0x…", "keysView": "0x50dE…757F",
-  "web3Gateway": "0x6cd2…77B2", "web3Url": "web3://0x6cd2…77B2:31337/0x0000…f39f…2266/",
-  "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x6cd2…77B2" },
+  "web3Gateway": "0x38Bd…bC4a", "web3Url": "web3://0x38Bd…bC4a:31337/0x0000…f39f…2266/",
+  "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x38Bd…bC4a" },
   "root": { "directoryRecordId": "0xde49…a430", "subjectId": "0x2494…4951", "principalId": "0x…f39f…2266" },
   "seed": {
     "version": "efs-fixture-seed/2", "root": { "…": "as above" },
@@ -144,7 +144,7 @@ leased in state `failed`.
   "signerCapable": true,
   "capabilities": { "filesSeed": "efs-fixture-seed/2", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
-  "planHash": "0x7395…77d2", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
+  "planHash": "0xdacd…38db", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
   "verified": { "skipped": false, "ok": true, "checks": 371, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
@@ -262,7 +262,7 @@ So a release directory or another checkout deploys with no forge build and no `o
 `up --artifacts <repo>/artifacts --plan <repo>/deploy/plan.json`. In the release layout, `vectors/layout.json` (or
 `artifacts/index.json`'s `layoutId`), `release/` and `deploy/` are read from `DIR/..`. Verified: the committed
 `artifacts/`, a copy of `artifacts/ release/ vectors/ deploy/` in an empty directory, and a snapshot of
-`out/release-ast` each reproduce the committed `deploy/plan.json` hash (`0x7395…77d2`) and deploy and verify OK.
+`out/release-ast` each reproduce the committed `deploy/plan.json` hash (`0xdacd…38db`) and deploy and verify OK.
 `release.mjs` now also writes `artifacts/index.json` (`efs-artifacts-index/1`: `layoutId`, `hotAbiId`,
 `hotAbiIdString`, the unit list, the manifest path) so `artifacts/` alone carries the layout id; until the next
 `pnpm release` it falls back to `vectors/layout.json`. The plan's ABIs travel with the plan (`plan.local`, not part of
@@ -465,6 +465,13 @@ guess, and `eth_estimateGas` stays the authority before sending. It excludes int
 script predicts five composites it never fits (create file, edit, rename + move, two chunks, the last publication of
 a 40 KB file) and exits 1 if a prague prediction is off by more than 15%. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
+
+`pnpm gas:model:check` (`node tools/gas-model.mjs --check 1 --skip-amsterdam 1`) writes nothing: it re-measures the
+prague profile, refits, and exits 1 when a validation composite is off by more than 15% or when any fitted constant
+or measured row differs from the committed `gas/model.json`, printing the first differences and the regeneration
+commands (`pnpm run gas:model`, then `pnpm run release`). Gas is deterministic for identical bytecode, so the
+comparison is exact; CI runs it after `pnpm release:check` on the prague build the suites left warm, and without
+`--skip-amsterdam 1` it checks the amsterdam profile the same way (locally only: CI never builds amsterdam).
 
 ## Gas rows written (`gas/report.json`)
 

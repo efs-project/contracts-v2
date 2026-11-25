@@ -12,14 +12,19 @@
 //
 // and predicts the suite's validation composites (never fitted). Exit 1 when a prague validation error exceeds 15%.
 //
-//   node tools/gas-model.mjs [--skip-amsterdam 1]
+// `--check 1` (`pnpm gas:model:check`, CI) writes nothing: it re-measures, refits and exits 1 when a checked profile's
+// validation error exceeds 15% or when its fitted constants or measured rows differ from the committed gas/model.json
+// (gas is deterministic for identical bytecode, so the comparison is exact). `--skip-amsterdam 1` checks prague only.
+//
+//   node tools/gas-model.mjs [--skip-amsterdam 1] [--check 1]
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
 
-const o = parseArgs(process.argv.slice(2), ["skip-amsterdam"]);
+const o = parseArgs(process.argv.slice(2), ["skip-amsterdam", "check"]);
+const CHECK = !!o.check && o.check !== "0";
 const SUITE = "test/integration/GasModel.t.sol";
 const LIMIT_PERCENT = 15;
 const git = (...args) => { try { return execFileSync("git", args, { cwd: root }).toString().trim(); } catch { return null; } };
@@ -219,6 +224,7 @@ const model = {
 };
 const errs = validate(JSON.parse(toJSON(model)), "efs-gas-model-1.schema.json");
 assert.deepEqual(errs, [], `gas/model.json does not match its schema:\n${errs.join("\n")}`);
+if (CHECK) process.exit(check(JSON.parse(readFileSync(join(root, "gas/model.json"), "utf8"))));
 mkdirSync(join(root, "gas"), { recursive: true });
 writeFileSync(join(root, "gas/model.json"), toJSON(model));
 
@@ -232,4 +238,41 @@ const bad = prague.validation.filter((v) => Math.abs(v.errorPercent) > LIMIT_PER
 if (bad.length) {
   for (const v of bad) console.error(`gas-model: prague "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
   process.exit(1);
+}
+
+/** Paths at which `a` and `b` (parsed JSON) differ, each with both values. */
+function diff(a, b, path, out) {
+  if (a === b) return out;
+  if (a && b && typeof a === "object" && typeof b === "object" && Array.isArray(a) === Array.isArray(b)) {
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) diff(a[k], b[k], `${path}${Array.isArray(a) ? `[${k}]` : `.${k}`}`, out);
+    return out;
+  }
+  out.push(`${path}: committed ${JSON.stringify(a)}, measured ${JSON.stringify(b)}`);
+  return out;
+}
+
+/** --check: the error bound, and exact equality of the fitted constants and the measured rows, per checked profile. */
+function check(committed) {
+  const fresh = JSON.parse(toJSON(model));
+  const bound = [];
+  const differences = [];
+  for (const [name, p] of Object.entries(fresh.profiles)) {
+    for (const v of p.validation) {
+      if (Math.abs(v.errorPercent) > LIMIT_PERCENT) bound.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+    }
+    const c = committed.profiles?.[name];
+    if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
+    for (const k of ["constants", "split", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
+  }
+  for (const m of bound) console.error(`gas-model --check: ${m}`);
+  if (differences.length) {
+    const shown = Math.min(8, differences.length);
+    console.error(`gas-model --check: gas/model.json is stale (${Object.keys(fresh.profiles).join(" + ")}): ${differences.length} difference(s), the first ${shown}:`);
+    for (const d of differences.slice(0, shown)) console.error(`  ${d}`);
+    console.error("gas-model --check: regenerate with `pnpm run gas:model`, then `pnpm run release`");
+  }
+  if (bound.length || differences.length) return 1;
+  const checked = Object.entries(fresh.profiles).map(([n, p]) => `${n} (${p.rows.length} rows, max |error| ${p.maxAbsErrorPercent}%)`).join(", ");
+  console.log(`gas-model --check: OK, the committed gas/model.json equals the measurement: ${checked}`);
+  return 0;
 }

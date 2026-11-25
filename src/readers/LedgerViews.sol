@@ -30,9 +30,10 @@ import {E_READSET_SHAPE, E_RESERVED} from "../interfaces/Errors.sol";
 /// @notice Immutable and stateless; every function takes `address ledger`, decodes rows through `LedgerRows`
 ///         (the codec shared with `LedgerReads`) and echoes the basis it observed. Statuses as in `LedgerReads`:
 ///         UNSET is never returned, UNKNOWN only when the facet cannot know (a registry that cannot answer, a
-///         publication still being applied, or a binding row that does not name its coordinate), UNSUPPORTED on
-///         a layout this facet was not generated for. Views whose return carries no `Status` (`heads`,
-///         `headSnapshots`) revert `E_LAYOUT` instead.
+///         publication still being applied, a binding row that does not name its coordinate, or no code at
+///         `ledger`: no ledger at this block, every value zero), UNSUPPORTED on code that is not the layout this
+///         facet was generated for (`LedgerRows.probe`). Views whose return carries no `Status` (`heads`,
+///         `headSnapshots`) revert `E_LAYOUT` instead (`have` 0 without a ledger).
 contract LedgerViews is ILedgerViews {
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_REBIND = 2;
@@ -64,8 +65,8 @@ contract LedgerViews is ILedgerViews {
         view
         returns (Status st, PublicationView memory v)
     {
-        v.observed = LedgerRows.basis(ledger);
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, v);
+        (st, v.observed) = LedgerRows.gateBasis(ledger);
+        if (st != Status.PRESENT) return (st, v);
         v.ordinal = uint48(
             uint256(
                 LedgerRows.load(ledger, Layout.publicationsPublicationAtSlot(principalId, nonce))
@@ -188,20 +189,19 @@ contract LedgerViews is ILedgerViews {
 
     /// @inheritdoc ILedgerViews
     /// @dev One status per id: PRESENT / ABSENT_PROVEN; every id LIMIT_EXCEEDED past `limits.maxReadIds`,
-    ///      every id UNSUPPORTED on a foreign layout.
+    ///      every id UNSUPPORTED on a foreign layout, every id UNKNOWN without a ledger.
     function records(address ledger, bytes32[] calldata ids)
         external
         view
         returns (Status[] memory st, RecordHeader[] memory hs, BasisCommit memory b)
     {
-        b = LedgerRows.basis(ledger);
+        Status all; // UNSET (never returned) below marks "no blanket status"
+        (all, b) = LedgerRows.gateBasis(ledger);
         uint256 n = ids.length;
         st = new Status[](n);
         hs = new RecordHeader[](n);
-        Status all = Status.UNSET; // never returned: the marker of "no blanket status"
-        if (!LedgerRows.layoutOk(ledger)) {
-            all = Status.UNSUPPORTED;
-        } else {
+        if (all == Status.PRESENT) {
+            all = Status.UNSET;
             (uint16 maxReadIds,,) = LedgerRows.readBounds(ledger);
             if (n > maxReadIds) all = Status.LIMIT_EXCEEDED;
         }
@@ -264,11 +264,9 @@ contract LedgerViews is ILedgerViews {
             BasisCommit memory b
         )
     {
-        b = LedgerRows.basis(ledger);
+        (st, b) = LedgerRows.gateBasis(ledger);
         selectedIndex = LedgerRows.SELECTED_NONE;
-        if (!LedgerRows.layoutOk(ledger)) {
-            return (Status.UNSUPPORTED, selected, selectedIndex, all, b);
-        }
+        if (st != Status.PRESENT) return (st, selected, selectedIndex, all, b);
         uint256 n = principals.length;
         (uint16 maxReadIds,,) = LedgerRows.readBounds(ledger);
         if (n > maxReadIds || n > LedgerRows.SELECTED_NONE) {
@@ -354,7 +352,8 @@ contract LedgerViews is ILedgerViews {
         view
         returns (Status, AcceptanceBasis memory ab)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (Status.UNSUPPORTED, ab);
+        Status g = LedgerRows.gate(ledger);
+        if (g != Status.PRESENT) return (g, ab);
         bytes32[] memory w =
             ILedgerHot(ledger).extsloadBatch(LedgerRows.run(Layout.admissionsRowsSlot(ordinal), 2));
         AdmissionRow memory r = LedgerRows.admission(w[0], w[1]);
@@ -407,13 +406,14 @@ contract LedgerViews is ILedgerViews {
     ///      last transition at or before `asOf` (state from that row's kind, revision counted back from the
     ///      live revision, the target kind a masked or released head kept from its last BIND, canonical
     ///      target), NONE when the binding did not exist yet at `asOf` (or never), UNKNOWN when more than
-    ///      `maxHops` admission rows would be read, on a foreign layout or on a reserved head state.
+    ///      `maxHops` admission rows would be read, without a ledger, on a foreign layout or on a reserved head
+    ///      state.
     function historyAt(address ledger, bytes32 bindingKey, uint64 asOf, uint16 maxHops)
         external
         view
         returns (History, Head memory h)
     {
-        if (!LedgerRows.layoutOk(ledger)) return (History.UNKNOWN, h);
+        if (LedgerRows.gate(ledger) != Status.PRESENT) return (History.UNKNOWN, h);
         bytes32[] memory w = ILedgerHot(ledger)
             .extsloadBatch(LedgerRows.run(Layout.bindingsHeadsSlot(bindingKey), 2));
         Head memory live = LedgerRows.head(w[0], w[1]);
