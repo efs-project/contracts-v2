@@ -48,6 +48,208 @@ pnpm scripts: `release`, `release:check`, `plan`, `fixture:up`, `fixture:verify`
 `fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report`, `gas:model`, `gas:model:check` and `test:tools` (the
 tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --json`).
 
+## What changes for a consumer in this release
+
+The SDK's single re-vendor moves it from the release it vendors now (`cc59d0c`, "Merge the folder identity fix and
+the remove/move/hide recipes") to this one: the tag work of docs/TAG-DESIGN.md, built in the order of its §12 and
+integrated on `fable/2026-11-25-tags-release`. Everything below is a change a consumer must make or a fact it must
+re-pin; nothing else in the consumer surface moved. Re-vendor `release/`, `artifacts/`, `deploy/plan.json`,
+`gas/model.json`, `schemas/`, `test/snapshots/abi/`, `vectors/layout.json` and `test/vectors/` together: the release
+digest covers them.
+
+**1. Actions and the number.** `Action.salt` is renamed `saltOrStrength` (same position, same `bytes32`; the SDK takes
+field names from the vendored ABI). For CREATE it is the creator salt (nonzero), as before; for BIND and UNBIND it is
+the binding's unsigned strength 0..65,535 (`BindingNumber.MAX_STRENGTH`; a larger value is refused with
+`E_SHAPE(leaf, 2)`, never truncated); for every other kind, RELEASE included, it must be zero. The signed number is
+derived, never stored (`BindingNumber.numberOf`): BOUND → strength (0..65,535), MASKED → −1 − strength
+(−1..−65,536), UNSET and RELEASED → none. A BIND states `strength`, an UNBIND `−1 − strength`, a RELEASE nothing, so
+every action written before (strength 0) keeps its meaning: a bind is 0, a mask is −1. A number change is one BIND to
+the same target (positive to positive) or one more UNBIND (negative to negative), under the usual revision check.
+The head row's 40-bit expiry field narrowed to 32 bits to make room; `notAfter` stays reserved and always 0.
+
+**2. Lone negatives.** UNBIND is admitted from every state, for every purpose. From UNSET it is transition 6
+FIRST_MASK: the binding ordinal, `bindingPosition` and the position cell are allocated as a first BIND allocates
+them, with no target (target kind 0, target word 0, revision 1, no previous admission); from MASKED it changes a
+negative number and from RELEASED it re-states one (transition 3 MASK). What it does to history reads: a binding's
+history (`LedgerViews.historyAt`, family 8) can now START with a mask that has no target, so a consumer must not
+assume the first entry of a history is a BIND with a target; a mask's entry keeps the previous target word only
+when there was one. A first mask is a first statement: it files the first-statement lists (below) and is in no
+backlink list (it has no target).
+
+**3. Target kind ADDRESS.** A nonzero target whose top 96 bits are zero (`bytes32(uint256(uint160(addr)))`) and that
+is neither a record nor a created subject is target kind 3 ADDRESS (1 RECORD, 2 SUBJECT, 0 none). `FilesFinalValidator`
+admits it for TAG and refuses it for HEAD (code 7) and FOLDER (code 6). Heads (`ILedgerHot.head`, `Head`) report
+`targetKind` and `strength`.
+
+**4. Two events.** `Bound(uint64 admission, bytes32 indexed purpose, bytes32 indexed subject, bytes32 indexed role,
+bytes32 target, uint8 kind, uint16 strength, uint8 transitionKind, uint8 targetKind)`: one per BIND, UNBIND or
+RELEASE admission, right after its `Admitted` (join on `admission`; the author is `Admitted.principalId`); a filter on
+(purpose = TAG, role = thing) finds everything said about a thing, lone negatives included. `Body(bytes32 indexed
+recordId, bytes32 indexed typeId, bytes body)`: the body of a fresh record of a Type whose descriptor sets
+`TYPE_FLAG_EMITS_BODY` (header byte 133 bit 0; `TypeInfo.flags`) and whose body is at most `BODY_EVENT_MAX` (256)
+bytes, after the `Admitted` of the PUBLISH that first admitted it; never for a repeat publish or a REUSE. `files-name/2`
+and the three Topics Types set the flag.
+
+**5. The hot ABI and the ABI ids.** `ILedgerHot.head` returns `strength` (and the documented `targetKind`), and the
+hot interface gained `bodyWord(recordId, index)` (word `index` of a stored body, zero beyond it and for a missing
+record; one SLOAD; the only body read profile rules and validators may use). Every ABI id now follows one rule
+(design §5.3, `tools/abi-id.mjs`): `keccak256(bytes(name) ‖ for each function sorted by selector: selector ‖
+keccak256(canonical output tuple))`; events and errors are outside it. The ids, all four new against `cc59d0c`, are in
+the identity table below; the hot interface's name is now `efs/ledger-hot/2` and the posting store's
+`efs/posting-store/2` (it gained `retain` and the UNCOUNTED append tag).
+
+**6. The Topics Types and `EfsTopics`.** Three new NATIVE Types, registered at genesis after the ten Files Types
+(thirteen in all): `topic-word/1` (a word's page and the root-level topic `/<word>`: the word's bytes, no refs;
+refusal codes 1–8, `TopicProfile.wordRefusal`), `topic/1` (a path of two or more words: exactly `[parent, wordPage]`,
+64 bytes, both declared refs; the parent a `topic/1` or `topic-word/1` record) and `text/1` (a short display string,
+1–255 bytes, for labels; codes 20–24). A topic's id is its record id, computable from the words alone
+(`EfsTopics.wordPageId`, `childId`, `pathId`); `test/vectors/topics.json` carries the grammars' verdicts, the refused
+code point table and path ids for the SDK's twin. `src/lib/EfsTopics.sol` is the consumer library: `registerWord`,
+`registerPath`, `registerChild`, `tag`, `deny` (a lone negative at revision 0), `property`, `label`, `same`,
+`broader`, and `propertyKey`/`labelKey`. **The three Topics Type ids are PROVISIONAL** (see the pre-freeze gates).
+The named purposes are now HEAD, FOLDER, TAG, PROPERTY (`efs/purpose/property/1`), SAME (`efs/purpose/same/1`) and
+BROADER (`efs/purpose/broader/1`); the kernel accepts any purpose.
+
+**7. The validator's codes.** `FilesFinalValidator` refuses with `E_FILES_FINAL(code, leaf)`, wrapped in
+`E_INDEX_CALL`; codes 1–15 are listed in `src/profiles/FilesFinalValidator.sol` and, in plain words, in
+docs/TAG-DESIGN.md §2. New in this release: a folder parent may be a home (an address-shaped word, code 2), codes 6
+and 7 (ADDRESS on FOLDER/HEAD), 9 (a TAG first statement's subject is neither a home nor a topic registered STRICTLY
+before it, in an earlier action), 10–13 (SAME/BROADER ends), 14 (a TAG BIND's target must equal its role) and 15 (a
+TAG first mask must name something that exists). A mask or release of an existing binding is never judged.
+
+**8. Folder identity and the recipes.** A folder is a `files-directory/1` record with body `abi.encode(creator,
+salt)`, admitted only by that creator (`FilesDirectoryRule`: `ctx.principalId == creator`, `salt != 0`); its id is
+the record id, never a subject, so the kind of an object follows from its id. The recipes (`EfsFiles`): **remove**
+and **move** RELEASE the old entry (a release never stops another author's entry from showing through the lens),
+**hide** UNBINDs it (a mask stops the lens walk, so it hides everyone's entry at that name).
+
+**9. The index lists and their keys** (design §10.2; generation 1). New first-statement families, appended only at an
+author's FIRST statement on a position, either sign: 6 `place` `Keys.placeList(purpose, place)` (TAG and FOLDER;
+each filing: a fresh position and every later author's first yes, so a position may repeat; `count` = filings,
+`live` = distinct positions ever stated), 7 `place-below` `Keys.placeBelowList(TAG, ancestor)` (the same per proper
+ancestor), 19 `scope-below` `Keys.scopeBelowList(author, TAG, ancestor)`, 20 `position-authors`
+`Keys.positionAuthorsList(position)` (`count` = authors who ever stated, `live` = the yes-count, exactly the authors
+whose head there is BOUND now) and 21 `role-places` `Keys.rolePlacesList(TAG, role)` (every statement reachable from
+its thing). The backlink list (family 5) is now keyed by purpose, `Keys.backlinkList(purpose, target)`, and a
+number-only re-bind does not touch it. The topic families are kept only when the generation's units contain the
+profile validator for the same two topic Types (`IRealmIndex.topicTypes()`); the index is two contracts
+(`readsContract()`; every read is answered at the generation's address).
+
+**10. The readers and `LedgerViews`.** Three new readers, listed in the `ReaderDirectory`:
+`TopicMineReader.mine` (kind `efs/reader/topic-mine/1`: a lens of authors over their own exact and roll-up lists,
+newest first, the combined walk with the viewed-place check), `TopicEveryoneReader.everyone` (`efs/reader/topic-everyone/1`:
+`PlaceQuery.raw` every row, otherwise a row shown when its yes-count is above zero unless a lens author denies it)
+and `TopicLookupReader` (`efs/reader/topic-lookup/1`: `byName`, `about`, `placeCount`, `authorCount`, `entryCount`,
+`wordPage`, `children`). Rows are de-duplicated by thing within a page and carry the `decider` (the lens index whose
+statement decided the row, 255 none) and its number; a page can be short or empty and still `LIMIT`, `ROWS` or `GAS`
+with a continuation. `LedgerViews` gained `headStates` (the state word alone of up to `maxReadIds` heads),
+`bindingCells`, `lensRule` and `authorHeads`; `LedgerViews`, `LensReader` and `FilesPageReader` moved address with
+the layout.
+
+**11. The gateway's link grammar and answers.** The `web3://` entry point is now two contracts: `EfsWeb3Gateway` (the
+address a URL names: parsing, names, lens, listings) and `EfsWeb3Content` (deploy step R5a; serves the revision the
+gateway selects, by STATICCALL at the immutable `CONTENT`, codehash `CONTENT_CODEHASH` checked on every call; the
+deployment document records both under `readers.web3Gateway`). The first path segment decides the kind of path:
+`/0x<40 hex>/…` an address's HOME (lens default: that address's own principal; named by `x-efs-home`); `/~efs/o/<id>/…`
+an object link (a `files-directory/1` record is that folder, lens default its creator; a created subject is that
+file's HEAD, lens default its creator; a record of another Type 501, an id naming nothing 404); `/~efs/v/<revision id>`
+a revision link (exactly that `files-root/1` or `files-child/1` record's bytes, no lens; another existing object 501);
+every other `~` segment 400; anything else a topic path, 501 (no folder is ever served there). Statuses: 200, 307
+external location, 400 malformed, 404 not found (an existing object is never 404), 416 offset past the end, 500 the
+HEAD law's named bodies ("HEAD law: target is not a record", "target not a revision", "short revision", "revision of
+other file"), 501 not served, 503 listing unsupported. The full grammar is `src/periphery/EfsWeb3Gateway.sol`'s
+NatSpec and docs/LARGE-FILES.md "`web3://`".
+
+**12. The gas model.** `gas/model.json` (and `release.json` `gasModel`) gained per schedule `floor` (the kernel's
+quote inputs: `workModel`, the floor prices and `kernelTail`, per-Type `refs` and `specs`, `callGasRetained`,
+`dispatchOverhead`, the kernel's own fitted share `kernel`, and the formula in prose), a top-level `planning` (the
+rule: inside `planning.limits` and `max(E, V) ≤ ⌊2^24 × (100 − headroomPercent) / 100⌋`), `tagLists` (the per-level
+terms `tagLevel.{mineNew,mineExisting,sharedNew,sharedExisting}`, `bindTagFresh`, `bindTagSecondAuthor`, and the
+price-as-new rule `priceAsNew`) and `reads` (the topic readers' fitted terms, bounds per lens size and `recommended`
+limits). `tools/gas-plan.mjs` is the reference planner (it reads only the model; `test/vectors/floor-plan.json` its
+verdicts for seventeen shapes); the SDK's planner must reproduce it.
+
+**13. The work model in plain terms** (formula 2, `formulaVersion = 2`). The kernel reserves gas for the index's final
+phase per bind-kind action (`finalComputePerBind`): it was **120,000 in the release the SDK vendors now and is
+7,400**, which is what a bind's final check actually uses; the 120,000 made the floor refuse large publications that
+could pay (64 lone negatives on Glamsterdam). To keep the quote above what the index spends, three terms are new:
+`rwPerBindLater` (120 tenths of a slot rewrite more for every later statement: a re-bind, number change, mask,
+release, restore), `freshPerPublishExisting` (29 tenths of a fresh slot for a PUBLISH of an existing record or a
+REUSE) and `finalComputePerPublish` (2,800 of final-phase compute per PUBLISH or REUSE). For the largest batch per
+publication this means: binds are no longer capped by the reserve (64 masks, releases or masks of masks fit in one
+publication on both schedules), publish-heavy and later-statement batches are priced closer to what they spend, and
+first tags on deep topics are still limited by their per-level list cost, which the gas model carries and the floor
+does not (the per-shape table is docs/TAG-NUMBERS.md "The largest publication"). The deployed index's work model is
+checked against the gas model field by field by the fixture (`verify`, group `pricing`).
+
+**14. `ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal, so it prices every
+BIND and UNBIND as a first statement; it is exact only when every bind-kind action is one. Plan from the gas model's
+rule, never from `indexFloor`.
+
+**15. Pre-freeze gates** (none blocks a disposable testnet; each blocks freezing a Realm):
+
+- **The build-from-history step and its three counters.** A later index generation builds its new families from
+  history before it is attached (design §10.6); that step is specified, not written (generation 1 refuses `build`
+  and `backfill`). It must rebuild three COUNTERS, not only list entries: family 5's `live`, family 20's yes-count
+  and the distinct figure of families 6 and 7. Until it is written and tested, "a later generation can add this list"
+  (for example the all-authors list on a file's versions, QUESTIONS Q52) is not yet true.
+- **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
+  15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
+  QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
+- **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
+  16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
+
+**16. A gap in CI, now closed (it predates this release).** `pnpm check` ran only before the build in CI, so its
+artifact checks were reported as pending and never ran there: the opcode lint that the ingress writes nothing, the
+opcode lint that the apply delegate calls nothing, and the rule that profile rules carry no immutables. They pass on
+this release's tree. CI now runs `pnpm check --built` after the build, which fails when any of them did not run. A
+consumer that relied on "CI is green" for those three properties in earlier commits should know they were checked
+locally, not by CI.
+
+### The identity table (this release against `cc59d0c`)
+
+Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
+
+| pin | this release | moved |
+|---|---|---|
+| release digest (`sha256(release.json)`) | `0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495` | yes (was `0x3080c7d497d248404e07169de87a5ebe0c657b2c6dce97ce3b97a4535be94045`) |
+| plan hash | `0xf5cbe78320301e69e205453876294a8ec6344810d41c42df643e13f6626b9904` | yes (was `0x12fc89b5ba9692557865a0078c648bb9b21daa89c651a021686fe691deb4caf0`) |
+| execution set | `0xf5514949f83a07bdd6811d62d6d2afb6d4b3499e1553b8cd18ad0b260e38f00d` | yes (was `0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9`) |
+| index obligations | `0xfa019dab971c12742de361bd2e8ee26e6f1dcf40820204a5e1ce5f1d40a1315f` | yes (was `0x7a7c39be2aa7dc061f901c8eded0a2a5cbcb282c15895c35c89bf88608e822b2`) |
+| index manifest hash | `0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0` | yes (was `0x5156a9991e6bde7401ee2ace2cfab0e42c448636fcd80b3ffe53ba4efbaae710`) |
+| layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | yes (was `0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb`) |
+| hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | yes (was `0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99`) |
+| hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | yes (was `0x953f29e98a1f402cd1ab51c0b2d59b1b60f6067df47ca0969e4b8a855a36a76b`) |
+| posting store ABI id `efs/posting-store/2` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | yes (was `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229`) |
+| bitmap store ABI id `efs/bitmap-store/1` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | yes (was `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425`) |
+| Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
+| Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
+| Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
+| Type id `files-name/2` | `0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a` | yes (was `0x13a1949ef993df66ef17cdc87042b773ee0185f5dd16ea95eab0b500974521f8`) |
+| Type id `files-bytes/1` | `0x9e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0` | no |
+| Type id `files-content/1` | `0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe` | no |
+| Type id `files-external/1` | `0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386` | no |
+| Type id `directory-alias/1` | `0x0c48b987487897968c6b3688da60e3c6db8e645aac2b481b3a1cc36789aecb61` | no |
+| Type id `realm-notice/1` | `0xc9efe343865f6f02915f75a1793e2a303b257cbe4bbd4a128ab936cc18cf5c24` | no |
+| Type id `files-span/1` | `0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd` | no |
+| Type id `topic-word/1` (provisional) | `0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b` | new |
+| Type id `topic/1` (provisional) | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | new |
+| Type id `text/1` (provisional) | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | new |
+| ledger proxy | `0x83DbD3411050C131bD2F4e1493Ff5750D80530C6` | yes (was `0x870aa1d6873256e38F82E348c23F707B7E890c1c`) |
+| index (generation 1) | `0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6` | yes (was `0xa09CB554d43a121318DFB7deE4F7e46Aa56219dd`) |
+| `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | yes (was `0x02c6Cb67a439788469FD03A410E51EC90554837a`) |
+| `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | yes (was `0xFeD47e0060dBA4Acf18198c6DDc0CFBbd8A0dd55`) |
+| `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
+| `readers.keysView` | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` | no |
+| `readers.lensReader` | `0x5CaDE2E35B9Bd66c848DE94749b2446874f9f143` | yes (was `0xafe53Fc89439Ad34E9cc3Cb87644d87304a6375c`) |
+| `readers.filesPageReader` | `0x6c9b137BbA0850375CAf186b782c0a98E184c882` | yes (was `0x72Fd6c2b8186f66ea2c8eD60c3dd237F87cF8F6e`) |
+| `readers.topicMineReader` | `0xE53496e13ba1a08490Df3daBfcFeeE081C1Fd247` | new |
+| `readers.topicEveryoneReader` | `0x5bfC28aC82202F2c5409FEf47748f61C6096eC0D` | new |
+| `readers.topicLookupReader` | `0x99B1C12963f9c0E8A705606C078A3558D5007204` | new |
+| `readers.web3Gateway` | `0x18c605A87562c0f736529F17BCb4b5B8705c6077` | yes (was `0x7e256aCb7a469989da187aC50cF4e44c5f227975`) |
+| `readers.web3Gateway.content` (`EfsWeb3Content`) | `0x2c80161a8fEE688c3Cdb37fE9C59E4B1dC504929` | new |
+| seed version | `efs-fixture-seed/4` | no |
+
 ## The fixture: many instances at once
 
 Any number of agents, in any number of checkouts and worktrees of this repository, the SDK and the client, can run
@@ -115,7 +317,7 @@ With `--json`, a failure prints `{"ok": false, "command": "...", "error": {"code
 actual `port` and `rpcUrl` (also when the port was allocated from the range) and `verified: {skipped: false, ok, checks,
 failures, ms, coldPin}`. If a check fails, `up` tears the instance down (its own anvil, its lease) and exits 1 with an
 error object listing the failures; with `--keep-on-fail` the instance stays leased in state `failed`. Measured cost of
-the in-`up` verify: about 0.9 s for 408 checks (the big file is re-assembled node by node); a whole `up` takes about
+the in-`up` verify: about 0.9 s for 567 checks (the big file is re-assembled node by node); a whole `up` takes about
 4–5 s. `--no-verify` skips it (`verified: {skipped: true}`). Both failure paths were exercised by hand against a stale
 `deploy/plan.json` (one mismatch): the default tore the instance down and removed its lease; `--keep-on-fail` left it
 leased in state `failed`.
@@ -131,7 +333,7 @@ leased in state `failed`.
   "expected": "<stateDir>/expected.json", "journal": "<stateDir>/fixture.json", "log": "<stateDir>/anvil.log",
   "ledger": "0x870a…0c1c", "registry": "0x…", "controller": "0x…", "keysView": "0x50dE…757F",
   "web3Gateway": "0x38Bd…bC4a", "web3Url": "web3://0x38Bd…bC4a:31337/~efs/o/0xf754…c037/",
-  "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x38Bd…bC4a" },
+  "readers": { "ledgerReads": "0x…", "ledgerViews": "0x…", "readerDirectory": "0x…", "lensReader": "0x…", "filesPageReader": "0x…", "keysView": "0x50dE…757F", "web3Gateway": "0x38Bd…bC4a", "web3Content": "0x…" },
   "root": { "directoryRecordId": "0xf754…c037", "principalId": "0x…f39f…2266" },
   "seed": {
     "version": "efs-fixture-seed/4", "root": { "…": "as above" },
@@ -149,9 +351,9 @@ leased in state `failed`.
   "signerCapable": true,
   "capabilities": { "filesSeed": "efs-fixture-seed/4", "filesTypes": 13, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1", "efs/reader/topic-mine/1", "efs/reader/topic-everyone/1", "efs/reader/topic-lookup/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
-  "planHash": "0xdacd…38db", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
+  "planHash": "0xf5cb…9904", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
-  "verified": { "skipped": false, "ok": true, "checks": 408, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
+  "verified": { "skipped": false, "ok": true, "checks": 567, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
 ```
 
@@ -267,7 +469,7 @@ So a release directory or another checkout deploys with no forge build and no `o
 `up --artifacts <repo>/artifacts --plan <repo>/deploy/plan.json`. In the release layout, `vectors/layout.json` (or
 `artifacts/index.json`'s `layoutId`), `release/` and `deploy/` are read from `DIR/..`. Verified: the committed
 `artifacts/`, a copy of `artifacts/ release/ vectors/ deploy/` in an empty directory, and a snapshot of
-`out/release-ast` each reproduce the committed `deploy/plan.json` hash (`0xdacd…38db`) and deploy and verify OK.
+`out/release-ast` each reproduce the committed `deploy/plan.json` hash (`0xf5cb…9904`) and deploy and verify OK.
 `release.mjs` now also writes `artifacts/index.json` (`efs-artifacts-index/1`: `layoutId`, `hotAbiId`,
 `hotAbiIdString`, the unit list, the manifest path) so `artifacts/` alone carries the layout id; until the next
 `pnpm release` it falls back to `vectors/layout.json`. The plan's ABIs travel with the plan (`plan.local`, not part of
@@ -345,18 +547,23 @@ they follow G18; they run after the genesis activation (G20). **R3** and **R4** 
 `keccak256("efs/reader/files-page/1")` (the strings `test/periphery/ReaderDirectory.t.sol` uses; the directory does
 not interpret them). **R6** `TopicMineReader(ledger, views, reads)` (the lens view), **R7**
 `TopicEveryoneReader(ledger, views, reads)` (the public views) and **R8** `TopicLookupReader(ledger, views, reads,
-topic/1, topic-word/1)` follow the gateway (R5); **R9**, **R10** and **R11** list them under
+topic/1, topic-word/1)` follow the gateway (R5a, R5); **R9**, **R10** and **R11** list them under
 `keccak256("efs/reader/topic-mine/1")`, `keccak256("efs/reader/topic-everyone/1")` and
-`keccak256("efs/reader/topic-lookup/1")`. Every reader is realm-specific, because its immutables name the ledger
-proxy.
+`keccak256("efs/reader/topic-lookup/1")`. **R5a** `EfsWeb3Content(ledger, reads, {files-root/1, files-child/1,
+files-content/1, files-external/1, files-bytes/1, files-span/1})` is the `web3://` gateway's content server and **R5**
+`EfsWeb3Gateway(ledger, reads, views, filesPageReader, web3Content, rootDirectory, files-directory/1)` the entry point
+a `web3://` URL names; the gateway's constructor reads the content server's `ledger()` and records its codehash
+(`CONTENT_CODEHASH`), so R5a precedes R5. Neither is an `IReader` or listed. Every reader is realm-specific, because
+its immutables name the ledger proxy.
 
 **Reader features are size-bound.** Every reader and facet is held to the 19,660 B runtime budget (`forge build
 --sizes`; budgets are never edited to fit), so a reader feature costs bytes another feature cannot have: the step-4
 amendment split the old `TopicPageReader` (465 B of headroom) into the lens and the public view. Headroom at this
-release: `TopicMineReader` 4,304 B (15,356 B), `TopicEveryoneReader` 3,359 B (16,301 B), `TopicLookupReader` 3,114 B (16,546 B),
-`LedgerViews` 1,337 B (18,323 B), `EfsWeb3Gateway` 32 B (19,628 B) (the gateway's link forms took most of its room; the 501 answers for an
-existing object's id and a revision link were paid for by merging error bodies: a further gateway feature needs bytes
-found first).
+release: `TopicMineReader` 4,179 B (15,481 B), `TopicEveryoneReader` 3,055 B (16,605 B), `TopicLookupReader` 3,102 B (16,558 B),
+`LedgerViews` 1,085 B (18,575 B; `headStates`, the viewed-place check's one-word read, took 252 B), `EfsWeb3Gateway` 4,269 B (15,391 B)
+and `EfsWeb3Content` 10,699 B (8,961 B) (the gateway was one 19,628 B contract with 32 B of headroom; it was split so the `web3://`
+entry point keeps parsing, names, lens and listings and a pinned content server serves revisions, docs/LARGE-FILES.md "Two
+contracts, one address").
 
 ### The fixture key
 
@@ -387,7 +594,7 @@ equal; see HARNESS-BUG below).
 | `tools/release.mjs` | Writes `release/release.json`, `release/errors.json` and `artifacts/`. |
 | `tools/gas-report.mjs` | Writes `gas/report.json`. |
 | `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the thirteen rules, `RefuseAllPolicy` and `FilesFinalValidator` (six Type ids: name, directory, root, child, topic, topic-word) through the factory in forge's EVM and returns `FilesTypes`' and `TopicTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
-| `deploy/plan.json` | `efs-deploy-plan/1`: 77 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, R0–R4, thirteen G21 registrations, R5 the `web3://` gateway, R6–R11 the three topic readers and their listings, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
+| `deploy/plan.json` | `efs-deploy-plan/1`: 78 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, R0–R4, thirteen G21 registrations, R5a and R5 the `web3://` gateway's content server and entry point, R6–R11 the three topic readers and their listings, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
 | `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (36/36 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 90 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (thirteen Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, `constants` (action kinds, capability bits, the three purpose ids with their preimages, the Status and Coverage codes, and the Files form, carrier, hash, alias and target-kind codes with the chunk payload: all parsed from the Solidity sources, so a consumer never types a protocol string), the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
 | `test/vectors/media.json` | `efs/vectors/media/1`, written by `tools/release.mjs` (or alone by `node tools/media-vectors.mjs`) and compared byte for byte by `release:check`: `files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty media strings with the grammar's code and each rule's refusal code (`docs/LARGE-FILES.md` "Media types"). `test/profiles/FilesMediaType.t.sol` asserts it against the rules, `EfsFiles`, `Keys` and `script/Genesis.s.sol`'s Type ids. |
 | `test/vectors/topics.json` | `efs/vectors/topics/1`, written by `tools/release.mjs` (or alone by `node tools/topic-vectors.mjs`) and compared byte for byte by `release:check`: the `topic-word/1` and `text/1` verdicts with their codes, the refused code point table (`TopicProfile.REFUSED`), path ids for 1, 2, 3 and 64 words, `PROPERTY` keys, the purposes and the `EfsTopics` builder encodings, for the release Type ids. `test/profiles/TopicVectors.t.sol` asserts every vector. |
@@ -395,7 +602,7 @@ equal; see HARNESS-BUG below).
 | `artifacts/<Unit>.json` | `efs-artifact/1` per deployable unit: ABI, method identifiers, creation and runtime bytecode, named immutable offsets. `LedgerCore.json`'s ABI is the union of the kernel ABI with the events and errors of `LedgerApply`, `LedgerIngress` and `LedgerControl`. Interface ABIs are not copied: `abi.interfaces` points at `test/snapshots/abi/` (tools/abi-snapshot.mjs), and storage layouts at `test/snapshots/layout/`. |
 | `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader`/`TopicPageReader`/`TopicLookupReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids (for the topic lookup reader, the two topic Type ids), plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, principalId}` (a folder is a record, never a subject); `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
 | `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, the three files with their ids, lengths, sha256 and, for big.bin and remote.txt, the descriptor, span-root and sentinel ids; counts 27 admissions / 17 records / 7 bindings / 6 publications; seven heads; thirteen records; catalog count 13). |
-| `<home>/instances/<name>/` | One instance's runtime state (never tracked): `anvil.pid`, `anvil.log`, `fixture.json` (rpc, pid, ttl, factory method, signing, RPC method counts, the journal of all 61 transactions with hash, block and gasUsed, and the two read estimates), its own `efs-deployment.json` and `expected.json`, and `up.json`. `release/efs-deployment.json` and `release/expected.json` are the committed sample, written only by `up --write-release`. |
+| `<home>/instances/<name>/` | One instance's runtime state (never tracked): `anvil.pid`, `anvil.log`, `fixture.json` (rpc, pid, ttl, factory method, signing, RPC method counts, the journal of all 79 transactions with hash, block and gasUsed, and the two read estimates), its own `efs-deployment.json` and `expected.json`, and `up.json`. `release/efs-deployment.json` and `release/expected.json` are the committed sample, written only by `up --write-release`. |
 | `artifacts/index.json` | `efs-artifacts-index/1`: `layoutId`, `hotAbiId`, the unit list; lets `artifacts/` deploy alone. |
 | `gas/report.json` | `efs-gas-report/1` (below). |
 | `schemas/*.schema.json` | JSON Schemas (draft 2020-12) for the six documents above and the lease (`efs-fixture-lease-1`). `verify` validates every document present against them, using the subset in `deploy-plan.mjs validate`. They are drafts: `schemas/README.md` says release schemas land after review. |
@@ -404,7 +611,7 @@ equal; see HARNESS-BUG below).
 
 ## What `verify` reproduces
 
-408 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
+567 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
 build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested and fails.
 
 1. **Documents.** `planHash` (recomputed, and equal to `deploy/plan.json`), the ledger address, the execution set, the
@@ -425,7 +632,15 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
    `describe()`.
 7. **The index.** `manifestHash()` equals the offline manifest hash; `replayReadiness()` is ready, with families and
    units equal to the plan; `progress().lastProcessed` equals 27; `digestSpecCount` is 1 for `files-content/1` and for
-   `files-external/1`.
+   `files-external/1`. **The index prices like the release** (group `pricing`): `workModel()` read at the index address
+   is compared field by field (every field of the ABI's `WorkModel`, `formulaVersion` and formula 2's
+   `rwPerBindLater`, `freshPerPublishExisting` and `finalComputePerPublish` included) with the deploy plan's work model,
+   the deployment document's `index.workModel`, every schedule's `gasModel.schedules.<s>.floor.workModel` in
+   `release.json` and, in a checkout, every `profiles.<s>.floor.workModel` in `gas/model.json`; and `describe().limits`'
+   floor prices (`floorFreshGas`, `floorRewriteGas`, `kernelTail`) with the `floor.limits` of the schedule that prices
+   the chain. A mismatch fails verify naming the field and the document (`pricing workModel.<field>: chain … != …`);
+   a document missing a field, or carrying one the chain does not have, fails the same way. `tools/test/release-pricing.test.mjs`
+   checks the committed documents against the Solidity struct and the compiled ABI without a chain.
 8. **The thirteen Types.** The catalog equals the offline id set. For each Type, `typeInfo` mandatory, ruleId, shape and
    blob; `descriptorBytes` equals the JS descriptor; `refTypes`; `declaration` (key and installed); and the published
    id.
@@ -450,7 +665,10 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
     and `COMPLETE` with exactly three rows in bind order (`readme.txt`, `big.bin`, `remote.txt`, each → its file
     subject, HEAD → its root record). `LedgerReads.record`
     of that root record must return PRESENT with the right Type, word 0 and body.
-11. **The `web3://` gateway.** `resolveMode()` is `"5219"` and its fourteen immutables are the planned ones. Then
+11. **The `web3://` gateway.** `resolveMode()` is `"5219"`, the gateway's nine immutables (`ledger`, `READS`,
+    `VIEWS`, `PAGER`, `CONTENT`, `CONTENT_CODEHASH`, `layoutId`, `ROOT_DIRECTORY`, `DIRECTORY_TYPE`) and the content
+    server's nine (`ledger`, `READS`, `layoutId` and the six Files Type ids it interprets) are the planned ones, and
+    the content server's code hashes to `readers.web3Gateway.content.runtimeCodehash`. Then
     the seed is read through `request` the way a `web3://` client does it, from the seed root by its folder id
     (`/~efs/o/<root directoryRecordId>/docs/…`, the root's creator as the default lens): `docs/readme.txt` with the
     default lens and with `?lens=<fixture account>` (same bytes, sha256, `text/plain` from the extension, no
@@ -458,11 +676,14 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
     `docs/big.bin` chunk by chunk following `web3-next-chunk` until the header is absent (three chunks, 20,000 bytes,
     the seed's sha256, each with the declared `Content-Type: application/octet-stream` and `nosniff`);
     `docs/remote.txt` as `307` with the seed's locator and `x-efs-media-type`; `docs` as a complete JSON listing of the three files; `404` and `416` for a missing
-    name and an offset at the end; and the link forms: `/docs/readme.txt` (a plain word: a topic path) `501`,
-    `/~home/…` and a principal id as the first segment `400`, the sample file's subject id and its root revision
-    record's id by `/~efs/o/…` `501` (existing objects that are not folders: never `404`), a revision link
-    `/~efs/v/<record>` `501`, an id that names nothing `404`, and the fixture account's own home `/0x<address>/` a
-    complete listing named by `x-efs-home`.
+    name and an offset at the end; the sample file by its object link `/~efs/o/<subject id>` (its creator's HEAD)
+    and by its revision link `/~efs/v/<root record id>`, both `200` with the sample bytes and `x-efs-record` the root
+    record; `docs/big.bin` by its object link and by its revision link, chunk by chunk (three chunks, the seed's
+    sha256); and the link forms: `/docs/readme.txt` (a plain word: a topic path) `501`, `/~home/…` and a principal id
+    as the first segment `400`, the sample file's root revision record's id by `/~efs/o/…` `501` and the root folder's
+    id by `/~efs/v/…` `501` (existing objects of another kind: never `404`), an id that names nothing `404` by both
+    links, `/~efs/v` without an id `400`, and the fixture account's own home `/0x<address>/` a complete listing named
+    by `x-efs-home`.
 12. **Cold pin.** What an SDK holding only `release.json` and `efs-deployment.json` does on first contact.
 
 ### Cold-pin call count (observed)
@@ -489,7 +710,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0x8bcbf0b47ee0977369c474cd39d6fde82d30148e15ed125a75417356da0a1718`.
+  `0xf5514949f83a07bdd6811d62d6d2afb6d4b3499e1553b8cd18ad0b260e38f00d`.
 
 ## The planning model (`gas/model.json`)
 
@@ -537,11 +758,12 @@ and digest `specs` in `types`, `callGasRetained` = 63/64, `dispatchOverhead`), `
 gas: every `GasModel.t.sol` publication is also run from the same state with the index's two callbacks answered by
 `vm.mockCall`, logged as `kernel frame gas`, and fitted like the constants) and `formula`, the plain statement:
 
-- quote: `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new record ? freshPerPublishFresh +
-  freshPerDigestSpec·specs : 0)) + Σ_bind-kind(head UNSET ? freshPerBindFresh : 0)`, `rw10 = rwPerPublication +
-  Σ_publish/reuse rwPerPublish + Σ_bind-kind rwPerBind`; `P = computeBase + n·computePerAction + binds·computePerHookEffect
-  + ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase +
-  binds·finalComputePerBind`;
+- quote (work-model formula 2): `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new record ?
+  freshPerPublishFresh + freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_bind-kind(head UNSET ?
+  freshPerBindFresh : 0)`, `rw10 = rwPerPublication + Σ_publish/reuse rwPerPublish + Σ_bind-kind(rwPerBind + (head
+  UNSET ? 0 : rwPerBindLater))` (a RELEASE is always a later statement, a REUSE always an existing record); `P =
+  computeBase + n·computePerAction + binds·computePerHookEffect + ⌈fresh10/10⌉·floorFreshGas +
+  ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish`;
 - requirement: `V = max(K + ⌈(⌈P·64/63⌉ + dispatchOverhead)·64/63⌉, E) + ⌈F·64/63⌉ + kernelTail`, E the execution
   estimate (prague `constants`, amsterdam `split.executionGas`) and K from `floor.kernel` with the same composition.
 
@@ -551,22 +773,34 @@ and the model's error); anything larger is split before it is signed. A roll-up 
 when it holds a number of entries in `tagLists.priceAsNew.entries` (`[1]`) or a multiple of
 `tagLists.priceAsNew.entriesMultipleOf` (5, zero included); the prose rule above is that field. `tools/gas-plan.mjs` is
 the reference implementation (it imports nothing and reads only the model it is given; `tools/test/gas-plan.test.mjs`);
-`pnpm run release` writes its verdict for eleven shapes to `test/vectors/floor-plan.json` (the largest planned count per
+`pnpm run release` writes its verdict for seventeen shapes to `test/vectors/floor-plan.json` (the largest planned count per
 schedule with E, K, V, P and F, and the refusal of one unit more), and `test/integration/FloorPlan.t.sol` builds each
 shape at that count, checks the kernel's own `prepare` quote equals the rule's P and F (read from the `E_INDEX_GAS` the
-first callback reverts with on just enough gas; `ILedgerCommitments.indexFloor` prices every bind as a first statement,
-so it is only an upper bound), and proves it admitted: on prague by running it with exactly 2^24 − 21,000 − calldata,
+first callback reverts with on just enough gas, or `indexFloor` for a publication with no BIND or UNBIND, whose quote
+does not depend on heads), and proves it admitted: on prague by running it with exactly 2^24 − 21,000 − calldata,
 and on both schedules by `E ≤` and `V ≤` that, with E and K measured from the same cooled state (Foundry's amsterdam
 profile has no reservoir and no cap, so there this is arithmetic on the measurement). The shapes: lone negatives on a
 one-word topic; first tags at depth 8 and 64, everything new and everything existing; a second author's first tags at
-depth 8; masks, releases and restores of tags; a registration chunk of word pages; create-file recipes.
+depth 8; masks, releases and restores of tags; number changes of asserted tags; masks of masks; re-binds of
+root-folder entries to another file; repeat PUBLISHes of existing name records; fresh name records; a mix of fresh
+name records and first tags (one of each per unit); a registration chunk of word pages; create-file recipes. For each
+the suite also logs the callbacks' prefix spend (E − K − the final phase) and the final phase against P and F, and
+for every shape but the first tags (whose depth the floor does not know) and the folder re-binds' final phase it
+asserts the quote covers them.
+
+**`ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal, so every BIND and UNBIND
+reads an UNSET head and is priced as a first statement (`freshPerBindFresh`, which is above `rwPerBindLater` on both
+schedules); it is exact only when every bind-kind action is one. A consumer plans from the gas model's rule
+(`planning`, `floor`), never from `indexFloor`.
 
 **Read terms (`reads`, step 4).** Every run also measures the topic readers (`tools/gas-reads.mjs` over
 `test/integration/TopicReadMeasure.t.sol`, one cold view call per row, on both schedules) and writes `reads`, a
 top-level section of its own: per schedule the measured `rows`, the fitted `terms` (`mine` exact and below: an opening,
 a per-lens-author opening term, a per-row base and a per-row term per lens index up to the decider; `everyone` exact
 and below: an opening, a per-row base, a per-lens-author term and the cost of a skipped entry at lenses of 1, 8 and
-64; `raw`, `byName`, `about`, `wordPage`, `children`: an opening and a per-row cost), the `bounds` per lens size (the
+64; the below views are fitted on their worst cases, where the viewed-place check reads a head state for every lens
+author asked, and `mineBelowQuiet` / `everyoneBelowQuiet` give the same terms where nothing is stated at the viewed
+place; `raw`, `byName`, `about`, `wordPage`, `children`: an opening and a per-row cost), the `bounds` per lens size (the
 most worst-case rows, and skipped entries, one call reads under `callGasCap` less `marginPercent`) and
 `recommended` (`pageTimesLens` per view, `maxRows`, `limitEntries`). The SDK sizes `limit` and `maxRows` from them;
 `--check 1` compares the measured rows exactly, like the publication rows.
@@ -587,24 +821,24 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 695,327 | 2,460,129 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,710 | 1,879,457 (1,370,880) |
-| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,327,370 | 4,624,342 (3,623,040) |
-| M1 create file (5 leaves, fresh folder) | 1,699,759 | 5,883,796 (4,602,240) |
-| Edit | 909,960 | 2,820,534 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,094,895 | 3,393,362 (2,448,000) |
-| Remove (RELEASE from BOUND) | 450,446 | 1,202,484 (783,360) |
-| Restore (released → same target) | 492,141 | 1,258,714 (783,360) |
-| RELEASE from mask | 413,704 | 1,077,856 (685,440) |
-| Hide (UNBIND from BOUND) | 434,591 | 1,105,945 (685,440) |
-| Restore a released placement (Move-back analog) | 507,019 | 1,354,266 (881,280) |
-| WITHDRAW | 458,030 | 1,297,689 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 669,300 | 2,434,166 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 573,824 | 1,853,671 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,321,839 | 4,795,163 (3,818,880) |
+| M1 create file (5 leaves, fresh folder) | 1,683,951 | 6,044,428 (4,798,080) |
+| Edit | 864,874 | 2,775,614 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,119,384 | 3,608,491 (2,643,840) |
+| Remove (RELEASE from BOUND) | 451,410 | 1,210,736 (783,360) |
+| Restore (released → same target) | 485,955 | 1,259,816 (783,360) |
+| RELEASE from mask | 400,516 | 1,064,756 (685,440) |
+| Hide (UNBIND from BOUND) | 435,504 | 1,114,146 (685,440) |
+| Restore a released placement (Move-back analog) | 500,862 | 1,355,397 (881,280) |
+| WITHDRAW | 444,440 | 1,284,087 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
 
 - `FilesPageReader.listDirectory`, one page of `docs/` (now three rows; limit 32, one principal, unbound basis,
-  F_NAME | F_HEADER | F_KIND): 583,235 gas, 548 B calldata, 1,856 B returndata.
+  F_NAME | F_HEADER | F_KIND): 560,160 gas, 548 B calldata, 1,856 B returndata.
 - `LedgerReads.record` of `readme.txt`'s root record: 91,620 gas, 68 B calldata, 576 B returndata.
 
 The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, whose `console2.log` lines `forge test
@@ -612,27 +846,28 @@ The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, 
 
 | Run | Calls | Max gas per page | Total gas | Max / total returndata |
 |---|---:|---:|---:|---:|
-| warm, 30M per call | 6 | 30.0M | 157.1M | 74,720 / 389,664 B |
-| cold, 30M per call | 6 | 30.0M | 157.1M | 74,720 / 389,664 B |
-| warm, 50M per call | 4 | 51.0M | 162.0M | 121,952 / 387,680 B |
-| pages of 100 rows | 11 | 15.3M | 151.8M | 39,392 / 394,624 B |
+| warm, 30M per call | 6 | 29.8M | 160.3M | 72,800 / 389,664 B |
+| cold, 30M per call | 6 | 29.9M | 160.3M | 72,800 / 389,664 B |
+| warm, 50M per call | 4 | 50.9M | 165.2M | 119,264 / 387,680 B |
+| pages of 100 rows | 11 | 15.6M | 154.8M | 39,392 / 394,624 B |
 
 The prototype needed 199 calls.
 
-The report also carries 26 supplementary recipe steps and the fixture's 71 transaction receipts, which are prague
+The report also carries 26 supplementary recipe steps and the fixture's 79 transaction receipts, which are prague
 only and include intrinsic cost:
 
-- Genesis code deposit: 45.8M over 30 transactions (the thirteen rules included).
-- Readers and views (R0–R5): 11.35M (`KeysView` 0.38M, `LensReader` 3.76M, `FilesPageReader` 2.81M, each listing 0.16M, `EfsWeb3Gateway` 3.88M).
+- Genesis code deposit: 45.39M over 30 transactions (the thirteen rules included).
+- Readers and views (R0–R11, 13 transactions): 24.02M (`KeysView`, `LensReader`, `FilesPageReader`, the content
+  server and the gateway, the three topic readers and the five listings).
 - The thirteen descriptor blobs: 2.10M.
-- **Genesis activation: 3.02M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). It was 4.21M before the
-  protocol-string rename, which changed only constants: when `CodeScan`'s fast walk meets a byte that reads as a
-  forbidden opcode before the trailer (such as a byte of the 32-byte constants via-IR places after the final
-  `INVALID`), it walks the unit again from pc 0, so the constants' bytes decide which units pay a second walk
-  (before: `BitmapStore`, `LedgerIngress`, `TypeRegistry`; now: `LedgerControl`, `TypeRegistry`).
+- **Genesis activation: 4.09M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). Most of it is
+  `CodeScan` walking every unit of the set; when the fast walk meets a byte that reads as a forbidden opcode before
+  the trailer (such as a byte of the 32-byte constants via-IR places after the final `INVALID`), it walks the unit
+  again from pc 0, so a unit's constants decide whether it pays a second walk (3.02M before the tag release, which
+  added units and code to the set).
 - `registerDescribed`: 0.24–0.28M each (design ≈ 0.30M).
-- Seed: root 0.69M, folder 1.32M, `readme.txt` 1.69M; `big.bin` 12.60M (two 8 KB chunks, 16,384 body bytes) +
-  5.92M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.44M.
+- Seed: root 0.66M, folder 1.32M, `readme.txt` 1.68M; `big.bin` 12.57M (two 8 KB chunks, 16,384 body bytes) +
+  5.82M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.37M.
 
 ## KERNEL-BUG
 
@@ -673,15 +908,19 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    passes the real G7 decoder; the suites pass `address(0)`. `efs-deployment.json` records `index.runtimeCodehash` and
    `index.reads {address, runtimeCodehash}`; `verify` checks both codehashes on chain and `readsContract()`.
 9. **Work model.** `src/` has no release work model, so the index uses
-   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4; the
-   constants are measured with the step-3b lists in place; `gas/model.json` `floor.workModel` must equal it, which
-   `pnpm release` asserts).
+   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4, formula 2; the
+   constants are measured with the step-3b lists in place, the later-statement, existing-record and per-publish final
+   terms by `test/integration/IndexFloor.t.sol`'s `later`/`publish`/`reuse` rows; `gas/model.json` `floor.workModel`
+   must equal it, which `pnpm release` asserts). `WorkModel` is returned inline by `IIndexReads.manifest()`, so a
+   field added to it moves the two profile words after it; `LensReader` finds them from the struct's encoded size
+   (the other readers ask `PHYSICAL_PROFILE()`/`CALLBACK_PROFILE()`), and `test/index/IndexReadsSplit.t.sol` asserts
+   the reply's head keeps that shape.
    Limits come from `KernelDeploy.s1Limits()` (the §4.2 values; under `FOUNDRY_PROFILE=amsterdam` the fresh-slot floor
    price is the Glamsterdam execution-gas 12,100, `GLAMSTERDAM_FLOOR` in `tools/deploy-plan.mjs`).
 10. **G3/G4/G7 take no arguments.** `LedgerReads`, `LedgerViews` and `IndexReplayDecoder` have the layout compiled in;
     they are not "generated for layoutId" by argument.
-11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20 and R6–R11 (the topic readers, step 4)
-    after R5. The facets `LedgerReads` and `LedgerViews` are not `IReader`s and are not listed; only the five readers
+11. **Readers.** §8.2 has no reader step, so the plan adds R1–R4 after G20, R5a–R5 (the `web3://` gateway's two
+    contracts) after them and R6–R11 (the topic readers, step 4) after R5. The facets `LedgerReads` and `LedgerViews` are not `IReader`s and are not listed; only the five readers
     are. **R0** deploys `KeysView` (the
     pure `Keys` derivations as a view, outside the execution set; the eight key helpers left `ILedgerCommitments`); its
     address is `keysView` in the deployment document and the `up` result.

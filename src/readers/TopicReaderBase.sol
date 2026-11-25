@@ -30,9 +30,9 @@ error E_TOPIC_STATUS(uint8 status); // none
 /// @notice Immutable and stateless. The ledger and its two read facets are constructor immutables; the live index
 ///         is resolved per call from `ILedgerHot(ledger).index()` and never cached. Every list is read through the
 ///         index's own reads (`IIndexReads.postingHeadOf`/`postingSliceOf`, which carry the list's coverage) or the
-///         bitmap store's scope reads, every ledger fact through a facet (`LedgerViews.bindingCells`,
-///         `authorHeads`, `headsAt`; `LedgerReads.basis`, `admission`, `recordHeader`); the readers never read raw
-///         slots. Principal-id APIs only, never `msg.sender`.
+///         bitmap store's scope reads, every ledger fact through a facet (`LedgerViews.bindingCells`, `lensRule`,
+///         `authorHeads`, `headStates`; `LedgerReads.basis`, `admission`, `recordHeader`); the readers never read
+///         raw slots. Principal-id APIs only, never `msg.sender`.
 /// @dev Faults are named reverts, never fabricated rows: `E_TOPIC_READ` (a dependency failed), `E_TOPIC_REPLY` (a
 ///      short reply or a zero enum), `E_TOPIC_STATUS` (a per-row status the page cannot carry) and
 ///      `E_TOPIC_INCONSISTENT(code)`: 1 a list head out of range (live > count, an entry past the admissions, a
@@ -56,6 +56,9 @@ abstract contract TopicReaderBase is IReader {
     /// The keys of one `LedgerViews.heads` call (the release profile's `limits.maxReadIds`).
     uint256 internal constant MAX_KEYS = 64;
     uint256 internal constant SELECTED_NONE = 255;
+    /// Shortcut A of `_maskedAt` is read only for a candidate with at least this many lens authors left to ask: its
+    /// one list-head read (about 8k cold) costs more than the state words it can save (about 2.4k each) below it.
+    uint256 internal constant NOBODY_MIN_ASK = 4;
     /// A lower bound on one returned row's gas, so a row array is sized by what the call can pay for.
     uint256 internal constant ROW_GAS_FLOOR = 15_000;
     uint256 internal constant CONTINUATION_VERSION = 1;
@@ -84,6 +87,11 @@ abstract contract TopicReaderBase is IReader {
         uint64 origin;
         uint64 selected;
         bool resumed;
+        /// Bit a: lens[a] is proven to hold no MASKED head at the viewed place (`_maskedAt` shortcut B; 0 unless the
+        /// view sets it).
+        uint256 quiet;
+        /// The place a lens view reads (`TopicMineReader`; unused elsewhere).
+        bytes32 place;
     }
 
     /// One append-only list read newest first: entries below `hi` are unread.
@@ -489,30 +497,42 @@ abstract contract TopicReaderBase is IReader {
         }
     }
 
-    /// Raw heads of at most `MAX_KEYS` `keys` (`LedgerViews.heads`): each in a defined state (a reserved state is
-    /// UNSUPPORTED), a canonical target and an admission the page has observed.
-    function _heads(Run memory r, bytes32[] memory keys) internal view returns (Head[] memory hs) {
+    /// The states of at most `MAX_KEYS` heads (`LedgerViews.headStates`, one word per head): each a defined state (a
+    /// reserved state is UNSUPPORTED), one per key, under the page's basis.
+    function _states(Run memory r, bytes32[] memory keys)
+        internal
+        view
+        returns (uint8[] memory st)
+    {
         BasisCommit memory b;
-        (hs, b) = abi.decode(
-            _sc(VIEWS, abi.encodeCall(ILedgerViews.heads, (LEDGER, keys)), 256),
-            (Head[], BasisCommit)
+        (st, b) = abi.decode(
+            _sc(VIEWS, abi.encodeCall(ILedgerViews.headStates, (LEDGER, keys)), 256),
+            (uint8[], BasisCommit)
         );
         _echo(r, b);
-        if (hs.length != keys.length) revert E_TOPIC_INCONSISTENT(4);
-        for (uint256 i; i < hs.length; ++i) {
-            Head memory h = hs[i];
-            if (h.state > 3) revert E_TOPIC_STATUS(uint8(Status.UNSUPPORTED));
-            if (
-                (h.state != 1 && h.target != 0) || (h.state == 0) != (h.admission == 0)
-                    || h.admission > r.observed.admissionHighWater
-            ) revert E_TOPIC_INCONSISTENT(4);
+        if (st.length != keys.length) revert E_TOPIC_INCONSISTENT(4);
+        for (uint256 i; i < st.length; ++i) {
+            if (st[i] > 3) revert E_TOPIC_STATUS(uint8(Status.UNSUPPORTED));
         }
     }
 
     /// The viewed-place half of the combined lens walk (design §11): for each candidate i, the index of the first
-    /// of `lens[0 .. ask[i])` whose head at `(TAG, place, things[i])` is MASKED (a "not this" at the place being
-    /// viewed), or SELECTED_NONE; `ask[i] == 0` asks nobody. The heads are read in `heads` rounds of at most
-    /// MAX_KEYS keys.
+    /// of `lens[0 .. ask[i])` whose head at the viewed position `(TAG, place, things[i])` is MASKED (a "not this" at
+    /// the place being viewed), or SELECTED_NONE; `ask[i] == 0` asks nobody. Two shortcuts leave out heads that
+    /// cannot be MASKED, so neither changes an answer:
+    ///   - B: a lens author whose bit is set in `r.quiet` is never asked (`TopicMineReader` sets it from the author's
+    ///     exact scope list at `place`, whose head it holds already; see there why such an author holds no MASKED
+    ///     head at the place). 0 in the other views.
+    ///   - A: before anyone is asked about candidate i (when at least NOBODY_MIN_ASK lens authors are left to ask),
+    ///     the head of the viewed position's `position-authors` list (family 20, key = the position) is read. The
+    ///     index appends to it at every author's first statement at the position, of either sign (FIRST_BIND or
+    ///     FIRST_MASK, design §10.2; `count` never falls), and a head leaves UNSET only by a first statement (an
+    ///     UNBIND of an UNSET head is a FIRST_MASK; a RELEASE of one is refused by the kernel), so with every
+    ///     admission folded (coverage COMPLETE) a count of 0 means every head at the position is UNSET: nobody is
+    ///     asked. Any other coverage (UNKNOWN or PARTIAL) asks as before: the
+    ///     heads are the ledger's own and need no index, so a list the index cannot vouch for is never read as
+    ///     "nobody".
+    /// What is left is read as head states only (`_states`), in rounds of at most MAX_KEYS keys.
     function _maskedAt(
         Run memory r,
         bytes32[] memory lens,
@@ -521,38 +541,85 @@ abstract contract TopicReaderBase is IReader {
         uint256[] memory ask
     ) internal view returns (uint256[] memory kv) {
         uint256 n = things.length;
+        kv = new uint256[](n);
+        uint256[] memory upto = new uint256[](n);
+        bytes32[] memory viewed = new bytes32[](n);
         uint256 total;
         for (uint256 i; i < n; ++i) {
-            total += ask[i];
+            kv[i] = SELECTED_NONE;
+            uint256 asked = ask[i] - _popcount(r.quiet & ((1 << ask[i]) - 1)); // B: the authors left to ask
+            if (asked == 0) continue;
+            viewed[i] = Keys.position(Purpose.TAG, place, things[i]);
+            // A: nobody ever stated anything there (asked only where it can pay for itself)
+            if (asked >= NOBODY_MIN_ASK && _nobodyAt(r, viewed[i])) continue;
+            upto[i] = ask[i];
+            total += asked;
         }
-        kv = new uint256[](n);
+        if (total == 0) return kv;
         bytes32[] memory keys = new bytes32[](total);
         uint256 t;
         for (uint256 i; i < n; ++i) {
-            kv[i] = SELECTED_NONE;
-            bytes32 viewed = Keys.position(Purpose.TAG, place, things[i]);
-            for (uint256 a; a < ask[i]; ++a) {
-                keys[t++] = Keys.binding(lens[a], viewed);
+            for (uint256 a; a < upto[i]; ++a) {
+                if ((r.quiet >> a) & 1 == 0) keys[t++] = Keys.binding(lens[a], viewed[i]);
             }
         }
-        Head[] memory hs = new Head[](total);
+        uint8[] memory st = _statesInRounds(r, keys);
+        t = 0;
+        for (uint256 i; i < n; ++i) {
+            for (uint256 a; a < upto[i]; ++a) {
+                if ((r.quiet >> a) & 1 != 0) continue;
+                if (kv[i] == SELECTED_NONE && st[t] == 2) kv[i] = a;
+                ++t;
+            }
+        }
+    }
+
+    /// Shortcut A of `_maskedAt`: the viewed position's `position-authors` head is empty under COMPLETE coverage.
+    ///      The head is checked as `_listHead` checks it (UNSET coverage a reply fault, its counts in range).
+    function _nobodyAt(Run memory r, bytes32 position) private view returns (bool) {
+        bytes memory ret = _sc(
+            r.index,
+            abi.encodeCall(
+                IIndexReads.postingHeadOf,
+                (FamilyId.wrap(F_POSITION_AUTHORS), TypeId.wrap(0), 0, position)
+            ),
+            160
+        );
+        (Coverage c, uint64 count, uint64 live, uint64 last) =
+            abi.decode(ret, (Coverage, uint64, uint64, uint64));
+        if (c == Coverage.UNSET) revert E_TOPIC_REPLY(IIndexReads.postingHeadOf.selector, 0);
+        uint64 hw = r.observed.admissionHighWater;
+        if (live > count || count > hw || last > hw || (count == 0) != (last == 0)) {
+            revert E_TOPIC_INCONSISTENT(1);
+        }
+        return c == Coverage.COMPLETE && count == 0;
+    }
+
+    /// `_states` over any number of keys, in rounds of at most MAX_KEYS.
+    function _statesInRounds(Run memory r, bytes32[] memory keys)
+        private
+        view
+        returns (uint8[] memory st)
+    {
+        uint256 total = keys.length;
+        st = new uint8[](total);
         for (uint256 from; from < total; from += MAX_KEYS) {
             uint256 m = total - from < MAX_KEYS ? total - from : MAX_KEYS;
             bytes32[] memory chunk = new bytes32[](m);
             for (uint256 a; a < m; ++a) {
                 chunk[a] = keys[from + a];
             }
-            Head[] memory got = _heads(r, chunk);
+            uint8[] memory got = _states(r, chunk);
             for (uint256 a; a < m; ++a) {
-                hs[from + a] = got[a];
+                st[from + a] = got[a];
             }
         }
-        t = 0;
-        for (uint256 i; i < n; ++i) {
-            for (uint256 a; a < ask[i]; ++a) {
-                if (kv[i] == SELECTED_NONE && hs[t + a].state == 2) kv[i] = a;
-            }
-            t += ask[i];
+    }
+
+    /// The set bits of a word of at most 64 bits.
+    function _popcount(uint256 x) internal pure returns (uint256 c) {
+        for (; x != 0; x &= x - 1) {
+            ++c;
         }
     }
 

@@ -8,9 +8,11 @@ import {Coordinate, FamilyId, Purpose, TypeId} from "../../src/interfaces/Action
 import {ILedgerViews} from "../../src/interfaces/ILedgerViews.sol";
 import {BasisCommit, Status} from "../../src/interfaces/Results.sol";
 import {Head} from "../../src/interfaces/Views.sol";
+import {E_RESERVED} from "../../src/interfaces/Errors.sol";
 
-/// @notice The two batched list reads of `LedgerViews` (design §5.7): `bindingCells` (binding ordinal → position and
-///         cell) and `authorHeads` (a `position-authors` entry → author and head), against the kernel's own heads, with
+/// @notice The batched list reads of `LedgerViews` (design §5.7): `bindingCells` (binding ordinal → position and
+///         cell), `authorHeads` (a `position-authors` entry → author and head) and `headStates` (the state word alone
+///         of many heads, the topic readers' viewed-place check), against the kernel's own heads, with
 ///         the blanket statuses (LIMIT_EXCEEDED past `maxReadIds`, UNKNOWN without a ledger) and the per-entry
 ///         ABSENT_PROVEN / INVALID, and their ABI encodings (standard: the facet returns them through the encoder).
 contract FacetsListsTest is TopicReadersBase {
@@ -151,6 +153,39 @@ contract FacetsListsTest is TopicReadersBase {
         assertGt(b.admissionHighWater, 0);
     }
 
+    function test_head_states_are_the_heads_state_words() public {
+        _release(carol, topic, things[1]);
+        bytes32[] memory who = new bytes32[](4);
+        who[0] = _pid(alice); // BOUND
+        who[1] = _pid(bob); // MASKED
+        who[2] = _pid(carol); // RELEASED at things[1]; UNSET at things[0]
+        who[3] = keccak256("facets-lists/nobody"); // UNSET
+        bytes32[] memory keys = new bytes32[](8);
+        for (uint256 i; i < 4; ++i) {
+            keys[i] = Keys.binding(who[i], Keys.position(Purpose.TAG, topic, things[0]));
+            keys[4 + i] = Keys.binding(who[i], Keys.position(Purpose.TAG, topic, things[1]));
+        }
+        (uint8[] memory s, BasisCommit memory b) = views.headStates(address(r.ledger), keys);
+        (Head[] memory hs, BasisCommit memory hb) = views.heads(address(r.ledger), keys);
+        assertEq(s.length, 8);
+        for (uint256 i; i < 8; ++i) {
+            assertEq(s[i], hs[i].state, "the head's own state");
+        }
+        assertEq(s[0], 1);
+        assertEq(s[1], 2);
+        assertEq(s[2], 0);
+        assertEq(s[6], 3);
+        assertEq(keccak256(abi.encode(b)), keccak256(abi.encode(hb)), "the same basis");
+        // bounds as `heads`: an empty batch is served with its basis, more than maxReadIds keys revert
+        (s, b) = views.headStates(address(r.ledger), new bytes32[](0));
+        assertEq(s.length, 0);
+        assertGt(b.admissionHighWater, 0);
+        (s,) = views.headStates(address(r.ledger), new bytes32[](64));
+        assertEq(s.length, 64);
+        vm.expectRevert(abi.encodeWithSelector(E_RESERVED.selector, uint8(31), uint256(65)));
+        views.headStates(address(r.ledger), new bytes32[](65));
+    }
+
     /// The replies are the ABI encoder's: the raw return data equals `abi.encode` of the decoded values.
     function test_canonical_encodings() public view {
         bytes32 pos = Keys.position(Purpose.TAG, topic, things[0]);
@@ -169,5 +204,14 @@ contract FacetsListsTest is TopicReadersBase {
         (Status[] memory s2, bytes32[] memory p2, Coordinate[] memory c2, BasisCommit memory b2) =
             abi.decode(raw, (Status[], bytes32[], Coordinate[], BasisCommit));
         assertEq(keccak256(raw), keccak256(abi.encode(s2, p2, c2, b2)));
+        bytes32[] memory keys = new bytes32[](2);
+        keys[0] = Keys.binding(_pid(alice), pos);
+        keys[1] = Keys.binding(_pid(bob), pos);
+        (ok, raw) = address(views)
+            .staticcall(abi.encodeCall(ILedgerViews.headStates, (address(r.ledger), keys)));
+        assertTrue(ok);
+        (uint8[] memory s3, BasisCommit memory b3) = abi.decode(raw, (uint8[], BasisCommit));
+        assertEq(keccak256(raw), keccak256(abi.encode(s3, b3)));
+        assertEq(raw.length, 32 * 10, "offset, basis (6 words), length, two states");
     }
 }

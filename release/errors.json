@@ -1557,9 +1557,9 @@
           "name": "code"
         }
       ],
-      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "source": "src/periphery/EfsWeb3Content.sol",
       "retryClass": "none",
-      "meaning": "Constructor only: 1 a zero ledger or facet, 2 a page reader bound to another ledger."
+      "meaning": "Constructor only: 1 a zero ledger, facet or content server, 2 a page reader bound to another ledger, 3 a content server bound to another ledger."
     },
     "0x25058ee6": {
       "name": "E_WEB3_STATUS",
@@ -1574,9 +1574,9 @@
           "name": "reason"
         }
       ],
-      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "source": "src/periphery/EfsWeb3Content.sol",
       "retryClass": "none",
-      "meaning": "The inner frame's answer for anything other than a served response: `request` returns it as `(status, reason)` with a `text/plain` body. Never escapes `request`."
+      "meaning": "The inner frame's answer for anything other than a served response: `EfsWeb3Gateway.request` returns it as `(status, reason)` with a `text/plain` body. Never escapes `request`."
     },
     "0xcb944f40": {
       "name": "E_WITHDRAW",

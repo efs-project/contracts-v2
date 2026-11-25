@@ -3,14 +3,16 @@ pragma solidity 0.8.37;
 
 import {FilesPageHarness} from "./FilesPageHarness.sol";
 import {EfsWeb3Gateway} from "../../../src/periphery/EfsWeb3Gateway.sol";
+import {EfsWeb3Content} from "../../../src/periphery/EfsWeb3Content.sol";
 import {KeyValue} from "../../../src/interfaces/IWeb3Gateway.sol";
 import {EfsFiles} from "../../../src/lib/EfsFiles.sol";
 import {Keys} from "../../../src/lib/Keys.sol";
 import {Action, Purpose} from "../../../src/interfaces/Actions.sol";
 
 /// @notice The `EfsWeb3Gateway` suites' fixture: the Files Realm of `FilesPageHarness` (kernel, real registry, real
-///         generation-1 index, the ten Types, the two facets and a `FilesPageReader`), a gateway with the page reader
-///         and one without, and a tree written by this contract's principal `p` and an EOA `alice`:
+///         generation-1 index, the ten Types, the two facets and a `FilesPageReader`), one `EfsWeb3Content` and two
+///         gateways over it (one with the page reader, one without), and a tree written by this contract's principal
+///         `p` and an EOA `alice`:
 ///
 ///           /hello.txt              inline "hello, web3"
 ///           /notes.txt              edited: root "v1" then child "v2: edited"
@@ -35,6 +37,7 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
     uint256 internal constant CHUNK = 8_160;
     EfsWeb3Gateway internal gw;
     EfsWeb3Gateway internal bare; // no page reader
+    EfsWeb3Content internal content; // the content server both gateways call
     address internal alice = makeAddr("alice");
     bytes32 internal pa;
     string internal P; // p as 64 hex digits
@@ -58,12 +61,9 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         P = _hex64(p);
         A = _hex64(pa);
         R = string.concat("/~efs/o/", vm.toString(rootDir));
-        gw = new EfsWeb3Gateway(
-            address(r.ledger), address(reads), address(views), address(reader), rootDir, _gt()
-        );
-        bare = new EfsWeb3Gateway(
-            address(r.ledger), address(reads), address(views), address(0), rootDir, _gt()
-        );
+        content = new EfsWeb3Content(address(r.ledger), address(reads), _ct());
+        gw = _gateway(address(reader), address(content));
+        bare = _gateway(address(0), address(content));
         Action[] memory a;
         bytes[] memory b;
         (, helloRoot) = _file(address(this), rootDir, "hello.txt", "hello, web3", true);
@@ -92,9 +92,20 @@ abstract contract Web3GatewayHarness is FilesPageHarness {
         _file(address(this), rootDir, "shared.txt", "p's shared", false);
     }
 
-    function _gt() internal view returns (EfsWeb3Gateway.Types memory g) {
-        g.directory = typeIds[T_DIRECTORY];
-        g.name = typeIds[T_NAME];
+    /// A gateway over this Realm's root with page reader `pager` (zero: none) and content server `server`.
+    function _gateway(address pager, address server) internal returns (EfsWeb3Gateway) {
+        return new EfsWeb3Gateway(
+            address(r.ledger),
+            address(reads),
+            address(views),
+            pager,
+            server,
+            rootDir,
+            typeIds[T_DIRECTORY]
+        );
+    }
+
+    function _ct() internal view returns (EfsWeb3Content.Types memory g) {
         g.root = typeIds[T_ROOT];
         g.child = typeIds[T_CHILD];
         g.content = typeIds[T_CONTENT];

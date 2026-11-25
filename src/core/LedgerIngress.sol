@@ -319,11 +319,13 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         uint256 rw10;
         uint256 compute;
         uint256 binds;
+        uint256 publishes;
         uint32 floorFresh;
         uint32 floorRewrite;
     }
 
-    /// One pass over the actions: the acceptance profile (when wanted) and the index floor quote.
+    /// One pass over the actions: the acceptance profile (when wanted) and the index floor quote (`WorkModel` formula 2,
+    /// design §10.4).
     function _foldAndQuote(
         address ledger,
         Action[] calldata actions,
@@ -358,7 +360,10 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         prefixFloor = uint32(
             q.compute + uint256(freshSlots) * q.floorFresh + uint256(rewrites) * q.floorRewrite
         );
-        finalReserve = uint32(wm.finalComputeBase + uint256(wm.finalComputePerBind) * q.binds);
+        finalReserve = uint32(
+            wm.finalComputeBase + uint256(wm.finalComputePerBind) * q.binds
+                + uint256(wm.finalComputePerPublish) * q.publishes
+        );
     }
 
     function _foldOne(
@@ -396,8 +401,11 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
                     q.fresh10 += wm.freshPerPublishFresh + wm.freshPerDigestSpec
                     * _digestSpecs(ledger, a.typeId);
                 }
+            } else {
+                q.fresh10 += wm.freshPerPublishExisting;
             }
             q.rw10 += wm.rwPerPublish;
+            ++q.publishes;
             q.fresh10 += uint256(wm.freshPerRef) * info.refCount;
         } else if (
             kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
@@ -410,13 +418,16 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
                 }
             }
             // a first statement of either sign (BIND or UNBIND on an UNSET head) allocates the binding and
-            // its position, so a first mask is priced like a first bind; RELEASE never stands on an UNSET head
+            // its position, so a first mask is priced like a first bind; every other statement is a later one
+            // (RELEASE never stands on an UNSET head) and moves the lists a first statement only appends to
+            uint8 state = 1;
             if (kind != ActionKind.RELEASE) {
-                (uint8 state,,,) = _headState(
+                (state,,,) = _headState(
                     ledger, Keys.binding(principalId, Keys.position(a.purpose, a.subject, a.role))
                 );
-                if (state == 0) q.fresh10 += wm.freshPerBindFresh;
             }
+            if (state == 0) q.fresh10 += wm.freshPerBindFresh;
+            else q.rw10 += wm.rwPerBindLater;
             q.rw10 += wm.rwPerBind;
             q.compute += wm.computePerHookEffect;
         }

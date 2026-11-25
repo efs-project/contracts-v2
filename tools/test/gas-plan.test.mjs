@@ -47,15 +47,16 @@ test("the quote is the kernel's formula (design §10.4) on a hand-computed publi
       { kind: "bind", cost: "bindHeadRebind", first: false },
     ];
     const t = types["files-child/1"];
-    const fresh10 = w.freshPerPublication + w.freshPerPublishFresh + w.freshPerDigestSpec * t.specs + w.freshPerRef * t.refs + w.freshPerRef * types["files-bytes/1"].refs + w.freshPerBindFresh;
-    const rw10 = w.rwPerPublication + 2 * w.rwPerPublish + 2 * w.rwPerBind;
+    // the existing files-bytes/1 pays freshPerPublishExisting, the HEAD re-bind (a later statement) rwPerBindLater
+    const fresh10 = w.freshPerPublication + w.freshPerPublishFresh + w.freshPerDigestSpec * t.specs + w.freshPerRef * t.refs + w.freshPerRef * types["files-bytes/1"].refs + w.freshPerPublishExisting + w.freshPerBindFresh;
+    const rw10 = w.rwPerPublication + 2 * w.rwPerPublish + 2 * w.rwPerBind + w.rwPerBindLater;
     const fresh = Math.ceil(fresh10 / 10);
     const rw = Math.ceil(rw10 / 10);
     const q = planner(model, s).quote(acts);
     assert.equal(q.freshSlots, fresh);
     assert.equal(q.rewrites, rw);
     assert.equal(q.prefixFloor, w.computeBase + 5 * w.computePerAction + 2 * w.computePerHookEffect + fresh * l.floorFreshGas + rw * l.floorRewriteGas);
-    assert.equal(q.finalReserve, w.finalComputeBase + 2 * w.finalComputePerBind);
+    assert.equal(q.finalReserve, w.finalComputeBase + 2 * w.finalComputePerBind + 2 * w.finalComputePerPublish);
   }
 });
 

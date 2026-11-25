@@ -11,6 +11,7 @@ import {IBitmapStore} from "../interfaces/IBitmapStore.sol";
 import {Cursor, Entry, ILensReader, Page, Selection} from "../interfaces/Readers.sol";
 import {BasisCommit, Coverage, History, Qualified, Status} from "../interfaces/Results.sol";
 import {Head, RecordHeader} from "../interfaces/Views.sol";
+import {WORK_MODEL_WORDS} from "../interfaces/Index.sol";
 
 // Every narrowing cast below reads one ABI word of a facet, hot-getter or store reply at the width that ABI
 // declares; each such decode is re-encoded and compared with the raw words, so a reply word with dirty high bits
@@ -390,8 +391,10 @@ contract LensReader is ILensReader {
         if (index == address(0)) return Status.UNSUPPORTED;
         bytes memory r;
         (ok, r) = index.staticcall(abi.encodeCall(IIndexReads.manifest, ()));
-        if (!ok || r.length < 640) return Status.UNKNOWN;
-        if (bytes32(_w(r, 18)) != PHYSICAL_PROFILE || bytes32(_w(r, 19)) != CALLBACK_PROFILE) {
+        // the reply's head: header, three array offsets, the WorkModel inline, then the two profiles
+        uint256 at = 4 + WORK_MODEL_WORDS;
+        if (!ok || r.length < (at + 2) << 5) return Status.UNKNOWN;
+        if (bytes32(_w(r, at)) != PHYSICAL_PROFILE || bytes32(_w(r, at + 1)) != CALLBACK_PROFILE) {
             return Status.UNSUPPORTED;
         }
         (ok, sc.store) = _addr(index, IIndexReads.bitmapStore.selector);

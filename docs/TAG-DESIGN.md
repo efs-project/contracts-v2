@@ -1,17 +1,20 @@
 # Tags: design and measured costs
 
-**Status: a recommendation with measured evidence (2026-11-25). Nothing here is on `main`.** It answers the work
-order in the planning vault's `Reviews/2026-11-25-tag-model-spec.md` (section 9), which applies James's rulings of
-2026-11-25. The code that produced the numbers is the spike on the branch `spike/2026-11-25-tags`; it is evidence
-and is never merged as it stands. The proper version is built step by step in the order of section 12, each step
-reviewed on a branch before it reaches `main`, and the SDK re-vendors once at the end. The integration owner and
-the tag review accepted this document as the basis for that work on 2026-11-25.
+**Status: this document now describes the release (2026-11-25).** It was written before the build as a recommendation
+from the spike (`spike/2026-11-25-tags`, commit `a47f2e9`) and answered the work order in the planning vault's
+`Reviews/2026-11-25-tag-model-spec.md` (section 9), which applies James's rulings of 2026-11-25. The proper version
+was then built in the order of section 12, each step reviewed on a branch, and integrated as one release on
+`fable/2026-11-25-tags-release` (the gateway split, the viewed-place check's cut and work-model formula 2 merged on
+top of step 4). Everything below says what is built; what is still a choice for James is section 13 and
+[QUESTIONS-FOR-JAMES.md](QUESTIONS-FOR-JAMES.md) Q49–Q54. The SDK re-vendors once, from
+[tools/RELEASE.md](../tools/RELEASE.md) "What changes for a consumer in this release".
 
-Every figure is measured on the integrated spike build (commit `a47f2e9`) unless marked *(estimate)*. The full tables,
-with the commands that produced them, are in [spike/TAG-SPIKE-NUMBERS.md](spike/TAG-SPIKE-NUMBERS.md). "Today" is the
-Prague fee schedule; "Glamsterdam" is EIP-8037/8038, where creating storage is priced separately (see "Depth").
-[TAG-OPTIONS.md](TAG-OPTIONS.md) is the earlier options paper; its identity recommendation was overruled and this
-document replaces it.
+Every figure is measured on the integrated release tree; the full tables, with the commands that produced them, are
+in [TAG-NUMBERS.md](TAG-NUMBERS.md). Figures marked *(estimate)* are not measured. "Today" is the Prague fee
+schedule; "Glamsterdam" is EIP-8037/8038, where creating storage is priced separately (see "Depth"), and its figures
+are all gas unless they say "execution". [TAG-OPTIONS.md](TAG-OPTIONS.md) is the earlier options paper; its identity
+recommendation was overruled and this document replaces it. The spike's own record is
+[spike/TAG-SPIKE-NUMBERS.md](spike/TAG-SPIKE-NUMBERS.md).
 
 ## In plain words
 
@@ -21,30 +24,31 @@ document replaces it.
   nothing extra to store. Zero or above means the tag applies; below zero means it doesn't. "Not this" can be said
   about something you never tagged.
 - **A tag on a topic that was never registered is refused.** Registering is publishing one small record per new word
-  and per new path, and it rides in the same transaction as the first tag.
+  and per new path, and it rides in the same transaction as the first tag, ahead of it.
 - **Anyone can attach files to any address, and tag any address,** including one that has never transacted.
 - **Every tag is listed** under its topic and every parent topic, per author and across all authors. The lists are
-  written once, at an author's first statement about a thing in a topic, and never rewritten.
-- **A 64-word path works.** No depth limit is proposed.
+  written at an author's first statement about a thing in a topic and never rewritten.
+- **A 64-word path works.** There is no depth limit.
 
 What it costs, one transaction with nothing else in it:
 
-| | Today | Glamsterdam (all gas) |
+| | Today | Glamsterdam |
 |---|---:|---:|
-| Tag a thing in an existing 2-word topic | 0.81M | 2.88M |
-| The same, plus registering one new word and its path | 1.36M | 4.65M |
-| Each further tag in the same transaction (4-word topic, everything new) | 0.47M | 1.77M |
-| Change a tag's number | 0.49M | 1.41M |
-| "Not this" about something never tagged | 0.68M | 2.29M |
-| Tag an address that never transacted | 0.74M | 2.49M |
-| Register a brand-new 8-word path, every word new | 3.98M | 14.0M |
-| Tag on a brand-new 64-word path, nothing existing (worst case) | 4.76M | 17.98M |
+| Tag a thing in an existing 2-word topic | 0.82M | 2.89M |
+| The same, plus registering one new word and its path | 1.39M | 4.68M |
+| Each further tag in the same transaction (4-word topic, everything new) | 0.48M | 1.78M |
+| Change a tag's number | 0.45M | 1.28M |
+| "Not this" about something never tagged | 0.69M | 2.31M |
+| Tag an address that never transacted | 0.75M | 2.50M |
+| Register a brand-new 8-word path, every word new | 4.07M | 14.09M |
+| A first tag on a 64-word path, nothing existing (worst case; the path already registered) | 4.72M | 17.68M |
 
-For scale, creating a file today costs about 1.7M.
+For scale, creating a file today costs about 1.68M (6.04M on Glamsterdam).
 
 ## 1. Topics
 
-Two record Types, both with rules that run when the record is published.
+Two record Types, both with rules that run when the record is published (`topic-word/1`, `topic/1`), and a third for
+labels (`text/1`, section 8).
 
 - **Word page, `topic-word/1`.** Its body is the word's bytes and nothing else. It is also the root-level topic: the
   page for the word `tesla` is the topic `/tesla`.
@@ -56,303 +60,300 @@ What this gives, with no new kernel code:
 
 - **The id is the record id,** a hash of the Type and the body. It does not depend on who published it, on the Realm
   or on the chain. Two people publishing `/cars/tesla` get the same id, and the second publication stores nothing
-  again. Anyone computes the id from the words with no chain read.
-- **Parent before child, word page before use.** The kernel already refuses a record whose declared reference does
-  not exist. A parent published earlier in the same publication counts, so a short new path registers in one
+  again. Anyone computes the id from the words with no chain read (`EfsTopics.pathId`; the SDK's twin is checked
+  against `test/vectors/topics.json`).
+- **Parent before child, word page before use.** The kernel refuses a record whose declared reference does not
+  exist. A parent published earlier in the same publication counts, so a short new path registers in one
   transaction and a deep one splits in order.
 - **Permanent.** The reference check asks "was this ever admitted". A withdrawal by the first registrant lowers a
-  count and changes nothing the check or the index reads (tested).
+  count and changes nothing the check or the index reads.
 - **One sequence of words has exactly one record.** A one-word topic is only ever a word page, because a path record
   cannot be built without a parent and the kernel refuses a zero reference. An n-word topic is exactly one path
-  record. A path whose parent is a file, a folder, a name or any other Type is refused (tested per case). A reader
-  should still treat a chain that does not end at a word page as invalid.
+  record. A path whose parent is a file, a folder, a name or any other Type is refused.
 - **Both directories exist already.** The index keeps a list per (Type, reference slot, referenced record). Slot 0 of
-  path records gives a topic's children. Slot 1 gives the topics whose own word is a given word, which is what a
-  word's page shows. No new index code, and no per-word list of items (measured in round one: it cost as much again
-  as the roll-up lists).
+  path records gives a topic's children; slot 1 gives the topics whose own word is a given word, which is what a
+  word's page shows (`TopicLookupReader.children`, `wordPage`).
 
 **Word rules, checked once per word, on the word page:** 1 to 255 bytes of well-formed UTF-8; no `/` or `\`, no
-ASCII control byte, no ASCII `A`–`Z`, no Unicode whitespace at all (every fold rule turns whitespace into `_`, so
-`tesla` followed by a no-break space could only be a look-alike); not `.` or `..`; not starting with `~`; not `0x`
-followed by 40 hex digits. The last two apply to every word, not only the first in a path, because every word has a root-level page.
-An address belongs in a tag as its target: tag the USDC contract's address under `/tokens/usdc`, never
-`/tokens/0xa0b8…`. The check costs 121 to 208 gas per byte. Everything else about folding (Unicode case, look-alike
-letters, normalisation) stays in the SDK; the chain cannot check it. The spike's rule does not yet refuse C1
-controls, bidi controls or invisible separators, which `files-name/2` does refuse; the proper version refuses them,
-at least as strictly as names. Joiners and variation selectors (ZWJ, ZWNJ, VS1–16) are refused too, from a list kept
-as one constant that can still change until the fold rule is confirmed, because a folded word never contains them.
-The refused list is shared with the SDK's vectors.
+ASCII control byte, no ASCII `A`–`Z`, no Unicode white space at all (every fold rule turns white space into `_`, so
+`tesla` followed by a no-break space could only be a look-alike); none of the refused code points (C1 controls,
+format and bidirectional controls, invisible separators, joiners and variation selectors, noncharacters); not `.`
+or `..`; not starting with `~`; not `0x` followed by 40 hex digits. The last two apply to every word, not only the
+first in a path, because every word has a root-level page. An address belongs in a tag as its target: tag the USDC
+contract's address under `/tokens/usdc`, never `/tokens/0xa0b8…`. The check costs about 121 gas per byte of ASCII
+and 478 per byte of multi-byte text. Everything else about folding (Unicode case, look-alike letters,
+normalisation) stays in the SDK; the chain cannot check it. The refused table is one constant
+(`TopicProfile.REFUSED`, from Unicode 15.1) shared with the SDK's vectors; it is hand-written until one generator
+produces it from a pinned Unicode version (Q53), so the three Topics Type ids are provisional until then.
 
-**Cost.** A word page is 0.53M alone and 0.20M as an extra action in a batch (1.64M / 0.69M on Glamsterdam). A path
-record is 0.64M alone and 0.27M in a batch (2.10M / 0.95M).
+**Cost.** A word page is 0.54M alone and 0.21M as an extra action in a batch (1.65M / 0.70M on Glamsterdam). A path
+record is 0.65M alone and 0.28M in a batch (2.11M / 0.95M).
 
 ## 2. The tag and its number
 
-A tag is a bind at position (TAG, topic, thing), targeting the thing. The model is unchanged from the measured path
-in TAG-OPTIONS.
+A tag is a bind at position (TAG, topic, thing), targeting the thing.
 
-- **The number rides in a field the action already has.** On BIND and UNBIND the `salt` word carries an unsigned
-  strength from 0 to 65,535. BIND means number = strength. UNBIND means number = −1 − strength. So every action
-  written today keeps its meaning (a bind is 0, a mask is −1) and no (kind, value) pair is meaningless. A strength
-  above 65,535 is refused, never truncated, so a later widening cannot change the meaning of an action already on
-  chain. RELEASE means "I say nothing" and carries no number. The proper version should rename the field
-  `saltOrStrength`; the SDK takes field names from the vendored ABI.
-- **No new storage.** The head row had 8 reserved bits and a 40-bit expiry field that is always zero; the expiry
-  field narrows to 32 bits (seconds until 2106) and the number takes 16. Bind rows in the admission log had a 16-bit
-  field that is always zero for binds. Eight bits would give up nothing; 24 bits would shrink the expiry field to 194
-  days, which makes it useless. Sixteen is the widest clean width.
+- **The number rides in a field the action already has.** The action's field is now `saltOrStrength`: on BIND and
+  UNBIND it carries an unsigned strength from 0 to 65,535. BIND means number = strength. UNBIND means number =
+  −1 − strength. So every action written before keeps its meaning (a bind is 0, a mask is −1) and no (kind, value)
+  pair is meaningless. A strength above 65,535 is refused, never truncated. RELEASE means "I say nothing" and
+  carries no number.
+- **No new storage.** The head row's 40-bit expiry field narrowed to 32 bits (seconds until 2106) and the number took
+  16; bind rows in the admission log carry it in a 16-bit field that was always zero for binds.
 - **A first statement may be negative.** UNBIND is admitted from every state: never said, asserted, denied and
   released. This applies to every purpose, with no gate in the kernel, which knows no purposes.
-- **What a validator may refuse, in exact words.** An author can always mask or release a binding of theirs that
-  already exists; no validator may refuse that. A validator may refuse an action that asserts something (any BIND,
-  including a re-bind of an existing folder entry to a bad target) and an action that creates a new position for its
-  author (a first statement of either sign, such as a first negative on an unregistered topic).
 - **Changing only the number keeps history.** A positive to another positive is a BIND to the same target; a negative
   to another negative is another UNBIND. Each is one action under the usual revision check, and each adds a history
   entry.
-- **What a tag's subject may be.** A registered topic, or a home (section 3). The profile validator refuses a first
-  statement (positive or negative) on anything else, with a named error. The topic must be registered strictly
-  before the tag, in an earlier action; the spike first accepted "anywhere in the same publication", and that tag
-  would have silently missed its roll-up lists. Other apps that want tag-like links on their own ids use their own
-  purpose.
-- **What can be tagged.** Any record or subject that exists, of any Type, including a Type this repository has never
-  seen (a chess app's move records are tagged the same way): a file, a folder, a topic, a specific revision of a
-  file. And an address. The proper version tests this with a third-party Type.
+- **What can be tagged.** Any record or subject that exists, of any Type, including one this repository has never
+  seen: a file, a folder, a topic, a specific revision of a file. And an address.
 
 | Operation on an existing tag | Today | Glamsterdam |
 |---|---:|---:|
-| Change a positive (0 → 75) | 485,253 | 1,413,319 |
-| Change a negative (−1 → −5) | 423,408 | 1,168,334 |
-| Positive to negative | 441,018 | 1,193,144 |
-| Negative to positive | 503,330 | 1,512,316 |
-| To silent | 422,465 | 1,167,391 |
+| Change a positive (0 → 75) | 448,570 | 1,281,550 |
+| Change a negative (−1 → −5) | 426,776 | 1,171,736 |
+| Positive to negative | 458,649 | 1,217,975 |
+| Negative to positive | 521,153 | 1,537,339 |
+| To silent | 425,843 | 1,170,803 |
 
 A nonzero number costs 12 gas more than zero.
 
-## 3. Addresses: homes and targets
+**The validator's laws, in plain words** (`FilesFinalValidator`, refusal codes 1 to 15). It judges only HEAD, FOLDER,
+TAG, SAME and BROADER, and only a statement that asserts something or creates a new position for its author: an
+author can always mask or release a binding of theirs that already exists, and no law refuses that.
+
+- **Folders.** 1: a folder entry needs a name record. 2: its parent is a folder or a home (an address). 3: an entry
+  cannot point at its own folder. 4: a file it names must already exist. 5: a record it names must be a folder.
+  6: nothing else may be named, an address included (it would confirm and never be readable). Codes 1 and 2 apply
+  to a first "not this" too, so it can only be said about an entry that could exist.
+- **A file's HEAD.** 7: never an address. 8: it names a revision record of that same file.
+- **Tags.** 9: a first statement (either sign) sits under a home or under a topic registered strictly before it, in
+  an earlier action (a topic registered later in the same publication would silently miss its list entries).
+  14: a tag's target is the thing it names (its role). 15: a first "not this" names something that exists: a record
+  or a subject admitted before it, or an address.
+- **`same` and `broader`.** 10 and 11: both ends are topics registered strictly before; 12: the two ends differ;
+  13: the target is the other end.
+
+## 3. Addresses: homes, targets and links
 
 - **A home's id is the address itself,** as a left-padded word. That is the same value as a key account's principal
   id. A record id or a minted subject id is a hash, so one that looks like an address would take about 2^96 tries;
   the two forms cannot be confused. The zero address is not a home (the kernel refuses a zero subject).
 - **Attaching.** A named entry whose parent is address-shaped is accepted with no check on the address: it needs no
-  code, no balance and no history. Tag links under a home need nothing new. Attaching a file to a home costs the
-  same as into a folder (1,731,223 against 1,737,328 today). The existing folder page reader and lens reader work on
-  a home unchanged (tested).
+  code, no balance and no history. Creating a file at a home that already holds files costs 1.61M against 1.70M
+  in a folder with files today (5.61M / 6.10M on Glamsterdam). The folder page reader and lens reader work on a
+  home unchanged.
 - **An address as a tag's target.** A third target kind, ADDRESS, admits an address-shaped target that is neither a
-  record nor a subject. The validator allows it for TAG only. On a file's HEAD or a folder entry it is refused with
-  a named error, because it would confirm and never be readable. A named folder entry pointing at an address can
-  come later, with its reader.
+  record nor a subject. The validator allows it for TAG only.
 - **A contract's home** is its raw address, but a contract's principal id is not (it is qualified by the Realm). The
-  SDK computes "the owner's entries" for a contract home from the contract principal.
-- **Not built:** `web3://` paths that start at a home. The gateway's first path segment already means "this
-  author's entries under the Realm root", so a home start needs its own marker. About 200 to 400 bytes
-  *(estimate)*, within the gateway's 1,650 bytes of headroom. `directory-alias/1` cannot point at a home yet.
+  gateway and the SDK compute "the owner's entries" for a contract home from the contract principal.
+- **Folders have a fixed identity.** A folder is a record of (creator, salt) that only its creator can publish, so
+  the kind of an object follows from its id. Remove and move release an entry; hide masks it (a mask stops the lens
+  walk, so it hides everyone's entry at that name; a release never does).
+
+**What `web3://` serves** (one link grammar; `EfsWeb3Gateway` parses, `EfsWeb3Content` serves the bytes). The first
+path segment decides the kind of path:
+
+- `/0x<address>/name/…`: that address's home, read by default through the address's own entries.
+- `/~efs/o/<id>/…`: an object link. A folder id is that folder (read through its creator by default); a file id is
+  that file's current version.
+- `/~efs/v/<revision id>`: exactly that version's bytes, whoever's version it is and whether or not it is current.
+- Any other `~` path is the system's and refused (400); any other first word is a topic path, which this gateway does
+  not serve yet (501). No folder is ever served at a topic path, so a topic link can never mean a folder.
+- An existing object the gateway does not serve is 501, never 404; 404 means the id names nothing. `?lens=` replaces
+  the default authors.
 
 ## 4. The lists
 
-Every list is append-only. An entry is written once, at an author's first statement on (topic, thing), whatever its
-sign. Later changes, removals and re-adds write no list. A reader takes the current state and number from the
-statement itself. "Newest first" therefore means most recently first-stated; no later action by an author can move
-or duplicate their entry (tested, including remove-and-add-back).
+Every list is append-only. An entry is written at an author's first statement on (topic, thing), whatever its sign;
+later changes, removals and re-adds write no list. A reader takes the current state and number from the statement
+itself.
 
 | List | Key | Written when | Purposes |
 |---|---|---|---|
-| Per author, exact | (author, purpose, place) | exists today | all |
-| **Per author, this topic and below** | (author, TAG, ancestor) | the author's first statement, once per proper ancestor | TAG |
-| All authors, a place's distinct items | (purpose, place) | the first statement by anyone at that (place, item) | TAG, FOLDER |
+| Per author, exact | (author, purpose, place) | the author's first statement at a position | all |
+| Per author, this topic and below | (author, TAG, ancestor) | the author's first statement, once per proper ancestor | TAG |
+| All authors, a place's filings | (purpose, place) | the first statement by anyone at a (place, item), and every later author's first yes there | TAG, FOLDER |
 | All authors, who said it | the (place, item) position | every author's first statement there | TAG, FOLDER |
-| All authors, this topic and below | (TAG, ancestor) | the first statement by anyone, once per proper ancestor | TAG |
+| All authors, this topic and below | (TAG, ancestor) | as the place's filings, once per proper ancestor | TAG |
 | All authors, where a thing is filed | (TAG, thing) | the first statement by anyone at that (place, thing) | TAG |
 
-- **Amended after the step 3b review (DESIGN §10.2).** The two "all authors, a place's items" lists (the place, and
-  this topic and below) are written at the first statement by anyone at an item AND at every later author's first
-  yes there, in order of filing, so whoever speaks first does not fix where an item sits in "newest first": a real
-  tag after someone's early "not this", or a second person's `hello.txt` at a home, shows as new. An item may appear
-  more than once; readers remove duplicates by item. A later author's first no, and a yes after an author's own
-  first no, file nothing. Each list's head gives both numbers in one read: filings, and distinct items ever stated
-  (an "about" count that includes items nobody says yes to now). The "who said it" list's head also counts the
-  authors who say yes now (a counter moved by masks, releases and restores; no entry is ever added after an
-  author's first statement). A first "not this" must name something that exists (validator code 15 for TAG; the
-  name and parent laws for FOLDER).
-- **Two levels for all authors.** One list of a place's filings, and one list per item of who said it. A lookup of
-  one name or item reads one short list whatever the size of the place. As built (step 3c), a place's list holds
-  an item once for its first statement and once more for each later author's first yes, so a photo tagged by a
-  hundred people appears up to a hundred times and a reader removes the repeats. The list's head gives filings and
-  an "about" count of distinct items; an item's head gives how many people ever made a statement about it and
-  exactly how many say yes now. Each is one read. Buckets by name hash were considered and rejected: a spammer
-  picks names that fall in the victim's bucket, so a targeted attack is not bounded.
-- **Every statement is reachable from its target, whatever its sign.** A lone "not nsfw" carries no target, so the
-  existing "what points at this" list never shows it. The last list in the table fixes that for every kind of
-  target. Hiding still uses only lens authors' denials, read directly.
+- **Two levels for all authors, with two figures each.** One list of a place's filings, and one list per item of who
+  said it. A place's list files an item at its first statement and again at every later author's first yes, so a
+  real tag after someone's early "not this", or a second person's `hello.txt` at a home, shows as new, and whoever
+  speaks first does not fix where an item sits. Its head gives two figures in one read: **filings**, and an **"about"
+  count** of distinct items ever stated (including items nobody says yes to now). An item's head gives how many
+  people ever made a statement about it and, **exactly, how many say yes now** (a counter moved by first yeses, masks,
+  releases and restores; one read, no scan). A later author's first no, and a yes after an author's own first no,
+  file nothing. Buckets by name hash were considered and rejected: a spammer picks names that fall in the victim's
+  bucket, so a targeted attack is not bounded.
+- **Every statement is reachable from its target, whatever its sign.** A lone "not nsfw" carries no target, so "what
+  points at this" never shows it; the last list in the table fixes that for every kind of target.
 - **Not kept:** all-authors lists on HEAD (a storage slot per file, and nothing reads it), per-word lists of items,
-  and "where a name is used" for FOLDER (pure cost: +25,575 gas per created file).
-- **Can the HEAD list be added later? Yes, by design, with one condition.** Every list here is derived from the
-  kernel's permanent record of statements, so a later index generation can add a list and build it from history
-  into a fresh store, in order, before it is switched on (DESIGN §10.6). The result is exact, and whoever runs the
-  build pays the same storage slot per file then. The condition: that build step is specified but not yet written
-  (generation 1's `build` refuses), and adding a generation is an act of the Realm's controller, possible until the
-  Realm is frozen. So leaving the list out now is a deferral that stays free only if the build step is written
-  before the freeze.
+  and "where a name is used" for FOLDER.
+- **Can the HEAD list be added later? Yes, with one condition.** Every list is derived from the kernel's permanent
+  record of statements, so a later index generation can add a list and build it from history into a fresh store
+  before it is switched on (DESIGN §10.6). That build step is specified but not written (generation 1's `build`
+  refuses), and it must rebuild three counters as well as entries (the backlink count, the yes-count and the "about"
+  count). Adding a generation is an act of the Realm's controller, possible until the Realm is frozen, so the
+  deferral stays free only if the build step is written before the freeze (Q52).
 - **Rebuild equals live.** A test drives a mixed history through the live index, replays it into a fresh index, and
-  compares every list. The index reads only records that can never change, and the validator guarantees they predate
-  the tag.
+  compares every list.
+- **The topic lists exist only with their validator.** The index keeps them only when its own fixed list of units
+  contains the profile validator built for the same two topic Types; its constructor refuses any other
+  combination, so no Realm can keep topic lists without the "registered before" law that makes them complete.
 
-**What the lists add to one first tag** (on top of about 0.70M today and 2.57M on Glamsterdam with no lists):
+**A first tag, by depth** (one statement alone in its publication; Glamsterdam all gas):
 
 | Case | 1 word | 4 words | 8 words | 64 words |
 |---|---:|---:|---:|---:|
-| Today: everything new | 85k | 265k | 517k | 4.06M |
-| Today: my lists exist, the item is new here | 74k | 183k | 341k | 2.57M |
-| Today: someone already tagged this item here | 39k | 141k | 275k | 2.25M |
-| Today: everything exists | 22k | 89k | 176k | 1.49M |
-| Glamsterdam: everything new | 350k | 1.06M | 2.01M | 15.4M |
-| Glamsterdam: everything exists | 37k | 146k | 291k | 2.41M |
+| Everything new, today | 0.73M | 0.92M | 1.17M | 4.72M |
+| Everything exists, today | 0.61M | 0.73M | 0.89M | 3.10M |
+| Everything new, Glamsterdam | 2.60M | 3.31M | 4.27M | 17.68M |
+| Everything exists, Glamsterdam | 1.92M | 2.12M | 2.39M | 6.21M |
 
-Per extra path level: the per-author roll-up is 35k gas on a list the author has never used and 23.5k on an existing
-one (123k and 38k on Glamsterdam). The all-authors roll-up costs the same again, but only when the item is new to
-that topic. Round two also made every list write cheaper: one store call per action with one authorization, which
-took 16k off every publication and 39k off a first tag before any list is added.
+Per extra path level: the per-author roll-up is 34.6k gas on a new list and 22.9k on an existing one (122.7k and
+37.3k on Glamsterdam); the all-authors roll-up 27.1k and 15.4k (115.2k and 29.8k), paid at every filing.
 
-**Ordinary file work:** creating a file costs about 53k more (3%) with the all-authors folder lists on; an edit costs
-nothing more.
+**Ordinary file work:** creating a file pays a "who said it" list and, at a fresh position, a place filing: about
+56k–62k more (3.6–4.0%) than before the lists, measured at step 3b; an edit writes no list.
 
-## 5. Depth
+## 5. Depth and the planning rule
 
-- **Today, a tag fits one transaction to about 254 words** in the worst case and 651 when everything exists.
-- **On Glamsterdam the answer depends on a rule I had checked.** EIP-8037 (status: Last Call; its deadline has
-  passed) says the 16.78M per-transaction cap applies to execution gas only. Gas for creating storage is paid from a
-  separate reservoir, and a transaction's total limit may be far higher. On that reading the worst-case 64-word tag
-  is 3.30M of execution gas and fits; the deepest path is about 364 words *(estimate: Foundry has no reservoir, so
-  this is computed from the execution share)*. If all gas counted against the cap, the worst case (17.98M) would not
-  fit and the limit would be about 59 words. Both readings are in the tables.
-- **A block must still have room.** A block's usage is the larger of its execution gas and its storage gas. The
-  worst-case tag carries 14.7M of storage gas, which fits any plausible block.
+- **Today, a single first tag fits one transaction to about 254 words** in the worst case and 401 when everything
+  exists (a lone negative where everything exists: 627).
+- **On Glamsterdam the answer depends on a rule I had checked.** EIP-8037 says the 16.78M per-transaction cap applies
+  to execution gas only; gas for creating storage is paid from a separate reservoir. On that reading the worst-case
+  64-word tag is 3.28M of execution gas and fits, and the deepest path is about 366 words. If all gas counted against
+  the cap, the worst case (17.68M) would not fit and the limit would be about 60 words. Both readings are in the
+  tables.
+- **A block must still have room.** A block's usage is the larger of its execution gas and its storage gas; the
+  worst-case tag carries about 14.4M of storage gas, which fits any plausible block.
 
 **If the Glamsterdam rule changes before it activates** so that all gas counts against the cap, the worst case is
-59 words, under the 64 the ruling requires. Nothing is built for this; two options, neither of which ever skips a
-level:
-
-- **Open the roll-up list when the topic is registered** *(preferred)*. The worst case is dear because every
-  all-authors list on a new path is brand new, and a new list is a new storage slot. If registering a topic also
-  writes that topic's all-authors roll-up list head, those lists always exist by the time anything is tagged. Only
-  the author's own lists can then be new. A first tag on a 64-word path becomes about 12.7M all gas *(estimate:
-  2.6M base, 63 levels at 123k for the author's new lists and 38k for the existing shared ones)*, which fits, and
-  the limit moves to about 88 words. Price: one more storage slot per registered topic (22k gas today, 110k on
-  Glamsterdam), paid at registration, which already splits across transactions. The tag stays one atomic write.
-- **A roll-up continuation** *(for paths deeper than that)*. The tag is admitted with its exact lists and as many
-  ancestor levels as fit; a later action, which anyone may send, finishes the remaining levels. A tag whose lists
-  are unfinished must be visible as such to readers, and the continuation must be an ordinary recorded action so a
-  rebuilt index matches the live one. Price *(estimate)*: one storage slot per unfinished tag for its progress, the
-  fixed cost of a publication (about 0.3M today) per continuation, and the same per-level cost as now. It is a new
-  action kind and a real addition to the kernel, so it is the fallback, not the plan.
+60 words, under the 64 the ruling requires. Nothing is built for this; two options, neither of which ever skips a
+level: open a topic's shared roll-up list when it is registered *(preferred; computed: the 64-word worst case falls
+to about 12.30M all gas, for one more list head per registered topic, 27k today and 115k on Glamsterdam)*, or a
+roll-up continuation, a new action kind that finishes a tag's remaining levels later *(the fallback: a real
+addition to the kernel)*.
 
 **Registering a brand-new path, every word new:**
 
 | Words | Today | Transactions | Glamsterdam, all gas | Execution only | Transactions |
 |---:|---:|---:|---:|---:|---:|
-| 8 | 3.98M | 1 | 14.0M | 2.93M | 1 |
-| 16 | 7.89M | 1 | 27.8M | 5.74M | 1 |
-| 32 | 15.9M | 1 | 55.9M | 11.5M | 1 |
-| 64 | 32.7M | 3 | 113.0M | 23.5M | 2 |
+| 8 | 4.07M | 1 | 14.09M | 3.01M | 1 |
+| 16 | 8.08M | 1 | 27.96M | 5.91M | 1 |
+| 32 | 16.32M | 1 | 56.25M | 11.85M | 1 |
+| 64 | 33.49M | 3 | 113.80M | 24.19M | 2 |
 
-- The Glamsterdam counts assume the execution-only reading, where the limit is 64 actions per publication. If all gas
-  counted, 64 words would take 8 transactions.
-- The 64-word registration carries about 89M of storage gas over two transactions. Assuming a 60M block gas limit
-  *(my assumption; state yours if it differs)*, each half fits one block and takes most of it. Under a 36M limit it
-  would need three.
-- **Wallet prompts for a first tag on a brand-new path** *(estimate, registration and tag combined)*: up to 16 words,
-  one transaction, so one prompt. At 32 words, two today and one on Glamsterdam. At 64 words, three today and two on
-  Glamsterdam. A wallet batch (EIP-5792) makes each of these one prompt, and the bounded session grant James already
-  allowed makes them none. Registration parts are safe to send first and are harmless if the save is abandoned.
+The Glamsterdam counts assume the execution-only reading. The 64-word registration carries about 89.5M of storage gas
+over two transactions; under a 60M block gas limit *(my assumption)* each half fits one block. **Wallet prompts for a
+first tag on a brand-new path** *(estimate, registration and tag combined)*: up to 16 words one transaction, so one
+prompt; at 32 words two today and one on Glamsterdam; at 64 words three today and two on Glamsterdam; a wallet batch makes each of these one prompt, and the bounded session grant makes them
+none. Registration parts are safe to send first and harmless if the save is abandoned.
+
+**The planning rule and the floor.** Before each index call the kernel requires a floor of visible gas, priced from
+the index's work model in slot counts (DESIGN §10.4, formula 2). The release fixes the spike's finding: the final
+reserve per bind is 7,400 (it was 120,000), so 64 lone negatives fit one publication on Glamsterdam, and three terms
+keep the quote above what the index spends (later statements, publishes of existing records, the final phase per
+publish). The floor does not know a tag's depth; the gas model does. So the SDK plans every publication from the
+published gas model (`planning`, `floor`, the per-level terms; `tools/gas-plan.mjs` is the reference planner): a
+publication is planned when it is inside the Realm's limits and its estimate and the floor's requirement both fit
+under the cap less 15%, and anything larger is split before it is signed. The largest planned publication of each
+of seventeen shapes is tested on both schedules (TAG-NUMBERS "The largest publication"): for example 38 lone
+negatives today and 54 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
+recipes, and 64 masks, releases or registration pages. `indexFloor` is an upper bound only; the fixture checks that
+the deployed index prices exactly like the published model.
 
 ## 6. Reading
 
-The spike has one reader with the three views. It reads raw storage, which the repository's rules do not allow a
-shipped reader to do; the proper version goes through the read facets.
+Three readers, all through the read facets (no raw storage): `TopicMineReader` (my lens), `TopicEveryoneReader`
+(the public views) and `TopicLookupReader` (one position's authors, a thing's places, counts, word pages,
+children).
+
+- **Raw** shows every row of a place's lists. **Everyone** shows a row only when its item's yes-count is above zero
+  (somebody says yes now; one exact read, never a scan), unless a lens author denies it. **Mine** reads only the lens
+  authors' own lists.
+- **The lens order, with one combined walk.** An earlier lens author always beats a later one. For an entry filed
+  under topic T and viewed at place P (P = T in an exact view, an ancestor below), each lens author in order is asked
+  two things: is it "not this" about the thing at the viewed place, and what does it say where the entry was filed.
+  The first answer found decides; the row carries the **decider** (which lens author decided it) and that author's
+  number. A stranger's negative never hides a row somebody affirms.
+- **The viewed-place check is cheap where it cannot matter.** It reads only head states, and leaves out a lens author
+  whose list at the place has nothing masked and, with at least four authors to ask, a position nobody ever stated
+  anything at.
+- **De-duplication by thing.** A thing filed at two child topics, or filed again by a later author's first yes,
+  appears more than once in a list. A page shows each thing once, through its newest filing that shows; the
+  yes-count and the lens are checked before a thing counts as seen, so a newer filing nobody affirms never hides an
+  older affirmed one. Across pages the SDK removes repeats.
+- **Two bounds.** A paged read takes `limit` (list entries read) and `maxRows` (rows returned) and stops at whichever
+  comes first, or at its gas reserve. A short or empty page is not the end: every page says whether the list is
+  finished and where to resume. One number cannot bound both, because skipping a padded stretch is cheap and a shown
+  row under a large lens is not.
 
 | Read (cold call) | Gas |
 |---|---:|
-| Mine: my lens, this topic and below, page of 10, lens of 1 / 8 / 32 / 64 | 283k / 633k / 2.08M / 4.10M |
-| The same, page of 50 | 1.35M / 1.93M / 6.49M / 15.1M |
-| Everyone, lens of 8, page of 10 / 50 | 656k / 3.49M |
-| Raw, page of 10 / 50 | 322k / 1.44M |
-| "Anyone's `pet.jpg` at this address", 3 authors / 300 authors | 88,440 / 88,446 |
-| One name in a place of 3 / 2,001 entries | 71k / 73k |
-| A place's count; an item's author count | 29k; 32k |
-| A word's page for 1 / 5 / 20 places (directory plus one count each) | 61k / 177k / 610k |
+| Mine: my lens, this topic and below, page of 10, lens of 1 / 8 / 32 / 64 | 563k / 1.10M / 2.31M / 4.80M |
+| The same, page of 50 | 2.43M / 3.67M / 7.58M / 11.88M |
+| The same, worst case of the viewed-place check, page of 10 | 687k / 1.57M / 3.83M / 8.82M |
+| Everyone, lens of 8, page of 10 / 50 (below; worst case) | 1.32M / 6.18M (1.81M / 8.69M) |
+| Raw, page of 10 / 50 | 538k / 2.45M |
+| A skipped entry in Everyone, any lens | 36k |
+| "Anyone's `pet.jpg` at this address", 300 authors, page of 10 | 363k |
+| A place's count; an item's author count | 85k; 85k |
+| A word's page for 1 / 5 / 20 places | 152k / 355k / 1.07M |
 
-- **Depth makes no difference to a read** (under 0.5% between 1 and 64 words).
-- **Call size.** Providers cap the gas of one read call. Assuming a conservative 10M cap, keep a page to 50 rows at
-  most and page × lens to 1,600 at most *(estimate from the measured points)*: 25 rows at a lens of 64, 50 rows at a
-  lens of 32. The SDK should split larger reads, so a big lens never fails as "unknown" because one call was too big.
-  The cost grows with lens size because each candidate from the j-th lens author checks the authors ahead of it; the
-  proper reader should batch those checks through the existing heads facet.
-- **Duplicates** are removed within a page. The same item reached through two authors' lists can appear again on the
-  next page; the client removes it across pages.
-- **Denials.** The spike hides a row when a lens author is negative at the position the entry was filed under. The
-  spec also hides it when a lens author is negative at the place being viewed; the proper reader adds that check.
-- **Which rows a public view shows** (corrected 2026-11-25; an earlier version of this bullet was wrong). Raw shows
-  every row. Everyone shows a row only when its item's yes-count is above zero, that is, when somebody currently
-  says yes; the count is exact and is one read, so no scan of authors decides it and a row is never dropped because
-  a scan stopped early. Only a lens author's negative hides a row that somebody affirms: a negative at the place the
-  entry was filed under, or at the place being viewed for the same thing. A stranger's negative never hides one,
-  and posting negatives before the first real tag neither hides the item nor keeps it out of "new", because every
-  author's first yes is its own entry.
-- **Reading a roll-up.** One thing can be filed at two child topics. A reader checks the yes-count before treating a
-  thing as seen: if the newer filing has no yes and the older one has, the thing still shows through the older.
-  Repeats are removed by thing within a page; the SDK removes them across pages.
-- **A short page is not the end.** With repeats and unaffirmed rows skipped, a page can return fewer rows than asked
-  for, or none, while more remain. Every paged read says whether the list is finished and where to resume, and
-  bounds its work by entries read.
-- **Counts.** A place's list length is its filings, and it also keeps an "about" count of distinct items ever
-  stated, including ones nobody says yes to now. An item's counts are the authors who ever made a statement and,
-  exactly, the authors who say yes now.
+- **Depth makes no difference to a read.** Depth 8 and 64 cost the same to the gas.
+- **Call size.** Providers cap the gas of one read call. The release publishes the read terms and, at a 10M cap less
+  10%, the bounds: keep page × lens at or below 768 (`mine` exact), 416 (`mine` below), 688 (`everyone` exact) and
+  408 (`everyone` below), at most 150 rows and 246 entries per call (245 on Glamsterdam). The SDK splits larger
+  reads, so a big lens never fails as one call too big.
 
 ## 7. Spam and what stays true
 
-- Adding one entry to a place's public list costs the spammer about 0.30M gas today (1.13M on Glamsterdam). Adding
-  one to "who said this" at a name needs a fresh account each time and costs about 0.54M (1.71M). These were measured
-  in round two, before the final integration.
-- A reader pays about 28k gas to skip a junk row in Raw and 71k with a lens of 8 *(estimate, from the page slopes)*.
+- Adding one entry to a place's public list costs the spammer about 0.68M gas alone today, 0.35M each when 64 are
+  batched (2.21M / 1.27M on Glamsterdam). Adding one to "who said this" at a name needs a fresh account each time
+  and costs about 0.61M (1.86M).
+- **Sybil bumping.** Because every author's first yes is filed, a thing can be moved to the front of a public "newest
+  first" view by saying yes to it from a fresh account: about 0.68M alone, 0.34M each for one fresh account over 64
+  existing things (2.22M / 1.19M on Glamsterdam). One account bumps a given thing once; the yes-count rises by that
+  one author and the "about" count not at all (Q54).
+- A reader pays about 36k gas to skip a junk entry in Everyone, at any lens size, and about 48k per row in Raw.
   Mine is not affected: it reads only lens authors' lists.
 - **Bounded whatever the spam:** a count; a lookup of one name or item; a page at one position.
-- **Not bounded:** paging through a spammed place in Everyone or Raw. With public lists newest first, whoever
-  appended last at `pet.jpg` is what a public first page shows. The lens is the defence, and the client should label
-  the public tier.
-- Counts can be inflated at about one tag's gas per entry. Show the lens count beside the global one.
+- **Not bounded:** paging through a spammed place in Everyone or Raw. The lens is the defence, and the client should
+  label the public tier. Counts can be inflated at about one tag's gas per entry; show the lens count beside the
+  global one.
 
-## 8. Meaning: the purposes for statements about topics
+## 8. Meaning: the three purposes for statements about topics
 
-Proposed smallest set, to be fixed before anything lasting is deployed. None is built or measured; each statement
-is one bind and costs what a tag does.
+Built, with the label Type:
 
 | Purpose | Position | Target | Holds |
 |---|---|---|---|
-| `property` | (any subject, key) | a value record or a file | one value per author per key: a label per language, the definition, "moved to" |
+| `property` | (any subject, key) | a value record, a file or an address | one value per author per key: a label per language, the definition, "moved to" |
 | `same` | (topic, other topic) | the other topic | "same as", at word level between word pages and at path level between paths |
 | `broader` | (topic, parent topic) | the parent | the optional booru-style parent |
 
-- Single-valued facts share one purpose and differ by key (`label:en`, `definition`, `moved-to`), so a new kind of
-  fact needs no new purpose. `property` is general: its subject may be a topic, a home, a file or a folder, so a
-  display name for an address, a file's description and later inherited settings all live there.
-- Many-valued relations get their own purpose so each has its own list. **A new relation later (`related`,
-  `part of`) needs no release.** A purpose is only a constant: the kernel accepts any purpose, the per-author lists
-  and "what points at this" exist for every purpose, and the validator judges only the purposes it names. A release
-  is needed only if a relation wants all-authors lists or a rule of its own. So no generic `relation` purpose is
-  proposed; `same` and `broader` are named now because readers use them constantly.
-- "What points at this" already exists across authors, so synonyms are found from either side.
-- A label needs a small text Type (`files-name/2` refuses `/`, so it cannot hold "AC/DC").
-- Curating a topic's children uses TAG itself, as the spec says: tag the child into the parent with a number.
+- Single-valued facts share one purpose and differ by key (`label:en`, `definition`, `moved-to`;
+  `EfsTopics.propertyKey`), so a new kind of fact needs no new purpose. `property`'s subject may be a topic, a home,
+  a file or a folder; no validator judges it.
+- **A new relation later (`related`, `part of`) needs no release.** A purpose is only a constant: the kernel accepts
+  any purpose, the per-author lists and "what points at this" exist for every purpose, and the validator judges only
+  the purposes it names.
+- A label's text is a `text/1` record (1 to 255 bytes, one line; `/`, spaces and capitals allowed, so it can hold
+  "AC/DC").
+- Each statement is one bind: `same` or `broader` costs 0.65M today (2.26M on Glamsterdam); a label with a new text
+  record 0.94M (3.29M), naming an existing text 0.65M (2.27M).
+- Curating a topic's children uses TAG itself: tag the child into the parent with a number.
 
 ## 9. Events for indexers
 
-- Today the kernel's events carry neither a bind's target nor its number, and no byte of a record's body. An
-  off-chain indexer would need storage reads or transaction traces.
-- The spike adds `Bound`, one event per bind, with purpose, subject, role, target, kind, strength, transition and
-  target kind. It costs 3,633 gas per bind and 124 bytes of kernel code.
-- **Still missing: the words.** A topic's word reaches no log. The proper version should emit a record's body when a
-  fresh record of a small Type is admitted (a word costs about 1 to 2k gas to log *(estimate)*), so an indexer can
-  follow topics, labels and names from events alone.
+- **`Bound`**, one event per bind, unbind or release, with purpose, place, thing, target, kind, number, transition
+  and target kind; a log filter on (TAG, thing) finds everything anyone said about the thing, lone negatives
+  included.
+- **`Body`** carries the bytes of a fresh small record of a Type that asks for it (names, words, paths, labels), so
+  an indexer follows topics, labels and names from events alone. A repeat publish logs nothing.
 
 ## 10. What cannot be done in contracts
 
@@ -371,70 +372,60 @@ Assigned to an indexer (The Graph) or the client on purpose:
 - Unicode folding, look-alike detection, and ENS names. The chain sees only bytes and addresses.
 - Listing every author's versions of one file (no all-authors list is kept on HEAD).
 
-## 11. Findings that affect the rest of the system
+## 11. Findings that affected the rest of the system, and what became of them
 
-1. **The index contract is over its size budget.** It is 21,955 bytes against 19,660. The proper version moves its
-   read-only functions into a separate reads contract (about 2.3 KB *(estimate)*, no cost to writes). The ingress
-   has 626 bytes left and the gateway 1,654.
-2. **The kernel's gas floor would wrongly refuse some large publications on Glamsterdam.** Before each index call the
-   kernel requires a floor of visible gas. EIP-8037 says the GAS opcode does not see the storage reservoir. A
-   publication of 64 lone negatives on a one-word topic needs 19.0M visible by the floor's arithmetic but only 15.4M
-   of execution gas to run, so it is refused though it can pay (asserted in a test). The cause is a reserve of 120k
-   per bind in the index's work model, far above what a bind's final check uses. The fix is in the work model, not a
-   limits value, and belongs in the same release. On today's schedule that publication cannot pay anyway.
-3. **The quote does not price the lists.** A deep tag sent with too little gas fails with a clear out-of-gas error
-   and is never accepted without its lists, but the person pays for the failed transaction. The primary fix is in
-   the SDK: it always plans from the words, so it knows the depth, the number of new words, and (from two reads)
-   whether the author's and the shared lists exist. The release publishes the per-level terms in the gas model (a
-   new list, an existing list, per author and shared, on both schedules) so the SDK's gas limit and the kernel's
-   floor are computed from the same figures. The depth is not stored in the path record: if it were, the rule would
-   have to enforce depth = parent's depth + 1, or two records could exist for one sequence of words. Quoting walks
-   the path instead. The floor fix of finding 2 ships with it. Under the "all gas counts" reading the SDK reports
-   a too-deep first tag as too large for one transaction; it never shortens the path.
-4. **A design document error.** DESIGN §4.3 lists 11 reserved bits in the admission row; the real layout has none.
-   The proper version corrects the text and re-versions the layout identities.
-5. **No reader returns the number yet.** It must be added to the head and admission views, which changes those ABIs
-   and the layout id.
-6. **Removing a file should release, not mask.** A mask stops the lens search, so removing my `pet.jpg` at a shared
-   place would hide other people's. The reference recipes change in the same release (remove and move release; hide
-   masks).
-7. **"Trust that topics are registered" must not be a setting.** The spike's index has a flag that skips two reads
-   per level because the validator guarantees a topic is registered before it is tagged. A Realm built with the flag
-   and without the validator would quietly drop roll-up entries. In the proper version there is no flag: the index
-   keeps the topic lists only when its own fixed list of units contains the profile validator built for the same two
-   topic Types, and its constructor refuses any other combination. A test proves the misconfigured index cannot be
-   deployed.
+1. **The index was over its size budget** (21,955 bytes against 19,660). Built: the read-only functions moved to a
+   separate reads contract; the generation is now 16,582 bytes.
+2. **The kernel's floor would have refused large payable publications on Glamsterdam**, because of a 120k reserve
+   per bind in the work model. Built: work-model formula 2 (section 5).
+3. **The quote does not price the lists.** Built as planned: the release publishes the per-level terms and the
+   planning rule, and the SDK plans from the words; the depth is not stored in the path record.
+4. **A design document error** (reserved bits in the admission row). Corrected, and the layout re-versioned.
+5. **No reader returned the number.** Built: heads, the admission views and every topic reader row carry it.
+6. **Removing a file should release, not mask.** Built: remove and move release, hide masks.
+7. **"Trust that topics are registered" must not be a setting.** Built: no flag; the index refuses to keep topic lists
+   without its validator (section 4).
+8. **The gateway ran out of room** (32 bytes of headroom after the link forms). Built: it is two contracts behind one
+   address, the entry point (4,269 bytes of headroom) and a pinned content server (10,699).
 
-## 12. The proper version, as one release
+## 12. From "proper version" to built
 
-Already under way on `fable/2026-11-25-single-release`: a folder becomes a record of (creator, salt) that only its
-creator can publish, which fixes the kind of an object by its id, and the remove/move/hide recipes.
-
-Then, in this order, each reviewed before it merges:
+The release built, in the order this section planned, each step reviewed before it merged:
 
 1. Kernel: the number (shape law, head and row fields, the read ABIs), a lone negative from every state, the ADDRESS
-   target kind, the `Bound` event and the record-body event, the work-model and floor fix.
-2. Profiles: the two topic Types with the word rule and shared vectors, the validator checks (topic before tag,
-   address targets for TAG only, homes as parents), the text Type and the three purposes of section 8.
-3. Index: the five new lists with batched writes, the reads contract split to get under the size budget, the quote
-   terms.
-4. Readers: the three views, lookup by name, counts, the word page, through the read facets; a home start for
-   `web3://` paths.
-5. Release: regenerate every snapshot once, measure the real build on both schedules, and hand the SDK one re-vendor.
+   target kind, `Bound` and `Body`, the hot read of a record's body word, the work model and floor fix.
+2. Profiles: the two topic Types with the word rule and shared vectors, the validator's laws (topic before tag,
+   address targets for TAG only, homes as parents), the text Type and the three purposes.
+3. Index: the five first-statement lists with batched writes, the reads contract split, the quote terms, the
+   step-3b amendments (every later author's first yes is filed; the exact yes-count).
+4. Readers: the three views through the read facets, with the combined lens walk, the two bounds and de-duplication
+   by thing; lookup by name, counts, the word page, children.
+5. Release: the gateway split with object, revision and home links; the viewed-place check's cut; formula 2; every
+   snapshot regenerated once, the release measured on both schedules, and one re-vendor for the SDK.
 
-Everything moves in that release: the layout id, the hot ABI id if the head read gains the number, the execution
-set, the index manifest, the plan hash, the Type ids of the directory and the new Types, and nearly every address.
+Still not built: `web3://` topic paths and `directory-alias/1` pointing at a home; the build-from-history step of a
+later index generation; the generator for the refused code point table.
+
+Everything moved in the release: the layout id, the hot ABI id, the execution set, the index manifest, the plan
+hash, the Type id of `files-name/2` and the three new Types, and nearly every address (tools/RELEASE.md, the identity
+table).
 
 ## 13. For James
 
-Nothing here blocks the work; these are the points where a different answer from you would change the build.
+Nothing here blocks the work; these are the points where a different answer from you would change the build. Each
+is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 
 1. **The number's range is −65,536 to 65,535.** It costs nothing. A wider range would cost a storage slot per tag
-   with a nonzero number. *Recommend keeping it.*
+   with a nonzero number. *Recommend keeping it.* (Q49)
 2. **A tag can only be filed under a registered topic or an address.** A chess app that wants tag-like links on its
-   own ids uses its own kind of link, at the same cost. *Recommend keeping it.*
-3. **No word may start with `~` or look like an address,** anywhere in a path. *Recommend keeping it.*
+   own ids uses its own kind of link, at the same cost. *Recommend keeping it.* (Q50)
+3. **No word may start with `~`, look like an address or contain white space,** anywhere in a path. *Recommend
+   keeping it.* (Q51)
 4. **Everyone's versions of one file are not listed on chain.** Keeping that list costs a storage slot for every
-   file ever created (about 36k gas today, 124k on Glamsterdam). *Recommend leaving it to the indexer.*
-5. **Cost.** A tag is about half the price of creating a file today, and a deep new path can take two or three
+   file ever created (about 36k gas today, 124k on Glamsterdam). *Recommend leaving it to the indexer, with the
+   build-from-history step written before any freeze.* (Q52)
+5. **The refused code point table** waits on your fold rule; until one generator produces it, the Topics Type ids
+   are provisional. (Q53) **Sybil bumping** in public "newest first" views costs about 0.34M–0.68M per bump today.
+   (Q54)
+6. **Cost.** A tag is about half the price of creating a file today, and a deep new path can take two or three
    transactions for its first use. You ruled that cost is not the constraint; these are the numbers you asked to see.

@@ -171,6 +171,12 @@
           "type": "object",
           "required": ["address", "runtimeCodehash"],
           "description": "the generation's IndexReads: its manifest and every read the generation forwards (design §10.1)"
+        },
+        "workModel": {
+          "type": "object",
+          "description": "the generation's IIndexReads.workModel(): every field of src/interfaces/Index.sol WorkModel (formula 2); verify compares it with the chain and with the gas model's floor",
+          "required": ["formulaVersion", "freshPerPublication", "rwPerPublication", "freshPerPublishFresh", "freshPerPublishExisting", "rwPerPublish", "freshPerBindFresh", "rwPerBind", "rwPerBindLater", "freshPerRef", "freshPerDigestSpec", "computeBase", "computePerAction", "computePerHookEffect", "finalComputeBase", "finalComputePerBind", "finalComputePerPublish"],
+          "additionalProperties": { "type": "integer" }
         }
       }
     },
@@ -221,11 +227,20 @@
             "rootDirectory",
             "urlBase",
             "seedUrl",
-            "ledger"
+            "ledger",
+            "content"
           ],
           "properties": {
             "resolveMode": {
               "const": "5219"
+            },
+            "content": {
+              "type": "object",
+              "description": "The EfsWeb3Content the gateway reaches by STATICCALL: its address and runtime codehash, as the gateway's CONTENT / CONTENT_CODEHASH immutables record them.",
+              "required": [
+                "address",
+                "runtimeCodehash"
+              ]
             }
           }
         },

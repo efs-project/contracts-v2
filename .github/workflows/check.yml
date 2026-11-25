@@ -12,8 +12,12 @@ permissions:
 jobs:
   foundation:
     runs-on: ubuntu-24.04
-    # The build is about 8 minutes and the ci-profile test run compiles again; 15 minutes stopped being enough once
-    # the tag suites landed (the run for c6a1627 was cancelled mid-test, not failed).
+    # One compile (about 8 minutes here): the ci profile only adds compiler OUTPUTS to the default settings (ASTs,
+    # build info, storage layouts), never a setting that changes bytecode, so the build runs under it once and every
+    # later step reuses it (the default-profile steps read a superset of what they need). Building under the default
+    # profile first made the ci-profile test step compile everything again (measured locally: 329 s default build,
+    # then 334 s of the 340 s test step recompiling, the 1,221 tests themselves about 5 s). The limit stays 40 minutes
+    # from when the job compiled twice; it can come down once a single-compile run's time is on record.
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,7 +36,14 @@ jobs:
       - run: forge soldeer install
       - run: pnpm check
       - run: forge fmt --check
+      # Sizes and runtime bytes are the same under both profiles (the ci profile changes outputs only); building
+      # under ci here is what lets `forge test` below skip its compile.
       - run: forge build --sizes
+        env:
+          FOUNDRY_PROFILE: ci
+      # `pnpm check` above ran before anything was built, so its artifact checks (the two opcode lints and the
+      # profile rules' no-immutables rule) were only reported as pending. Run them for real now that out/ exists.
+      - run: pnpm check --built
       - run: pnpm layout:check
       - run: pnpm abi:check
       - run: forge test

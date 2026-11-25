@@ -61,16 +61,33 @@ contract FloorPlanTest is FloorBase {
 
     /// `a`/`b`: the largest planned publication; `a1`/`b1`: one unit more (built only when it is within 64 actions;
     /// otherwise a 65-action publication). Both from the current state, by this contract's principal.
+    /// What the floor quotes against what the index spends, for the planned publication: the callbacks' prefix
+    /// spend (E − K − the final phase) and the final phase, with the ratios of the quote to them in thousandths.
+    struct Spend {
+        uint256 prefix;
+        uint256 finalPhase;
+        uint256 prefixRatio; // P / prefix × 1000
+        uint256 finalRatio; // F / final phase × 1000
+    }
+
     function _prove(
         string memory shape,
         Action[] memory a,
         bytes[] memory b,
         Action[] memory a1,
         bytes[] memory b1
-    ) internal {
+    ) internal returns (Spend memory sp) {
         assertEq(a.length, _u(shape, "actions"), "the vectors' publication");
         Need memory w = _need(a, b, address(0));
         _log(shape, w);
+        sp.finalPhase = _finalPhase(a, b, w.exec);
+        sp.prefix = w.exec - w.kernel - sp.finalPhase;
+        sp.prefixRatio = uint256(w.prefixFloor) * 1000 / sp.prefix;
+        sp.finalRatio = uint256(w.finalReserve) * 1000 / sp.finalPhase;
+        emit log_named_uint(string.concat("floor ", shape, " callbacks prefix"), sp.prefix);
+        emit log_named_uint(string.concat("floor ", shape, " final phase"), sp.finalPhase);
+        emit log_named_uint(string.concat("floor ", shape, " prefix ratio x1000"), sp.prefixRatio);
+        emit log_named_uint(string.concat("floor ", shape, " final ratio x1000"), sp.finalRatio);
         emit log_named_uint(string.concat("floor ", shape, " k"), _k(shape));
         emit log_named_uint(string.concat("floor ", shape, " model E"), _u(shape, "E"));
         emit log_named_uint(string.concat("floor ", shape, " model K"), _u(shape, "K"));
@@ -262,7 +279,7 @@ contract FloorPlanTest is FloorBase {
 
     /// Masks, releases and restores of asserted tags on the one-word topic (the tags, and for restores the masks,
     /// are written first).
-    function _tagTransitions(string memory shape, uint8 which) internal {
+    function _tagTransitions(string memory shape, uint8 which) internal returns (Spend memory) {
         uint256 k = _k(shape);
         uint256 n = k + 1 > 64 ? 64 : k + 1;
         _send(address(this), _tags(topic, shape, 0, n), _bodies(n));
@@ -281,19 +298,55 @@ contract FloorPlanTest is FloorBase {
             _send(address(this), masks, _bodies(n));
         }
         Action[] memory more = _more(all, k, 1);
-        _prove(shape, _prefix(all, k), _bodies(k), more, _bodies(more.length));
+        return _prove(shape, _prefix(all, k), _bodies(k), more, _bodies(more.length));
+    }
+
+    /// The quote covers the callbacks' prefix spend (and, when `final_`, the final phase) of the planned publication.
+    function _covers(Spend memory sp, bool final_) internal pure {
+        assertGe(sp.prefixRatio, 1000, "the prefix floor covers the callbacks' spend");
+        if (final_) assertGe(sp.finalRatio, 1000, "the final reserve covers the final phase");
+    }
+
+    /// Number changes of asserted tags (a REBIND to the same target with a new number) and masks of masks (an UNBIND
+    /// from MASKED with a new number; the lone negatives are written first).
+    function _restatements(string memory shape, bool masks) internal returns (Spend memory) {
+        uint256 k = _k(shape);
+        uint256 n = k + 1 > 64 ? 64 : k + 1;
+        Action[] memory first = new Action[](n);
+        for (uint256 i; i < n; ++i) {
+            first[i] = masks
+                ? EfsTopics.deny(topic, _thing(shape, i), 0, 0)
+                : EfsTopics.tag(topic, _thing(shape, i), 0, 0);
+        }
+        _send(address(this), first, _bodies(n));
+        Action[] memory all = new Action[](65);
+        for (uint256 i; i < 65; ++i) {
+            all[i] = masks
+                ? EfsTopics.deny(topic, _thing(shape, i), 1, 3)
+                : EfsTopics.tag(topic, _thing(shape, i), 1, 7);
+        }
+        Action[] memory more = _more(all, k, 1);
+        return _prove(shape, _prefix(all, k), _bodies(k), more, _bodies(more.length));
+    }
+
+    function test_plan_tag_number_changes() public {
+        _covers(_restatements("tagNumberChanges", false), true);
+    }
+
+    function test_plan_masks_of_masks() public {
+        _covers(_restatements("masksOfMasks", true), true);
     }
 
     function test_plan_tag_masks() public {
-        _tagTransitions("tagMasks", 0);
+        _covers(_tagTransitions("tagMasks", 0), true);
     }
 
     function test_plan_tag_releases() public {
-        _tagTransitions("tagReleases", 1);
+        _covers(_tagTransitions("tagReleases", 1), true);
     }
 
     function test_plan_tag_restores() public {
-        _tagTransitions("tagRestores", 2);
+        _covers(_tagTransitions("tagRestores", 2), true);
     }
 
     /// A 12-byte word `floorplan` + three letters, distinct per i (< 26^3).
@@ -377,5 +430,114 @@ contract FloorPlanTest is FloorBase {
         (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k * 5);
         (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
         _prove("createFiles", a, b, a1, b1);
+    }
+
+    // ---- re-binds and publishes (work-model formula 2) -----------------------------------------------------------
+
+    /// A ten-byte name `<pre><3 letters>.txt` (pre is three bytes), distinct per i (< 26^3).
+    function _nm(string memory pre, uint256 i) internal pure returns (bytes memory) {
+        return bytes.concat(
+            bytes(pre),
+            bytes1(uint8(97 + (i / 676) % 26)),
+            bytes1(uint8(97 + (i / 26) % 26)),
+            bytes1(uint8(97 + i % 26)),
+            ".txt"
+        );
+    }
+
+    /// Creates `n` files `<pre>xyz.txt` in the root folder (five actions each, in publications of 50); returns them.
+    function _filesIn(string memory pre, uint256 n) internal returns (bytes32[] memory f) {
+        f = new bytes32[](n);
+        Action[] memory a = new Action[](n * 5);
+        bytes[] memory b = new bytes[](n * 5);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 file,) = EfsFiles.createFile(
+                _filesTypes(),
+                p,
+                rootDir,
+                keccak256(abi.encode("floor-plan rebind", pre, i)),
+                _nm(pre, i),
+                "Meeting at 10:00.\n",
+                true
+            );
+            f[i] = file;
+            for (uint256 j; j < 5; ++j) {
+                (a[i * 5 + j], b[i * 5 + j]) = (x[j], y[j]);
+            }
+        }
+        _sendSliced(address(this), a, b, 50);
+    }
+
+    /// k re-binds of root-folder entries (`fa-…`) from their files to other files (`fb-…`'s).
+    function test_plan_folder_rebinds() public {
+        uint256 k = _k("folderRebinds");
+        uint256 n = k + 1 > 64 ? 64 : k + 1;
+        _filesIn("fa-", n);
+        bytes32[] memory other = _filesIn("fb-", n);
+        Action[] memory all = new Action[](65);
+        for (uint256 i; i < 65; ++i) {
+            all[i] = EfsFiles.bind(
+                Purpose.FOLDER, rootDir, keccak256(_nm("fa-", i)), i < n ? other[i] : bytes32(0), 1
+            );
+        }
+        Action[] memory more = _more(all, k, 1);
+        // the prefix is covered; the final phase of a folder re-bind (≈ 13k, the Files validator's reads) is above the
+        // per-bind reserve, which is set from first tags on distinct topics (design §10.4): only the planner's E pays it
+        _covers(
+            _prove("folderRebinds", _prefix(all, k), _bodies(k), more, _bodies(more.length)), false
+        );
+    }
+
+    /// 65 name records `<pre>xyz.txt` (10 bytes each).
+    function _nameRecords(string memory pre)
+        internal
+        view
+        returns (Action[] memory all, bytes[] memory bodies)
+    {
+        all = new Action[](65);
+        bodies = new bytes[](65);
+        for (uint256 i; i < 65; ++i) {
+            (all[i], bodies[i]) = _name(_nm(pre, i));
+            assertEq(bodies[i].length, 10);
+        }
+    }
+
+    /// k repeat PUBLISHes of existing name records (the same bodies published once before).
+    function test_plan_repeat_publishes() public {
+        uint256 k = _k("repeatPublishes");
+        uint256 n = k + 1 > 64 ? 64 : k + 1;
+        (Action[] memory all, bytes[] memory bodies) = _nameRecords("rp-");
+        (Action[] memory first, bytes[] memory fb) = _slice(all, bodies, n);
+        _send(address(this), first, fb);
+        uint256 m = (k + 1) > 64 ? 65 : k + 1;
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        _covers(_prove("repeatPublishes", a, b, a1, b1), true);
+    }
+
+    /// k fresh name records (publish-heavy: the final phase's per-publish term).
+    function test_plan_name_records() public {
+        uint256 k = _k("nameRecords");
+        (Action[] memory all, bytes[] memory bodies) = _nameRecords("nr-");
+        uint256 m = (k + 1) > 64 ? 65 : k + 1;
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        _covers(_prove("nameRecords", a, b, a1, b1), true);
+    }
+
+    /// k units of a fresh name record and a first tag on the one-word topic (2 actions each).
+    function test_plan_publishes_and_tags() public {
+        uint256 k = _k("publishesAndTags");
+        (Action[] memory names, bytes[] memory nb) = _nameRecords("pt-");
+        Action[] memory all = new Action[](66);
+        bytes[] memory bodies = new bytes[](66);
+        for (uint256 i; i < 33; ++i) {
+            (all[2 * i], bodies[2 * i]) = (names[i], nb[i]);
+            all[2 * i + 1] = EfsTopics.tag(topic, _thing("publishesAndTags", i), 0, 0);
+        }
+        uint256 m = (k + 1) * 2 > 64 ? 65 : (k + 1) * 2;
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k * 2);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        _covers(_prove("publishesAndTags", a, b, a1, b1), true);
     }
 }

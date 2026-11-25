@@ -160,6 +160,11 @@
       },
       {
         "internalType": "uint16",
+        "name": "freshPerPublishExisting",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
         "name": "rwPerPublish",
         "type": "uint16"
       },
@@ -171,6 +176,11 @@
       {
         "internalType": "uint16",
         "name": "rwPerBind",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "rwPerBindLater",
         "type": "uint16"
       },
       {
@@ -206,6 +216,11 @@
       {
         "internalType": "uint32",
         "name": "finalComputePerBind",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "finalComputePerPublish",
         "type": "uint32"
       }
     ]
@@ -587,6 +602,11 @@
               "internalType": "uint16"
             },
             {
+              "name": "freshPerPublishExisting",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
               "name": "rwPerPublish",
               "type": "uint16",
               "internalType": "uint16"
@@ -598,6 +618,11 @@
             },
             {
               "name": "rwPerBind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerBindLater",
               "type": "uint16",
               "internalType": "uint16"
             },
@@ -633,6 +658,11 @@
             },
             {
               "name": "finalComputePerBind",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "finalComputePerPublish",
               "type": "uint32",
               "internalType": "uint32"
             }
@@ -922,6 +952,11 @@
               "internalType": "uint16"
             },
             {
+              "name": "freshPerPublishExisting",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
               "name": "rwPerPublish",
               "type": "uint16",
               "internalType": "uint16"
@@ -933,6 +968,11 @@
             },
             {
               "name": "rwPerBind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerBindLater",
               "type": "uint16",
               "internalType": "uint16"
             },
@@ -968,6 +1008,11 @@
             },
             {
               "name": "finalComputePerBind",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "finalComputePerPublish",
               "type": "uint32",
               "internalType": "uint32"
             }

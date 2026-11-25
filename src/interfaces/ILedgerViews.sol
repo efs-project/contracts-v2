@@ -27,6 +27,13 @@ interface ILedgerViews {
         view
         returns (Head[] memory, BasisCommit memory);
 
+    /// The state word alone of each head (0 UNSET, 1 BOUND, 2 MASKED, 3 RELEASED; a reserved state as stored): one
+    /// storage word per key, at most maxReadIds keys.
+    function headStates(address ledger, bytes32[] calldata keys)
+        external
+        view
+        returns (uint8[] memory states, BasisCommit memory);
+
     /// Ordered first-touch: BOUND or MASKED wins; UNSET/RELEASED fall through.
     function headsAt(address ledger, bytes32[] calldata principals, bytes32 position)
         external

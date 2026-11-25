@@ -357,6 +357,143 @@ contract TopicFaultyTest is TopicReadersBase {
         _everyoneF();
     }
 
+    // ---- the viewed-place check: the author-list shortcut and the head-state read --------------------------------
+
+    function _hasThing(MineRow[] memory rows, bytes32 thing) internal pure returns (bool) {
+        for (uint256 i; i < rows.length; ++i) {
+            if (rows[i].thing == thing) return true;
+        }
+        return false;
+    }
+
+    /// The viewed position of alice's roll-up row (things[1] under t[1], viewed at t[0]) gets a stranger's statement,
+    /// so the check reads alice's head state there (`headStates`); each fault of that read is a named revert.
+    function test_head_state_faults_are_named_reverts() public {
+        _tag(carol, t[0], things[1]); // a stranger at the viewed position: its author list is not empty
+        (, MineRow[] memory want) = _mineF(true);
+        assertTrue(_hasThing(want, things[1]), "the stranger hides nothing");
+        // reply words: 0 offset, 1..6 basis, 7 length, 8 the first state
+        fv.setMode(ILedgerViews.headStates.selector, M_REVERT);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                E_TOPIC_READ.selector, address(fv), ILedgerViews.headStates.selector
+            )
+        );
+        _mineF(true);
+        fv.setMode(ILedgerViews.headStates.selector, M_EXHAUST);
+        vm.expectPartialRevert(E_TOPIC_READ.selector);
+        _mineF(true);
+        fv.setMode(ILedgerViews.headStates.selector, M_EMPTY);
+        vm.expectRevert(
+            abi.encodeWithSelector(E_TOPIC_REPLY.selector, ILedgerViews.headStates.selector, 0)
+        );
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_SHORT, 0, 200);
+        vm.expectPartialRevert(E_TOPIC_REPLY.selector);
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_SET_WORD, 8, 7); // a reserved state
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_STATUS.selector, uint8(Status.UNSUPPORTED)));
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_SET_WORD, 8, 256); // past uint8: the decoder refuses
+        vm.expectRevert();
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_SET_WORD, 7, 0); // no states for the keys asked
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 4));
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_ADD_WORD, 7, 1); // a length past the reply
+        vm.expectRevert();
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_SET_WORD, 1, uint256(keccak256("e")));
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 5)); // another basis
+        _mineF(true);
+        _set(fv, ILedgerViews.headStates.selector, M_EXTRA, 0, 64);
+        (, MineRow[] memory got) = _mineF(true);
+        assertEq(
+            keccak256(abi.encode(got)), keccak256(abi.encode(want)), "trailing bytes tolerated"
+        );
+    }
+
+    /// A lens of four whose every author has a "not this" at t[0] about another thing (none is all live, so all four
+    /// are asked about alice's roll-up row things[1] at the viewed place, enough for the author-list read).
+    function _lens4() internal returns (bytes32[] memory l) {
+        address dave = makeAddr("fault/dave");
+        address erin = makeAddr("fault/erin");
+        _deny(dave, t[0], things[2]);
+        _deny(erin, t[0], things[2]);
+        l = new bytes32[](4);
+        l[0] = _pid(carol); // "not this" at t[0] about things[0]
+        l[1] = _pid(dave);
+        l[2] = _pid(erin);
+        l[3] = _pid(alice); // "not this" at t[0] about things[2]; files things[1] under t[1]
+    }
+
+    /// The viewed position's author list decides only "nobody stated anything here", and only at COMPLETE coverage:
+    /// UNKNOWN or PARTIAL asks the heads as before (observed here by arming the head-state read to revert), so a list
+    /// the index cannot vouch for is never read as "nobody"; UNSET coverage and a count in the future are faults.
+    function test_an_author_list_the_index_cannot_vouch_for_never_reads_as_nobody() public {
+        bytes32[] memory lens = _lens4();
+        (, MineRow[] memory want) = fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        assertTrue(_hasThing(want, things[1]), "nobody stated anything at the viewed position");
+        // COMPLETE and empty: no head is read at the viewed place
+        fv.setMode(ILedgerViews.headStates.selector, M_REVERT);
+        (, MineRow[] memory got) = fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        assertEq(keccak256(abi.encode(got)), keccak256(abi.encode(want)), "no state read");
+        for (uint256 c = uint8(Coverage.UNKNOWN); c <= uint8(Coverage.PARTIAL); ++c) {
+            fi.setFault(
+                IIndexReads.postingHeadOf.selector,
+                FaultyReads.Fault(M_SET_WORD, 0, true, F_POSITION_AUTHORS, c)
+            );
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    E_TOPIC_READ.selector, address(fv), ILedgerViews.headStates.selector
+                )
+            );
+            fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        }
+        fv.clear(ILedgerViews.headStates.selector);
+        (TopicPageInfo memory info, MineRow[] memory asked) =
+            fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        assertEq(uint8(info.q.status), uint8(Status.PRESENT));
+        assertEq(keccak256(abi.encode(asked)), keccak256(abi.encode(want)), "asked: the same rows");
+        fi.setFault(
+            IIndexReads.postingHeadOf.selector,
+            FaultyReads.Fault(M_SET_WORD, 0, true, F_POSITION_AUTHORS, 0)
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(E_TOPIC_REPLY.selector, IIndexReads.postingHeadOf.selector, 0)
+        );
+        fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        fi.setFault(
+            IIndexReads.postingHeadOf.selector,
+            FaultyReads.Fault(M_FUTURE_ADMISSION, 1, true, F_POSITION_AUTHORS, 1)
+        );
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_INCONSISTENT.selector, 1));
+        fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        // a lens author's "not this" at the viewed place hides, whatever the list's coverage says
+        fi.clear(IIndexReads.postingHeadOf.selector);
+        _deny(makeAddr("fault/erin"), t[0], things[1]);
+        (, got) = fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        assertFalse(_hasThing(got, things[1]), "erin (index 2) hides it at the viewed place");
+        fi.setFault(
+            IIndexReads.postingHeadOf.selector,
+            FaultyReads.Fault(M_SET_WORD, 0, true, F_POSITION_AUTHORS, uint8(Coverage.UNKNOWN))
+        );
+        (, got) = fp.mine(lens, t[0], true, _unbound(), "", 0, 0, 0);
+        assertFalse(_hasThing(got, things[1]), "UNKNOWN never reads as nobody");
+    }
+
+    /// The all-live scope shortcut holds only at COMPLETE live-scope coverage: at PARTIAL every lens author is asked,
+    /// and the rows are the faithful ones (the page says PARTIAL).
+    function test_a_partial_scope_coverage_asks_every_lens_author() public {
+        // bob's exact list at t[0] is all live (bob is skipped at COMPLETE); a stranger keeps the author list full
+        _tag(carol, t[0], things[1]);
+        (, MineRow[] memory want) = _mineF(true);
+        _set(fi, IIndexReads.coverage.selector, M_SET_WORD, 0, uint8(Coverage.PARTIAL));
+        (TopicPageInfo memory info, MineRow[] memory got) = _mineF(true);
+        assertEq(uint8(info.listingCoverage), uint8(Coverage.PARTIAL));
+        assertEq(keccak256(abi.encode(got)), keccak256(abi.encode(want)));
+    }
+
     // ---- refusals as data ------------------------------------------------------------------------------------
 
     function test_a_foreign_layout_is_unsupported_as_data() public {

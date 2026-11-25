@@ -260,6 +260,8 @@ contract NoLedgerTest is FacetFixture {
         vm.expectRevert(refusal);
         views.heads(l, keys);
         vm.expectRevert(refusal);
+        views.headStates(l, keys);
+        vm.expectRevert(refusal);
         views.headSnapshots(l, principals, positions);
     }
 

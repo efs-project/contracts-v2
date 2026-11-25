@@ -33,7 +33,7 @@ import { concat as concatHex, createPublicClient, createWalletClient, custom, de
 import { privateKeyToAccount } from "viem/accounts";
 import {
   ADMIN_SLOT, DEFAULTS, FACTORY, FACTORY_RUNTIME, FIXTURE_KEY, IMPLEMENTATION_SLOT,
-  buildPlan, domainSeparator, executionSet, jsonable, keys, limitsProfileId, planDocument, root, toJSON, validate,
+  FLOOR_LIMIT_FIELDS, buildPlan, domainSeparator, executionSet, jsonable, keys, limitsProfileId, planDocument, priceMismatches, root, toJSON, validate,
 } from "./deploy-plan.mjs";
 import {
   DEFAULT_RANGES, EXIT, FixtureError, allocate, assertName, defaultName, gc as registryGc, instanceDir, leasePath, list as registryList,
@@ -377,7 +377,7 @@ function upResult(lease, plan, { home, releaseWritten }) {
     rpcUrl: lease.url, host: lease.host, port: lease.port, chainId: lease.chainId, realmSalt: lease.realmSalt, realmId: plan.realm.realmId,
     pid: lease.pid, stateDir: lease.stateDir, deployment: lease.deployment, expected: lease.expected, journal: lease.journal, log: lease.log,
     ledger: a.ledgerProxy, registry: a.registryProxy, controller: a.controller,
-    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, lensReader: a.lensReader, filesPageReader: a.filesPageReader, topicMineReader: a.topicMineReader, topicEveryoneReader: a.topicEveryoneReader, topicLookupReader: a.topicLookupReader, keysView: a.keysView, web3Gateway: a.web3Gateway },
+    readers: { ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, lensReader: a.lensReader, filesPageReader: a.filesPageReader, topicMineReader: a.topicMineReader, topicEveryoneReader: a.topicEveryoneReader, topicLookupReader: a.topicLookupReader, keysView: a.keysView, web3Gateway: a.web3Gateway, web3Content: a.web3Content },
     keysView: a.keysView,
     web3Gateway: a.web3Gateway,
     web3Url: `${plan.gateway.urlBase}~efs/o/${plan.gateway.rootDirectory}/`,
@@ -896,6 +896,32 @@ export async function verify(o = {}) {
   eq("keysView bindingKey", await read(pub, kv, "KeysView", "bindingKey", [exp.root.principalId, headPos]), readme.headKey);
   eq("keysView scopeKey", await read(pub, kv, "KeysView", "scopeKey", [exp.root.principalId, keccak256(toHex("efs/purpose/folder/1")), exp.folder.directoryRecordId]), exp.file.scopeKey);
   for (const spec of plan.index.specs) eq(`index digestSpecCount ${spec.typeId.slice(0, 10)}`, await read(pub, a.index, "RealmIndex", "digestSpecCount", [spec.typeId]), 1n);
+
+  // 9d. the index prices like the release: the work model the deployed index answers (workModel(), every field of the
+  // ABI's WorkModel, formulaVersion included) equals the deploy plan's and every gas-model floor's (release.json
+  // gasModel, and gas/model.json in a checkout; one index serves every schedule), and the Realm's floor prices
+  // (describe().limits) equal the floor.limits of the schedule that prices this chain. A planner sizes publications
+  // from those documents, so any difference would let it plan what the kernel refuses.
+  {
+    const wmChain = await read(pub, a.index, "RealmIndex", "workModel");
+    const wmFields = abiOf("RealmIndex").find((i) => i.name === "workModel").outputs[0].components.map((c) => c.name);
+    const relModel = JSON.parse(readFileSync(join(REL, "release.json"), "utf8")).gasModel;
+    const modelFile = join(plan.local.repoRoot, "gas/model.json");
+    const model = existsSync(modelFile) ? JSON.parse(readFileSync(modelFile, "utf8")) : null;
+    const wmSources = { "deploy plan workModel": plan.workModel, "efs-deployment.json index.workModel": dep.index?.workModel };
+    const floorSources = {};
+    for (const [s, sched] of Object.entries(relModel?.schedules ?? {})) wmSources[`release.json gasModel.schedules.${s}.floor.workModel`] = sched.floor?.workModel;
+    for (const [s, prof] of Object.entries(model?.profiles ?? {})) wmSources[`gas/model.json profiles.${s}.floor.workModel`] = prof.floor?.workModel;
+    const sched = HARDFORKS[hardfork]?.feeSchedule;
+    floorSources[`release.json gasModel.schedules.${sched}.floor.limits`] = relModel?.schedules?.[sched]?.floor?.limits;
+    if (model) floorSources[`gas/model.json profiles.${sched}.floor.limits`] = model.profiles?.[sched]?.floor?.limits;
+    const misses = [
+      ...priceMismatches("workModel", wmFields, wmChain, wmSources),
+      ...priceMismatches("floor.limits", FLOOR_LIMIT_FIELDS, d.limits, floorSources),
+    ];
+    checked.pricing = (checked.pricing ?? 0) + wmFields.length * Object.keys(wmSources).length + FLOOR_LIMIT_FIELDS.length * Object.keys(floorSources).length;
+    for (const m of misses) failures.push(`pricing ${m}`);
+  }
   eq("seed root-is-directory", (await read(pub, a.ledgerProxy, "LedgerCore", "recordHeader", [dep.root.directoryRecordId]))[0], dep.typeIds["files-directory/1"]);
 
   // 9b. the readers: immutables, the directory listing, and one page of the seeded folder
@@ -931,10 +957,17 @@ export async function verify(o = {}) {
   const gw = a.web3Gateway;
   eq("gateway deployment", [dep.readers.web3Gateway?.address, dep.readers.web3Gateway?.rootDirectory], [gw, exp.root.directoryRecordId]);
   eq("gateway resolveMode", await read(pub, gw, "EfsWeb3Gateway", "resolveMode"), pad(toHex("5219"), { dir: "right", size: 32 }));
-  for (const [fn, value] of [["ledger", a.ledgerProxy], ["READS", a.ledgerReads], ["VIEWS", a.ledgerViews], ["PAGER", pageR], ["layoutId", plan.layoutId], ["ROOT_DIRECTORY", exp.root.directoryRecordId],
-    ["DIRECTORY_TYPE", dep.typeIds["files-directory/1"]], ["NAME_TYPE", dep.typeIds["files-name/2"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]],
-    ["CONTENT_TYPE", dep.typeIds["files-content/1"]], ["EXTERNAL_TYPE", dep.typeIds["files-external/1"]], ["BYTES_TYPE", dep.typeIds["files-bytes/1"]], ["SPAN_TYPE", dep.typeIds["files-span/1"]]]) {
+  // the entry point names its content server by address and codehash; both are the plan's and the deployment's
+  const gwc = a.web3Content;
+  eq("gateway content deployment", [dep.readers.web3Gateway?.content?.address, dep.readers.web3Gateway?.content?.runtimeCodehash], [gwc, plan.gateway.content.runtimeCodehash]);
+  eq("gateway content codehash", keccak256(await pub.getCode({ address: gwc })), plan.gateway.content.runtimeCodehash);
+  for (const [fn, value] of [["ledger", a.ledgerProxy], ["READS", a.ledgerReads], ["VIEWS", a.ledgerViews], ["PAGER", pageR], ["CONTENT", gwc], ["CONTENT_CODEHASH", plan.gateway.content.runtimeCodehash],
+    ["layoutId", plan.layoutId], ["ROOT_DIRECTORY", exp.root.directoryRecordId], ["DIRECTORY_TYPE", dep.typeIds["files-directory/1"]]]) {
     eq(`gateway ${fn}`, await read(pub, gw, "EfsWeb3Gateway", fn), value);
+  }
+  for (const [fn, value] of [["ledger", a.ledgerProxy], ["READS", a.ledgerReads], ["layoutId", plan.layoutId], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]],
+    ["CONTENT_TYPE", dep.typeIds["files-content/1"]], ["EXTERNAL_TYPE", dep.typeIds["files-external/1"]], ["BYTES_TYPE", dep.typeIds["files-bytes/1"]], ["SPAN_TYPE", dep.typeIds["files-span/1"]]]) {
+    eq(`gateway content ${fn}`, await read(pub, gwc, "EfsWeb3Content", fn), value);
   }
   // what a web3:// client does with a URL path: split, percent-decode, call request(); the body is bytes, not UTF-8
   const web3Get = async (path) => {
@@ -968,10 +1001,29 @@ export async function verify(o = {}) {
   eq("gateway listing", [listed.status, listed.headers["x-efs-listing"], JSON.parse(hexToString(listed.body))], [200, "complete", { entries: exp.files.map((f) => ({ name: f.name, kind: "file" })), complete: true }]);
   eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 416]);
   // the first segment decides the kind: a plain word is a topic (not served, so `docs` is never a folder there),
-  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing); an existing object's id
-  // that is not a folder (the sample file's subject, its revision record) and a revision link are 501, never 404;
-  // only an id that names nothing is 404
-  eq("gateway forms", [(await web3Get(`/docs/${gwReadme.name}`)).status, (await web3Get(`/~home/${dep.actors.fixturePrincipal}/docs`)).status, (await web3Get(`/${exp.root.principalId}/docs`)).status, (await web3Get(`/~efs/o/${exp.file.subjectId}/`)).status, (await web3Get(`/~efs/o/${exp.file.rootRecordId}/`)).status, (await web3Get(`/~efs/v/${exp.file.rootRecordId}`)).status, (await web3Get(`/~efs/o/${keccak256(toHex("efs/fixture/no such object"))}/`)).status], [501, 400, 400, 501, 501, 501, 404]);
+  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing); the id of an existing
+  // object that is neither a folder nor a file (the sample file's revision record) is 501, never 404, and so is a
+  // revision link to a record that is not a revision (the root folder); only an id that names nothing is 404
+  const nothing = keccak256(toHex("efs/fixture/no such object"));
+  eq("gateway forms", [(await web3Get(`/docs/${gwReadme.name}`)).status, (await web3Get(`/~home/${dep.actors.fixturePrincipal}/docs`)).status, (await web3Get(`/${exp.root.principalId}/docs`)).status, (await web3Get(`/~efs/o/${exp.file.rootRecordId}/`)).status, (await web3Get(`/~efs/v/${exp.root.directoryRecordId}`)).status, (await web3Get(`/~efs/o/${nothing}/`)).status, (await web3Get(`/~efs/v/${nothing}`)).status, (await web3Get("/~efs/v")).status],
+    [501, 400, 400, 501, 501, 404, 404, 400]);
+  // the sample file by its object link (its creator's HEAD) and by its revision link serve the sample bytes
+  const byId = await web3Get(`/~efs/o/${exp.file.subjectId}`);
+  eq("gateway file by id", [byId.status, sha256(byId.body), byId.headers["x-efs-record"], byId.headers["content-type"]], [200, gwReadme.sha256, exp.file.rootRecordId, "application/octet-stream"]);
+  const byRevision = await web3Get(`/~efs/v/${exp.file.rootRecordId}`);
+  eq("gateway revision link", [byRevision.status, sha256(byRevision.body), byRevision.headers["x-efs-record"]], [200, gwReadme.sha256, exp.file.rootRecordId]);
+  // big.bin through both forms, chunk by chunk
+  for (const [label, first] of [["by id", `/~efs/o/${gwBig.subjectId}`], ["by revision", `/~efs/v/${gwBig.headRecordId}`]]) {
+    const got = [];
+    for (let url = first; url; ) {
+      const r = await web3Get(url);
+      eq(`gateway big ${label} chunk ${got.length}`, [r.status, r.headers["x-efs-record"], r.headers["content-type"]], [200, gwBig.headRecordId, gwBig.media]);
+      got.push(r.body);
+      url = r.status === 200 && got.length <= gwBig.chunkCount ? r.headers["web3-next-chunk"] : undefined;
+    }
+    const all = concatHex(got);
+    eq(`gateway big ${label}`, [got.length, size(all), sha256(all)], [gwBig.chunkCount, gwBig.length, gwBig.sha256]);
+  }
   const homeDir = await web3Get(`/${dep.actors.fixturePrincipal}/`);
   eq("gateway home", [homeDir.status, homeDir.headers["x-efs-home"], homeDir.headers["x-efs-listing"]], [200, dep.actors.fixturePrincipal.toLowerCase(), "complete"]);
 

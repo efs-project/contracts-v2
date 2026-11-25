@@ -105,6 +105,53 @@ contract TopicReadMeasureTest is TopicReadersBase {
         _mineCase(64, 64);
     }
 
+    /// The worst case of the viewed-place check: the `mine` fixture at depth 8, where every row DOES read the heads
+    /// at the viewed place. Before the filings, the last lens author says yes to every thing at the place itself
+    /// (so the viewed position's author list is not empty) and every lens author says "not this" about one other
+    /// thing there (so no lens author's exact scope list at the place is all live). Those entries are older than
+    /// every filing, so a page of 50 reads only the 50 roll-up rows, and every row still shows: no lens author
+    /// masks the row's own thing at the place. Rows log as `tr mine worst lens=L depth=8 page=P`.
+    function _mineWorstCase(uint256 lensSize) internal {
+        vm.pauseGasMetering();
+        string memory k = string.concat("w", vm.toString(lensSize));
+        address[] memory a = _authorsN(k, lensSize);
+        bytes32[] memory t = _regPath(string.concat("dw", vm.toString(lensSize)), 8);
+        bytes32[] memory xs = _things(THINGS);
+        bytes32 decoy = _things(1)[0];
+        for (uint256 i; i < lensSize; ++i) {
+            _act(a[i], EfsTopics.deny(t[0], decoy, 0, 0));
+        }
+        Action[] memory yes = new Action[](THINGS);
+        for (uint256 i; i < THINGS; ++i) {
+            yes[i] = EfsTopics.tag(t[0], xs[i], 0, 0);
+        }
+        _execAs(a[lensSize - 1], yes, new bytes[](THINGS));
+        for (uint256 i; i < THINGS; ++i) {
+            _act(a[i % lensSize], EfsTopics.tag(t[7], xs[i], 0, 0));
+        }
+        vm.resumeGasMetering();
+        bytes32[] memory lens = _lensOf(a);
+        string memory key = string.concat("mine worst lens=", vm.toString(lensSize), " depth=8");
+        _log(string.concat(key, " page=10"), _mineGas(lens, t[0], 10));
+        _log(string.concat(key, " page=50"), _mineGas(lens, t[0], 50));
+    }
+
+    function test_mine_worst_lens1() public {
+        _mineWorstCase(1);
+    }
+
+    function test_mine_worst_lens8() public {
+        _mineWorstCase(8);
+    }
+
+    function test_mine_worst_lens32() public {
+        _mineWorstCase(32);
+    }
+
+    function test_mine_worst_lens64() public {
+        _mineWorstCase(64);
+    }
+
     // ---- everyone, raw, about --------------------------------------------------------------------------------
 
     function _everyoneGas(bytes32 place, bool below, bytes32[] memory lens, bool raw, uint32 limit)
@@ -145,6 +192,28 @@ contract TopicReadMeasureTest is TopicReadersBase {
             _log(string.concat("everyone below lens=8", k), _everyoneGas(top, true, lens, false, n));
             _log(string.concat("raw exact", k), _everyoneGas(kid, false, new bytes32[](0), true, n));
             _log(string.concat("raw below", k), _everyoneGas(top, true, new bytes32[](0), true, n));
+        }
+    }
+
+    /// The worst case of `everyone` below: the same 60 things filed at the place and then under its child, so every
+    /// row (a child filing, the newest) has a statement at the viewed place (the viewed position's author list is
+    /// not empty) and every one of the 8 silent lens authors is asked there. Rows log as
+    /// `tr everyone worst below lens=8 page=P`.
+    function test_everyone_worst_below() public {
+        vm.pauseGasMetering();
+        bytes32 top = _regPath("evw", 1)[0];
+        bytes32 kid = _child(top, "kid", true);
+        bytes32[] memory xs = _things(60);
+        _tagMany(alice, top, xs);
+        _tagMany(alice, kid, xs);
+        address[] memory a = _authorsN("evwlens", 8);
+        vm.resumeGasMetering();
+        bytes32[] memory lens = _lensOf(a);
+        for (uint32 n = 10; n <= 50; n += 40) {
+            _log(
+                string.concat("everyone worst below lens=8 page=", vm.toString(n)),
+                _everyoneGas(top, true, lens, false, n)
+            );
         }
     }
 

@@ -1,9 +1,9 @@
 {
   "schema": "efs-gas-report/1",
   "measurement": {
-    "commit": "a5a54161876dc5d80d64f89b3825ef9f4c464c6c",
+    "commit": "98b375605a5b41cff22d3b92100f04a43670034b",
     "dirtyFiles": 0,
-    "date": "2026-11-25T18:01:41.353Z",
+    "date": "2026-11-25T19:41:52.357Z",
     "foundry": "forge Version: 1.8.3"
   },
   "method": {
@@ -24,12 +24,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       },
       "designEstimate": null
@@ -43,12 +43,12 @@
       },
       "conditions": "files-directory/1, 64-byte body (two words, as the design row's 41 B / 2 words); the author has published before",
       "prague": {
-        "gas": 573197,
-        "frameGas": 569444
+        "gas": 573824,
+        "frameGas": 570071
       },
       "amsterdam": {
-        "gas": 1853044,
-        "frameGas": 478410,
+        "gas": 1853671,
+        "frameGas": 479037,
         "frameStateGas": 1370880
       },
       "designEstimate": {
@@ -65,12 +65,12 @@
       },
       "conditions": "first placement in the root folder (a fresh scope, not steady)",
       "prague": {
-        "gas": 1321322,
-        "frameGas": 1316454
+        "gas": 1321839,
+        "frameGas": 1316971
       },
       "amsterdam": {
-        "gas": 4794634,
-        "frameGas": 970886,
+        "gas": 4795163,
+        "frameGas": 971415,
         "frameStateGas": 3818880
       },
       "designEstimate": {
@@ -87,12 +87,12 @@
       },
       "conditions": "first placement in a fresh folder; 18-byte inline document",
       "prague": {
-        "gas": 1683543,
-        "frameGas": 1677534
+        "gas": 1683951,
+        "frameGas": 1677942
       },
       "amsterdam": {
-        "gas": 6044008,
-        "frameGas": 1239920,
+        "gas": 6044428,
+        "frameGas": 1240340,
         "frameStateGas": 4798080
       },
       "designEstimate": {
@@ -109,12 +109,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 864216,
-        "frameGas": 859873
+        "gas": 864874,
+        "frameGas": 860531
       },
       "amsterdam": {
-        "gas": 2774944,
-        "frameGas": 714281,
+        "gas": 2775614,
+        "frameGas": 714951,
         "frameStateGas": 2056320
       },
       "designEstimate": {
@@ -131,12 +131,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 1118766,
-        "frameGas": 1113878
+        "gas": 1119384,
+        "frameGas": 1114496
       },
       "amsterdam": {
-        "gas": 3607839,
-        "frameGas": 959110,
+        "gas": 3608491,
+        "frameGas": 959762,
         "frameStateGas": 2643840
       },
       "designEstimate": {
@@ -153,12 +153,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 450695,
-        "frameGas": 446932
+        "gas": 451410,
+        "frameGas": 447647
       },
       "amsterdam": {
-        "gas": 1210021,
-        "frameGas": 422898,
+        "gas": 1210736,
+        "frameGas": 423613,
         "frameStateGas": 783360
       },
       "designEstimate": {
@@ -175,12 +175,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 485300,
-        "frameGas": 481534
+        "gas": 485955,
+        "frameGas": 482189
       },
       "amsterdam": {
-        "gas": 1259127,
-        "frameGas": 472000,
+        "gas": 1259816,
+        "frameGas": 472689,
         "frameStateGas": 783360
       },
       "designEstimate": {
@@ -197,12 +197,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 399801,
-        "frameGas": 396061
+        "gas": 400516,
+        "frameGas": 396776
       },
       "amsterdam": {
-        "gas": 1064041,
-        "frameGas": 374861,
+        "gas": 1064756,
+        "frameGas": 375576,
         "frameStateGas": 685440
       },
       "designEstimate": {
@@ -219,12 +219,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 434799,
-        "frameGas": 431031
+        "gas": 435504,
+        "frameGas": 431736
       },
       "amsterdam": {
-        "gas": 1113441,
-        "frameGas": 424231,
+        "gas": 1114146,
+        "frameGas": 424936,
         "frameStateGas": 685440
       },
       "designEstimate": {
@@ -241,12 +241,12 @@
       },
       "conditions": "same target, not a different old target",
       "prague": {
-        "gas": 500207,
-        "frameGas": 496464
+        "gas": 500862,
+        "frameGas": 497119
       },
       "amsterdam": {
-        "gas": 1354754,
-        "frameGas": 469730,
+        "gas": 1355397,
+        "frameGas": 470373,
         "frameStateGas": 881280
       },
       "designEstimate": {
@@ -263,12 +263,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 443839,
-        "frameGas": 440101
+        "gas": 444440,
+        "frameGas": 440702
       },
       "amsterdam": {
-        "gas": 1283486,
-        "frameGas": 398467,
+        "gas": 1284087,
+        "frameGas": 399068,
         "frameStateGas": 881280
       },
       "designEstimate": {
@@ -285,12 +285,12 @@
         "label": "recipe bind before its parent and name publish"
       },
       "prague": {
-        "gas": 1418503,
-        "frameGas": 1413076
+        "gas": 1419010,
+        "frameGas": 1413583
       },
       "amsterdam": {
-        "gas": 5155775,
-        "frameGas": 1037708,
+        "gas": 5156282,
+        "frameGas": 1038215,
         "frameStateGas": 4112640
       }
     },
@@ -301,12 +301,12 @@
         "label": "recipe place under a withdrawn directory"
       },
       "prague": {
-        "gas": 997357,
-        "frameGas": 993049
+        "gas": 997884,
+        "frameGas": 993576
       },
       "amsterdam": {
-        "gas": 3443029,
-        "frameGas": 794881,
+        "gas": 3443556,
+        "frameGas": 795408,
         "frameStateGas": 2643840
       }
     },
@@ -317,12 +317,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -333,12 +333,12 @@
         "label": "recipe create + root (no binds)"
       },
       "prague": {
-        "gas": 683048,
-        "frameGas": 678738
+        "gas": 683654,
+        "frameGas": 679344
       },
       "amsterdam": {
-        "gas": 2293274,
-        "frameGas": 526404,
+        "gas": 2293880,
+        "frameGas": 527010,
         "frameStateGas": 1762560
       }
     },
@@ -349,12 +349,12 @@
         "label": "recipe publish alias"
       },
       "prague": {
-        "gas": 566317,
-        "frameGas": 562565
+        "gas": 566944,
+        "frameGas": 563192
       },
       "amsterdam": {
-        "gas": 1831963,
-        "frameGas": 457331,
+        "gas": 1832590,
+        "frameGas": 457958,
         "frameStateGas": 1370880
       }
     },
@@ -365,12 +365,12 @@
         "label": "recipe publish grandchild"
       },
       "prague": {
-        "gas": 657526,
-        "frameGas": 653813
+        "gas": 658153,
+        "frameGas": 654440
       },
       "amsterdam": {
-        "gas": 2194020,
-        "frameGas": 525667,
+        "gas": 2194635,
+        "frameGas": 526282,
         "frameStateGas": 1664640
       }
     },
@@ -381,12 +381,12 @@
         "label": "recipe publish large child"
       },
       "prague": {
-        "gas": 1317735,
-        "frameGas": 1311485
+        "gas": 1318347,
+        "frameGas": 1312097
       },
       "amsterdam": {
-        "gas": 2645987,
-        "frameGas": 1170927,
+        "gas": 2646587,
+        "frameGas": 1171527,
         "frameStateGas": 1468800
       }
     },
@@ -397,12 +397,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -413,12 +413,12 @@
         "label": "recipe create + FOLDER bind before its name"
       },
       "prague": {
-        "gas": 1147123,
-        "frameGas": 1142255
+        "gas": 1147627,
+        "frameGas": 1142759
       },
       "amsterdam": {
-        "gas": 4165835,
-        "frameGas": 831687,
+        "gas": 4166339,
+        "frameGas": 832191,
         "frameStateGas": 3329280
       }
     },
@@ -429,12 +429,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -445,12 +445,12 @@
         "label": "recipe create + place"
       },
       "prague": {
-        "gas": 1145672,
-        "frameGas": 1140817
+        "gas": 1146176,
+        "frameGas": 1141321
       },
       "amsterdam": {
-        "gas": 4164384,
-        "frameGas": 830249,
+        "gas": 4164888,
+        "frameGas": 830753,
         "frameStateGas": 3329280
       }
     },
@@ -461,12 +461,12 @@
         "label": "recipe hide"
       },
       "prague": {
-        "gas": 449699,
-        "frameGas": 445961
+        "gas": 450404,
+        "frameGas": 446666
       },
       "amsterdam": {
-        "gas": 1209025,
-        "frameGas": 421927,
+        "gas": 1209730,
+        "frameGas": 422632,
         "frameStateGas": 783360
       }
     },
@@ -477,12 +477,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -493,12 +493,12 @@
         "label": "recipe create + name + place"
       },
       "prague": {
-        "gas": 1144956,
-        "frameGas": 1140101
+        "gas": 1145460,
+        "frameGas": 1140605
       },
       "amsterdam": {
-        "gas": 4163668,
-        "frameGas": 829533,
+        "gas": 4164172,
+        "frameGas": 830037,
         "frameStateGas": 3329280
       }
     },
@@ -509,12 +509,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -525,12 +525,12 @@
         "label": "recipe realm-notice/1 frozen"
       },
       "prague": {
-        "gas": 611175,
-        "frameGas": 607416
+        "gas": 611790,
+        "frameGas": 608031
       },
       "amsterdam": {
-        "gas": 2045361,
-        "frameGas": 474882,
+        "gas": 2045988,
+        "frameGas": 475509,
         "frameStateGas": 1566720
       }
     },
@@ -541,12 +541,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -557,12 +557,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -573,12 +573,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -589,12 +589,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -605,12 +605,12 @@
         "label": "recipe a folder at two names with a file inside"
       },
       "prague": {
-        "gas": 2666345,
-        "frameGas": 2658661
+        "gas": 2666658,
+        "frameGas": 2658974
       },
       "amsterdam": {
-        "gas": 9923069,
-        "frameGas": 1885945,
+        "gas": 9923394,
+        "frameGas": 1886270,
         "frameStateGas": 8029440
       }
     },
@@ -621,12 +621,12 @@
         "label": "recipe release one placement of a non-empty folder"
       },
       "prague": {
-        "gas": 452525,
-        "frameGas": 448824
+        "gas": 453240,
+        "frameGas": 449539
       },
       "amsterdam": {
-        "gas": 1211851,
-        "frameGas": 424790,
+        "gas": 1212566,
+        "frameGas": 425505,
         "frameStateGas": 783360
       }
     },
@@ -637,12 +637,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -653,12 +653,12 @@
         "label": "recipe create file without placement"
       },
       "prague": {
-        "gas": 1084897,
-        "frameGas": 1080029
+        "gas": 1085402,
+        "frameGas": 1080534
       },
       "amsterdam": {
-        "gas": 3927469,
-        "frameGas": 789161,
+        "gas": 3927974,
+        "frameGas": 789666,
         "frameStateGas": 3133440
       }
     },
@@ -669,12 +669,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     },
@@ -685,12 +685,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 668673,
-        "frameGas": 664966
+        "gas": 669300,
+        "frameGas": 665593
       },
       "amsterdam": {
-        "gas": 2433539,
-        "frameGas": 471432,
+        "gas": 2434166,
+        "frameGas": 472059,
         "frameStateGas": 1958400
       }
     }
@@ -700,7 +700,7 @@
       "row": "Read: FilesPageReader.listDirectory, the seeded folder docs/ (one page, limit 32, one principal, unbound basis)",
       "source": {
         "fixture": "the fixture instance's journal (fixture.json) reads",
-        "to": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
+        "to": "0x6c9b137BbA0850375CAf186b782c0a98E184c882",
         "function": "listDirectory"
       },
       "prague": {
@@ -987,12 +987,12 @@
   "fixtureReceipts": {
     "hardfork": "osaka",
     "chainId": 31337,
-    "startedAt": "2026-11-25T18:00:15.613Z",
-    "instance": "gw501-claude",
+    "startedAt": "2026-11-25T19:41:26.804Z",
+    "instance": "relint-gas",
     "rows": [
       {
         "row": "Genesis code deposit (every CREATE2 of G1–G19 + RealmGenesis.run)",
-        "gasUsed": 45257788,
+        "gasUsed": 45385078,
         "transactions": 30
       },
       {
@@ -1001,13 +1001,13 @@
         "transactions": 13
       },
       {
-        "row": "Readers and views (R0 KeysView, R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list, R5 EfsWeb3Gateway, R6 TopicMineReader, R7 TopicEveryoneReader, R8 TopicLookupReader, R9–R11 ReaderDirectory.list)",
-        "gasUsed": 22831390,
-        "transactions": 12
+        "row": "Readers and views (R0 KeysView, R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list, R5a EfsWeb3Content, R5 EfsWeb3Gateway, R6 TopicMineReader, R7 TopicEveryoneReader, R8 TopicLookupReader, R9–R11 ReaderDirectory.list)",
+        "gasUsed": 24023534,
+        "transactions": 13
       },
       {
         "row": "Activation (genesis, G20)",
-        "gasUsed": 4083004,
+        "gasUsed": 4093102,
         "design": {
           "prague": "≈ 1.1–1.9M",
           "amsterdam": "≈ 3.5–4.3M"
@@ -1119,27 +1119,27 @@
       },
       {
         "row": "Seed seed root (PUBLISH files-directory/1)",
-        "gasUsed": 664276
+        "gasUsed": 664902
       },
       {
         "row": "Seed seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)",
-        "gasUsed": 1315730
+        "gasUsed": 1316259
       },
       {
         "row": "Seed seed file docs/readme.txt (CREATE, PUBLISH root form 0, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "gasUsed": 1676945
+        "gasUsed": 1677353
       },
       {
         "row": "Seed seed docs/big.bin publication 1/2 (2 actions, 16384 body bytes)",
-        "gasUsed": 12564980
+        "gasUsed": 12565579
       },
       {
         "row": "Seed seed docs/big.bin publication 2/2 (9 actions, 4351 body bytes)",
-        "gasUsed": 5815051
+        "gasUsed": 5815462
       },
       {
         "row": "Seed seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "gasUsed": 2372329
+        "gasUsed": 2372743
       }
     ],
     "journal": [
@@ -1148,7 +1148,7 @@
         "label": "fund the factory deployer",
         "txHash": "0x1830051f0c7350759cca1c95276d6919fcc6144ea70a45d1e72eea3dc7784c26",
         "blockNumber": 1,
-        "blockHash": "0x497692e27b60f583983a36a945cda7510d2fc23e73dcbf403a95d51abcdc6c5a",
+        "blockHash": "0x444e2863dd8c9bbf0d582ba9fc27d56edb92f208e71dca0a1d17d3c4e3e469d9",
         "gasUsed": 21000
       },
       {
@@ -1156,621 +1156,629 @@
         "label": "factory presigned tx",
         "txHash": "0xeddf9e61fb9d8f5111840daef55e5fde0041f5702856532cdbb5a02998033d26",
         "blockNumber": 2,
-        "blockHash": "0xa89b00c09f5f1f26569fdc9d10e9a5f666ab17241ff67a54807371f06cd50fc9",
+        "blockHash": "0x28e2a4e4c8b8cc8453e711367b6acd0df3a07e0067bffdd245df5014086684ba",
         "gasUsed": 68137
       },
       {
         "id": "G1",
         "label": "LedgerIngress",
-        "txHash": "0x1171a6db43e9c4ba1c812982ebd75eb0ee563f889e97c931568ba3160b3a5e8e",
+        "txHash": "0x13b9bec89775ce0076ed24b2c2b25149f719ae771b4a5930509a977f96c7bbbf",
         "blockNumber": 3,
-        "blockHash": "0xba67e9b49cef1315981ce26aceee3b9bd034d76e251520873d9c38dfe8762d78",
-        "gasUsed": 4176258
+        "blockHash": "0xeccd3a3d72b274025d14ca2ba580100186ddbfbc8e624925fcfc1afeac3e4163",
+        "gasUsed": 4227760
       },
       {
         "id": "G2",
         "label": "LedgerApply",
-        "txHash": "0x4ebb9408e9dd753484aff640decfa12205fe7bc588e36874320ff76c9f232283",
+        "txHash": "0xe92fccb6fef31182fd8506fe7e628d61f7b2a3fa569cd876ff629be4e5baf6cd",
         "blockNumber": 4,
-        "blockHash": "0x3d08e35edae9d31806c918fca52463a0a75ee0d6b264ad6bc3ead10764eb04cf",
+        "blockHash": "0x1360e3592bfbaea17182b38ce07cf17376dda090f0aeccbe196e1c5e29cd8ba7",
         "gasUsed": 1267045
       },
       {
         "id": "G2c",
         "label": "LedgerControl",
-        "txHash": "0xb29eb416e72230a212fbb124eba876c9191cacc3b9e64eb4ed1a2b28aa07c5fa",
+        "txHash": "0x505a439631309717f9591061eec2ead23bfa948f51b430431f1efe841ca95649",
         "blockNumber": 5,
-        "blockHash": "0x553cf657d62152ea11de86b98723e5b18a30a6f706940b7a12c75c5326a6fb70",
+        "blockHash": "0x819a56a5dd7dd71e00762c6f8e25f7571b7c5278101c1baee5c12a49350843b4",
         "gasUsed": 3760872
       },
       {
         "id": "G3",
         "label": "LedgerReads",
-        "txHash": "0x61ec948d582393d3af1fab4d63dc3835416975f9a29e430c5ee2b951a8e58187",
+        "txHash": "0xe1e92671efb1993886ae2c0de4ed0bee6dac863cbf9824606256131a67ed0629",
         "blockNumber": 6,
-        "blockHash": "0x289d1b0cde1d6e8e4e70bc33b21f6c411b286d5a9d506545bf10855dfe85bf2f",
+        "blockHash": "0x79b8daa72c7f4468e4592415009f301eb0dee2418b5c4b2484ed39527119e9b2",
         "gasUsed": 3148205
       },
       {
         "id": "G4",
         "label": "LedgerViews",
-        "txHash": "0x611730015565425c5692663c963f490ac5de2c0ebcc9bf8e5dd776d40954c9c6",
+        "txHash": "0x1b04372a21121758866f9b824404d9ea90c37082cd0a46cb5c307a99e0cb0d12",
         "blockNumber": 7,
-        "blockHash": "0x9b1aaf0a0c33067724305df1b112b89f53951a04afb1240ea626067b56bdf8fd",
-        "gasUsed": 4023485
+        "blockHash": "0x9c6d5e6300f36580d579fabd7d271bae837477e520c809130737d2d1fb5354d4",
+        "gasUsed": 4078113
       },
       {
         "id": "G5",
         "label": "DescriptorStore",
-        "txHash": "0x23f7984c477e4d03ebf0ca378aae954f1ac83b3448ecd4e7608bde4a5c24918e",
+        "txHash": "0x246c819c96c1d7a50537a15a03336ecbe45cdb12e5bff32216aa1d2d5818d5c0",
         "blockNumber": 8,
-        "blockHash": "0x6b5257b529311de07e29cdb10bf5aa181a6747f2d7da5363991e4f4a2d3d4418",
+        "blockHash": "0xd4bb7e317540967ceef20d8a44eb8ffac3aac051baac5eb1eb54396281ca8f3b",
         "gasUsed": 217390
       },
       {
         "id": "G7",
         "label": "IndexReplayDecoder",
-        "txHash": "0xfd7046cd21c04b6361dac88b466c5e68418fffa0a28f3d2e79cef155ccfd1231",
+        "txHash": "0xb82dcffa4d28389f76aef8938abf7cf4618d40671cc01cc68c5fa30e8dc0c172",
         "blockNumber": 9,
-        "blockHash": "0xc7f64572e03433673dd29b12a03c295eb069a0239f3b1337038039fdbe9e7f2d",
+        "blockHash": "0x28e7852145165db8de7b204dd92eee5760e75480fb8e27d90455a936a88395ce",
         "gasUsed": 1223989
       },
       {
         "id": "G8",
         "label": "ReaderDirectory",
-        "txHash": "0xd1567198d36469a77c8ed939c59230b9f48642072f4a4846c272b193123cc409",
+        "txHash": "0x7d944ffa98f15dbd24048738d5db4b75c527ae07ca7451ae7f9557305b270088",
         "blockNumber": 10,
-        "blockHash": "0xcb1c231f51850d78f5c31222537779abd6390b76eadd8fac61cdedad022f6b68",
+        "blockHash": "0x959a3ca2d22cd28d3e1d060d0350013935f3828667e56f6934734323884a10f9",
         "gasUsed": 377313
       },
       {
         "id": "G10.4",
         "label": "FilesBytesRule",
-        "txHash": "0x74b182d414b929e04f3c4e19807e6b37c97f2051fcf0c4c0182912e1000e562a",
+        "txHash": "0xe6ef6ab87a45665242ba36af8cd40cf09e56ad8d8556efe38e65f132b7402b92",
         "blockNumber": 11,
-        "blockHash": "0x4fa6d3523372daf035aba9857c4f2a544a77f4114e79ea63a82de4ff776b150c",
+        "blockHash": "0xbab070a74dea896d679cf90742eac909d4841522b494818b75b69ddf62d5e816",
         "gasUsed": 173432
       },
       {
         "id": "G10.9",
         "label": "FilesSpanRule",
-        "txHash": "0xaf55f755d1d3b11aa0def6acff03039097586f90f9de5e9abaf7e9eada092c10",
+        "txHash": "0x405720f91442b0f33edaa1b9082e4f9b9e8b0dd104de70eff6b276e2722f87b0",
         "blockNumber": 12,
-        "blockHash": "0x1bc3edbf1d85db5d3f7b85df53de550d929a17f01ffbe4ecff5f2f588538900f",
+        "blockHash": "0x2e3de82dbeee10f602a537d6febcc9d383f7a31f45954c8025cbf86c750b7365",
         "gasUsed": 283232
       },
       {
         "id": "G10.5",
         "label": "FilesContentRule",
-        "txHash": "0xb5ae0b2e27b1a2238f38f3f4e7da606e667b994584c1c0a84d107dd28939c35d",
+        "txHash": "0x23e3465bd474691b670b6107c2d5da758f989f2959322a9e683ebc7107fcbf5a",
         "blockNumber": 13,
-        "blockHash": "0x166c81d3c78ebd82ca778629dc8e5f845ddf42f3813ea3c2ce205e0722df96c1",
+        "blockHash": "0x75d81d74a60e73595a9596ef1628035e8e9e92be505df4c2c2a846aaa0b32501",
         "gasUsed": 506435
       },
       {
         "id": "G10.6",
         "label": "FilesExternalContentRule",
-        "txHash": "0x162de0960dd3aac6ab6be3f6d91dae8c0da43b1e91d7b25e4ee4f527d3c9d9a4",
+        "txHash": "0xde953040069c4f8098a54a16152f015125bf7521f35ad367d8eef9d8d17aab2f",
         "blockNumber": 14,
-        "blockHash": "0xe89ed4d618338cf98e3a33e87cedb1a162e8538d15da397060b0efd5134be600",
+        "blockHash": "0xe27572f898cbc883d9a6024d10a437cfed7981770e31a3e599e0eafff9bf681f",
         "gasUsed": 567823
       },
       {
         "id": "G10.0",
         "label": "FilesRootRule",
-        "txHash": "0x383eb8547df5620803ba2abc676c9375a61a7dfb83a07d3bf281a119dfae31fd",
+        "txHash": "0xc740d3afe404ea15c8f42e2ef165216c18168c1846513317a0e36fc9468c8385",
         "blockNumber": 15,
-        "blockHash": "0x6d6f8c83c9dea44c368d86ce1342cdd273470a37862b58e3a69f8201563e0ee0",
+        "blockHash": "0x4559f5781de31d5ba19f77e9eedd7366cdfc1fea003d41a8c63e7a6b3162845c",
         "gasUsed": 350103
       },
       {
         "id": "G10.1",
         "label": "FilesChildRule",
-        "txHash": "0x75592d41f7d86766886fd5bf69c2d9508c7058dd8191c4be3668f851472b2e43",
+        "txHash": "0x12329d5f8c0392cfcd49cc1d35c4e87b33be93ce2a19ef84e6adecbd9aa1cdc4",
         "blockNumber": 16,
-        "blockHash": "0x2517548dbcfb401ee10dcd5da88ef317fb8569b0ad1e530d792d4d74a79af926",
+        "blockHash": "0x5a72eb3972530b57d997b9c1771bb4f195173328fe2c4d54ca4ef14ca32cea9a",
         "gasUsed": 407755
       },
       {
         "id": "G10.2",
         "label": "FilesDirectoryRule",
-        "txHash": "0x3cafce16a2224d5352e7a7843a26c8df9855af8895719215f9a325d5a4c13047",
+        "txHash": "0xbf4fa3635c39a1247cbab9f284923aae0b1cf9cc69c45552eeea11b29db61f1d",
         "blockNumber": 17,
-        "blockHash": "0x7240679034b4308d748c34f5bea846ea99518f2cc00a0ed73621df246555eb46",
+        "blockHash": "0x1ddf883484ee7d0487b2d49e78bfb818e969ea986ac3ed2a69ac4931f7e17cd9",
         "gasUsed": 169092
       },
       {
         "id": "G10.3",
         "label": "FilesNameRule",
-        "txHash": "0x684001ae0122b0a533ecbea0a76194e105e08f9f7d8539b8a0846787688414b6",
+        "txHash": "0x6eff94dd1695cf859495a0a46afc26404e25a8eabc6efbf070d2235a66d6241a",
         "blockNumber": 18,
-        "blockHash": "0xaffe7d06f1ecf14ed493fd7af6a8ae00e7915e47342d1c88ab48991be5fab302",
+        "blockHash": "0x9dc78d77e33c737de73ad9b0aff377dfb754912d646bada272e232ddec9e52bc",
         "gasUsed": 418055
       },
       {
         "id": "G10.8",
         "label": "RealmNoticeRule",
-        "txHash": "0x936ae8f8bb08643af80a4afec690ef350e89e38f3df4555f9f2243319921b6d7",
+        "txHash": "0x9b7d85c5cd407e4847b58e55b4194ce88b8f3809ead2081ed223cd32c1ab999e",
         "blockNumber": 19,
-        "blockHash": "0x1267a8f0f1c9f0d95369f376d864dbe709c5d6b705da10d7f7566ba23dbf9523",
+        "blockHash": "0xf25d66f6a08f3315654e9612f5cdfaca5e19b030b8fd9ed773a78f1cc8b97509",
         "gasUsed": 354535
       },
       {
         "id": "G10.7",
         "label": "DirectoryAliasRule",
-        "txHash": "0x42180b4818a2b5d729bb748e6b0fe9a0f374dd6ff6e9bbab4719cda5cb46a2f7",
+        "txHash": "0x893dda4b81c1ad35c38ffb1017e40604077f526ad64521a3b10858c1e7149c4c",
         "blockNumber": 20,
-        "blockHash": "0xd95329cd249517bb66bb065ecbbf134130c3f622f99c0f357d0e30365764b25c",
+        "blockHash": "0x76f6d6a4ab020e0b63f27f3c645a7bb01365656993ac1fb1fed07dd61249f0a3",
         "gasUsed": 308584
       },
       {
         "id": "G10.10",
         "label": "TopicWordRule",
-        "txHash": "0x8a75981ed85fcf835cdb79ad7ebf6387e35b1cde1486815d9e70454884d4aa1e",
+        "txHash": "0xe48e623facd3d9e2117ad16e445ef74bf95213a978d5670fb55a8ea45ef32210",
         "blockNumber": 21,
-        "blockHash": "0x6b887d6eb202baac17b40d1892d3cbc26c53993499e52c539855d17308ac0051",
+        "blockHash": "0xd0d187b4c703668104cd9fe149f90ef593dc7d10eb644b4a0585217de1feffc1",
         "gasUsed": 463271
       },
       {
         "id": "G10.11",
         "label": "TopicRule",
-        "txHash": "0x1d4ea5fd7489474731bfb83f4e8481796ecb7953a82374673eeff75738333c1e",
+        "txHash": "0x7f097e1f0a810e678fe02c7196918732b5161f17b893db299351f8cce3fcada4",
         "blockNumber": 22,
-        "blockHash": "0x2395cc33869cda78f610732e3b681d1b5d116e35f133f5509768a355faf7e2db",
+        "blockHash": "0x1f665c13f24c62ac417a615221ed94656cbfa5876566502c662afbe6e24a6a02",
         "gasUsed": 211954
       },
       {
         "id": "G10.12",
         "label": "TextRule",
-        "txHash": "0xe517e6d5022094258d64df698472770ce446881c3d1fa947fdd079cedffb64dc",
+        "txHash": "0x2f98c0dd7799b609d4772d46c2a1b9f695520dc119f8c2dc9d21d4e44d540e25",
         "blockNumber": 23,
-        "blockHash": "0x741846b8933a22a3f78c4a8fa842ac36c0e4432023f523654d0240556c667328",
+        "blockHash": "0x1ca2d6f916625b87acc6bef183084657d2f18ad474e440a4d497ec1cc9031308",
         "gasUsed": 436393
       },
       {
         "id": "G10.policy",
         "label": "RefuseAllPolicy",
-        "txHash": "0x8a0b39e78e941ee0b7be7c99c7f72e997ff2560e9e30a3ff5208751223f94e82",
+        "txHash": "0xc9178f26b78f6de24028875c51a9aeafe5f07fbafdd36ac242d89ee818db3657",
         "blockNumber": 24,
-        "blockHash": "0xf92b0a61e5cd050da1e5a609affc78a76916c4a5688df9ca7934d56ea07da75f",
+        "blockHash": "0x71f85eb770b9dd458d6fc6949d8ee9e4263de24ef2d35504434a8cffe8a60767",
         "gasUsed": 111284
       },
       {
         "id": "G11.0",
         "label": "DescriptorStore",
-        "txHash": "0xfedc662fde981c84c21aaf730209ac3aed45274032ac6c2d5b4da14afd441f89",
+        "txHash": "0x11283ca0dcb4331ec68af94dfa6b7652fa6b37895a3aad9bdb34fbff8bdc341d",
         "blockNumber": 25,
-        "blockHash": "0xf11beaf2d8192a14efb09a666f5493504f9353e284f3821480af3867756f1bd8",
+        "blockHash": "0x014c7379a7a41f29a6dbc703a6f3c48a04295df73f238398341749e228c9cc13",
         "gasUsed": 145555
       },
       {
         "id": "G11.1",
         "label": "DescriptorStore",
-        "txHash": "0x782eb7cdfd6325d5d8252d1c6b59018e0fbe8070f2e5c2104e47e5864ea67cfd",
+        "txHash": "0x1055c77c7f2621aae9ea244eec0b3657931121d3b67e6a6bac1e8cb30e488aa3",
         "blockNumber": 26,
-        "blockHash": "0xadc996e44541c7d98ab5300740d778255e3f7c83596943eb3b8f67f7f17f1165",
+        "blockHash": "0xc7c6cbf9dfcafa5adb3702876149ee17638ec850560770a4e3d0471e04075531",
         "gasUsed": 185821
       },
       {
         "id": "G11.2",
         "label": "DescriptorStore",
-        "txHash": "0x7745d83790546abf7ce81f424d2975df923fa4b9be1bdd19225eaab8caf9c66d",
+        "txHash": "0x4714fb3727daf3920523a494bd08433d5c656d5945d7dcb2d4f443ac79152417",
         "blockNumber": 27,
-        "blockHash": "0x3bf2fe49f1b73f19feb62520985186acfede4b9baf29f30aa0f250990a555f16",
+        "blockHash": "0x2ffe179fc13db1f396fff4f22e1210287d999f64e2ff13be4de9d142db026bdc",
         "gasUsed": 140739
       },
       {
         "id": "G11.3",
         "label": "DescriptorStore",
-        "txHash": "0x241f76ceae8bb1e08e321edad2c1ba214738fc787d3ef7f8d998a3ba7500bf1c",
+        "txHash": "0x1184415a06208829b4264bb91a3edd5e0c3c1038f2acc9b063c52eb1e51122cc",
         "blockNumber": 28,
-        "blockHash": "0x27fe85109db2a15ee855d6e69a82fe58ba59b33c697f6b3b96671cc2c969f889",
+        "blockHash": "0x836bbb320453886a7d744a6d47d3a3b7f4f86a35fcd4cd6369b0fa479832bdde",
         "gasUsed": 124922
       },
       {
         "id": "G11.4",
         "label": "DescriptorStore",
-        "txHash": "0x0c098464249d39f75edf290225ffa0d83adcd3fd75c46f89e1c8739a98495d02",
+        "txHash": "0x5d5dad7282203b81e5e2ee2f71bb7c6174e1f9bdaa8baeae27d3d14c8ccefaab",
         "blockNumber": 29,
-        "blockHash": "0x19781407ad9b402ceca4a0a5ca0aa2f781164ed809b541228b7e7eb381c0414f",
+        "blockHash": "0x83ee31f7eee481ab8ceec354c93f1ffe2125aaed30a61a3c578118a710eae172",
         "gasUsed": 129123
       },
       {
         "id": "G11.5",
         "label": "DescriptorStore",
-        "txHash": "0x090ff06cc68455e499cad35c837554fe1c22fe87e2142acb84a2a8c2560bf234",
+        "txHash": "0xbe6d8927550ee399cccd051b2ea1bde2e5ad6f3c2bcc20f29c00066f9d021224",
         "blockNumber": 30,
-        "blockHash": "0xf6520a87ab82493299131e62370ff008e7d1c5d1825eb3cf27f601260fa289ca",
+        "blockHash": "0xab6d6be80b55d375ae934815c05d0884f5233e425efa7e7dc7e51a70a3919f91",
         "gasUsed": 222721
       },
       {
         "id": "G11.6",
         "label": "DescriptorStore",
-        "txHash": "0xf7e8aa5c3bc0a9fbdf35f5eeaddd75396e0570e8e68c03d3fb27a89e409455d9",
+        "txHash": "0xf2d2df8ea3955c9758f95f62076ed65aa77b0f0c2390759dc67a2d86c21345ba",
         "blockNumber": 31,
-        "blockHash": "0xb9c6cc79d0e669d5e93475fcf154ab6bf2f9496959bfdbc96f6023e1278e52e9",
+        "blockHash": "0x5060c7ac13d5c760033b5f4715dd72ed90dbe7eeea1d3f6b8a1a8342ada3f496",
         "gasUsed": 193374
       },
       {
         "id": "G11.7",
         "label": "DescriptorStore",
-        "txHash": "0x59a15c8aa4814583fbf30a06eef0c594ff4d777c38e3ef42d9e9329fc0c2cc1c",
+        "txHash": "0xcf07d1936b6f6e94c558d26f10c4ef456e98ff63c21f8cf2f73b01f5f67aa719",
         "blockNumber": 32,
-        "blockHash": "0xf402219ba211e26e67409cbb3c9c907b8c523ee9cd6e2c59d7bc9bdc7f26b0ff",
+        "blockHash": "0x33006f7dce530e85a92991522b3edc2c28e062570229e587bda013260a84061b",
         "gasUsed": 125367
       },
       {
         "id": "G11.8",
         "label": "DescriptorStore",
-        "txHash": "0x09bf52b8d4747f66f4b8ce34e2089c4eebab8554b34c6b46bad3cafd30aece1c",
+        "txHash": "0xc0e6f74952c2af68984f2e05f22bd9ec98173c48637fa385281909ce54b46c42",
         "blockNumber": 33,
-        "blockHash": "0xfdcda56f0a31c5ed921aac940557c57b9d81421b413de162cdb4d639380b6709",
+        "blockHash": "0x5ba4b97a920fae0c873d8d76b612277f31e107c27252aea7096e6a8bf1774fb6",
         "gasUsed": 124286
       },
       {
         "id": "G11.9",
         "label": "DescriptorStore",
-        "txHash": "0x3c6c2a648eb0c24dcdaeed1dd754dd4dc018cbd9351d4370995fd2bccacfd92e",
+        "txHash": "0xab9a9eaec9ce47e333cba97822b7876a85d5a76d304241683f28c03d9b34201a",
         "blockNumber": 34,
-        "blockHash": "0xbae5652f42789f760f609c4efa4ba00a49293932634cf7a0304e94452cfe3e61",
+        "blockHash": "0xede11260a2b5dc9e3afcc853817b2ebed34a0132c0d93194c794869d619c33e4",
         "gasUsed": 211576
       },
       {
         "id": "G11.10",
         "label": "DescriptorStore",
-        "txHash": "0xb9ab7488cf12564a42362d818ec5f2a8deb45aa62b1622a415362466de5d082b",
+        "txHash": "0xd1bccf176ce4117b971f54918f3ed7dda91a008648632f840dcc392c202b74d3",
         "blockNumber": 35,
-        "blockHash": "0xe5bef089f0cef06a14a89fe6790ceeb9c16797092c35334b8c870f91c2a3cfa3",
+        "blockHash": "0x3e49b5792c72e3505981a1e88c61ed754657c444dd520baf87255480482f418e",
         "gasUsed": 157524
       },
       {
         "id": "G11.11",
         "label": "DescriptorStore",
-        "txHash": "0x70b2377baebd97e210bfde66d4a9e49180e671ebe4e8dac980933f976aef7a26",
+        "txHash": "0x1febdc08358ae7407fcec9018bd8d741b21913396cb2349f14818b170a9d4b91",
         "blockNumber": 36,
-        "blockHash": "0xade83094dc15f3659b6f1439c825b03d1869b9cc6eb8caf3d2fd3ca4f09e0d3a",
+        "blockHash": "0x287aaf5a3c668a60aefe1603abfc811a32b9a9b7a9b6ea129138409d698e3025",
         "gasUsed": 201046
       },
       {
         "id": "G11.12",
         "label": "DescriptorStore",
-        "txHash": "0x9ed871687b70feb756ff051e15061ab2c9297a8eb2fd550f6baf23ae31680964",
+        "txHash": "0x60207160fcf2c417443f2b303ccf0f4d4597d0856abe7da40485b6a1731c1328",
         "blockNumber": 37,
-        "blockHash": "0xcb9468513c92b55cf529bbf4d89a58607d7fc9dfaeb50e32956e1c11010967ce",
+        "blockHash": "0x1b06cf47e4f61e27f974a848d498deb5ed4c5603c4ae901fc0e59771c7909d3b",
         "gasUsed": 138823
       },
       {
         "id": "G12",
         "label": "FilesFinalValidator",
-        "txHash": "0xd1f8f708d0d99eb9e2fe2b107caeeefbc9ddf2ad0e406ec88af6456e4b707e36",
+        "txHash": "0xce1a21250c4b13811d8a37f5231db6ac6e9665750df75745e883f11fa6196725",
         "blockNumber": 38,
-        "blockHash": "0x3c7b34f0237d8ab26e6911874522de7c2228a63a4918d82f19a25a0197ef5d63",
+        "blockHash": "0xfb07f8c754800ce4d22f23a9a47990978a4ff0b1b25d0bb10324cd574fab1733",
         "gasUsed": 1114973
       },
       {
         "id": "G13",
         "label": "LedgerCore",
-        "txHash": "0xf1c140f742813d14db8cd6918db39e1b4d7391b038c9fc9f21a69e4ada810b31",
+        "txHash": "0x59d34e98c1488474cb17767e7b16e7da4fbf5df74a965f8862985067064dbd40",
         "blockNumber": 39,
-        "blockHash": "0xb4b94703b5ab5f47a7fac581bfd89ef6ad2705a24ac5a93628d330564418402f",
+        "blockHash": "0xc866237214452c5b21612c13594c0d6e6e2449cd6021bf451e6bf6158ca0eb44",
         "gasUsed": 3350115
       },
       {
         "id": "G14",
         "label": "TypeRegistry",
-        "txHash": "0x0d2998affa2e8db2960b963b8b2cd80da339a3705b368fe56772dbdaac89927b",
+        "txHash": "0xd75f8055441ca8c5eeafba4702011629813c980f1f6441cfa9c9efba946b5d01",
         "blockNumber": 40,
-        "blockHash": "0x6d5514c9e2f43af7bb78be161a5afad9022dcd04d52d5cdb023d1fbdf88a1e11",
+        "blockHash": "0x7ac7ef518b0a7a721868c90b46fdb6c419e0d3078463fff67eb5e21cd712fc9c",
         "gasUsed": 3442120
       },
       {
         "id": "G15",
         "label": "RealmGenesis",
-        "txHash": "0xffa252c27b32ca1bd04f1412aeb7c78af26e44d420f6f14b72d9167c75b7df58",
+        "txHash": "0xa0b5054f74016e77e03bf4574829820f40c5e0e465372eba3a502a0a8ce93ffe",
         "blockNumber": 41,
-        "blockHash": "0x7a0c9a6ef03b190c70cc0d1248b00e2ddc539c5d137b99720e06ffc1e1f3e784",
+        "blockHash": "0x55473c8ebc3612301c16f81b53da1eba924f533e072a4956e9d4c4eec71cb8e6",
         "gasUsed": 1171366
       },
       {
         "id": "G16",
         "label": "PostingStore",
-        "txHash": "0xd6243d04ae184365ed3aaf29f656d608825bdc8c82ad4ee9af032793e9b71617",
+        "txHash": "0x2be4dc0249f456ba1288ec2b202bacca271163e77aa25dc2ceab396a51eb18e7",
         "blockNumber": 42,
-        "blockHash": "0xd3e66515b4f458ca188acc5d4476fd7ae08a6b112adcca8fa26226e08462d495",
+        "blockHash": "0xe43e28dc07f627ca7e28cfcf5fb14d6d8c364c91f035bd9ed38fc157e32e2e3d",
         "gasUsed": 1883456
       },
       {
         "id": "G17",
         "label": "BitmapStore",
-        "txHash": "0x7a999becbf07eb0e0f2a69e1cef98a050144e5825a5006e30cc2cc67c36bd886",
+        "txHash": "0x2cd5f39d5846d1b19db5a2044218be45256c4e535efbc0158c7f32b68637e1d1",
         "blockNumber": 43,
-        "blockHash": "0x7673625d4273d9d9c42b02c8d86b506838174b6428a32d63627b840ab69b9213",
+        "blockHash": "0x790e27235c00dc0d468866843e29e33f8a63c82f19fdc4b50a4301ca8610ebee",
         "gasUsed": 1871278
       },
       {
         "id": "G18",
         "label": "RealmGenesis",
-        "txHash": "0x4cffcb43809c74d247073d2075cef6dc5aff78b9cd25f8e3ba0a0ca78dd4f9f0",
+        "txHash": "0x75fe3b11ab04e18949010990b4c3c5c2cf0bd127ab1d3c556a77902649e24cf2",
         "blockNumber": 44,
-        "blockHash": "0xf20ec0eb28b370c8e6afc1fbb9e0d42f205f43389adc8a69fe83475121c3ff30",
+        "blockHash": "0x18d5f539fce2c6ab71e3d46c662138cd2a84d933a062a990d82f6e93a1ef749a",
         "gasUsed": 5141103
       },
       {
         "id": "G19a",
         "label": "IndexReads",
-        "txHash": "0x673f413a60d9f8b6cef7091a4fcfe1f0e70c4ef024562145fa7c6e84597b5840",
+        "txHash": "0xde4d1d93c498457e1296ee1511d2b077ae52edd9bb5d50d85069a44da4af4cd7",
         "blockNumber": 45,
-        "blockHash": "0xb9a64cc0a433e8b1a337695c0b303704530576f569f0e9423fe702382dd4fd87",
-        "gasUsed": 4841978
+        "blockHash": "0xef46e34637528dffde4dfeeb9300f3bf2768c1d186387a92c72d2e601d5098c0",
+        "gasUsed": 4925776
       },
       {
         "id": "G19",
         "label": "RealmIndex",
-        "txHash": "0x233c8f92f04c11a3927500a70de7e76a90006baab01437ec2bc846f39036e5ed",
+        "txHash": "0x042cb28c921de1f90d59789b3fc367d5167090571acd96e1877312d0f9155c96",
         "blockNumber": 46,
-        "blockHash": "0x4abd6afbb818e40a0cbf964a7a2109f1b87f2fa23ef88b5967a93a491489e725",
-        "gasUsed": 4326872
+        "blockHash": "0xd29790b23f5c219702f08c5ae0b9c2e4c662c9a0b2cc9c43b3d25dbf6a67fceb",
+        "gasUsed": 4348032
       },
       {
         "id": "G20",
         "label": "RealmController",
-        "txHash": "0x3748d2ed2edfe2379799ded36a060a825406cd98411394830dc67932a2cb663f",
+        "txHash": "0xacee0e362423103818cd7fbee17232beb4ce8b8269c5482c2800cb75d1794dd7",
         "blockNumber": 47,
-        "blockHash": "0xd30ed3f7fe5d1f765a6dde695ed5503f6678eed7e5f4fc5b7417f0b8b163d791",
-        "gasUsed": 4083004
+        "blockHash": "0x9a73f9b907146856ec53284d08e3c245b388e732bcef95780e395d26713ab7cc",
+        "gasUsed": 4093102
       },
       {
         "id": "R0",
         "label": "KeysView",
-        "txHash": "0x00d00e114c5507147968101a9c7fb41965242b17bd30abba4209b4f649409011",
+        "txHash": "0x54d8670479a62dc00633191e1bbf2e60f90d5d616e50a12973cee901e5b81cbe",
         "blockNumber": 48,
-        "blockHash": "0x4a62c3bbe961a84efa26488d9c11043241b4ba015ae39d2a34d67e695b9c4b9d",
+        "blockHash": "0xa2deb86a10b7ff8fb6c2bc32f41f5def0c407dc6f16799ee7888ae8a2d8050b7",
         "gasUsed": 381713
       },
       {
         "id": "R1",
         "label": "LensReader",
-        "txHash": "0x6cc2c041485c93a8256fa7e80df7de4f81c2ceaa8dd24cc33ba52647ec1dfe21",
+        "txHash": "0x5a8e29fcdbc4e6f9d3d7f39ac12670825750f29814b1bf03f7824f32e02d40a7",
         "blockNumber": 49,
-        "blockHash": "0xc3b43b93ed57f7edda950b632438269aee47ed39338af630d0631cb067b02f4b",
+        "blockHash": "0x47a938c812fb4e4a80c0db7d56a915b647a2cc3d6aab0bd7e99a8daf81e5888b",
         "gasUsed": 3837730
       },
       {
         "id": "R2",
         "label": "FilesPageReader",
-        "txHash": "0xc1bb9cbc4858e318386ef2abb39f3594713ac01bfda3b6b43a073ed73f820b4a",
+        "txHash": "0x4eb8488114388b1ab02f55fc8dcbb6e5bdfe75b50d85bbd33a8bdd9f1ae04125",
         "blockNumber": 50,
-        "blockHash": "0x0cc3d43f96971976c34ccd5bfbf0f0e3c3c8f53325b6f25f279594785d202149",
+        "blockHash": "0x89334580e9d27b2b945df4fe3929a6c0787c8bef6f0cc9db67448972c193dfb6",
         "gasUsed": 2814840
       },
       {
         "id": "R3",
         "label": "list LensReader under efs/reader/lens/1",
-        "txHash": "0x8d7604f5fb59820fd80c6f638f65c95fa4584318d657d366f60bacce53d935b7",
+        "txHash": "0xa7cac3d18b7173683149b306b907ab7f8f08bdcd13cedc9d92d75a7bfeb46581",
         "blockNumber": 51,
-        "blockHash": "0x0042ece3a5b9cd4e7f103a274af3c47d552b4253b8b82fac09f250b6b5ec68e0",
+        "blockHash": "0x51aec0b4024f8f0e6c1b5014f97747f313c0409cafc59c64fb106a5cdf974c9d",
         "gasUsed": 164671
       },
       {
         "id": "R4",
         "label": "list FilesPageReader under efs/reader/files-page/1",
-        "txHash": "0x9578657b80c4e839a7786bbac83eea22d0d4237448d23b041fb3a3ad6f76e24a",
+        "txHash": "0xb237fb482eb91da14e1310a2ad09b8bde646f729a0ad0b4b5e7119c5a05a3966",
         "blockNumber": 52,
-        "blockHash": "0xf4516c82aba437d9d752a471dce80425835ad7c66c0d0d111581cc71a3cf3980",
+        "blockHash": "0x06b9d686706170eabd0b2f25b9f7cc24696ab14f18017254d3ca3f4f20ad0f35",
         "gasUsed": 164429
       },
       {
         "id": "G21.0",
         "label": "TypeRegistry",
-        "txHash": "0xcd9eaea9090f15929a4bc000f5fe39788518581f752b9cc90433127b8cacc6f7",
+        "txHash": "0x50502f154797200722884e6ba544d1450b2dbdcf9c5f17d64b6a6cb90fa14f3a",
         "blockNumber": 53,
-        "blockHash": "0xb97daf206958fe7ba64de9cb47e5f85c633994a930a88dcdac4ed931a72cf6c5",
+        "blockHash": "0x1576563289892df3bc65cd1f919cfcafa84ee8d8312ab19bdd77c199a0ade021",
         "gasUsed": 260616
       },
       {
         "id": "G21.1",
         "label": "TypeRegistry",
-        "txHash": "0x74e4f65ecb0802a933bc94d8750d99d7b4c118d226d01757a7c9dd999e48dcab",
+        "txHash": "0x15157f05a7a2856c4eb9ce77a0a9f0627612abaa6bbb1319539a3f7e4322fbcc",
         "blockNumber": 54,
-        "blockHash": "0x6da2de73119f29aaae09cb0b7f8abd2cf137aa530ed7d8946758b462bb9deb32",
+        "blockHash": "0x3ac34b1bc898c46537e514df670b15d51875eb32ab1efd8f8c1a46ffd9b05f0e",
         "gasUsed": 250626
       },
       {
         "id": "G21.2",
         "label": "TypeRegistry",
-        "txHash": "0xbd3136b2eca8db6d5bd03f5f58bf8c23a12ecea558bd9d8e5b802853fafeb894",
+        "txHash": "0x3733a54ce83bc9544bb19e5c125d96411a1c39565c7c77dd84b335b9535dd77c",
         "blockNumber": 55,
-        "blockHash": "0xefa51cbf93cfad4e3b9a6aa43d4079ca575ac12a0f491a8aea1774d464d7041c",
+        "blockHash": "0x96e0d5fb0037336d39b70ff2b8f9cf3116657ca24f609faf0b82a552ee24129d",
         "gasUsed": 243100
       },
       {
         "id": "G21.3",
         "label": "TypeRegistry",
-        "txHash": "0x381160435c1d337ae5531d752fdc904419de36f91bb3cc015ea331d468edb414",
+        "txHash": "0x990ab08b2b2cfec8e0fd9a75d058b5a1b4e67a96423987347cb500bf0001aa8d",
         "blockNumber": 56,
-        "blockHash": "0xbdd97a9918e2fd7a73c3e0d0fb1601ed5fb91495df95084ade988131e71238c9",
+        "blockHash": "0x1281caada30e1e3e2bbe80bf543113888bdacef791ff170b37893773826a84cd",
         "gasUsed": 241816
       },
       {
         "id": "G21.4",
         "label": "TypeRegistry",
-        "txHash": "0x124220705bcbb849876bee4c7f59608843900559253aa97f4b469beb7d2a97fe",
+        "txHash": "0x11978880740638be7bc3a7f0aa5c2b25cf7abd849d64da013344c05880d6e51c",
         "blockNumber": 57,
-        "blockHash": "0x2c512fbf522056954795e986e69d0916d2a3daab60e5b10e86986a963b05e519",
+        "blockHash": "0x1a71e361296fe1965ca5a5e634df3610a211443ae71d031c4d9a248c04de1cdf",
         "gasUsed": 242267
       },
       {
         "id": "G21.5",
         "label": "TypeRegistry",
-        "txHash": "0x0830450f757b9357b9e9b53ca9ca591eef8d2048c1703c18bc5801c8e141c66b",
+        "txHash": "0x154a6ad9ed49f388d5ccd5a8f48bcffd685ff8d351cc511b0fe2411931b2eb45",
         "blockNumber": 58,
-        "blockHash": "0x65d6599ef27f5b14ebd5214409881f1acd6e3cffa6de82f90a4a38734f7a2890",
+        "blockHash": "0x952239d2e0513b8b7b376721ca2b47e9059bcc9ec4ceb5bd15a35e5373c81d5a",
         "gasUsed": 253671
       },
       {
         "id": "G21.6",
         "label": "TypeRegistry",
-        "txHash": "0x368f9620b851152a7ba77fda4c060a3fc42dbcfa3295d6ea5a085905e26e7b67",
+        "txHash": "0xa6ce8433c40061414869baa764e6e8cf8789460ddc65bd3d85f07de9f91b7829",
         "blockNumber": 59,
-        "blockHash": "0x6606cb2c021067e5c02c742990036f87ee542deb6dab3f803643641de8009c96",
+        "blockHash": "0x6e7ac04654ea187e9d5649d6555a4f62878a124a200013e087454da76943d2a7",
         "gasUsed": 271578
       },
       {
         "id": "G21.7",
         "label": "TypeRegistry",
-        "txHash": "0xd30661828ec9ec40c901de0060bcff5ead5ef055ed037228cc88cbf93b7427c2",
+        "txHash": "0x09e576e33c85cee0134a55b8fe5e398f74252dca7e543f3032b8e8f1d99aa40c",
         "blockNumber": 60,
-        "blockHash": "0xc4f13d9df62c79c67275b463014462f7cca6eebf6cb9d6702d944f7695e4a82e",
+        "blockHash": "0x43a1231789622114b9029eb11391ea407c4445975145b6b7fe14f6fce8a104f9",
         "gasUsed": 241849
       },
       {
         "id": "G21.8",
         "label": "TypeRegistry",
-        "txHash": "0xd12699b5a0202e31a61667048ffe74847d2591f87fb6f3417944121ee455768d",
+        "txHash": "0xba08a2a4edd6a420d40ebde2d273e747ed2f01ce9862f04ca084a40d146d29f6",
         "blockNumber": 61,
-        "blockHash": "0x9c1cd62f905d5ca8e13d03ac48c47160957511ebe1e4e7eabcbe3e92b351fdef",
+        "blockHash": "0x877fd28d4740804ccb103fed2df37dec82b8f45c4640d509578677912a09c7b1",
         "gasUsed": 241805
       },
       {
         "id": "G21.9",
         "label": "TypeRegistry",
-        "txHash": "0x89ab9ca6e7a63dcbf1f6c9ca28c50e07ff76d98fb621ed12143e61ee36b71fcf",
+        "txHash": "0xc1c71b85658376a457734af71d40189ac96ad61d309762d03ab522d26a7d095b",
         "blockNumber": 62,
-        "blockHash": "0x90111e0f9b97bbc2766b099948b1f890499de1b3224afe4f6151eb22d933263e",
+        "blockHash": "0x601bbfffb03bccb4855ddc0a9e17e6b8440379c80824e50170765e7c13c0376d",
         "gasUsed": 257011
       },
       {
         "id": "G21.10",
         "label": "TypeRegistry",
-        "txHash": "0xb0964128bc46ca74b9bc318d4966d0127fbea5f93ec6888669b28f185ba9205f",
+        "txHash": "0xc5b530e2ade9e921e684a21beb1b71b576e3c2a90e9635b0eb46b4c25241919d",
         "blockNumber": 63,
-        "blockHash": "0xc2c09ebc531b66db4ea27411dcb9ef1a68ff89e6f31b782deac2bdee5e411ed6",
+        "blockHash": "0xe941c7bf24dd49f81f4ea219f5a68ad4de5c8b1965a31a74716ac290649c8cac",
         "gasUsed": 244562
       },
       {
         "id": "G21.11",
         "label": "TypeRegistry",
-        "txHash": "0xec47a552c609a6f0e1716944ebfc2a38349c557b36994547007e5807cdda5d7f",
+        "txHash": "0xcd6ad6b6d6ce8d75f751b56ff626cc04e5cb368f76e1c62a1d0c23fbd3d7572b",
         "blockNumber": 64,
-        "blockHash": "0xa79ab519cf8904e22a57080236bae7d571ceb1898443958272abfc7172f8ab49",
+        "blockHash": "0x3ce255d97b533f0566d00d471240613d4bec0a8fc78c7e9a6d388ad7388fc2e5",
         "gasUsed": 276368
       },
       {
         "id": "G21.12",
         "label": "TypeRegistry",
-        "txHash": "0x0b76aff283e24424a088cdfc6485e9e53d7abc4e25907898611c1e75855612a6",
+        "txHash": "0xf434be1e990d6f8f53bf6aa5d787fdcc9b47a04b591522e857f5244a50cfe669",
         "blockNumber": 65,
-        "blockHash": "0xc2878a38301ad63dc579cc438ad4360f64ac2bfcbd4757b432515e07e6d0009f",
+        "blockHash": "0x2fb918077417f2ad23fa37c040be7fac77a54ffdd4cd7b7f238011db6efff4c0",
         "gasUsed": 242982
+      },
+      {
+        "id": "R5a",
+        "label": "EfsWeb3Content",
+        "txHash": "0xfcb9412f8a1522e650a37f2c459601043fea2ee7eb5606934591a4769ade6320",
+        "blockNumber": 66,
+        "blockHash": "0xe065c3c80c952de68fed7777da4bf5c726d6186965b6686747b9f2f097ff3578",
+        "gasUsed": 2009758
       },
       {
         "id": "R5",
         "label": "EfsWeb3Gateway",
-        "txHash": "0x853a5a0e9a08439334c40dfa756e1ea3fe4dab4eea267e35657bc350b2c9ec09",
-        "blockNumber": 66,
-        "blockHash": "0xbdf2175a1ca8ee8cd05bd083eac355228ec96759795384231bcf7e5b3615651b",
-        "gasUsed": 4329554
+        "txHash": "0xf79fe701cc4301309e1ab06042f1e9d8f3185d08d16f587c225c8510f0015625",
+        "blockNumber": 67,
+        "blockHash": "0x8099da7307d5c36aa88e940b3e0fee87a5a53fa13fd2ffc5d0f992a218562dfd",
+        "gasUsed": 3416232
       },
       {
         "id": "R6",
         "label": "TopicMineReader",
-        "txHash": "0x39d12375bf760a302b205dfb8d1646dd117e6f25b70579966bf5a5b4e43fee8c",
-        "blockNumber": 67,
-        "blockHash": "0x57c9562305667eceb2b60278be5eecac1731fb159ab3c50db7f7ba90d1db6495",
-        "gasUsed": 3394175
+        "txHash": "0x66622943543d0268eabcfdeadee1e7faa8a857cf3e52bdbdeba844851f990296",
+        "blockNumber": 68,
+        "blockHash": "0x64bdf5070bdb9bc8f5f186972f2953aa1c865a3c22848c16e81be0813b04c173",
+        "gasUsed": 3421624
       },
       {
         "id": "R7",
         "label": "TopicEveryoneReader",
-        "txHash": "0x0c14528c3047789baf2ba3c995b9198a870d84fe279090250e6d9da53e51f3c6",
-        "blockNumber": 68,
-        "blockHash": "0x219c9ce612aa19c3e60bb29b930b633d17be52e682c8f82600ffa2b4863046e3",
-        "gasUsed": 3599328
+        "txHash": "0xe43bdfba790172025958adb428ee140582e475fe23bf74af92a2f408c3984e33",
+        "blockNumber": 69,
+        "blockHash": "0xd964a2e1ce2356e1fe5131e1ae2d6cd3ec3370ed80f84849ddf2cdb903e896aa",
+        "gasUsed": 3665309
       },
       {
         "id": "R8",
         "label": "TopicLookupReader",
-        "txHash": "0x1f4ee72177c1744554b4b11778b562f10793a27852f8a60af23d30588892fb18",
-        "blockNumber": 69,
-        "blockHash": "0xd136ab1bc16e1421160472d4a53d531f1c65e6af93b1a849c32e95faa321280c",
-        "gasUsed": 3652113
+        "txHash": "0xc86d471d2efeba1deecc61e6d57418b03c85da107a2fb0b9855ae842226eac63",
+        "blockNumber": 70,
+        "blockHash": "0xaebd4abbe22dc5f27018921c7efc0eea921d182880dcac9c7c478a1fbdeb6cca",
+        "gasUsed": 3654717
       },
       {
         "id": "R9",
         "label": "list TopicMineReader under efs/reader/topic-mine/1",
-        "txHash": "0x290e3ab550c49978baed9bfd52b2b2ebd52b343a63ffb83d25450404e8ec00cc",
-        "blockNumber": 70,
-        "blockHash": "0x096b38a0ba3c2f156d218a37089c7d90eb6249a99873676bbcfe395171b67af7",
-        "gasUsed": 164386
+        "txHash": "0x3415104a6a50ab20166ac15d42b267f30a0dac25952f2bf1389ae740662a9c19",
+        "blockNumber": 71,
+        "blockHash": "0x4fb5a0826a10eec4c16fae153b29b023476a3fae4547063e47c66dd66ddc971b",
+        "gasUsed": 164154
       },
       {
         "id": "R10",
         "label": "list TopicEveryoneReader under efs/reader/topic-everyone/1",
-        "txHash": "0x7e3166086d799b101edd9623b8b33ebf1e466e41d531281883ab038971d11593",
-        "blockNumber": 71,
-        "blockHash": "0x8abbe82701fc825ba6f624b5af8df218e4a944382abedacc9e7ddecde79d2761",
-        "gasUsed": 164159
+        "txHash": "0x33410217802701bbf5ad474ffc30894cf9555213e31a30313ccfd38410cb9c5d",
+        "blockNumber": 72,
+        "blockHash": "0xa33b77ff23348850ec6ceef9c5c0bac39f504abcb2aa1b2f3b8c3e9e56d35b4a",
+        "gasUsed": 164077
       },
       {
         "id": "R11",
         "label": "list TopicLookupReader under efs/reader/topic-lookup/1",
-        "txHash": "0x2640f04fa97f1695af6dbd6326ef6280838eb337801f12107dca1f4257cc35f9",
-        "blockNumber": 72,
-        "blockHash": "0x3ee1927efd8e68041da843664aac86a38fca7fd7dd8d21e94e036a3932355395",
-        "gasUsed": 164292
+        "txHash": "0x2a48c2c89fc51bc2a7d739a86685f26eaa85ba4eb61cd0ec9ea41d1624ed3484",
+        "blockNumber": 73,
+        "blockHash": "0xaf0e92e9353dea3b43294de8e288f610a98e8fca5cfda0c6db9a36f5ed38b936",
+        "gasUsed": 164280
       },
       {
         "id": "G22.root",
         "label": "seed root (PUBLISH files-directory/1)",
-        "txHash": "0xb4c595e1b8901e4b189490b18810b1f7c355565686fcdc4632674ac3eee63dca",
-        "blockNumber": 73,
-        "blockHash": "0x1bfe79eaa41abdd124ea5369cb5940c0fd292a5029e552677be241b5d718fa8f",
-        "gasUsed": 664276,
+        "txHash": "0xfd225d59d1a7313d0acfc3f44ecc9cecd497fe6e8ba0216651f5a5bf7d822f92",
+        "blockNumber": 74,
+        "blockHash": "0x6bcbedda878d8c1d5ebda0ad43b310373acfa0112ac4572cd427864d3998a6fa",
+        "gasUsed": 664902,
         "publication": 1
       },
       {
         "id": "G22.folder",
         "label": "seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)",
-        "txHash": "0x50af2af41a6762835b3a92fba6f578c2f87c6791f61d519574783c08055e6efe",
-        "blockNumber": 74,
-        "blockHash": "0x1f8fc0e3cde9d0f277508c0629f31590cefa30a5a8f202a1d790e20c964a4ae4",
-        "gasUsed": 1315730,
+        "txHash": "0xef57efd3171c7e984d382d6c60e096dd422d86c46af837edc96ce2ad00bfbdce",
+        "blockNumber": 75,
+        "blockHash": "0x4df81a968c7374da270b5b5fbc79cd87cf45018061e1cda4c5e171a23ecd69eb",
+        "gasUsed": 1316259,
         "publication": 2
       },
       {
         "id": "G22.file",
         "label": "seed file docs/readme.txt (CREATE, PUBLISH root form 0, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0xdafb2c47a302d80dd0bd28e8253e27d6417c999a61b6d3a40309c88245c42a74",
-        "blockNumber": 75,
-        "blockHash": "0x2ffa411495695ec760703f75c6ba8db66e587d906851be482e09e537ec1bf21d",
-        "gasUsed": 1676945,
+        "txHash": "0xa927160fe6c4f6229cdfc69a5098fe81c87cc14f5a75b1714fba2cefb4ffa90c",
+        "blockNumber": 76,
+        "blockHash": "0x974929921c8a8c9a53dad8dd5fa90474daa582542006110f31e82d5732075106",
+        "gasUsed": 1677353,
         "publication": 3
       },
       {
         "id": "G22.big.0",
         "label": "seed docs/big.bin publication 1/2 (2 actions, 16384 body bytes)",
-        "txHash": "0xb618736c83236e08faf3d449dfc3874a4ce28f629d1b572351c16c5e39bd3129",
-        "blockNumber": 76,
-        "blockHash": "0xa3a4a23830f934e8bdd7f0c04e488676516e491264078d299da6e3e5658dcf82",
-        "gasUsed": 12564980,
+        "txHash": "0xbfcca413abd2a9da7eccf552bca7aa8eaa5dbde81d9a160b8cd59d36e91b89b8",
+        "blockNumber": 77,
+        "blockHash": "0x84f4c3393417dc4717693c9fc2f07e747c0ad96cb012a3cc3bf09260c9029c66",
+        "gasUsed": 12565579,
         "publication": 4
       },
       {
         "id": "G22.big.1",
         "label": "seed docs/big.bin publication 2/2 (9 actions, 4351 body bytes)",
-        "txHash": "0xbce356e74ade0e586d8fb51a0b518a5fffbef1b1efeadbb7a07d08f4b6189e7a",
-        "blockNumber": 77,
-        "blockHash": "0x74a4d9040628b371f8f79301c4f0f4ce8f7c8f44e3b6d987cc23a14e3de607be",
-        "gasUsed": 5815051,
+        "txHash": "0xafd0f93baaccbbffdf180b42551a9f3ad7b33627fc0103134074f340f41f45fe",
+        "blockNumber": 78,
+        "blockHash": "0x3834a1f36929bbfacb9f189d645e740f8840448336ec716dc995c23ccacc73ae",
+        "gasUsed": 5815462,
         "publication": 5
       },
       {
         "id": "G22.remote",
         "label": "seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0xf569acef7f51a7f581ad11c55d0d79ec210b2521240772f38e364b0cbe3eae4b",
-        "blockNumber": 78,
-        "blockHash": "0x120c8023d9e98ba9025c6d2759ebc42ef168458b1d955aa5d90641b097057e00",
-        "gasUsed": 2372329,
+        "txHash": "0x8e8e553d4e0ab50d0a221e7cd6f28fb1395286522ad20186303a158006e3d3f2",
+        "blockNumber": 79,
+        "blockHash": "0x1ddaddb8dd5443232bbfaa9badbf29dbf926d3e4cdde2f7e05aa85e2d67c7551",
+        "gasUsed": 2372743,
         "publication": 6
       }
     ]

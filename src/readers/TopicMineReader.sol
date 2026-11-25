@@ -35,8 +35,12 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         comes from the deciding author's own entry, so each (topic filed under, thing) appears once in a listing
 ///         read at one block), so it needs only the heads of lens[0..j]: candidates are resolved in batches of up to
 ///         16 by one `LedgerViews.lensRule` call (the state word of each earlier author's head and the candidate
-///         author's whole head at the filed position), and the roll-up candidates that would show then read the
-///         heads of lens[0..j] at the viewed place in `heads` rounds of at most 64 keys. What `mine` shows for a
+///         author's whole head at the filed position), and the roll-up candidates that would show then ask lens[0..j]
+///         at the viewed place, leaving out what cannot be MASKED there (`TopicReaderBase._maskedAt`): a lens author
+///         whose exact scope list at the place is all live (its head, already read, at no further read; B) and, for
+///         a viewed position nobody ever stated anything at (its `position-authors` head, one read per row; A),
+///         every lens author; the rest are read as head states only (`LedgerViews.headStates`, one word per head) in
+///         rounds of at most 64 keys. Neither shortcut changes a row. What `mine` shows for a
 ///         lens and place, `TopicEveryoneReader.everyone` shows too. With `below`, a thing filed under two topics is
 ///         shown once per page, through its newest filing that the lens shows (`repeatsSkipped` counts the rest).
 ///         Heads are read at each page's own block, so a stance changed between pages can move a row, and a caller
@@ -71,7 +75,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
     }
 
     /// @param ledger_ the ledger proxy this reader serves (its layout is pinned here: `layoutId()`)
-    /// @param views_ the `LedgerViews` facet (`lensRule`, `heads`)
+    /// @param views_ the `LedgerViews` facet (`lensRule`, `headStates`)
     /// @param reads_ the `LedgerReads` facet (`basis`)
     constructor(address ledger_, address views_, address reads_)
         TopicReaderBase(ledger_, views_, reads_)
@@ -90,6 +94,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
     ) external view returns (TopicPageInfo memory info, MineRow[] memory rows) {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, lens, place, below));
+        r.place = place;
         uint256 n = below ? 2 * lens.length : lens.length;
         (Status st, uint64[] memory cursor) =
             _open(r, expected, lens.length, true, continuation, n, info);
@@ -111,7 +116,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             mstore(0x40, add(rows, mul(add(cap, 1), 32)))
         }
         (uint8 scan, uint256 got) =
-            _merge(r, s, lens, place, rows, Bounds(limit, maxRows, gasReserve), info);
+            _merge(r, s, lens, rows, Bounds(limit, maxRows, gasReserve), info);
         assembly ("memory-safe") {
             mstore(rows, got)
         }
@@ -138,6 +143,8 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
         // live-scope is a genesis family of the served physical profile: its coverage is the family's, the same for
         // every scope (design §10.5), so it is read once
         cov = _scopeCoverage(r, Keys.scope(lens[0], Purpose.TAG, place));
+        // shortcut B (see `_scope`) can apply: `_merge` keeps the lens authors whose exact list is all live
+        if (below && cov == Coverage.COMPLETE) r.quiet = type(uint256).max;
         for (uint256 i; i < s.length; ++i) {
             Src memory x = s[i];
             bytes32 author = lens[i % len];
@@ -172,6 +179,20 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
         return (Status.PRESENT, s, cov, left);
     }
 
+    /// Shortcut B of `_maskedAt` (the bits of `r.quiet`, set in `_sources` for a below view): a lens author whose
+    /// exact scope list at the place has `live == count`, read under COMPLETE live-scope coverage, holds no MASKED head
+    /// at any position `(TAG, place, ·)`, the viewed positions included, so it is never asked at the viewed place.
+    /// Why: the list `Keys.scope(author, TAG, place)` (family 10) has exactly one entry per binding of the author at a
+    /// position whose purpose is TAG and whose subject is the place, appended at the binding's first statement
+    /// (FIRST_BIND or FIRST_MASK; a binding is allocated once and a head never returns to UNSET), and that entry's
+    /// live bit (family 18) is set exactly while the head is BOUND: appended set; cleared at once by a FIRST_MASK;
+    /// cleared by every MASK and RELEASE, set by every RESTORE, untouched by a REBIND (`RealmIndex._foldBind`). The
+    /// store changes `live` only when a bit actually flips (`BitmapStore.appendScopeEntry`, `setBit`), so `live` is
+    /// the number of set bits among the `count` entries. Coverage COMPLETE means every admission up to the page's high
+    /// water is folded. So `live == count` means every binding of the author at the place is BOUND now (none MASKED,
+    /// none RELEASED), and a position with no entry is one the author never stated anything at (UNSET). live-scope is
+    /// a genesis family of the served physical profile, never backfilled (`backfillOr` would set bits uncounted); a
+    /// coverage other than COMPLETE leaves every bit clear and asks as before.
     /// An exact scope list's head.
     function _scope(Run memory r, address store, Src memory x) private view {
         bytes memory ret =
@@ -210,12 +231,12 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
     function _merge(
         Run memory r,
         Src[] memory s,
-        bytes32[] calldata lens,
-        bytes32 place,
+        bytes32[] memory lens,
         MineRow[] memory rows,
         Bounds memory b,
         TopicPageInfo memory info
     ) private view returns (uint8, uint256 got) {
+        if (r.quiet != 0) _quiet(r, s, lens.length);
         uint64[] memory ord = new uint64[](WINDOW);
         uint256[] memory src = new uint256[](WINDOW);
         for (;;) {
@@ -241,9 +262,18 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
                 src[n] = best;
                 ++n;
             }
-            if (n != 0) got = _resolve(r, s, lens, place, ord, src, n, rows, got, info);
+            if (n != 0) got = _resolve(r, s, lens, ord, src, n, rows, got, info);
         }
         return (SCAN_EXHAUSTED, got); // unreachable: the loop returns
+    }
+
+    /// Shortcut B's bits (see `_scope`): lens author a when its exact scope list at the place is all live.
+    function _quiet(Run memory r, Src[] memory s, uint256 len) private pure {
+        uint256 q;
+        for (uint256 a; a < len; ++a) {
+            if (s[a].l.live == s[a].l.count) q |= 1 << a;
+        }
+        r.quiet = q;
     }
 
     /// The list whose front entry is the newest (binding ordinals are unique), refilling empty windows.
@@ -272,8 +302,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
     function _resolve(
         Run memory r,
         Src[] memory s,
-        bytes32[] calldata lens,
-        bytes32 place,
+        bytes32[] memory lens,
         uint64[] memory ord,
         uint256[] memory src,
         uint256 n,
@@ -287,25 +316,8 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             o[i] = ord[i];
             who[i] = uint8(src[i] % lens.length);
         }
-        Lensed memory x = _lensRule(r, lens, o, who);
-        bytes32[] memory th = new bytes32[](n);
-        uint256[] memory ask = new uint256[](n);
-        for (uint256 i; i < n; ++i) {
-            bool exact = s[src[i]].exact;
-            Coordinate memory c = x.cells[i];
-            // an exact entry is filed at the place; a roll-up entry under a proper descendant of it
-            if (c.purpose != Purpose.TAG || (c.subject == place) != exact) {
-                revert E_TOPIC_INCONSISTENT(3);
-            }
-            Head memory h = x.own[i];
-            if (h.state == 0 || h.bindingOrdinal != o[i] || (exact && h.state != 1)) {
-                revert E_TOPIC_INCONSISTENT(4); // the entry is the author's binding; a live bit means BOUND
-            }
-            th[i] = c.role;
-            // the filed position shows it (iT = j says yes): below, ask lens[0..j] at the viewed place
-            if (!exact && x.decider[i] == who[i] && h.state == 1) ask[i] = uint256(who[i]) + 1;
-        }
-        uint256[] memory kv = _maskedAt(r, lens, place, th, ask);
+        (Lensed memory x, bytes32[] memory th, uint256[] memory kv) =
+            _viewedCheck(r, s, lens, src, o, who);
         for (uint256 i; i < n; ++i) {
             uint256 j = who[i];
             Head memory h = x.own[i];
@@ -331,6 +343,39 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             ++r.selected;
         }
         return got;
+    }
+
+    /// A batch's `lensRule` reply, checked against its entries, and the viewed-place check: `th[i]` is entry i's
+    /// thing, `kv[i]` the first of lens[0..j] whose head at the viewed place is MASKED (SELECTED_NONE for an exact
+    /// entry, and for a roll-up entry its own author does not show where it was filed).
+    function _viewedCheck(
+        Run memory r,
+        Src[] memory s,
+        bytes32[] memory lens,
+        uint256[] memory src,
+        uint64[] memory o,
+        uint8[] memory who
+    ) private view returns (Lensed memory x, bytes32[] memory th, uint256[] memory kv) {
+        x = _lensRule(r, lens, o, who);
+        uint256 n = o.length;
+        th = new bytes32[](n);
+        uint256[] memory ask = new uint256[](n);
+        for (uint256 i; i < n; ++i) {
+            bool exact = s[src[i]].exact;
+            Coordinate memory c = x.cells[i];
+            // an exact entry is filed at the place; a roll-up entry under a proper descendant of it
+            if (c.purpose != Purpose.TAG || (c.subject == r.place) != exact) {
+                revert E_TOPIC_INCONSISTENT(3);
+            }
+            Head memory h = x.own[i];
+            if (h.state == 0 || h.bindingOrdinal != o[i] || (exact && h.state != 1)) {
+                revert E_TOPIC_INCONSISTENT(4); // the entry is the author's binding; a live bit means BOUND
+            }
+            th[i] = c.role;
+            // the filed position shows it (iT = j says yes): below, ask lens[0..j] at the viewed place
+            if (!exact && x.decider[i] == who[i] && h.state == 1) ask[i] = uint256(who[i]) + 1;
+        }
+        kv = _maskedAt(r, lens, r.place, th, ask);
     }
 
     /// The window just below `hi`: up to WINDOW entries (an exact list's window stays inside one bitmap word, whose

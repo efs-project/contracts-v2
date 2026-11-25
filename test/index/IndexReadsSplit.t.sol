@@ -13,7 +13,14 @@ import {FamilyId, ScopeKey} from "../../src/interfaces/Actions.sol";
 import {Coverage} from "../../src/interfaces/Results.sol";
 import {IIndexReads} from "../../src/interfaces/IIndexReads.sol";
 import {ILedgerControl} from "../../src/interfaces/ILedgerControl.sol";
-import {DigestSpec, FamilyEntry, Readiness, Unit, WorkModel} from "../../src/interfaces/Index.sol";
+import {
+    DigestSpec,
+    FamilyEntry,
+    Readiness,
+    Unit,
+    WorkModel,
+    WORK_MODEL_WORDS
+} from "../../src/interfaces/Index.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {E_PIN} from "../../src/interfaces/Errors.sol";
 
@@ -65,6 +72,33 @@ contract IndexReadsSplitTest is Test {
             .activate(
                 KernelDeploy.genesisSet(k, address(this), address(registry), index, manifestHash)
             );
+    }
+
+    /// The readers that check the index's profiles from `manifest()`'s raw reply (`LensReader`) find them right after
+    /// the inline `WorkModel`, at word 4 + `WORK_MODEL_WORDS`: the constant must be the struct's encoded size and the
+    /// reply's head must keep that shape, so a work model that gains fields fails here until the constant follows.
+    function test_manifest_profiles_follow_the_inline_work_model() public view {
+        WorkModel memory none;
+        assertEq(
+            abi.encode(none).length, WORK_MODEL_WORDS * 32, "WORK_MODEL_WORDS is the struct's size"
+        );
+        (bool ok, bytes memory raw) =
+            address(g.index).staticcall(abi.encodeCall(IIndexReads.manifest, ()));
+        assertTrue(ok);
+        (,,,, WorkModel memory work, bytes32 physical, bytes32 callback) = g.index.manifest();
+        uint256 at = 4 + WORK_MODEL_WORDS;
+        assertEq(abi.encode(work).length, WORK_MODEL_WORDS * 32, "a static struct, inline");
+        assertEq(_word(raw, at), physical, "physicalProfile right after the work model");
+        assertEq(_word(raw, at + 1), callback, "callbackProfile next");
+        assertEq(
+            uint256(_word(raw, 1)), (at + 2) * 32, "the head ends there: the first array follows"
+        );
+    }
+
+    function _word(bytes memory r, uint256 i) internal pure returns (bytes32 x) {
+        assembly ("memory-safe") {
+            x := mload(add(add(r, 0x20), shl(5, i)))
+        }
     }
 
     function test_manifest_hash_folds_the_reads_contract() public view {

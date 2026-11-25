@@ -8,18 +8,13 @@ import {ILedgerReads} from "../interfaces/ILedgerReads.sol";
 import {IFilesPageReader, IReader} from "../interfaces/Readers.sol";
 import {BasisCommit, Coverage, Status} from "../interfaces/Results.sol";
 import {IWeb3Gateway, KeyValue} from "../interfaces/IWeb3Gateway.sol";
+import {IWeb3Content} from "../interfaces/IWeb3Content.sol";
+import {E_WEB3_CONFIG, E_WEB3_STATUS} from "./EfsWeb3Content.sol";
 
-/// The inner frame's answer for anything other than a served response: `request` returns it as
-/// `(status, reason)` with a `text/plain` body. Never escapes `request`.
-error E_WEB3_STATUS(uint16 status, string reason); // none
-/// Constructor only: 1 a zero ledger or facet, 2 a page reader bound to another ledger.
-error E_WEB3_CONFIG(uint8 code); // none
-
-// Narrowing casts are record offsets and lengths bounded by the record's own 32-bit length, or ASCII bytes; the
-// gateway reads the ledger row by row, so calls in loops are its purpose, bounded by the path depth, the lens
-// length and the span tree's depth (each level strictly shrinks the length it covers). Ignored tuple components are
-// fields the gateway does not need; a zero page reader is the documented "no listings" configuration; `_fail` is the
-// one refusal path, loops included.
+// Narrowing casts are ASCII bytes and the facet's 32-bit word index; the gateway reads the ledger row by row, so
+// calls in loops are its purpose, bounded by the path depth and the lens length. Ignored tuple components are fields
+// the gateway does not need; a zero page reader is the documented "no listings" configuration; `_fail` is the one
+// refusal path, loops included.
 // forge-lint: disable-start(unsafe-typecast)
 // forge-lint: disable-start(calls-loop)
 // forge-lint: disable-start(unused-return)
@@ -28,12 +23,16 @@ error E_WEB3_CONFIG(uint8 code); // none
 
 /// @title EfsWeb3Gateway/1 — EFS content over `web3://` (docs/LARGE-FILES.md "`web3://`")
 /// @notice ERC-5219 resource-request mode (`resolveMode() == "5219"`) with ERC-7617 chunked bodies. Immutable and
-///         stateless, outside the execution set, so it can be added, fixed and replaced after a freeze. Bound at
-///         construction to one ledger, its `LedgerReads` facet (bodies), its `LedgerViews` facet (held for parity
-///         with the other readers; this version needs no composite read), an optional `FilesPageReader` (zero: no
-///         listings), the Realm's root `files-directory/1` record and the Files Type ids it interprets. Facts come
-///         from the Etched hot getters (`head`, `recordHeader`, `layoutId`), bodies from `LedgerReads.bodySlice` /
-///         `bodyWords`; it never reads raw slots and never consults the index for a file read.
+///         stateless, outside the execution set, so it can be added, fixed and replaced after a freeze. This is the
+///         one address a `web3://<gateway>/…` URL names: it parses the URL, resolves names and the lens, applies the
+///         HEAD selection and serves listings; the revision it selects is served by `CONTENT`, an `EfsWeb3Content`
+///         bound to the same ledger, reached by STATICCALL at an immutable address whose codehash is recorded
+///         (`CONTENT_CODEHASH`, checked on every call). Bound at construction to one ledger, its `LedgerReads`
+///         facet (a folder's creator word, a subject's creator), its `LedgerViews` facet (held for parity with the
+///         other readers; this version needs no composite read), an optional `FilesPageReader` (zero: no listings),
+///         the content server, the Realm's root `files-directory/1` record and the `files-directory/1` Type id.
+///         Facts come from the Etched hot getters (`head`, `recordHeader`, `layoutId`) and the facet; it never
+///         reads raw slots and never consults the index for a file read.
 ///
 ///         URL grammar (docs/LARGE-FILES.md "`web3://`"; the shared link grammar): the FIRST path segment decides
 ///         the kind of path.
@@ -43,16 +42,23 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///           contract principal of a contract (a Safe's home shows the Safe's own entries). The home itself is named
 ///           `x-efs-home: 0x<40 hex>` (lowercase) in place of `x-efs-record`: a home is an address, never a record.
 ///           Any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id".
-///         - `/~efs/o/<folder id>[/<name>…][/][?lens=…][&offset=<n>]`: any folder, the Realm root included, by its
-///           `files-directory/1` record id (`0x` + 64 hex). The lens defaults to the folder's creator, the record's
-///           body word 0 (`abi.encode(creator, salt)`). An id that is not a `files-directory/1` record but names
-///           something that exists (a record of another Type, such as a file revision or a name; a created subject,
-///           which is what a file is) is 501 "object not served": it exists, this gateway does not serve that kind
-///           of object link yet, and it is never 404. Only an id that is neither a record nor a created subject is
-///           404 "not found"; never an empty listing. An id of another shape is 400 "malformed id".
-///         - `/~efs/v[/…]` (a revision link): 501 "object not served", whatever follows. Every other `~` first
-///           segment, and every other `~efs/…` form, is 400 "unknown system path" (`~` first segments are the
-///           system's).
+///         - `/~efs/o/<object id>[/<name>…][/][?lens=…][&offset=<n>]` (an object link; `0x` + 64 hex, any case):
+///           a `files-directory/1` record id is that FOLDER, the Realm root included, with the names below it; the
+///           lens defaults to the folder's creator, the record's body word 0 (`abi.encode(creator, salt)`). A
+///           created subject is a FILE: its current HEAD under the lens, served exactly as a named file is; the lens
+///           defaults to the subject's creator (the principal of the publication that created it,
+///           `LedgerReads.subjectInfo`); a name after it is 404 "not found: file used as a folder". An id that is a
+///           record of any other Type (a file revision, a name, a descriptor) is 501 "object not served": it
+///           exists, this gateway does not serve that kind of object link, and it is never 404. Only an id that is
+///           neither a record nor a created subject is 404 "not found"; never an empty listing. An id of another
+///           shape is 400 "malformed id".
+///         - `/~efs/v/<revision record id>[?offset=<n>]` (a revision link): exactly that `files-root/1` or
+///           `files-child/1` record's bytes, with no lens (`lens` is ignored), whether or not it is anyone's HEAD;
+///           `Content-Type` from its descriptor, else `application/octet-stream` (there is no name). An existing
+///           record of another Type or a created subject is 501 "object not served", an id that names nothing 404,
+///           a malformed id 400 "malformed id", and a missing id or a segment after it 400 "malformed revision
+///           link". Every other `~` first segment, and every other `~efs/…` form, is 400 "unknown system path"
+///           (`~` first segments are the system's).
 ///         - Anything else is a topic path (`/<word>/…`): 501 "topic paths are not served" (this gateway serves
 ///           none yet). No folder is ever served there, so a topic link can never mean a folder.
 ///         `lens` replaces the default lens with exactly the listed principals (at most 64): each 64 hex digits (a
@@ -68,49 +74,28 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         principal in order through `ILedgerHot.head(Keys.binding(principal, position))`: the first BOUND head
 ///         wins, a MASKED head stops (mask beats fall-through), UNSET and RELEASED fall through. A directory target
 ///         continues the walk; a file subject must be the last name. A file's HEAD `(HEAD, file, 0)` is resolved the
-///         same way and must name a `files-root/1` / `files-child/1` record whose file word is that file (the
-///         reader-side HEAD law). Form 0: the inline bytes. Form 1 naming `files-content/1`: carrier 0 or 2, the
-///         chunk holding byte `offset` (found by descending the span tree by its lengths, O(depth) record reads),
-///         served from `offset` to the chunk's end, with `web3-next-chunk: /<path>?offset=<next>[&lens=…]` unless it
-///         reaches the end; carrier 1 (remote sentinel) is 404. Form 1 naming `files-external/1`: 307 with
-///         `Location: <locator>` (and `x-efs-media-type` when the location declares one). A directory: with a page reader, 200 `application/json`
-///         `{"entries":[{"name":…,"kind":"file"|"directory"}…],"complete":bool}` from one page of at most
-///         `LISTING_LIMIT` rows and `x-efs-listing: complete|partial`; without one, 200 `directory`.
-///
-///         Headers: `Content-Type` (a `files-content/1` descriptor's declared media type when it has one, else by
-///         the final name's extension; listings JSON; refusals text), `X-Content-Type-Options: nosniff` (only with
-///         a declared media type, so a browser cannot upgrade an author's `text/plain` to HTML; the extension path
-///         sends none), `Content-Length` (the whole file's length), `x-efs-record` (the revision record, or the
-///         directory record), `x-efs-sha256` (a descriptor's digest: the author's claim for carrier 2 and external
-///         locations, verify after reading), `x-efs-cipher` (a nonzero cipher word: the stored ciphertext is
-///         served), `x-efs-media-type` (a `files-external/1` location's declared media type, on the 307, so a
-///         client that does not follow the redirect still learns it). A media type is the rest of a descriptor's
-///         body; a descriptor shorter than its words, or a location whose locator length is 0 or runs past the
-///         body, is a 500.
+///         same way; a HEAD that is not a record target is 500 "HEAD law: target is not a record", and the record is
+///         handed to `CONTENT.serveRevision(record, file, lastName, offset)`, which checks the rest of the reader-side
+///         HEAD law ("HEAD law: target not a revision", "HEAD law: short revision", "HEAD law: revision of other
+///         file") and serves it: inline bytes, one chunk of a `files-content/1` descriptor, or a `files-external/1`
+///         location as a 307 (see `EfsWeb3Content`). When a chunk does not reach the end of the file the gateway adds
+///         `web3-next-chunk: /<path>?offset=<next>[&lens=…]`. A directory: with a page reader, 200
+///         `application/json` `{"entries":[{"name":…,"kind":"file"|"directory"}…],"complete":bool}` from one page of
+///         at most `LISTING_LIMIT` rows and `x-efs-listing: complete|partial`; a listing the pager answers with a
+///         status other than PRESENT is 500 "listing refused" (UNSUPPORTED 503), one that reverts 500 "listing
+///         failed"; without a page reader, 200 `directory`.
 ///
 ///         Statuses (never a revert for anything a URL can cause): 200 served; 307 external location; 400 malformed
-///         URL or unknown system path; 404 not found, removed (masked), file used as a folder, an id that names
-///         nothing, or remote-only content; 501 a link form not served yet (a topic path, a revision link, the id of
-///         an existing object that is not a folder); 416 `offset` at or
-///         past the end (except 0 on an empty file); 500 a broken invariant (a Type, length or record the Files
-///         laws guarantee is wrong or missing, a failed listing); 503 a ledger layout or head state this gateway was
-///         not built for, or a read the facet refuses (UNSUPPORTED, LIMIT_EXCEEDED).
-/// @dev `request` calls `serve` on itself by STATICCALL; every refusal inside is `E_WEB3_STATUS(status, reason)` and
-///      any other failure of the inner frame (a dependency revert, out of gas) is a 500, so `request` itself only
-///      fails when the outer frame cannot encode its answer.
+///         URL or unknown system path; 404 not found, removed (masked), file used as a folder, no revision, an id that
+///         names nothing, or remote-only content; 501 a link form not served yet (a topic path, the id of an
+///         existing object that is neither a folder nor a file, a revision link to an object that is not a
+///         revision); 416 `offset` at or past the end (except 0 on an empty file); 500 a broken invariant (a Type,
+///         length or record the Files laws guarantee is wrong or missing, a failed listing); 503 a ledger layout or
+///         head state this gateway was not built for, or a read the facet refuses (UNSUPPORTED, LIMIT_EXCEEDED).
+/// @dev `request` calls `serve` on itself by STATICCALL; every refusal inside, the content server's included, is
+///      `E_WEB3_STATUS(status, reason)` and any other failure of the inner frame (a dependency revert, out of gas) is
+///      a 500, so `request` itself only fails when the outer frame cannot encode its answer.
 contract EfsWeb3Gateway is IWeb3Gateway {
-    /// The Files Type ids the gateway interprets (`FilesTypes.typeIdOf` of the release descriptors).
-    struct Types {
-        bytes32 directory;
-        bytes32 name;
-        bytes32 root;
-        bytes32 child;
-        bytes32 content;
-        bytes32 external_;
-        bytes32 bytes_;
-        bytes32 span;
-    }
-
     uint16 public constant FACET_VERSION = 1;
     uint256 public constant MAX_NAMES = 32;
     uint256 public constant MAX_NAME_BYTES = 255;
@@ -125,9 +110,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     uint8 private constant TARGET_RECORD = 1;
     uint8 private constant TARGET_SUBJECT = 2;
     uint8 private constant ROW_ENTRY = 1;
-    uint256 private constant CARRIER_REMOTE = 1;
-    uint256 private constant CARRIER_SPAN = 2;
-    uint256 private constant MAX_HEADERS = 8;
+    uint256 private constant MAX_HEADERS = 3;
     bytes16 private constant HEX = "0123456789abcdef";
     bytes16 private constant UPPER_HEX = "0123456789ABCDEF";
     string private constant TEXT = "text/plain; charset=utf-8";
@@ -136,16 +119,12 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     address public immutable READS;
     address public immutable VIEWS;
     address public immutable PAGER;
+    /// The `EfsWeb3Content` that serves the revisions this gateway selects, and its runtime codehash.
+    address public immutable CONTENT;
+    bytes32 public immutable CONTENT_CODEHASH;
     bytes32 private immutable LAYOUT;
     bytes32 public immutable ROOT_DIRECTORY;
     bytes32 public immutable DIRECTORY_TYPE;
-    bytes32 public immutable NAME_TYPE;
-    bytes32 public immutable ROOT_TYPE;
-    bytes32 public immutable CHILD_TYPE;
-    bytes32 public immutable CONTENT_TYPE;
-    bytes32 public immutable EXTERNAL_TYPE;
-    bytes32 public immutable BYTES_TYPE;
-    bytes32 public immutable SPAN_TYPE;
 
     /// One request's working state.
     struct Req {
@@ -158,36 +137,39 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         uint256 start;
         bytes32 home;
         bytes32 folder;
+        bool revision;
     }
 
     /// @param pager_ a `FilesPageReader` bound to `ledger_`, or zero for no listings
+    /// @param content_ an `EfsWeb3Content` bound to `ledger_`
     /// @param rootDirectory_ the Realm root's `files-directory/1` record id (served as `/~efs/o/<id>/`)
+    /// @param directoryType_ the `files-directory/1` Type id
     constructor(
         address ledger_,
         address reads_,
         address views_,
         address pager_,
+        address content_,
         bytes32 rootDirectory_,
-        Types memory t
+        bytes32 directoryType_
     ) {
-        if (ledger_ == address(0) || reads_ == address(0) || views_ == address(0)) {
+        if (
+            ledger_ == address(0) || reads_ == address(0) || views_ == address(0)
+                || content_ == address(0)
+        ) {
             revert E_WEB3_CONFIG(1);
         }
         if (pager_ != address(0) && IReader(pager_).ledger() != ledger_) revert E_WEB3_CONFIG(2);
+        if (IWeb3Content(content_).ledger() != ledger_) revert E_WEB3_CONFIG(3);
         LEDGER = ledger_;
         READS = reads_;
         VIEWS = views_;
         PAGER = pager_;
+        CONTENT = content_;
+        CONTENT_CODEHASH = content_.codehash;
         LAYOUT = ILedgerHot(ledger_).layoutId();
         ROOT_DIRECTORY = rootDirectory_;
-        DIRECTORY_TYPE = t.directory;
-        NAME_TYPE = t.name;
-        ROOT_TYPE = t.root;
-        CHILD_TYPE = t.child;
-        CONTENT_TYPE = t.content;
-        EXTERNAL_TYPE = t.external_;
-        BYTES_TYPE = t.bytes_;
-        SPAN_TYPE = t.span;
+        DIRECTORY_TYPE = directoryType_;
     }
 
     function facetVersion() external pure returns (uint16) {
@@ -244,19 +226,25 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     {
         Req memory q = _parse(resource, params);
         if (ILedgerHot(LEDGER).layoutId() != LAYOUT) _fail(503, "foreign ledger layout");
+        // a revision link: exactly that revision, no lens, no name (the content server judges the id)
+        if (q.revision) return _serveRevision(q, resource, q.folder, 0, "");
         bytes32 dir = q.home;
         if (q.home == 0) {
-            // a folder by id: a `files-directory/1` record, never a silent empty folder; its creator (body word 0,
-            // `abi.encode(creator, salt)`) is the lens unless `lens` names one
+            // an object by id: a `files-directory/1` record is a folder, never a silent empty folder, and its
+            // creator (body word 0, `abi.encode(creator, salt)`) is the lens unless `lens` names one
             dir = q.folder;
             (bytes32 t,,,,) = ILedgerHot(LEDGER).recordHeader(dir);
             if (t != DIRECTORY_TYPE) {
-                // something that exists (a record of another Type: every record has a nonzero Type; a created
-                // subject such as a file) is never absent: only an id that names nothing is 404
-                if (t == 0 && ILedgerHot(LEDGER).subjectCreatedAt(dir) == 0) {
-                    _fail(404, "not found");
-                }
-                _fail(501, "object not served");
+                // a record of another Type (every record has a nonzero Type) exists: never absent
+                if (t != 0) _fail(501, "object not served");
+                // a created subject is a file, served under its creator's lens unless `lens` names one; only an
+                // id that is neither a record nor a created subject is 404
+                (Status st,, bytes32 creator) = ILedgerReads(READS).subjectInfo(LEDGER, dir);
+                if (st == Status.ABSENT_PROVEN) _fail(404, "not found");
+                _ok(st);
+                if (q.start != q.last) _fail(404, "not found: file used as a folder");
+                if (q.lensParam.length == 0) q.lens[0] = creator;
+                return _file(q, resource, dir, "");
             }
             if (q.lensParam.length == 0) q.lens[0] = _words(dir, 0, 1)[0];
         }
@@ -267,7 +255,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             if (state != BOUND) _fail(404, "not found");
             if (kind == TARGET_SUBJECT) {
                 if (i + 1 != q.last) _fail(404, "not found: file used as a folder");
-                return _file(q, resource, target);
+                return _file(q, resource, target, bytes(resource[i]));
             }
             if (kind != TARGET_RECORD || !_isDirectory(target)) {
                 _fail(500, "folder target is not a directory");
@@ -303,7 +291,9 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         return (0, 0, 0);
     }
 
-    function _file(Req memory q, string[] calldata resource, bytes32 file)
+    /// File subject `file`'s HEAD `(HEAD, file, 0)` under the lens, served by the content server, which checks the
+    /// rest of the reader-side HEAD law against `file`; `name` gives the extension fallback (empty: none).
+    function _file(Req memory q, string[] calldata resource, bytes32 file, bytes memory name)
         private
         view
         returns (uint16, bytes memory, KeyValue[] memory)
@@ -311,105 +301,30 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         (uint8 state, uint8 kind, bytes32 rev) =
             _select(q.lens, Keys.position(Purpose.HEAD, file, 0));
         if (state != BOUND) _fail(404, "not found: no revision");
-        if (kind != TARGET_RECORD) _fail(500, "HEAD law broken");
-        (bytes32 typeId,, uint32 length,,) = ILedgerHot(LEDGER).recordHeader(rev);
-        if (typeId != ROOT_TYPE && typeId != CHILD_TYPE) {
-            _fail(500, "HEAD law broken");
-        }
-        uint256 base = typeId == ROOT_TYPE ? 0 : 32; // the file word: root word 0, child word 1
-        if (length < base + 64) _fail(500, "HEAD law broken");
-        bytes memory body = _slice(rev, 0, length);
-        if (_word(body, base) != file) _fail(500, "HEAD law broken");
-        _add(q, "Content-Type", _contentType(bytes(resource[q.last - 1])));
-        _add(q, "x-efs-record", _hex(rev));
-        uint256 form = uint256(_word(body, base + 32));
-        if (form == 0) {
-            uint256 size = length - base - 64;
-            _range(q.offset, size);
-            _add(q, "Content-Length", _dec(size));
-            return (200, _tail(body, base + 64 + q.offset), _headers(q));
-        }
-        if (form != 1 || length != base + 96) _fail(500, "unknown revision form");
-        return _descriptor(q, resource, _word(body, base + 64));
+        if (kind != TARGET_RECORD) _fail(500, "HEAD law: target is not a record");
+        return _serveRevision(q, resource, rev, file, name);
     }
 
-    function _descriptor(Req memory q, string[] calldata resource, bytes32 d)
-        private
-        view
-        returns (uint16, bytes memory, KeyValue[] memory)
-    {
-        (bytes32 typeId,, uint32 length,,) = ILedgerHot(LEDGER).recordHeader(d);
-        if (typeId == EXTERNAL_TYPE) {
-            // [sentinel, 2, 2, 1, length, sha256, locatorLength] ‖ locator ‖ media (the rest of the body)
-            if (length <= 224) _fail(500, "malformed location");
-            bytes memory b = _slice(d, 0, length);
-            uint256 locator = uint256(_word(b, 192));
-            if (locator == 0 || locator > length - 224) _fail(500, "malformed location");
-            _add(q, "x-efs-sha256", _hex(_word(b, 160)));
-            _add(q, "Location", string(_cut(b, 224, locator)));
-            if (224 + locator < length) {
-                _add(q, "x-efs-media-type", string(_tail(b, 224 + locator)));
-            }
-            return (307, "", _headers(q));
+    /// `CONTENT.serveRevision` (its refusals revert through), then `web3-next-chunk` when the chunk is not the last.
+    function _serveRevision(
+        Req memory q,
+        string[] calldata resource,
+        bytes32 rev,
+        bytes32 file,
+        bytes memory name
+    ) private view returns (uint16, bytes memory, KeyValue[] memory) {
+        if (CONTENT.codehash != CONTENT_CODEHASH) {
+            _fail(500, "content server changed");
         }
-        if (typeId != CONTENT_TYPE || length < 320) _fail(500, "revision names no descriptor");
-        // [bytesRef, version, carrier, hashAlg, length, sha256, cipher, …] ‖ media (the rest of the body)
-        bytes32[] memory w = _words(d, 0, 7);
-        uint256 carrier = uint256(w[2]);
-        uint256 size = uint256(w[4]);
-        if (carrier == CARRIER_REMOTE) _fail(404, "not found: remote-only content");
-        if (carrier > CARRIER_SPAN) _fail(500, "unknown carrier");
-        _range(q.offset, size);
-        if (length > 320) {
-            // the declared media type replaces the extension's guess (Content-Type is always header 0)
-            q.h[0].value = string(_slice(d, 320, length - 320));
-            _add(q, "X-Content-Type-Options", "nosniff");
+        (uint16 status, bytes memory body, KeyValue[] memory h, uint256 next) =
+            IWeb3Content(CONTENT).serveRevision(rev, file, name, q.offset);
+        if (next == 0) return (status, body, h);
+        KeyValue[] memory all = new KeyValue[](h.length + 1);
+        for (uint256 i; i < h.length; ++i) {
+            all[i] = h[i];
         }
-        _add(q, "Content-Length", _dec(size));
-        _add(q, "x-efs-sha256", _hex(w[5]));
-        if (w[6] != 0) _add(q, "x-efs-cipher", _dec(uint256(w[6])));
-        bytes memory chunk = _chunk(w[0], carrier == CARRIER_SPAN, size, q.offset);
-        uint256 next = q.offset + chunk.length;
-        if (next < size) _add(q, "web3-next-chunk", _nextUrl(q, resource, next));
-        return (200, chunk, _headers(q));
-    }
-
-    /// The bytes from `offset` to the end of the chunk that holds it, under the tree `node` of `size` bytes: a
-    /// `files-bytes/1` chunk (carrier 0) or a `files-span/1` root (carrier 2), descended by the left child's
-    /// length. Every node's Type and length is checked against what its parent says it covers.
-    function _chunk(bytes32 node, bool span, uint256 size, uint256 offset)
-        private
-        view
-        returns (bytes memory chunk)
-    {
-        for (bool top = true;; top = false) {
-            (bytes32 t,, uint32 len,,) = ILedgerHot(LEDGER).recordHeader(node);
-            if (t == BYTES_TYPE && !(top && span)) {
-                if (len < 32 || len - 32 != size) _fail(500, "tree: chunk length");
-                return _slice(node, 32 + offset, size - offset);
-            }
-            if (t != SPAN_TYPE || len != 96 || (top && !span)) _fail(500, "tree: missing node");
-            bytes32[] memory w = _words(node, 0, 3); // [left, right, length]
-            if (uint256(w[2]) != size) _fail(500, "tree: span length");
-            uint256 left = _length(w[0]);
-            if (left == 0 || left >= size) _fail(500, "tree: child length");
-            if (offset < left) {
-                node = w[0];
-                size = left;
-            } else {
-                node = w[1];
-                offset -= left;
-                size -= left;
-            }
-        }
-    }
-
-    /// The payload length a tree child covers; 0 when it is neither a chunk nor a span.
-    function _length(bytes32 child) private view returns (uint256) {
-        (bytes32 t,, uint32 len,,) = ILedgerHot(LEDGER).recordHeader(child);
-        if (t == BYTES_TYPE) return len < 32 ? 0 : len - 32;
-        if (t == SPAN_TYPE && len == 96) return uint256(_words(child, 2, 1)[0]);
-        return 0;
+        all[h.length] = KeyValue("web3-next-chunk", _nextUrl(q, resource, next));
+        return (status, body, all);
     }
 
     function _directory(Req memory q, bytes32 dir)
@@ -437,7 +352,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             IFilesPageReader.DirectoryPage memory page
         ) {
             if (page.q.status == Status.UNSUPPORTED) _fail(503, "listing unsupported");
-            if (page.q.status != Status.PRESENT) _fail(500, "listing failed");
+            if (page.q.status != Status.PRESENT) _fail(500, "listing refused");
             // complete only when the pager proves it and offers no continuation: a listing is never silently short
             bool complete = page.listingCoverage == Coverage.COMPLETE && page.next.length == 0;
             _add(q, "Content-Type", "application/json");
@@ -451,18 +366,6 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     // =============================================================================================
     // Facet reads
     // =============================================================================================
-
-    function _slice(bytes32 id, uint256 offset, uint256 length)
-        private
-        view
-        returns (bytes memory out)
-    {
-        if (length == 0) return out;
-        Status st;
-        (st, out) = ILedgerReads(READS).bodySlice(LEDGER, id, uint32(offset), uint32(length));
-        _ok(st);
-        if (out.length != length) _fail(500, "short body");
-    }
 
     function _words(bytes32 id, uint256 from, uint256 count)
         private
@@ -499,12 +402,16 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         bytes calldata s0 = bytes(resource[0]);
         bytes32 first;
         if (s0[0] == "~") {
-            // `/~efs/o/<folder id>/…`, the only system path served; `/~efs/v/…` (a revision link) is a defined form
-            // that is not served yet, whatever follows it
+            // `/~efs/o/<object id>/…` (an object link) and `/~efs/v/<revision id>` (a revision link, nothing after
+            // the id); every other system path is unknown
             bytes32 sys =
                 last < 2 ? bytes32(0) : keccak256(bytes.concat(s0, "/", bytes(resource[1])));
-            if (sys == keccak256("~efs/v")) _fail(501, "object not served");
-            if (last < 3 || sys != keccak256("~efs/o")) _fail(400, "unknown system path");
+            if (sys == keccak256("~efs/v")) {
+                if (last != 3) _fail(400, "malformed revision link");
+                q.revision = true;
+            } else if (last < 3 || sys != keccak256("~efs/o")) {
+                _fail(400, "unknown system path");
+            }
             q.folder = bytes32(_id(bytes(resource[2]), 66));
             q.start = 3;
         } else if (_prefixed(s0)) {
@@ -530,8 +437,9 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             if (key == keccak256("lens")) lens = bytes(params[i].value);
             else if (key == keccak256("offset")) q.offset = _uint(bytes(params[i].value));
         }
-        // the lens is the `lens` parameter alone when one is given, else the place's default principal (the
-        // address's own; a folder's creator, read in `serve`)
+        // a revision link has no lens; elsewhere the lens is the `lens` parameter alone when one is given, else the
+        // place's default principal (the address's own; a folder's or a file's creator, read in `serve`)
+        if (q.revision) lens = msg.data[0:0];
         uint256 k = lens.length != 0 ? 0 : 1;
         uint256 count = k;
         for (uint256 i; i < lens.length; ++i) {
@@ -645,11 +553,6 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         revert E_WEB3_STATUS(status, reason);
     }
 
-    /// 416 unless `offset` is inside `[0, size)`; offset 0 of an empty file is served (an empty body).
-    function _range(uint256 offset, uint256 size) private pure {
-        if (offset != 0 && offset >= size) _fail(416, "offset out of range");
-    }
-
     function _add(Req memory q, string memory key, string memory value) private pure {
         q.h[q.n++] = KeyValue(key, value);
     }
@@ -660,38 +563,6 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         assembly ("memory-safe") {
             mstore(h, n)
         }
-    }
-
-    /// By the final name's extension (after its last `.`, not a leading one), ASCII case-insensitive.
-    function _contentType(bytes calldata name) private pure returns (string memory) {
-        uint256 dot;
-        for (uint256 i = name.length; i > 1;) {
-            if (name[--i] == ".") {
-                dot = i;
-                break;
-            }
-        }
-        uint256 n = name.length - dot - 1;
-        if (dot == 0 || n == 0 || n > 4) return "application/octet-stream";
-        bytes32 e;
-        for (uint256 i; i < n; ++i) {
-            bytes1 c = name[dot + 1 + i];
-            if (c >= "A" && c <= "Z") c |= 0x20;
-            e |= bytes32(c) >> (8 * i);
-        }
-        if (e == "txt") return TEXT;
-        if (e == "html" || e == "htm") return "text/html; charset=utf-8";
-        if (e == "css") return "text/css; charset=utf-8";
-        if (e == "js") return "text/javascript; charset=utf-8";
-        if (e == "json") return "application/json";
-        if (e == "svg") return "image/svg+xml";
-        if (e == "png") return "image/png";
-        if (e == "jpg" || e == "jpeg") return "image/jpeg";
-        if (e == "gif") return "image/gif";
-        if (e == "webp") return "image/webp";
-        if (e == "pdf") return "application/pdf";
-        if (e == "wasm") return "application/wasm";
-        return "application/octet-stream";
     }
 
     /// `{"entries":[{"name":"…","kind":"file"|"directory"},…],"complete":true|false}` over the ENTRY rows.
@@ -746,17 +617,6 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     }
 
     // ---- small codecs ---------------------------------------------------------------------------------------
-
-    function _word(bytes memory b, uint256 base) private pure returns (bytes32 w) {
-        assembly ("memory-safe") {
-            w := mload(add(add(b, 32), base))
-        }
-    }
-
-    /// `b[from:]` (empty when `from` is at or past the end).
-    function _tail(bytes memory b, uint256 from) private pure returns (bytes memory) {
-        return from >= b.length ? bytes("") : _cut(b, from, b.length - from);
-    }
 
     /// `b[from:from + n]` (the caller keeps it inside `b`).
     function _cut(bytes memory b, uint256 from, uint256 n) private pure returns (bytes memory out) {
