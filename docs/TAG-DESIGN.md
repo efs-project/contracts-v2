@@ -191,12 +191,14 @@ itself.
   points at this" never shows it; the last list in the table fixes that for every kind of target.
 - **Not kept:** all-authors lists on HEAD (a storage slot per file, and nothing reads it), per-word lists of items,
   and "where a name is used" for FOLDER.
-- **Can the HEAD list be added later? Yes, with one condition.** Every list is derived from the kernel's permanent
-  record of statements, so a later index generation can add a list and build it from history into a fresh store
-  before it is switched on (DESIGN §10.6). That build step is specified but not written (generation 1's `build`
-  refuses), and it must rebuild three counters as well as entries (the backlink count, the yes-count and the "about"
-  count). Adding a generation is an act of the Realm's controller, possible until the Realm is frozen, so the
-  deferral stays free only if the build step is written before the freeze (Q52).
+- **Can the HEAD list be added later? Yes, at a price, and with one condition.** Every list is derived from the
+  kernel's permanent record of statements, so a later index generation can add a list and build it from history
+  into a fresh store before it is switched on. That build step is designed ([INDEX-BUILD.md](INDEX-BUILD.md)) but
+  not written (generation 1's `build` refuses). The price: a build walks the Realm's whole history, estimated at
+  about 290k gas per file today against about 31k to 36k to keep the list from the start, so adding it later is
+  realistic for a small or young Realm and an indexer is the route for a large one. The condition: adding a
+  generation is an act of the Realm's controller, possible until the Realm is frozen, so the build step must be
+  written before the freeze (Q52).
 - **Rebuild equals live.** A test drives a mixed history through the live index, replays it into a fresh index, and
   compares every list.
 - **The topic lists exist only with their validator.** The index keeps them only when its own fixed list of units
@@ -422,8 +424,9 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 3. **No word may start with `~`, look like an address or contain white space,** anywhere in a path. *Recommend
    keeping it.* (Q51)
 4. **Everyone's versions of one file are not listed on chain.** Keeping that list costs a storage slot for every
-   file ever created (about 36k gas today, 124k on Glamsterdam). *Recommend leaving it to the indexer, with the
-   build-from-history step written before any freeze.* (Q52)
+   file ever created (about 36k gas today, 124k on Glamsterdam). Adding it later is possible but is estimated at 8
+   to 9 times that per file, paid at once, so it suits only a small or young Realm. *Recommend leaving it to the
+   indexer, with the build-from-history step written before any freeze.* (Q52)
 5. **The refused code point table** waits on your fold rule; until one generator produces it, the Topics Type ids
    are provisional. (Q53) **Sybil bumping** in public "newest first" views costs about 0.34M–0.68M per bump today.
    (Q54)
