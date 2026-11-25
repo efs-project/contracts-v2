@@ -53,6 +53,7 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
 
     bytes32 private immutable F_BY_TYPE;
     bytes32 private immutable F_BY_AUTHOR;
@@ -293,10 +294,16 @@ contract RealmIndex is IRealmIndex, IIndexReads, GenerationStorage {
         ps.append(FamilyId.wrap(F_HISTORY), _pk(0, 8, 0, bindingKey), admission, 0);
         if (e.oldTarget != 0) ps.release(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.oldTarget), 1);
         uint8 tk = e.transitionKind;
-        if (tk == T_FIRST_BIND) {
-            bs.appendScopeEntry(
+        if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
+            uint64 entry = bs.appendScopeEntry(
                 FamilyId.wrap(F_SCOPE), ScopeKey.wrap(scope), e.bindingOrdinal, admission
             );
+            // SPIKE (T-4): a first mask leaves a dead scope entry (the store appends live entries only)
+            if (tk == T_FIRST_MASK) {
+                bs.setBit(
+                    FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(scope), entry, false, admission
+                );
+            }
             ps.append(
                 FamilyId.wrap(F_ROLE_SCOPE),
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),

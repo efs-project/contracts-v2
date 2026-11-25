@@ -39,6 +39,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
 
     modifier delegateOnly() {
         if (address(this) == SELF) revert E_DELEGATE_ONLY();
@@ -200,18 +201,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         prevAdmission = head.admission;
         uint48 ordinal = head.bindingOrdinal;
         if (state == STATE_UNSET) {
-            CountersStorage storage c = _counters();
-            ordinal = c.bindings + 1;
-            if (ordinal > ClosureConstants.SATURATION) revert E_COUNTER_SATURATED(2);
-            c.bindings = ordinal;
-            b.bindingPosition[ordinal] = position;
-            PositionCell storage p = b.positions[position];
-            if (p.purpose == 0) {
-                p.purpose = action.purpose;
-                p.subject = action.subject;
-                if (action.role != 0) p.role = action.role;
-            }
-            head.bindingOrdinal = ordinal;
+            ordinal = _allocate(b, head, action, position);
             effect.transitionKind = T_FIRST_BIND;
         } else if (state == STATE_BOUND) {
             effect.oldTarget = head.target;
@@ -239,6 +229,27 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.target = target;
     }
 
+    /// The first transition of a binding: a fresh binding ordinal, its position, the position cell if new.
+    function _allocate(
+        BindingsStorage storage b,
+        HeadRow storage head,
+        Action calldata action,
+        bytes32 position
+    ) private returns (uint48 ordinal) {
+        CountersStorage storage c = _counters();
+        ordinal = c.bindings + 1;
+        if (ordinal > ClosureConstants.SATURATION) revert E_COUNTER_SATURATED(2);
+        c.bindings = ordinal;
+        b.bindingPosition[ordinal] = position;
+        PositionCell storage p = b.positions[position];
+        if (p.purpose == 0) {
+            p.purpose = action.purpose;
+            p.subject = action.subject;
+            if (action.role != 0) p.role = action.role;
+        }
+        head.bindingOrdinal = ordinal;
+    }
+
     // ---- UNBIND (mask) / RELEASE ---------------------------------------------------------------------------------
 
     function _applyMaskOrRelease(
@@ -252,16 +263,24 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         bytes32 key = Keys.binding(principalId, position);
         HeadRow storage head = _bindings().heads[key];
         uint8 state = head.state;
-        bool live = state == STATE_BOUND || (kind == ActionKind.RELEASE && state == STATE_MASKED);
+        // SPIKE (T-4): a mask may also stand on a silent head (UNSET or RELEASED); MASKED → MASKED stays refused
+        bool live = kind == ActionKind.UNBIND
+            ? state != STATE_MASKED && state <= STATE_RELEASED
+            : state == STATE_BOUND || state == STATE_MASKED;
         if (!live) revert E_NOT_LIVE(effect.leaf, key, state);
         if (head.revision != action.expectedRevision) {
             revert E_CAS(key, action.expectedRevision, head.revision);
         }
 
         prevAdmission = head.admission;
+        uint8 transition = kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
         if (state == STATE_BOUND) {
             effect.oldTarget = head.target; // the canonical target before the transition
             effect.oldTargetKind = head.targetKind;
+        } else if (state == STATE_UNSET) {
+            // first mask: the position is allocated as a first BIND allocates it, with no target
+            _allocate(_bindings(), head, action, position);
+            transition = T_FIRST_MASK;
         }
         uint48 newRevision = head.revision + 1;
         head.state = kind == ActionKind.UNBIND ? STATE_MASKED : STATE_RELEASED;
@@ -276,7 +295,7 @@ contract LedgerApply is ILedgerApply, LedgerStorage {
         effect.role = action.role;
         effect.revision = newRevision;
         effect.prevAdmission = prevAdmission;
-        effect.transitionKind = kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
+        effect.transitionKind = transition;
     }
 
     // ---- CREATE --------------------------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ pragma solidity ^0.8.27;
 /// Effect/3: 24 static words (768 B); callbackProfile =
 /// keccak("efs/index-callback/3:ordered-prefix:static-final:effect-24:refs").
 /// transitionKind: 0 none (publish/reuse/create/withdraw) 1 FIRST_BIND 2 REBIND 3 MASK 4 RELEASE 5 RESTORE (BIND
-/// from MASKED/RELEASED). freshRecord: first admission of recordId. refCount: how many entries of `refs` belong
+/// from MASKED/RELEASED) 6 FIRST_MASK (UNBIND from UNSET: allocates the position, no target; spike T-4). freshRecord: first admission of recordId. refCount: how many entries of `refs` belong
 /// to this effect, in order. WITHDRAW: recordId/typeId of the withdrawn record, withdrawnAdmission = target
 /// admission, withdrawnPrincipal = its retained principal.
 struct Effect {

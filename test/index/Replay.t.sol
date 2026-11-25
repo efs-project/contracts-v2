@@ -416,6 +416,68 @@ contract ReplayTest is Test {
         dec.decode(k.proxy, 99);
     }
 
+    /// SPIKE (T-4): a first mask (UNBIND from UNSET) and a mask from RELEASED fold live and replay to the same
+    /// stores; the decoder derives FIRST_MASK from an UNSET previous row.
+    function testReplayFoldsFirstMaskAndMaskFromReleased() public {
+        _history();
+        bytes32 third = keccak256("third");
+        bytes32 second = keccak256("second");
+        assertEq(_one(_bindKind(ActionKind.UNBIND, third, 0, 0), ""), 9); // 12: first mask
+        (uint64 sc, uint64 sl,, uint48 bits,,) = g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
+        assertEq(abi.encode(sc, sl, bits), abi.encode(3, 1, 1), "a dead third entry");
+        PostingKey rs3 =
+            PostingKey.wrap(Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, third)));
+        (uint64 rc,,,) = g.posting.postingHead(rs3);
+        assertEq(rc, 1, "the role-scope posting of a denial exists");
+        assertEq(_one(_bindKind(ActionKind.UNBIND, second, 0, 2), ""), 10); // 13: mask from RELEASED
+        assertEq(_one(_bindKind(ActionKind.BIND, third, recordId, 1), ""), 11); // 14: restore over the first mask
+        (sc, sl,, bits,,) = g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
+        assertEq(abi.encode(sc, sl, bits), abi.encode(3, 2, 5));
+
+        IndexReplayDecoder dec = new IndexReplayDecoder();
+        (Effect[] memory e,) = dec.decode(k.proxy, 9);
+        assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget, e[0].target), abi.encode(6, 0, 0));
+        (e,) = dec.decode(k.proxy, 10);
+        assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(3, 0));
+        (e,) = dec.decode(k.proxy, 11);
+        assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(5, 0));
+
+        (IndexDeployer d, RealmIndex ix) = _gen2();
+        assertEq(_replayAll(ix), 11);
+        IPostingStore p2 = IPostingStore(d.postingStore());
+        IBitmapStore b2 = IBitmapStore(d.bitmapStore());
+        PostingKey[] memory keys = new PostingKey[](5);
+        keys[0] = rs3;
+        keys[1] = PostingKey.wrap(
+            Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, third)))
+        );
+        keys[2] = PostingKey.wrap(
+            Keys.historyList(Keys.binding(principal, Keys.position(FOLDER, subject, second)))
+        );
+        keys[3] = PostingKey.wrap(Keys.backlinkList(recordId));
+        keys[4] = PostingKey.wrap(Keys.posting(0, 16, 0, Keys.roleScope(principal, FOLDER, second)));
+        for (uint256 i; i < keys.length; ++i) {
+            (uint64 c1, uint64 l1, uint64 last1, uint16 f1) = g.posting.postingHead(keys[i]);
+            (uint64 c2, uint64 l2, uint64 last2, uint16 f2) = p2.postingHead(keys[i]);
+            assertEq(abi.encode(c1, l1, last1, f1), abi.encode(c2, l2, last2, f2), "posting head");
+            assertEq(
+                keccak256(abi.encode(g.posting.postingSlice(keys[i], 0, 64))),
+                keccak256(abi.encode(p2.postingSlice(keys[i], 0, 64)))
+            );
+        }
+        (uint64 x1, uint64 y1, uint64 z1, uint48 w1,, uint64 v1) =
+            g.bitmap.scopeHead(ScopeKey.wrap(scopeKey));
+        (uint64 x2, uint64 y2, uint64 z2, uint48 w2,, uint64 v2) =
+            b2.scopeHead(ScopeKey.wrap(scopeKey));
+        assertEq(abi.encode(x1, y1, z1, w1, v1), abi.encode(x2, y2, z2, w2, v2), "scope head");
+        for (uint64 i; i < 3; ++i) {
+            assertEq(
+                g.bitmap.scopeEntry(ScopeKey.wrap(scopeKey), i),
+                b2.scopeEntry(ScopeKey.wrap(scopeKey), i)
+            );
+        }
+    }
+
     // ---- review findings -------------------------------------------------------------------------------------
 
     /// A replayed store stamps the mutating admission, not the frontier at replay time.

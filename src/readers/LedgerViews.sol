@@ -40,6 +40,7 @@ contract LedgerViews is ILedgerViews {
     uint8 private constant T_MASK = 3;
     uint8 private constant T_RELEASE = 4;
     uint8 private constant T_RESTORE = 5;
+    uint8 private constant T_FIRST_MASK = 6;
 
     /// The facet ABI revision.
     function facetVersion() external pure returns (uint16) {
@@ -145,7 +146,8 @@ contract LedgerViews is ILedgerViews {
     }
 
     /// BIND / UNBIND / RELEASE. The previous state of the binding is the kind of the row at `prevAdmission`
-    /// (BIND → BOUND, UNBIND → MASKED, RELEASE → RELEASED; row 0 is never written → UNSET).
+    /// (BIND → BOUND, UNBIND → MASKED, RELEASE → RELEASED; row 0 is never written → UNSET, and an UNBIND from UNSET
+    /// is a FIRST_MASK).
     function _bindEffect(address ledger, AdmissionRow memory r, Effect memory f)
         private
         view
@@ -174,7 +176,8 @@ contract LedgerViews is ILedgerViews {
             f.transitionKind =
                 prevKind == 0 ? T_FIRST_BIND : prevKind == ActionKind.BIND ? T_REBIND : T_RESTORE;
         } else {
-            f.transitionKind = r.kind == ActionKind.UNBIND ? T_MASK : T_RELEASE;
+            f.transitionKind =
+                r.kind == ActionKind.RELEASE ? T_RELEASE : prevKind == 0 ? T_FIRST_MASK : T_MASK;
         }
         if (prevKind == ActionKind.BIND) {
             f.oldTarget = w[2];

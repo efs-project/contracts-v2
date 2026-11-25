@@ -8,6 +8,9 @@ import {Layout} from "../../../src/core/layout/Layout.sol";
 import {Action, ActionKind} from "../../../src/interfaces/Actions.sol";
 import {ILedger} from "../../../src/interfaces/ILedger.sol";
 import {Effect} from "../../../src/interfaces/Index.sol";
+import {Status} from "../../../src/interfaces/Results.sol";
+import {PublicationView} from "../../../src/interfaces/Views.sol";
+import {LedgerViews} from "../../../src/readers/LedgerViews.sol";
 import {
     E_BODY,
     E_CAS,
@@ -429,14 +432,21 @@ contract KindsTest is KernelFixture {
         assertEq(abi.encode(row.kind, row.a, row.prevAdmission), abi.encode(4, 0, 2));
     }
 
+    /// SPIKE (T-4): UNBIND stands on a silent head (UNSET, RELEASED); RELEASE still needs a written head and
+    /// MASKED → MASKED is still refused.
     function test_unbind_and_release_refusals() public {
         bytes32 r = _land("kinds/mask/refusals");
         bytes32 key = _key(principal, FOLDER, SA, ROLE);
-        for (uint8 kind = ActionKind.UNBIND; kind <= ActionKind.RELEASE; kind += 3) {
-            Action memory m = _unbind(FOLDER, SA, ROLE, 0);
-            m.kind = kind;
-            _refuse2(m, "", abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(1), key, uint8(0)));
-        }
+        _refuse2(
+            _release(FOLDER, SA, ROLE, 0),
+            "",
+            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(1), key, uint8(0))
+        );
+        _refuse2(
+            _unbind(FOLDER, SA, ROLE, 1),
+            "",
+            abi.encodeWithSelector(E_CAS.selector, key, uint64(1), uint64(0))
+        );
         _exec(_acts(_bind(FOLDER, SA, ROLE, r, 0)), _bodies(1));
         _refuse1(
             _unbind(FOLDER, SA, ROLE, 5),
@@ -450,11 +460,68 @@ contract KindsTest is KernelFixture {
             abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(2))
         );
         _exec(_acts(_release(FOLDER, SA, ROLE, 2)), _bodies(1));
-        for (uint8 kind = ActionKind.UNBIND; kind <= ActionKind.RELEASE; kind += 3) {
-            Action memory m = _unbind(FOLDER, SA, ROLE, 3);
-            m.kind = kind;
-            _refuse1(m, "", abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(3)));
-        }
+        _refuse1(
+            _release(FOLDER, SA, ROLE, 3),
+            "",
+            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key, uint8(3))
+        );
+        // a first mask, then a second mask of the same head, is refused as before
+        bytes32 key2 = _key(principal, FOLDER, SB, ROLE);
+        _exec(_acts(_unbind(FOLDER, SB, ROLE, 0)), _bodies(1));
+        _refuse1(
+            _unbind(FOLDER, SB, ROLE, 1),
+            "",
+            abi.encodeWithSelector(E_NOT_LIVE.selector, uint8(0), key2, uint8(2))
+        );
+    }
+
+    /// SPIKE (T-4): UNBIND from UNSET allocates the position as a first BIND does, with no target.
+    function test_first_mask_allocates_the_position_without_a_target() public {
+        bytes32 r = _land("kinds/first-mask");
+        bytes32 key = _key(principal, FOLDER, SA, ROLE);
+        uint256 hs = Layout.bindingsHeadsSlot(key);
+        uint64 nonce = _nonce(principal);
+        Effect[] memory e = _logged(_acts(_unbind(FOLDER, SA, ROLE, 0)), _bodies(1));
+        (Status st, PublicationView memory v) =
+            new LedgerViews().publication(k.proxy, principal, nonce);
+        assertEq(uint8(st), uint8(Status.PRESENT));
+        assertEq(v.effectsHash, keccak256(abi.encode(e)), "LedgerViews re-derives FIRST_MASK");
+        assertEq(abi.encode(_head(key)), abi.encode(Head(2, 1, 2, 0, 0, 1, bytes32(0))));
+        assertEq(_raw(hs + 1), bytes32(0), "no target word is written");
+        assertEq(
+            abi.encode(
+                e[0].transitionKind,
+                e[0].oldTarget,
+                e[0].oldTargetKind,
+                e[0].target,
+                e[0].targetKind,
+                e[0].bindingOrdinal,
+                e[0].revision
+            ),
+            abi.encode(6, 0, 0, 0, 0, 1, 1)
+        );
+        assertEq(
+            _raw(Layout.bindingsBindingPositionSlot(1)),
+            Keys.position(FOLDER, SA, ROLE),
+            "the ordinal names the position"
+        );
+        Row memory row = _row(2);
+        assertEq(
+            abi.encode(row.kind, row.a, row.prevAdmission, row.bindingOrdinal, row.targetKind),
+            abi.encode(4, 0, 0, 1, 0)
+        );
+        // the lifecycle closes: restore over the first mask, mask again, release, mask from released
+        e = _logged(_acts(_bind(FOLDER, SA, ROLE, r, 1)), _bodies(1));
+        assertEq(abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(5, 0), "RESTORE");
+        assertEq(abi.encode(_head(key)), abi.encode(Head(1, 2, 3, 1, 2, 1, r)));
+        _exec(_acts(_unbind(FOLDER, SA, ROLE, 2)), _bodies(1));
+        _exec(_acts(_release(FOLDER, SA, ROLE, 3)), _bodies(1));
+        e = _logged(_acts(_unbind(FOLDER, SA, ROLE, 4)), _bodies(1));
+        assertEq(
+            abi.encode(e[0].transitionKind, e[0].oldTarget), abi.encode(3, 0), "MASK, no backlink"
+        );
+        assertEq(abi.encode(_head(key)), abi.encode(Head(2, 5, 6, 1, 5, 1, bytes32(0))));
+        assertEq(_raw(hs + 1), r, "the target word is kept");
     }
 
     function test_release_from_bound_and_from_masked() public {
