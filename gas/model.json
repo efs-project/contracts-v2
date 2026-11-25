@@ -2211,190 +2211,212 @@
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "da2989c9a3e587da86f129f1dfd224b3f8216975",
+    "commit": "16aae8cb538080ee71ac6714b87be3941980d99e",
     "dirtyFiles": 1,
-    "date": "2026-11-25T18:54:49.587Z",
+    "date": "2026-11-25T19:38:50.689Z",
     "foundry": "forge Version: 1.8.3"
   },
   "reads": {
-    "note": "Planning only: what one cold topic-reader view call costs (no intrinsic, no calldata) and the bounds that keep one call under callGasCap. Per-row terms are the same on both schedules (reads are not repriced); amsterdam's openings carry about 4k more of cold accounts. A skipped entry of `everyone` (nobody says yes) reads its cell and its author-list head and no lens, so its cost does not grow with the lens (it was 49k at a lens of 1, 357k at 64 exact and 1.56M at 64 below when the lens was read first).",
+    "note": "Planning only: what one cold topic-reader view call costs (no intrinsic, no calldata) and the bounds that keep one call under callGasCap. Per-row terms are the same on both schedules (reads are not repriced); amsterdam's openings carry about 4k more of cold accounts. The below views' viewed-place check reads only head states (one word per head) and skips what cannot be MASKED: a lens author whose exact scope list at the place is all live (mine) and, with at least 4 lens authors to ask, a viewed position nobody ever stated anything at (both views); mineBelow and everyoneBelow are fitted where those shortcuts never apply (the bounds), mineBelowQuiet and everyoneBelowQuiet where they always do. A skipped entry of `everyone` (nobody says yes) reads its cell and its author-list head and no lens, so its cost does not grow with the lens (it was 49k at a lens of 1, 357k at 64 exact and 1.56M at 64 below when the lens was read first).",
     "suite": "test/integration/TopicReadMeasure.t.sol",
     "callGasCap": 10000000,
     "marginPercent": 10,
     "method": {
       "measurement": "one cold view call per row of the suite: vm.cool on every account the call can touch, then vm.lastCallGas().gasTotalUsed",
-      "mine": "gas = opening + openingPerLensAuthor·L + Σ over rows (perRow + perLensIndex·(j + 1)), j the deciding lens index; least squares over lens 1, 8, 32, 64 and pages 10, 50 of the round-robin fixture (mineExact: filed at the place; mineBelow: under a descendant, with the viewed-place heads of lens[0..j]); negative terms clamped to 0",
-      "everyone": "gas = opening + Σ over rows (perRow + perLensAuthor·L) + Σ over skipped entries perSkippedEntry; perRow and opening from raw (no lens), perLensAuthor from the lens-8 page (every lens head read: no lens author has a stance), perSkippedEntryByLens from a padded place (lone negatives, lens 1, 8 and 64)",
+      "mine": "gas = opening + openingPerLensAuthor·L + Σ over rows (perRow + perLensIndex·(j + 1)), j the deciding lens index; least squares over lens 1, 8, 32, 64 and pages 10, 50 of the round-robin fixture (mineExact: filed at the place; mineBelow: the worst case under a descendant, a statement at every viewed position and a masked entry in every lens author's exact list at the place, so every row reads the head states of lens[0..j] at the viewed place; mineBelowQuiet: under a descendant with nothing stated at the place, so no viewed-place head is read); negative terms clamped to 0",
+      "everyone": "gas = opening + Σ over rows (perRow + perLensAuthor·L) + Σ over skipped entries perSkippedEntry; perRow and opening from raw (no lens), perLensAuthor from the lens-8 page (every lens head read: no lens author has a stance; below, everyoneBelow from the worst case with a statement at every viewed position, everyoneBelowQuiet with none), perSkippedEntryByLens from a padded place (lone negatives, lens 1, 8 and 64)",
       "bounds": "budget = callGasCap × (100 − marginPercent) / 100; maxRows = floor((budget − opening(L)) / worst row(L)), the worst row decided by the last lens author (j + 1 = L); maxSkippedEntries = floor((budget − opening) / the largest perSkippedEntry); a page that mixes both stays under budget while opening + rows·row(L) + skipped·perSkippedEntry ≤ budget",
       "recommended": "pageTimesLens: the smallest maxRows·L over lens 8..64 per view (keep maxRows·L at or below it); maxRows: at most 150 rows per call; limitEntries: the most entries one `everyone` call reads when none is a row, at a lens of 64"
     },
     "schedules": {
       "prague": {
         "rows": {
-          "about page=10": 472966,
-          "about page=10 sample=4": 1165183,
-          "about page=20": 801085,
-          "authorCount 300 authors": 84920,
-          "byName 300 authors page=10": 363416,
-          "byName 300 authors page=50": 1273400,
-          "children 16": 894812,
-          "children page=1": 185687,
-          "entryCount exact 2000 entries": 82917,
-          "everyone below lens=8 page=10": 2162189,
-          "everyone below lens=8 page=50": 10961183,
-          "everyone exact lens=8 page=10": 1096193,
-          "everyone exact lens=8 page=50": 5247023,
-          "mine lens=1 depth=1 page=10": 583111,
-          "mine lens=1 depth=1 page=50": 2400616,
-          "mine lens=1 depth=64 page=10": 706363,
-          "mine lens=1 depth=64 page=50": 3152520,
-          "mine lens=1 depth=8 page=10": 706363,
-          "mine lens=1 depth=8 page=50": 3152520,
-          "mine lens=32 depth=1 page=10": 2500836,
-          "mine lens=32 depth=1 page=50": 7578985,
-          "mine lens=32 depth=64 page=10": 4007395,
-          "mine lens=32 depth=64 page=50": 17713161,
-          "mine lens=32 depth=8 page=10": 4007395,
-          "mine lens=32 depth=8 page=50": 17713161,
-          "mine lens=64 depth=1 page=10": 5270251,
-          "mine lens=64 depth=1 page=50": 12307334,
-          "mine lens=64 depth=64 page=10": 11007154,
-          "mine lens=64 depth=64 page=50": 32658239,
-          "mine lens=64 depth=8 page=10": 11007154,
-          "mine lens=64 depth=8 page=50": 32658239,
-          "mine lens=8 depth=1 page=10": 1048408,
-          "mine lens=8 depth=1 page=50": 3615223,
-          "mine lens=8 depth=64 page=10": 1576465,
-          "mine lens=8 depth=64 page=50": 6603077,
-          "mine lens=8 depth=8 page=10": 1576465,
-          "mine lens=8 depth=8 page=50": 6603077,
-          "placeCount 2000 positions": 84897,
-          "raw below page=10": 618742,
-          "raw below page=50": 2669814,
-          "raw exact page=10": 537945,
-          "raw exact page=50": 2446182,
-          "skip below lens=1 page=60": 2368256,
-          "skip below lens=1 per entry": 36102,
-          "skip below lens=64 page=60": 2369759,
-          "skip below lens=64 per entry": 36113,
-          "skip below lens=8 page=60": 2368422,
-          "skip below lens=8 per entry": 36103,
-          "skip exact lens=1 page=60": 2335188,
-          "skip exact lens=1 per entry": 35936,
-          "skip exact lens=64 page=60": 2336683,
-          "skip exact lens=64 per entry": 35947,
-          "skip exact lens=8 page=60": 2335354,
-          "skip exact lens=8 per entry": 35938,
-          "wordPage places=1": 151512,
-          "wordPage places=20": 1066420,
-          "wordPage places=5": 355125
+          "about page=10": 473030,
+          "about page=10 sample=4": 1165473,
+          "about page=20": 801153,
+          "authorCount 300 authors": 84957,
+          "byName 300 authors page=10": 363480,
+          "byName 300 authors page=50": 1273480,
+          "children 16": 894860,
+          "children page=1": 185725,
+          "entryCount exact 2000 entries": 82954,
+          "everyone below lens=8 page=10": 1315134,
+          "everyone below lens=8 page=50": 6177276,
+          "everyone exact lens=8 page=10": 1088601,
+          "everyone exact lens=8 page=50": 5205963,
+          "everyone worst below lens=8 page=10": 1808276,
+          "everyone worst below lens=8 page=50": 8692141,
+          "mine lens=1 depth=1 page=10": 576269,
+          "mine lens=1 depth=1 page=50": 2362014,
+          "mine lens=1 depth=64 page=10": 563194,
+          "mine lens=1 depth=64 page=50": 2427134,
+          "mine lens=1 depth=8 page=10": 563194,
+          "mine lens=1 depth=8 page=50": 2427134,
+          "mine lens=32 depth=1 page=10": 2501122,
+          "mine lens=32 depth=1 page=50": 7527892,
+          "mine lens=32 depth=64 page=10": 2307423,
+          "mine lens=32 depth=64 page=50": 7576021,
+          "mine lens=32 depth=8 page=10": 2307423,
+          "mine lens=32 depth=8 page=50": 7576021,
+          "mine lens=64 depth=1 page=10": 5277237,
+          "mine lens=64 depth=1 page=50": 12238349,
+          "mine lens=64 depth=64 page=10": 4797151,
+          "mine lens=64 depth=64 page=50": 11876200,
+          "mine lens=64 depth=8 page=10": 4797151,
+          "mine lens=64 depth=8 page=50": 11876200,
+          "mine lens=8 depth=1 page=10": 1043236,
+          "mine lens=8 depth=1 page=50": 3574302,
+          "mine lens=8 depth=64 page=10": 1099766,
+          "mine lens=8 depth=64 page=50": 3670736,
+          "mine lens=8 depth=8 page=10": 1099766,
+          "mine lens=8 depth=8 page=50": 3670736,
+          "mine worst lens=1 depth=8 page=10": 686699,
+          "mine worst lens=1 depth=8 page=50": 2929274,
+          "mine worst lens=32 depth=8 page=10": 3825206,
+          "mine worst lens=32 depth=8 page=50": 13799753,
+          "mine worst lens=64 depth=8 page=10": 8821390,
+          "mine worst lens=64 depth=8 page=50": 23180254,
+          "mine worst lens=8 depth=8 page=10": 1569170,
+          "mine worst lens=8 depth=8 page=50": 5865692,
+          "placeCount 2000 positions": 84934,
+          "raw below page=10": 619151,
+          "raw below page=50": 2671538,
+          "raw exact page=10": 538317,
+          "raw exact page=50": 2447872,
+          "skip below lens=1 page=60": 2370347,
+          "skip below lens=1 per entry": 36135,
+          "skip below lens=64 page=60": 2371848,
+          "skip below lens=64 per entry": 36146,
+          "skip below lens=8 page=60": 2370513,
+          "skip below lens=8 per entry": 36137,
+          "skip exact lens=1 page=60": 2337241,
+          "skip exact lens=1 per entry": 35970,
+          "skip exact lens=64 page=60": 2338734,
+          "skip exact lens=64 per entry": 35981,
+          "skip exact lens=8 page=60": 2337406,
+          "skip exact lens=8 per entry": 35971,
+          "wordPage places=1": 151549,
+          "wordPage places=20": 1066470,
+          "wordPage places=5": 355165
         },
         "terms": {
           "mineExact": {
-            "opening": 193420,
-            "openingPerLensAuthor": 27774,
-            "perRow": 36244,
-            "perLensIndex": 6671,
+            "opening": 192296,
+            "openingPerLensAuthor": 28360,
+            "perRow": 35574,
+            "perLensIndex": 6617,
             "maxAbsErrorPercent": 11.5
           },
           "mineBelow": {
-            "opening": 385940,
-            "openingPerLensAuthor": 0,
-            "perRow": 22489,
-            "perLensIndex": 24459,
-            "maxAbsErrorPercent": 21.1
+            "opening": 339251,
+            "openingPerLensAuthor": 20650,
+            "perRow": 38825,
+            "perLensIndex": 15374,
+            "maxAbsErrorPercent": 31.3
+          },
+          "mineBelowQuiet": {
+            "opening": 237769,
+            "openingPerLensAuthor": 19214,
+            "perRow": 37353,
+            "perLensIndex": 6737,
+            "maxAbsErrorPercent": 23.9
           },
           "everyoneExact": {
-            "opening": 60885,
-            "perRow": 47706,
-            "perLensAuthor": 7008,
+            "opening": 60927,
+            "perRow": 47739,
+            "perLensAuthor": 6899,
             "perSkippedEntryByLens": {
-              "1": 35936,
-              "8": 35938,
-              "64": 35947
+              "1": 35970,
+              "8": 35971,
+              "64": 35981
             }
           },
           "everyoneBelow": {
-            "opening": 105972,
-            "perRow": 51277,
-            "perLensAuthor": 21087,
+            "opening": 106051,
+            "perRow": 51310,
+            "perLensAuthor": 15098,
             "perSkippedEntryByLens": {
-              "1": 36102,
-              "8": 36103,
-              "64": 36113
+              "1": 36135,
+              "8": 36137,
+              "64": 36146
             }
           },
+          "everyoneBelowQuiet": {
+            "opening": 106051,
+            "perRow": 51310,
+            "perLensAuthor": 8781
+          },
           "rawExact": {
-            "opening": 60885,
-            "perRow": 47706
+            "opening": 60927,
+            "perRow": 47739
           },
           "rawBelow": {
-            "opening": 105972,
-            "perRow": 51277
+            "opening": 106051,
+            "perRow": 51310
           },
           "byName": {
-            "opening": 135916,
+            "opening": 135980,
             "perRow": 22750
           },
           "about": {
-            "opening": 144846,
+            "opening": 144910,
             "perRow": 32812
           },
           "wordPage": {
-            "opening": 118025,
+            "opening": 118065,
             "perRow": 47420
           },
           "children": {
-            "opening": 138412,
-            "perRow": 47275
+            "opening": 138449,
+            "perRow": 47276
           }
         },
         "bounds": {
           "1": {
             "mineExact": {
-              "maxRows": 204
+              "maxRows": 208
             },
             "mineBelow": {
-              "maxRows": 183
+              "maxRows": 159
             },
             "everyoneExact": {
               "maxRows": 163,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 122,
+              "maxRows": 133,
               "maxSkippedEntries": 246
             }
           },
           "8": {
             "mineExact": {
-              "maxRows": 95
+              "maxRows": 96
             },
             "mineBelow": {
-              "maxRows": 39
+              "maxRows": 52
             },
             "everyoneExact": {
               "maxRows": 86,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 40,
+              "maxRows": 51,
               "maxSkippedEntries": 246
             }
           },
           "16": {
             "mineExact": {
-              "maxRows": 58
+              "maxRows": 59
             },
             "mineBelow": {
-              "maxRows": 20
+              "maxRows": 29
             },
             "everyoneExact": {
-              "maxRows": 55,
+              "maxRows": 56,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 22,
+              "maxRows": 30,
               "maxSkippedEntries": 246
             }
           },
@@ -2403,14 +2425,14 @@
               "maxRows": 31
             },
             "mineBelow": {
-              "maxRows": 10
+              "maxRows": 15
             },
             "everyoneExact": {
-              "maxRows": 32,
+              "maxRows": 33,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 12,
+              "maxRows": 16,
               "maxSkippedEntries": 246
             }
           },
@@ -2419,24 +2441,24 @@
               "maxRows": 15
             },
             "mineBelow": {
-              "maxRows": 5
+              "maxRows": 7
             },
             "everyoneExact": {
               "maxRows": 18,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 6,
+              "maxRows": 8,
               "maxSkippedEntries": 246
             }
           }
         },
         "recommended": {
           "pageTimesLens": {
-            "mineExact": 760,
-            "mineBelow": 312,
+            "mineExact": 768,
+            "mineBelow": 416,
             "everyoneExact": 688,
-            "everyoneBelow": 320
+            "everyoneBelow": 408
           },
           "maxRows": 150,
           "limitEntries": 246
@@ -2444,171 +2466,193 @@
       },
       "amsterdam": {
         "rows": {
-          "about page=10": 476766,
-          "about page=10 sample=4": 1170983,
-          "about page=20": 804885,
-          "authorCount 300 authors": 88120,
-          "byName 300 authors page=10": 367216,
-          "byName 300 authors page=50": 1277200,
-          "children 16": 899712,
-          "children page=1": 189087,
-          "entryCount exact 2000 entries": 86117,
-          "everyone below lens=8 page=10": 2166189,
-          "everyone below lens=8 page=50": 10966383,
-          "everyone exact lens=8 page=10": 1100193,
-          "everyone exact lens=8 page=50": 5252223,
-          "mine lens=1 depth=1 page=10": 587311,
-          "mine lens=1 depth=1 page=50": 2405416,
-          "mine lens=1 depth=64 page=10": 710563,
-          "mine lens=1 depth=64 page=50": 3157320,
-          "mine lens=1 depth=8 page=10": 710563,
-          "mine lens=1 depth=8 page=50": 3157320,
-          "mine lens=32 depth=1 page=10": 2505036,
-          "mine lens=32 depth=1 page=50": 7583785,
-          "mine lens=32 depth=64 page=10": 4011595,
-          "mine lens=32 depth=64 page=50": 17717961,
-          "mine lens=32 depth=8 page=10": 4011595,
-          "mine lens=32 depth=8 page=50": 17717961,
-          "mine lens=64 depth=1 page=10": 5274451,
-          "mine lens=64 depth=1 page=50": 12312134,
-          "mine lens=64 depth=64 page=10": 11011354,
-          "mine lens=64 depth=64 page=50": 32663039,
-          "mine lens=64 depth=8 page=10": 11011354,
-          "mine lens=64 depth=8 page=50": 32663039,
-          "mine lens=8 depth=1 page=10": 1052608,
-          "mine lens=8 depth=1 page=50": 3620023,
-          "mine lens=8 depth=64 page=10": 1580665,
-          "mine lens=8 depth=64 page=50": 6607877,
-          "mine lens=8 depth=8 page=10": 1580665,
-          "mine lens=8 depth=8 page=50": 6607877,
-          "placeCount 2000 positions": 88097,
-          "raw below page=10": 622542,
-          "raw below page=50": 2674214,
-          "raw exact page=10": 541745,
-          "raw exact page=50": 2450582,
-          "skip below lens=1 page=60": 2372656,
-          "skip below lens=1 per entry": 36112,
-          "skip below lens=64 page=60": 2374159,
-          "skip below lens=64 per entry": 36123,
-          "skip below lens=8 page=60": 2372822,
-          "skip below lens=8 per entry": 36113,
-          "skip exact lens=1 page=60": 2339588,
-          "skip exact lens=1 per entry": 35946,
-          "skip exact lens=64 page=60": 2341083,
-          "skip exact lens=64 per entry": 35957,
-          "skip exact lens=8 page=60": 2339754,
-          "skip exact lens=8 per entry": 35948,
-          "wordPage places=1": 154812,
-          "wordPage places=20": 1071620,
-          "wordPage places=5": 358825
+          "about page=10": 476830,
+          "about page=10 sample=4": 1171273,
+          "about page=20": 804953,
+          "authorCount 300 authors": 88157,
+          "byName 300 authors page=10": 367280,
+          "byName 300 authors page=50": 1277280,
+          "children 16": 899760,
+          "children page=1": 189125,
+          "entryCount exact 2000 entries": 86154,
+          "everyone below lens=8 page=10": 1319134,
+          "everyone below lens=8 page=50": 6182476,
+          "everyone exact lens=8 page=10": 1092601,
+          "everyone exact lens=8 page=50": 5211163,
+          "everyone worst below lens=8 page=10": 1812276,
+          "everyone worst below lens=8 page=50": 8697341,
+          "mine lens=1 depth=1 page=10": 580469,
+          "mine lens=1 depth=1 page=50": 2366814,
+          "mine lens=1 depth=64 page=10": 567394,
+          "mine lens=1 depth=64 page=50": 2431934,
+          "mine lens=1 depth=8 page=10": 567394,
+          "mine lens=1 depth=8 page=50": 2431934,
+          "mine lens=32 depth=1 page=10": 2505322,
+          "mine lens=32 depth=1 page=50": 7532692,
+          "mine lens=32 depth=64 page=10": 2311623,
+          "mine lens=32 depth=64 page=50": 7580821,
+          "mine lens=32 depth=8 page=10": 2311623,
+          "mine lens=32 depth=8 page=50": 7580821,
+          "mine lens=64 depth=1 page=10": 5281437,
+          "mine lens=64 depth=1 page=50": 12243149,
+          "mine lens=64 depth=64 page=10": 4801351,
+          "mine lens=64 depth=64 page=50": 11881000,
+          "mine lens=64 depth=8 page=10": 4801351,
+          "mine lens=64 depth=8 page=50": 11881000,
+          "mine lens=8 depth=1 page=10": 1047436,
+          "mine lens=8 depth=1 page=50": 3579102,
+          "mine lens=8 depth=64 page=10": 1103966,
+          "mine lens=8 depth=64 page=50": 3675536,
+          "mine lens=8 depth=8 page=10": 1103966,
+          "mine lens=8 depth=8 page=50": 3675536,
+          "mine worst lens=1 depth=8 page=10": 690899,
+          "mine worst lens=1 depth=8 page=50": 2934074,
+          "mine worst lens=32 depth=8 page=10": 3829406,
+          "mine worst lens=32 depth=8 page=50": 13804553,
+          "mine worst lens=64 depth=8 page=10": 8825590,
+          "mine worst lens=64 depth=8 page=50": 23185054,
+          "mine worst lens=8 depth=8 page=10": 1573370,
+          "mine worst lens=8 depth=8 page=50": 5870492,
+          "placeCount 2000 positions": 88134,
+          "raw below page=10": 622951,
+          "raw below page=50": 2675938,
+          "raw exact page=10": 542117,
+          "raw exact page=50": 2452272,
+          "skip below lens=1 page=60": 2374747,
+          "skip below lens=1 per entry": 36145,
+          "skip below lens=64 page=60": 2376248,
+          "skip below lens=64 per entry": 36156,
+          "skip below lens=8 page=60": 2374913,
+          "skip below lens=8 per entry": 36147,
+          "skip exact lens=1 page=60": 2341641,
+          "skip exact lens=1 per entry": 35980,
+          "skip exact lens=64 page=60": 2343134,
+          "skip exact lens=64 per entry": 35991,
+          "skip exact lens=8 page=60": 2341806,
+          "skip exact lens=8 per entry": 35981,
+          "wordPage places=1": 154849,
+          "wordPage places=20": 1071670,
+          "wordPage places=5": 358865
         },
         "terms": {
           "mineExact": {
-            "opening": 197470,
-            "openingPerLensAuthor": 27774,
-            "perRow": 36259,
-            "perLensIndex": 6671,
+            "opening": 196346,
+            "openingPerLensAuthor": 28360,
+            "perRow": 35589,
+            "perLensIndex": 6617,
             "maxAbsErrorPercent": 11.4
           },
           "mineBelow": {
-            "opening": 389990,
-            "openingPerLensAuthor": 0,
-            "perRow": 22504,
-            "perLensIndex": 24459,
-            "maxAbsErrorPercent": 21
+            "opening": 343301,
+            "openingPerLensAuthor": 20650,
+            "perRow": 38840,
+            "perLensIndex": 15374,
+            "maxAbsErrorPercent": 31.1
+          },
+          "mineBelowQuiet": {
+            "opening": 241819,
+            "openingPerLensAuthor": 19214,
+            "perRow": 37368,
+            "perLensIndex": 6737,
+            "maxAbsErrorPercent": 23.7
           },
           "everyoneExact": {
-            "opening": 64535,
-            "perRow": 47721,
-            "perLensAuthor": 7010,
+            "opening": 64577,
+            "perRow": 47754,
+            "perLensAuthor": 6901,
             "perSkippedEntryByLens": {
-              "1": 35946,
-              "8": 35948,
-              "64": 35957
+              "1": 35980,
+              "8": 35981,
+              "64": 35991
             }
           },
           "everyoneBelow": {
-            "opening": 109622,
-            "perRow": 51292,
-            "perLensAuthor": 21089,
+            "opening": 109701,
+            "perRow": 51325,
+            "perLensAuthor": 15100,
             "perSkippedEntryByLens": {
-              "1": 36112,
-              "8": 36113,
-              "64": 36123
+              "1": 36145,
+              "8": 36147,
+              "64": 36156
             }
           },
+          "everyoneBelowQuiet": {
+            "opening": 109701,
+            "perRow": 51325,
+            "perLensAuthor": 8782
+          },
           "rawExact": {
-            "opening": 64535,
-            "perRow": 47721
+            "opening": 64577,
+            "perRow": 47754
           },
           "rawBelow": {
-            "opening": 109622,
-            "perRow": 51292
+            "opening": 109701,
+            "perRow": 51325
           },
           "byName": {
-            "opening": 139716,
+            "opening": 139780,
             "perRow": 22750
           },
           "about": {
-            "opening": 148646,
+            "opening": 148710,
             "perRow": 32812
           },
           "wordPage": {
-            "opening": 121225,
+            "opening": 121265,
             "perRow": 47520
           },
           "children": {
-            "opening": 141712,
-            "perRow": 47375
+            "opening": 141749,
+            "perRow": 47376
           }
         },
         "bounds": {
           "1": {
             "mineExact": {
-              "maxRows": 204
+              "maxRows": 207
             },
             "mineBelow": {
-              "maxRows": 183
+              "maxRows": 159
             },
             "everyoneExact": {
               "maxRows": 163,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 122,
-              "maxSkippedEntries": 246
+              "maxRows": 133,
+              "maxSkippedEntries": 245
             }
           },
           "8": {
             "mineExact": {
-              "maxRows": 95
+              "maxRows": 96
             },
             "mineBelow": {
-              "maxRows": 39
+              "maxRows": 52
             },
             "everyoneExact": {
               "maxRows": 86,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 40,
-              "maxSkippedEntries": 246
+              "maxRows": 51,
+              "maxSkippedEntries": 245
             }
           },
           "16": {
             "mineExact": {
-              "maxRows": 58
+              "maxRows": 59
             },
             "mineBelow": {
-              "maxRows": 20
+              "maxRows": 29
             },
             "everyoneExact": {
-              "maxRows": 55,
+              "maxRows": 56,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 22,
-              "maxSkippedEntries": 246
+              "maxRows": 30,
+              "maxSkippedEntries": 245
             }
           },
           "32": {
@@ -2616,15 +2660,15 @@
               "maxRows": 31
             },
             "mineBelow": {
-              "maxRows": 10
+              "maxRows": 15
             },
             "everyoneExact": {
-              "maxRows": 32,
+              "maxRows": 33,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 12,
-              "maxSkippedEntries": 246
+              "maxRows": 16,
+              "maxSkippedEntries": 245
             }
           },
           "64": {
@@ -2632,27 +2676,27 @@
               "maxRows": 15
             },
             "mineBelow": {
-              "maxRows": 5
+              "maxRows": 7
             },
             "everyoneExact": {
               "maxRows": 18,
               "maxSkippedEntries": 248
             },
             "everyoneBelow": {
-              "maxRows": 6,
-              "maxSkippedEntries": 246
+              "maxRows": 8,
+              "maxSkippedEntries": 245
             }
           }
         },
         "recommended": {
           "pageTimesLens": {
-            "mineExact": 760,
-            "mineBelow": 312,
+            "mineExact": 768,
+            "mineBelow": 416,
             "everyoneExact": 688,
-            "everyoneBelow": 320
+            "everyoneBelow": 408
           },
           "maxRows": 150,
-          "limitEntries": 246
+          "limitEntries": 245
         }
       }
     }
