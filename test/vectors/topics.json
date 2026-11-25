@@ -416,7 +416,7 @@
     "record": "Keys.record(typeId, body) = keccak256(abi.encode(keccak256(\"efs/record/1\"), typeId, keccak256(body)))",
     "wordPage": "Keys.record(topic-word/1, word)",
     "path": "n = 1: the word page; n >= 2: Keys.record(topic/1, abi.encode(pathId(first n-1 words), wordPage(last word)))",
-    "propertyKey": "keccak256(abi.encode(keccak256(\"efs/property-key/1\"), keccak256(key))); a label key is propertyKey(\"label:\" ‖ BCP 47 tag)"
+    "propertyKey": "keccak256(abi.encode(keccak256(\"efs/property-key/1\"), keccak256(key))); a label key is propertyKey(\"label:\" ‖ the BCP 47 tag lowercased (ASCII A-Z only), so pt-BR is pt-br)"
   },
   "order": "register every word page and path record before use and strictly before the first statement on it (an earlier action of the same publication counts): pages first, then the path records from two words on, then the statements",
   "purposes": {
@@ -3375,6 +3375,38 @@
     {
       "key": "moved-to",
       "id": "0x3dd0baeeeb4c537f68d9b086314bc40e186d5f243ba33fb7a961c07a36616f9c"
+    }
+  ],
+  "labelKeys": [
+    {
+      "language": "en",
+      "canonical": "en",
+      "id": "0x28703bbe448488e14770b73db6c3d0f2facd83ade38f8691aaebd5bb96a219f6"
+    },
+    {
+      "language": "EN",
+      "canonical": "en",
+      "id": "0x28703bbe448488e14770b73db6c3d0f2facd83ade38f8691aaebd5bb96a219f6"
+    },
+    {
+      "language": "pt-br",
+      "canonical": "pt-br",
+      "id": "0xc720ae1e7a74126cc1f2635af0e2e554a203fd991649b57c44ca8cbdb6864d05"
+    },
+    {
+      "language": "pt-BR",
+      "canonical": "pt-br",
+      "id": "0xc720ae1e7a74126cc1f2635af0e2e554a203fd991649b57c44ca8cbdb6864d05"
+    },
+    {
+      "language": "PT-BR",
+      "canonical": "pt-br",
+      "id": "0xc720ae1e7a74126cc1f2635af0e2e554a203fd991649b57c44ca8cbdb6864d05"
+    },
+    {
+      "language": "zh-Hant-TW",
+      "canonical": "zh-hant-tw",
+      "id": "0xb59466abbe8510cfb591584851c5f5da53089d208c22d8616b0920047e084fd2"
     }
   ],
   "inputs": {

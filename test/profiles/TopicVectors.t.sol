@@ -146,6 +146,31 @@ contract TopicVectorsTest is Test {
         }
     }
 
+    /// A label's language tag is lowercased before its key is derived (`EfsTopics.labelKey`): every vector's key is
+    /// its canonical tag's, and `pt-BR` / `EN` are the keys of `pt-br` / `en`.
+    function test_label_keys_fold_the_language_tag() public view {
+        uint256 n;
+        for (uint256 i; _has("labelKeys", i); ++i) {
+            bytes memory language =
+                bytes(vm.parseJsonString(json, _at("labelKeys", i, ".language")));
+            bytes memory canonical =
+                bytes(vm.parseJsonString(json, _at("labelKeys", i, ".canonical")));
+            bytes32 id = vm.parseJsonBytes32(json, _at("labelKeys", i, ".id"));
+            assertEq(EfsTopics.labelKey(language), id);
+            assertEq(EfsTopics.labelKey(canonical), id);
+            assertEq(EfsTopics.propertyKey(bytes.concat("label:", canonical)), id);
+            ++n;
+        }
+        assertGe(n, 6);
+        assertEq(EfsTopics.labelKey("pt-BR"), EfsTopics.labelKey("pt-br"));
+        assertEq(EfsTopics.labelKey("EN"), EfsTopics.labelKey("en"));
+        assertTrue(EfsTopics.propertyKey("label:EN") != EfsTopics.labelKey("EN"));
+        // the caller's bytes are not modified
+        bytes memory tagBytes = "pt-BR";
+        EfsTopics.labelKey(tagBytes);
+        assertEq(tagBytes, bytes("pt-BR"));
+    }
+
     function test_property_keys_and_purposes() public view {
         for (uint256 i; _has("propertyKeys", i); ++i) {
             string memory key = vm.parseJsonString(json, _at("propertyKeys", i, ".key"));

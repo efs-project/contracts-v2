@@ -343,6 +343,9 @@ Built, with the label Type:
   the purposes it names.
 - A label's text is a `text/1` record (1 to 255 bytes, one line; `/`, spaces and capitals allowed, so it can hold
   "AC/DC").
+- A label's language is a BCP 47 tag, lowercased before its key is derived: `pt-BR` and `pt-br` are one key
+  (`label:pt-br`), and so are `EN` and `en`. The chain cannot check this (the key is a hash), so `EfsTopics.labelKey`
+  and its JS twin fold ASCII `A`–`Z` themselves; a writer that derives the key some other way must do the same.
 - Each statement is one bind: `same` or `broader` costs 0.65M today (2.26M on Glamsterdam); a label with a new text
   record 0.94M (3.29M), naming an existing text 0.65M (2.27M).
 - Curating a topic's children uses TAG itself: tag the child into the parent with a number.
