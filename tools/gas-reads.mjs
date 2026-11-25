@@ -9,9 +9,14 @@
 //
 //   mine (exact or below) = opening + openingPerLensAuthor·L + Σ over rows (perRow + perLensIndex·(j + 1))
 //     j the row's deciding lens index (a row of lens author j reads the heads of lens[0..j]); least squares over the
-//     four lens sizes and two page sizes of the measured round-robin fixture, negative terms clamped to 0
+//     four lens sizes and two page sizes of the measured round-robin fixture, negative terms clamped to 0. mineBelow
+//     is fitted on the worst case of the viewed-place check ("mine worst": every row reads the head states of
+//     lens[0..j] at the viewed place), mineBelowQuiet on the plain fixture (nobody stated anything at the viewed
+//     place: the shortcuts read no head there); the bounds use mineBelow
 //   everyone (exact or below) = opening + Σ over rows (perRow + perLensAuthor·L) + Σ over skipped entries perSkipped
-//     the lens term from the lens-8 page against `raw` (no lens); a skipped entry (nobody says yes) reads no lens
+//     the lens term from the lens-8 page against `raw` (no lens); a skipped entry (nobody says yes) reads no lens.
+//     everyoneBelow's lens term is the worst case ("everyone worst below": a statement at every viewed position, so
+//     every lens author is asked there), everyoneBelowQuiet's the plain fixture (empty viewed positions)
 //   raw, about, byName, wordPage, children = opening + perRow·rows
 //
 // and the bounds: the most rows (every entry a row decided by the last lens author, the worst case) and the most
@@ -72,7 +77,7 @@ const need = (rows, key) => {
   return rows[key];
 };
 
-function mineFit(rows, depth) {
+function mineFit(rows, key) {
   const A = [];
   const b = [];
   for (const L of [1, 8, 32, 64]) {
@@ -80,7 +85,7 @@ function mineFit(rows, depth) {
       let js = 0; // rows newest first: things THINGS-1 .. THINGS-page, thing i filed by lens author i mod L
       for (let i = THINGS - 1; i >= THINGS - page; i--) js += (i % L) + 1;
       A.push([1, L, page, js]);
-      b.push(need(rows, `mine lens=${L} depth=${depth} page=${page}`));
+      b.push(need(rows, key(L, page)));
     }
   }
   const [o0, o1, a, k] = lsq(A, b).map((x) => Math.max(0, round(x)));
@@ -99,13 +104,16 @@ function schedule(rows) {
   const rawExact = linear(rows, "raw exact page=", 10, 50, [10, 50]);
   const rawBelow = linear(rows, "raw below page=", 10, 50, [10, 50]);
   const evExact = linear(rows, "everyone exact lens=8 page=", 10, 50, [10, 50]);
-  const evBelow = linear(rows, "everyone below lens=8 page=", 10, 50, [10, 50]);
+  const evBelowQuiet = linear(rows, "everyone below lens=8 page=", 10, 50, [10, 50]);
+  const evBelow = linear(rows, "everyone worst below lens=8 page=", 10, 50, [10, 50]);
   const skipped = (view) => Object.fromEntries([1, 8, 64].map((L) => [L, need(rows, `skip ${view} lens=${L} per entry`)]));
   const terms = {
-    mineExact: mineFit(rows, 1),
-    mineBelow: mineFit(rows, 8),
+    mineExact: mineFit(rows, (L, page) => `mine lens=${L} depth=1 page=${page}`),
+    mineBelow: mineFit(rows, (L, page) => `mine worst lens=${L} depth=8 page=${page}`),
+    mineBelowQuiet: mineFit(rows, (L, page) => `mine lens=${L} depth=8 page=${page}`),
     everyoneExact: { opening: rawExact.opening, perRow: rawExact.perRow, perLensAuthor: round((evExact.perRow - rawExact.perRow) / 8), perSkippedEntryByLens: skipped("exact") },
     everyoneBelow: { opening: rawBelow.opening, perRow: rawBelow.perRow, perLensAuthor: round((evBelow.perRow - rawBelow.perRow) / 8), perSkippedEntryByLens: skipped("below") },
+    everyoneBelowQuiet: { opening: rawBelow.opening, perRow: rawBelow.perRow, perLensAuthor: round((evBelowQuiet.perRow - rawBelow.perRow) / 8) },
     rawExact,
     rawBelow,
     byName: linear(rows, "byName 300 authors page=", 10, 50, [10, 50]),
@@ -136,14 +144,14 @@ export function measureReads({ amsterdam }) {
   const schedules = { prague: schedule(runReads("default")) };
   if (amsterdam) schedules.amsterdam = schedule(runReads("amsterdam"));
   return {
-    note: "Planning only: what one cold topic-reader view call costs (no intrinsic, no calldata) and the bounds that keep one call under callGasCap. Per-row terms are the same on both schedules (reads are not repriced); amsterdam's openings carry about 4k more of cold accounts. A skipped entry of `everyone` (nobody says yes) reads its cell and its author-list head and no lens, so its cost does not grow with the lens (it was 49k at a lens of 1, 357k at 64 exact and 1.56M at 64 below when the lens was read first).",
+    note: "Planning only: what one cold topic-reader view call costs (no intrinsic, no calldata) and the bounds that keep one call under callGasCap. Per-row terms are the same on both schedules (reads are not repriced); amsterdam's openings carry about 4k more of cold accounts. The below views' viewed-place check reads only head states (one word per head) and skips what cannot be MASKED: a lens author whose exact scope list at the place is all live (mine) and, with at least 4 lens authors to ask, a viewed position nobody ever stated anything at (both views); mineBelow and everyoneBelow are fitted where those shortcuts never apply (the bounds), mineBelowQuiet and everyoneBelowQuiet where they always do. A skipped entry of `everyone` (nobody says yes) reads its cell and its author-list head and no lens, so its cost does not grow with the lens (it was 49k at a lens of 1, 357k at 64 exact and 1.56M at 64 below when the lens was read first).",
     suite: READS_SUITE,
     callGasCap: CALL_GAS_CAP,
     marginPercent: MARGIN_PERCENT,
     method: {
       measurement: "one cold view call per row of the suite: vm.cool on every account the call can touch, then vm.lastCallGas().gasTotalUsed",
-      mine: "gas = opening + openingPerLensAuthor·L + Σ over rows (perRow + perLensIndex·(j + 1)), j the deciding lens index; least squares over lens 1, 8, 32, 64 and pages 10, 50 of the round-robin fixture (mineExact: filed at the place; mineBelow: under a descendant, with the viewed-place heads of lens[0..j]); negative terms clamped to 0",
-      everyone: "gas = opening + Σ over rows (perRow + perLensAuthor·L) + Σ over skipped entries perSkippedEntry; perRow and opening from raw (no lens), perLensAuthor from the lens-8 page (every lens head read: no lens author has a stance), perSkippedEntryByLens from a padded place (lone negatives, lens 1, 8 and 64)",
+      mine: "gas = opening + openingPerLensAuthor·L + Σ over rows (perRow + perLensIndex·(j + 1)), j the deciding lens index; least squares over lens 1, 8, 32, 64 and pages 10, 50 of the round-robin fixture (mineExact: filed at the place; mineBelow: the worst case under a descendant, a statement at every viewed position and a masked entry in every lens author's exact list at the place, so every row reads the head states of lens[0..j] at the viewed place; mineBelowQuiet: under a descendant with nothing stated at the place, so no viewed-place head is read); negative terms clamped to 0",
+      everyone: "gas = opening + Σ over rows (perRow + perLensAuthor·L) + Σ over skipped entries perSkippedEntry; perRow and opening from raw (no lens), perLensAuthor from the lens-8 page (every lens head read: no lens author has a stance; below, everyoneBelow from the worst case with a statement at every viewed position, everyoneBelowQuiet with none), perSkippedEntryByLens from a padded place (lone negatives, lens 1, 8 and 64)",
       bounds: "budget = callGasCap × (100 − marginPercent) / 100; maxRows = floor((budget − opening(L)) / worst row(L)), the worst row decided by the last lens author (j + 1 = L); maxSkippedEntries = floor((budget − opening) / the largest perSkippedEntry); a page that mixes both stays under budget while opening + rows·row(L) + skipped·perSkippedEntry ≤ budget",
       recommended: "pageTimesLens: the smallest maxRows·L over lens 8..64 per view (keep maxRows·L at or below it); maxRows: at most 150 rows per call; limitEntries: the most entries one `everyone` call reads when none is a row, at a lens of 64",
     },
