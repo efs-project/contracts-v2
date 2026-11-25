@@ -36,6 +36,11 @@ an AST build (`out/release-ast`, locally) immutable names are read from that bui
 the committed manifest's, their offsets are checked against the build, and the fixture tests that follow read every
 named immutable from a deployed instance.
 
+`gas/report.json` is not covered by `release:check` or any digest (only `verify` validates it against its schema), so
+regenerate it by hand with `pnpm gas:report -- --fixture <n>` (or `--fixture-state <journal>`) after the last step,
+from a committed tree so its `measurement.dirtyFiles` is 0, whenever the kernel, the index, a Files rule, a body
+layout or the fixture seed changes.
+
 `up` copies `sha256(release/release.json)` into the deployment document and `verify` re-hashes the file, so
 regenerating `release.json` after `up` makes `verify` fail until the next `up`.
 
