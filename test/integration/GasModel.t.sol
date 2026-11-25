@@ -834,6 +834,223 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("restore tag", x);
     }
 
+    // ---- statements about topics: PROPERTY, SAME, BROADER (design §12.5) ------------------------------------------
+    // Each row registers what it states about inside its own test (one unmeasured publication: `setUp` has no
+    // headroom under the amsterdam cap), so the measured pair starts from that state. Positions are distinct per
+    // action, so k1 and k2 each write fresh heads.
+
+    /// Six word pages `<name>-0..5`, published unmeasured; returns their ids.
+    function _pages(string memory name) internal returns (bytes32[6] memory w) {
+        _rememberTopics();
+        EfsTopics.Types memory t = _topicTypes();
+        Action[] memory a = new Action[](6);
+        bytes[] memory b = new bytes[](6);
+        for (uint256 i; i < 6; ++i) {
+            b[i] = bytes(string.concat(name, "-", vm.toString(i)));
+            (Action[] memory ra,, bytes32 page) = EfsTopics.registerWord(t, b[i]);
+            a[i] = ra[0];
+            w[i] = page;
+        }
+        _do(a, b);
+    }
+
+    /// Three topics (word pages `<name>-0..2`) and six `text/1` labels (24 bytes, as `pub text 24`), published
+    /// unmeasured: the label subjects, and `first[i]` / `second[i]` the existing texts a label names.
+    function _labelled(string memory name)
+        internal
+        returns (bytes32[3] memory topic, bytes32[3] memory first, bytes32[3] memory second)
+    {
+        _rememberTopics();
+        EfsTopics.Types memory t = _topicTypes();
+        Action[] memory a = new Action[](9);
+        bytes[] memory b = new bytes[](9);
+        for (uint256 i; i < 3; ++i) {
+            b[i] = bytes(string.concat(name, "-", vm.toString(i)));
+            (Action[] memory ra,, bytes32 page) = EfsTopics.registerWord(t, b[i]);
+            a[i] = ra[0];
+            topic[i] = page;
+            b[3 + i] = abi.encodePacked("Label ", _nm(5000 + i, 18));
+            (a[3 + i],) = _publish(T_TEXT, b[3 + i]);
+            first[i] = EfsTopics.recordId(t.text, b[3 + i]);
+            b[6 + i] = abi.encodePacked("Label ", _nm(5100 + i, 18));
+            (a[6 + i],) = _publish(T_TEXT, b[6 + i]);
+            second[i] = EfsTopics.recordId(t.text, b[6 + i]);
+        }
+        _do(a, b);
+    }
+
+    /// `label:en` → `first[i]` on `topic[i]`, unmeasured (the later statements' starting state).
+    function _labelAll(bytes32[3] memory topic, bytes32[3] memory first) internal {
+        Action[] memory a = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            a[i] = EfsTopics.property(topic[i], EfsTopics.labelKey("en"), first[i], 0);
+        }
+        _do(a, new bytes[](3));
+    }
+
+    /// A label as a first statement: `BIND(PROPERTY, topic, labelKey("en") → an existing text/1)` (FIRST_BIND; the
+    /// validator does not judge PROPERTY).
+    function test_model_bind_property_fresh() public {
+        (bytes32[3] memory topic, bytes32[3] memory first,) = _labelled("prop-fresh");
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsTopics.property(topic[i], EfsTopics.labelKey("en"), first[i], 0);
+        }
+        _actionPair("bind property fresh", x);
+    }
+
+    /// A label changed to another existing text: a re-bind (CAS to a different target).
+    function test_model_bind_property_rebind() public {
+        (bytes32[3] memory topic, bytes32[3] memory first, bytes32[3] memory second) =
+            _labelled("prop-rebind");
+        _labelAll(topic, first);
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsTopics.property(topic[i], EfsTopics.labelKey("en"), second[i], 1);
+        }
+        _actionPair("bind property rebind", x);
+    }
+
+    /// A mask of a label: UNBIND from BOUND at a PROPERTY position.
+    function test_model_unbind_property() public {
+        (bytes32[3] memory topic, bytes32[3] memory first,) = _labelled("prop-mask");
+        _labelAll(topic, first);
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.unbind(Purpose.PROPERTY, topic[i], EfsTopics.labelKey("en"), 1);
+        }
+        _actionPair("unbind property", x);
+    }
+
+    /// A release of a label: RELEASE from BOUND at a PROPERTY position.
+    function test_model_release_property() public {
+        (bytes32[3] memory topic, bytes32[3] memory first,) = _labelled("prop-release");
+        _labelAll(topic, first);
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.release(Purpose.PROPERTY, topic[i], EfsTopics.labelKey("en"), 1);
+        }
+        _actionPair("release property", x);
+    }
+
+    /// Composite (never fitted): a label with its text: `EfsTopics.label`, PUBLISH a new 24-byte text/1 then
+    /// BIND PROPERTY to it (a first statement).
+    function test_model_validate_label_new_text() public {
+        (bytes32[3] memory topic,,) = _labelled("prop-new");
+        (Action[] memory a, bytes[] memory b,) = EfsTopics.label(
+            _topicTypes(), topic[0], "en", abi.encodePacked("Label ", _nm(5200, 18)), 0
+        );
+        assertEq(b[0].length, 24);
+        _exec("model validate label new text", a, b);
+    }
+
+    /// `purpose` from w[i] to w[3 + i], unmeasured (the later statements' starting state).
+    function _relateAll(bytes32 purpose, bytes32[6] memory w) internal {
+        Action[] memory a = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            a[i] = _bind(purpose, w[i], w[3 + i], w[3 + i], 0);
+        }
+        _do(a, new bytes[](3));
+    }
+
+    /// A first statement at `purpose` (SAME or BROADER) from w[i] to w[3 + i] (FIRST_BIND; the validator reads both
+    /// topics' headers).
+    function _relationFresh(string memory key, bytes32 purpose, bytes32[6] memory w) internal {
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(purpose, w[i], w[3 + i], w[3 + i], 0);
+        }
+        _actionPair(key, x);
+    }
+
+    /// The later statements at `purpose` on w[i] → w[3 + i]: `which` 0 a mask (UNBIND from BOUND), 1 a release
+    /// (RELEASE from BOUND), 2 a restore (BIND from MASKED to the kept target; the masks written unmeasured first).
+    function _relationLater(string memory key, bytes32 purpose, bytes32[6] memory w, uint256 which)
+        internal
+    {
+        _relateAll(purpose, w);
+        if (which == 2) {
+            Action[] memory m = new Action[](3);
+            for (uint256 i; i < 3; ++i) {
+                m[i] = EfsFiles.unbind(purpose, w[i], w[3 + i], 1);
+            }
+            _do(m, new bytes[](3));
+        }
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = which == 0
+                ? EfsFiles.unbind(purpose, w[i], w[3 + i], 1)
+                : which == 1
+                    ? EfsFiles.release(purpose, w[i], w[3 + i], 1)
+                    : _bind(purpose, w[i], w[3 + i], w[3 + i], 2);
+        }
+        _actionPair(key, x);
+    }
+
+    /// `same` between word pages (the word-level synonym).
+    function test_model_bind_same_fresh_word() public {
+        _relationFresh("bind same fresh word", Purpose.SAME, _pages("same-w"));
+    }
+
+    /// `same` between 2-word path records (`same-p/<a>` = `same-p/<b>`): joins those two places only.
+    function test_model_bind_same_fresh_path() public {
+        _rememberTopics();
+        EfsTopics.Types memory t = _topicTypes();
+        Action[] memory a = new Action[](13);
+        bytes[] memory b = new bytes[](13);
+        bytes32 parent;
+        (a[0], b[0], parent) = _registerOne(t, "same-p");
+        bytes32[6] memory w;
+        for (uint256 i; i < 6; ++i) {
+            (Action[] memory ca, bytes[] memory cb, bytes32 id) = EfsTopics.registerChild(
+                t, parent, bytes(string.concat("same-p-", vm.toString(i))), true
+            );
+            (a[1 + 2 * i], b[1 + 2 * i]) = (ca[0], cb[0]);
+            (a[2 + 2 * i], b[2 + 2 * i]) = (ca[1], cb[1]);
+            w[i] = id;
+        }
+        _do(a, b);
+        _relationFresh("bind same fresh path", Purpose.SAME, w);
+    }
+
+    function _registerOne(EfsTopics.Types memory t, bytes memory word)
+        internal
+        pure
+        returns (Action memory, bytes memory, bytes32 page)
+    {
+        (Action[] memory ra, bytes[] memory rb, bytes32 id) = EfsTopics.registerWord(t, word);
+        return (ra[0], rb[0], id);
+    }
+
+    function test_model_unbind_same() public {
+        _relationLater("unbind same", Purpose.SAME, _pages("same-m"), 0);
+    }
+
+    function test_model_release_same() public {
+        _relationLater("release same", Purpose.SAME, _pages("same-r"), 1);
+    }
+
+    function test_model_restore_same() public {
+        _relationLater("restore same", Purpose.SAME, _pages("same-s"), 2);
+    }
+
+    /// `broader` between word pages (a booru-style parent).
+    function test_model_bind_broader_fresh() public {
+        _relationFresh("bind broader fresh", Purpose.BROADER, _pages("brd-w"));
+    }
+
+    function test_model_unbind_broader() public {
+        _relationLater("unbind broader", Purpose.BROADER, _pages("brd-m"), 0);
+    }
+
+    function test_model_release_broader() public {
+        _relationLater("release broader", Purpose.BROADER, _pages("brd-r"), 1);
+    }
+
+    function test_model_restore_broader() public {
+        _relationLater("restore broader", Purpose.BROADER, _pages("brd-s"), 2);
+    }
+
     /// The per-Type inputs of the floor quote (design §10.4) for every Type the model prices: how many leading body
     /// words are references (`freshPerRef` each, on every publish) and how many digest specs name the Type
     /// (`freshPerDigestSpec` each, on a fresh record). `tools/gas-model.mjs` copies them into `floor.types`.

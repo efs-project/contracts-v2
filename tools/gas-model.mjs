@@ -9,7 +9,9 @@
 //   cost(PUBLISH new, shape S, body n bytes) = base[S] + perWord·ceil(n/32) + perByte·n
 //   cost(PUBLISH existing), cost(REUSE), cost(CREATE), cost(BIND fresh|rebind, purpose), cost(UNBIND|RELEASE, purpose),
 //   cost(BIND TAG number change) (a REBIND to the same target with a new strength), cost(UNBIND TAG lone) (a first mask),
-//   cost(WITHDRAW), plus firstWriteSurcharge once for a principal that has never written
+//   cost(BIND PROPERTY fresh|rebind), cost(BIND SAME fresh word|path), cost(BIND BROADER fresh), cost(UNBIND|RELEASE,
+//   PROPERTY|SAME|BROADER), cost(restore SAME|BROADER), cost(WITHDRAW), plus firstWriteSurcharge once for a principal
+//   that has never written
 //   cost(first TAG on an n-word topic) = bindTagFresh | bindTagSecondAuthor (fresh | existing position)
 //     + Σ over the n − 1 proper ancestors: tagLevel.mine{New|Existing}
 //       + (fresh position or a first yes ? tagLevel.shared{New|Existing} : 0)
@@ -108,6 +110,22 @@ const ACTIONS = {
   unbindTag: "unbind tag",
   releaseTag: "release tag",
   restoreTag: "restore tag",
+  // statements about topics (design §12.5): PROPERTY (a label: labelKey("en") → an existing text/1), SAME (word page
+  // to word page, or 2-word path to path) and BROADER (word page to word page); each first statement and its later
+  // statements
+  bindPropertyFresh: "bind property fresh",
+  bindPropertyRebind: "bind property rebind",
+  unbindProperty: "unbind property",
+  releaseProperty: "release property",
+  bindSameFreshWord: "bind same fresh word",
+  bindSameFreshPath: "bind same fresh path",
+  unbindSame: "unbind same",
+  releaseSame: "release same",
+  restoreSame: "restore same",
+  bindBroaderFresh: "bind broader fresh",
+  unbindBroader: "unbind broader",
+  releaseBroader: "release broader",
+  restoreBroader: "restore broader",
   withdraw: "withdraw",
 };
 
@@ -132,6 +150,8 @@ const VALIDATION = [
     actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
   { key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
     actions: ["bindTagFresh", levels("mineNew", 5), levels("sharedNew", 5)] },
+  { key: "validate label new text", what: "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
+    actions: [pub("text/1", 24), "bindPropertyFresh"] },
 ];
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */
@@ -314,7 +334,7 @@ const model = {
     slopes: `perWord and perByte: least squares of the files-bytes/1 marginal over body sizes ${BYTES_SIZES.join(", ")} (100 and 1,000 are not word multiples, which separates the two terms); publishNew[shape] = its marginal − perWord·ceil(n/32) − perByte·n, averaged over the measured sizes (fit.publishNewBaseBySize)`,
     fixed: "median of 2·gas(k = 1) − gas(k = 2) over every pair (fit.impliedFixedByPair: the first action of a kind in a publication pays some cold state that later ones find warm, which this single constant averages)",
     firstWriteSurcharge: "(CREATE + PUBLISH files-directory/1 as a principal's first publication ever) − (the same shape by a principal that has written once)",
-    keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; WITHDRAW of one occurrence",
+    keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; restore = BIND from MASKED to the kept target; PROPERTY binds are a label (labelKey(\"en\") on a word page → an existing text/1; a label with a new text is publishNew[\"text/1\"] + its body terms + bindPropertyFresh, validated by \"validate label new text\"); SAME and BROADER first statements run FilesFinalValidator's topic checks on subject and role (word page to word page; bindSameFreshPath 2-word path to path), their later statements are on word pages; WITHDRAW of one occurrence",
     tagLevels: TAG_LEVELS_METHOD,
   },
   planning: PLANNING,

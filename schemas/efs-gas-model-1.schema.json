@@ -75,6 +75,19 @@
                 "unbindTag",
                 "releaseTag",
                 "restoreTag",
+                "bindPropertyFresh",
+                "bindPropertyRebind",
+                "unbindProperty",
+                "releaseProperty",
+                "bindSameFreshWord",
+                "bindSameFreshPath",
+                "unbindSame",
+                "releaseSame",
+                "restoreSame",
+                "bindBroaderFresh",
+                "unbindBroader",
+                "releaseBroader",
+                "restoreBroader",
                 "withdraw",
                 "firstWriteSurcharge",
                 "tagLevel"
@@ -166,6 +179,45 @@
                   "type": "integer"
                 },
                 "restoreTag": {
+                  "type": "integer"
+                },
+                "bindPropertyFresh": {
+                  "type": "integer"
+                },
+                "bindPropertyRebind": {
+                  "type": "integer"
+                },
+                "unbindProperty": {
+                  "type": "integer"
+                },
+                "releaseProperty": {
+                  "type": "integer"
+                },
+                "bindSameFreshWord": {
+                  "type": "integer"
+                },
+                "bindSameFreshPath": {
+                  "type": "integer"
+                },
+                "unbindSame": {
+                  "type": "integer"
+                },
+                "releaseSame": {
+                  "type": "integer"
+                },
+                "restoreSame": {
+                  "type": "integer"
+                },
+                "bindBroaderFresh": {
+                  "type": "integer"
+                },
+                "unbindBroader": {
+                  "type": "integer"
+                },
+                "releaseBroader": {
+                  "type": "integer"
+                },
+                "restoreBroader": {
                   "type": "integer"
                 }
               }
