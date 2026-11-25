@@ -2,7 +2,7 @@
 pragma solidity 0.8.37;
 
 /// @notice The only ledger hot reads a Files rule or `FilesFinalValidator` makes (`subjectCreatedAt`,
-///         `recordHeader`, `realmOrigin`, `controller`, `noticePrincipal`), settable by the test. Any other read
+///         `recordHeader`, `bodyWord`, `realmOrigin`, `controller`, `noticePrincipal`), settable by the test. Any other read
 ///         reverts (no fallback), so a rule that reaches for more fails loudly.
 contract FilesLedgerStub {
     struct Header {
@@ -13,6 +13,7 @@ contract FilesLedgerStub {
 
     mapping(bytes32 => uint64) public subjectCreatedAt;
     mapping(bytes32 => Header) internal _headers;
+    mapping(bytes32 => mapping(uint256 => bytes32)) public bodyWord;
     bytes32 public realmOrigin;
     address public controller;
     bytes32 public noticePrincipal;
@@ -25,6 +26,10 @@ contract FilesLedgerStub {
         external
     {
         _headers[recordId] = Header(typeId, firstAdmission, length);
+    }
+
+    function setBodyWord(bytes32 recordId, uint256 index, bytes32 word) external {
+        bodyWord[recordId][index] = word;
     }
 
     function setRealm(bytes32 origin, address controller_, bytes32 noticePrincipal_) external {

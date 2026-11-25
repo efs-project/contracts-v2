@@ -36,7 +36,10 @@
     "FilesPageReader",
     "FilesSpanRule",
     "KeysView",
-    "EfsWeb3Gateway"
+    "EfsWeb3Gateway",
+    "TopicWordRule",
+    "TopicRule",
+    "TextRule"
   ],
   "manifest": "release/release.json",
   "note": "each <Unit>.json is efs-artifact/1; a fixture deploys from this directory with `efs-fixture up --artifacts artifacts [--plan deploy/plan.json]`"

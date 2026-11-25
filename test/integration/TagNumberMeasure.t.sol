@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.sol";
 
@@ -11,18 +12,18 @@ import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.
 ///         when MASKED); it costs no slot. Same harness as `TagPathMeasure.t.sol`: the shape is one TAG binding
 ///         per (topic, thing), every publication is cooled so it pays what a transaction of its own pays, the topic
 ///         already has one member (so `k1` and `k10` are both later members), `k10` is ten actions in one
-///         publication and `per extra` is (k10 - k1) / 9. The topic is a plain id: no validator checks a TAG
-///         subject at this step. Logs: `num <row> gas` (and `frame state gas` under the amsterdam profile).
+///         publication and `per extra` is (k10 - k1) / 9. The topic is a word page registered in `setUp`
+///         (`FilesFinalValidator` refuses a first tag on anything else). Logs: `num <row> gas` (and `frame state gas` under the amsterdam profile).
 contract TagNumberMeasureTest is FilesRecipesBase {
     uint256 internal constant N = 60;
-    bytes32 internal constant X = keccak256("measure/number/topic");
+    bytes32 internal X;
 
     address[] internal cold;
     bytes32[N] internal s;
 
     function setUp() public override {
         super.setUp();
-        for (uint256 i; i < 10; ++i) {
+        for (uint256 i; i < TYPE_COUNT; ++i) {
             cold.push(instances[i]);
         }
         cold.push(address(validator));
@@ -44,7 +45,11 @@ contract TagNumberMeasureTest is FilesRecipesBase {
             }
             r.ledger.execute(a, new bytes[](20), _ctx(a), "");
         }
-        // the concept's first member, so every measured row is a later member
+        // the topic, registered, then its first member, so every measured row is a later member
+        (Action[] memory ra, bytes[] memory rb, bytes32 topic) =
+            EfsTopics.registerWord(_topicTypes(), "measure-number");
+        r.ledger.execute(ra, rb, _ctx(ra), "");
+        X = topic;
         _silent(_acts(ActionKind.BIND, N - 1, 1, 0, 0));
     }
 

@@ -64,6 +64,7 @@
                 "bindFolderRebind",
                 "unbindFolder",
                 "releaseFolder",
+                "bindTagFresh",
                 "bindTagNumberChange",
                 "unbindTagLone",
                 "withdraw",
@@ -116,6 +117,9 @@
                   "type": "integer"
                 },
                 "releaseFolder": {
+                  "type": "integer"
+                },
+                "bindTagFresh": {
                   "type": "integer"
                 },
                 "bindTagNumberChange": {

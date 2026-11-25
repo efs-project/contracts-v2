@@ -115,7 +115,7 @@ With `--json`, a failure prints `{"ok": false, "command": "...", "error": {"code
 actual `port` and `rpcUrl` (also when the port was allocated from the range) and `verified: {skipped: false, ok, checks,
 failures, ms, coldPin}`. If a check fails, `up` tears the instance down (its own anvil, its lease) and exits 1 with an
 error object listing the failures; with `--keep-on-fail` the instance stays leased in state `failed`. Measured cost of
-the in-`up` verify: about 0.8 s for 373 checks (the big file is re-assembled node by node); a whole `up` takes about
+the in-`up` verify: about 0.9 s for 408 checks (the big file is re-assembled node by node); a whole `up` takes about
 4–5 s. `--no-verify` skips it (`verified: {skipped: true}`). Both failure paths were exercised by hand against a stale
 `deploy/plan.json` (one mismatch): the default tore the instance down and removed its lease; `--keep-on-fail` left it
 leased in state `failed`.
@@ -147,11 +147,11 @@ leased in state `failed`.
   },
   "typeIds": { "files-root/1": "0x…", "…": "one per Files Type" },
   "signerCapable": true,
-  "capabilities": { "filesSeed": "efs-fixture-seed/4", "filesTypes": 10, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
+  "capabilities": { "filesSeed": "efs-fixture-seed/4", "filesTypes": 13, "seedFiles": ["readme.txt", "big.bin", "remote.txt"], "largeFiles": true, "externalLocations": true, "keysView": true, "web3Gateway": true, "readers": ["efs/reader/lens/1", "efs/reader/files-page/1"], "signerCapable": true, "unlockedAccounts": 10, "hardfork": "prague" },
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
   "planHash": "0xdacd…38db", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
-  "verified": { "skipped": false, "ok": true, "checks": 373, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
+  "verified": { "skipped": false, "ok": true, "checks": 408, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
 ```
 
@@ -335,7 +335,7 @@ not interpret them). Both readers are realm-specific, because their immutables n
 ### The fixture key
 
 The fixture key is anvil's default account 0 (`0xf39F…2266`; its private key is printed by every `anvil`). It is the
-controller owner, the declaration key of the ten Files Types and the seed principal. Never use it with value.
+controller owner, the declaration key of the thirteen Types (ten Files, three Topics) and the seed principal. Never use it with value.
 `~/.env` is never read.
 
 ### The factory
@@ -360,14 +360,15 @@ equal; see HARNESS-BUG below).
 | `tools/test/*.test.mjs` | The tooling tests (`pnpm test:tools`). |
 | `tools/release.mjs` | Writes `release/release.json`, `release/errors.json` and `artifacts/`. |
 | `tools/gas-report.mjs` | Writes `gas/report.json`. |
-| `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the ten rules, `RefuseAllPolicy` and `FilesFinalValidator` through the factory in forge's EVM and returns `FilesTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
-| `deploy/plan.json` | `efs-deploy-plan/1`: 61 steps (F0, G1–G20, R0–R4, G21, R5 the `web3://` gateway, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the ten Type ids and descriptors, the seed and `planHash`. |
-| `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (33/33 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 86 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (ten Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, `constants` (action kinds, capability bits, the three purpose ids with their preimages, the Status and Coverage codes, and the Files form, carrier, hash, alias and target-kind codes with the chunk payload: all parsed from the Solidity sources, so a consumer never types a protocol string), the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
+| `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the thirteen rules, `RefuseAllPolicy` and `FilesFinalValidator` (six Type ids: name, directory, root, child, topic, topic-word) through the factory in forge's EVM and returns `FilesTypes`' and `TopicTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
+| `deploy/plan.json` | `efs-deploy-plan/1`: 70 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, R0–R4, thirteen G21 registrations, R5 the `web3://` gateway, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
+| `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (36/36 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 90 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (thirteen Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, `constants` (action kinds, capability bits, the three purpose ids with their preimages, the Status and Coverage codes, and the Files form, carrier, hash, alias and target-kind codes with the chunk payload: all parsed from the Solidity sources, so a consumer never types a protocol string), the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
 | `test/vectors/media.json` | `efs/vectors/media/1`, written by `tools/release.mjs` (or alone by `node tools/media-vectors.mjs`) and compared byte for byte by `release:check`: `files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty media strings with the grammar's code and each rule's refusal code (`docs/LARGE-FILES.md` "Media types"). `test/profiles/FilesMediaType.t.sol` asserts it against the rules, `EfsFiles`, `Keys` and `script/Genesis.s.sol`'s Type ids. |
-| `release/errors.json` | `efs-errors/1`: 106 file-level errors from `src/`, each with selector, signature, args, source, retry class (the first word of the trailing comment; required, the generator refuses an error without one) and meaning (the rest of that comment, else the `///` lines above the error). Every selector in `test/snapshots/abi/Errors.json` is reproduced. |
+| `test/vectors/topics.json` | `efs/vectors/topics/1`, written by `tools/release.mjs` (or alone by `node tools/topic-vectors.mjs`) and compared byte for byte by `release:check`: the `topic-word/1` and `text/1` verdicts with their codes, the refused code point table (`TopicProfile.REFUSED`), path ids for 1, 2, 3 and 64 words, `PROPERTY` keys, the purposes and the `EfsTopics` builder encodings, for the release Type ids. `test/profiles/TopicVectors.t.sol` asserts every vector. |
+| `release/errors.json` | `efs-errors/1`: 107 file-level errors from `src/`, each with selector, signature, args, source, retry class (the first word of the trailing comment; required, the generator refuses an error without one) and meaning (the rest of that comment, else the `///` lines above the error). Every selector in `test/snapshots/abi/Errors.json` is reproduced. |
 | `artifacts/<Unit>.json` | `efs-artifact/1` per deployable unit: ABI, method identifiers, creation and runtime bytecode, named immutable offsets. `LedgerCore.json`'s ABI is the union of the kernel ABI with the events and errors of `LedgerApply`, `LedgerIngress` and `LedgerControl`. Interface ABIs are not copied: `abi.interfaces` points at `test/snapshots/abi/` (tools/abi-snapshot.mjs), and storage layouts at `test/snapshots/layout/`. |
 | `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids, plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, principalId}` (a folder is a record, never a subject); `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
-| `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, the three files with their ids, lengths, sha256 and, for big.bin and remote.txt, the descriptor, span-root and sentinel ids; counts 27 admissions / 17 records / 7 bindings / 6 publications; seven heads; thirteen records; catalog count 10). |
+| `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, the three files with their ids, lengths, sha256 and, for big.bin and remote.txt, the descriptor, span-root and sentinel ids; counts 27 admissions / 17 records / 7 bindings / 6 publications; seven heads; thirteen records; catalog count 13). |
 | `<home>/instances/<name>/` | One instance's runtime state (never tracked): `anvil.pid`, `anvil.log`, `fixture.json` (rpc, pid, ttl, factory method, signing, RPC method counts, the journal of all 61 transactions with hash, block and gasUsed, and the two read estimates), its own `efs-deployment.json` and `expected.json`, and `up.json`. `release/efs-deployment.json` and `release/expected.json` are the committed sample, written only by `up --write-release`. |
 | `artifacts/index.json` | `efs-artifacts-index/1`: `layoutId`, `hotAbiId`, the unit list; lets `artifacts/` deploy alone. |
 | `gas/report.json` | `efs-gas-report/1` (below). |
@@ -375,7 +376,7 @@ equal; see HARNESS-BUG below).
 
 ## What `verify` reproduces
 
-373 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
+408 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
 build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested and fails.
 
 1. **Documents.** `planHash` (recomputed, and equal to `deploy/plan.json`), the ledger address, the execution set, the
@@ -384,7 +385,7 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
 2. **Code, byte for byte.** The factory runtime and its codehash. For the 29 units the plan deploys (the two readers
    and `KeysView` included), the runtime is compared byte for byte with the artifact plus the planned immutables.
    Codehashes are checked for those 29, the 5 `RealmGenesis` creations (controller, both proxies, both ProxyAdmins)
-   and the 10 descriptor blobs.
+   and the 13 descriptor blobs.
 3. **Genesis.** `controller()`, `registryProxy()` and `ledgerProxy()` equal the plan, `predict()` equals the plan,
    and a second `run()` reverts with exactly `E_GENESIS(0)` (checked by `eth_call`).
 4. **Proxies and ownership.** Both ERC-1967 implementation and admin slots; both `ProxyAdmin.owner() == controller`;
@@ -397,7 +398,7 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
 7. **The index.** `manifestHash()` equals the offline manifest hash; `replayReadiness()` is ready, with families and
    units equal to the plan; `progress().lastProcessed` equals 27; `digestSpecCount` is 1 for `files-content/1` and for
    `files-external/1`.
-8. **The ten Types.** The catalog equals the offline id set. For each Type, `typeInfo` mandatory, ruleId, shape and
+8. **The thirteen Types.** The catalog equals the offline id set. For each Type, `typeInfo` mandatory, ruleId, shape and
    blob; `descriptorBytes` equals the JS descriptor; `refTypes`; `declaration` (key and installed); and the published
    id.
 9. **The seed.** Thirteen record headers, seven heads (state, revision, target), the three file subjects created,
@@ -452,7 +453,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0x5078878cd0911b35236939cccee1666df6e43ddd3fda3a89330c4a750bb9fc6a`.
+  `0x8bcbf0b47ee0977369c474cd39d6fde82d30148e15ed125a75417356da0a1718`.
 
 ## The planning model (`gas/model.json`)
 
@@ -496,18 +497,18 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 694,925 | 2,459,701 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,353 | 1,879,076 (1,370,880) |
-| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,326,369 | 4,623,305 (3,623,040) |
-| M1 create file (5 leaves, fresh folder) | 1,690,112 | 5,874,115 (4,602,240) |
-| Edit | 900,073 | 2,810,624 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,093,961 | 3,392,391 (2,448,000) |
-| Remove (RELEASE from BOUND) | 450,101 | 1,202,115 (783,360) |
-| Restore (released → same target) | 491,429 | 1,257,977 (783,360) |
-| RELEASE from mask | 413,359 | 1,077,487 (685,440) |
-| Hide (UNBIND from BOUND) | 434,247 | 1,105,576 (685,440) |
-| Restore a released placement (Move-back analog) | 506,307 | 1,353,517 (881,280) |
-| WITHDRAW | 457,685 | 1,297,320 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 695,327 | 2,460,129 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,710 | 1,879,457 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,327,370 | 4,624,342 (3,623,040) |
+| M1 create file (5 leaves, fresh folder) | 1,699,759 | 5,883,796 (4,602,240) |
+| Edit | 909,960 | 2,820,534 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,094,895 | 3,393,362 (2,448,000) |
+| Remove (RELEASE from BOUND) | 450,446 | 1,202,484 (783,360) |
+| Restore (released → same target) | 492,141 | 1,258,714 (783,360) |
+| RELEASE from mask | 413,704 | 1,077,856 (685,440) |
+| Hide (UNBIND from BOUND) | 434,591 | 1,105,945 (685,440) |
+| Restore a released placement (Move-back analog) | 507,019 | 1,354,266 (881,280) |
+| WITHDRAW | 458,030 | 1,297,689 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
@@ -528,20 +529,20 @@ The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, 
 
 The prototype needed 199 calls.
 
-The report also carries 25 supplementary recipe steps and the fixture's 62 transaction receipts, which are prague
+The report also carries 26 supplementary recipe steps and the fixture's 71 transaction receipts, which are prague
 only and include intrinsic cost:
 
-- Genesis code deposit: 44.6M over 27 transactions (the ten rules included).
-- Readers and views (R0–R5): 11.17M (`KeysView` 0.38M, `LensReader` 3.76M, `FilesPageReader` 2.81M, each listing 0.16M, `EfsWeb3Gateway` 3.88M).
-- The ten descriptor blobs: 1.54M.
-- **Genesis activation: 2.97M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). It was 4.21M before the
+- Genesis code deposit: 45.8M over 30 transactions (the thirteen rules included).
+- Readers and views (R0–R5): 11.35M (`KeysView` 0.38M, `LensReader` 3.76M, `FilesPageReader` 2.81M, each listing 0.16M, `EfsWeb3Gateway` 3.88M).
+- The thirteen descriptor blobs: 2.10M.
+- **Genesis activation: 3.02M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). It was 4.21M before the
   protocol-string rename, which changed only constants: when `CodeScan`'s fast walk meets a byte that reads as a
   forbidden opcode before the trailer (such as a byte of the 32-byte constants via-IR places after the final
   `INVALID`), it walks the unit again from pc 0, so the constants' bytes decide which units pay a second walk
   (before: `BitmapStore`, `LedgerIngress`, `TypeRegistry`; now: `LedgerControl`, `TypeRegistry`).
-- `registerDescribed`: 0.24–0.27M each (design ≈ 0.30M).
-- Seed: root 0.77M, folder 1.39M, `readme.txt` 1.67M; `big.bin` 12.60M (two 8 KB chunks, 16,384 body bytes) +
-  5.87M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.41M.
+- `registerDescribed`: 0.24–0.28M each (design ≈ 0.30M).
+- Seed: root 0.69M, folder 1.32M, `readme.txt` 1.69M; `big.bin` 12.60M (two 8 KB chunks, 16,384 body bytes) +
+  5.92M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.44M.
 
 ## KERNEL-BUG
 
@@ -560,7 +561,7 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    `LedgerControl(ingress, apply, predecessorLayoutId = 0)` delegate, which §8.2 does not list. The plan adds step
    **G2c**.
 2. **G6: `DescribedTypeRule/1` is not deployed.** The file is untracked and still being written by another agent.
-   Genesis passes `wrapperV1 = 0`, as `test/control/RealmController.t.sol` does, and the ten Files Types are all
+   Genesis passes `wrapperV1 = 0`, as `test/control/RealmController.t.sol` does, and the thirteen Types are all
    NATIVE, so no wrapper is needed. A later `controller.activateWrapper(1, wrapper)` adds it.
 3. **G9: `IndexBuild/1` does not exist.** `RealmIndex` takes no build, `Readiness.build` is 0, and the plan has no G9.
 4. **G13.** `LAYOUT_ID` is a compiled constant, not an immutable. `PREDECESSOR_LAYOUT_ID` is on `LedgerControl`.

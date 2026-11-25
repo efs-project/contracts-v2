@@ -4,6 +4,9 @@ pragma solidity 0.8.37;
 import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
+import {E_INDEX_CALL} from "../../src/interfaces/Errors.sol";
+import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 import {Action, ActionKind, FamilyId, Purpose, TypeId} from "../../src/interfaces/Actions.sol";
 import {BasisCommit, Status} from "../../src/interfaces/Results.sol";
 import {Cursor, Page} from "../../src/interfaces/Readers.sol";
@@ -12,15 +15,16 @@ import {LedgerViews} from "../../src/readers/LedgerViews.sol";
 import {LensReader} from "../../src/readers/LensReader.sol";
 
 /// @notice Measurements for docs/TAG-OPTIONS.md, option (a): what the generic binding path that exists today costs
-///         when it carries a tag. Nothing here defines a tag: the TAG purpose is an ordinary purpose to the kernel
-///         and the generation-1 index, with no Type, rule or validator of its own. The shape measured is one
-///         binding per (concept, target) pair: position `(TAG, concept, role = target)`, target = the tagged
-///         subject. `concept` is an arbitrary 32-byte id (a position's subject need not exist; a target must).
+///         when it carries a tag. The TAG purpose is an ordinary purpose to the kernel and the generation-1 index;
+///         `FilesFinalValidator` requires a first statement's subject to be a registered topic or a home (code 9).
+///         The shape measured is one binding per (concept, target) pair: position `(TAG, concept, role = target)`,
+///         target = the tagged subject. `concept` is a word page registered in `setUp` (or in the measured
+///         publication's own first actions), so the rows include the validator's topic check.
 ///         Writes are cooled like `GasModel.t.sol`, so each publication pays what a transaction of its own pays.
 ///         Logs: `tag <key> gas` (and `frame state gas` under the amsterdam profile).
 contract TagPathMeasureTest is FilesRecipesBase {
     uint256 internal constant N = 60;
-    bytes32 internal constant X = keccak256("measure/concept/x");
+    bytes32 internal X;
     bytes32 internal constant Y = keccak256("measure/concept/y");
 
     address[] internal cold;
@@ -32,7 +36,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         lens = new LensReader(
             address(r.ledger), address(new LedgerViews()), address(new LedgerReads())
         );
-        for (uint256 i; i < 10; ++i) {
+        for (uint256 i; i < TYPE_COUNT; ++i) {
             _remember(instances[i]);
         }
         _remember(address(validator));
@@ -54,6 +58,10 @@ contract TagPathMeasureTest is FilesRecipesBase {
             }
             r.ledger.execute(a, new bytes[](20), _ctx(a), "");
         }
+        (Action[] memory ra, bytes[] memory rb, bytes32 topic) =
+            EfsTopics.registerWord(_topicTypes(), "measure-concept-x");
+        r.ledger.execute(ra, rb, _ctx(ra), "");
+        X = topic;
     }
 
     function _remember(address a) internal {
@@ -105,15 +113,31 @@ contract TagPathMeasureTest is FilesRecipesBase {
         _run("assert k40", _tags(X, 13, 40));
     }
 
-    /// The other key order: position (TAG, target, role = concept). Same kernel work, other lists.
-    function test_assert_keyed_by_target() public {
+    function execExternal(Action[] calldata a) external {
+        require(msg.sender == address(this));
+        r.ledger.execute(a, new bytes[](a.length), _ctx(a), "");
+    }
+
+    /// The other key order, position (TAG, thing, role = topic), is refused: a tag's subject is a registered topic
+    /// or a home, never the thing (`FilesFinalValidator` code 9), for a first assert and a first negative.
+    function test_keyed_by_target_is_refused() public {
         Action[] memory a = new Action[](1);
         a[0] = _bind(Purpose.TAG, s[0], X, s[0], 0);
-        _run("assert by-target k1", a);
-        a = new Action[](2);
-        a[0] = _bind(Purpose.TAG, s[1], X, s[1], 0);
-        a[1] = _bind(Purpose.TAG, s[2], X, s[2], 0);
-        _run("assert by-target k2", a);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                E_INDEX_CALL.selector,
+                abi.encodeWithSelector(E_FILES_FINAL.selector, uint8(9), uint8(0))
+            )
+        );
+        this.execExternal(a);
+        a[0] = _bindKind(ActionKind.UNBIND, Purpose.TAG, s[0], X, 0, 0);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                E_INDEX_CALL.selector,
+                abi.encodeWithSelector(E_FILES_FINAL.selector, uint8(9), uint8(0))
+            )
+        );
+        this.execExternal(a);
     }
 
     /// Deny after an assertion (UNBIND = mask), assert again, deny, then back to silent (RELEASE).
@@ -189,11 +213,17 @@ contract TagPathMeasureTest is FilesRecipesBase {
     /// then one head read per entry to see whether it is still asserted.
     function test_read_concepts_on_a_target() public {
         bytes32 target = s[0];
-        Action[] memory a = new Action[](8);
+        Action[] memory a = new Action[](16);
+        bytes[] memory b = new bytes[](16);
+        bytes32[8] memory concepts;
         for (uint256 i; i < 8; ++i) {
-            a[i] = _bind(Purpose.TAG, keccak256(abi.encode("concept", i)), target, target, 0);
+            (Action[] memory ra, bytes[] memory rb, bytes32 page) =
+                EfsTopics.registerWord(_topicTypes(), abi.encodePacked("concept-", vm.toString(i)));
+            (a[i], b[i]) = (ra[0], rb[0]);
+            concepts[i] = page;
+            a[8 + i] = _bind(Purpose.TAG, page, target, target, 0);
         }
-        _silent(a);
+        r.ledger.execute(a, b, _ctx(a), "");
         _cool();
         uint256 before = gasleft();
         (, uint64[] memory entries,) = r.g.index
@@ -210,9 +240,7 @@ contract TagPathMeasureTest is FilesRecipesBase {
         emit log_named_uint("tag read concepts on a target: list gas", listGas);
         before = gasleft();
         for (uint256 i; i < 8; ++i) {
-            bytes32 key = Keys.binding(
-                p, Keys.position(Purpose.TAG, keccak256(abi.encode("concept", i)), target)
-            );
+            bytes32 key = Keys.binding(p, Keys.position(Purpose.TAG, concepts[i], target));
             (uint8 state,,,,,,,) = r.hot.head(key);
             assertEq(state, 1);
         }

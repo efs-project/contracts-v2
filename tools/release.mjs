@@ -3,14 +3,15 @@
 // auxiliary AST build in out/release-ast (immutable names; its bytecode must equal out/'s, the double-build check)
 // and the chain-free plan facts of tools/deploy-plan.mjs. It also writes release/errors.json (the error catalog),
 // artifacts/<Unit>.json (ABI union, bytecode, immutables, method identifiers), test/vectors/media.json (the
-// media-type vectors of tools/media-vectors.mjs for the release Type ids) and test/vectors/numbers.json (the binding
-// number vectors of tools/number-vectors.mjs) and cross-checks the JS Files
-// twin against the Solidity FilesTypes through `forge script script/Genesis.s.sol --sig "profile(address)"`.
+// media-type vectors of tools/media-vectors.mjs for the release Type ids), test/vectors/numbers.json (the binding
+// number vectors of tools/number-vectors.mjs) and test/vectors/topics.json (the Topics vectors of
+// tools/topic-vectors.mjs) and cross-checks the JS Files and Topics twin against the Solidity FilesTypes and
+// TopicTypes through `forge script script/Genesis.s.sol --sig "profile(address)"`.
 //
 //   node tools/release.mjs [--skip-script 1] [--check 1]
 //
 // `--check 1` writes nothing: it regenerates every document in memory and fails when a committed file differs
-// (release/errors.json, artifacts/*.json, test/vectors/media.json, test/vectors/numbers.json and deploy/plan.json byte for byte; release/release.json without the facts
+// (release/errors.json, artifacts/*.json, test/vectors/media.json, test/vectors/numbers.json, test/vectors/topics.json and deploy/plan.json byte for byte; release/release.json without the facts
 // of the machine and the moment: source commit, forge and node versions, build platform, the double-build count and
 // the script cross-check record). CI runs it after the suites, so a push whose snapshot is stale against its own
 // sources cannot merge. Without an AST build (CI) the immutable names are the manifest's and their offsets are checked
@@ -26,6 +27,7 @@ import { join, relative } from "node:path";
 import { keccak256, toFunctionSelector } from "viem";
 import { mediaVectors } from "./media-vectors.mjs";
 import { numberVectors } from "./number-vectors.mjs";
+import { topicVectors } from "./topic-vectors.mjs";
 import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-script", "check"]);
@@ -137,6 +139,8 @@ emit("artifacts/index.json", toJSON({ schema: "efs-artifacts-index/1", layoutId:
 emit("test/vectors/media.json", toJSON(mediaVectors(plan)));
 // ---- test/vectors/numbers.json: the binding number's shape law, signed numbers and builder encodings ---------------
 emit("test/vectors/numbers.json", toJSON(numberVectors()));
+// ---- test/vectors/topics.json: the Topics grammars, refused code points, path ids, property keys and builders -----
+emit("test/vectors/topics.json", toJSON(topicVectors(plan)));
 
 // ---- cross-check: the JS Files twin against the Solidity FilesTypes ------------------------------------------------
 let scriptCheck = { ran: false };
@@ -181,13 +185,14 @@ const libraryConstants = (rel, name) => {
 };
 const enumCodes = (rel, name) => Object.fromEntries(block(src(rel).replace(/\/\/.*$/gm, ""), `enum ${name}`, rel).split(",").map((v, i) => [String(i), v.trim()]).filter(([, v]) => v));
 const pick = (o, prefix) => Object.fromEntries(Object.entries(o).filter(([k]) => k.startsWith(prefix)).map(([k, v]) => [k.slice(prefix.length), v]));
-const ACTIONS = "src/interfaces/Actions.sol", RESULTS = "src/interfaces/Results.sol", FILES_LIB = "src/lib/EfsFiles.sol", FILES_PROFILE = "src/profiles/FilesProfile.sol";
+const ACTIONS = "src/interfaces/Actions.sol", RESULTS = "src/interfaces/Results.sol", FILES_LIB = "src/lib/EfsFiles.sol", FILES_PROFILE = "src/profiles/FilesProfile.sol", TOPIC_PROFILE = "src/profiles/TopicProfile.sol";
 const vocabulary = src(RESULTS).match(/STATUS_VOCABULARY_ID = keccak256\("([^"]+)"\)/)?.[1];
 assert.ok(vocabulary, `${RESULTS}: STATUS_VOCABULARY_ID not found`);
 const efsFiles = libraryConstants(FILES_LIB, "EfsFiles"), filesProfile = libraryConstants(FILES_PROFILE, "FilesProfile");
+const topicProfile = libraryConstants(TOPIC_PROFILE, "TopicProfile");
 const constants = {
   note: "parsed from the sources in `from` at release time; the ids are keccak256 of the UTF-8 preimage. Value 0 of each enum is reserved and never returned.",
-  from: [ACTIONS, RESULTS, FILES_LIB, FILES_PROFILE],
+  from: [ACTIONS, RESULTS, FILES_LIB, FILES_PROFILE, TOPIC_PROFILE],
   actionKinds: libraryConstants(ACTIONS, "ActionKind"),
   capabilities: libraryConstants(ACTIONS, "Capability"),
   purposes: libraryConstants(ACTIONS, "Purpose"),
@@ -201,12 +206,15 @@ const constants = {
     chunking: { id: "efs/chunking/1", chunkPayload: efsFiles.CHUNK_PAYLOAD, spec: "docs/LARGE-FILES.md" },
     mediaType: { maxLength: filesProfile.MEDIA_MAX, empty: "unknown", spec: "docs/LARGE-FILES.md \"Media types\"", vectors: "test/vectors/media.json" },
   },
+  topics: { wordMax: topicProfile.WORD_MAX, textMax: topicProfile.TEXT_MAX, refusedClasses: pick(topicProfile, "CLASS_"), spec: "docs/DESIGN.md §12.5", vectors: "test/vectors/topics.json" },
 };
-for (const [k, n] of [["actionKinds", 9], ["capabilities", 10], ["purposes", 3]]) assert.equal(Object.keys(constants[k]).length, n, `constants.${k}: expected ${n} entries`);
+for (const [k, n] of [["actionKinds", 9], ["capabilities", 10], ["purposes", 6]]) assert.equal(Object.keys(constants[k]).length, n, `constants.${k}: expected ${n} entries`);
 assert.equal(constants.status.codes["12"], "LIMIT_EXCEEDED");
 assert.deepEqual(constants.files.form, { INLINE: 0, CONTENT: 1 });
 assert.deepEqual(constants.files.contentCarrier, { INLINE: 0, REMOTE: 1, SPAN: 2 });
 assert.equal(constants.files.chunking.chunkPayload, 8160);
+assert.deepEqual(constants.topics.refusedClasses, { C1: 1, BIDI: 2, INVISIBLE: 3, JOINER: 4, NONCHARACTER: 5, WHITESPACE: 6 });
+assert.equal(constants.topics.wordMax, 255);
 assert.equal(constants.purposes.FOLDER.id, plan.index.units[0].purposeFilter ?? constants.purposes.FOLDER.id, "Purpose.FOLDER != the validator unit's purpose filter");
 
 // ---- the planning gas model (gas/model.json, measured by tools/gas-model.mjs) and the joint envelope ----------------
@@ -304,7 +312,7 @@ const manifest = {
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
   errors: { path: "release/errors.json", sha256: sha256(Buffer.from(generated.get("release/errors.json"))), count: Object.keys(errors).length },
   abi: { interfaces: "test/snapshots/abi/", units: "artifacts/" },
-  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json", "test/vectors/numbers.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
+  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json", "test/vectors/numbers.json", "test/vectors/topics.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
   dependencyRoot: null,
   deployPlan: { path: "deploy/plan.json", genesis: plan.addresses.genesis, factory: plan.factory },
 };
@@ -331,7 +339,7 @@ if (CHECK) {
     console.error(`release: the committed snapshot does not match this build (${drift.length}):\n  ${drift.join("\n  ")}\nRegenerate it in the same push: forge build, the AST build, \`pnpm run release\`, \`pnpm run plan\` (tools/RELEASE.md).`);
     process.exit(1);
   }
-  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json, test/vectors/media.json, test/vectors/numbers.json${scriptCheck.ran ? "; FilesTypes twin == forge script" : ""})`);
+  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json, test/vectors/media.json, test/vectors/numbers.json, test/vectors/topics.json${scriptCheck.ran ? "; FilesTypes/TopicTypes twin == forge script" : ""})`);
   process.exit(0);
 }
 const digest = sha256(readFileSync(join(root, "release/release.json")));

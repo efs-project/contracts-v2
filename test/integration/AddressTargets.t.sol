@@ -4,6 +4,7 @@ pragma solidity 0.8.37;
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Action, ActionKind, Coordinate, Purpose} from "../../src/interfaces/Actions.sol";
 import {BasisCommit, Qualified, Status} from "../../src/interfaces/Results.sol";
 import {Selection} from "../../src/interfaces/Readers.sol";
@@ -19,11 +20,11 @@ import {LensReader} from "../../src/readers/LensReader.sol";
 ///         a subject is admitted with `targetKind = 3`, so an address that never transacted can be tagged; the
 ///         readers and the replay decoder carry it; `FilesFinalValidator` refuses it for HEAD (code 7) and FOLDER
 ///         (code 6), admits it for TAG and does not judge a purpose the profile does not name. A file revision is a
-///         record, so it was a target already.
-///         Topics are plain ids here: no validator checks a TAG subject at this step.
+///         record, so it was a target already. The two topics are word pages registered in `setUp` (a tag's subject
+///         must be a registered topic or a home).
 contract AddressTargetsTest is FilesRecipesBase {
-    bytes32 internal constant TOPIC = keccak256("address-targets/topic/phishing");
-    bytes32 internal constant TRUSTED = keccak256("address-targets/topic/trusted");
+    bytes32 internal TOPIC;
+    bytes32 internal TRUSTED;
     address internal phisher = makeAddr("address-targets/phisher");
     bytes32 internal target;
     LensReader internal lens;
@@ -31,6 +32,12 @@ contract AddressTargetsTest is FilesRecipesBase {
     function setUp() public override {
         super.setUp();
         target = bytes32(uint256(uint160(phisher)));
+        (Action[] memory a, bytes[] memory b, bytes32 phishing) =
+            EfsTopics.registerWord(_topicTypes(), "phishing");
+        _execAs(address(this), a, b);
+        (a, b, TRUSTED) = EfsTopics.registerWord(_topicTypes(), "trusted");
+        _execAs(address(this), a, b);
+        TOPIC = phishing;
         lens = new LensReader(
             address(r.ledger), address(new LedgerViews()), address(new LedgerReads())
         );

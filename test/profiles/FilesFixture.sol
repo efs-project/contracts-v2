@@ -30,9 +30,15 @@ import {DirectoryAliasRule} from "../../src/profiles/DirectoryAliasRule.sol";
 import {RealmNoticeRule} from "../../src/profiles/RealmNoticeRule.sol";
 import {RefuseAllPolicy} from "../../src/profiles/RefuseAllPolicy.sol";
 import {FilesFinalValidator} from "../../src/profiles/FilesFinalValidator.sol";
+import {TopicTypes} from "../../src/profiles/TopicTypes.sol";
+import {TopicWordRule} from "../../src/profiles/TopicWordRule.sol";
+import {TopicRule} from "../../src/profiles/TopicRule.sol";
+import {TextRule} from "../../src/profiles/TextRule.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 
-/// @notice The Files profile on a real Realm: the ten rule instances, `RefuseAllPolicy` and `FilesFinalValidator`
-///         at their deterministic CREATE2(0x4e59…956C, salt 0, initcode) addresses (design §8.2 G10/G12), the ten
+/// @notice The Files profile on a real Realm: the thirteen rule instances (the ten Files Types, then the Topics
+///         Types `topic-word/1`, `topic/1`, `text/1`), `RefuseAllPolicy` and `FilesFinalValidator`
+///         at their deterministic CREATE2(0x4e59…956C, salt 0, initcode) addresses (design §8.2 G10/G12), the
 ///         descriptors and Type ids from `FilesTypes` under one declaration key, and a Realm builder: kernel, real
 ///         registry proxy, real generation-1 index with the validator pinned as its one unit (`purposeFilter =
 ///         FOLDER`) and the two Files digest specs (word 5, sha256) in the manifest, then the genesis ceremony.
@@ -50,6 +56,10 @@ abstract contract FilesFixture is Test {
     uint8 internal constant T_ALIAS = 7;
     uint8 internal constant T_NOTICE = 8;
     uint8 internal constant T_SPAN = 9;
+    uint8 internal constant T_TOPIC_WORD = 10;
+    uint8 internal constant T_TOPIC = 11;
+    uint8 internal constant T_TEXT = 12;
+    uint8 internal constant TYPE_COUNT = 13;
 
     struct Realm {
         KernelDeploy.Kernel k;
@@ -64,11 +74,11 @@ abstract contract FilesFixture is Test {
 
     address internal declarationKey;
     /// Rule instances by Type index (T_*), the descriptor bytes, initcode hashes and Type ids.
-    address[10] internal instances;
-    bytes[10] internal initcodes;
-    bytes32[10] internal initcodeHashes;
-    bytes[10] internal descriptors;
-    bytes32[10] internal typeIds;
+    address[13] internal instances;
+    bytes[13] internal initcodes;
+    bytes32[13] internal initcodeHashes;
+    bytes[13] internal descriptors;
+    bytes32[13] internal typeIds;
     address internal refuseAll;
     FilesFinalValidator internal validator;
 
@@ -110,15 +120,34 @@ abstract contract FilesFixture is Test {
                 type(DirectoryAliasRule).creationCode, abi.encode(typeIds[T_DIRECTORY])
             )
         );
+        // the Topics Types (TopicTypes): the word Type first (the topic descriptor and rule name its id), then text
+        _deploy(T_TOPIC_WORD, type(TopicWordRule).creationCode);
+        _deploy(
+            T_TOPIC,
+            abi.encodePacked(type(TopicRule).creationCode, abi.encode(typeIds[T_TOPIC_WORD]))
+        );
+        _deploy(T_TEXT, type(TextRule).creationCode);
         refuseAll = Factory.deploy(type(RefuseAllPolicy).creationCode);
         validator = FilesFinalValidator(
             Factory.deploy(
                 abi.encodePacked(
                     type(FilesFinalValidator).creationCode,
-                    abi.encode(typeIds[T_NAME], typeIds[T_DIRECTORY])
+                    abi.encode(
+                        typeIds[T_NAME],
+                        typeIds[T_DIRECTORY],
+                        typeIds[T_ROOT],
+                        typeIds[T_CHILD],
+                        typeIds[T_TOPIC],
+                        typeIds[T_TOPIC_WORD]
+                    )
                 )
             )
         );
+    }
+
+    /// The Topics Type ids for the `EfsTopics` builders.
+    function _topicTypes() internal view returns (EfsTopics.Types memory) {
+        return EfsTopics.Types(typeIds[T_TOPIC_WORD], typeIds[T_TOPIC], typeIds[T_TEXT]);
     }
 
     function _deploy(uint8 t, bytes memory initcode) internal {
@@ -146,11 +175,20 @@ abstract contract FilesFixture is Test {
         if (t == T_EXTERNAL) return FilesTypes.filesExternal(key, instance, h, typeIds[T_BYTES]);
         if (t == T_ALIAS) return FilesTypes.directoryAlias(key, instance, h);
         if (t == T_SPAN) return FilesTypes.filesSpan(key, instance, h);
+        if (t == T_TOPIC_WORD) return TopicTypes.topicWord(key, instance, h);
+        if (t == T_TOPIC) return TopicTypes.topic(key, instance, h, typeIds[T_TOPIC_WORD]);
+        if (t == T_TEXT) return TopicTypes.text(key, instance, h);
         return FilesTypes.realmNotice(key, instance, h);
     }
 
-    /// The manifest unit of design §10.7: no fold hook, the validator as the final hook, FOLDER only.
+    /// When set before `_realm`, the Realm's index pins no unit, so nothing judges its binds: the suites that show
+    /// a reader still refusing state the validator would refuse at admission (a bad HEAD already on chain).
+    bool internal withoutValidator;
+
+    /// The manifest unit of design §10.7: no fold hook, the validator as the final hook, FOLDER only (none when
+    /// `withoutValidator`).
     function _units() internal view returns (Unit[] memory units) {
+        if (withoutValidator) return new Unit[](0);
         units = new Unit[](1);
         units[0] = Unit({
             foldHook: address(0),
@@ -206,9 +244,22 @@ abstract contract FilesFixture is Test {
         r.principal = Keys.principalFor(address(this), r.hot.realmOrigin());
     }
 
-    /// §8.2 G11 + G21: the ten blobs, then permissionless registration (by a stranger) of the ten Types.
+    /// §8.2 G11 + G21: the thirteen blobs, then permissionless registration (by a stranger) of the thirteen Types.
+    /// When set before `_register`, only the ten Files Types are registered; `_registerTopics` adds the three Topics
+    /// Types later (GasModel.t.sol: its `setUp` has no headroom under the amsterdam per-transaction cap).
+    bool internal filesTypesOnly;
+
     function _register(Realm memory r) internal {
-        for (uint8 t; t < 10; ++t) {
+        _registerRange(r, 0, filesTypesOnly ? T_TOPIC_WORD : TYPE_COUNT);
+    }
+
+    /// The three Topics Types, for a Realm registered with `filesTypesOnly`.
+    function _registerTopics(Realm memory r) internal {
+        _registerRange(r, T_TOPIC_WORD, TYPE_COUNT);
+    }
+
+    function _registerRange(Realm memory r, uint8 from, uint8 to) internal {
+        for (uint8 t = from; t < to; ++t) {
             bytes memory sig = _declare(r.registry, typeIds[t]);
             r.store.put(descriptors[t], sig);
             vm.prank(address(0xCAFE));

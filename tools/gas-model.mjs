@@ -68,6 +68,9 @@ const SHAPES = {
   "files-root/1 form 1": [["pub root f1", 96]],
   "files-child/1 form 0": [["pub child f0", 196]],
   "files-child/1 form 1": [["pub child f1", 128]],
+  "topic-word/1": [["pub topic word 12", 12], ["pub topic word 40", 40]],
+  "topic/1": [["pub topic", 64]],
+  "text/1": [["pub text 24", 24]],
 };
 const ACTIONS = {
   publishExisting: "pub existing",
@@ -80,6 +83,7 @@ const ACTIONS = {
   bindFolderRebind: "bind folder rebind",
   unbindFolder: "unbind folder",
   releaseFolder: "release folder",
+  bindTagFresh: "bind tag fresh",
   bindTagNumberChange: "bind tag number change",
   unbindTagLone: "unbind tag lone",
   withdraw: "withdraw",

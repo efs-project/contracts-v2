@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // The genesis deploy plan of design §8.2, computed offline from the Foundry artifacts in out/ (the identity build)
 // and nothing else: every CREATE2 address from its initcode hash, the three RealmGenesis creations from its nonces,
-// every runtime code hash (immutables filled from their recorded offsets), the ten Files descriptors and Type ids
-// (an independent JS twin of src/profiles/FilesTypes.sol), the index manifest hash and the genesis execution set.
+// every runtime code hash (immutables filled from their recorded offsets), the thirteen descriptors and Type ids (the
+// ten Files Types and the three Topics Types; an independent JS twin of src/profiles/FilesTypes.sol and TopicTypes.sol), the index manifest hash and the genesis execution set.
 // Imported by tools/efs-fixture.mjs and tools/release.mjs; as a CLI it writes deploy/plan.json:
 //
 //   node tools/deploy-plan.mjs [--chain-id 31337] [--realm-salt 0x…] [--out deploy/plan.json] [--artifacts DIR]
@@ -127,7 +127,10 @@ export const DOM = {
   subject: h("efs/subject/1"), position: h("efs/position/1"), binding: h("efs/binding/1"),
   scope: h("efs/vk/binding-scope/1"),
 };
-export const PURPOSE = { HEAD: h("efs/purpose/head/1"), FOLDER: h("efs/purpose/folder/1"), TAG: h("efs/purpose/tag/1") };
+export const PURPOSE = {
+  HEAD: h("efs/purpose/head/1"), FOLDER: h("efs/purpose/folder/1"), TAG: h("efs/purpose/tag/1"),
+  PROPERTY: h("efs/purpose/property/1"), SAME: h("efs/purpose/same/1"), BROADER: h("efs/purpose/broader/1"),
+};
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
 export const familyId = (name) => h(`efs/family/${name}/1`);
 export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope"];
@@ -204,6 +207,7 @@ export const UNITS = {
   DirectoryAliasRule: "DirectoryAliasRule", RealmNoticeRule: "RealmNoticeRule", RefuseAllPolicy: "RefuseAllPolicy",
   TransparentUpgradeableProxy: "TransparentUpgradeableProxy", ProxyAdmin: "ProxyAdmin", LensReader: "LensReader", FilesPageReader: "FilesPageReader",
   FilesSpanRule: "FilesSpanRule", KeysView: "KeysView", EfsWeb3Gateway: "EfsWeb3Gateway",
+  TopicWordRule: "TopicWordRule", TopicRule: "TopicRule", TextRule: "TextRule",
 };
 
 // ---- immutables: names → offsets ------------------------------------------------------------------------------------
@@ -281,12 +285,17 @@ export function runtimeOf(name, values = {}) {
   return `0x${bytes.toString("hex")}`;
 }
 
-// ---- the Files profile: a JS twin of src/profiles/FilesTypes.sol ----------------------------------------------------
+// ---- the Files and Topics profiles: a JS twin of src/profiles/FilesTypes.sol and TopicTypes.sol ----------------------
 
-export const T = { ROOT: 0, CHILD: 1, DIRECTORY: 2, NAME: 3, BYTES: 4, CONTENT: 5, EXTERNAL: 6, ALIAS: 7, NOTICE: 8, SPAN: 9 };
-export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/2", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1"];
-export const RULES = ["FilesRootRule", "FilesChildRule", "FilesDirectoryRule", "FilesNameRule", "FilesBytesRule", "FilesContentRule", "FilesExternalContentRule", "DirectoryAliasRule", "RealmNoticeRule", "FilesSpanRule"];
+export const T = { ROOT: 0, CHILD: 1, DIRECTORY: 2, NAME: 3, BYTES: 4, CONTENT: 5, EXTERNAL: 6, ALIAS: 7, NOTICE: 8, SPAN: 9, TOPIC_WORD: 10, TOPIC: 11, TEXT: 12 };
+export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/2", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1", "topic-word/1", "topic/1", "text/1"];
+export const RULES = ["FilesRootRule", "FilesChildRule", "FilesDirectoryRule", "FilesNameRule", "FilesBytesRule", "FilesContentRule", "FilesExternalContentRule", "DirectoryAliasRule", "RealmNoticeRule", "FilesSpanRule", "TopicWordRule", "TopicRule", "TextRule"];
 const NAMESPACE = h("efs/files/1");
+const TOPICS_NAMESPACE = h("efs/topics/1");
+const FIELD_TOPIC_PARENT = h("efs/topics/field/parent/1");
+const FIELD_TOPIC_WORD = h("efs/topics/field/word/1");
+const SEMANTIC_PARENT_TOPIC = h("efs/topics/semantic/parent-topic/1");
+const SEMANTIC_WORD_PAGE = h("efs/topics/semantic/word-page/1");
 const FIELD_PARENT = h("efs/files/field/parent/1");
 const FIELD_BYTES = h("efs/files/field/bytes/1");
 const FIELD_LEFT = h("efs/files/field/left/1");
@@ -297,11 +306,10 @@ const SEMANTIC_SPAN_CHILD = h("efs/files/semantic/span-child/1");
 /** `refTypes` sentinel: any Type. */
 const REF_ANY = ZERO;
 const refField = (id, semantic, ref) => encodePacked(["bytes32", "bytes32", "uint8", "uint8", "uint16", "uint256", "uint256", "bytes32"], [id, semantic, 1, 0, 32, 0n, 0n, ref]);
-/** FilesTypes.*Spec(), byte for byte: description, dependencyClass, refHeaderWords, the REF32 field rows as
- *  [id, semantic, ref(ids)] (fieldCount = rows; refTypes = each row's ref, in order) and flags (header byte 133;
- *  0 when absent). Bit 0 is TYPE_FLAG_EMITS_BODY (the kernel logs a fresh body of at most 256 bytes in `Body`),
- *  meant for names, words and topic records: of these ten only files-name/2 sets it; the topic and text Types the
- *  tag profile adds set it there. */
+/** FilesTypes.*Spec() and TopicTypes.*Spec(), byte for byte: description, dependencyClass, refHeaderWords, the REF32
+ *  field rows as [id, semantic, ref(ids)] (fieldCount = rows; refTypes = each row's ref, in order), the namespace
+ *  (efs/files/1 unless named) and header byte 133, the `flags` byte (0 unless named; bit 0 is TYPE_FLAG_EMITS_BODY:
+ *  the kernel logs a fresh body of at most 256 bytes in `Body`). */
 const SPECS = [
   { description: "abi.encode(fileSubject, form) || rest; the first revision of a created file subject; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(parentRecord, fileSubject, form) || rest; parent is files-root/1 or files-child/1 of the same file; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 2, fields: [[FIELD_PARENT, SEMANTIC_REVISION, () => REF_ANY]] },
@@ -313,15 +321,27 @@ const SPECS = [
   { description: "abi.encode(targetObjectId, kind); kind 1 a files-directory/1 record, 2 a created file subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(bytes32 kind, uint256 revision, bytes note); kind frozen | successor | migration", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(left, right, length); each child a files-bytes/1 record with a nonempty payload or a files-span/1 record; length is the sum of the children payload lengths, below 2^64", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_LEFT, SEMANTIC_SPAN_CHILD, () => REF_ANY], [FIELD_RIGHT, SEMANTIC_SPAN_CHILD, () => REF_ANY]] },
+  { description: "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, no /, no ASCII control, space or A-Z, no C1, bidi, invisible, joiner or variation selector code point, not . or .., not starting with ~, not 0x and 40 lowercase hex", dependencyClass: 1, refHeaderWords: 1, fields: [], namespace: TOPICS_NAMESPACE,
+    flags: 1 }, // TYPE_FLAG_EMITS_BODY
+  { description: "abi.encode(parent, wordPage); a path of two or more words; parent is a topic/1 or topic-word/1 record, wordPage a topic-word/1 record", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_TOPIC_PARENT, SEMANTIC_PARENT_TOPIC, () => REF_ANY], [FIELD_TOPIC_WORD, SEMANTIC_WORD_PAGE, (ids) => ids[T.TOPIC_WORD]]], namespace: TOPICS_NAMESPACE,
+    flags: 1 }, // TYPE_FLAG_EMITS_BODY
+  { description: "a short display string: 1-255 bytes of well-formed UTF-8, no control character (C0, DEL, C1), no bidi control or invisible code point; /, spaces and uppercase allowed", dependencyClass: 1, refHeaderWords: 1, fields: [], namespace: TOPICS_NAMESPACE,
+    flags: 1 }, // TYPE_FLAG_EMITS_BODY
 ];
 /** The rules' constructor arguments (sibling Type ids) and the dependency order they force (FilesTypes). */
 const RULE_ARGS = {
   [T.SPAN]: (ids) => [ids[T.BYTES]], [T.CONTENT]: (ids) => [ids[T.BYTES], ids[T.SPAN]], [T.ROOT]: (ids) => [ids[T.CONTENT], ids[T.EXTERNAL]],
   [T.CHILD]: (ids) => [ids[T.ROOT], ids[T.CONTENT], ids[T.EXTERNAL]], [T.ALIAS]: (ids) => [ids[T.DIRECTORY]],
+  [T.TOPIC]: (ids) => [ids[T.TOPIC_WORD]],
 };
-export const RULE_ORDER = [T.BYTES, T.SPAN, T.CONTENT, T.EXTERNAL, T.ROOT, T.CHILD, T.DIRECTORY, T.NAME, T.NOTICE, T.ALIAS];
+export const RULE_ORDER = [T.BYTES, T.SPAN, T.CONTENT, T.EXTERNAL, T.ROOT, T.CHILD, T.DIRECTORY, T.NAME, T.NOTICE, T.ALIAS, T.TOPIC_WORD, T.TOPIC, T.TEXT];
+/** FilesFinalValidator's constructor arguments, in order (also the order of its identity). */
+export const validatorArgs = (ids) => [ids[T.NAME], ids[T.DIRECTORY], ids[T.ROOT], ids[T.CHILD], ids[T.TOPIC], ids[T.TOPIC_WORD]];
+/** FilesFinalValidator.identity(): keccak(abi.encode(keccak("efs/unit/files-final/1"), ...validatorArgs)). */
+export const validatorIdentityOf = (ids) => keccak256(enc(["bytes32", "bytes32", "bytes32", "bytes32", "bytes32", "bytes32", "bytes32"], [h("efs/unit/files-final/1"), ...validatorArgs(ids)]));
 
-/** FilesTypes.encode: the codec-1 bytes of a NATIVE descriptor (design §9.2 offsets). */
+/** FilesTypes.encode (TopicTypes.encode for the Topics namespace): the codec-1 bytes of a NATIVE descriptor (design
+ *  §9.2 offsets). */
 export function descriptor(t, key, ruleCodehash, initcodeHash, ids) {
   const s = SPECS[t];
   const name = stringToHex(TYPE_NAMES[t]);
@@ -329,7 +349,7 @@ export function descriptor(t, key, ruleCodehash, initcodeHash, ids) {
   const fields = s.fields.length ? concat(s.fields.map(([id, sem, ref]) => refField(id, sem, ref(ids)))) : "0x";
   const header = encodePacked(
     ["uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint24", "uint8", "uint8", "uint8", "address", "bytes32", "bytes32", "bytes32", "uint16", "uint8", "uint8"],
-    [1, 0, 3, s.fields.length, 1, s.dependencyClass, 1, 1, 0, 0, 0, size(name), key, NAMESPACE, ruleCodehash, initcodeHash, size(description), s.refHeaderWords, s.flags ?? 0],
+    [1, 0, 3, s.fields.length, 1, s.dependencyClass, 1, 1, 0, 0, 0, size(name), key, s.namespace ?? NAMESPACE, ruleCodehash, initcodeHash, size(description), s.refHeaderWords, s.flags ?? 0],
   );
   assert.equal(size(header), 134);
   return concat([header, name, description, fields]);
@@ -445,8 +465,8 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const decoder = add("G7", "IndexReplayDecoder", [], { LAYOUT_ID: layoutId });
   const directory = add("G8", "ReaderDirectory", [], {});
 
-  // G10: the ten NATIVE rule instances in FilesTypes' dependency order (a rule naming a sibling Type id in its
-  // initcode follows that Type)
+  // G10: the thirteen NATIVE rule instances in FilesTypes' then TopicTypes' dependency order (a rule naming a sibling
+  // Type id in its initcode follows that Type)
   const ids = new Array(TYPE_NAMES.length);
   const descriptors = new Array(TYPE_NAMES.length);
   const instances = new Array(TYPE_NAMES.length);
@@ -463,7 +483,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   for (const t of RULE_ORDER) rule(t, RULE_ARGS[t] ? RULE_ARGS[t](ids) : []);
   const refuseAll = add("G10.policy", "RefuseAllPolicy", [], {});
 
-  // G11: the ten descriptor blobs (CREATE2 by the DescriptorStore at salt 0; runtime 0x00 ‖ descriptor ‖ sig)
+  // G11: the thirteen descriptor blobs (CREATE2 by the DescriptorStore at salt 0; runtime 0x00 ‖ descriptor ‖ sig)
   for (let t = 0; t < TYPE_NAMES.length; t++) {
     const sig = await declare(ids[t], key);
     const blobRuntime = concat(["0x00", descriptors[t], sig]);
@@ -475,9 +495,9 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     steps.push({ id: `G11.${t}`, kind: "CALL", contract: "DescriptorStore", to: store.address, function: "put(bytes,bytes)", type: TYPE_NAMES[t], address: blob, args: [descriptors[t], sig], runtimeCodehash: profile[t].blobCodehash, postCheck: "extcodehash(blob) == keccak256(0x00 ‖ descriptor ‖ sig)", data: encodeFunctionData({ abi: artifact("DescriptorStore").abi, functionName: "put", args: [descriptors[t], sig] }) });
   }
 
-  // G12: FilesFinalValidator, no caller pin
-  const validator = add("G12", "FilesFinalValidator", [ids[T.NAME], ids[T.DIRECTORY]], {});
-  const validatorIdentity = keccak256(enc(["bytes32", "bytes32", "bytes32"], [h("efs/unit/files-final/1"), ids[T.NAME], ids[T.DIRECTORY]]));
+  // G12: FilesFinalValidator (name, directory, root, child, topic, topic-word), no caller pin
+  const validator = add("G12", "FilesFinalValidator", validatorArgs(ids), {});
+  const validatorIdentity = validatorIdentityOf(ids);
 
   // G13–G14: the two implementations
   const core = add("G13", "LedgerCore", [ingress.address, apply.address, control.address, HOT_ABI_ID], { INGRESS: ingress.address, INGRESS_CODEHASH: ingress.runtimeCodehash, APPLY: apply.address, APPLY_CODEHASH: apply.runtimeCodehash, CONTROL: control.address, CONTROL_CODEHASH: control.runtimeCodehash, HOT_ABI_ID });
@@ -557,7 +577,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   listing("R3", READER_KINDS.lens, lens.address, "list LensReader under efs/reader/lens/1");
   listing("R4", READER_KINDS.filesPage, page.address, "list FilesPageReader under efs/reader/files-page/1");
 
-  // G21: permissionless registration of the ten Types
+  // G21: permissionless registration of the thirteen Types
   for (let t = 0; t < TYPE_NAMES.length; t++) {
     steps.push({ id: `G21.${t}`, kind: "CALL", contract: "TypeRegistry", to: registryProxy, function: "registerDescribed(bytes,bytes,address,bytes)", type: TYPE_NAMES[t], typeId: ids[t], postCheck: "returns typeId; typeInfo(typeId).mandatory == instance", data: encodeFunctionData({ abi: artifact("TypeRegistry").abi, functionName: "registerDescribed", args: [descriptors[t], profile[t].declarationSig, instances[t], "0x"] }) });
   }

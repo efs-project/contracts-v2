@@ -5,6 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
 import {ClosureConstants} from "../../src/interfaces/Limits.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
@@ -16,9 +17,9 @@ import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
 ///         that first admits a record of a Type whose descriptor sets `TYPE_FLAG_EMITS_BODY` (byte 133 bit 0) and
 ///         whose body is at most `ClosureConstants.BODY_EVENT_MAX` bytes emits `Body` (record id, Type id, body);
 ///         an unflagged Type never does, at any size, and neither does a repeat publish, a REUSE or a larger body.
-///         Topics are plain ids: no validator checks a TAG subject here.
+///         The topic is a word page registered in `setUp`.
 contract BoundEventTest is FilesRecipesBase {
-    bytes32 internal constant TOPIC = keccak256("bound-event/topic");
+    bytes32 internal TOPIC;
     bytes32 internal thing;
 
     function setUp() public override {
@@ -27,6 +28,9 @@ contract BoundEventTest is FilesRecipesBase {
         a[0] = _create(keccak256("thing"));
         _execAs(address(this), a, new bytes[](1));
         thing = Keys.subject(p, keccak256("thing"));
+        bytes[] memory b;
+        (a, b, TOPIC) = EfsTopics.registerWord(_topicTypes(), "bound-event");
+        _execAs(address(this), a, b);
     }
 
     function _one(Action memory x) internal pure returns (Action[] memory a) {
@@ -69,15 +73,11 @@ contract BoundEventTest is FilesRecipesBase {
             new bytes[](1)
         );
 
+        // an address thing: role = target = the left-padded address, target kind 3
+        bytes32 addr2 = bytes32(uint256(uint160(makeAddr("events/addr2"))));
         vm.expectEmit(true, true, true, true, address(r.ledger));
-        emit ILedger.Bound(
-            _next(), Purpose.TAG, TOPIC, keccak256("other-role"), addr, ActionKind.BIND, 0, 1, 3
-        );
-        _execAs(
-            address(this),
-            _one(_bind(Purpose.TAG, TOPIC, keccak256("other-role"), addr, 0)),
-            new bytes[](1)
-        );
+        emit ILedger.Bound(_next(), Purpose.TAG, TOPIC, addr2, addr2, ActionKind.BIND, 0, 1, 3);
+        _execAs(address(this), _one(_bind(Purpose.TAG, TOPIC, addr2, addr2, 0)), new bytes[](1));
     }
 
     /// Exactly one `Bound` per bind-kind admission and none for record or subject kinds; its log is 3 indexed
@@ -112,11 +112,14 @@ contract BoundEventTest is FilesRecipesBase {
     /// The two filter recipes: (purpose TAG, role = the thing) finds every statement about the thing across
     /// topics, the lone negative included; (purpose, subject) finds everything under one topic.
     function test_filter_by_role_and_by_subject() public {
-        bytes32 other = keccak256("bound-event/topic/other");
-        Action[] memory a = new Action[](3);
+        (Action[] memory a, bytes[] memory b, bytes32 other) =
+            EfsTopics.registerWord(_topicTypes(), "bound-event-other");
+        _execAs(address(this), a, b);
+        a = new Action[](3);
         a[0] = EfsFiles.bindWithStrength(Purpose.TAG, TOPIC, thing, thing, 0, 3);
         a[1] = EfsFiles.loneNegative(Purpose.TAG, other, thing, 9);
-        a[2] = _bind(Purpose.TAG, TOPIC, keccak256("bound-event/role/2"), thing, 0);
+        bytes32 another = bytes32(uint256(uint160(makeAddr("bound-event/another")))); // another thing
+        a[2] = _bind(Purpose.TAG, TOPIC, another, another, 0);
         vm.recordLogs();
         _execAs(address(this), a, new bytes[](3));
         Vm.Log[] memory logs = vm.getRecordedLogs();
@@ -211,6 +214,34 @@ contract BoundEventTest is FilesRecipesBase {
         assertEq(logs.length, 1);
         logs = _publishLogs(T_NAME, name);
         assertEq(logs.length, 0, "a repeat publish is not fresh");
+    }
+
+    /// The three Topics Types set the flag: a fresh word page (multi-byte UTF-8 included), a fresh `topic/1` path
+    /// record and a fresh `text/1` record are each logged with their record id, Type id and exact bytes; publishing
+    /// any of them again logs nothing.
+    function test_body_on_fresh_topics_records_not_on_a_repeat() public {
+        EfsTopics.Types memory t = _topicTypes();
+        assertEq(r.registry.typeInfo(t.word).flags, 1);
+        assertEq(r.registry.typeInfo(t.topic).flags, 1);
+        assertEq(r.registry.typeInfo(t.text).flags, 1);
+        _bodyOnceAs(t.word, bytes("caf\u00e9"));
+        bytes memory page = bytes("\u9ce5");
+        _bodyOnceAs(t.word, page);
+        _bodyOnceAs(t.topic, EfsTopics.pathBody(TOPIC, EfsTopics.wordPageId(t.word, page)));
+        _bodyOnceAs(t.text, bytes("Birds of Prey / Raptors"));
+    }
+
+    /// A fresh `body` of `typeId` logs exactly one `Body(Keys.record(typeId, body), typeId, body)`; a repeat none.
+    function _bodyOnceAs(bytes32 typeId, bytes memory body) internal {
+        bytes32 id = Keys.record(typeId, body);
+        vm.expectEmit(true, true, false, true, address(r.ledger));
+        emit ILedger.Body(id, typeId, body);
+        Vm.Log[] memory logs = _publishLogsAs(typeId, body);
+        assertEq(logs.length, 1);
+        assertEq(logs[0].topics[1], id);
+        assertEq(logs[0].topics[2], typeId);
+        assertEq(abi.decode(logs[0].data, (bytes)), body);
+        assertEq(_publishLogsAs(typeId, body).length, 0, "a repeat publish is not fresh");
     }
 
     /// A REUSE of a flagged record is never fresh.

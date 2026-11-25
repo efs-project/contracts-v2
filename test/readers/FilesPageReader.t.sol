@@ -6,7 +6,8 @@ import {FilesPageReader} from "../../src/readers/FilesPageReader.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, ActionKind, Purpose} from "../../src/interfaces/Actions.sol";
-import {E_CAS} from "../../src/interfaces/Errors.sol";
+import {E_CAS, E_INDEX_CALL} from "../../src/interfaces/Errors.sol";
+import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 import {BasisCommit, Coverage, Qualified, Status} from "../../src/interfaces/Results.sol";
 import {IFilesPageReader} from "../../src/interfaces/Readers.sol";
 import {ILedgerReads} from "../../src/interfaces/ILedgerReads.sol";
@@ -287,56 +288,40 @@ contract FilesPageReaderTest is FilesPageHarness {
         _execAs(author, a, b);
     }
 
-    // ---- INVALID heads (the reader-side §12.1 HEAD law) -------------------------------------------------------
+    // ---- INVALID heads: refused at admission (the validator's HEAD law, code 8) ------------------------------
 
-    /// CREATE, PUBLISH name, BIND(HEAD → `headTarget`, or the file subject itself when 0) unless `!withHead`,
-    /// BIND(FOLDER, root, name → file): the gen-1 validator judges FOLDER binds only, so any HEAD target lands.
-    function _placeWithHead(string memory name, bytes32 headTarget, bool withHead)
+    function _headPlacement(string memory name, bytes32 headTarget)
         internal
-        returns (bytes32 file)
+        view
+        returns (Action[] memory a, bytes[] memory b)
     {
         bytes32 salt = keccak256(bytes(name));
-        file = EfsFiles.subjectId(p, salt);
-        uint256 n = withHead ? 4 : 3;
-        Action[] memory a = new Action[](n);
-        bytes[] memory b = new bytes[](n);
+        bytes32 file = EfsFiles.subjectId(p, salt);
+        a = new Action[](4);
+        b = new bytes[](4);
         a[0] = EfsFiles.create(salt);
         b[1] = bytes(name);
         a[1] = EfsFiles.publish(t.name, b[1]);
-        if (withHead) {
-            a[2] = EfsFiles.bind(Purpose.HEAD, file, 0, headTarget == 0 ? file : headTarget, 0);
-        }
-        a[n - 1] = EfsFiles.bind(Purpose.FOLDER, rootDir, keccak256(bytes(name)), file, 0);
-        _exec(a, b);
+        a[2] = EfsFiles.bind(Purpose.HEAD, file, 0, headTarget == 0 ? file : headTarget, 0);
+        a[3] = EfsFiles.bind(Purpose.FOLDER, rootDir, keccak256(bytes(name)), file, 0);
     }
 
-    function test_invalid_heads_are_reported_invalid_never_dropped() public {
+    /// The three bad HEADs the reader reports INVALID (`FilesPageInvalidHeadsTest`) cannot be written here: a name
+    /// record, another file's root and a subject as the HEAD target are refused by `FilesFinalValidator` code 8.
+    function test_invalid_heads_are_refused_at_admission() public {
         bytes32 nameRec = Keys.recordFromHash(t.name, keccak256("bad.txt"));
-        bytes32 bad = _placeWithHead("bad.txt", nameRec, true); // a files-name/2 record as the HEAD target
-        bytes32 wrong = _placeWithHead("wrong.txt", aRoot, true); // another file's root record
-        bytes32 self = _placeWithHead("self.txt", 0, true); // a subject (itself) as the HEAD target
-        bytes32 none = _placeWithHead("none.txt", 0, false); // no HEAD bound
-        IFilesPageReader.DirectoryPage memory page = _list(rootDir, _lens(p), F_ALL);
-        assertEq(page.rows.length, 8);
-        assertEq(page.rows[4].target, bad);
-        assertEq(page.rows[4].rowKind, ROW_INVALID, "a name record is not a revision");
-        assertEq(page.rows[4].headRecord, nameRec);
-        assertEq(page.rows[5].target, wrong);
-        assertEq(page.rows[5].rowKind, ROW_INVALID, "a root record of another file");
-        assertEq(page.rows[5].headerWord0, fileA);
-        assertEq(page.rows[6].target, self);
-        assertEq(page.rows[6].rowKind, ROW_INVALID, "a subject HEAD target");
-        assertEq(page.rows[7].target, none);
-        assertEq(page.rows[7].rowKind, ROW_ENTRY, "no HEAD is not invalid");
-        assertEq(page.rows[7].headRecord, 0);
-        assertEq(page.rows[7].headRevision, 0);
-        // the kinds filter never hides an INVALID file row behind a files filter
-        page = reader.listDirectory(rootDir, _lens(p), _q(F_HEADER, 2), _unbound(), "", 0, 0);
-        assertEq(page.rows.length, 7);
-        (Qualified memory q, IFilesPageReader.Row memory row) =
-            reader.lookupName(rootDir, keccak256("bad.txt"), _lens(p), _unbound());
-        assertEq(uint8(q.status), uint8(Status.INVALID));
-        assertEq(row.rowKind, ROW_INVALID);
+        bytes32[3] memory targets = [nameRec, aRoot, bytes32(0)];
+        string[3] memory names = ["bad.txt", "wrong.txt", "self.txt"];
+        for (uint256 i; i < 3; ++i) {
+            (Action[] memory a, bytes[] memory b) = _headPlacement(names[i], targets[i]);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    E_INDEX_CALL.selector,
+                    abi.encodeWithSelector(E_FILES_FINAL.selector, uint8(8), uint8(2))
+                )
+            );
+            this.execAsExternal(address(this), a, b);
+        }
     }
 
     // ---- paging: limit, gasReserve, continuation, flags ---------------------------------------------------
@@ -587,5 +572,71 @@ contract FilesPageReaderTest is FilesPageHarness {
         assembly ("memory-safe") {
             w := mload(add(add(b, 32), at))
         }
+    }
+}
+
+/// @notice The reader-side HEAD law (§12.1) on a Realm WITHOUT `FilesFinalValidator`: a bad HEAD can only be on chain
+///         where nothing judged it at admission (the validator refuses all three since §12.5), and the page reader
+///         still reports each such file INVALID rather than dropping it (defence in depth).
+contract FilesPageInvalidHeadsTest is FilesPageHarness {
+    bytes32 internal fileA;
+    bytes32 internal aRoot;
+
+    function setUp() public {
+        withoutValidator = true;
+        _setUpFiles(keccak256("files-page/no-validator"));
+        (fileA, aRoot) = _file(address(this), rootDir, "a.txt", "alpha", true);
+    }
+
+    /// CREATE, PUBLISH name, BIND(HEAD → `headTarget`, or the file subject itself when 0) unless `!withHead`,
+    /// BIND(FOLDER, root, name → file): no unit judges the binds of this Realm, so any HEAD target lands.
+    function _placeWithHead(string memory name, bytes32 headTarget, bool withHead)
+        internal
+        returns (bytes32 file)
+    {
+        bytes32 salt = keccak256(bytes(name));
+        file = EfsFiles.subjectId(p, salt);
+        uint256 n = withHead ? 4 : 3;
+        Action[] memory a = new Action[](n);
+        bytes[] memory b = new bytes[](n);
+        a[0] = EfsFiles.create(salt);
+        b[1] = bytes(name);
+        a[1] = EfsFiles.publish(t.name, b[1]);
+        if (withHead) {
+            a[2] = EfsFiles.bind(Purpose.HEAD, file, 0, headTarget == 0 ? file : headTarget, 0);
+        }
+        a[n - 1] = EfsFiles.bind(Purpose.FOLDER, rootDir, keccak256(bytes(name)), file, 0);
+        _exec(a, b);
+    }
+
+    function test_invalid_heads_are_reported_invalid_never_dropped() public {
+        bytes32 nameRec = Keys.recordFromHash(t.name, keccak256("bad.txt"));
+        bytes32 bad = _placeWithHead("bad.txt", nameRec, true); // a files-name/2 record as the HEAD target
+        bytes32 wrong = _placeWithHead("wrong.txt", aRoot, true); // another file's root record
+        bytes32 self = _placeWithHead("self.txt", 0, true); // a subject (itself) as the HEAD target
+        bytes32 none = _placeWithHead("none.txt", 0, false); // no HEAD bound
+        IFilesPageReader.DirectoryPage memory page = _list(rootDir, _lens(p), F_ALL);
+        assertEq(page.rows.length, 5);
+        assertEq(page.rows[0].target, fileA);
+        assertEq(page.rows[0].rowKind, ROW_ENTRY);
+        assertEq(page.rows[1].target, bad);
+        assertEq(page.rows[1].rowKind, ROW_INVALID, "a name record is not a revision");
+        assertEq(page.rows[1].headRecord, nameRec);
+        assertEq(page.rows[2].target, wrong);
+        assertEq(page.rows[2].rowKind, ROW_INVALID, "a root record of another file");
+        assertEq(page.rows[2].headerWord0, fileA);
+        assertEq(page.rows[3].target, self);
+        assertEq(page.rows[3].rowKind, ROW_INVALID, "a subject HEAD target");
+        assertEq(page.rows[4].target, none);
+        assertEq(page.rows[4].rowKind, ROW_ENTRY, "no HEAD is not invalid");
+        assertEq(page.rows[4].headRecord, 0);
+        assertEq(page.rows[4].headRevision, 0);
+        // the kinds filter never hides an INVALID file row behind a files filter
+        page = reader.listDirectory(rootDir, _lens(p), _q(F_HEADER, 2), _unbound(), "", 0, 0);
+        assertEq(page.rows.length, 5);
+        (Qualified memory q, IFilesPageReader.Row memory row) =
+            reader.lookupName(rootDir, keccak256("bad.txt"), _lens(p), _unbound());
+        assertEq(uint8(q.status), uint8(Status.INVALID));
+        assertEq(row.rowKind, ROW_INVALID);
     }
 }
