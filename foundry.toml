@@ -18,6 +18,10 @@ fuzz = { runs = 32 }
 # Golden vectors produced by independent tooling (tools/vectors.mjs) and read by the suites.
 fs_permissions = [{ access = "read", path = "./test/vectors" }, { access = "read", path = "./test/snapshots" }]
 
+# The CI gate. Only test settings (fuzz runs) and extra compiler OUTPUTS (ASTs for tools/attrib.mjs, build info,
+# storage layouts) differ from the default; no setting that changes bytecode. CI builds once under this profile and
+# every default-profile step after it reuses that build (.github/workflows/check.yml); a compiler setting added here
+# would make CI compile twice and test bytes other than the release's.
 [profile.ci]
 fuzz = { runs = 256 }
 ast = true
