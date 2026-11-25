@@ -57,7 +57,7 @@ contract IndexDeployerTest is Test {
         assertEq(bs.initialWriter(), gen);
         assertEq(ps.ledger(), address(ledger));
         assertFalse(ps.attached());
-        assertEq(ps.familyIds().length, 10);
+        assertEq(ps.familyIds().length, 14); // SPIKE (tags-index): + families 6, 7, 9, 2
         assertEq(bs.familyIds().length, 3);
         RealmIndex ix = RealmIndex(gen);
         assertEq(ix.postingStore(), address(ps));
