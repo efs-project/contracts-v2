@@ -20,11 +20,22 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
     uint8 private constant COVERAGE_COMPLETE = 2;
     uint8 private constant COVERAGE_RETIRED = 3;
 
+    uint256 public constant FAMILY_CAPACITY = 4;
+
     bytes32 private immutable FAMILY_LIVE_SCOPE;
+    bytes32 private immutable F0;
+    bytes32 private immutable F1;
+    bytes32 private immutable F2;
+    bytes32 private immutable F3;
 
     constructor(address ledger_, address initialWriter_, bytes32[] memory families)
         StoreBase(ledger_, initialWriter_)
     {
+        _checkFamilies(families, FAMILY_CAPACITY);
+        F0 = _familyAt(families, 0);
+        F1 = _familyAt(families, 1);
+        F2 = _familyAt(families, 2);
+        F3 = _familyAt(families, 3);
         BitmapStorage storage $ = _bitmap();
         for (uint256 i; i < families.length; ++i) {
             $.familyIds.push(families[i]);
@@ -36,6 +47,11 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
 
     function _familyIds() internal view override returns (bytes32[] storage) {
         return _bitmap().familyIds;
+    }
+
+    /// The family set (at most `FAMILY_CAPACITY`: scope, roster, live-scope and one more) as immutables.
+    function _isFamily(bytes32 f) internal view override returns (bool) {
+        return f != 0 && (f == F0 || f == F1 || f == F2 || f == F3);
     }
 
     function _writers() internal view override returns (WriterRange[] storage) {

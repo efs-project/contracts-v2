@@ -215,18 +215,70 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         // CREATE touches no family
     }
 
+    // ---- the posting appends of one effect, written by one appendBatch (design §4.6) --------------------------
+
+    /// The posting appends of one effect, in fold order, written by one `appendBatch` CALL at the end of the
+    /// effect instead of one `append` CALL each. The store checks every entry's family and order law exactly as
+    /// `append` does and asks the writer rule once (its inputs cannot change within the call), so the stored
+    /// result is the per-append result. Reordering against the effect's other store calls is safe because none
+    /// of them touches a buffered key before the flush: the bitmap calls are another store; the by-record read
+    /// precedes every append of its key; the digest de-duplication reads the buffer itself (a key appended
+    /// earlier in this effect is exactly a key whose last entry is this admission); a bind's `release` of the
+    /// old target precedes the new target's append in both orders. A WITHDRAW, which releases a key it may
+    /// first append, does not buffer.
+    struct Appends {
+        FamilyId[] families;
+        PostingKey[] keys;
+        uint64[] ordinals;
+        uint256 n;
+    }
+
+    function _appends(uint256 capacity) private pure returns (Appends memory b) {
+        b.families = new FamilyId[](capacity);
+        b.keys = new PostingKey[](capacity);
+        b.ordinals = new uint64[](capacity);
+    }
+
+    function _add(Appends memory b, bytes32 family, PostingKey key, uint64 ordinal) private pure {
+        uint256 n = b.n;
+        b.families[n] = FamilyId.wrap(family);
+        b.keys[n] = key;
+        b.ordinals[n] = ordinal;
+        b.n = n + 1;
+    }
+
+    function _buffered(Appends memory b, PostingKey key) private pure returns (bool) {
+        for (uint256 i; i < b.n; ++i) {
+            if (PostingKey.unwrap(b.keys[i]) == PostingKey.unwrap(key)) return true;
+        }
+        return false;
+    }
+
+    function _flush(Appends memory b) private {
+        uint256 n = b.n;
+        if (n == 0) return;
+        FamilyId[] memory f = b.families;
+        PostingKey[] memory k = b.keys;
+        uint64[] memory o = b.ordinals;
+        assembly ("memory-safe") {
+            mstore(f, n)
+            mstore(k, n)
+            mstore(o, n)
+        }
+        IPostingStore(POSTING).appendBatch(f, k, o);
+    }
+
     function _foldRecord(Effect calldata e, bytes32[] calldata refs) private {
         IPostingStore ps = IPostingStore(POSTING);
         uint64 admission = e.admission;
         bytes32 t = e.typeId;
-        ps.append(FamilyId.wrap(F_BY_TYPE), _pk(t, 1, 0, 0), admission, 0);
-        ps.append(FamilyId.wrap(F_BY_AUTHOR), _pk(0, 4, 0, e.principalId), admission, 0);
+        Appends memory b = _appends(4 + refs.length + _specs.length);
+        _add(b, F_BY_TYPE, _pk(t, 1, 0, 0), admission);
+        _add(b, F_BY_AUTHOR, _pk(0, 4, 0, e.principalId), admission);
         if (e.freshRecord) {
-            ps.append(FamilyId.wrap(F_UNIQUE_BY_TYPE), _pk(t, 13, 0, 0), admission, 0);
+            _add(b, F_UNIQUE_BY_TYPE, _pk(t, 13, 0, 0), admission);
             for (uint256 i; i < refs.length; ++i) {
-                ps.append(
-                    FamilyId.wrap(F_REFERENCE_POSITION), _pk(t, 11, uint8(i), refs[i]), admission, 0
-                );
+                _add(b, F_REFERENCE_POSITION, _pk(t, 11, uint8(i), refs[i]), admission);
             }
             for (uint256 i; i < _specs.length; ++i) {
                 DigestSpec storage spec = _specs[i];
@@ -235,9 +287,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                     .extsload(bytes32(Layout.recordsBodyWordsSlot(e.recordId, spec.wordIndex)));
                 PostingKey dk =
                     PostingKey.wrap(Keys.digestList(bytes32(uint256(spec.algorithm)), word));
-                (,, uint64 dlast,) = ps.postingHead(dk);
-                if (dlast == admission) continue; // two specs resolving to one key fold once
-                ps.append(FamilyId.wrap(F_DIGEST), dk, admission, 0);
+                if (_buffered(b, dk)) continue; // two specs resolving to one key fold once
+                _add(b, F_DIGEST, dk, admission);
             }
         } else {
             // by-record is virtual until the second occurrence: materialize the first entry then
@@ -245,10 +296,11 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             (uint64 count,,,) = ps.postingHead(key);
             if (count == 0) {
                 (, uint64 firstAdmission,,,) = ILedgerHot(LEDGER).recordHeader(e.recordId);
-                ps.append(FamilyId.wrap(F_BY_RECORD), key, firstAdmission, 0);
+                _add(b, F_BY_RECORD, key, firstAdmission);
             }
-            ps.append(FamilyId.wrap(F_BY_RECORD), key, admission, 0);
+            _add(b, F_BY_RECORD, key, admission);
         }
+        _flush(b);
     }
 
     function _foldBind(Effect calldata e) private {
@@ -257,7 +309,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         uint64 admission = e.admission;
         bytes32 scope = Keys.scope(e.principalId, e.purpose, e.subject);
         bytes32 bindingKey = Keys.binding(e.principalId, e.position);
-        ps.append(FamilyId.wrap(F_HISTORY), _pk(0, 8, 0, bindingKey), admission, 0);
+        Appends memory b = _appends(3);
+        _add(b, F_HISTORY, _pk(0, 8, 0, bindingKey), admission);
         if (e.oldTarget != 0) ps.release(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.oldTarget), 1);
         uint8 tk = e.transitionKind;
         if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
@@ -271,11 +324,11 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                     FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(scope), entry, false, admission
                 );
             }
-            ps.append(
-                FamilyId.wrap(F_ROLE_SCOPE),
+            _add(
+                b,
+                F_ROLE_SCOPE,
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),
-                e.bindingOrdinal,
-                0
+                e.bindingOrdinal
             );
         } else if (tk == T_REBIND) {
             bs.stamp(ScopeKey.wrap(scope), admission);
@@ -297,9 +350,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 admission
             );
         }
-        if (e.kind == ActionKind.BIND) {
-            ps.append(FamilyId.wrap(F_BACKLINK), _pk(0, 5, 0, e.target), admission, 0);
-        }
+        if (e.kind == ActionKind.BIND) _add(b, F_BACKLINK, _pk(0, 5, 0, e.target), admission);
+        _flush(b);
     }
 
     function _foldWithdraw(Effect calldata e) private {
