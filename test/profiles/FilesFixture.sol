@@ -30,6 +30,9 @@ import {DirectoryAliasRule} from "../../src/profiles/DirectoryAliasRule.sol";
 import {RealmNoticeRule} from "../../src/profiles/RealmNoticeRule.sol";
 import {RefuseAllPolicy} from "../../src/profiles/RefuseAllPolicy.sol";
 import {FilesFinalValidator} from "../../src/profiles/FilesFinalValidator.sol";
+import {TopicTypes} from "../../src/profiles/TopicTypes.sol";
+import {TopicWordRule} from "../../src/profiles/TopicWordRule.sol";
+import {TopicRule} from "../../src/profiles/TopicRule.sol";
 
 /// @notice The Files profile on a real Realm: the ten rule instances, `RefuseAllPolicy` and `FilesFinalValidator`
 ///         at their deterministic CREATE2(0x4e59…956C, salt 0, initcode) addresses (design §8.2 G10/G12), the ten
@@ -72,6 +75,16 @@ abstract contract FilesFixture is Test {
     address internal refuseAll;
     FilesFinalValidator internal validator;
 
+    /// SPIKE (tags/topics): the two Topics Types (`TT_WORD` topic-word/1, `TT_PATH` topic/1), registered beside the
+    /// Files Types in every fixture Realm.
+    uint8 internal constant TT_WORD = 0;
+    uint8 internal constant TT_PATH = 1;
+    address[2] internal topicInstances;
+    bytes[2] internal topicInitcodes;
+    bytes32[2] internal topicInitcodeHashes;
+    bytes[2] internal topicDescriptors;
+    bytes32[2] internal topicTypeIds;
+
     function _deployProfile() internal {
         declarationKey = vm.addr(DECLARATION_PK);
         // dependency order (FilesTypes): a rule whose constructor state names a sibling Type id is deployed after
@@ -110,6 +123,7 @@ abstract contract FilesFixture is Test {
                 type(DirectoryAliasRule).creationCode, abi.encode(typeIds[T_DIRECTORY])
             )
         );
+        _deployTopics();
         refuseAll = Factory.deploy(type(RefuseAllPolicy).creationCode);
         validator = FilesFinalValidator(
             Factory.deploy(
@@ -119,6 +133,26 @@ abstract contract FilesFixture is Test {
                 )
             )
         );
+    }
+
+    /// SPIKE (tags/topics): the word Type first (the topic descriptor and rule name its id).
+    function _deployTopics() internal {
+        bytes memory wi = type(TopicWordRule).creationCode;
+        topicInstances[TT_WORD] = Factory.deploy(wi);
+        topicInitcodes[TT_WORD] = wi;
+        topicInitcodeHashes[TT_WORD] = keccak256(wi);
+        topicDescriptors[TT_WORD] =
+            TopicTypes.topicWord(declarationKey, topicInstances[TT_WORD], keccak256(wi));
+        topicTypeIds[TT_WORD] = TopicTypes.typeIdOf(topicDescriptors[TT_WORD]);
+        bytes memory ti =
+            abi.encodePacked(type(TopicRule).creationCode, abi.encode(topicTypeIds[TT_WORD]));
+        topicInstances[TT_PATH] = Factory.deploy(ti);
+        topicInitcodes[TT_PATH] = ti;
+        topicInitcodeHashes[TT_PATH] = keccak256(ti);
+        topicDescriptors[TT_PATH] = TopicTypes.topic(
+            declarationKey, topicInstances[TT_PATH], keccak256(ti), topicTypeIds[TT_WORD]
+        );
+        topicTypeIds[TT_PATH] = TopicTypes.typeIdOf(topicDescriptors[TT_PATH]);
     }
 
     function _deploy(uint8 t, bytes memory initcode) internal {
@@ -214,6 +248,14 @@ abstract contract FilesFixture is Test {
             vm.prank(address(0xCAFE));
             (bytes32 got,) = r.registry.registerDescribed(descriptors[t], sig, instances[t], "");
             require(got == typeIds[t], "registered id");
+        }
+        for (uint8 t; t < 2; ++t) {
+            bytes memory sig = _declare(r.registry, topicTypeIds[t]);
+            r.store.put(topicDescriptors[t], sig);
+            vm.prank(address(0xCAFE));
+            (bytes32 got,) =
+                r.registry.registerDescribed(topicDescriptors[t], sig, topicInstances[t], "");
+            require(got == topicTypeIds[t], "registered topic id");
         }
     }
 
