@@ -164,6 +164,16 @@ or duplicate their entry (tested, including remove-and-add-back).
 | All authors, this topic and below | (TAG, ancestor) | the first statement by anyone, once per proper ancestor | TAG |
 | All authors, where a thing is filed | (TAG, thing) | the first statement by anyone at that (place, thing) | TAG |
 
+- **Amended after the step 3b review (DESIGN §10.2).** The two "all authors, a place's items" lists (the place, and
+  this topic and below) are written at the first statement by anyone at an item AND at every later author's first
+  yes there, in order of filing, so whoever speaks first does not fix where an item sits in "newest first": a real
+  tag after someone's early "not this", or a second person's `hello.txt` at a home, shows as new. An item may appear
+  more than once; readers remove duplicates by item. A later author's first no, and a yes after an author's own
+  first no, file nothing. Each list's head gives both numbers in one read: filings, and distinct items ever stated
+  (an "about" count that includes items nobody says yes to now). The "who said it" list's head also counts the
+  authors who say yes now (a counter moved by masks, releases and restores; no entry is ever added after an
+  author's first statement). A first "not this" must name something that exists (validator code 15 for TAG; the
+  name and parent laws for FOLDER).
 - **Two levels for all authors.** One list of a place's distinct items, and one list per item of who said it. A
   lookup of one name or item reads one short list whatever the size of the place. One photo tagged by a hundred
   people appears once. A place's count is "distinct items" and an item's count is "how many people said this", each
