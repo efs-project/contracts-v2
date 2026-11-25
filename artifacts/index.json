@@ -1,8 +1,8 @@
 {
   "schema": "efs-artifacts-index/1",
-  "layoutId": "0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb",
-  "hotAbiId": "0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99",
-  "hotAbiIdString": "efs/ledger-hot/1",
+  "layoutId": "0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212",
+  "hotAbiId": "0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0",
+  "hotAbiIdString": "efs/ledger-hot/2",
   "units": [
     "LedgerIngress",
     "LedgerApply",
