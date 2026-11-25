@@ -496,25 +496,25 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 697,098 | 2,461,898 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 601,526 | 1,881,273 (1,370,880) |
-| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,327,548 | 4,624,508 (3,623,040) |
-| M1 create file (5 leaves, fresh folder) | 1,691,154 | 5,875,181 (4,602,240) |
-| Edit | 902,473 | 2,813,048 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,092,857 | 3,391,311 (2,448,000) |
-| Remove (RELEASE from BOUND) | 450,008 | 1,202,034 (783,360) |
-| Restore (released → same target) | 491,322 | 1,257,870 (783,360) |
-| RELEASE from mask | 413,302 | 1,077,442 (685,440) |
-| Hide (UNBIND from BOUND) | 434,154 | 1,105,495 (685,440) |
-| Restore a released placement (Move-back analog) | 506,188 | 1,353,422 (881,280) |
-| WITHDRAW | 457,593 | 1,297,240 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 694,925 | 2,459,701 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 599,353 | 1,879,076 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,326,369 | 4,623,305 (3,623,040) |
+| M1 create file (5 leaves, fresh folder) | 1,690,112 | 5,874,115 (4,602,240) |
+| Edit | 900,073 | 2,810,624 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,093,961 | 3,392,391 (2,448,000) |
+| Remove (RELEASE from BOUND) | 450,101 | 1,202,115 (783,360) |
+| Restore (released → same target) | 491,429 | 1,257,977 (783,360) |
+| RELEASE from mask | 413,359 | 1,077,487 (685,440) |
+| Hide (UNBIND from BOUND) | 434,247 | 1,105,576 (685,440) |
+| Restore a released placement (Move-back analog) | 506,307 | 1,353,517 (881,280) |
+| WITHDRAW | 457,685 | 1,297,320 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
 
 - `FilesPageReader.listDirectory`, one page of `docs/` (now three rows; limit 32, one principal, unbound basis,
-  F_NAME | F_HEADER | F_KIND): 581,775 gas, 548 B calldata, 1,856 B returndata.
-- `LedgerReads.record` of `readme.txt`'s root record: 91,502 gas, 68 B calldata, 576 B returndata.
+  F_NAME | F_HEADER | F_KIND): 583,235 gas, 548 B calldata, 1,856 B returndata.
+- `LedgerReads.record` of `readme.txt`'s root record: 91,620 gas, 68 B calldata, 576 B returndata.
 
 The 1,000-entry filtered folder comes from `test/readers/LargeDirectory.t.sol`, whose `console2.log` lines `forge test
 --json -vv` exposes in `decoded_logs`. Each run lists all 1,000 live rows; per-page detail is in the report:
