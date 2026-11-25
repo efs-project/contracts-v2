@@ -10,6 +10,7 @@
 //
 //   node tools/efs-fixture.mjs up      [--name N] [--port P | --port-range LO-HI] [--chain-id 31337]
 //                                      [--realm-salt 0x… | --fresh] [--ttl 900 | --ttl 0 | --keep] [--no-unlocked]
+//                                      [--hardfork osaka|prague]   (default osaka: the EIP-7825 gas cap is enforced)
 //                                      [--state-dir DIR] [--artifacts DIR] [--plan FILE] [--no-verify]
 //                                      [--keep-on-fail] [--write-release] [--json]
 //   node tools/efs-fixture.mjs verify  [--name N] [--documents DIR | --release] [--json]
@@ -44,6 +45,11 @@ export { DEFAULT_RANGES, EXIT, FixtureError, KINDS, allocate, gc as registryGc, 
 /** release/ of the repository the plan's artifacts belong to (this checkout, or a release directory). */
 const relDir = (plan) => join(plan.local.repoRoot, "release");
 export const DEFAULT_TTL = 900;
+/** The local chain's rules. "osaka" is what mainnet and Sepolia run (Fusaka): anvil then enforces EIP-7825's
+ *  per-transaction gas limit cap, but only with --enable-tx-gas-limit (measured on anvil 1.8.3: without the flag, or
+ *  under prague with it, a 20M-gas transaction is accepted). The contracts are still compiled for prague. */
+export const HARDFORKS = { osaka: { args: ["--hardfork", "osaka", "--enable-tx-gas-limit"], txGasCap: 16_777_216, feeSchedule: "prague" }, prague: { args: ["--hardfork", "prague"], txGasCap: null, feeSchedule: "prague" } };
+export const DEFAULT_HARDFORK = "osaka";
 /** anvil's ten default accounts (mnemonic "test test … junk"); index 0 is the fixture key. Public throwaways. */
 export const DEFAULT_ACCOUNTS = [
   "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
@@ -171,6 +177,8 @@ export async function up(o = {}) {
   if (!isSalt(realmSalt)) fail("BAD_OPTION", `--realm-salt must be 0x + 64 hex digits (got ${realmSalt})`, EXIT.USAGE);
   const ttl = o.keep ? 0 : o.ttl === undefined ? DEFAULT_TTL : toInt(o.ttl, "--ttl");
   const unlocked = o.unlocked !== false;
+  const hardfork = o.hardfork ?? DEFAULT_HARDFORK;
+  if (!HARDFORKS[hardfork]) fail("BAD_OPTION", `--hardfork ${hardfork}: one of ${Object.keys(HARDFORKS).join(", ")}`, EXIT.USAGE);
   const host = o.host ?? "127.0.0.1";
   if (!["127.0.0.1", "::1", "localhost"].includes(host)) fail("BAD_OPTION", `--host ${host}: the fixture binds loopback only (127.0.0.1, ::1)`, EXIT.USAGE);
   const port = o.port === undefined || o.port === null ? undefined : toInt(o.port, "--port");
@@ -188,7 +196,7 @@ export async function up(o = {}) {
 
   const meta = {
     chainId, realmSalt, realmId: plan.realm.realmId, ledger: plan.addresses.ledgerProxy, registry: plan.addresses.registryProxy,
-    layoutId: plan.layoutId, checkout: root, artifacts: plan.local.artifacts.dir, artifactsMode: plan.local.artifacts.mode, plan: planFile, stateDir, unlocked, signerCapable: unlocked, generation: o.generation ?? 1,
+    layoutId: plan.layoutId, checkout: root, artifacts: plan.local.artifacts.dir, artifactsMode: plan.local.artifacts.mode, plan: planFile, stateDir, unlocked, signerCapable: unlocked, hardfork, txGasCap: HARDFORKS[hardfork].txGasCap, generation: o.generation ?? 1,
     deployment: join(stateDir, "efs-deployment.json"), expected: join(stateDir, "expected.json"), journal: join(stateDir, "fixture.json"), log: join(stateDir, "anvil.log"),
   };
   let lease;
@@ -200,7 +208,7 @@ export async function up(o = {}) {
       mkdirSync(stateDir, { recursive: true });
       for (const f of STATE_FILES) rmSync(join(stateDir, f), { force: true });
       log(`efs-fixture: instance ${name} leased port ${lease.port} (${leasePath(name, home)})`);
-      const started = await startAnvil({ lease, chainId, ttl, unlocked, stateDir });
+      const started = await startAnvil({ lease, chainId, ttl, unlocked, stateDir, hardfork });
       if (started.ok) { child = started.child; break; }
       // the child's bind is authoritative: someone outside the registry took the port between probe and bind
       release(name, home);
@@ -213,7 +221,7 @@ export async function up(o = {}) {
     lease = update(name, { pid: info.pid, startTime: info.startTime, command: info.command, state: "deploying" }, home);
     writeFileSync(join(stateDir, "anvil.pid"), `${info.pid}\n`);
     const url = lease.url;
-    log(`efs-fixture: anvil pid ${info.pid} on ${url} (chain ${chainId}, hardfork prague, ${ttl ? `ttl ${ttl}s` : "no ttl"}, ${unlocked ? "default accounts unlocked" : "no unlocked accounts"})`);
+    log(`efs-fixture: anvil pid ${info.pid} on ${url} (chain ${chainId}, hardfork ${hardfork}${HARDFORKS[hardfork].txGasCap ? `, tx gas cap ${HARDFORKS[hardfork].txGasCap}` : ""}, ${ttl ? `ttl ${ttl}s` : "no ttl"}, ${unlocked ? "default accounts unlocked" : "no unlocked accounts"})`);
 
     const { rpc, pub, wallet, account } = clients(url, chainId, { forbid: UNSIGNED });
     const signer = await signerProbe(url, unlocked);
@@ -222,11 +230,12 @@ export async function up(o = {}) {
     const reads = await readEstimates(rpc, plan, account.address);
     log(`efs-fixture: genesis + registration + seed done (${journal.length} transactions, all eth_sendRawTransaction; factory via ${factoryMethod})`);
 
-    const deployment = await deploymentDocument({ plan, planHash, pub, url, factoryMethod, journal, account, signer });
+    const chain = await chainFacts(pub, hardfork);
+    const deployment = await deploymentDocument({ plan, planHash, pub, url, factoryMethod, journal, account, signer, chain });
     const expected = expectedDocument(plan, deployment);
     writeFileSync(meta.deployment, toJSON(deployment));
     writeFileSync(meta.expected, toJSON(expected));
-    writeFileSync(meta.journal, toJSON({ schema: "efs-fixture-state/1", name, url, port: lease.port, chainId, realmSalt, pid: info.pid, ttl, startedAt: lease.startedAt, factoryMethod, signer, rpcCalls: { ...rpc.counts }, journal, reads }));
+    writeFileSync(meta.journal, toJSON({ schema: "efs-fixture-state/1", name, url, port: lease.port, chainId, realmSalt, pid: info.pid, ttl, startedAt: lease.startedAt, factoryMethod, signer, hardfork, rpcCalls: { ...rpc.counts }, journal, reads }));
 
     // the instance is ready only once every verify check has passed against it
     let verified = { skipped: true };
@@ -250,7 +259,7 @@ export async function up(o = {}) {
       releaseWritten = ["release/efs-deployment.json", "release/expected.json"];
       log("efs-fixture: wrote the committed sample release/efs-deployment.json and release/expected.json");
     }
-    const capabilities = capabilitiesOf(plan, signer);
+    const capabilities = capabilitiesOf(plan, signer, chain);
     lease = update(name, { state: "ready", readyAt: new Date().toISOString(), verified, signerCapable: signer.signerCapable, capabilities, planHash, seedVersion: plan.seed.version, root: plan.seed.root, seed: seedIds(plan) }, home);
     const result = { ...upResult(lease, plan, { home, releaseWritten }), verified };
     writeFileSync(join(stateDir, "up.json"), toJSON(result));
@@ -268,8 +277,8 @@ export async function up(o = {}) {
 }
 
 /** Spawn the owned anvil under the watchdog and wait until it answers. Returns {ok, child:{info}} or {ok:false, bind, reason}. */
-async function startAnvil({ lease, chainId, ttl, unlocked, stateDir }) {
-  const args = ["--port", String(lease.port), "--host", lease.host, "--chain-id", String(chainId), "--hardfork", "prague", "--disable-default-create2-deployer"];
+async function startAnvil({ lease, chainId, ttl, unlocked, stateDir, hardfork }) {
+  const args = ["--port", String(lease.port), "--host", lease.host, "--chain-id", String(chainId), ...HARDFORKS[hardfork].args, "--disable-default-create2-deployer"];
   if (!unlocked) args.push("--accounts", "0", "--fund-accounts", ...DEFAULT_ACCOUNTS.map((a) => `${a}:${DEFAULT_BALANCE_ETH}`));
   const logPath = join(stateDir, "anvil.log");
   const fd = openSync(logPath, "w");
@@ -334,7 +343,17 @@ function seedIds(plan) {
   };
 }
 
-function capabilitiesOf(plan, signer) {
+/** What the chain enforced when the instance was deployed: a snapshot, not live truth. A block gas limit moves and a
+ *  later fork changes what the per-transaction cap counts, so a client reads the live values and treats these as
+ *  defaults. `txGasCap` is null where nothing enforces one. */
+async function chainFacts(pub, hardfork) {
+  const block = await pub.getBlock({ blockTag: "latest" });
+  const cap = HARDFORKS[hardfork].txGasCap;
+  // feeSchedule names the key of release.json gasModel.schedules that prices this chain (osaka did not reprice storage)
+  return { hardfork, feeSchedule: HARDFORKS[hardfork].feeSchedule, txGasCap: cap, txGasCapEnforced: cap !== null, txGasCapRule: cap === null ? null : "EIP-7825: a transaction whose gas limit exceeds the cap is rejected", blockGasLimit: Number(block.gasLimit), atBlock: Number(block.number), snapshot: "taken when the instance was deployed; read live values from the chain" };
+}
+
+function capabilitiesOf(plan, signer, chain) {
   return {
     filesSeed: plan.seed.version,
     filesTypes: plan.profile.length,
@@ -346,7 +365,8 @@ function capabilitiesOf(plan, signer) {
     readers: [plan.readers.lens.kindLabel, plan.readers.filesPage.kindLabel],
     signerCapable: signer.signerCapable,
     unlockedAccounts: signer.accounts,
-    hardfork: "prague",
+    hardfork: chain.hardfork,
+    txGasCap: chain.txGasCap,
   };
 }
 
@@ -477,7 +497,7 @@ async function readEstimates(rpc, plan, from) {
   return out;
 }
 
-async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, journal, account, signer }) {
+async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, journal, account, signer, chain }) {
   const { read } = bind(plan);
   const a = plan.addresses;
   const relPath = join(relDir(plan), "release.json");
@@ -547,8 +567,9 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     actors: { owner: account.address, fixturePrincipal: account.address, fixturePrincipalId: plan.seed.principalId, declarationKey: account.address, fixtureKey: "anvil default account 0 (public test key; never use with value)", fundedAccounts: DEFAULT_ACCOUNTS },
     signerCapable: signer.signerCapable,
     signing: { transactions: signer.signing, unlockedAccounts: signer.accounts, unsignedSend: signer.unsignedSend },
-    capabilities: capabilitiesOf(plan, signer),
-    rpc: { url, chainId: plan.chainId, hardfork: "prague" },
+    capabilities: capabilitiesOf(plan, signer, chain),
+    chain,
+    rpc: { url, chainId: plan.chainId, hardfork: chain.hardfork },
     evidenceGrade: "local-fixture",
   };
 }
@@ -662,6 +683,20 @@ export async function verify(o = {}) {
   eq("instance chainId", Number(await rpc.call("eth_chainId")), lease.chainId);
   const unlocked = (await rpc.call("eth_accounts")).length;
   eq("instance signerCapable", unlocked > 0, lease.signerCapable);
+  // the chain's rules: the recorded snapshot, and the per-transaction gas cap actually enforced (a refused
+  // transaction changes no state, so this probe is safe to repeat)
+  const hardfork = lease.hardfork ?? "prague";
+  const cap = HARDFORKS[hardfork]?.txGasCap ?? null;
+  const latest = await pub.getBlock({ blockTag: "latest" });
+  eq("instance feeSchedule", dep.chain?.feeSchedule, HARDFORKS[hardfork]?.feeSchedule);
+  eq("instance chain", [dep.chain?.hardfork, dep.chain?.txGasCap, dep.chain?.txGasCapEnforced, dep.chain?.blockGasLimit], [hardfork, cap, cap !== null, Number(latest.gasLimit)]);
+  if (cap !== null) {
+    const key = privateKeyToAccount(FIXTURE_KEY);
+    const probe = await key.signTransaction({ chainId: lease.chainId, type: "eip1559", to: key.address, value: 0n, gas: BigInt(cap) + 1n, nonce: await pub.getTransactionCount({ address: key.address }), maxFeePerGas: (latest.baseFeePerGas ?? 0n) * 2n + 1_000_000_000n, maxPriorityFeePerGas: 0n });
+    let refusal = null;
+    try { await rpc.call("eth_sendRawTransaction", [probe]); } catch (e) { refusal = e.rpc?.message ?? e.message; }
+    eq("instance txGasCap-enforced", refusal !== null, true);
+  }
   if (dep.signerCapable !== undefined) eq("instance deployment.signerCapable", dep.signerCapable, unlocked > 0);
 
   // 1. the plan reproduces from the artifacts, and the published documents agree with it
@@ -1032,7 +1067,7 @@ export async function reset(o = {}) {
   return up({
     name: prev.name, home, log: o.log, port: prev.port, host: prev.host, chainId: o.chainId ?? prev.chainId,
     realmSalt: o.fresh ? undefined : o.realmSalt ?? prev.realmSalt, fresh: !!o.fresh, ttl: o.keep ? 0 : o.ttl ?? prev.ttl ?? DEFAULT_TTL,
-    unlocked: o.unlocked ?? prev.unlocked, stateDir: prev.stateDir, artifacts: prev.artifacts, plan: o.fresh || o.chainId !== undefined ? undefined : prev.plan ?? undefined,
+    unlocked: o.unlocked ?? prev.unlocked, hardfork: o.hardfork ?? prev.hardfork, stateDir: prev.stateDir, artifacts: prev.artifacts, plan: o.fresh || o.chainId !== undefined ? undefined : prev.plan ?? undefined,
     generation: (prev.generation ?? 1) + 1,
   });
 }
@@ -1040,7 +1075,7 @@ export async function reset(o = {}) {
 // ---- CLI -----------------------------------------------------------------------------------------------------------
 
 const COMMANDS = {
-  up: { values: ["name", "port", "port-range", "host", "chain-id", "realm-salt", "ttl", "state-dir", "artifacts", "plan", "home"], flags: ["fresh", "keep", "no-unlocked", "no-unlocked-accounts", "no-verify", "keep-on-fail", "write-release", "json"] },
+  up: { values: ["name", "port", "port-range", "host", "chain-id", "realm-salt", "ttl", "state-dir", "artifacts", "plan", "home", "hardfork"], flags: ["fresh", "keep", "no-unlocked", "no-unlocked-accounts", "no-verify", "keep-on-fail", "write-release", "json"] },
   verify: { values: ["name", "documents", "home"], flags: ["release", "json"] },
   status: { values: ["name", "home", "kind"], flags: ["json"] },
   list: { values: ["home", "kind"], flags: ["json"] },
@@ -1050,7 +1085,7 @@ const COMMANDS = {
 };
 const USAGE = `usage: node tools/efs-fixture.mjs <command> [options]   (tools/RELEASE.md)
   up      [--name N] [--port P | --port-range LO-HI] [--chain-id 31337] [--realm-salt 0x… | --fresh]
-          [--ttl 900 | --ttl 0 | --keep] [--no-unlocked] [--state-dir DIR] [--artifacts DIR] [--plan FILE]
+          [--ttl 900 | --ttl 0 | --keep] [--no-unlocked] [--hardfork osaka|prague] [--state-dir DIR] [--artifacts DIR] [--plan FILE]
           [--no-verify] [--keep-on-fail] [--write-release] [--json]
   verify  [--name N] [--documents DIR | --release] [--json]
   status  [--name N] [--json]          list [--kind chain|gateway|ui] [--json]
@@ -1093,7 +1128,7 @@ async function main() {
     if (cmd === "up") {
       result = await up({
         name: o.name, port: o.port, portRange: o["port-range"], host: o.host, chainId: o["chain-id"], realmSalt: o["realm-salt"], fresh: o.fresh,
-        ttl: o.ttl, keep: o.keep, unlocked: !(o["no-unlocked"] || o["no-unlocked-accounts"]), stateDir: o["state-dir"], artifacts: o.artifacts, plan: o.plan, verify: !o["no-verify"], keepOnFail: o["keep-on-fail"], writeRelease: o["write-release"], home, log,
+        ttl: o.ttl, keep: o.keep, unlocked: !(o["no-unlocked"] || o["no-unlocked-accounts"]), hardfork: o.hardfork, stateDir: o["state-dir"], artifacts: o.artifacts, plan: o.plan, verify: !o["no-verify"], keepOnFail: o["keep-on-fail"], writeRelease: o["write-release"], home, log,
       });
       if (!json) log(`efs-fixture: name=${result.name} rpc=${result.rpcUrl} chainId=${result.chainId} pid=${result.pid} state=${result.stateDir}`);
     } else if (cmd === "verify") {

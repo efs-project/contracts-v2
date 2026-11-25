@@ -40,7 +40,7 @@ named immutable from a deployed instance.
 regenerating `release.json` after `up` makes `verify` fail until the next `up`.
 
 pnpm scripts: `release`, `release:check`, `plan`, `fixture:up`, `fixture:verify`, `fixture:status`, `fixture:list`, `fixture:down`,
-`fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report` and `test:tools` (the tooling tests; pass options after
+`fixture:reset`, `fixture:gc`, `fixture:snapshot`, `gas:report`, `gas:model` and `test:tools` (the tooling tests; pass options after
 `--`, e.g. `pnpm fixture:up -- --name mine --json`).
 
 ## The fixture: many instances at once
@@ -55,6 +55,7 @@ chains are supported: no fork mode, no RPC keys.
 ```text
 node tools/efs-fixture.mjs up      [--name N] [--port P | --port-range LO-HI] [--chain-id 31337]
                                    [--realm-salt 0x… | --fresh] [--ttl 900 | --ttl 0 | --keep] [--no-unlocked]
+                                   [--hardfork osaka|prague]
                                    [--state-dir DIR] [--artifacts DIR] [--plan FILE] [--no-verify] [--keep-on-fail]
                                    [--write-release] [--json]
 node tools/efs-fixture.mjs verify  [--name N] [--documents DIR | --release] [--json]
@@ -109,7 +110,7 @@ With `--json`, a failure prints `{"ok": false, "command": "...", "error": {"code
 actual `port` and `rpcUrl` (also when the port was allocated from the range) and `verified: {skipped: false, ok, checks,
 failures, ms, coldPin}`. If a check fails, `up` tears the instance down (its own anvil, its lease) and exits 1 with an
 error object listing the failures; with `--keep-on-fail` the instance stays leased in state `failed`. Measured cost of
-the in-`up` verify: about 0.8 s for 368 checks (the big file is re-assembled node by node); a whole `up` takes about
+the in-`up` verify: about 0.8 s for 371 checks (the big file is re-assembled node by node); a whole `up` takes about
 4–5 s. `--no-verify` skips it (`verified: {skipped: true}`). Both failure paths were exercised by hand against a stale
 `deploy/plan.json` (one mismatch): the default tore the instance down and removed its lease; `--keep-on-fail` left it
 leased in state `failed`.
@@ -145,7 +146,7 @@ leased in state `failed`.
   "ttl": 900, "startedAt": "…", "expiresAt": "…",
   "planHash": "0x8a60…8cfc", "plan": null, "checkout": "/path/to/checkout", "artifacts": "/path/to/out", "artifactsMode": "forge",
   "registryHome": "<home>", "lease": "<home>/leases/<name>.json", "releaseWritten": null,
-  "verified": { "skipped": false, "ok": true, "checks": 368, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
+  "verified": { "skipped": false, "ok": true, "checks": 371, "failures": 0, "ms": 694, "coldPin": { "calls": 9, "envelopes": 2 } }
 }
 ```
 
@@ -227,6 +228,26 @@ leases with `allocate` in the same registry (their own ranges), updates them as 
 them on shutdown; it adopts a chain whose `lookup` is `live` and passes `verify`. Never parse `anvil.log`; never kill by
 port.
 
+### The chain's rules
+
+The fixture's anvil runs `--hardfork osaka --enable-tx-gas-limit` by default, so the local chain enforces what
+mainnet and Sepolia enforce since Fusaka: **a transaction whose gas limit exceeds 16,777,216 (2^24, EIP-7825) is
+refused.** Measured on anvil 1.8.3: `--hardfork osaka` alone does not enforce it, and neither does
+`--enable-tx-gas-limit` under prague; both are needed. The contracts are still compiled for prague and the addresses
+do not change. `--hardfork prague` gives the old behaviour (no cap) for a measurement that needs it.
+
+`efs-deployment/1` records the rules as `chain: { hardfork, feeSchedule, txGasCap, txGasCapEnforced, blockGasLimit,
+atBlock }`. `feeSchedule` is the key of `release.json` `gasModel.schedules` that prices the chain (`prague` for both
+prague and osaka, which did not reprice storage; each schedule also lists its `hardforks`), so a planner never maps a
+hardfork name to a price list by itself.
+It is a **snapshot taken at deployment, not live truth**: a block gas limit moves and a later fork changes what the
+cap counts (after Glamsterdam it counts execution gas only), so a client reads the live block gas limit from the
+chain and treats the document's values as defaults. `verify` compares the snapshot with the chain and proves the
+cap by sending a signed transaction with gas limit cap + 1, which must be refused (a refusal changes no state).
+`tools/test/fixture-gas-cap.test.mjs` shows the consequence: a publication inside every Realm limit (64 records,
+16,384 body bytes, about 28M gas) is refused above the cap, runs out of gas at the cap and is admitted when split
+into four; under `--hardfork prague` the same publication is admitted whole.
+
 ### Artifact sources
 
 `--artifacts DIR` (or `EFS_ARTIFACTS_DIR`) selects where the plan reads its unit artifacts; the layout is detected:
@@ -285,7 +306,8 @@ viem local account and submitted with `eth_sendRawTransaction`; the fixture's RP
   verified in `up` and again; `list`; `down`; no lease, claim, state directory or process left). The concurrency test
   skips, with the reason, when the plan cannot be built from the current artifacts. `vendored-tree.test.mjs` (no anvil)
   copies the three fixture tools with `schemas/`, `artifacts/`, `release/` and `deploy/` into an empty directory with
-  no `out/` and reproduces the committed plan hash there: the tree a consumer's CI vendors.
+  no `out/` and reproduces the committed plan hash there: the tree a consumer's CI vendors. `fixture-gas-cap.test.mjs`
+  is described under "The chain's rules".
 
 ### The hot-ABI id
 
@@ -347,7 +369,7 @@ equal; see HARNESS-BUG below).
 
 ## What `verify` reproduces
 
-368 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
+371 checks against the chain, recomputed from `out/` (and `release/release.json`'s immutable names when the AST
 build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested and fails.
 
 1. **Documents.** `planHash` (recomputed, and equal to `deploy/plan.json`), the ledger address, the execution set, the
@@ -421,6 +443,28 @@ five codehashes against `describe()` and the release.
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs2/fixture/realm/1")`) the value is
   `0x863d4eb7487f3255978b9b38bbb4760b2147accc3fe7376610f3d60e4beb9baa`.
+
+## The planning model (`gas/model.json`)
+
+`release/release.json` carries the model as `gasModel`: the constants **keyed by fee schedule** (`schedules.prague`,
+`schedules.amsterdam`; one schedule's constants must never be applied on a chain running the other), the file's
+sha256, and a **joint envelope**. The Realm limits allow a publication of 64 actions and 16,384 body bytes, which can
+need about 28M gas, more than the 16,777,216 one transaction may carry (EIP-7825). `gasModel.envelope` therefore
+states what one atomic publication realistically holds, as the smallest of the gas budget (the cap less 15% headroom
+for intrinsic gas, calldata and the model's error, less the fixed cost) and the two Realm limits, for six named
+shapes: a small and a 1 KB edit, a small and a 1 KB create, an 8 KB chunk and a span node. It is for user-facing
+messages ("this save is too large to be atomic"); a planner uses the constants and confirms with `eth_estimateGas`.
+Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`.
+
+`pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
+rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
++ perByte·n` and one constant per other action kind and purpose, plus a once-per-principal first-write surcharge
+(amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only). It
+is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
+guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
+script predicts five composites it never fits (create file, edit, rename + move, two chunks, the last publication of
+a 40 KB file) and exits 1 if a prague prediction is off by more than 15%. Regenerate and commit it whenever the
+kernel, the index or a Files rule changes.
 
 ## Gas rows written (`gas/report.json`)
 
@@ -520,7 +564,7 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
     pure `Keys` derivations as a view, outside the execution set; the eight key helpers left `ILedgerCommitments`); its
     address is `keysView` in the deployment document and the `up` result.
 12. **§13 `fixture/`.** There is no `fixture/` directory, no forge-script-encoded seed transactions, no
-    `EfsFixture.sol` and no Multicall3 etch. `--state-dir` exists (above); `--hardfork` does not, because every planned codehash is a prague build, and the anvil is always `--hardfork prague`. The seed is
+    `EfsFixture.sol` and no Multicall3 etch. `--state-dir` exists (above). `--hardfork osaka|prague` chooses the local chain's rules only (default osaka); every planned codehash is a prague build either way, and both give the same addresses. The seed is
     encoded in JS (`EfsNative`-equivalent: both expectations bound through `executionSet()` and the ingress's
     `acceptanceProfileOf`) and recorded in `efs-deployment.json` `seed.transactions` and `expected.json`.
 13. **Placement of `release.json`.** `schemas/` named no path, so the manifest is `release/release.json`. The six

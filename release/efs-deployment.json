@@ -1,6 +1,6 @@
 {
   "schema": "efs-deployment/1",
-  "releaseDigest": "0xa94767f0dc8dd6af54b96eb0967a0d1971bbed72f9ddc8985321fd81601f9710",
+  "releaseDigest": "0x478aabd299873a356798d76bd240247df2d45674515a1dcae50149d528df4776",
   "planHash": "0x8a60763b54c94ce569c18dff2320d7debafc31c5b660273bd1f42ba938be8cfc",
   "chainId": 31337,
   "realmId": "0x77b2f54b3e96e8c816b758c64b9c0508aed9564c015b1efff23e4a9a757f412d",
@@ -23,7 +23,7 @@
     },
     "txHash": "0xa4ff3fd15932a549b1fd5e99d95eb6c50f97c68fff0f21c73f954dd3e2a6f309",
     "blockNumber": 38,
-    "blockHash": "0xb76a0c062a0a27da6341b0c4f325ed7f77ddd8b9a7bd40375aefdbf85da1af12"
+    "blockHash": "0x26074fe0fded9a8362abe8f4299822303a618439f35a3004196b6c19a0695755"
   },
   "activation": {
     "revision": 1,
@@ -1386,12 +1386,23 @@
     ],
     "signerCapable": true,
     "unlockedAccounts": 10,
-    "hardfork": "prague"
+    "hardfork": "osaka",
+    "txGasCap": 16777216
+  },
+  "chain": {
+    "hardfork": "osaka",
+    "feeSchedule": "prague",
+    "txGasCap": 16777216,
+    "txGasCapEnforced": true,
+    "txGasCapRule": "EIP-7825: a transaction whose gas limit exceeds the cap is rejected",
+    "blockGasLimit": 30000000,
+    "atBlock": 62,
+    "snapshot": "taken when the instance was deployed; read live values from the chain"
   },
   "rpc": {
     "url": "http://127.0.0.1:8600",
     "chainId": 31337,
-    "hardfork": "prague"
+    "hardfork": "osaka"
   },
   "evidenceGrade": "local-fixture"
 }

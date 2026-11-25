@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "af56443a6faa3b787adbc02e7e7a7b81d1cb6110",
-    "tree": "10bea3c40493682c440f9c691a23db17c9b4b3f3",
-    "dirty": 17,
+    "commit": "7d46bd84ff08114c462ecb104bd95cdd3cdc6e03",
+    "tree": "65116a9c11199f87bb1a2a28abdcdcd77f79217b",
+    "dirty": 4,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -2040,6 +2040,238 @@
         "id": "efs2/chunking/1",
         "chunkPayload": 8160,
         "spec": "docs/LARGE-FILES.md"
+      }
+    }
+  },
+  "gasModel": {
+    "schema": "efs-gas-model/1",
+    "path": "gas/model.json",
+    "sha256": "0x4dbc9b4e3f3fca5f21b8ca23c85934f922096525446655d2cbcf4d4f8900e40d",
+    "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
+    "schedules": {
+      "prague": {
+        "status": "mainnet and Sepolia today (Fusaka); the cap counts all gas",
+        "hardforks": [
+          "prague",
+          "osaka"
+        ],
+        "constants": {
+          "fixed": 335579,
+          "perWord": 22729,
+          "perByte": 11.8,
+          "publishNew": {
+            "files-bytes/1": 174937,
+            "files-span/1": 315083,
+            "files-content/1 carrier 0": 179587,
+            "files-content/1 carrier 2": 199206,
+            "files-external/1": 246684,
+            "files-directory/1": 179150,
+            "files-name/2": 158911,
+            "files-root/1 form 0": 158581,
+            "files-root/1 form 1": 184662,
+            "files-child/1 form 0": 245676,
+            "files-child/1 form 1": 271834
+          },
+          "publishExisting": 193336,
+          "reuse": 196749,
+          "create": 96918,
+          "bindHeadFresh": 329855,
+          "bindHeadRebind": 195160,
+          "bindFolderFreshFile": 367151,
+          "bindFolderFreshDirectory": 366885,
+          "bindFolderRebind": 205296,
+          "unbindFolder": 135821,
+          "releaseFolder": 134043,
+          "withdraw": 151865,
+          "firstWriteSurcharge": 11779
+        },
+        "maxAbsErrorPercent": 5.91
+      },
+      "amsterdam": {
+        "status": "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block",
+        "hardforks": [
+          "amsterdam"
+        ],
+        "constants": {
+          "fixed": 926123,
+          "perWord": 110649,
+          "perByte": 11.8,
+          "publishNew": {
+            "files-bytes/1": 526905,
+            "files-span/1": 1019133,
+            "files-content/1 carrier 0": 355493,
+            "files-content/1 carrier 2": 463120,
+            "files-external/1": 707968,
+            "files-directory/1": 531118,
+            "files-name/2": 349261,
+            "files-root/1 form 0": 422553,
+            "files-root/1 form 1": 536666,
+            "files-child/1 form 0": 773660,
+            "files-child/1 form 1": 887862
+          },
+          "publishExisting": 552370,
+          "reuse": 555783,
+          "create": 360878,
+          "bindHeadFresh": 1297729,
+          "bindHeadRebind": 583094,
+          "bindFolderFreshFile": 1422957,
+          "bindFolderFreshDirectory": 1422727,
+          "bindFolderRebind": 586030,
+          "unbindFolder": 333361,
+          "releaseFolder": 331583,
+          "withdraw": 430225,
+          "firstWriteSurcharge": 85499
+        },
+        "executionGas": {
+          "fixed": 324474,
+          "perWord": 12729,
+          "perByte": 11.8,
+          "publishNew": {
+            "files-bytes/1": 135225,
+            "files-span/1": 235773,
+            "files-content/1 carrier 0": 159653,
+            "files-content/1 carrier 2": 169360,
+            "files-external/1": 218368,
+            "files-directory/1": 139438,
+            "files-name/2": 153421,
+            "files-root/1 form 0": 128793,
+            "files-root/1 form 1": 144986,
+            "files-child/1 form 0": 186140,
+            "files-child/1 form 1": 202422
+          },
+          "publishExisting": 160690,
+          "reuse": 164103,
+          "create": 67118,
+          "bindHeadFresh": 220609,
+          "bindHeadRebind": 191414,
+          "bindFolderFreshFile": 247917,
+          "bindFolderFreshDirectory": 247687,
+          "bindFolderRebind": 194350,
+          "unbindFolder": 137521,
+          "releaseFolder": 135743,
+          "withdraw": 136465,
+          "firstWriteSurcharge": -12421
+        },
+        "maxAbsErrorPercent": 7.67
+      }
+    },
+    "envelope": {
+      "what": "how many of one shape fit one atomic publication: the smallest of the gas budget and the Realm limits maxActions and maxBodyBytesPerPublication. For user-facing messages; plan with the constants.",
+      "txGasCap": 16777216,
+      "txGasCapRule": "EIP-7825",
+      "headroomPercent": 15,
+      "budgetRule": "floor(txGasCap × (100 − headroomPercent) / 100) − fixed, on the gas the cap counts",
+      "limits": {
+        "maxActions": 64,
+        "maxBodyBytesPerPublication": 16384
+      },
+      "shapes": {
+        "editSmall": {
+          "what": "edit a file: PUBLISH files-child/1 form 0 with 100 bytes of content, rebind HEAD",
+          "actions": 2,
+          "bodyBytes": 196
+        },
+        "edit1k": {
+          "what": "the same with 1,024 bytes of content",
+          "actions": 2,
+          "bodyBytes": 1120
+        },
+        "createSmall": {
+          "what": "create a file: CREATE, PUBLISH files-root/1 form 0 with 100 bytes, PUBLISH a 12-byte name, BIND HEAD, BIND FOLDER",
+          "actions": 5,
+          "bodyBytes": 176
+        },
+        "create1k": {
+          "what": "the same with 1,024 bytes of content",
+          "actions": 5,
+          "bodyBytes": 1100
+        },
+        "chunk": {
+          "what": "PUBLISH one 8,192-byte files-bytes/1 chunk (8,160 file bytes)",
+          "actions": 1,
+          "bodyBytes": 8192
+        },
+        "spanNode": {
+          "what": "PUBLISH one files-span/1 node",
+          "actions": 1,
+          "bodyBytes": 96
+        }
+      },
+      "prague": {
+        "editSmall": {
+          "count": 23,
+          "boundBy": "gas",
+          "gasEach": 602252,
+          "gasOfPublication": 14187370
+        },
+        "edit1k": {
+          "count": 11,
+          "boundBy": "gas",
+          "gasEach": 1249567,
+          "gasOfPublication": 14080816
+        },
+        "createSmall": {
+          "count": 10,
+          "boundBy": "gas",
+          "gasEach": 1272596,
+          "gasOfPublication": 13061537
+        },
+        "create1k": {
+          "count": 7,
+          "boundBy": "gas",
+          "gasEach": 1919911,
+          "gasOfPublication": 13774956
+        },
+        "chunk": {
+          "count": 2,
+          "boundBy": "gas",
+          "gasEach": 6090227,
+          "gasOfPublication": 12516032
+        },
+        "spanNode": {
+          "count": 36,
+          "boundBy": "gas",
+          "gasEach": 384403,
+          "gasOfPublication": 14174080
+        }
+      },
+      "amsterdam": {
+        "editSmall": {
+          "count": 29,
+          "boundBy": "gas",
+          "gasEach": 2133610,
+          "gasOfPublication": 62800807
+        },
+        "edit1k": {
+          "count": 14,
+          "boundBy": "maxBodyBytesPerPublication",
+          "gasEach": 5242685,
+          "gasOfPublication": 74323713
+        },
+        "createSmall": {
+          "count": 12,
+          "boundBy": "maxActions",
+          "gasEach": 4629998,
+          "gasOfPublication": 56486097
+        },
+        "create1k": {
+          "count": 10,
+          "boundBy": "gas",
+          "gasEach": 7739073,
+          "gasOfPublication": 78316853
+        },
+        "chunk": {
+          "count": 2,
+          "boundBy": "maxBodyBytesPerPublication",
+          "gasEach": 28949715,
+          "gasOfPublication": 58825552
+        },
+        "spanNode": {
+          "count": 50,
+          "boundBy": "gas",
+          "gasEach": 1352213,
+          "gasOfPublication": 68536763
+        }
       }
     }
   },

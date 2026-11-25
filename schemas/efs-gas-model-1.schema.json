@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "efs-gas-model/1",
+  "title": "efs-gas-model/1 \u2014 a per-action gas model of one native-lane publication",
+  "description": "Written by tools/gas-model.mjs from test/integration/GasModel.t.sol. gas(publication) = fixed + \u03a3 cost(action); PUBLISH new = publishNew[shape] + perWord\u00b7ceil(n/32) + perByte\u00b7n. Planning only: eth_estimateGas stays the authority before sending. Excludes intrinsic, calldata and refunds.",
+  "type": "object",
+  "required": [
+    "schema",
+    "note",
+    "method",
+    "profiles",
+    "source"
+  ],
+  "properties": {
+    "schema": {
+      "const": "efs-gas-model/1"
+    },
+    "note": {
+      "type": "string"
+    },
+    "method": {
+      "type": "object",
+      "required": [
+        "suite",
+        "prague",
+        "amsterdam",
+        "measurement",
+        "marginal",
+        "slopes",
+        "fixed"
+      ]
+    },
+    "profiles": {
+      "type": "object",
+      "required": [
+        "prague"
+      ],
+      "properties": {
+        "prague": {
+          "type": "object",
+          "required": [
+            "quantity",
+            "constants",
+            "fit",
+            "rows",
+            "validation",
+            "maxAbsErrorPercent"
+          ],
+          "properties": {
+            "constants": {
+              "type": "object",
+              "required": [
+                "fixed",
+                "perWord",
+                "perByte",
+                "publishNew",
+                "publishExisting",
+                "reuse",
+                "create",
+                "bindHeadFresh",
+                "bindHeadRebind",
+                "bindFolderFreshFile",
+                "bindFolderFreshDirectory",
+                "bindFolderRebind",
+                "unbindFolder",
+                "releaseFolder",
+                "withdraw",
+                "firstWriteSurcharge"
+              ],
+              "properties": {
+                "fixed": {
+                  "type": "integer"
+                },
+                "perWord": {
+                  "type": "integer"
+                },
+                "perByte": {
+                  "type": "number"
+                },
+                "publishNew": {
+                  "type": "object",
+                  "required": [
+                    "files-bytes/1"
+                  ],
+                  "additionalProperties": {
+                    "type": "integer"
+                  }
+                },
+                "publishExisting": {
+                  "type": "integer"
+                },
+                "reuse": {
+                  "type": "integer"
+                },
+                "create": {
+                  "type": "integer"
+                },
+                "bindHeadFresh": {
+                  "type": "integer"
+                },
+                "bindHeadRebind": {
+                  "type": "integer"
+                },
+                "bindFolderFreshFile": {
+                  "type": "integer"
+                },
+                "bindFolderFreshDirectory": {
+                  "type": "integer"
+                },
+                "bindFolderRebind": {
+                  "type": "integer"
+                },
+                "unbindFolder": {
+                  "type": "integer"
+                },
+                "releaseFolder": {
+                  "type": "integer"
+                },
+                "withdraw": {
+                  "type": "integer"
+                },
+                "firstWriteSurcharge": {
+                  "type": "integer"
+                }
+              }
+            },
+            "rows": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "test",
+                  "gas",
+                  "frameGas"
+                ]
+              }
+            },
+            "validation": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "what",
+                  "measured",
+                  "predicted",
+                  "errorPercent"
+                ]
+              }
+            },
+            "maxAbsErrorPercent": {
+              "type": "number"
+            }
+          }
+        },
+        "amsterdam": {
+          "type": "object",
+          "required": [
+            "quantity",
+            "constants",
+            "split",
+            "fit",
+            "rows",
+            "validation",
+            "maxAbsErrorPercent"
+          ],
+          "properties": {
+            "split": {
+              "type": "object",
+              "required": [
+                "executionGas",
+                "stateGas",
+                "note"
+              ]
+            },
+            "rows": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "test",
+                  "gas",
+                  "frameGas"
+                ]
+              }
+            },
+            "validation": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "what",
+                  "measured",
+                  "predicted",
+                  "errorPercent",
+                  "measuredExecutionGas",
+                  "predictedExecutionGas",
+                  "measuredStateGas",
+                  "predictedStateGas"
+                ]
+              }
+            },
+            "maxAbsErrorPercent": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "test",
+        "commit",
+        "date"
+      ]
+    }
+  }
+}

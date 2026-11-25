@@ -152,7 +152,7 @@ A session (`docs/SESSION-LANE.md`) changes the prompt column only: the publicati
 transactions stay the same, plus an estimated 0.17M per publication today (0.8M after Glamsterdam). For scale, at a
 60M block gas limit (an assumption, not checked against any chain) a 1 MB file is the gas of about 14 full blocks
 today and a 10 MB file about 135. At a gas price of 1 gwei, 1 MB costs about 0.8 ETH today. Span publications are
-bounded by gas before the 64-action limit (about 50 span nodes per transaction today), so a client must split by the
+bounded by gas before the 64-action limit (a span node costs about 0.38M when its children are cold, as they are in a transaction of its own, so about 43 reach the cap and 36 fit with headroom; the 0.32M row above was measured warm), so a client must split by the
 gas quote and not only by action and byte counts.
 
 ## What changes in the repository
