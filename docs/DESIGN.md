@@ -259,6 +259,9 @@ counters (one word)
 RecordCell { bytes32 typeId; uint256 meta }                       (2 slots per fresh record + body words)
   meta: firstAdmission u48@0 | length u32@48 | occurrences u48@80 | carrierKind u8@128 | reserved u120@136
   carrierKind: 0 INLINE_WORDS (bodyWord[id][i], tail masked); 1 CODE_BLOB reserved (refused until capability b6)
+    A body is never stored as contract code today, so user bytes that begin with 0xEF store like any others
+    (EIP-3541 refuses code that starts with 0xEF; test/integration/BytesStartingWithEF.t.sol). If the CODE_BLOB
+    carrier is ever built, its runtime must begin with a STOP byte, as the descriptor store's does.
   bodyWord[id][i]: whole 32-byte words; length is the byte length; words beyond length are never written
 
 SubjectCell (one word)
