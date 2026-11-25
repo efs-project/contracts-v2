@@ -30,6 +30,23 @@ interface ILedger {
         bytes32 id,
         bytes32 principalId
     );
+    /// SPIKE (tags/topics, Part E): one per BIND/UNBIND/RELEASE admission, after its `Admitted`, so an indexer follows
+    /// every binding (a tag: purpose TAG, subject = topic, role = thing) with no storage read. `kind` is the action
+    /// kind (3 BIND, 4 UNBIND, 7 RELEASE) and `strength` its 0..65535 strength: number = strength after a BIND,
+    /// -1 - strength after an UNBIND, none after a RELEASE. `target` is the bound target (0 for UNBIND/RELEASE),
+    /// `targetKind` 1 RECORD 2 SUBJECT 3 ADDRESS (0 when none), `transitionKind` as `Effect/3`. The author is the
+    /// `principalId` of the `Admitted` event with the same `admission`.
+    event Bound(
+        uint64 indexed admission,
+        bytes32 indexed purpose,
+        bytes32 indexed subject,
+        bytes32 role,
+        bytes32 target,
+        uint8 kind,
+        uint16 strength,
+        uint8 transitionKind,
+        uint8 targetKind
+    );
     /// Guarded publications: the preimage lives only here under the default retention profile.
     event ReadSetChecked(uint64 indexed publication, bytes32 indexed readSetHash, bytes readSet);
     /// ERC-1271 bytes under the log-only retention profile (w9.store == 0).
