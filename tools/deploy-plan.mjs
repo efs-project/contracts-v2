@@ -131,6 +131,30 @@ export const WORK_MODEL = {
  *  ≈ 110,020. `KernelDeploy.s1Limits()` uses them under FOUNDRY_PROFILE=amsterdam. The fixture's chains (osaka,
  *  prague) use LIMITS. */
 export const GLAMSTERDAM_FLOOR = { floorFreshGas: 12100, floorRewriteGas: 5000, kernelTail: 20000 };
+/** The floor fields of `Limits` the quote reads (the Realm's prices; `floor.limits` in the gas model). */
+export const FLOOR_LIMIT_FIELDS = ["floorFreshGas", "floorRewriteGas", "kernelTail"];
+
+/** One message per field where a release source prices differently from what the chain answers: `fields` the struct's
+ *  field names (from the ABI, so a field added on chain is never skipped), `chain` the decoded struct, `sources`
+ *  `{name: object}` (the deploy plan's work model, each gas-model floor). A source missing a field, carrying one the
+ *  chain does not have, or holding another value fails with the struct and field named. */
+export function priceMismatches(struct, fields, chain, sources) {
+  const out = [];
+  for (const f of fields) if (chain[f] === undefined) out.push(`${struct}.${f}: the chain's reply has no such field`);
+  for (const [src, obj] of Object.entries(sources)) {
+    if (!obj || typeof obj !== "object") {
+      out.push(`${struct}: ${src} has none`);
+      continue;
+    }
+    for (const k of Object.keys(obj)) if (!fields.includes(k)) out.push(`${struct}.${k}: in ${src}, not a field on chain`);
+    for (const f of fields) {
+      if (chain[f] === undefined) continue;
+      if (obj[f] === undefined) out.push(`${struct}.${f}: chain ${chain[f]}, missing from ${src}`);
+      else if (BigInt(obj[f]) !== BigInt(chain[f])) out.push(`${struct}.${f}: chain ${chain[f]} != ${src} ${obj[f]}`);
+    }
+  }
+  return out;
+}
 export const DOM = {
   type: h("efs/type/1"), describedShape: h("efs/described-shape/1"), executionSet: h("efs/execution-set/1"),
   realmOrigin: h("efs/realm-origin/1"), realm: h("efs/realm/1"), record: h("efs/record/1"),

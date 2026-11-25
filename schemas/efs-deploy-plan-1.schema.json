@@ -7,6 +7,7 @@
   "required": ["schema", "chainId", "realmSalt", "owner", "fixturePrincipal", "declarationKey", "factory", "hotAbiId", "layoutId", "executionProfileId", "limits", "workModel", "genesis", "addresses", "realm", "activation", "index", "profile", "seed", "steps", "planHash", "gateway"],
   "properties": {
     "schema": { "const": "efs-deploy-plan/1" },
+    "workModel": { "type": "object", "description": "the generation's work model (tools/deploy-plan.mjs WORK_MODEL): every field of src/interfaces/Index.sol WorkModel, formula 2", "required": ["formulaVersion", "freshPerPublication", "rwPerPublication", "freshPerPublishFresh", "freshPerPublishExisting", "rwPerPublish", "freshPerBindFresh", "rwPerBind", "rwPerBindLater", "freshPerRef", "freshPerDigestSpec", "computeBase", "computePerAction", "computePerHookEffect", "finalComputeBase", "finalComputePerBind", "finalComputePerPublish"], "additionalProperties": { "type": "integer" } },
     "genesis": { "type": "object", "required": ["address", "nonces"] },
     "steps": {
       "type": "array",

@@ -33,7 +33,7 @@ import { concat as concatHex, createPublicClient, createWalletClient, custom, de
 import { privateKeyToAccount } from "viem/accounts";
 import {
   ADMIN_SLOT, DEFAULTS, FACTORY, FACTORY_RUNTIME, FIXTURE_KEY, IMPLEMENTATION_SLOT,
-  buildPlan, domainSeparator, executionSet, jsonable, keys, limitsProfileId, planDocument, root, toJSON, validate,
+  FLOOR_LIMIT_FIELDS, buildPlan, domainSeparator, executionSet, jsonable, keys, limitsProfileId, planDocument, priceMismatches, root, toJSON, validate,
 } from "./deploy-plan.mjs";
 import {
   DEFAULT_RANGES, EXIT, FixtureError, allocate, assertName, defaultName, gc as registryGc, instanceDir, leasePath, list as registryList,
@@ -896,6 +896,32 @@ export async function verify(o = {}) {
   eq("keysView bindingKey", await read(pub, kv, "KeysView", "bindingKey", [exp.root.principalId, headPos]), readme.headKey);
   eq("keysView scopeKey", await read(pub, kv, "KeysView", "scopeKey", [exp.root.principalId, keccak256(toHex("efs/purpose/folder/1")), exp.folder.directoryRecordId]), exp.file.scopeKey);
   for (const spec of plan.index.specs) eq(`index digestSpecCount ${spec.typeId.slice(0, 10)}`, await read(pub, a.index, "RealmIndex", "digestSpecCount", [spec.typeId]), 1n);
+
+  // 9d. the index prices like the release: the work model the deployed index answers (workModel(), every field of the
+  // ABI's WorkModel, formulaVersion included) equals the deploy plan's and every gas-model floor's (release.json
+  // gasModel, and gas/model.json in a checkout; one index serves every schedule), and the Realm's floor prices
+  // (describe().limits) equal the floor.limits of the schedule that prices this chain. A planner sizes publications
+  // from those documents, so any difference would let it plan what the kernel refuses.
+  {
+    const wmChain = await read(pub, a.index, "RealmIndex", "workModel");
+    const wmFields = abiOf("RealmIndex").find((i) => i.name === "workModel").outputs[0].components.map((c) => c.name);
+    const relModel = JSON.parse(readFileSync(join(REL, "release.json"), "utf8")).gasModel;
+    const modelFile = join(plan.local.repoRoot, "gas/model.json");
+    const model = existsSync(modelFile) ? JSON.parse(readFileSync(modelFile, "utf8")) : null;
+    const wmSources = { "deploy plan workModel": plan.workModel, "efs-deployment.json index.workModel": dep.index?.workModel };
+    const floorSources = {};
+    for (const [s, sched] of Object.entries(relModel?.schedules ?? {})) wmSources[`release.json gasModel.schedules.${s}.floor.workModel`] = sched.floor?.workModel;
+    for (const [s, prof] of Object.entries(model?.profiles ?? {})) wmSources[`gas/model.json profiles.${s}.floor.workModel`] = prof.floor?.workModel;
+    const sched = HARDFORKS[hardfork]?.feeSchedule;
+    floorSources[`release.json gasModel.schedules.${sched}.floor.limits`] = relModel?.schedules?.[sched]?.floor?.limits;
+    if (model) floorSources[`gas/model.json profiles.${sched}.floor.limits`] = model.profiles?.[sched]?.floor?.limits;
+    const misses = [
+      ...priceMismatches("workModel", wmFields, wmChain, wmSources),
+      ...priceMismatches("floor.limits", FLOOR_LIMIT_FIELDS, d.limits, floorSources),
+    ];
+    checked.pricing = (checked.pricing ?? 0) + wmFields.length * Object.keys(wmSources).length + FLOOR_LIMIT_FIELDS.length * Object.keys(floorSources).length;
+    for (const m of misses) failures.push(`pricing ${m}`);
+  }
   eq("seed root-is-directory", (await read(pub, a.ledgerProxy, "LedgerCore", "recordHeader", [dep.root.directoryRecordId]))[0], dep.typeIds["files-directory/1"]);
 
   // 9b. the readers: immutables, the directory listing, and one page of the seeded folder

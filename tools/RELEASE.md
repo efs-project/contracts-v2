@@ -430,7 +430,15 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
    `describe()`.
 7. **The index.** `manifestHash()` equals the offline manifest hash; `replayReadiness()` is ready, with families and
    units equal to the plan; `progress().lastProcessed` equals 27; `digestSpecCount` is 1 for `files-content/1` and for
-   `files-external/1`.
+   `files-external/1`. **The index prices like the release** (group `pricing`): `workModel()` read at the index address
+   is compared field by field (every field of the ABI's `WorkModel`, `formulaVersion` and formula 2's
+   `rwPerBindLater`, `freshPerPublishExisting` and `finalComputePerPublish` included) with the deploy plan's work model,
+   the deployment document's `index.workModel`, every schedule's `gasModel.schedules.<s>.floor.workModel` in
+   `release.json` and, in a checkout, every `profiles.<s>.floor.workModel` in `gas/model.json`; and `describe().limits`'
+   floor prices (`floorFreshGas`, `floorRewriteGas`, `kernelTail`) with the `floor.limits` of the schedule that prices
+   the chain. A mismatch fails verify naming the field and the document (`pricing workModel.<field>: chain … != …`);
+   a document missing a field, or carrying one the chain does not have, fails the same way. `tools/test/release-pricing.test.mjs`
+   checks the committed documents against the Solidity struct and the compiled ABI without a chain.
 8. **The thirteen Types.** The catalog equals the offline id set. For each Type, `typeInfo` mandatory, ruleId, shape and
    blob; `descriptorBytes` equals the JS descriptor; `refTypes`; `declaration` (key and installed); and the published
    id.
