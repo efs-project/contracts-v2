@@ -523,7 +523,8 @@ contract LayoutTest is Test {
             uint40 registeredAt,
             uint48 catalogOrdinal,
             uint8 codecVersion,
-            uint8 textProfile
+            uint8 textProfile,
+            uint8 flags
         ) = Layout.unpackTypeRowWord0(raw(address(R), s));
         assertEq(grade, row.grade);
         assertEq(refCount, row.refCount);
@@ -537,6 +538,7 @@ contract LayoutTest is Test {
         assertEq(catalogOrdinal, row.catalogOrdinal);
         assertEq(codecVersion, row.codecVersion);
         assertEq(textProfile, row.textProfile);
+        assertEq(flags, row.flags);
         assertEq(raw(address(R), s + 1), row.shape);
         assertEq(raw(address(R), s + 2), row.ruleId);
         assertEq(Layout.unpackTypeRowWord3(raw(address(R), s + 3)), row.mandatory);

@@ -19,7 +19,7 @@ library Descriptors {
         bytes32 ruleCodehash;
         bytes32 aux;
         uint8 refHeaderWords;
-        uint8 reserved;
+        uint8 flags; // byte 133
         bytes name;
         bytes description;
         bytes fields;
@@ -66,7 +66,7 @@ library Descriptors {
                 p.aux,
                 uint16(p.description.length),
                 p.refHeaderWords,
-                p.reserved
+                p.flags
             ),
             p.name,
             p.description,

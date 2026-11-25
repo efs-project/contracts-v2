@@ -626,7 +626,7 @@ library Layout {
         s = uint256(keccak256(abi.encode(k1, s)));
     }
 
-    // slot +0 of TypeRow: grade at bit 0 | refCount at bit 8 | wrapperVersion at bit 16 | ruleMode at bit 24 | dependencyClass at bit 32 | refHeaderWords at bit 40 | validationGas at bit 48 | policyRows at bit 72 | registeredAt at bit 88 | catalogOrdinal at bit 128 | codecVersion at bit 176 | textProfile at bit 184
+    // slot +0 of TypeRow: grade at bit 0 | refCount at bit 8 | wrapperVersion at bit 16 | ruleMode at bit 24 | dependencyClass at bit 32 | refHeaderWords at bit 40 | validationGas at bit 48 | policyRows at bit 72 | registeredAt at bit 88 | catalogOrdinal at bit 128 | codecVersion at bit 176 | textProfile at bit 184 | flags at bit 192
     function unpackTypeRowWord0(bytes32 w)
         internal
         pure
@@ -642,7 +642,8 @@ library Layout {
             uint40 registeredAt,
             uint48 catalogOrdinal,
             uint8 codecVersion,
-            uint8 textProfile
+            uint8 textProfile,
+            uint8 flags
         )
     {
         uint256 x = uint256(w);
@@ -658,6 +659,7 @@ library Layout {
         catalogOrdinal = uint48(x >> 128);
         codecVersion = uint8(x >> 176);
         textProfile = uint8(x >> 184);
+        flags = uint8(x >> 192);
     }
 
     // slot +3 of TypeRow: mandatory at bit 0

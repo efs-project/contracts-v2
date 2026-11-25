@@ -18,6 +18,10 @@ import {Keys} from "../lib/Keys.sol";
 ///         `validationGas` 0 (the closure default 300,000 is ample: the worst name, 255 bytes of CJK, measured 117k).
 ///         `dependencyClass` is the creator's disclosure: 2 (realm reads) for the rules that call the ledger, 1 for
 ///         the rules pure over calldata, `refHeaders` and constructor state.
+///         `flags` (header byte 133) bit 0 is `ClosureConstants.TYPE_FLAG_EMITS_BODY`: the kernel logs a fresh
+///         record's body (at most 256 bytes) in `Body`. It is meant for the small records an indexer must follow
+///         from events alone: names, words and topic records. Of these ten only `files-name/2` sets it; the topic
+///         and text Types the tag profile adds set it there; directories, content, bytes and file revisions never.
 ///
 ///         Dependency order (a rule's constructor state names sibling Type ids, so the Type it names must be derived
 ///         first; the constructor arguments are inside `ruleInitcodeHash`, never in the descriptor bytes):
@@ -53,6 +57,7 @@ library FilesTypes {
         uint8 refHeaderWords;
         bytes fields;
         uint8 fieldCount;
+        uint8 flags; // header byte 133 (bit 0 TYPE_FLAG_EMITS_BODY)
     }
 
     // =============================================================================================
@@ -177,6 +182,7 @@ library FilesTypes {
             "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
+        s.flags = 1; // TYPE_FLAG_EMITS_BODY: a name is followed from events alone
     }
 
     function bytesSpec() internal pure returns (Spec memory s) {
@@ -277,7 +283,7 @@ library FilesTypes {
                 initcodeHash,
                 uint16(s.description.length),
                 s.refHeaderWords,
-                uint8(0) // reserved
+                s.flags
             ),
             s.name,
             s.description,

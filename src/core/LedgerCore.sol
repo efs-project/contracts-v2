@@ -437,7 +437,7 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             refs[base + i] = w;
         }
         r.refCount = base + refCount;
-        _emitAdmitted(admission, a, body, ret, p.principalId);
+        _emitAdmitted(admission, a, body, ret, p.principalId, v.typeFlags);
         _counters().admissions = uint48(admission); // checkpoint: the staged frontier is visible through counts()
         _notifyIndex(r, ret);
         _recheck(r);
@@ -491,13 +491,15 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
 
     /// Topic 3 and the id come from the apply delegate's words (typeId 5, recordId 6, subjectId 7, position 9);
     /// `Bound` from the action and the Effect words transitionKind 15 and targetKind 16; `Body` when word 19
-    /// (freshRecord) is set on a PUBLISH whose body is at most `ClosureConstants.BODY_EVENT_MAX` bytes.
+    /// (freshRecord) is set on a PUBLISH whose Type sets `ClosureConstants.TYPE_FLAG_EMITS_BODY` (`typeFlags`,
+    /// the ingress's `LeafVerdict`) and whose body is at most `ClosureConstants.BODY_EVENT_MAX` bytes.
     function _emitAdmitted(
         uint64 admission,
         Action calldata a,
         bytes calldata body,
         bytes memory blob,
-        bytes32 principalId
+        bytes32 principalId,
+        uint8 typeFlags
     ) private {
         uint8 kind = a.kind;
         bytes32 typeId;
@@ -544,7 +546,10 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
             emit Admitted(admission, kind, typeId, a.target, principalId);
         } else {
             emit Admitted(admission, kind, a.typeId, recordId, principalId);
-            if (freshRecord != 0 && body.length <= ClosureConstants.BODY_EVENT_MAX) {
+            if (
+                freshRecord != 0 && typeFlags & ClosureConstants.TYPE_FLAG_EMITS_BODY != 0
+                    && body.length <= ClosureConstants.BODY_EVENT_MAX
+            ) {
                 emit Body(recordId, a.typeId, body);
             }
         }
@@ -733,6 +738,10 @@ contract LedgerCore is ILedger, ILedgerHot, ILedgerControl, Initializable, Ledge
     {
         RecordCell storage cell = _records().cells[recordId];
         return (cell.typeId, cell.firstAdmission, cell.length, cell.occurrences, cell.carrierKind);
+    }
+
+    function bodyWord(bytes32 recordId, uint256 index) external view returns (bytes32) {
+        return _records().bodyWords[recordId][index];
     }
 
     function publicationAt(bytes32 principalId, uint64 nonce)

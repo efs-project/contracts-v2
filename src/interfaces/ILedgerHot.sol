@@ -101,6 +101,12 @@ interface ILedgerHot {
             uint8 carrierKind
         );
 
+    /// Word `index` of record `recordId`'s stored body: whole 32-byte words, the last one zero-padded; zero for a
+    /// word beyond the body's length and for a record that does not exist. One SLOAD.
+    /// Profile rules and validators may read only this interface; a Files validator reads a revision record's
+    /// file word here (design §5.3).
+    function bodyWord(bytes32 recordId, uint256 index) external view returns (bytes32);
+
     /// (0, 0) when none; two SLOADs (the ordinal map, then evidence w3); the only two-SLOAD read here.
     function publicationAt(bytes32 principalId, uint64 nonce)
         external

@@ -36,11 +36,15 @@ library ClosureConstants {
     uint32 internal constant DESCRIPTOR_MAX = 4_096;
     /// The ERC-1271 `isValidSignature` call is forwarded at least this much (design §6.2).
     uint32 internal constant WALLET_GAS_FLOOR = 300_000;
-    /// The largest record body the kernel logs in a `Body` event on its first admission (design §5.5). 256 bytes
-    /// covers every name and word (both capped at 255 bytes) and the small fixed-shape records (a folder's 64-byte
-    /// body, a span, a topic path's two references) and excludes content descriptors (at least 320 bytes) and file
-    /// bytes in any real quantity (a chunk is up to 8,192 bytes), so the log never grows with a file's size.
+    /// The largest record body the kernel logs in a `Body` event on its first admission (design §5.5), a hard
+    /// ceiling on the log cost of a Type whose descriptor sets `TYPE_FLAG_EMITS_BODY`: the flag decides who pays
+    /// (only records of a flagged Type are logged), the ceiling bounds what they pay. 256 bytes covers every name
+    /// and word (both capped at 255 bytes) and small fixed-shape records (a topic path's two references), so a
+    /// flagged Type never logs a body that grows with a file's size.
     uint32 internal constant BODY_EVENT_MAX = 256;
+    /// Bit 0 of the described-Type descriptor's `flags` byte (header byte 133, design §9.2): the kernel emits
+    /// `Body` for a fresh record of the Type of at most `BODY_EVENT_MAX` bytes. Bits 1–7 are reserved and refused.
+    uint8 internal constant TYPE_FLAG_EMITS_BODY = 1;
     /// The saturation threshold of every 48-bit counter and ordinal (design §4.1).
     uint64 internal constant SATURATION = (uint64(1) << 48) - 64;
     /// realm-notice/1 kinds (design §12.1, §8.10): the freeze canary, the successor notice, the migration notice.

@@ -312,6 +312,7 @@ contract DoublesTest is Test {
             refHeaderWords: 3,
             validationGas: 123_456,
             policyRows: 2,
+            flags: 1,
             mandatory: address(0xa1),
             ruleId: keccak256("rule"),
             shape: keccak256("shape"),

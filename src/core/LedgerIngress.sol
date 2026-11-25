@@ -467,6 +467,7 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         }
         v.refCount = info.refCount;
         v.policyRow = info.policyRow;
+        v.typeFlags = info.flags;
         _validateRecord(leaf, a.typeId, info, bodyMem, admission, principalId, $);
     }
 

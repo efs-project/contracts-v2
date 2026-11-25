@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-/// The hot-path registry row for one Type (design §5.9): 17 fields. `custom`/`bindingId` are nonzero only for
-/// grade 2, so validateLeaf fills AcceptContext without a binding() call.
+/// The hot-path registry row for one Type (design §5.9): 18 fields. `custom`/`bindingId` are nonzero only for
+/// grade 2, so validateLeaf fills AcceptContext without a binding() call. `flags` (last, so the facets' fixed
+/// word offsets into the reply hold) is the descriptor's byte 133 as registered (bit 0
+/// `ClosureConstants.TYPE_FLAG_EMITS_BODY`: the kernel logs a fresh small body in `Body`).
 struct TypeInfo {
     uint8 grade;
     uint8 refCount;
@@ -21,6 +23,7 @@ struct TypeInfo {
     uint16 policyRow;
     address custom;
     bytes32 bindingId;
+    uint8 flags;
 }
 
 /// @title ITypeRegistry — the Type registry (design §5.9)

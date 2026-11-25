@@ -17,8 +17,9 @@ import {LensReader} from "../../src/readers/LensReader.sol";
 
 /// @notice Target kind 3 = ADDRESS. A nonzero address-shaped target (top 96 bits zero) that is neither a record nor
 ///         a subject is admitted with `targetKind = 3`, so an address that never transacted can be tagged; the
-///         readers and the replay decoder carry it; `FilesFinalValidator` admits it for TAG only (FOLDER refuses it
-///         with code 6, every other purpose with code 7). A file revision is a record, so it was a target already.
+///         readers and the replay decoder carry it; `FilesFinalValidator` refuses it for HEAD (code 7) and FOLDER
+///         (code 6), admits it for TAG and does not judge a purpose the profile does not name. A file revision is a
+///         record, so it was a target already.
 ///         Topics are plain ids here: no validator checks a TAG subject at this step.
 contract AddressTargetsTest is FilesRecipesBase {
     bytes32 internal constant TOPIC = keccak256("address-targets/topic/phishing");
@@ -128,9 +129,10 @@ contract AddressTargetsTest is FilesRecipesBase {
         this.execExternal(a, b);
     }
 
-    /// ADDRESS targets are for tags only: a HEAD bind to an address is refused by `FilesFinalValidator` code 7, and
-    /// so is a bind of a purpose this profile has never heard of; the TAG bind to the same word is admitted.
-    function test_head_to_an_address_is_refused_tag_is_admitted() public {
+    /// A HEAD bind to an address is refused by `FilesFinalValidator` code 7 (this profile's readers cannot serve
+    /// it); a bind of a purpose this profile does not name is not judged and is admitted, and so is the TAG bind
+    /// to the same word.
+    function test_head_to_an_address_is_refused_tag_and_third_party_are_admitted() public {
         bytes32 file = Keys.subject(p, keccak256("address-targets/head"));
         Action[] memory a = new Action[](2);
         a[0] = _create(keccak256("address-targets/head"));
@@ -142,17 +144,14 @@ contract AddressTargetsTest is FilesRecipesBase {
             )
         );
         this.execExternal(a, new bytes[](2));
-        a[1] = _bind(keccak256("third-party/purpose/1"), file, 0, target, 0);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                E_INDEX_CALL.selector,
-                abi.encodeWithSelector(E_FILES_FINAL.selector, uint8(7), uint8(1))
-            )
-        );
-        this.execExternal(a, new bytes[](2));
-        a[1] = _bind(Purpose.TAG, TOPIC, target, target, 0);
+        bytes32 thirdParty = keccak256("third-party/purpose/1");
+        a[1] = _bind(thirdParty, file, 0, target, 0);
         _execAs(address(this), a, new bytes[](2));
-        (uint8 st,,, uint8 kind,,,,) = r.hot.head(_key(Purpose.TAG, TOPIC, target));
+        (uint8 st,,, uint8 kind,,,,) = r.hot.head(_key(thirdParty, file, 0));
+        assertEq(abi.encode(st, kind), abi.encode(uint8(1), uint8(3)));
+        a = _one(_bind(Purpose.TAG, TOPIC, target, target, 0));
+        _execAs(address(this), a, new bytes[](1));
+        (st,,, kind,,,,) = r.hot.head(_key(Purpose.TAG, TOPIC, target));
         assertEq(abi.encode(st, kind), abi.encode(uint8(1), uint8(3)));
     }
 

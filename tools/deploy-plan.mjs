@@ -297,13 +297,16 @@ const SEMANTIC_SPAN_CHILD = h("efs/files/semantic/span-child/1");
 /** `refTypes` sentinel: any Type. */
 const REF_ANY = ZERO;
 const refField = (id, semantic, ref) => encodePacked(["bytes32", "bytes32", "uint8", "uint8", "uint16", "uint256", "uint256", "bytes32"], [id, semantic, 1, 0, 32, 0n, 0n, ref]);
-/** FilesTypes.*Spec(), byte for byte: description, dependencyClass, refHeaderWords and the REF32 field rows as
- *  [id, semantic, ref(ids)] (fieldCount = rows; refTypes = each row's ref, in order). */
+/** FilesTypes.*Spec(), byte for byte: description, dependencyClass, refHeaderWords, the REF32 field rows as
+ *  [id, semantic, ref(ids)] (fieldCount = rows; refTypes = each row's ref, in order) and flags (header byte 133;
+ *  0 when absent). Bit 0 is TYPE_FLAG_EMITS_BODY (the kernel logs a fresh body of at most 256 bytes in `Body`),
+ *  meant for names, words and topic records: of these ten only files-name/2 sets it; the topic and text Types the
+ *  tag profile adds set it there. */
 const SPECS = [
   { description: "abi.encode(fileSubject, form) || rest; the first revision of a created file subject; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(parentRecord, fileSubject, form) || rest; parent is files-root/1 or files-child/1 of the same file; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 2, fields: [[FIELD_PARENT, SEMANTIC_REVISION, () => REF_ANY]] },
   { description: "abi.encode(bytes32 creatorPrincipal, bytes32 salt); a folder is this record, admitted only when the publishing principal is the creator word and the salt is nonzero", dependencyClass: 1, refHeaderWords: 1, fields: [] },
-  { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [] },
+  { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [], flags: 1 },
   { description: "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
   { description: "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1, the rest of the body", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
@@ -326,7 +329,7 @@ export function descriptor(t, key, ruleCodehash, initcodeHash, ids) {
   const fields = s.fields.length ? concat(s.fields.map(([id, sem, ref]) => refField(id, sem, ref(ids)))) : "0x";
   const header = encodePacked(
     ["uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint8", "uint24", "uint8", "uint8", "uint8", "address", "bytes32", "bytes32", "bytes32", "uint16", "uint8", "uint8"],
-    [1, 0, 3, s.fields.length, 1, s.dependencyClass, 1, 1, 0, 0, 0, size(name), key, NAMESPACE, ruleCodehash, initcodeHash, size(description), s.refHeaderWords, 0],
+    [1, 0, 3, s.fields.length, 1, s.dependencyClass, 1, 1, 0, 0, 0, size(name), key, NAMESPACE, ruleCodehash, initcodeHash, size(description), s.refHeaderWords, s.flags ?? 0],
   );
   assert.equal(size(header), 134);
   return concat([header, name, description, fields]);

@@ -119,6 +119,7 @@ contract TypeRegistry is ITypeRegistry, Initializable, RegistryStorage {
         info.refHeaderWords = row.refHeaderWords;
         info.validationGas = row.validationGas;
         info.policyRows = row.policyRows;
+        info.flags = row.flags;
         info.mandatory = row.mandatory;
         info.ruleId = row.ruleId;
         info.shape = row.shape;
@@ -265,6 +266,7 @@ contract TypeRegistry is ITypeRegistry, Initializable, RegistryStorage {
         row.catalogOrdinal = ordinal;
         row.codecVersion = 1;
         row.textProfile = h.textProfile;
+        row.flags = h.flags;
         row.shape = Keys.shape(descriptor);
         row.ruleId = h.ruleCodehash;
         row.mandatory = mandatory;

@@ -163,6 +163,23 @@ contract FilesFinalValidatorTest is Test {
         _bad(_list(_bind(0, PARENT, ROLE, FILE, 3)), 6, 0);
     }
 
+    /// An ADDRESS target (kind 3): HEAD is refused with 7 and FOLDER with 6 (this profile's readers cannot serve
+    /// either pointing at an address), TAG is admitted, and a purpose the profile does not name is not judged.
+    function test_address_targets_by_purpose() public {
+        bytes32 addr = bytes32(uint256(uint160(address(0xADD))));
+        Effect memory e = _bind(0, FILE, 0, addr, 3);
+        e.purpose = Purpose.HEAD;
+        _bad(_list(e), 7, 0);
+        _bad(_list(_bind(0, PARENT, ROLE, addr, 3)), 6, 0);
+        e.purpose = Purpose.TAG;
+        _ok(_list(e));
+        e.purpose = keccak256("third-party/purpose/1");
+        _ok(_list(e));
+        // the property purpose a later profile adds is another app's purpose here
+        e.purpose = keccak256("efs/purpose/property/1");
+        _ok(_list(e));
+    }
+
     function test_the_refusal_names_the_offending_leaf() public {
         Effect[] memory l = new Effect[](4);
         l[0] = _bind(0, PARENT, ROLE, FILE, 2);
