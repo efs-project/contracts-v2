@@ -129,6 +129,26 @@ contract AddressTargetsTest is FilesRecipesBase {
         this.execExternal(a, b);
     }
 
+    /// ADDRESS targets are for tags only: a HEAD bind to an address is refused by `FilesFinalValidator` code 8 (FOLDER
+    /// keeps code 6 above); the TAG bind to the same address word is admitted.
+    function test_head_to_an_address_is_refused_tag_is_admitted() public {
+        bytes32 file = Keys.subject(p, keccak256("address-targets/head"));
+        Action[] memory a = new Action[](2);
+        a[0] = _create(keccak256("address-targets/head"));
+        a[1] = _bind(Purpose.HEAD, file, 0, target, 0);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                E_INDEX_CALL.selector,
+                abi.encodeWithSelector(E_FILES_FINAL.selector, uint8(8), uint8(1))
+            )
+        );
+        this.execExternal(a, new bytes[](2));
+        a[1] = _bind(Purpose.TAG, topic, target, target, 0);
+        _execAs(address(this), a, new bytes[](2));
+        (uint8 st,,, uint8 kind,,,) = r.hot.head(_key(Purpose.TAG, topic, target));
+        assertEq(abi.encode(st, kind), abi.encode(uint8(1), uint8(3)));
+    }
+
     /// The zero word is refused by the shape law; a non-address word that is neither record nor subject is still
     /// E_TARGET_MISSING.
     function test_non_address_missing_target_still_refused() public {

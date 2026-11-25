@@ -36,8 +36,11 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      parent), 4 a subject target not created by then, 5 a record target that is not a directory record admitted
 ///      by then, 6 an unknown target kind.
 ///      SPIKE (tags/topics): 7 a TAG effect whose `transitionKind` is FIRST_BIND (1) or FIRST_MASK (6) has a subject
-///      that is neither address-shaped (a home) nor a `topic/1` or `topic-word/1` record admitted at or before the
-///      terminal admission. Later transitions on an existing TAG binding (REBIND, MASK, RELEASE, RESTORE) are never
+///      that is neither address-shaped (a home) nor a `topic/1` or `topic-word/1` record first admitted strictly
+///      BEFORE that effect's own admission (the index walks the topic's ancestors at the tag's admission, so a
+///      topic registered later in the same publication is refused: registrations come first). 8 a BIND whose
+///      `targetKind` is 3 (ADDRESS) and whose purpose is neither TAG nor FOLDER (FOLDER refuses it with 6): an
+///      address is a target for tags only. Later transitions on an existing TAG binding (REBIND, MASK, RELEASE, RESTORE) are never
 ///      refused, so a tag can always be changed or withdrawn. A topic's admission is write-once (a WITHDRAW of its
 ///      registrant's admission decrements occurrences and keeps `firstAdmission`), so a withdrawn registration
 ///      still registers the topic. Two more cold `SLOAD`s (the topic Type ids) per publication with a first TAG.
@@ -59,6 +62,7 @@ contract FilesFinalValidator is IIndexHook {
 
     uint8 private constant T_FIRST_BIND = 1;
     uint8 private constant T_FIRST_MASK = 6;
+    uint8 private constant TARGET_ADDRESS = 3;
 
     constructor(
         bytes32 nameTypeId_,
@@ -120,10 +124,20 @@ contract FilesFinalValidator is IIndexHook {
                     wordType = topicWordTypeId;
                 }
                 (bytes32 t, uint64 first,,,) = hot.recordHeader(e.subject);
-                if ((t != topicType && t != wordType) || first == 0 || first > terminal) {
+                // strictly BEFORE this statement: the index walks the topic's ancestors at the tag's own
+                // admission, so a topic registered later in the same publication would leave the tag with no
+                // roll-up entries for good
+                if ((t != topicType && t != wordType) || first == 0 || first >= e.admission) {
                     revert E_FILES_FINAL(7, e.leaf);
                 }
                 continue;
+            }
+            // SPIKE (address targets): an ADDRESS target (kind 3) is for tags only; FOLDER keeps code 6 below
+            if (
+                e.kind == ActionKind.BIND && e.targetKind == TARGET_ADDRESS
+                    && e.purpose != Purpose.FOLDER
+            ) {
+                revert E_FILES_FINAL(8, e.leaf);
             }
             if (e.kind != ActionKind.BIND || e.purpose != Purpose.FOLDER) continue;
             if (address(hot) == address(0)) {

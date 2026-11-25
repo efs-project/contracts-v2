@@ -90,17 +90,32 @@ contract TopicTagsTest is FilesRecipesBase {
         assertEq(st, 2);
     }
 
-    /// The check reads the record as of the terminal admission (as the name law does), so a registration later in
-    /// the same publication also satisfies it: order inside one publication does not matter for this check.
-    function test_registered_later_in_the_same_publication() public {
+    /// The topic must be first admitted strictly before the tag's own admission: the index walks the topic's
+    /// ancestors at the tag's admission, so a tag ahead of its registration in one publication would get no roll-up
+    /// entries for good. It is refused (code 7, the tag's leaf); registrations come first.
+    function test_registered_later_in_the_same_publication_is_refused() public {
         (Action memory w, bytes memory wb) = _wordPage("later");
         Action[] memory a = new Action[](2);
         bytes[] memory b = new bytes[](2);
         a[0] = _tag(_wordId("later"));
         (a[1], b[1]) = (w, wb);
-        _execAs(address(this), a, b);
-        (uint8 st,,) = _head(_key(Purpose.TAG, _wordId("later"), thing));
-        assertEq(st, 1);
+        _refused(a, b, 0);
+        // a lone negative ahead of its registration, the same
+        a[0] = _deny(_wordId("later"));
+        _refused(a, b, 0);
+        // a two-word path: the page and the path record first, then the tag, is admitted (see above); the path
+        // record AFTER the tag is refused even though its parent page came first
+        bytes[] memory words = new bytes[](2);
+        words[0] = "early";
+        words[1] = "late";
+        (Action[] memory reg, bytes[] memory rb, bytes32 topic) = _pathActions(words, true);
+        a = new Action[](4);
+        b = new bytes[](4);
+        (a[0], b[0]) = (reg[0], rb[0]);
+        (a[1], b[1]) = (reg[1], rb[1]);
+        a[2] = _tag(topic);
+        (a[3], b[3]) = (reg[2], rb[2]);
+        _refused(a, b, 2);
     }
 
     function test_a_home_subject_is_admitted() public {

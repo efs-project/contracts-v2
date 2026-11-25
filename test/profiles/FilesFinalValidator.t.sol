@@ -222,11 +222,35 @@ contract FilesFinalValidatorTest is Test {
         }
     }
 
-    function test_topic_registered_after_the_terminal_admission_is_refused() public {
+    /// The topic must be first admitted strictly BEFORE the tag's own admission (the tag at leaf 0 is admission
+    /// TERMINAL - 5): later in the same publication, at the tag's own admission, or after the terminal admission is
+    /// refused (the index walks ancestors at the tag's admission, so such a tag would never roll up).
+    function test_topic_registered_at_or_after_the_tag_is_refused() public {
+        uint64 tagAt = TERMINAL - 5;
         ledger.setRecord(TOPIC, TOPIC_TYPE, TERMINAL + 1, 64);
         _bad(_list(_tag(0, TOPIC, 1)), 7, 0);
         ledger.setRecord(TOPIC, TOPIC_TYPE, TERMINAL, 64);
+        _bad(_list(_tag(0, TOPIC, 1)), 7, 0);
+        ledger.setRecord(TOPIC, TOPIC_TYPE, tagAt + 1, 64);
+        _bad(_list(_tag(0, TOPIC, 6)), 7, 0);
+        ledger.setRecord(TOPIC, TOPIC_TYPE, tagAt, 64);
+        _bad(_list(_tag(0, TOPIC, 1)), 7, 0);
+        ledger.setRecord(TOPIC, TOPIC_TYPE, tagAt - 1, 64);
         _ok(_list(_tag(0, TOPIC, 1)));
+        _ok(_list(_tag(0, TOPIC, 6)));
+    }
+
+    /// An ADDRESS target (kind 3) is for tags only: any other purpose's BIND is refused with code 8 (FOLDER keeps 6).
+    function test_address_target_is_for_tags_only() public {
+        bytes32 addr = bytes32(uint256(uint160(address(0xBAD))));
+        Effect memory h = _bind(0, FILE, 0, addr, 3);
+        h.purpose = Purpose.HEAD;
+        _bad(_list(h), 8, 0);
+        _bad(_list(_bind(0, PARENT, ROLE, addr, 3)), 6, 0);
+        Effect memory t = _tag(0, TOPIC, 1);
+        t.target = addr;
+        t.targetKind = 3;
+        _ok(_list(t));
     }
 
     // ---- shape -----------------------------------------------------------------------------------------------------
