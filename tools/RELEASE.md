@@ -354,8 +354,9 @@ proxy.
 --sizes`; budgets are never edited to fit), so a reader feature costs bytes another feature cannot have: the step-4
 amendment split the old `TopicPageReader` (465 B of headroom) into the lens and the public view. Headroom at this
 release: `TopicMineReader` 4,304 B (15,356 B), `TopicEveryoneReader` 3,359 B (16,301 B), `TopicLookupReader` 3,114 B (16,546 B),
-`LedgerViews` 1,337 B (18,323 B), `EfsWeb3Gateway` 76 B (19,584 B) (the gateway's link forms took most of its room: a further
-gateway feature needs bytes found first).
+`LedgerViews` 1,337 B (18,323 B), `EfsWeb3Gateway` 32 B (19,628 B) (the gateway's link forms took most of its room; the 501 answers for an
+existing object's id and a revision link were paid for by merging error bodies: a further gateway feature needs bytes
+found first).
 
 ### The fixture key
 
@@ -458,8 +459,10 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
     the seed's sha256, each with the declared `Content-Type: application/octet-stream` and `nosniff`);
     `docs/remote.txt` as `307` with the seed's locator and `x-efs-media-type`; `docs` as a complete JSON listing of the three files; `404` and `416` for a missing
     name and an offset at the end; and the link forms: `/docs/readme.txt` (a plain word: a topic path) `501`,
-    `/~home/…` and a principal id as the first segment `400`, a record that is not a folder by id `404`, and the
-    fixture account's own home `/0x<address>/` a complete listing named by `x-efs-home`.
+    `/~home/…` and a principal id as the first segment `400`, the sample file's subject id and its root revision
+    record's id by `/~efs/o/…` `501` (existing objects that are not folders: never `404`), a revision link
+    `/~efs/v/<record>` `501`, an id that names nothing `404`, and the fixture account's own home `/0x<address>/` a
+    complete listing named by `x-efs-home`.
 12. **Cold pin.** What an SDK holding only `release.json` and `efs-deployment.json` does on first contact.
 
 ### Cold-pin call count (observed)

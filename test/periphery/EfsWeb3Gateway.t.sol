@@ -492,9 +492,10 @@ contract EfsWeb3GatewayInvalidHeadsTest is Web3GatewayHarness {
         _placeWithHead("wrong.txt", helloRoot, true);
         _placeWithHead("self.txt", 0, true);
         _placeWithHead("none.txt", 0, false);
-        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law: target not a revision");
-        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law: revision of other file");
-        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law: target is not a record");
+        // one body for every reader-side HEAD law breach (merged to fit the size budget)
+        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law broken");
+        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law broken");
+        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law broken");
         assertEq(_status(_u(P, "/none.txt"), 404).body, "not found: no revision");
     }
 }

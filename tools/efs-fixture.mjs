@@ -968,8 +968,10 @@ export async function verify(o = {}) {
   eq("gateway listing", [listed.status, listed.headers["x-efs-listing"], JSON.parse(hexToString(listed.body))], [200, "complete", { entries: exp.files.map((f) => ({ name: f.name, kind: "file" })), complete: true }]);
   eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 416]);
   // the first segment decides the kind: a plain word is a topic (not served, so `docs` is never a folder there),
-  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing)
-  eq("gateway forms", [(await web3Get(`/docs/${gwReadme.name}`)).status, (await web3Get(`/~home/${dep.actors.fixturePrincipal}/docs`)).status, (await web3Get(`/${exp.root.principalId}/docs`)).status, (await web3Get(`/~efs/o/${exp.file.rootRecordId}/`)).status], [501, 400, 400, 404]);
+  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing); an existing object's id
+  // that is not a folder (the sample file's subject, its revision record) and a revision link are 501, never 404;
+  // only an id that names nothing is 404
+  eq("gateway forms", [(await web3Get(`/docs/${gwReadme.name}`)).status, (await web3Get(`/~home/${dep.actors.fixturePrincipal}/docs`)).status, (await web3Get(`/${exp.root.principalId}/docs`)).status, (await web3Get(`/~efs/o/${exp.file.subjectId}/`)).status, (await web3Get(`/~efs/o/${exp.file.rootRecordId}/`)).status, (await web3Get(`/~efs/v/${exp.file.rootRecordId}`)).status, (await web3Get(`/~efs/o/${keccak256(toHex("efs/fixture/no such object"))}/`)).status], [501, 400, 400, 501, 501, 501, 404]);
   const homeDir = await web3Get(`/${dep.actors.fixturePrincipal}/`);
   eq("gateway home", [homeDir.status, homeDir.headers["x-efs-home"], homeDir.headers["x-efs-listing"]], [200, dep.actors.fixturePrincipal.toLowerCase(), "complete"]);
 

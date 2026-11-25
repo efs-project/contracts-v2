@@ -45,9 +45,12 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///           Any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id".
 ///         - `/~efs/o/<folder id>[/<name>…][/][?lens=…][&offset=<n>]`: any folder, the Realm root included, by its
 ///           `files-directory/1` record id (`0x` + 64 hex). The lens defaults to the folder's creator, the record's
-///           body word 0 (`abi.encode(creator, salt)`). An id that is not a `files-directory/1` record (no record, a
-///           record of another Type, a file subject: files are not served by id) is 404 "not found: not a folder",
-///           never an empty listing; an id of another shape is 400 "malformed id". Every other `~` first
+///           body word 0 (`abi.encode(creator, salt)`). An id that is not a `files-directory/1` record but names
+///           something that exists (a record of another Type, such as a file revision or a name; a created subject,
+///           which is what a file is) is 501 "object not served": it exists, this gateway does not serve that kind
+///           of object link yet, and it is never 404. Only an id that is neither a record nor a created subject is
+///           404 "not found"; never an empty listing. An id of another shape is 400 "malformed id".
+///         - `/~efs/v[/…]` (a revision link): 501 "object not served", whatever follows. Every other `~` first
 ///           segment, and every other `~efs/…` form, is 400 "unknown system path" (`~` first segments are the
 ///           system's).
 ///         - Anything else is a topic path (`/<word>/…`): 501 "topic paths are not served" (this gateway serves
@@ -86,8 +89,9 @@ error E_WEB3_CONFIG(uint8 code); // none
 ///         body, is a 500.
 ///
 ///         Statuses (never a revert for anything a URL can cause): 200 served; 307 external location; 400 malformed
-///         URL or unknown system path; 404 not found, removed (masked), file used as a folder, an id that is not a
-///         folder, or remote-only content; 501 a topic path; 416 `offset` at or
+///         URL or unknown system path; 404 not found, removed (masked), file used as a folder, an id that names
+///         nothing, or remote-only content; 501 a link form not served yet (a topic path, a revision link, the id of
+///         an existing object that is not a folder); 416 `offset` at or
 ///         past the end (except 0 on an empty file); 500 a broken invariant (a Type, length or record the Files
 ///         laws guarantee is wrong or missing, a failed listing); 503 a ledger layout or head state this gateway was
 ///         not built for, or a read the facet refuses (UNSUPPORTED, LIMIT_EXCEEDED).
@@ -245,7 +249,15 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             // a folder by id: a `files-directory/1` record, never a silent empty folder; its creator (body word 0,
             // `abi.encode(creator, salt)`) is the lens unless `lens` names one
             dir = q.folder;
-            if (!_isDirectory(dir)) _fail(404, "not found: not a folder");
+            (bytes32 t,,,,) = ILedgerHot(LEDGER).recordHeader(dir);
+            if (t != DIRECTORY_TYPE) {
+                // something that exists (a record of another Type: every record has a nonzero Type; a created
+                // subject such as a file) is never absent: only an id that names nothing is 404
+                if (t == 0 && ILedgerHot(LEDGER).subjectCreatedAt(dir) == 0) {
+                    _fail(404, "not found");
+                }
+                _fail(501, "object not served");
+            }
             if (q.lensParam.length == 0) q.lens[0] = _words(dir, 0, 1)[0];
         }
         for (uint256 i = q.start; i < q.last; ++i) {
@@ -299,15 +311,15 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         (uint8 state, uint8 kind, bytes32 rev) =
             _select(q.lens, Keys.position(Purpose.HEAD, file, 0));
         if (state != BOUND) _fail(404, "not found: no revision");
-        if (kind != TARGET_RECORD) _fail(500, "HEAD law: target is not a record");
+        if (kind != TARGET_RECORD) _fail(500, "HEAD law broken");
         (bytes32 typeId,, uint32 length,,) = ILedgerHot(LEDGER).recordHeader(rev);
         if (typeId != ROOT_TYPE && typeId != CHILD_TYPE) {
-            _fail(500, "HEAD law: target not a revision");
+            _fail(500, "HEAD law broken");
         }
         uint256 base = typeId == ROOT_TYPE ? 0 : 32; // the file word: root word 0, child word 1
-        if (length < base + 64) _fail(500, "HEAD law: short revision");
+        if (length < base + 64) _fail(500, "HEAD law broken");
         bytes memory body = _slice(rev, 0, length);
-        if (_word(body, base) != file) _fail(500, "HEAD law: revision of other file");
+        if (_word(body, base) != file) _fail(500, "HEAD law broken");
         _add(q, "Content-Type", _contentType(bytes(resource[q.last - 1])));
         _add(q, "x-efs-record", _hex(rev));
         uint256 form = uint256(_word(body, base + 32));
@@ -425,7 +437,7 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             IFilesPageReader.DirectoryPage memory page
         ) {
             if (page.q.status == Status.UNSUPPORTED) _fail(503, "listing unsupported");
-            if (page.q.status != Status.PRESENT) _fail(500, "listing refused");
+            if (page.q.status != Status.PRESENT) _fail(500, "listing failed");
             // complete only when the pager proves it and offers no continuation: a listing is never silently short
             bool complete = page.listingCoverage == Coverage.COMPLETE && page.next.length == 0;
             _add(q, "Content-Type", "application/json");
@@ -487,13 +499,12 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         bytes calldata s0 = bytes(resource[0]);
         bytes32 first;
         if (s0[0] == "~") {
-            // `/~efs/o/<folder id>/…`, the only system path served
-            if (
-                last < 3
-                    || keccak256(bytes.concat(s0, "/", bytes(resource[1]))) != keccak256("~efs/o")
-            ) {
-                _fail(400, "unknown system path");
-            }
+            // `/~efs/o/<folder id>/…`, the only system path served; `/~efs/v/…` (a revision link) is a defined form
+            // that is not served yet, whatever follows it
+            bytes32 sys =
+                last < 2 ? bytes32(0) : keccak256(bytes.concat(s0, "/", bytes(resource[1])));
+            if (sys == keccak256("~efs/v")) _fail(501, "object not served");
+            if (last < 3 || sys != keccak256("~efs/o")) _fail(400, "unknown system path");
             q.folder = bytes32(_id(bytes(resource[2]), 66));
             q.start = 3;
         } else if (_prefixed(s0)) {
