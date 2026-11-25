@@ -452,7 +452,7 @@ five codehashes against `describe()` and the release.
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
   live value. On the default fixture (chain 31337, salt `keccak256("efs/fixture/realm/1")`) the value is
-  `0x9c4692dc8db33e573d80dc6e90bb1cc50e17cacd6a9355556a69ae7f3c8d53a0`.
+  `0x5078878cd0911b35236939cccee1666df6e43ddd3fda3a89330c4a750bb9fc6a`.
 
 ## The planning model (`gas/model.json`)
 

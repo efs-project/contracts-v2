@@ -1395,6 +1395,13 @@
                 "type": "uint8"
               },
               {
+                "name": "flags",
+                "slot": 0,
+                "offset": 24,
+                "bytes": 1,
+                "type": "uint8"
+              },
+              {
                 "name": "shape",
                 "slot": 1,
                 "offset": 0,

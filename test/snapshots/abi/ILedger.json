@@ -224,7 +224,7 @@
         {
           "name": "admission",
           "type": "uint64",
-          "indexed": true,
+          "indexed": false,
           "internalType": "uint64"
         },
         {
@@ -242,7 +242,7 @@
         {
           "name": "role",
           "type": "bytes32",
-          "indexed": false,
+          "indexed": true,
           "internalType": "bytes32"
         },
         {
