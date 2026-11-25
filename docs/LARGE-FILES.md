@@ -153,15 +153,17 @@ Two directions, both in the core design:
    no kernel support: every fact it serves is a hot read or a facet read. Being a reader, it can be added, fixed
    and replaced after a freeze.
 
-### The gateway as built (`EfsWeb3Gateway/1`)
+### The gateway as built (`EfsWeb3Gateway/1` and `EfsWeb3Content/1`)
 
-One grammar, the shared link grammar of the tag spec (§5): the FIRST path segment decides the kind of path.
+One grammar, the shared link grammar of the tag spec (§5) and of the SDK (`parseLink`, `@efs/sdk/links`): the FIRST
+path segment decides the kind of path.
 
 | First segment | Path | Meaning | Default lens |
 |---|---|---|---|
 | `0x` + 40 hex | `/0x<address>[/<name>…][/]` | that address's **home** (its place, `bytes32(uint256(uint160(address)))`, design §12.5) | the address's own author identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's contract principal of a contract (a Safe's home shows the Safe's own entries) |
-| `~efs` | `/~efs/o/<folder id>[/<name>…][/]` | any **folder by its object id** (`0x` + 64 hex, a `files-directory/1` record id), the Realm root included, then the names below it | the folder's creator (the directory record's body word 0, `abi.encode(creator, salt)`) |
-| `~efs` | `/~efs/v[/…]` | a **revision link**: a defined form this gateway does not serve yet, `501 object not served` whatever follows | |
+| `~efs` | `/~efs/o/<folder id>[/<name>…][/]` | an **object link** to a folder (`0x` + 64 hex, a `files-directory/1` record id), the Realm root included, then the names below it (a path link) | the folder's creator (the directory record's body word 0, `abi.encode(creator, salt)`) |
+| `~efs` | `/~efs/o/<file id>[/]` | an **object link** to a file (`0x` + 64 hex, its created subject id): the file's current HEAD under the lens, served exactly as a named file is; a name after it is `404 not found: file used as a folder` | the file's creator: the principal of the publication that created the subject (`LedgerReads.subjectInfo`) |
+| `~efs` | `/~efs/v/<revision id>[/]` | a **revision link**: exactly that `files-root/1` or `files-child/1` record's bytes, whether or not it is anyone's HEAD | none: `lens` is ignored |
 | any other `~…` | | the system's: `400 unknown system path` (also every other `~efs/…` form) | |
 | anything else | `/<word>/…` | a **topic** path: `501 topic paths are not served` (this gateway serves none yet); a folder is never served there, so a topic link can never mean a folder | |
 
@@ -171,53 +173,74 @@ principal is 64 hex digits, `0x` + 64 hex digits, or `0x` + 40 hex digits for a 
 account); a contract account in address form is `400` (its principal depends on the Realm, so name it by id). Hex is
 case-insensitive. `&offset=<n>` (decimal, default 0) is the first byte served. A large file is one chunk per
 response; the `web3-next-chunk` header carries the URL of the next one (the request's own path, `?offset=` and the
-`lens` given), so an ERC-7617 client streams the whole file. At most 32 names of 1..255 bytes. A trailing slash is
-ignored. For each name the first principal of the lens with a live binding wins; a mask stops the walk (`404`); unset
-and released fall through.
+`lens` given; a revision link carries no `lens`), so an ERC-7617 client streams the whole file. At most 32 names of
+1..255 bytes. A trailing slash is ignored. For each name, and for a file's HEAD, the first principal of the lens with a
+live binding wins; a mask stops the walk (`404`); unset and released fall through, so a file whose creator released
+their HEAD answers `404 not found: no revision` under the creator's lens, exactly as a named file with no HEAD does.
 
-An id that is not a `files-directory/1` record but names something that exists (a record of any other Type, such as
-a file revision or a name; a created subject, which is what a file is) is `501 object not served`: object links are
-the default way to share, so an existing thing's id is never answered as absent. Only an id that is neither a record
-nor a created subject is `404 not found`; neither is ever an empty listing. Files are not served by id yet
-(folder-by-id is the requirement; file-by-id did not fit the gateway's size budget and is not built), and neither are
-revision links (`/~efs/v/…`, `501`). A malformed address or id is `400 malformed id`.
-A home itself carries `x-efs-home: 0x<40 hex>` (lowercase) instead of `x-efs-record`: a home is an address, never a
-record; a folder (by id or below a home) carries `x-efs-record`. A bare `/~efs/o/<folder id>` answers the directory
-itself, as a home's own path does. The Realm root's sample URL is `web3://<gateway>:<chainId>/~efs/o/<root
-directoryRecordId>/` (`readers.web3Gateway.seedUrl` in `efs-deployment.json`); `ROOT_DIRECTORY` stays the gateway's
-configuration (the root's id), never a default. Until step 4 the first segment was a principal (`/<principal>/…`, the
-Realm root through that principal's lens) and `/~home/0x<40 hex>/…` was the home; both are gone. Measured in
-`test/periphery/EfsWeb3GatewayForms.t.sol`, `EfsWeb3GatewayHome.t.sol` and `EfsWeb3GatewayUrl.t.sol`; the gateway
-runtime is 19,628 B of the 19,660 B budget (32 B of headroom; the 501 answers were paid for by merging the four
-reader-side HEAD law 500 bodies into one, `HEAD law broken`, and `listing refused` into `listing failed`).
+An object link's id is routed by what it is: a `files-directory/1` record is a folder, a created subject is a file,
+and an id that is a record of any other Type (a file revision, a name, a descriptor) is `501 object not served`:
+object links are the default way to share, so an existing thing's id is never answered as absent. A revision link to
+an existing record that is not a revision, or to a created subject, is `501 object not served` too. Only an id that is
+neither a record nor a created subject is `404 not found`; neither link is ever an empty listing. A malformed address
+or id is `400 malformed id`; a revision link without its id or with a segment after it is `400 malformed revision
+link` (the SDK's `bad-id`). A home itself carries `x-efs-home: 0x<40 hex>` (lowercase) instead of `x-efs-record`: a
+home is an address, never a record; a folder (by id or below a home) carries `x-efs-record`. A bare `/~efs/o/<folder
+id>` answers the directory itself, as a home's own path does. A file served by an object link or a revision link has
+no name, so without a declared media type its `Content-Type` is `application/octet-stream`. The Realm root's sample
+URL is `web3://<gateway>:<chainId>/~efs/o/<root directoryRecordId>/` (`readers.web3Gateway.seedUrl` in
+`efs-deployment.json`); `ROOT_DIRECTORY` stays the gateway's configuration (the root's id), never a default. Until
+step 4 the first segment was a principal (`/<principal>/…`, the Realm root through that principal's lens) and
+`/~home/0x<40 hex>/…` was the home; both are gone.
+
+**Two contracts, one address.** The `web3://` address is `EfsWeb3Gateway`: it parses the URL, routes the first
+segment, walks names, applies the lens, selects the HEAD and serves listings. The revision it selects is served by
+`EfsWeb3Content` (`IWeb3Content.serveRevision(revision, file, name, offset)`): the reader-side HEAD law against
+`file` (0 for a revision link), the inline bytes, a descriptor's chunk found by descending the span tree, a location's
+`307`, and every content header; it returns the next chunk's offset and the gateway writes `web3-next-chunk`, so URLs
+stay the gateway's. The split is sound because the content server holds no state and has no owner; the gateway
+reaches it by `STATICCALL` at an immutable address (`CONTENT`) and records its runtime codehash (`CONTENT_CODEHASH`,
+checked on every call: `500 content server changed`, unreachable after EIP-6780 since the server has no
+`SELFDESTRUCT`, `CREATE` or `DELEGATECALL`), so it cannot be swapped; and every input it takes is one a URL can name
+(`/~efs/v/<revision>?offset=<n>` serves the same bytes), so a direct call reveals nothing the gateway does not. Its
+refusals are the same `E_WEB3_STATUS(status, reason)` reverts and pass through `request` as statuses. Sizes (prague,
+via-IR): `EfsWeb3Gateway` 15,391 B and `EfsWeb3Content` 8,961 B of the 19,660 B budget (4,269 B and 10,699 B of headroom; the
+single gateway was 19,628 B). The split also restored the five distinct 500 bodies merged for size on 2026-11-25:
+`HEAD law: target is not a record` (a HEAD whose target is not a record), `HEAD law: target not a revision`, `HEAD
+law: short revision`, `HEAD law: revision of other file`, and `listing refused` (the pager answered a status other
+than PRESENT; `listing failed` stays for a pager that reverts). Measured in `test/periphery/EfsWeb3GatewayForms.t.sol`,
+`EfsWeb3GatewayLinks.t.sol`, `EfsWeb3GatewayHome.t.sol`, `EfsWeb3GatewayUrl.t.sol` and `EfsWeb3Gateway.t.sol`.
 
 | Status | When |
 |---|---|
 | 200 | a file's bytes or one chunk of them; a directory as JSON `{"entries":[{"name","kind"}…],"complete":bool}` |
 | 307 | the file is a `files-external/1` location; `Location` carries the URI, `x-efs-media-type` its declared media type |
-| 400 | malformed address, id, lens principal or offset; an unknown system path; an empty name; too many names or principals |
-| 404 | no such name, a hidden (masked) name, a file used as a folder, an id that names nothing, no revision, remote-only content |
+| 400 | malformed address, id, lens principal or offset; a revision link without its id or with more after it; an unknown system path; an empty name; too many names or principals |
+| 404 | no such name, a hidden (masked) name or HEAD, a file used as a folder, an id that names nothing, no revision, remote-only content |
 | 416 | `offset` at or past the end (offset 0 of an empty file is `200`) |
-| 500 | a broken Files invariant (wrong Type or length, a missing tree node) or a failed listing |
-| 501 | a link form not served by this gateway yet: a topic path (a plain-word first segment), a revision link `/~efs/v/…`, or the id of an existing object that is not a folder (a file, a revision, any other record) — never `404` |
+| 500 | a broken Files invariant (wrong Type or length, a missing tree node, a HEAD law breach), a refused or failed listing |
+| 501 | a link form not served by this gateway yet: a topic path (a plain-word first segment), an object link to an existing object that is neither a folder nor a file (a revision, any other record), or a revision link to an existing object that is not a revision — never `404` |
 | 503 | another ledger layout, or a read the facet refuses |
 
 Headers: `Content-Type` (a `files-content/1` descriptor's declared media type when it has one, else from the last
-name's extension), `X-Content-Type-Options: nosniff` (only on a 200 that serves a declared media type, so a browser
-cannot upgrade an author's `text/plain` to HTML; the extension path is unchanged and sends none), `Content-Length`
-(the whole file), `x-efs-record` (the revision or directory record), `x-efs-sha256` (the descriptor's digest: for a
-span tree and for an external location it is the author's claim, verify after reading), `x-efs-cipher`,
-`x-efs-media-type` (on the 307 of a `files-external/1` location that declares one, so a client that does not follow
-the redirect still learns it), `x-efs-listing: complete|partial`. A descriptor shorter than its words, or a location
-whose locator length is 0 or runs past the body, is a 500. `request` never
+name's extension, `application/octet-stream` when there is no name), `X-Content-Type-Options: nosniff` (only on a 200
+that serves a declared media type, so a browser cannot upgrade an author's `text/plain` to HTML; the extension path is
+unchanged and sends none), `Content-Length` (the whole file), `x-efs-record` (the revision or directory record),
+`x-efs-sha256` (the descriptor's digest: for a span tree and for an external location it is the author's claim,
+verify after reading), `x-efs-cipher`, `x-efs-media-type` (on the 307 of a `files-external/1` location that declares
+one, so a client that does not follow the redirect still learns it), `x-efs-listing: complete|partial`. A descriptor
+shorter than its words, or a location whose locator length is 0 or runs past the body, is a 500. `request` never
 reverts for anything a URL can cause. A directory lists one page of 64 entries; a longer directory is `partial`.
 
-Measured in the suites (cold storage): an inline file 0.13M gas, an 8,160-byte chunk at tree depth 3 about 1.2M, a
-7-entry listing 0.88M. A local fixture deploys the gateway (`readers.web3Gateway` in `efs-deployment.json`, with a
-ready `seedUrl`, the seed root by id) and `verify` reads the three seed files back through it, following
-`web3-next-chunk`, and checks the forms (a topic path 501, `~home` 400, a principal id first segment 400, the sample
-file's subject id, its revision record's id and a revision link 501, an id that names nothing 404, the fixture
-account's own empty home).
+Measured in the suites (cold storage): an inline file 0.21M gas, an 8,160-byte chunk at tree depth 3 about 1.36M, a
+7-entry listing 0.93M (the content server's `STATICCALL` and its own layout check add a few thousand gas to a file
+read). A local fixture deploys both contracts (`readers.web3Gateway` in `efs-deployment.json`, with the content
+server's address and codehash under `content` and a ready `seedUrl`, the seed root by id) and `verify` reads the three
+seed files back through it, following `web3-next-chunk`, reads the sample file by its object link and by its revision
+link and `docs/big.bin` chunk by chunk through both, and checks the forms (a topic path 501, `~home` 400, a principal
+id first segment 400, the sample file's revision record as an object link 501, a revision link to the root folder
+501, an id that names nothing 404 through both links, a revision link without an id 400, the fixture account's own
+empty home).
 
 The shared root has no named path: it is a folder like any other, reached by its id (ruled 2026-11-25 with the link
 grammar). Topic paths are reserved and not served until a reader for them exists.
@@ -258,5 +281,6 @@ gas quote and not only by action and byte counts.
 
 `src/profiles/` (the four rules above, the new `FilesSpanRule`, `FilesTypes`), `src/lib/EfsFiles.sol` (encoders, the
 canonical chunker), the Files suites and fixtures, the genesis plan (ten Files Types), and
-`src/periphery/EfsWeb3Gateway.sol` with `src/interfaces/IWeb3Gateway.sol`. The kernel, the registry, the index, the readers' laws and the final
+`src/periphery/EfsWeb3Gateway.sol` and `src/periphery/EfsWeb3Content.sol` with `src/interfaces/IWeb3Gateway.sol` and
+`src/interfaces/IWeb3Content.sol`. The kernel, the registry, the index, the readers' laws and the final
 validator are untouched.

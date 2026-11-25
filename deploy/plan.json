@@ -81,7 +81,8 @@
     "topicEveryoneReader": "0x413cc58a5FBfD5E429f66B61738333babe4b558e",
     "topicLookupReader": "0xa19606F95275E28967AA74dd177E4CC3d04b16b5",
     "keysView": "0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F",
-    "web3Gateway": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD"
+    "web3Gateway": "0xfa87c43c7b5f4754a195bC0c0d66D9f9Ae5B49E4",
+    "web3Content": "0xEeD8435F6DCD2976064cA5f98DABC5dE3a359112"
   },
   "readers": {
     "lens": {
@@ -116,12 +117,16 @@
     }
   },
   "gateway": {
-    "address": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD",
-    "runtimeCodehash": "0x748bc42406d51f752f0303f4ae229ac517ad3aabff741022d38b9443975a0430",
+    "address": "0xfa87c43c7b5f4754a195bC0c0d66D9f9Ae5B49E4",
+    "runtimeCodehash": "0xad1911022ac064b9bc24f2e1d5b097b2e9e622142d097f7dde098c0839d2f224",
     "resolveMode": "5219",
     "rootDirectory": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
     "pager": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
-    "urlBase": "web3://0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD:31337/"
+    "content": {
+      "address": "0xEeD8435F6DCD2976064cA5f98DABC5dE3a359112",
+      "runtimeCodehash": "0xeeb2369a2ba1f0c47c206ae8dfca5d20f2f004fb38d537b4ba3c93d96d1d3869"
+    },
+    "urlBase": "web3://0xfa87c43c7b5f4754a195bC0c0d66D9f9Ae5B49E4:31337/"
   },
   "hotAbiIdString": "efs/ledger-hot/2",
   "realm": {
@@ -1920,23 +1925,18 @@
       "calldataHash": "0x56a6245e0b1aa2b82e30e2c7a7d131cd07a72bfb1ed778bc0997583603afe8cc"
     },
     {
-      "id": "R5",
+      "id": "R5a",
       "kind": "CREATE2",
-      "contract": "EfsWeb3Gateway",
-      "source": "src/periphery/EfsWeb3Gateway.sol",
-      "address": "0xBd3f4db30cC739e7d5b3Aa64df45e8E44DeddDaD",
+      "contract": "EfsWeb3Content",
+      "source": "src/periphery/EfsWeb3Content.sol",
+      "address": "0xEeD8435F6DCD2976064cA5f98DABC5dE3a359112",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0x14383642a96b856f80062105447da199ec4b28477e68b823af233ba80ddf3955",
-      "initcodeBytes": 21130,
+      "initcodeHash": "0x4c98eb160aed85d3cd21d87ff5e7e98a8d59fd8ad24e53fdbbae1ecf411f515b",
+      "initcodeBytes": 9927,
       "args": [
         "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
         "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
-        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
-        "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
-        "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
         {
-          "directory": "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba",
-          "name": "0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a",
           "root": "0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c",
           "child": "0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120",
           "content": "0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe",
@@ -1945,10 +1945,33 @@
           "span": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd"
         }
       ],
-      "runtimeCodehash": "0x748bc42406d51f752f0303f4ae229ac517ad3aabff741022d38b9443975a0430",
-      "runtimeBytes": 19628,
+      "runtimeCodehash": "0xeeb2369a2ba1f0c47c206ae8dfca5d20f2f004fb38d537b4ba3c93d96d1d3869",
+      "runtimeBytes": 8961,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0xd55f09302a6dfb3957c86ac2d6fb5acc0d64aee5a271c2fbfea9ded72da4e30a"
+      "calldataHash": "0x3835438177dc9f6dcca283bf7b112a64d1d9a99722400df615076ab0e73dd12b"
+    },
+    {
+      "id": "R5",
+      "kind": "CREATE2",
+      "contract": "EfsWeb3Gateway",
+      "source": "src/periphery/EfsWeb3Gateway.sol",
+      "address": "0xfa87c43c7b5f4754a195bC0c0d66D9f9Ae5B49E4",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x00e0db14a04079ab5ee92d71c6fb10a440cb02f26aacb437fba9f9e6382e60fc",
+      "initcodeBytes": 16551,
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
+        "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
+        "0xEeD8435F6DCD2976064cA5f98DABC5dE3a359112",
+        "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
+        "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba"
+      ],
+      "runtimeCodehash": "0xad1911022ac064b9bc24f2e1d5b097b2e9e622142d097f7dde098c0839d2f224",
+      "runtimeBytes": 15391,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x0301dd268d31a92f67fcb04226ac72f83361319e407f8aad54752381f367a203"
     },
     {
       "id": "R6",
@@ -2475,5 +2498,5 @@
       "postCheck": "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"
     }
   ],
-  "planHash": "0x8c31b6bf88c081c0ae130c43f4c9700009ab535c6f84a2d92e056cb0f8d54dce"
+  "planHash": "0xce746437accf241434899f2669ebb26b411f50b969b266d1c59275536785e61d"
 }

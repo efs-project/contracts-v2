@@ -4,9 +4,13 @@ pragma solidity 0.8.37;
 import {Web3GatewayHarness} from "../harness/doubles/Web3GatewayHarness.sol";
 import {CodeScan} from "../../src/lib/CodeScan.sol";
 import {EfsWeb3Gateway} from "../../src/periphery/EfsWeb3Gateway.sol";
+import {EfsWeb3Content} from "../../src/periphery/EfsWeb3Content.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {Action, Purpose} from "../../src/interfaces/Actions.sol";
+import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
+import {IFilesPageReader} from "../../src/interfaces/Readers.sol";
+import {Status} from "../../src/interfaces/Results.sol";
 
 /// @notice `EfsWeb3Gateway` end to end on the real Files Realm (kernel, registry, generation-1 index, facets, page
 ///         reader): inline and edited files, a 40 KB chunked file fetched by following `web3-next-chunk` and checked
@@ -48,7 +52,21 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         assertEq(gw.PAGER(), address(reader));
         assertEq(bare.PAGER(), address(0));
         assertEq(gw.ROOT_DIRECTORY(), rootDir);
-        assertEq(gw.SPAN_TYPE(), typeIds[T_SPAN]);
+        assertEq(gw.DIRECTORY_TYPE(), typeIds[T_DIRECTORY]);
+        // the content server: pinned by address and codehash, bound to the same ledger and facet
+        assertEq(gw.CONTENT(), address(content));
+        assertEq(gw.CONTENT_CODEHASH(), address(content).codehash);
+        assertEq(bare.CONTENT(), address(content));
+        assertEq(content.ledger(), address(r.ledger));
+        assertEq(content.layoutId(), r.hot.layoutId());
+        assertEq(content.facetVersion(), 1);
+        assertEq(content.READS(), address(reads));
+        assertEq(content.ROOT_TYPE(), typeIds[T_ROOT]);
+        assertEq(content.CHILD_TYPE(), typeIds[T_CHILD]);
+        assertEq(content.CONTENT_TYPE(), typeIds[T_CONTENT]);
+        assertEq(content.EXTERNAL_TYPE(), typeIds[T_EXTERNAL]);
+        assertEq(content.BYTES_TYPE(), typeIds[T_BYTES]);
+        assertEq(content.SPAN_TYPE(), typeIds[T_SPAN]);
     }
 
     function test_runtime_is_plain_and_within_budget() public {
@@ -56,6 +74,14 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         assertEq(CodeScan.scan(code), 0, "no DELEGATECALL, CALLCODE, SELFDESTRUCT, CREATE, CREATE2");
         emit log_named_uint("EfsWeb3Gateway runtime bytes", code.length);
         assertLe(code.length, 19_660, "the 19,660 B runtime budget");
+        // the split's purpose: both halves keep at least 2,500 B of the budget free
+        assertLe(code.length, 19_660 - 2_500, "EfsWeb3Gateway headroom");
+        code = address(content).code;
+        assertEq(
+            CodeScan.scan(code), 0, "the content server is plain too: its code can never change"
+        );
+        emit log_named_uint("EfsWeb3Content runtime bytes", code.length);
+        assertLe(code.length, 19_660 - 2_500, "EfsWeb3Content headroom");
     }
 
     // ---- inline and edited files --------------------------------------------------------------------------------
@@ -251,10 +277,10 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
     function test_a_descriptor_whose_length_disagrees_with_its_layout_is_500() public {
         // The rules make such a record impossible on a real Realm, so a gateway is built with the two
         // descriptor Types swapped: a files-content/1 record is read as a location, and the reverse.
-        EfsWeb3Gateway.Types memory g = _gt();
+        EfsWeb3Content.Types memory g = _ct();
         (g.content, g.external_) = (g.external_, g.content);
-        EfsWeb3Gateway swapped = new EfsWeb3Gateway(
-            address(r.ledger), address(reads), address(views), address(reader), rootDir, g
+        EfsWeb3Gateway swapped = _gateway(
+            address(reader), address(new EfsWeb3Content(address(r.ledger), address(reads), g))
         );
         _declared("typed.txt", "typed", "text/plain");
         // a content body of 330 bytes read as a location: word 6 (the cipher, 0) as the locator length
@@ -398,6 +424,25 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
         assertEq(_count(res.body, '"kind":"file"'), 64, "one page of LISTING_LIMIT rows");
     }
 
+    function test_a_listing_the_pager_refuses_is_500_listing_refused() public {
+        IFilesPageReader.DirectoryPage memory page;
+        page.q.status = Status.INVALID;
+        vm.mockCall(
+            address(reader), abi.encodeWithSelector(reader.listDirectory.selector), abi.encode(page)
+        );
+        assertEq(_status(_u(P, "/docs"), 500).body, "listing refused");
+        page.q.status = Status.UNSUPPORTED;
+        vm.mockCall(
+            address(reader), abi.encodeWithSelector(reader.listDirectory.selector), abi.encode(page)
+        );
+        assertEq(_status(_u(P, "/docs"), 503).body, "listing unsupported");
+        // a pager that reverts is the other body
+        vm.mockCallRevert(
+            address(reader), abi.encodeWithSelector(reader.listDirectory.selector), "boom"
+        );
+        assertEq(_status(_u(P, "/docs"), 500).body, "listing failed");
+    }
+
     // ---- gas ----------------------------------------------------------------------------------------------------
 
     function test_gas_inline_and_chunk_reads_at_depth_3_and_7() public {
@@ -492,10 +537,46 @@ contract EfsWeb3GatewayInvalidHeadsTest is Web3GatewayHarness {
         _placeWithHead("wrong.txt", helloRoot, true);
         _placeWithHead("self.txt", 0, true);
         _placeWithHead("none.txt", 0, false);
-        // one body for every reader-side HEAD law breach (merged to fit the size budget)
-        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law broken");
-        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law broken");
-        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law broken");
+        // each reader-side HEAD law breach has its own body
+        assertEq(_status(_u(P, "/bad.txt"), 500).body, "HEAD law: target not a revision");
+        assertEq(_status(_u(P, "/wrong.txt"), 500).body, "HEAD law: revision of other file");
+        assertEq(_status(_u(P, "/self.txt"), 500).body, "HEAD law: target is not a record");
         assertEq(_status(_u(P, "/none.txt"), 404).body, "not found: no revision");
+        // the same through the file's object link
+        bytes32 bad = EfsFiles.subjectId(p, keccak256("bad.txt"));
+        assertEq(
+            _status(string.concat("/~efs/o/", vm.toString(bad)), 500).body,
+            "HEAD law: target not a revision"
+        );
+        bytes32 self = EfsFiles.subjectId(p, keccak256("self.txt"));
+        assertEq(
+            _status(string.concat("/~efs/o/", vm.toString(self)), 500).body,
+            "HEAD law: target is not a record"
+        );
+        bytes32 wrong = EfsFiles.subjectId(p, keccak256("wrong.txt"));
+        assertEq(
+            _status(string.concat("/~efs/o/", vm.toString(wrong)), 500).body,
+            "HEAD law: revision of other file"
+        );
+    }
+
+    /// The rules make a revision shorter than its words impossible, so the header is mocked: the fourth body.
+    function test_a_short_revision_is_500() public {
+        vm.mockCall(
+            address(r.ledger),
+            abi.encodeCall(ILedgerHot.recordHeader, (helloRoot)),
+            abi.encode(typeIds[T_ROOT], uint64(1), uint32(63), uint64(1), uint8(0))
+        );
+        assertEq(_status(_u(P, "/hello.txt"), 500).body, "HEAD law: short revision");
+        // a revision link has no HEAD law to break, but a short revision is still a broken invariant
+        assertEq(
+            _status(string.concat("/~efs/v/", vm.toString(helloRoot)), 500).body, "short revision"
+        );
+        vm.mockCall(
+            address(r.ledger),
+            abi.encodeCall(ILedgerHot.recordHeader, (notesChild)),
+            abi.encode(typeIds[T_CHILD], uint64(1), uint32(95), uint64(1), uint8(0))
+        );
+        assertEq(_status(_u(P, "/notes.txt"), 500).body, "HEAD law: short revision");
     }
 }

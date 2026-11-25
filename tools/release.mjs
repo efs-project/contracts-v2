@@ -59,7 +59,7 @@ const budgetOf = (name) => sizes.units.find((u) => u.name === name) ?? null;
 // ---- per-unit facts ------------------------------------------------------------------------------------------------
 const stepOf = (name) => plan.steps.find((s) => s.kind === "CREATE2" && s.contract === name);
 const createdOf = (label) => plan.steps.find((s) => s.id === "G18").creates.find((c) => c.label === label);
-const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "IndexReads", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "TopicMineReader", "TopicEveryoneReader", "TopicLookupReader", "EfsWeb3Gateway"]);
+const realmSpecific = new Set(["RealmGenesis", "PostingStore", "BitmapStore", "IndexReads", "RealmIndex", "RealmController", "TransparentUpgradeableProxy", "ProxyAdmin", "LensReader", "FilesPageReader", "TopicMineReader", "TopicEveryoneReader", "TopicLookupReader", "EfsWeb3Content", "EfsWeb3Gateway"]);
 const contracts = {};
 let reproducible = 0;
 for (const name of Object.keys(UNITS)) {

@@ -2205,9 +2205,9 @@
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "9e4d52557593904cbdf8cf71233f8d9895559fc8",
-    "dirtyFiles": 0,
-    "date": "2026-11-25T17:59:52.284Z",
+    "commit": "6309c0d379283d6c5b62653c5966c7d2cafc2da8",
+    "dirtyFiles": 1,
+    "date": "2026-11-25T18:33:41.162Z",
     "foundry": "forge Version: 1.8.3"
   },
   "reads": {
