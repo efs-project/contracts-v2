@@ -557,8 +557,8 @@ contract TagListsMeasureTest is TopicListsBase {
     // E. later transitions: a mask, a release and a restore (the yes-count of `position-authors`)
     // =============================================================================================
 
-    /// X's asserted head at (purpose, subject, role) is masked, restored, released and restored again, each step a
-    /// cooled publication of its own.
+    /// X's asserted head at (purpose, subject, role) is masked, restored, released and restored again, then masked
+    /// (unmeasured), masked again and released: each measured step a cooled publication of its own.
     function _transitions(
         string memory row,
         bytes32 purpose,
@@ -583,9 +583,14 @@ contract TagListsMeasureTest is TopicListsBase {
             string.concat(row, " restore from released"),
             _measure(X, _one(_bind(purpose, subject, role, target, 4)))
         );
+        _go(X, _one(EfsFiles.unbind(purpose, subject, role, 5))); // masked again (unmeasured)
         _log(
             string.concat(row, " mask of masked"),
-            _measure(X, _one(EfsFiles.unbind(purpose, subject, role, 5)))
+            _measure(X, _one(EfsFiles.unbind(purpose, subject, role, 6)))
+        );
+        _log(
+            string.concat(row, " release of masked"),
+            _measure(X, _one(EfsFiles.release(purpose, subject, role, 7)))
         );
     }
 
