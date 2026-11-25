@@ -1,12 +1,11 @@
 {
-  "name": "ITopicPageReader",
+  "name": "ITopicEveryoneReader",
   "source": "src/interfaces/Readers.sol",
   "closure": true,
   "methodIdentifiers": {
-    "0x995d04f5": "everyone((bytes32,bytes32,bool,bool,uint16),bytes32[],(bytes32,uint32,uint32,uint64,uint64,uint8),bytes,uint32,uint256)",
+    "0xeccc2025": "everyone((bytes32,bytes32,bool,bool,uint16),bytes32[],(bytes32,uint32,uint32,uint64,uint64,uint8),bytes,uint32,uint32,uint256)",
     "0xca3e077c": "layoutId()",
     "0x56397c35": "ledger()",
-    "0x0f214a4e": "mine(bytes32[],bytes32,bool,(bytes32,uint32,uint32,uint64,uint64,uint8),bytes,uint32,uint256)",
     "0x5fd7c347": "supportedProfiles()"
   },
   "events": {},
@@ -44,7 +43,7 @@
         "type": "uint8"
       }
     ],
-    "ITopicPageReader.PlaceQuery": [
+    "ITopicEveryoneReader.PlaceQuery": [
       {
         "internalType": "bytes32",
         "name": "purpose",
@@ -71,58 +70,6 @@
         "type": "uint16"
       }
     ],
-    "MineRow": [
-      {
-        "internalType": "bytes32",
-        "name": "position",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "topic",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "thing",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint8",
-        "name": "targetKind",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "decider",
-        "type": "uint8"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "principalId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "int32",
-        "name": "number",
-        "type": "int32"
-      },
-      {
-        "internalType": "uint64",
-        "name": "revision",
-        "type": "uint64"
-      },
-      {
-        "internalType": "uint64",
-        "name": "admission",
-        "type": "uint64"
-      },
-      {
-        "internalType": "uint64",
-        "name": "bindingOrdinal",
-        "type": "uint64"
-      }
-    ],
     "PlaceRow": [
       {
         "internalType": "bytes32",
@@ -143,6 +90,16 @@
         "internalType": "uint64",
         "name": "bindingOrdinal",
         "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decider",
+        "type": "uint8"
+      },
+      {
+        "internalType": "int32",
+        "name": "number",
+        "type": "int32"
       },
       {
         "internalType": "uint64",
@@ -258,7 +215,7 @@
         {
           "name": "query",
           "type": "tuple",
-          "internalType": "struct ITopicPageReader.PlaceQuery",
+          "internalType": "struct ITopicEveryoneReader.PlaceQuery",
           "components": [
             {
               "name": "purpose",
@@ -336,6 +293,11 @@
         },
         {
           "name": "limit",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "maxRows",
           "type": "uint32",
           "internalType": "uint32"
         },
@@ -483,6 +445,16 @@
               "internalType": "uint64"
             },
             {
+              "name": "decider",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "number",
+              "type": "int32",
+              "internalType": "int32"
+            },
+            {
               "name": "statements",
               "type": "uint64",
               "internalType": "uint64"
@@ -539,250 +511,6 @@
           "name": "",
           "type": "address",
           "internalType": "address"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "mine",
-      "inputs": [
-        {
-          "name": "lens",
-          "type": "bytes32[]",
-          "internalType": "bytes32[]"
-        },
-        {
-          "name": "place",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "below",
-          "type": "bool",
-          "internalType": "bool"
-        },
-        {
-          "name": "expected",
-          "type": "tuple",
-          "internalType": "struct BasisCommit",
-          "components": [
-            {
-              "name": "executionSet",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "revision",
-              "type": "uint32",
-              "internalType": "uint32"
-            },
-            {
-              "name": "indexGeneration",
-              "type": "uint32",
-              "internalType": "uint32"
-            },
-            {
-              "name": "registryMutations",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "admissionHighWater",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "phase",
-              "type": "uint8",
-              "internalType": "uint8"
-            }
-          ]
-        },
-        {
-          "name": "continuation",
-          "type": "bytes",
-          "internalType": "bytes"
-        },
-        {
-          "name": "limit",
-          "type": "uint32",
-          "internalType": "uint32"
-        },
-        {
-          "name": "gasReserve",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "tuple",
-          "internalType": "struct TopicPageInfo",
-          "components": [
-            {
-              "name": "q",
-              "type": "tuple",
-              "internalType": "struct Qualified",
-              "components": [
-                {
-                  "name": "status",
-                  "type": "uint8",
-                  "internalType": "enum Status"
-                },
-                {
-                  "name": "observed",
-                  "type": "tuple",
-                  "internalType": "struct BasisCommit",
-                  "components": [
-                    {
-                      "name": "executionSet",
-                      "type": "bytes32",
-                      "internalType": "bytes32"
-                    },
-                    {
-                      "name": "revision",
-                      "type": "uint32",
-                      "internalType": "uint32"
-                    },
-                    {
-                      "name": "indexGeneration",
-                      "type": "uint32",
-                      "internalType": "uint32"
-                    },
-                    {
-                      "name": "registryMutations",
-                      "type": "uint64",
-                      "internalType": "uint64"
-                    },
-                    {
-                      "name": "admissionHighWater",
-                      "type": "uint64",
-                      "internalType": "uint64"
-                    },
-                    {
-                      "name": "phase",
-                      "type": "uint8",
-                      "internalType": "uint8"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "listingCoverage",
-              "type": "uint8",
-              "internalType": "enum Coverage"
-            },
-            {
-              "name": "scanStatus",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "startsAtOrigin",
-              "type": "bool",
-              "internalType": "bool"
-            },
-            {
-              "name": "completeFromOrigin",
-              "type": "bool",
-              "internalType": "bool"
-            },
-            {
-              "name": "dedupWithinPageOnly",
-              "type": "bool",
-              "internalType": "bool"
-            },
-            {
-              "name": "scanned",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "rawTotal",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "positionsEver",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "selectedSoFar",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "repeatsSkipped",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "next",
-              "type": "bytes",
-              "internalType": "bytes"
-            }
-          ]
-        },
-        {
-          "name": "",
-          "type": "tuple[]",
-          "internalType": "struct MineRow[]",
-          "components": [
-            {
-              "name": "position",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "topic",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "thing",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "targetKind",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "decider",
-              "type": "uint8",
-              "internalType": "uint8"
-            },
-            {
-              "name": "principalId",
-              "type": "bytes32",
-              "internalType": "bytes32"
-            },
-            {
-              "name": "number",
-              "type": "int32",
-              "internalType": "int32"
-            },
-            {
-              "name": "revision",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "admission",
-              "type": "uint64",
-              "internalType": "uint64"
-            },
-            {
-              "name": "bindingOrdinal",
-              "type": "uint64",
-              "internalType": "uint64"
-            }
-          ]
         }
       ],
       "stateMutability": "view"

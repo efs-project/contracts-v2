@@ -145,6 +145,16 @@
         "type": "uint64"
       },
       {
+        "internalType": "uint8",
+        "name": "decider",
+        "type": "uint8"
+      },
+      {
+        "internalType": "int32",
+        "name": "number",
+        "type": "int32"
+      },
+      {
         "internalType": "uint64",
         "name": "statements",
         "type": "uint64"
@@ -449,6 +459,16 @@
               "name": "bindingOrdinal",
               "type": "uint64",
               "internalType": "uint64"
+            },
+            {
+              "name": "decider",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "number",
+              "type": "int32",
+              "internalType": "int32"
             },
             {
               "name": "statements",

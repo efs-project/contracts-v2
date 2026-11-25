@@ -57,7 +57,7 @@
     "apply": "0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343",
     "control": "0x1B7A9211Ee86545D8020Bc08c919a7EC661887D0",
     "ledgerReads": "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
-    "ledgerViews": "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
+    "ledgerViews": "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
     "descriptorStore": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
     "indexReplayDecoder": "0x49e9bC76aaE1a2585885D876311Daa4c974aED1b",
     "readerDirectory": "0x77865D8B084589021D9695865475cBED4fc16c31",
@@ -75,32 +75,53 @@
     "bitmapStore": "0x45E68cd877168670DedD0Ea599Bddcbff3bCE3B3",
     "indexReads": "0x277A7F53fC89E77dda8Fae97EE429Ed871CEC7C5",
     "index": "0x465eC78b638aeED58482D232f61030c128dDb697",
-    "lensReader": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
-    "filesPageReader": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+    "lensReader": "0xfFeA8909E6abCe517f2dfB6BFf2943Fc805C6cac",
+    "filesPageReader": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
+    "topicMineReader": "0x38aFFa6d46F71b399B79315b7C29d85B2e08217b",
+    "topicEveryoneReader": "0x413cc58a5FBfD5E429f66B61738333babe4b558e",
+    "topicLookupReader": "0xa19606F95275E28967AA74dd177E4CC3d04b16b5",
     "keysView": "0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F",
-    "web3Gateway": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA"
+    "web3Gateway": "0xddf4B7c510DcBd02542f459058ebe7F73944C21a"
   },
   "readers": {
     "lens": {
-      "address": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
+      "address": "0xfFeA8909E6abCe517f2dfB6BFf2943Fc805C6cac",
       "kind": "0x88b206ade76a1d3cb58bcd2afda4651746fc0a87ff0ca1b68af3eb90d7a061df",
       "kindLabel": "efs/reader/lens/1",
-      "runtimeCodehash": "0xe01b3511e55d7a944c60581247bb18e4f5ee90d70a986fd73b23621a0b0d2443"
+      "runtimeCodehash": "0x4dedf8b27d453ec32f8715b1a9d8a870424252add58ccb9e6253441c1d232823"
     },
     "filesPage": {
-      "address": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+      "address": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
       "kind": "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
       "kindLabel": "efs/reader/files-page/1",
-      "runtimeCodehash": "0x2ffbbcbb22442a292389f3a2c619c7bb21774ad118331f82ac29b5d70739ebe9"
+      "runtimeCodehash": "0xb6c0c1825a25c3bbdf5a041497b6da37c8edbb308f37724dec2f979c40507680"
+    },
+    "topicMine": {
+      "address": "0x38aFFa6d46F71b399B79315b7C29d85B2e08217b",
+      "kind": "0x3439e3188028f62d9f43b2a2d841a095228b686ef5a40c481fa627709f5063ff",
+      "kindLabel": "efs/reader/topic-mine/1",
+      "runtimeCodehash": "0x6b2a53decc681a550b658c9181f158c65197110bc3f103f11677c0f969ecd959"
+    },
+    "topicEveryone": {
+      "address": "0x413cc58a5FBfD5E429f66B61738333babe4b558e",
+      "kind": "0x68aaa9609069121630b7359eb69e483bfd5d3b3f0e5d64f89738946befda2e80",
+      "kindLabel": "efs/reader/topic-everyone/1",
+      "runtimeCodehash": "0x677ff409398084cf35ae29201b172f2832760bd0fdd1a0c41359dd71d9a64b76"
+    },
+    "topicLookup": {
+      "address": "0xa19606F95275E28967AA74dd177E4CC3d04b16b5",
+      "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
+      "kindLabel": "efs/reader/topic-lookup/1",
+      "runtimeCodehash": "0xcba05c8656048e89ff95173c7db7ff3b558a8cb7799e0c7ddd2e77ce564dc1b4"
     }
   },
   "gateway": {
-    "address": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA",
-    "runtimeCodehash": "0x3edbbc53763fd0f0a2a70915e5412336eb935a6d20afcd0057204943d5b2c1d0",
+    "address": "0xddf4B7c510DcBd02542f459058ebe7F73944C21a",
+    "runtimeCodehash": "0x53eeb478c4dd7d158ea3cf755140094231fe7c3202c892c689d1300bc9c59aa5",
     "resolveMode": "5219",
     "rootDirectory": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
-    "pager": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
-    "urlBase": "web3://0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA:31337/"
+    "pager": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
+    "urlBase": "web3://0xddf4B7c510DcBd02542f459058ebe7F73944C21a:31337/"
   },
   "hotAbiIdString": "efs/ledger-hot/2",
   "realm": {
@@ -787,15 +808,15 @@
       "kind": "CREATE2",
       "contract": "LedgerViews",
       "source": "src/readers/LedgerViews.sol",
-      "address": "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
+      "address": "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0xcaadbd435339debc87dd5a0ff19ecf58bff98d79804153d5e16fff34318b4ec5",
-      "initcodeBytes": 14647,
+      "initcodeHash": "0x524cbec9cca38d3ba93177b079501c2e8c67eaa52d9d699d28a7ffdf127be143",
+      "initcodeBytes": 18349,
       "args": [],
-      "runtimeCodehash": "0x7aef29e447255dc6e0e2c69e1df483f46ec15bcdbfa6b678aa17618aebd61873",
-      "runtimeBytes": 14621,
+      "runtimeCodehash": "0x6b083fc23ce879b74c547607a01c6555a6650826ba97ae5ebe4c822aaafdb3bf",
+      "runtimeBytes": 18323,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0x958d6c62ad487a17a40de7420fd8ada7c5c736c0479d21af53c3d89959e5ec3a"
+      "calldataHash": "0xb1d8a59295e4261d92a8a54703a06ca828c36f15b29285a12ffb1ae349be57ff"
     },
     {
       "id": "G5",
@@ -1689,41 +1710,41 @@
       "kind": "CREATE2",
       "contract": "LensReader",
       "source": "src/readers/LensReader.sol",
-      "address": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
+      "address": "0xfFeA8909E6abCe517f2dfB6BFf2943Fc805C6cac",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0xdb1a826254e176602cd869a4bee93d30b1bb555b1042bfc66b6cecb6bd0620df",
+      "initcodeHash": "0xd6cdc3b34f04e7ab5367aaea89e8245d16e798e47e6bba2fdebe5efdb6f383e7",
       "initcodeBytes": 18066,
       "args": [
         "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
-        "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
         "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366"
       ],
-      "runtimeCodehash": "0xe01b3511e55d7a944c60581247bb18e4f5ee90d70a986fd73b23621a0b0d2443",
+      "runtimeCodehash": "0x4dedf8b27d453ec32f8715b1a9d8a870424252add58ccb9e6253441c1d232823",
       "runtimeBytes": 17399,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0x85fa0ad49ab839427707759c344eba58345fd6b72ccc331ff77d873614407433"
+      "calldataHash": "0xed90f8d6c84eaeae98eccadcfce80a5522e75a31c92e00b33cfd11fc9d8f5fca"
     },
     {
       "id": "R2",
       "kind": "CREATE2",
       "contract": "FilesPageReader",
       "source": "src/readers/FilesPageReader.sol",
-      "address": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+      "address": "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0xe40292d26aaa2af2f5e0d151a5ca87ee625b1fcd8fbf346586224c9f4fd70dfc",
+      "initcodeHash": "0xb1e28955c49642cb95b5af96927821d400546a0debb06636e93b9f8a05ce98b5",
       "initcodeBytes": 13438,
       "args": [
         "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
-        "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
         "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
         "0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a",
         "0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c",
         "0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120"
       ],
-      "runtimeCodehash": "0x2ffbbcbb22442a292389f3a2c619c7bb21774ad118331f82ac29b5d70739ebe9",
+      "runtimeCodehash": "0xb6c0c1825a25c3bbdf5a041497b6da37c8edbb308f37724dec2f979c40507680",
       "runtimeBytes": 12676,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0xe24931794715987cc7d7f277eae1b6c1ea7e8d067467140f001e0d01d9431ed7"
+      "calldataHash": "0x75a2e98e64988fd2824dc4327043dce03b5194bda9d898b66e047bd14e21d85c"
     },
     {
       "id": "R3",
@@ -1735,10 +1756,10 @@
       "args": [
         "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
         "0x88b206ade76a1d3cb58bcd2afda4651746fc0a87ff0ca1b68af3eb90d7a061df",
-        "0x6Ba8994BD6EEFA65C02C804970090f2E55894210"
+        "0xfFeA8909E6abCe517f2dfB6BFf2943Fc805C6cac"
       ],
       "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
-      "calldataHash": "0xe8b95695eeb1bbbdbe652b2c3960bfa9bb72c53e0447125f8afc939735d5a884"
+      "calldataHash": "0x822b3f86c9c5f604a74f6fc39a13e5141b52c3087ef963735c69fa4cffc71515"
     },
     {
       "id": "R4",
@@ -1750,10 +1771,10 @@
       "args": [
         "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
         "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
-        "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC"
+        "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C"
       ],
       "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
-      "calldataHash": "0x21d80f2d785345b9e1720afff1c309e0dc29f5d26f583063cd4c79cd9412da7f"
+      "calldataHash": "0x975d4fde9f22d2e8bdd765f67ab87304ad891c76268e89d305165c4e9fa84ec9"
     },
     {
       "id": "G21.0",
@@ -1903,15 +1924,15 @@
       "kind": "CREATE2",
       "contract": "EfsWeb3Gateway",
       "source": "src/periphery/EfsWeb3Gateway.sol",
-      "address": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA",
+      "address": "0xddf4B7c510DcBd02542f459058ebe7F73944C21a",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0xb7d63834e99aeb6a9075a45af8ffde17a261e914a8cf95d35ae96fe75a908629",
-      "initcodeBytes": 19513,
+      "initcodeHash": "0xe8226c69f8dd18e0d68e53a804189ac29e03d58aaeefa91c2a083a01ec1e7a00",
+      "initcodeBytes": 21086,
       "args": [
         "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
         "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
-        "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
-        "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
+        "0x39686b0da5b3A7801Ba41E6373b46b33b4907f1C",
         "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
         {
           "directory": "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba",
@@ -1924,10 +1945,114 @@
           "span": "0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd"
         }
       ],
-      "runtimeCodehash": "0x3edbbc53763fd0f0a2a70915e5412336eb935a6d20afcd0057204943d5b2c1d0",
-      "runtimeBytes": 18025,
+      "runtimeCodehash": "0x53eeb478c4dd7d158ea3cf755140094231fe7c3202c892c689d1300bc9c59aa5",
+      "runtimeBytes": 19584,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0x4032826ba4dd637fb5e0529fc8bfa110fbc6b47b8c1db379b30cd58d1513c1e5"
+      "calldataHash": "0xb3bde5c0bf149580dd6158158f8ba986a83b53f0785172b4537e35b55db5da57"
+    },
+    {
+      "id": "R6",
+      "kind": "CREATE2",
+      "contract": "TopicMineReader",
+      "source": "src/readers/TopicMineReader.sol",
+      "address": "0x38aFFa6d46F71b399B79315b7C29d85B2e08217b",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0x06ce7f6a4bc4b437062873ff9955581b8a3f15263cd07289105874ff68f73e8e",
+      "initcodeBytes": 15928,
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
+        "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366"
+      ],
+      "runtimeCodehash": "0x6b2a53decc681a550b658c9181f158c65197110bc3f103f11677c0f969ecd959",
+      "runtimeBytes": 15356,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x3a41d62b281bed853a4ee34b779012725795109cd324ef00fa53742ef1e82f15"
+    },
+    {
+      "id": "R7",
+      "kind": "CREATE2",
+      "contract": "TopicEveryoneReader",
+      "source": "src/readers/TopicEveryoneReader.sol",
+      "address": "0x413cc58a5FBfD5E429f66B61738333babe4b558e",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xbc507b9069268c4d57cf348b7bcfed44f0e815404463e0a593b0e59d413fc6c7",
+      "initcodeBytes": 16895,
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
+        "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366"
+      ],
+      "runtimeCodehash": "0x677ff409398084cf35ae29201b172f2832760bd0fdd1a0c41359dd71d9a64b76",
+      "runtimeBytes": 16301,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0xb3d12bae7e3eab7e65a41136cde726e49bd5ee7b4c9dc107a70f0edcbc3ad9b2"
+    },
+    {
+      "id": "R8",
+      "kind": "CREATE2",
+      "contract": "TopicLookupReader",
+      "source": "src/readers/TopicLookupReader.sol",
+      "address": "0xa19606F95275E28967AA74dd177E4CC3d04b16b5",
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "initcodeHash": "0xb394994f91ed9f9b1dab06d1e6bf9c1a025d695a679ee3aff94c67e572785e61",
+      "initcodeBytes": 17288,
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0xcA6368a6cD3E128c8c20d6E647a3df5399C74E94",
+        "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
+        "0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf",
+        "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b"
+      ],
+      "runtimeCodehash": "0xcba05c8656048e89ff95173c7db7ff3b558a8cb7799e0c7ddd2e77ce564dc1b4",
+      "runtimeBytes": 16546,
+      "postCheck": "extcodehash(address) == runtimeCodehash",
+      "calldataHash": "0x0dd1199c8fc2f0192fd161587f4d212dbac4d75615c241af8d4099a7c8a28240"
+    },
+    {
+      "id": "R9",
+      "kind": "CALL",
+      "contract": "ReaderDirectory",
+      "to": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "function": "list(address,bytes32,address)",
+      "label": "list TopicMineReader under efs/reader/topic-mine/1",
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0x3439e3188028f62d9f43b2a2d841a095228b686ef5a40c481fa627709f5063ff",
+        "0x38aFFa6d46F71b399B79315b7C29d85B2e08217b"
+      ],
+      "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
+      "calldataHash": "0x30bf1123ae611d2d35c33c7c6901dcbedbf74752af87cc4e6ca297d29faf1b3b"
+    },
+    {
+      "id": "R10",
+      "kind": "CALL",
+      "contract": "ReaderDirectory",
+      "to": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "function": "list(address,bytes32,address)",
+      "label": "list TopicEveryoneReader under efs/reader/topic-everyone/1",
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0x68aaa9609069121630b7359eb69e483bfd5d3b3f0e5d64f89738946befda2e80",
+        "0x413cc58a5FBfD5E429f66B61738333babe4b558e"
+      ],
+      "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
+      "calldataHash": "0x452d077c2f83842b9123d2738da5d9408c90e21d242c41c7fe67aff6dbffd967"
+    },
+    {
+      "id": "R11",
+      "kind": "CALL",
+      "contract": "ReaderDirectory",
+      "to": "0x77865D8B084589021D9695865475cBED4fc16c31",
+      "function": "list(address,bytes32,address)",
+      "label": "list TopicLookupReader under efs/reader/topic-lookup/1",
+      "args": [
+        "0x21573e586DBf93213CCC9243c68a5Cdd36246161",
+        "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
+        "0xa19606F95275E28967AA74dd177E4CC3d04b16b5"
+      ],
+      "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
+      "calldataHash": "0x0756bc50896a42ad056a35d9c436a4d704f12bfe35fcbed7d1941cd5c0316893"
     },
     {
       "id": "G22.root",
@@ -2350,5 +2475,5 @@
       "postCheck": "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"
     }
   ],
-  "planHash": "0xe2f53ec7ef88b78d8271b7034b5830311c7c45093925d5dc0633d09437772b52"
+  "planHash": "0xde5883039e1851a14e2cdb9cb7775e94a56e228ddeb35c4559030c7e6e346d26"
 }
