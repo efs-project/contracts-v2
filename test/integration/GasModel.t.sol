@@ -174,9 +174,9 @@ contract GasModelTest is FilesRecipesBase {
         }
         _do(a, b);
         // P5: HEAD of s[8..11) + their children; FOLDER binds in d1 for rebind (names 6..9), unbind (9..12) and
-        //     release (12..15), targets s[29..32); TAG binds of s[35..38) under TOPIC (number-change targets)
-        a = new Action[](18);
-        b = new bytes[](18);
+        //     release (12..15), targets s[29..32)
+        a = new Action[](15);
+        b = new bytes[](15);
         for (uint256 i; i < 3; ++i) {
             a[i] = _bind(Purpose.HEAD, s[8 + i], 0, roots[8 + i], 0);
             (a[3 + i], b[3 + i]) =
@@ -185,9 +185,6 @@ contract GasModelTest is FilesRecipesBase {
         }
         for (uint256 i; i < 9; ++i) {
             a[6 + i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(6 + i)), s[29 + i % 3], 0);
-        }
-        for (uint256 i; i < 3; ++i) {
-            a[15 + i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
         }
         _do(a, b);
     }
@@ -481,8 +478,19 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("release folder", x);
     }
 
+    /// TAG binds of s[35..38) under TOPIC: the number-change targets and the lone negatives' scope. Run inside the
+    /// row's own test, not `setUp`, whose amsterdam execution gas is at the EIP-7825 per-transaction cap.
+    function _tagged() internal {
+        Action[] memory a = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            a[i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 0);
+        }
+        _do(a, new bytes[](3));
+    }
+
     /// A number change on an asserted tag: BIND to the same target with a new strength (0 -> 75), a REBIND.
     function test_model_bind_tag_number_change() public {
+        _tagged();
         Action[3] memory x;
         for (uint256 i; i < 3; ++i) {
             x[i] = EfsFiles.bindWithStrength(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 1, 75);
@@ -492,6 +500,7 @@ contract GasModelTest is FilesRecipesBase {
 
     /// A lone negative: UNBIND at a fresh position of an existing scope (FIRST_MASK), strength 4 (-5).
     function test_model_unbind_tag_lone() public {
+        _tagged();
         Action[3] memory x;
         for (uint256 i; i < 3; ++i) {
             x[i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, keccak256(abi.encode("lone", i)), 4);
