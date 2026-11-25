@@ -192,7 +192,10 @@ rule, never from `indexFloor`.
   history before it is attached (design §10.6); that step is specified, not written (generation 1 refuses `build`
   and `backfill`). It must rebuild three COUNTERS, not only list entries: family 5's `live`, family 20's yes-count
   and the distinct figure of families 6 and 7. Until it is written and tested, "a later generation can add this list"
-  (for example the all-authors list on a file's versions, QUESTIONS Q52) is not yet true.
+  (for example the all-authors list on a file's versions, QUESTIONS Q52) is not yet true. The design is
+  `docs/INDEX-BUILD.md` (a proposal, reviewed 2026-11-25): a build in `MODE_BUILD` already has every counter
+  operation, the missing parts are a generation that can carry some stores and build others, and one more
+  readiness check in `LedgerControl`. A build walks the whole history, so a later list has a price (its §6.2).
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
   QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
