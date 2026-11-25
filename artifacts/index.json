@@ -35,6 +35,8 @@
     "ProxyAdmin",
     "LensReader",
     "FilesPageReader",
+    "TopicPageReader",
+    "TopicLookupReader",
     "FilesSpanRule",
     "KeysView",
     "EfsWeb3Gateway",

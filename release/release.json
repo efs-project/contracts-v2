@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "17326e0eff03e2fd41840b953aa27e3a540989c7",
-    "tree": "5b91dc3e22fbe4b5d2bb01e73318e90061541237",
-    "dirty": 9,
+    "commit": "25fee188bfff0a9d116f8516a12a34d1df532f1e",
+    "tree": "ce9f28fd92a6ae0d6bbfd016dabb5e18d4b4aa9b",
+    "dirty": 11,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -32,7 +32,7 @@
       "out",
       "out/release-ast"
     ],
-    "unitsCompared": 37,
+    "unitsCompared": 39,
     "runtimeAndInitcodeIdentical": true,
     "note": "the AST build is a second full compile with the identity settings plus AST output; tools/deploy-plan.mjs refuses any unit whose bytes differ"
   },
@@ -68,13 +68,13 @@
     "src/interfaces/ILedgerReads.sol": "0x87689135a2344dd389b91612d44e8e19a3e0f03190f7d54514c2e30cccfeeb29",
     "src/interfaces/Views.sol": "0x7a51777b0972c3814e7a2d00f275a5b8a1c7de472956b4270cbc6301bae2dab2",
     "src/readers/LedgerReads.sol": "0xd67b64caae8e903d25ccf43a0df8f3d76b3fdd53aefbc42d7408c5f5f872c0d9",
-    "src/interfaces/ILedgerViews.sol": "0x04acf582915ec566cd4bc5fa9bc2f9f278e2feae06f9fdb02ff5136ba40874cb",
-    "src/readers/LedgerViews.sol": "0x8e84d4c17d3ce89575cd4b85f18474e4ab28953d32b38455d189e495a1d28750",
+    "src/interfaces/ILedgerViews.sol": "0xf6a0e9d9a75683f634c090ae9f453a3455d8d0d0a4f271d2c30b7194b0b0ed97",
+    "src/readers/LedgerViews.sol": "0x47a39fc4d00806795ffc0d31ce4cdbde04d50b640eb790190f858b938f45036e",
     "src/interfaces/internal/IDescriptorStore.sol": "0xfac9904c8cb6f5598b9355cfe0b92991c1364df99f6deb8c74a2a01d8aa8a7bd",
     "src/types/DescriptorStore.sol": "0x92b8fc770ff2e862400e68e0594d7093b3e853dfde5301efb4359fb6f6aa2007",
     "src/index/IndexReplayDecoder.sol": "0xd8bdd97a966ee330a9805fa6857f11e457e8a1f9178a250586e34ac89703ec6b",
     "src/interfaces/internal/IIndexReplayDecoder.sol": "0x08790824d4d2146e734c9082f86e589bab52cf8b8fa22ba5355384e1dcb831cd",
-    "src/interfaces/Readers.sol": "0xde07a26229c666323e254f4750a95fa6d80fe11bee403c8deb4615390dc40b82",
+    "src/interfaces/Readers.sol": "0x57b09e7dbdca5ab304429ac6eb757242d0c8603fe6d9c03fa225f62ca272ba32",
     "src/periphery/ReaderDirectory.sol": "0xd7e3b95d454e2b8b055fdc4c78aca7f0fae274ad34a1b704249ae15ddd54db26",
     "src/interfaces/internal/IDescribedWrapper.sol": "0x861881859804802e1fca45354ac21e74dc4e457c1d3d25b4e38a48b7581ae8ee",
     "src/types/DescribedCodec.sol": "0xb4078c3eab2b76bcebf55d4ff4919f54bd56384c1791af932d5da0d84491396b",
@@ -120,11 +120,14 @@
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
     "src/readers/LensReader.sol": "0xb2fb9c050baa63706e420c6c3ae96252c1756e158feddbb651014e098db17dfe",
     "src/readers/FilesPageReader.sol": "0x3aa5bc336008139030d622493bb72e98561241c201168b71b830b2fe0e6b04a4",
+    "src/readers/TopicPageReader.sol": "0x35732a979a080dce17ff33fec2eee2805c2599f3036d7e69bdf4af95451bd8d0",
+    "src/readers/TopicReaderBase.sol": "0x897e98106ed638526c051e147e4bbaed5b4b61f7ce992ea503de4d25d6447572",
+    "src/readers/TopicLookupReader.sol": "0xae19db92b9762ea14fc431cf4f43632617b46abaed301f87ea419529bee48977",
     "src/profiles/FilesSpanRule.sol": "0x5f255e216313efa9b4284aaf77d90cded8105d4b4e6c458d6bdfefbfdc2eeb2a",
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
     "src/periphery/KeysView.sol": "0xdd6cdae729a297ac6859171a801c89b21af429bbf085a89970aac2a1825a48f7",
     "src/interfaces/IWeb3Gateway.sol": "0x7fdbf781f32df3fa09aaa04f6790c3623e01eba96a26ab35388857dcff0f22ce",
-    "src/periphery/EfsWeb3Gateway.sol": "0x78502c3b31361c792e7c95ffcbddef4b589c9a4f29cc58cfdf5f8a65ba760aba",
+    "src/periphery/EfsWeb3Gateway.sol": "0xbf82f297442d361f020efbccca56ad8a3b28df1fa773f5fb2f616bd474e6bfff",
     "src/profiles/TopicProfile.sol": "0xee515a8a7d7ea4ff9fcceab44b9e45f72654671326dfb87317e8ada855b59e42",
     "src/profiles/TopicWordRule.sol": "0xbac191bfd610fe172765e39c86694dd6dd4b28154e5663314a46d73f2d4116e1",
     "src/profiles/TopicRule.sol": "0xc9c538e054c8e4d6a2fc8cf9165e70590fa454d4ea148732ff2d411915759eb0",
@@ -360,18 +363,18 @@
     },
     "LedgerViews": {
       "source": "src/readers/LedgerViews.sol",
-      "runtimeHash": "0x7aef29e447255dc6e0e2c69e1df483f46ec15bcdbfa6b678aa17618aebd61873",
-      "deployedBytecodeHash": "0x7aef29e447255dc6e0e2c69e1df483f46ec15bcdbfa6b678aa17618aebd61873",
-      "initcodeHash": "0xcaadbd435339debc87dd5a0ff19ecf58bff98d79804153d5e16fff34318b4ec5",
-      "initcodeWithArgsHash": "0xcaadbd435339debc87dd5a0ff19ecf58bff98d79804153d5e16fff34318b4ec5",
-      "address": "0xfBf65CEC12562526d21afDcBe79837AA80e48291",
+      "runtimeHash": "0xe9680859063da34a4d567fd429c638b8c951d32bbb7c1b56651e7cb92a12c096",
+      "deployedBytecodeHash": "0xe9680859063da34a4d567fd429c638b8c951d32bbb7c1b56651e7cb92a12c096",
+      "initcodeHash": "0xcdc629044a61d01c6add72cf9f180e8487102c52f55ecb8fafa2ed444245a64a",
+      "initcodeWithArgsHash": "0xcdc629044a61d01c6add72cf9f180e8487102c52f55ecb8fafa2ed444245a64a",
+      "address": "0x4Ff2b69Af86D41D1c05f6764c192AA9E88254eA5",
       "realmSpecific": false,
       "planStep": "G4",
       "immutables": [],
       "sizes": {
-        "runtime": 14621,
-        "initcode": 14647,
-        "initcodeWithArgs": 14647
+        "runtime": 18124,
+        "initcode": 18150,
+        "initcodeWithArgs": 18150
       },
       "budget": {
         "runtime": 19660,
@@ -1410,10 +1413,10 @@
     "LensReader": {
       "source": "src/readers/LensReader.sol",
       "runtimeHash": "0xe4d0f807130ed2f7f6b353735b2ab01496a159448f06e2f6287ab786e386e1a1",
-      "deployedBytecodeHash": "0xe01b3511e55d7a944c60581247bb18e4f5ee90d70a986fd73b23621a0b0d2443",
+      "deployedBytecodeHash": "0xf5341c2593444b8b257836c9880e5149a16f72f7e1d734715bb059a5dd251e64",
       "initcodeHash": "0xa28437508e7ea8133bbc6c397370a6809f64d085cb725beb85688886f604754b",
-      "initcodeWithArgsHash": "0xdb1a826254e176602cd869a4bee93d30b1bb555b1042bfc66b6cecb6bd0620df",
-      "address": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
+      "initcodeWithArgsHash": "0x10bcab66b6c00931177ea94f096028692ff45cb14eecf6447aae773585261b19",
+      "address": "0x1bD4eADBcC730e5e9cFB0dbd76bE4f3e675b2684",
       "realmSpecific": true,
       "planStep": "R1",
       "immutables": [
@@ -1476,10 +1479,10 @@
     "FilesPageReader": {
       "source": "src/readers/FilesPageReader.sol",
       "runtimeHash": "0x6bd68e20de3bdc14aee42e505361ee41e3ffe35c64dc58cb522ab01aac47741e",
-      "deployedBytecodeHash": "0x2ffbbcbb22442a292389f3a2c619c7bb21774ad118331f82ac29b5d70739ebe9",
+      "deployedBytecodeHash": "0xf176355d2e22d2f34a11169883c4fb7a762f33b289efb6513e3c219a503a3e60",
       "initcodeHash": "0x5304361e4b79e3bc91a62343a42316f9fe511396d46322ad127f942a25f61d6c",
-      "initcodeWithArgsHash": "0xe40292d26aaa2af2f5e0d151a5ca87ee625b1fcd8fbf346586224c9f4fd70dfc",
-      "address": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+      "initcodeWithArgsHash": "0xbf4437fa476e62ebfaf6b5626b33e98256914002d80a517ca56d01e1065dd318",
+      "address": "0x96c184e5A5b53171e57058B7AA4f140702e02fF3",
       "realmSpecific": true,
       "planStep": "R2",
       "immutables": [
@@ -1550,6 +1553,134 @@
         "initcode": 36864
       }
     },
+    "TopicPageReader": {
+      "source": "src/readers/TopicPageReader.sol",
+      "runtimeHash": "0xab419e81339aa0cfe1b0758684045dcc86f9133f131388aceb9573088e58cb25",
+      "deployedBytecodeHash": "0x78592257f1a5c0770684934de2e2d4ca5b7a37198f3c12cb176ff2c804b81cf1",
+      "initcodeHash": "0x1128b87307e1980d80f37aeca21f0648e5705450781e09dc743799b65a17fbed",
+      "initcodeWithArgsHash": "0x13ec3a5e7463abb99b19b2a6acd06588d3b5be1d01a10c13520e1e55c455b366",
+      "address": "0xa3187A08CfBCA66eB65a92a10cdAcb4557a814EF",
+      "realmSpecific": true,
+      "planStep": "R6",
+      "immutables": [
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            2519,
+            9487
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            396,
+            2398,
+            3246,
+            7620,
+            8755,
+            13720,
+            15903,
+            17782
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            154,
+            3435
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1860,
+            13837,
+            14292,
+            15839,
+            17722
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 19195,
+        "initcode": 19692,
+        "initcodeWithArgs": 19788
+      },
+      "budget": null
+    },
+    "TopicLookupReader": {
+      "source": "src/readers/TopicLookupReader.sol",
+      "runtimeHash": "0xd968297a8101794af11dff185955c8484fedf6e10f7969dad7c360031434867b",
+      "deployedBytecodeHash": "0x224d218fc1f3e971cd30e5719b63488f01c2286f6a6195101609eac0ee0772f0",
+      "initcodeHash": "0xf5f940cf730abe79de5f3bfb7e5fd6afc12966196e535faf756cc126266e2ce2",
+      "initcodeWithArgsHash": "0xd72a899a1f517406ba9348fe077d7390c09fbd1613b70bd411fc46bb0862709e",
+      "address": "0xE2796e98928Ff3fDc5e3f684cc2C00c34c21db96",
+      "realmSpecific": true,
+      "planStep": "R7",
+      "immutables": [
+        {
+          "name": "LAYOUT",
+          "offsets": [
+            2850,
+            15910
+          ]
+        },
+        {
+          "name": "LEDGER",
+          "offsets": [
+            2580,
+            3596,
+            5872,
+            7798,
+            10231,
+            11423,
+            12682,
+            13735,
+            14425,
+            15178
+          ]
+        },
+        {
+          "name": "READS",
+          "offsets": [
+            723,
+            7866,
+            11925,
+            13122,
+            14366
+          ]
+        },
+        {
+          "name": "TOPIC_TYPE",
+          "offsets": [
+            372,
+            11547,
+            12799,
+            14813
+          ]
+        },
+        {
+          "name": "VIEWS",
+          "offsets": [
+            1955,
+            4282
+          ]
+        },
+        {
+          "name": "WORD_TYPE",
+          "offsets": [
+            314,
+            14707
+          ]
+        }
+      ],
+      "sizes": {
+        "runtime": 16507,
+        "initcode": 17089,
+        "initcodeWithArgs": 17249
+      },
+      "budget": null
+    },
     "FilesSpanRule": {
       "source": "src/profiles/FilesSpanRule.sol",
       "runtimeHash": "0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6",
@@ -1586,11 +1717,11 @@
     },
     "EfsWeb3Gateway": {
       "source": "src/periphery/EfsWeb3Gateway.sol",
-      "runtimeHash": "0x45782d9c54c1adfd743c4afec75c2b67ade2fd12e7227ac7c17309f79f12731a",
-      "deployedBytecodeHash": "0x3edbbc53763fd0f0a2a70915e5412336eb935a6d20afcd0057204943d5b2c1d0",
-      "initcodeHash": "0x4f384bd33956b0ba7570acfa8f85631cd5677ced4d204b2c3f22a20a05b96858",
-      "initcodeWithArgsHash": "0xb7d63834e99aeb6a9075a45af8ffde17a261e914a8cf95d35ae96fe75a908629",
-      "address": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA",
+      "runtimeHash": "0x9e51fb6861fe3cfaacc1f958226f811602eabfcaa74c3f97f3f799c2618064b7",
+      "deployedBytecodeHash": "0x74d9351ebeda7d83204121ba408242bc13fd27771f5881ffcf0b34d6660d13a5",
+      "initcodeHash": "0x314989cefecf45650554bfbc51acb6521517d989828523f71c3fc0b95a068422",
+      "initcodeWithArgsHash": "0xdbfe1ad1b1a5fcd57a4ca05167f1997cf7e9c254beee74351a9528710c6798ae",
+      "address": "0x76b622F6408208eE69B00d1784c4B1e6f4C79949",
       "realmSpecific": true,
       "planStep": "R5",
       "immutables": [
@@ -1598,58 +1729,59 @@
           "name": "BYTES_TYPE",
           "offsets": [
             876,
-            16342,
-            17321
+            17288,
+            18267
           ]
         },
         {
           "name": "CHILD_TYPE",
           "offsets": [
             678,
-            7468
+            8076
           ]
         },
         {
           "name": "CONTENT_TYPE",
           "offsets": [
             736,
-            13639
+            14944
           ]
         },
         {
           "name": "DIRECTORY_TYPE",
           "offsets": [
             934,
-            4106
+            4411
           ]
         },
         {
           "name": "EXTERNAL_TYPE",
           "offsets": [
             1018,
-            13600
+            14905
           ]
         },
         {
           "name": "LAYOUT",
           "offsets": [
             411,
-            4063
+            4358
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
             1227,
-            3991,
-            6010,
-            6751,
-            11081,
-            11355,
-            11524,
-            13532,
-            16303,
-            17251
+            3887,
+            4282,
+            6618,
+            7359,
+            12386,
+            12660,
+            12829,
+            14837,
+            17249,
+            18197
           ]
         },
         {
@@ -1662,41 +1794,41 @@
           "name": "PAGER",
           "offsets": [
             1074,
-            7783
+            8540
           ]
         },
         {
           "name": "READS",
           "offsets": [
             467,
-            11158,
-            11433,
-            11603,
-            13732,
-            16233,
-            17457
+            12463,
+            12738,
+            12908,
+            15037,
+            17179,
+            18403
           ]
         },
         {
           "name": "ROOT_DIRECTORY",
           "offsets": [
             537,
-            4141
+            5105
           ]
         },
         {
           "name": "ROOT_TYPE",
           "offsets": [
             1297,
-            6812
+            7420
           ]
         },
         {
           "name": "SPAN_TYPE",
           "offsets": [
             315,
-            16269,
-            17360
+            17215,
+            18306
           ]
         },
         {
@@ -1707,9 +1839,9 @@
         }
       ],
       "sizes": {
-        "runtime": 18025,
-        "initcode": 19097,
-        "initcodeWithArgs": 19513
+        "runtime": 18971,
+        "initcode": 20050,
+        "initcodeWithArgs": 20466
       },
       "budget": null
     },
@@ -2305,29 +2437,41 @@
     "hotAbiIdName": "efs/ledger-hot/2",
     "readers": {
       "lens": {
-        "address": "0x6Ba8994BD6EEFA65C02C804970090f2E55894210",
+        "address": "0x1bD4eADBcC730e5e9cFB0dbd76bE4f3e675b2684",
         "kind": "0x88b206ade76a1d3cb58bcd2afda4651746fc0a87ff0ca1b68af3eb90d7a061df",
         "kindLabel": "efs/reader/lens/1",
-        "runtimeCodehash": "0xe01b3511e55d7a944c60581247bb18e4f5ee90d70a986fd73b23621a0b0d2443"
+        "runtimeCodehash": "0xf5341c2593444b8b257836c9880e5149a16f72f7e1d734715bb059a5dd251e64"
       },
       "filesPage": {
-        "address": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
+        "address": "0x96c184e5A5b53171e57058B7AA4f140702e02fF3",
         "kind": "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
         "kindLabel": "efs/reader/files-page/1",
-        "runtimeCodehash": "0x2ffbbcbb22442a292389f3a2c619c7bb21774ad118331f82ac29b5d70739ebe9"
+        "runtimeCodehash": "0xf176355d2e22d2f34a11169883c4fb7a762f33b289efb6513e3c219a503a3e60"
+      },
+      "topicPage": {
+        "address": "0xa3187A08CfBCA66eB65a92a10cdAcb4557a814EF",
+        "kind": "0xf2d1c851bcb9969e33748aec9d8e016e9997df235326429307172d7fef0c4bcf",
+        "kindLabel": "efs/reader/topic-page/1",
+        "runtimeCodehash": "0x78592257f1a5c0770684934de2e2d4ca5b7a37198f3c12cb176ff2c804b81cf1"
+      },
+      "topicLookup": {
+        "address": "0xE2796e98928Ff3fDc5e3f684cc2C00c34c21db96",
+        "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
+        "kindLabel": "efs/reader/topic-lookup/1",
+        "runtimeCodehash": "0x224d218fc1f3e971cd30e5719b63488f01c2286f6a6195101609eac0ee0772f0"
       },
       "web3Gateway": {
-        "address": "0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA",
-        "runtimeCodehash": "0x3edbbc53763fd0f0a2a70915e5412336eb935a6d20afcd0057204943d5b2c1d0",
+        "address": "0x76b622F6408208eE69B00d1784c4B1e6f4C79949",
+        "runtimeCodehash": "0x74d9351ebeda7d83204121ba408242bc13fd27771f5881ffcf0b34d6660d13a5",
         "resolveMode": "5219",
         "rootDirectory": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
-        "pager": "0xa2291318BdCBB93F5aA99ad1861c8b975c098AbC",
-        "urlBase": "web3://0xC7c6Cf786f8741Bf1df4E08c9b50c81DA4422AaA:31337/"
+        "pager": "0x96c184e5A5b53171e57058B7AA4f140702e02fF3",
+        "urlBase": "web3://0x76b622F6408208eE69B00d1784c4B1e6f4C79949:31337/"
       },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
         "ledgerReads": "0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366",
-        "ledgerViews": "0xfBf65CEC12562526d21afDcBe79837AA80e48291"
+        "ledgerViews": "0x4Ff2b69Af86D41D1c05f6764c192AA9E88254eA5"
       }
     },
     "statusVocabularyId": "0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87",
@@ -2498,7 +2642,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x0b35e3c2d49dbbe29468ab96d96c438c912ca5d83ed3e86288baa98b0c21a173",
+    "sha256": "0xebb689b8d3cc959b229936ec623f19ab1aab23595d02f3dc564d4624c072ac1e",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2791,8 +2935,8 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0x66b7f44e2ee0e3655c51636339e97313f0757883f86664568991645f8185e963",
-    "count": 107
+    "sha256": "0xee84a97fbda17ed29549dad9aa86698f6442cb4c9e6e3181effdb189f9457829",
+    "count": 111
   },
   "abi": {
     "interfaces": "test/snapshots/abi/",

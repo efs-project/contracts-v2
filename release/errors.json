@@ -1321,6 +1321,36 @@
       "retryClass": "none",
       "meaning": null
     },
+    "0x23b3b139": {
+      "name": "E_TOPIC_INCONSISTENT",
+      "signature": "E_TOPIC_INCONSISTENT(uint8)",
+      "args": [
+        {
+          "type": "uint8",
+          "name": "code"
+        }
+      ],
+      "source": "src/readers/TopicReaderBase.sol",
+      "retryClass": "none",
+      "meaning": "A dependency's reply contradicts another reply or the kernel's own laws; codes on `TopicReaderBase`."
+    },
+    "0x88b49861": {
+      "name": "E_TOPIC_READ",
+      "signature": "E_TOPIC_READ(address,bytes4)",
+      "args": [
+        {
+          "type": "address",
+          "name": "source"
+        },
+        {
+          "type": "bytes4",
+          "name": "selector"
+        }
+      ],
+      "source": "src/readers/TopicReaderBase.sol",
+      "retryClass": "none",
+      "meaning": "A dependency (the ledger, a facet, the index or a store) reverted, ran out of gas or has no code."
+    },
     "0x16d4b9f7": {
       "name": "E_TOPIC_REFUSED",
       "signature": "E_TOPIC_REFUSED(uint8)",
@@ -1333,6 +1363,36 @@
       "source": "src/profiles/TopicProfile.sol",
       "retryClass": "none",
       "meaning": "A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-7), `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24)."
+    },
+    "0xf26611de": {
+      "name": "E_TOPIC_REPLY",
+      "signature": "E_TOPIC_REPLY(bytes4,uint256)",
+      "args": [
+        {
+          "type": "bytes4",
+          "name": "selector"
+        },
+        {
+          "type": "uint256",
+          "name": "length"
+        }
+      ],
+      "source": "src/readers/TopicReaderBase.sol",
+      "retryClass": "none",
+      "meaning": "A dependency's reply is shorter than its ABI shape, or a word does not fit its declared width."
+    },
+    "0x900368ec": {
+      "name": "E_TOPIC_STATUS",
+      "signature": "E_TOPIC_STATUS(uint8)",
+      "args": [
+        {
+          "type": "uint8",
+          "name": "status"
+        }
+      ],
+      "source": "src/readers/TopicReaderBase.sol",
+      "retryClass": "none",
+      "meaning": "A facet answered a per-row read with a status the page cannot carry (UNKNOWN, UNSUPPORTED, LIMIT_EXCEEDED)."
     },
     "0x7553e4f8": {
       "name": "E_TRANSITION",
