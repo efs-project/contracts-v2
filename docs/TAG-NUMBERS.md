@@ -4,7 +4,7 @@ The numbers of the five lists of docs/TAG-DESIGN.md §4 as built (design §10.2 
 real Files Realm: the real `topic-word/1` and `topic/1` Types, `FilesFinalValidator` and the generation-1 index with
 its topic lists. `docs/spike/TAG-SPIKE-NUMBERS.md` stays as the spike's record; nothing here replaces it.
 
-**Every figure is marked.** *(measured)*: logged by a test run on the tree of commit `a6a5228` (whose index and kernel
+**Every figure is marked.** *(measured)*: logged by a test run on the tree of commit `a6a5228`, table C at `5d1f22a` (whose index and kernel
 source is that of `bb2e8d1`; `2e187a8` and `a6a5228` add only the gas-model rows and the measurement suites), Foundry
 1.8.3, solc 0.8.37 via-IR. *(computed)*: arithmetic on measured figures, with its inputs stated.
 
@@ -140,12 +140,12 @@ family 5) *(measured, `bindTagNumberChange`, step 3a → 3b)*: prague 192,466 �
 
 | statement, case | prague: deepest | tx gas at it | per level | amsterdam all gas: deepest | tx gas at it | per level | amsterdam execution only: deepest | tx execution gas at it | per level |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| tag, (i) everything new | 254 | 16,570,357 | 62,964 | 60 | 16,645,215 | 239,004 | 368 | 16,770,182 | 43,164 |
+| tag, (i) everything new | 254 | 16,570,357 | 62,964 | 60 | 16,645,239 | 239,004 | 368 | 16,770,206 | 43,164 |
 | tag, (ii) lists exist, position new | 397 | 16,756,606 | 39,484 | 209 | 16,767,800 | 68,284 | 239 | 16,720,701 | 68,284 |
-| tag, (iii) position exists, my roll-ups new | 443 | 16,746,016 | 36,032 | 119 | 16,666,743 | 124,052 | 589 | 16,755,710 | 26,132 |
+| tag, (iii) position exists, my roll-ups new | 443 | 16,746,016 | 36,032 | 119 | 16,666,767 | 124,052 | 589 | 16,755,734 | 26,132 |
 | tag, (iv) everything exists | 628 | 16,762,355 | 24,292 | 381 | 16,754,389 | 38,694 | 416 | 16,744,267 | 38,692 |
-| lone negative, (i) everything new | 254 | 16,500,790 | 62,962 | 61 | 16,548,428 | 239,002 | 369 | 16,773,330 | 43,162 |
-| lone negative, (iv) everything exists | 630 | 16,755,403 | 24,292 | 387 | 16,739,105 | 38,692 | 418 | 16,769,711 | 38,691 |
+| lone negative, (i) everything new | 254 | 16,500,790 | 62,962 | 61 | 16,548,452 | 239,002 | 369 | 16,773,354 | 43,162 |
+| lone negative, (iv) everything exists | 630 | 16,755,403 | 24,292 | 387 | 16,739,129 | 38,692 | 418 | 16,769,735 | 38,691 |
 
 ## How many first tags fit one publication (2^24, at most 64 actions) *(measured)*
 
