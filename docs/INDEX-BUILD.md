@@ -2021,7 +2021,8 @@ tested together on both schedules and regenerated once (tools/RELEASE.md items 4
     both names). Two source comments said 26 words (no bytecode change). (c) The planner's `quote()` (formula 3) and
     `cost()` (the tiers) live in one file and needed nothing beyond the merged action comment; `tools/gas-model.mjs` and
     the schema carry both pieces' changes, checked hunk by hunk against each branch. (d) The two claims agree: the floor
-    claims lists of up to 1,024 entries and covers up to 4,096 (`FloorSplit.t.sol`), and the gas model's
+    claims lists of up to 1,024 entries and covers up to 4,096 (`FloorSplit.t.sol`; as stated then: since the list
+    release the limits beyond the claim are 3,586 entries on prague and 8,191 on amsterdam), and the gas model's
     `laterLists.claimEntries` is 1,024 with its `beyondClaim` composites at 4,097 entries, excluded from the stated
     maxima. (e) `BuildGas.t.sol`'s bands hold on both profiles unchanged: formula 3 touches only the live fold's
     reservation, and the decoder's proved read moved the marginal figures by −137 to +709.

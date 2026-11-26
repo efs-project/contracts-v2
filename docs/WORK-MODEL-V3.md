@@ -170,8 +170,34 @@ words). Where this section and the sections below differ, this section is what t
    purpose is never zero (the kernel refuses it `E_SHAPE(leaf, 1)`, `test/unit/kernel/Shape.t.sol`
    `test_missing_required_field_is_E_SHAPE_1_for_every_kind`), so a zero `surchargePurpose` surcharges nothing that can
    be admitted.
+9. **The floor's margin, as the tests assert it and nowhere more** (the integration owner's ruling, applied at the
+   join). `FloorSplit.t.sol` `_row` asserts per action at least **1.03 on prague** for every bind-kind statement and
+   every WITHDRAW after the first inside the claim (PUBLISH, REUSE and CREATE at least 1.005; lowest 1.025, a new name
+   record) and at least **1.05 on amsterdam**, which every shape inside the claim holds. Measured lowest: **1.031 on
+   prague**, a yes after a lone no across places in lists of 1,023 entries (the binding cell of the later row's
+   compute); **1.057 on amsterdam**, folder re-binds across folders. 1,023 entries are dearer than 1,025 because each
+   probe of the entry search also reads the word its entry sits in, so the cost follows probes plus distinct words read,
+   not length. The claim tests assert the bound on the dearest list lengths (restores, masks and yeses after a lone no
+   at 1,023 entries as well as at 1,025; the masks' test is new at the join: 1.281 / 1.110). About 3% is enough
+   because a callback that runs short refuses the whole publication and admits nothing, and a sender's gas limit comes
+   from `eth_estimateGas` with a margin, so the floor's margin guards only a publication sent at or near the bare
+   floor. The per-shape table is tools/RELEASE.md item 50. The limits beyond the claim for the dearest shape are 3,586
+   entries on prague and 8,191 on amsterdam; they replace the 4,096 / 4,097 pair of the formula-3 release everywhere it
+   is stated as a present claim.
+10. **At the join** (with the names piece and the gas model's second piece, regenerated once: tools/RELEASE.md items 49
+    to 59). The batch sizes above hold on the joined model, and the planner gains five shapes (yeses after lone noes on
+    one topic: 45 prague / 48 amsterdam; create files at removed names 11 / 12, without the name PUBLISH 13 / 16; moves
+    into removed names 18 / 19, without the name PUBLISH 25 / 25). The gas model now has rows for a yes after a lone
+    no and restores to a new target, states every later row's measured position, and corrects another position by
+    `historyWordOpen` symmetrically; the kernel's share is low for large publications by a term in n² of the action
+    count (memory expansion, confirmed from one trace), stated in this release and modelled at the next
+    (tools/RELEASE.md item 57).
 
 ## Landed (2026-11-26, branch `fable/2026-11-26-formula-v3`)
+
+(As stated at the formula-3 release, `6d11858`. Its coverage pair 4,096 / 4,097 and its "1.05× or more" for later
+statements are replaced by the list release: limits 3,586 on prague and 8,191 on amsterdam, margins as the tests assert
+them, at least 1.03 / 1.05, "Landed: the list release" items 5 and 9 above.)
 
 Formula 3 is built. The rulings and two reviews changed it from the proposal below in these ways. The rest of the
 document is the proposal as reviewed, kept for its evidence; where it differs from this section, this section is what
@@ -615,7 +641,10 @@ surcharge is what keeps the HEAD quote honest, not just safe.
 
 Formula 3 keeps the lowest ratio at or above 1 the way formula 2 does: every slot count is at least the largest
 measured for its class, and each class's compute term is set so that its dearest measured shape stays at or above
-1.035 (first statements, prague, unchanged from formula 2) and 1.05 (later statements, both schedules). The measured
+1.035 (first statements, prague, unchanged from formula 2) and 1.05 (later statements, both schedules), as fitted at
+the formula-3 release. (Since the list release the later row's binding cell is a yes after a lone no at 1,023 entries
+on prague at 1.031: the tests assert at least 1.03 on prague and 1.05 on amsterdam, lowest 1.057, "Landed: the list
+release" item 9.) The measured
 whole-publication ratios, formula 3 (`FloorPlan.t.sol` at the planned k; `FloorStates.t.sol`; `IndexFloor.t.sol`;
 `FloorReconcile.t.sol`; `HeadAuthorsFloor.t.sol`; all passing on both profiles in `v3t0` and `v3t2`):
 
@@ -643,7 +672,8 @@ after a lone no is covered within the claim and the limits beyond it are 3,586 e
 - **Covered:** every first statement on a topic of one word (deep first tags remain the exception of §3.6); every
   re-bind, in a list of any length and at any number of places (it never searches); every mask and release, and every
   restore but one kind, in an author's list of up to 1,024 entries at one place, at any entry, with any number of
-  distinct places in one publication, quoted at 1.05× or more of its spend on both schedules; every WITHDRAW. The one
+  distinct places in one publication, quoted at 1.05× or more of its spend on both schedules as measured then (lowest
+  1.062 prague, 1.052 amsterdam; today at least 1.03 / 1.05 as the tests assert, lowest 1.031 / 1.057); every WITHDRAW. The one
   kind is a yes after a lone no, covered on prague only in lists of up to 256 entries (below). The list is one author's entries at
   one exact place, keyed by author, purpose and subject: for a tag, everything one author filed under one exact topic or
   address; for a folder, one author's entries in that folder; a file's HEAD list has one entry, so edits and version
@@ -653,7 +683,8 @@ after a lone no is covered within the claim and the limits beyond it are 3,586 e
   moderator's list of negatives on a busy topic. The quote covers a restore of a far entry across distinct places up to
   4,096 entries (twelve probes, measured 1.008 / 1.003) and stops covering from 4,097 (thirteen probes, measured
   0.995 / 0.991); the restore sets that number because it writes the most (2 fresh, 5 rewritten) on top of the search. Both
-  are pinned by tests (`test_split_break_even_covered_at_4096`, `test_split_break_even_not_covered_at_4097`), and the
+  were pinned by tests (`test_split_break_even_covered_at_4096`, `test_split_break_even_not_covered_at_4097`; since the
+  list release `test_split_break_even_covered_at_8191` / `_not_covered_at_8192` and the yes-after-lone-no limits), and the
   claim by `test_split_claim_restores_across_lists_at_the_claim`.
 - **Not covered either:** two statements at one position in one publication. The quote reads the author's head before
   the publication, so a first yes followed by a mask of the same position is quoted as two first statements; with the
@@ -695,8 +726,11 @@ after a lone no is covered within the claim and the limits beyond it are 3,586 e
   pinned; at the next regeneration (the list release) the later row's fresh count goes to 3.0 with its compute fitted by
   measurement, clearing the 1.05 assertion of `test_split_claim_restores_across_lists_at_the_claim` on both schedules
   (tools/RELEASE.md §15, "Open").
-- **The gas model is two fresh slots short for the same yes** (kernel gas as well as index gas, so this is a gas-model
-  matter, not a floor one). Besides the index's slot above, the kernel writes the binding head's target fresh:
+- **The gas model was two fresh slots short for the same yes** (as at the formula-3 release; since the list release the
+  model prices it with `bind<Purpose>AfterNo` rows, the composites below are in the stated maxima, and the interim rule
+  is ended: tools/RELEASE.md item 57; measured with the new rows, 32 across topics of 48 −7.11% prague all gas, −2.29%
+  amsterdam all gas, −7.32% amsterdam execution; 16 across 1,025 +0.22%, +0.32%, +0.63%). Kernel gas as well as index
+  gas, so this is a gas-model matter, not a floor one. Besides the index's slot above, the kernel writes the binding head's target fresh:
   `LedgerApply` writes `head.target` only when it changes, and a lone no leaves it zero. The model's restore rows
   (`restoreTag` and its tiers) measure a third statement, which writes neither. After a lone no and then a release or
   a second no, the yes is the binding's third statement: its history append rewrites, so of the two extra slots only the

@@ -210,7 +210,14 @@ itself.
   Q52). One entry per author's first HEAD statement on the file, either sign; `count` = the authors who ever stated a
   version, `live` = the versions standing now. A client reads it with the index's generic list reads and
   `LedgerViews.authorHeads` (no reader of its own). Measured: 26,054 gas a new file on prague, 16,154 of execution plus
-  97,920 of state gas on amsterdam; an edit pays nothing.
+  97,920 of state gas on amsterdam; an edit pays nothing. No reader enforces the list's rules, so a client does: (1) it
+  answers UNKNOWN unless the list's coverage (the first field `postingHeadOf` returns) is COMPLETE, never "no other
+  versions"; (2) "N versions" is `live`, never `count`, which includes authors who only said no and versions masked or
+  released; (3) the order is each author's first HEAD statement, not their latest edit, so "newest author first" reads
+  from the end and a page is sorted by the heads it fetched; (4) the list is public-tier: anyone adds an entry with one
+  HEAD statement from a fresh account (a yes needs a revision record naming the file, a lone no only that the subject is
+  a file), 550,965 gas for a lone no and 965,468 for a yes with its revision on prague (1.80M and 3.31M in all on
+  amsterdam), so lens authors' versions come first and the rest are labelled public.
 - **Not kept:** per-word lists of items, and "where a name is used" for FOLDER.
 - **Could the HEAD list have been added later? Yes, at a price, and with one condition** (the measurement the
   Q52 ruling was made on; the list is now kept from genesis, above). Every list is derived from the
