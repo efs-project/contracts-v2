@@ -208,24 +208,25 @@ rule, never from `indexFloor`.
   has a deployer plan of carried and fresh stores and a reads contract that routes and covers per family; an example,
   not product) and built-equals-live for that list against a Realm that ran it from genesis, every counter included;
   the dropped-list test (dropping a list from a carried store activates, the replaced generation's late walk writes
-  only the dropped list, declaring it in that store again is refused 12, the kept lists equal a twin Realm's: no
+  only the dropped list (since item 36 it is refused outright once its copy is stale), declaring it in that store
+  again is refused 12, the kept lists equal a twin Realm's: no
   kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
   rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE); a new unit's fold hook built with the walk;
   and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
   add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **What remains
-  of the gate:** the measured gas of a build on both schedules (step 4); the liveness gate below; a re-pin that adds a
-  unit with a fold hook builds no history for it (docs/INDEX-BUILD.md §3.6: a generation adding such a unit needs a
-  fresh store, nothing refuses the other shape); case (d), a digest spec rebuilt in a fresh store (its test, §8 test
-  9); and, if a real later generation adds a HEAD list, a per-purpose work-model term or an accepted over-quote of TAG
+  of the gate:** the measured gas of a build on both schedules (step 4); case (d), a digest spec rebuilt in a fresh
+  store (its test, §8 test 9); and, if a real later generation adds a HEAD list, a per-purpose work-model term or an accepted over-quote of TAG
   and FOLDER statements (docs/INDEX-BUILD.md §10 item 27). A build walks the whole history, so a later list has a
-  price (its §6.2).
-- **Activation must not depend on the live index answering** (docs/INDEX-BUILD.md §10, new with step 2). The kernel's
-  check 12 and the generation's carried check read the live index's `replayReadiness().families` whenever the
-  candidate carries a store. If that read reverts, the kernel's activation reverts with the live index's own error and
-  the generation's check fails, so a broken live index can be replaced only by a full replay into fresh stores. The
-  list is static (the live index's manifest, whose hash the revision row records), so the kernel could check a copy
-  the candidate carries against the recorded `indexManifestHash` instead of calling the live index; not built. Until
-  then, the recovery route is a full replay.
+  price (its §6.2). **Done (item 36): the liveness gate and Option A** (below).
+- **Activation must not depend on the live index answering. DONE (item 36).** The candidate carries a copy of the live
+  index's manifest preimage; the kernel (reason 14) and the generation check it against the recorded
+  `indexManifestHash` and never call the live index, so a broken live index is replaced by an ordinary re-pin
+  (docs/INDEX-BUILD.md §10). **The fold-hook gap is DONE too (Option A, item 36):** a re-pin that adds a fold-hook unit
+  is refused unless it walks and builds that hook. **What remains of the build-from-history gate:** case (d), a digest
+  spec rebuilt in a fresh store (§8 test 9); the Type-registry rule; the measured gas of a build (step 4); a per-purpose
+  work-model term for a HEAD list (item 27 of docs/INDEX-BUILD.md §10); an activation that KEEPS a live index which no
+  longer answers still reverts with that index's error (its reason-2 phase read; replacing the index is the recovery,
+  docs/INDEX-BUILD.md §5.3); a manifest copy over 24,575 B is refused, not split.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
   QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
@@ -512,6 +513,41 @@ from genesis, and the dropped-list, fold-hook and partial-coverage tests of the 
 and the floor-plan vectors' measured figures. Not moved: the index manifest hash (it folds the reads contract, not the
 index), the reads contract (`IndexReads`' runtime is byte-identical) and every other address and codehash, the layout
 id, the hot and store ABI ids, every Type id, `release/errors.json`, the ABI snapshots and the seed.
+
+**36. The liveness gate and Option A (build from history; docs/INDEX-BUILD.md §3.5, §3.6, §5.3, §10 items 29–33).**
+A consumer **re-vendors for the release this lands in**: an ABI, an error, the index's constructor and three units'
+code changed.
+- **Reason 14.** `E_INDEX_NOT_READY(14)`: the candidate carries a store and its copy of the live index's manifest is not
+  the manifest the kernel recorded for the current revision (empty, altered, another index's, or stale). Reason 12 no
+  longer includes "the live index has no code", and the kernel never calls the live index to activate a successor.
+  `E_PIN(reads, 12)`: a reads contract's copy exceeds 24,575 B. `E_BUILD(7)` also covers a stale or wrong copy and a new
+  fold-hook unit (below). `release/errors.json` changes with these meanings.
+- **The manifest copy.** `IIndexReads.liveManifestCopy()` (new selector `0x1c317828`; `test/snapshots/abi/IIndexReads.json`
+  changed) returns the copy a generation was deployed with: `abi.encode(header, families, units, specs, work,
+  physicalProfile, callbackProfile, reads, readsCodehash)` of the live index, whose keccak is its `manifestHash()`. An
+  operator deploying a later generation takes it from the live index's reads contract (its `manifest()` with that
+  contract's address and codehash; it does not need the live index to answer) and passes it as `IndexReads`' new last
+  constructor argument (`IndexDeployer.Plan.liveManifest`); genesis passes empty bytes. The copy is held as the code of
+  a data contract the reads contract creates (`LIVE_COPY`, `LIVE_COPY_CODEHASH`). **What an operator pays** (measured,
+  `test/index/LivenessCost.t.sol`): for generation 1's shape (7,168 B) about 1.54 M gas on prague and 0.27 M execution +
+  11.2 M state gas on amsterdam on top of the reads contract's deployment; a copy grows 320 B per family and 320 B per
+  unit (+32 B per unit family id, +96 B per digest spec). A copy is valid only while the index it copies is live: if
+  the live index is replaced before the candidate is activated, redeploy the candidate with a fresh copy.
+- **Option A.** A generation that carries a store refuses (`build` 7, readiness not ready, activation 8) any fold-hook
+  unit the live index does not declare with the same fold hook, fold codehash and `purposeFilter`, unless the
+  generation walks history and its reads contract names the unit as built (`IndexReads.builtHooks()`, read by the
+  generation at construction into `RealmIndex.BUILT_HOOKS`). Final-hook-only units and the empty Realm are unaffected.
+  Generation 1 builds none (`builtHooks() == 0`).
+- **Addresses move.** `IndexReads` (constructor, code), `RealmIndex` (code: `BUILT_HOOKS`, `_hookRuns`) and
+  `LedgerControl` (the controller delegate: reason 14) changed, so their runtime codehashes and every address and
+  identity derived from them move: the index and its reads contract, the index manifest hash and obligations, the
+  ledger implementation, the plan hash, the execution set and the release digest.
+
+**37. Identities.** Moved, against `<PLACEHOLDER: the commit this release is cut from>`: **TO BE FILLED AT
+REGENERATION** (release digest, plan hash, execution set, index obligations, index manifest hash, `IndexReads`,
+`RealmIndex`, `LedgerControl` and `LedgerCore` addresses and runtime codehashes, `gas/model.json` and
+`release/errors.json` sha256). Not regenerated on the liveness branch: `release/`, `deploy/plan.json`, `gas/model.json`
+and `gas/report.json` are from `4003069` and are stale until then.
 
 ### The identity table (this release against `0fb4804`)
 
