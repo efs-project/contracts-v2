@@ -413,7 +413,8 @@ answers, for a maintained family of the calling generation:
 The caller's state is read from its own progress word, in the one call coverage already made to it
 (`generationProgress()`, which returns the frontier and `liveStarted`): a generation that has folded live answers
 exactly as before step 2, with no ledger read and no check, so the live index's reads cost what they cost at
-`99d617a` (tools/RELEASE.md item 27). Only a generation that has never folded live takes the check.
+`99d617a` up to the shift of the function tables (−3,114 to +16 gas per measured read row; every read bound is as at
+`0fb4804`, tools/RELEASE.md item 27). Only a generation that has never folded live takes the check.
 
 | state of the caller | family in a fresh store | family in a carried store |
 |---|---|---|
