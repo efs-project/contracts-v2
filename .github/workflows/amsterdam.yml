@@ -1,22 +1,19 @@
 # SPDX-License-Identifier: MIT
 # The whole suite on the Glamsterdam schedule (FOUNDRY_PROFILE=amsterdam, EIP-8037/8038; docs/GAS-SCHEDULES.md
 # "How we measure"). Every release quotes amsterdam numbers, and check.yml runs prague only, so without this an
-# amsterdam-only failure could sit unseen. It runs after a push to main that touches what the suites compile or read,
-# never on pull requests. A workflow of its own because GitHub's `paths` filter applies to a whole workflow: put on
-# check.yml it would also skip the prague job.
+# amsterdam-only failure could sit unseen. To spend few runner minutes it runs only after a push to main that changes
+# the regenerated release (`release/**` or `gas/model.json`: every release step, which is when the quoted amsterdam
+# numbers change), or by hand; never on pull requests, never on a schedule, and not on ordinary code pushes. A
+# workflow of its own because GitHub's `paths` filter applies to a whole workflow: put on check.yml it would also skip
+# the prague job.
 name: amsterdam
 
 on:
   push:
     branches: [main]
     paths:
-      - "src/**"
-      - "test/**"
-      - "tools/**"
-      - "foundry.toml"
-      - "soldeer.lock"
-      - "remappings.txt"
-      - ".github/workflows/amsterdam.yml"
+      - "release/**"
+      - "gas/model.json"
   workflow_dispatch:
 
 permissions:

@@ -29,8 +29,9 @@ policy check. Smoke tests prove the tooling executes; they do not prove EFS sema
 CI runs these commands on PRs and pushes to main.
 A second workflow (`.github/workflows/amsterdam.yml`) builds the `amsterdam` profile into
 `out/amsterdam` and runs the whole suite under the Glamsterdam schedule, only after a push to
-main that touches `src/`, `test/`, `tools/` or the Foundry configuration (or by manual dispatch),
-never on pull requests. It costs about 15 to 18 runner minutes, nearly all of it the one compile.
+main that changes the regenerated release (`release/**` or `gas/model.json`) or by manual
+dispatch: about one run per release step, never on pull requests, ordinary code pushes or a
+schedule. It costs an estimated 15 to 18 runner minutes, nearly all of it the one compile.
 
 ## Layout
 
