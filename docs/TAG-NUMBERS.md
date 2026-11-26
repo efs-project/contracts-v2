@@ -275,6 +275,43 @@ all remaining gas and V includes E, so neither is refused nor left unfinishable)
 | registration chunk (word pages) | 64 | 13,909,124 | 14,275,123 | 1.08 | 1.12 | limit | 64 | 10,335,664 | 10,612,684 | 1.06 | 1.12 | limit |
 | create-file recipes (5 actions each) | 10 | 12,908,974 | 14,102,886 | 1.28 | 0.84 | gas | 12 | 10,861,569 | 11,848,168 | 1.26 | 0.84 | limit |
 
+> **Will change at regeneration (2026-11-26, the Glamsterdam rewrite price).** The amsterdam columns above were
+> planned with the floor pricing a rewrite at 5,000; on Glamsterdam a cold rewrite costs 12,100 of execution gas
+> (docs/GAS-SCHEDULES.md), and `floorRewriteGas` is now 12,100 there. The integration step regenerates
+> `gas/model.json` and `test/vectors/floor-plan.json` and refills this table; until then, the rule's figures on
+> amsterdam with the corrected price (`tools/gas-plan.mjs` on the committed model with only
+> `profiles.amsterdam.floor.limits.floorRewriteGas` changed, which is all the regeneration changes for these figures;
+> V and P in gas, E is unchanged) are below. **Prague does not move** (every prague figure of the vectors is identical).
+> Measured after the fix (`FloorPlan.t.sol`, amsterdam, prefix P / spend at the new k): lone negatives 1.33, masks and
+> releases 2.12, restores 2.01, number changes 4.25, masks of masks 3.49, folder re-binds 2.27, repeat publishes 1.56,
+> name records 1.93, a name record and a first tag 1.40, registration chunk 1.93, create files 1.70; deep first tags
+> 0.08–0.57 (the floor does not know the depth). The "lists exist" state (`FloorStates.t.sol`) is 1.26–2.16 on
+> amsterdam and 1.05–1.65 on prague.
+>
+> | shape | k before | k after | V at the old k, before | V at the old k, after | V at the new k | P at the old k, before → after |
+> |---|---:|---:|---:|---:|---:|---:|
+> | lone negatives, one-word topic | 54 | 50 | 14,053,591 | 15,272,722 | 14,168,540 | 7,037,000 → 8,577,700 |
+> | first tags, depth 8, everything new | 19 | 19 | 13,754,312 | 13,754,312 | 13,754,312 | 2,543,800 → 3,090,500 |
+> | first tags, depth 64, everything new | 3 | 3 | 10,695,394 | 10,695,394 | 10,695,394 | 487,000 → 579,300 |
+> | first tags, depth 8, everything existing | 20 | 20 | 13,932,229 | 13,932,229 | 13,932,229 | 2,666,300 → 3,241,400 |
+> | first tags, depth 64, everything existing | 3 | 3 | 12,950,875 | 12,950,875 | 12,950,875 | 487,000 → 579,300 |
+> | second author's first tags, depth 8 | 20 | 20 | 13,844,526 | 13,844,526 | 13,844,526 | 2,666,300 → 3,241,400 |
+> | masks of tags | 64 | 44 | 12,704,934 | 20,215,299 | 14,012,475 | 7,903,300 → 15,180,800 |
+> | releases of tags | 64 | 44 | 12,627,430 | 20,137,795 | 13,959,191 | 7,903,300 → 15,180,800 |
+> | restores of tags | 64 | 41 | 14,077,990 | 21,588,355 | 13,961,666 | 7,903,300 → 15,180,800 |
+> | number changes of tags | 64 | 41 | 14,101,222 | 21,611,587 | 13,976,549 | 7,903,300 → 15,180,800 |
+> | masks of masks | 64 | 44 | 12,704,934 | 20,215,299 | 14,012,475 | 7,903,300 → 15,180,800 |
+> | folder entries re-bound to another file | 61 | 40 | 14,073,457 | 21,232,118 | 14,048,790 | 7,537,300 → 14,474,000 |
+> | repeat publishes of existing name records | 64 | 64 | 10,235,327 | 12,404,173 | 12,404,173 | 4,332,900 → 6,434,500 |
+> | fresh name records | 64 | 64 | 11,269,792 | 13,438,639 | 13,438,639 | 2,554,200 → 4,655,800 |
+> | a name record and a first tag (2 actions each) | 30 | 27 | 13,888,111 | 15,785,851 | 14,257,629 | 5,099,600 → 6,938,500 |
+> | registration chunk (word pages) | 64 | 64 | 11,355,002 | 12,467,925 | 12,467,925 | 2,554,200 → 4,655,800 |
+> | create-file recipes (5 actions each) | 12 | 12 | 11,786,032 | 13,310,086 | 13,310,086 | 4,205,000 → 5,681,800 |
+> | edits: PUBLISH child + HEAD re-bind (2 actions each; not a FloorPlan shape) | 30 | 23 | 13,860,905 | 18,396,433 | 14,194,389 | 5,992,100 → 10,387,000 |
+>
+> The "64 lone negatives fit one amsterdam publication" statement below (V 16.45M) no longer holds: with 12,100 the
+> floor's requirement for 64 is 18.34M against the 16.60M a 2^24 transaction leaves (`IndexFloor.t.sol`).
+
 The model's estimates for deep tags run high (the composition prices every roll-up append from the per-level terms
 with the price-as-new rule), so the rule under-fills those publications rather than over-fills them.
 
