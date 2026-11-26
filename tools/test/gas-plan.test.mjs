@@ -221,7 +221,8 @@ test("the stated maximum errors: all gas on every schedule, execution gas on ams
     assert.equal(p.maxAbsExecutionErrorPercent, Math.abs(ex.executionErrorPercent), `${s}: maxAbsExecutionErrorPercent`);
     assert.equal(p.maxAbsExecutionErrorComposite, ex.key, `${s}: maxAbsExecutionErrorComposite`);
     assert.ok(p.maxAbsExecutionErrorPercent <= model.planning.headroomPercent, `${s}: the execution-gas maximum (the cap condition's) is inside the headroom`);
-    assert.match(model.planning.headroomCovers, /maxAbsExecutionErrorPercent/, "headroomCovers names the figure that bounds the cap on amsterdam");
+    assert.match(model.planning.headroomCovers, /maxUnderExecutionErrorPercent/, "headroomCovers names the figure the cap condition is tested against on amsterdam");
+    assert.match(model.planning.headroomCovers, /maxUnderErrorPercent/, "headroomCovers names the figure the cap condition is tested against on prague");
   }
 });
 
