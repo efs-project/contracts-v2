@@ -390,6 +390,88 @@ posting-store call (family 20's `release` or `retain`: a warm call and one slot 
 | FOLDER | mask of masked | 422,212 | 1,086,428 | 400,988 |
 | FOLDER | release of masked | 421,291 | 1,085,507 | 400,067 |
 
+## Later statements across places and in long lists (`GasModel.t.sol` sections 8 and 9; `gas/model.json` `laterLists`)
+
+The model's single-place rows price a later statement at ONE topic or folder whose author's list is short. Two
+ordinary states cost more: statements at distinct places rewrite one scope head each, and from the author's entry 48
+at a place the changed entry's live bit is in a bits word of its own, found by a bisection of the author's list there
+(about 3.7k gas per doubling of the list, on both schedules, within a place and across places when the entries are
+spread). A restore also appends to its target's backlink list, which takes a fresh word when the list holds one entry
+(the ordinary case of a file in one folder or a thing tagged once by the author), so the restore rows are measured in
+that state. The list tiers price them (tools/RELEASE.md "The list tiers"): a known count of at most 48 is the short tier,
+anything longer or unknown the rows measured at entry 1,024 of a 1,025-entry list; re-binds never search the list and
+have no tier. The rows, per later statement (k2 − k1 of its own pair; prague / amsterdam execution gas):
+
+| row | short, one place (the row) | short, new place | long, new place | long, same place |
+|---|---:|---:|---:|---:|
+| `unbindTag` | 156,465 / 165,465 | 160,871 / 177,083 | 201,242 / 224,642 | 196,393 / 212,593 |
+| `releaseTag` | 155,277 / 164,277 | 159,683 / 175,895 | 200,054 / 223,454 | 195,205 / 211,405 |
+| `restoreTag` | 187,148 / 193,448 | 191,542 / 205,054 | 249,014 / 252,614 | 227,066 / 240,566 |
+| `unbindFolder` | 160,170 / 169,170 | 160,791 / 176,991 | 201,150 / 224,550 | 196,301 / 212,501 |
+| `releaseFolder` | 157,149 / 166,149 | 159,603 / 175,803 | 199,962 / 223,362 | 195,113 / 211,313 |
+| `restoreFolder` | 207,900 / 214,212 | 200,140 / 213,652 | 257,612 / 261,212 | 237,664 / 251,164 |
+| `unbindProperty` | 146,347 / 155,347 | — | 181,906 / 190,894 | 181,858 / 190,858 |
+| `releaseProperty` | 145,159 / 154,159 | — | 180,718 / 189,706 | 180,670 / 189,670 |
+| `unbindSame` | 146,560 / 155,536 | — | 182,107 / 191,095 | 182,059 / 191,059 |
+| `releaseSame` | 145,360 / 154,360 | — | 180,919 / 189,907 | 180,871 / 189,871 |
+| `restoreSame` | 175,076 / 181,364 | — | 223,762 / 213,028 | 210,598 / 216,898 |
+| `unbindBroader` | 146,571 / 155,571 | — | 182,130 / 191,118 | 182,070 / 191,070 |
+| `releaseBroader` | 145,383 / 154,371 | — | 180,942 / 189,930 | 180,882 / 189,882 |
+| `restoreBroader` | 175,123 / 181,387 | — | 223,797 / 213,039 | 210,597 / 216,897 |
+| `bindTagNumberChange` | 154,250 / 138,950 | 159,014 / 150,926 | — | — |
+| `bindFolderRebind` | 207,009 / 196,175 | 209,809 / 206,187 | — | — |
+
+The composites (whole cooled publications, predicted with the tiers from the measured state; `beyondClaim` is reported
+and excluded from the stated maxima; error = predicted − measured, so a negative figure is an under-prediction).
+Measured on the branch with a local regeneration (not committed); the integration regenerates them:
+
+| composite | state | prague | amsterdam all | amsterdam execution |
+|---|---|---:|---:|---:|
+| tag masks across topics | acrossPlaces | -0.92% | -0.11% | -0.55% |
+| tag releases across topics | acrossPlaces | -0.92% | -0.11% | -0.54% |
+| tag restores across topics | acrossPlaces | -0.82% | -0.10% | -0.51% |
+| tag number changes across topics | acrossPlaces | -0.98% | -0.11% | -0.69% |
+| tag masks at entry 47 across topics | acrossPlaces | -9.64% | -4.08% | -8.66% |
+| tag releases at entry 47 across topics | acrossPlaces | -9.69% | -4.09% | -8.70% |
+| tag restores at entry 47 across topics | acrossPlaces | -8.33% | -3.15% | -7.64% |
+| tag masks at entry 48 across topics | acrossPlacesBitsWord | 8.77% | 4.21% | 8.12% |
+| tag releases at entry 48 across topics | acrossPlacesBitsWord | 8.83% | 4.23% | 8.18% |
+| tag restores at entry 48 across topics | acrossPlacesBitsWord | 7.00% | 2.76% | 7.16% |
+| tag masks at entry 1024 across topics | longLists | 0.32% | 0.62% | 0.75% |
+| tag releases at entry 1024 across topics | longLists | 0.32% | 0.63% | 0.76% |
+| tag restores at entry 1024 across topics | longLists | 0.25% | 0.42% | 0.66% |
+| tag masks at entry 4096 across topics | beyondClaim | -2.83% | -0.47% | -1.81% |
+| tag releases at entry 4096 across topics | beyondClaim | -2.85% | -0.47% | -1.82% |
+| tag restores at entry 4096 across topics | beyondClaim | -2.38% | -0.33% | -1.64% |
+| tag masks of 32 entries of 1025 at one topic | longLists | 10.92% | 6.72% | 13.81% |
+| tag releases of 32 entries of 1025 at one topic | longLists | 11.01% | 6.75% | 13.91% |
+| tag restores of 32 entries of 1025 at one topic | longLists | 9.32% | 5.10% | 12.04% |
+| tag number changes of 32 entries of 1025 at one topic | longLists | -0.98% | -0.11% | -0.73% |
+| folder masks across folders | acrossPlaces | -0.91% | -0.11% | -0.54% |
+| folder releases across folders | acrossPlaces | -0.91% | -0.11% | -0.54% |
+| folder re-binds across folders | acrossPlaces | 2.68% | 8.85% | 0.63% |
+| folder restores across folders | acrossPlaces | -2.88% | 0.46% | -3.16% |
+| folder masks at entry 48 across folders | acrossPlacesBitsWord | 8.78% | 4.22% | 8.13% |
+| folder releases at entry 48 across folders | acrossPlacesBitsWord | 8.84% | 4.23% | 8.19% |
+| folder restores at entry 48 across folders | acrossPlacesBitsWord | 7.30% | 4.11% | 6.77% |
+| folder masks at entry 1024 across folders | longLists | 0.32% | 0.63% | 0.75% |
+| folder releases at entry 1024 across folders | longLists | 0.33% | 0.63% | 0.76% |
+| folder restores at entry 1024 across folders | longLists | -0.01% | 0.32% | 0.39% |
+| folder masks of 8 entries of 1025 in one folder | longLists | 10.66% | 6.09% | 12.41% |
+| folder releases of 8 entries of 1025 in one folder | longLists | 10.72% | 6.10% | 12.48% |
+| folder re-binds of 8 entries of 1025 in one folder | longLists | 1.35% | 2.48% | 1.05% |
+| folder restores of 8 entries of 1025 in one folder | longLists | 8.27% | 4.45% | 10.00% |
+| property masks of 8 entries of 1025 at one topic | longLists | 11.13% | 6.05% | 13.00% |
+| same masks of 8 entries of 1025 at one topic | longLists | 11.12% | 6.05% | 12.99% |
+| broader masks of 8 entries of 1025 at one topic | longLists | 11.12% | 6.04% | 12.98% |
+| untag a file from six topics | acrossPlaces | 2.08% | 3.23% | 6.28% |
+| delete six files from three folders | acrossPlaces | 1.23% | 1.68% | 2.57% |
+
+What the short tier would under-predict if a planner passed a stale, low count for a long list (a publication at entry
+1,024): tag restores across 16 topics −21.19% on prague, −17.01% amsterdam execution (−20.44% all gas); tag masks
+−18.01% / −18.97%; folder releases across 16 folders −18.10% / −19.07%; and at entry 48, up to −16.75% / −13.87%. So a
+count older than what the planner trusts is treated as unknown.
+
 ## Reads (`TopicReadMeasure.t.sol`, `gas/model.json` `reads`)
 
 Every figure is one cold `view` call: every account the call can touch is cooled first (`vm.cool`), and the figure
