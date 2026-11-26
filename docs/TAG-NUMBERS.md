@@ -257,30 +257,34 @@ all remaining gas and V includes E, so neither is refused nor left unfinishable)
 
 | shape | prague k | E | V | P / spend | F / final | next | amsterdam k | E (execution) | V | P / spend | F / final | next |
 |---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---|
-| lone negatives, one-word topic | 38 | 13,164,513 | 14,333,094 | 1.13 | 1.39 | gas | 50 | 11,997,777 | 14,342,087 | 1.32 | 1.39 | gas |
-| first tags, depth 8, everything new | 18 | 11,241,065 | 11,416,697 | 0.50 | 1.41 | gas | 19 | 8,434,470 | 8,617,620 | 0.57 | 1.41 | gas |
-| first tags, depth 64, everything new | 3 | 10,449,420 | 10,512,290 | 0.07 | 1.27 | gas | 3 | 7,445,332 | 7,508,202 | 0.09 | 1.25 | gas |
-| first tags, depth 8, everything existing | 22 | 11,375,078 | 11,580,780 | 0.55 | 1.42 | gas | 20 | 8,317,111 | 8,507,778 | 0.55 | 1.41 | gas |
-| first tags, depth 64, everything existing | 4 | 8,223,087 | 8,293,475 | 0.12 | 1.29 | gas | 3 | 7,356,587 | 7,419,457 | 0.09 | 1.25 | gas |
-| second author's first tags, depth 8 | 22 | 11,663,122 | 11,868,824 | 0.53 | 1.42 | gas | 20 | 8,321,247 | 8,511,914 | 0.55 | 1.41 | gas |
-| masks of tags | 64 | 11,199,715 | 13,266,911 | 1.23 | 2.60 | limit | 44 | 8,034,574 | 14,141,417 | 2.12 | 2.59 | gas |
-| releases of tags | 64 | 11,120,967 | 13,186,691 | 1.23 | 2.60 | limit | 44 | 7,981,045 | 14,086,876 | 2.12 | 2.59 | gas |
-| restores of tags | 60 | 12,348,002 | 14,326,143 | 1.24 | 2.56 | gas | 41 | 8,631,234 | 14,069,123 | 2.01 | 2.55 | gas |
-| number changes of tags | 60 | 9,831,469 | 14,347,899 | 2.14 | 2.56 | gas | 41 | 6,081,753 | 14,083,982 | 4.25 | 2.55 | gas |
-| masks of masks | 64 | 9,151,013 | 13,112,763 | 1.74 | 2.60 | limit | 44 | 5,996,830 | 14,035,429 | 3.48 | 2.59 | gas |
-| folder entries re-bound to another file | 60 | 13,342,170 | 14,538,627 | 1.21 | 0.56 | gas | 40 | 8,743,008 | 14,160,624 | 2.27 | 0.57 | gas |
-| repeat publishes of existing name records | 64 | 12,694,014 | 13,564,207 | 1.11 | 1.16 | limit | 64 | 10,353,652 | 12,921,577 | 1.56 | 1.16 | limit |
-| fresh name records | 61 | 13,346,757 | 13,638,966 | 1.05 | 1.17 | gas | 64 | 10,381,168 | 12,820,487 | 1.93 | 1.16 | limit |
-| a name record and a first tag (2 actions each) | 21 | 13,427,297 | 13,774,590 | 1.02 | 1.32 | gas | 27 | 11,974,734 | 14,071,173 | 1.40 | 1.32 | gas |
-| registration chunk (word pages) | 64 | 13,918,864 | 14,277,971 | 1.08 | 1.16 | limit | 64 | 10,346,164 | 12,784,391 | 1.92 | 1.16 | limit |
-| create-file recipes (5 actions each) | 10 | 12,922,344 | 14,103,798 | 1.28 | 0.85 | gas | 12 | 10,877,817 | 13,373,334 | 1.70 | 0.85 | limit |
+| lone negatives, one-word topic | 38 | 13,161,332 | 14,330,407 | 1.13 | 1.39 | gas | 53 | 12,750,524 | 14,423,060 | 1.20 | 1.39 | gas |
+| first tags, depth 8, everything new | 18 | 11,238,899 | 11,414,531 | 0.50 | 1.41 | gas | 19 | 8,432,953 | 8,616,103 | 0.52 | 1.41 | gas |
+| first tags, depth 64, everything new | 3 | 10,445,638 | 10,508,508 | 0.07 | 1.27 | gas | 3 | 7,442,150 | 7,505,020 | 0.08 | 1.25 | gas |
+| first tags, depth 8, everything existing | 22 | 11,373,339 | 11,579,041 | 0.55 | 1.42 | gas | 20 | 8,315,700 | 8,506,367 | 0.51 | 1.41 | gas |
+| first tags, depth 64, everything existing | 4 | 8,219,424 | 8,289,812 | 0.12 | 1.29 | gas | 3 | 7,353,405 | 7,416,275 | 0.08 | 1.25 | gas |
+| second author's first tags, depth 8 | 22 | 11,661,383 | 11,867,085 | 0.53 | 1.42 | gas | 20 | 8,319,882 | 8,510,549 | 0.51 | 1.41 | gas |
+| masks of tags | 58 | 10,134,551 | 14,439,489 | 1.63 | 2.60 | gas | 55 | 10,072,975 | 14,354,427 | 1.59 | 2.60 | gas |
+| releases of tags | 58 | 10,063,554 | 14,367,158 | 1.63 | 2.60 | gas | 55 | 10,005,768 | 14,285,955 | 1.59 | 2.60 | gas |
+| restores of tags | 51 | 10,487,860 | 14,321,411 | 1.65 | 2.56 | gas | 51 | 10,766,554 | 14,417,872 | 1.51 | 2.56 | gas |
+| number changes of tags | 62 | 10,166,426 | 14,330,667 | 2.00 | 2.56 | gas | 64 | 9,484,302 | 14,460,951 | 2.23 | 2.56 | limit |
+| masks of masks | 58 | 8,278,655 | 14,299,801 | 2.31 | 2.60 | gas | 55 | 7,514,581 | 14,221,963 | 2.62 | 2.60 | gas |
+| folder entries re-bound to another file | 62 | 13,793,877 | 14,527,729 | 1.13 | 0.56 | gas | 61 | 13,311,465 | 14,416,511 | 1.19 | 0.56 | gas |
+| repeat publishes of existing name records | 64 | 12,684,712 | 13,555,737 | 1.11 | 1.16 | limit | 64 | 10,344,962 | 12,913,719 | 1.56 | 1.16 | limit |
+| fresh name records | 61 | 13,337,345 | 13,630,347 | 1.05 | 1.17 | gas | 64 | 10,372,094 | 12,812,245 | 1.93 | 1.16 | limit |
+| a name record and a first tag (2 actions each) | 21 | 13,423,619 | 13,771,458 | 1.02 | 1.32 | gas | 27 | 11,971,774 | 13,673,246 | 1.32 | 1.32 | gas |
+| registration chunk (word pages) | 64 | 13,909,190 | 14,269,129 | 1.08 | 1.16 | limit | 64 | 10,337,078 | 12,776,137 | 1.93 | 1.16 | limit |
+| create-file recipes (5 actions each) | 10 | 12,918,827 | 14,100,931 | 1.28 | 0.85 | gas | 12 | 10,875,001 | 13,019,593 | 1.59 | 0.85 | limit |
 
-Measured with this release's code and the regenerated `test/vectors/floor-plan.json` (`FloorPlan.t.sol -vv` on both
-profiles). **Since the Glamsterdam rewrite price** (the floor's `floorRewriteGas` 12,100 on a Glamsterdam Realm, was
+Measured with this release's code (work-model formula 3 and the list tiers, tools/RELEASE.md items 42 to 48) and the
+regenerated `test/vectors/floor-plan.json` (`FloorPlan.t.sol -vv` on both profiles). Against `3ca53ba`: prague masks,
+releases and masks of masks 64 → 58, restores 60 → 51, number changes 60 → 62, folder re-binds 60 → 62; amsterdam lone
+negatives 50 → 53, masks, releases and masks of masks 44 → 55, restores 41 → 51, number changes 41 → 64, folder re-binds
+40 → 61; every other `k` unchanged (tools/RELEASE.md item 43). The table below is the earlier step, kept for its
+record. **Since the Glamsterdam rewrite price** (the floor's `floorRewriteGas` 12,100 on a Glamsterdam Realm, was
 5,000; docs/GAS-SCHEDULES.md, tools/RELEASE.md item 39) the amsterdam columns moved; prague's did not (every prague `k`
 and floor quote is as before; E and V moved by a few gas to a few thousand with this release's code). The planning
 rule's floor quote V and largest batch on amsterdam, from `gas/model.json` `planning` and the floor-plan vectors at
-`726993e` against this release (V at the largest batch; the edits shape is the planner's only, `tools/gas-plan-later.mjs`):
+`726993e` against `3ca53ba` (formula 2; V at the largest batch; the edits shape is the planner's only, `tools/gas-plan-later.mjs`):
 
 | shape | k before | k after | V at the old k, before | V at the old k, after | V at the new k | P at the old k, before → after |
 |---|---:|---:|---:|---:|---:|---:|
@@ -303,19 +307,21 @@ rule's floor quote V and largest batch on amsterdam, from `gas/model.json` `plan
 | create-file recipes (5 actions each) | 12 | 12 | 11,786,032 | 13,310,756 | 13,310,756 | 4,205,000 → 5,681,800 |
 | edits: PUBLISH child + HEAD re-bind (2 actions each; not a FloorPlan shape) | 30 | 23 | 13,860,905 | 18,396,731 | 14,194,617 | 5,992,100 → 10,387,000 |
 
-The budget is 14,260,633 (2^24 less the 15% headroom). Prague, the same files: every `k` is unchanged (38, 18, 3, 22,
-4, 22, 64, 64, 60, 60, 64, 60, 64, 61, 21, 64, 10; edits 24) and every P is unchanged; V moved by +22 to +1,364 gas with
-this release's re-fitted constants. 64 lone negatives no longer fit one amsterdam publication: the floor's requirement
-for 64 is 18.34M against the 16.60M a 2^24 transaction leaves (`IndexFloor.t.sol`), so the rule plans 50.
+The budget is 14,260,633 (2^24 less the 15% headroom). Prague, the same files: every `k` was unchanged by that step
+(38, 18, 3, 22, 4, 22, 64, 64, 60, 60, 64, 60, 64, 61, 21, 64, 10; edits 24) and every P; V moved by +22 to +1,364 gas
+with that step's re-fitted constants. 64 lone negatives do not fit one amsterdam publication: the floor's requirement for
+64 is 17.40M under formula 3 (18.34M under formula 2) against the 16.60M a 2^24 transaction leaves (`IndexFloor.t.sol`),
+so the rule plans 53 (50 under formula 2).
 
 The model's estimates for deep tags run high (the composition prices every roll-up append from the per-level terms
 with the price-as-new rule), so the rule under-fills those publications rather than over-fills them.
 
 **The floor** (`IndexFloor.t.sol`, both profiles). 64 lone negatives on a one-word topic execute in 15.49M on
-amsterdam; the kernel's own share K is 7.34M, the prefix floor 10.15M (8.32M with a rewrite priced at 5,000) and the
-final reserve 494k (1.39× the final phase's 355k); the floor's requirement V = max(K + P·(64/63)² + 2k, E) + F·64/63 +
-20k is 18.34M, over the 16.60M a 2^24 transaction leaves after intrinsic gas and calldata (it was 16.45M, within it),
-so the planning rule splits them (50 a publication). On prague their execution gas alone is over the cap. The final phase's worst cases, 64 actions each (amsterdam execution gas,
+amsterdam; the kernel's own share K is 7.34M, the prefix floor 9.24M under formula 3 (formula 2: 10.15M, and 8.32M with
+a rewrite priced at 5,000) and the final reserve 494k (1.39× the final phase's 356k); the floor's requirement V = max(K +
+P·(64/63)² + 2k, E) + F·64/63 + 20k is 17.40M (formula 2: 18.34M), over the 16.60M a 2^24 transaction leaves after
+intrinsic gas and calldata (it was 16.45M, within it, at the 5,000 price), so the planning rule splits them (53 a
+publication). On prague their execution gas alone is over the cap. The final phase's worst cases, 64 actions each (amsterdam execution gas,
 reserve 494k): first masks about 64 created subjects 994k, about 64 records 738k, first tags on 64 distinct topics
 471k, lone negatives about addresses 355k: the per-bind reserve (`finalComputePerBind` 7,400) is set from the topics
 row, and a per-bind term large enough for the subjects row would put 64 lone negatives over the cap (design §10.4).
@@ -389,6 +395,88 @@ posting-store call (family 20's `release` or `retain`: a warm call and one slot 
 | FOLDER | restore from released | 498,922 | 1,272,782 | 489,422 |
 | FOLDER | mask of masked | 422,212 | 1,086,428 | 400,988 |
 | FOLDER | release of masked | 421,291 | 1,085,507 | 400,067 |
+
+## Later statements across places and in long lists (`GasModel.t.sol` sections 8 and 9; `gas/model.json` `laterLists`)
+
+The model's single-place rows price a later statement at ONE topic or folder whose author's list is short. Two
+ordinary states cost more: statements at distinct places rewrite one scope head each, and from the author's entry 48
+at a place the changed entry's live bit is in a bits word of its own, found by a bisection of the author's list there
+(about 3.7k gas per doubling of the list, on both schedules, within a place and across places when the entries are
+spread). A restore also appends to its target's backlink list, which takes a fresh word when the list holds one entry
+(the ordinary case of a file in one folder or a thing tagged once by the author), so the restore rows are measured in
+that state. The list tiers price them (tools/RELEASE.md "The list tiers"): a known count of at most 48 is the short tier,
+anything longer or unknown the rows measured at entry 1,024 of a 1,025-entry list; re-binds never search the list and
+have no tier. The rows, per later statement (k2 − k1 of its own pair; prague / amsterdam execution gas):
+
+| row | short, one place (the row) | short, new place | long, new place | long, same place |
+|---|---:|---:|---:|---:|
+| `unbindTag` | 156,523 / 165,523 | 160,929 / 177,107 | 201,300 / 224,700 | 196,451 / 212,617 |
+| `releaseTag` | 155,337 / 164,337 | 159,743 / 175,921 | 200,114 / 223,514 | 195,265 / 211,431 |
+| `restoreTag` | 187,314 / 193,604 | 191,708 / 205,186 | 249,180 / 252,780 | 227,232 / 240,698 |
+| `unbindFolder` | 160,228 / 169,194 | 160,849 / 177,015 | 201,208 / 224,608 | 196,359 / 212,525 |
+| `releaseFolder` | 157,209 / 166,175 | 159,663 / 175,829 | 200,022 / 223,422 | 195,173 / 211,339 |
+| `restoreFolder` | 208,066 / 214,332 | 200,330 / 213,784 | 257,778 / 261,378 | 237,830 / 251,296 |
+| `unbindProperty` | 146,405 / 155,405 | — | 181,964 / 190,918 | 181,916 / 190,882 |
+| `releaseProperty` | 145,219 / 154,219 | — | 180,778 / 189,732 | 180,730 / 189,696 |
+| `unbindSame` | 146,618 / 155,594 | — | 182,165 / 191,119 | 182,117 / 191,083 |
+| `releaseSame` | 145,420 / 154,420 | — | 180,979 / 189,933 | 180,931 / 189,897 |
+| `restoreSame` | 175,254 / 181,530 | — | 223,940 / 213,228 | 210,764 / 217,030 |
+| `unbindBroader` | 146,629 / 155,629 | — | 182,188 / 191,142 | 182,128 / 191,094 |
+| `releaseBroader` | 145,443 / 154,431 | — | 181,002 / 189,956 | 180,942 / 189,908 |
+| `restoreBroader` | 175,277 / 181,553 | — | 223,951 / 213,239 | 210,763 / 217,029 |
+| `bindTagNumberChange` | 154,415 / 139,105 | 159,179 / 151,057 | — | — |
+| `bindFolderRebind` | 207,174 / 196,386 | 209,998 / 206,386 | — | — |
+
+The composites (whole cooled publications, predicted with the tiers from the measured state; `beyondClaim` is reported
+and excluded from the stated maxima; error = predicted − measured, so a negative figure is an under-prediction).
+From the regenerated `gas/model.json` of this release:
+
+| composite | state | prague | amsterdam all | amsterdam execution |
+|---|---|---:|---:|---:|
+| tag masks across topics | acrossPlaces | -0.92% | -0.12% | -0.56% |
+| tag releases across topics | acrossPlaces | -0.92% | -0.12% | -0.56% |
+| tag restores across topics | acrossPlaces | -0.82% | -0.11% | -0.53% |
+| tag number changes across topics | acrossPlaces | -0.98% | -0.12% | -0.70% |
+| tag masks at entry 47 across topics | acrossPlaces | -9.64% | -4.09% | -8.67% |
+| tag releases at entry 47 across topics | acrossPlaces | -9.69% | -4.10% | -8.71% |
+| tag restores at entry 47 across topics | acrossPlaces | -8.32% | -3.16% | -7.65% |
+| tag masks at entry 48 across topics | acrossPlacesBitsWord | 8.77% | 4.22% | 8.13% |
+| tag releases at entry 48 across topics | acrossPlacesBitsWord | 8.84% | 4.23% | 8.19% |
+| tag restores at entry 48 across topics | acrossPlacesBitsWord | 7.00% | 2.76% | 7.17% |
+| tag masks at entry 1024 across topics | longLists | 0.32% | 0.63% | 0.75% |
+| tag releases at entry 1024 across topics | longLists | 0.32% | 0.63% | 0.76% |
+| tag restores at entry 1024 across topics | longLists | 0.25% | 0.42% | 0.66% |
+| tag masks at entry 4096 across topics | beyondClaim | -2.84% | -0.47% | -1.81% |
+| tag releases at entry 4096 across topics | beyondClaim | -2.85% | -0.47% | -1.82% |
+| tag restores at entry 4096 across topics | beyondClaim | -2.39% | -0.33% | -1.64% |
+| tag masks of 32 entries of 1025 at one topic | longLists | 10.93% | 6.72% | 13.80% |
+| tag releases of 32 entries of 1025 at one topic | longLists | 11.01% | 6.74% | 13.90% |
+| tag restores of 32 entries of 1025 at one topic | longLists | 9.31% | 5.09% | 12.03% |
+| tag number changes of 32 entries of 1025 at one topic | longLists | -0.98% | -0.11% | -0.73% |
+| folder masks across folders | acrossPlaces | -0.91% | -0.12% | -0.56% |
+| folder releases across folders | acrossPlaces | -0.90% | -0.11% | -0.55% |
+| folder re-binds across folders | acrossPlaces | 2.69% | 8.86% | 0.65% |
+| folder restores across folders | acrossPlaces | -2.87% | 0.46% | -3.17% |
+| folder masks at entry 48 across folders | acrossPlacesBitsWord | 8.78% | 4.22% | 8.14% |
+| folder releases at entry 48 across folders | acrossPlacesBitsWord | 8.85% | 4.24% | 8.20% |
+| folder restores at entry 48 across folders | acrossPlacesBitsWord | 7.29% | 4.11% | 6.77% |
+| folder masks at entry 1024 across folders | longLists | 0.32% | 0.63% | 0.76% |
+| folder releases at entry 1024 across folders | longLists | 0.33% | 0.63% | 0.76% |
+| folder restores at entry 1024 across folders | longLists | -0.01% | 0.32% | 0.39% |
+| folder masks of 8 entries of 1025 in one folder | longLists | 10.68% | 6.09% | 12.43% |
+| folder releases of 8 entries of 1025 in one folder | longLists | 10.74% | 6.10% | 12.49% |
+| folder re-binds of 8 entries of 1025 in one folder | longLists | 1.35% | 2.49% | 1.08% |
+| folder restores of 8 entries of 1025 in one folder | longLists | 8.28% | 4.45% | 10.00% |
+| property masks of 8 entries of 1025 at one topic | longLists | 11.16% | 6.05% | 13.01% |
+| same masks of 8 entries of 1025 at one topic | longLists | 11.15% | 6.05% | 13.00% |
+| broader masks of 8 entries of 1025 at one topic | longLists | 11.14% | 6.04% | 12.99% |
+| untag a file from six topics | acrossPlaces | 2.09% | 3.23% | 6.29% |
+| delete six files from three folders | acrossPlaces | 1.23% | 1.68% | 2.56% |
+
+What the short tier would under-predict if a planner passed a stale, low count for a long list (a publication at entry
+1,024): tag restores across 16 topics −21.20% on prague, −17.02% amsterdam execution (−20.44% all gas); tag masks
+−18.03% / −18.99%; folder releases across 16 folders −18.12% / −19.09%; and at entry 48, up to −16.75% / −13.95%. So a
+count older than what the planner trusts is treated as unknown.
 
 ## Reads (`TopicReadMeasure.t.sol`, `gas/model.json` `reads`)
 

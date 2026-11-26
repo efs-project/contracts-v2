@@ -94,7 +94,12 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
 
     Unit[] private _units;
     DigestSpec[] private _specs;
-    WorkModel private _work;
+    /// The work model, held as the code of a data contract this constructor created: one STOP byte, then
+    /// `abi.encode(work)` (the 32 words `IIndexReads.workModel()` returns), bound by address and codehash as
+    /// `IndexReads` holds the live manifest copy. The ingress reads it on every publication's quote, so it is served
+    /// with one EXTCODECOPY instead of storage reads. The code can never change (it starts with STOP, so it never runs).
+    address private immutable WORK;
+    bytes32 private immutable WORK_CODEHASH;
 
     /// @param reads the generation's `IndexReads`, built for `ledger_` over the manifest of this generation; its
     ///        units, digest specs and work model are copied here, and its manifest must name this build's header
@@ -150,7 +155,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         for (uint256 i; i < specs.length; ++i) {
             _specs.push(specs[i]);
         }
-        _work = work;
+        (WORK, WORK_CODEHASH) = _holdWork(abi.encode(work));
         BUILT_HOOKS = IndexReads(reads).builtHooks();
         MANIFEST_HASH = keccak256(
             abi.encode(
@@ -158,6 +163,19 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             )
         );
         _gen().progress.replayStage = 1; // FRESH
+    }
+
+    /// Creates the data contract that holds `w` after one STOP byte (initcode `PUSH2 len DUP1 PUSH1 12 PUSH1 0 CODECOPY
+    /// PUSH1 0 RETURN`, the holder `IndexReads._holdCopy` uses) and checks that its code is exactly that, so its
+    /// codehash commits to the words the manifest hash folds. `E_PIN(this, 13)` if it cannot be created.
+    function _holdWork(bytes memory w) private returns (address data, bytes32 codehash) {
+        bytes memory init =
+            abi.encodePacked(hex"61", uint16(w.length + 1), hex"80600c6000396000f3", hex"00", w);
+        assembly ("memory-safe") {
+            data := create(0, add(init, 32), mload(init))
+        }
+        codehash = keccak256(abi.encodePacked(hex"00", w));
+        if (data == address(0) || data.codehash != codehash) revert E_PIN(address(this), 13);
     }
 
     // =============================================================================================
@@ -782,8 +800,18 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// Read by the ingress on every publication's quote, so it is answered here (no forwarding hop on a write).
+    /// The reply is the data contract's code after its STOP byte: exactly `abi.encode(work)` of the manifest this index
+    /// hashed (`MANIFEST_HASH` folds the same `work`). Empty if the contract at `WORK` is not the one the constructor
+    /// created, which the ingress refuses (`E_WORK_MODEL` 2). It never returns to Solidity.
     function workModel() external view returns (WorkModel memory) {
-        return _work;
+        address data = WORK;
+        bytes32 codehash = WORK_CODEHASH;
+        assembly {
+            if iszero(eq(extcodehash(data), codehash)) { return(0, 0) }
+            let size := sub(extcodesize(data), 1)
+            extcodecopy(data, 0, 1, size)
+            return(0, size)
+        }
     }
 
     /// Read by the ingress per fresh record of a Type, so it is answered here.

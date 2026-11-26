@@ -10,6 +10,7 @@
     "method",
     "planning",
     "tagLists",
+    "laterLists",
     "profiles",
     "source"
   ],
@@ -49,7 +50,10 @@
             "rows",
             "validation",
             "maxAbsErrorPercent",
-            "maxAbsErrorComposite"
+            "maxAbsErrorComposite",
+            "maxUnderErrorPercent",
+            "maxUnderErrorComposite",
+            "maximaExcludeStates"
           ],
           "properties": {
             "constants": {
@@ -69,6 +73,7 @@
                 "bindFolderRebind",
                 "unbindFolder",
                 "releaseFolder",
+                "restoreFolder",
                 "bindTagFresh",
                 "bindTagSecondAuthor",
                 "bindTagNumberChange",
@@ -90,6 +95,42 @@
                 "releaseBroader",
                 "restoreBroader",
                 "withdraw",
+                "unbindTagNewPlace",
+                "releaseTagNewPlace",
+                "restoreTagNewPlace",
+                "bindTagNumberChangeNewPlace",
+                "unbindFolderNewPlace",
+                "releaseFolderNewPlace",
+                "restoreFolderNewPlace",
+                "bindFolderRebindNewPlace",
+                "unbindTagLongNewPlace",
+                "unbindTagLongSamePlace",
+                "releaseTagLongNewPlace",
+                "releaseTagLongSamePlace",
+                "restoreTagLongNewPlace",
+                "restoreTagLongSamePlace",
+                "unbindFolderLongNewPlace",
+                "unbindFolderLongSamePlace",
+                "releaseFolderLongNewPlace",
+                "releaseFolderLongSamePlace",
+                "restoreFolderLongNewPlace",
+                "restoreFolderLongSamePlace",
+                "unbindPropertyLongNewPlace",
+                "unbindPropertyLongSamePlace",
+                "releasePropertyLongNewPlace",
+                "releasePropertyLongSamePlace",
+                "unbindSameLongNewPlace",
+                "unbindSameLongSamePlace",
+                "releaseSameLongNewPlace",
+                "releaseSameLongSamePlace",
+                "restoreSameLongNewPlace",
+                "restoreSameLongSamePlace",
+                "unbindBroaderLongNewPlace",
+                "unbindBroaderLongSamePlace",
+                "releaseBroaderLongNewPlace",
+                "releaseBroaderLongSamePlace",
+                "restoreBroaderLongNewPlace",
+                "restoreBroaderLongSamePlace",
                 "firstWriteSurcharge",
                 "tagLevel"
               ],
@@ -245,8 +286,8 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "enum": ["listsNew", "listsExist"],
-                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case)."
+                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "longLists", "beyondClaim"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
                   }
                 },
                 "required": [
@@ -268,6 +309,20 @@
             "maxAbsErrorComposite": {
               "type": "string",
               "description": "The key of the validation composite that sets maxAbsErrorPercent."
+            },
+            "maxUnderErrorPercent": {
+              "type": "number",
+              "minimum": 0,
+              "description": "The largest UNDER-prediction over the validation composites the maxima count (state not in maximaExcludeStates): -min(errorPercent, 0) on ALL gas, a positive percent, 0 when no composite is predicted low. On this schedule the 2^24 cap counts all gas, so this is the figure a headroom check of the cap condition reads: headroom exists to stop a plan coming out too small, and an over-prediction only costs batch size."
+            },
+            "maxUnderErrorComposite": {
+              "type": ["string", "null"],
+              "description": "The key of the validation composite that sets maxUnderErrorPercent (null when it is 0)."
+            },
+            "maximaExcludeStates": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Validation states excluded from every stated maximum and from the 15% bound (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception); their composites are still listed with their errors."
             },
             "floor": {
               "type": "object",
@@ -295,18 +350,39 @@
                     "freshPerPublishFresh",
                     "freshPerPublishExisting",
                     "rwPerPublish",
-                    "freshPerBindFresh",
-                    "rwPerBind",
-                    "rwPerBindLater",
                     "freshPerRef",
                     "freshPerDigestSpec",
                     "computeBase",
                     "computePerAction",
-                    "computePerHookEffect",
                     "finalComputeBase",
                     "finalComputePerBind",
-                    "finalComputePerPublish"
+                    "finalComputePerPublish",
+                    "freshPerBindFirst",
+                    "rwPerBindFirst",
+                    "computePerBindFirst",
+                    "freshPerRebind",
+                    "rwPerRebind",
+                    "computePerRebind",
+                    "freshPerBindLater",
+                    "rwPerBindLater",
+                    "computePerBindLater",
+                    "surchargePurpose",
+                    "surchargeFreshFirst",
+                    "surchargeRwFirst",
+                    "surchargeComputeFirst",
+                    "surchargeFreshRebind",
+                    "surchargeRwRebind",
+                    "surchargeComputeRebind",
+                    "surchargeFreshLater",
+                    "surchargeRwLater",
+                    "surchargeComputeLater"
                   ],
+                  "properties": {
+                    "surchargePurpose": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{64}$"
+                    }
+                  },
                   "additionalProperties": {
                     "type": "integer"
                   }
@@ -397,7 +473,12 @@
             "maxAbsErrorPercent",
             "maxAbsErrorComposite",
             "maxAbsExecutionErrorPercent",
-            "maxAbsExecutionErrorComposite"
+            "maxAbsExecutionErrorComposite",
+            "maxUnderErrorPercent",
+            "maxUnderErrorComposite",
+            "maxUnderExecutionErrorPercent",
+            "maxUnderExecutionErrorComposite",
+            "maximaExcludeStates"
           ],
           "properties": {
             "split": {
@@ -429,8 +510,8 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "enum": ["listsNew", "listsExist"],
-                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case)."
+                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "longLists", "beyondClaim"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
                   },
                   "executionErrorPercent": {
                     "type": "number",
@@ -462,6 +543,20 @@
               "type": "string",
               "description": "The key of the validation composite that sets maxAbsErrorPercent."
             },
+            "maxUnderErrorPercent": {
+              "type": "number",
+              "minimum": 0,
+              "description": "The largest UNDER-prediction over the validation composites the maxima count (state not in maximaExcludeStates): -min(errorPercent, 0) on ALL gas, a positive percent, 0 when no composite is predicted low. It bounds the publication's total against the block; for the 2^24 cap read maxUnderExecutionErrorPercent."
+            },
+            "maxUnderErrorComposite": {
+              "type": ["string", "null"],
+              "description": "The key of the validation composite that sets maxUnderErrorPercent (null when it is 0)."
+            },
+            "maximaExcludeStates": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Validation states excluded from every stated maximum and from the 15% bound (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception); their composites are still listed with their errors."
+            },
             "maxAbsExecutionErrorPercent": {
               "type": "number",
               "description": "The largest |executionErrorPercent| over the validation composites: EXECUTION gas (split.executionGas against the measured frame gas). On this schedule the EIP-7825 2^24 cap counts execution gas only, so this is the figure a headroom check of the cap condition tests against."
@@ -469,6 +564,15 @@
             "maxAbsExecutionErrorComposite": {
               "type": "string",
               "description": "The key of the validation composite that sets maxAbsExecutionErrorPercent."
+            },
+            "maxUnderExecutionErrorPercent": {
+              "type": "number",
+              "minimum": 0,
+              "description": "The largest UNDER-prediction on EXECUTION gas over the composites the maxima count: -min(executionErrorPercent, 0), a positive percent. The 2^24 cap counts execution gas only on this schedule, so this is the figure a headroom check of the cap condition reads: headroom exists to stop a plan coming out too small, and an over-prediction only costs batch size."
+            },
+            "maxUnderExecutionErrorComposite": {
+              "type": ["string", "null"],
+              "description": "The key of the validation composite that sets maxUnderExecutionErrorPercent (null when it is 0)."
             },
             "floor": {
               "type": "object",
@@ -496,18 +600,39 @@
                     "freshPerPublishFresh",
                     "freshPerPublishExisting",
                     "rwPerPublish",
-                    "freshPerBindFresh",
-                    "rwPerBind",
-                    "rwPerBindLater",
                     "freshPerRef",
                     "freshPerDigestSpec",
                     "computeBase",
                     "computePerAction",
-                    "computePerHookEffect",
                     "finalComputeBase",
                     "finalComputePerBind",
-                    "finalComputePerPublish"
+                    "finalComputePerPublish",
+                    "freshPerBindFirst",
+                    "rwPerBindFirst",
+                    "computePerBindFirst",
+                    "freshPerRebind",
+                    "rwPerRebind",
+                    "computePerRebind",
+                    "freshPerBindLater",
+                    "rwPerBindLater",
+                    "computePerBindLater",
+                    "surchargePurpose",
+                    "surchargeFreshFirst",
+                    "surchargeRwFirst",
+                    "surchargeComputeFirst",
+                    "surchargeFreshRebind",
+                    "surchargeRwRebind",
+                    "surchargeComputeRebind",
+                    "surchargeFreshLater",
+                    "surchargeRwLater",
+                    "surchargeComputeLater"
                   ],
+                  "properties": {
+                    "surchargePurpose": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{64}$"
+                    }
+                  },
                   "additionalProperties": {
                     "type": "integer"
                   }
@@ -801,6 +926,17 @@
         "note": {
           "type": "string"
         }
+      }
+    },
+    "laterLists": {
+      "type": "object",
+      "description": "The list tiers of later statements (tools/gas-plan.mjs laterKey): the short tier when the author's entry count at the place is known and at most shortTierMaxEntries; otherwise the rows measured at entry claimEntries (the cap of the claim, not a third tier).",
+      "required": ["shortTierMaxEntries", "claimEntries", "rule", "note"],
+      "properties": {
+        "shortTierMaxEntries": { "type": "integer" },
+        "claimEntries": { "type": "integer" },
+        "rule": { "type": "string" },
+        "note": { "type": "string" }
       }
     }
   }

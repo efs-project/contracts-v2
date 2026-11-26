@@ -46,6 +46,14 @@ abstract contract FloorBase is FilesRecipesBase {
         uint256 room; // G = 2^24 − 21,000 − calldata
     }
 
+    /// The thinnest margin of the prefix quote over the callbacks' spend that the floor suites accept for a whole
+    /// publication of a shape the floor claims, in thousandths (docs/WORK-MODEL-V3.md, ruling 11). Formula 3 measured
+    /// 1.022 on prague (a name record and a first tag per unit, k 21) and 1.039 on amsterdam (64 tag restores); a change
+    /// that thins the lowest margin below these fails the suites instead of passing at 1.00.
+    function _minRatio() internal view returns (uint256) {
+        return _amsterdam() ? 1035 : 1020;
+    }
+
     function _amsterdam() internal view returns (bool) {
         return
             keccak256(bytes(vm.envOr("FOUNDRY_PROFILE", string("default"))))

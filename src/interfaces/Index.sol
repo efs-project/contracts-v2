@@ -39,17 +39,24 @@ struct Effect {
     bytes32 withdrawnPrincipal;
 }
 
-/// Slot counts (×10) and compute; converted with limits.floor* at quote time (design §10.4). Formula 2, over a
-/// publication of n actions, `binds` of them BIND/UNBIND/RELEASE and `publishes` PUBLISH/REUSE:
+/// Slot counts (×10) and compute; converted with limits.floor* at quote time (design §10.4). Formula 3
+/// (docs/WORK-MODEL-V3.md), over a publication of n actions, `binds` of them BIND/UNBIND/RELEASE and `publishes`
+/// PUBLISH/REUSE:
 ///   fresh10 = freshPerPublication + Σ_publishes (freshPerRef·refs + (new record ? freshPerPublishFresh +
-///             freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_binds (first statement ? freshPerBindFresh : 0)
-///   rw10    = rwPerPublication + publishes·rwPerPublish + Σ_binds (rwPerBind + (first statement ? 0 : rwPerBindLater))
-///   prefixFloor  = computeBase + n·computePerAction + binds·computePerHookEffect + ceil(fresh10/10)·floorFreshGas
+///             freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_rows fresh
+///   rw10    = rwPerPublication + publishes·rwPerPublish + Σ_rows rw
+///   prefixFloor  = computeBase + n·computePerAction + Σ_rows compute + ceil(fresh10/10)·floorFreshGas
 ///                  + ceil(rw10/10)·floorRewriteGas
 ///   finalReserve = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish
-/// A first statement is a BIND or UNBIND on an UNSET author head (it allocates the binding); every other bind-kind
-/// action, a RELEASE always, is a later statement. A record is new when no earlier admission wrote its header (a
-/// REUSE always names an existing one).
+/// Each bind-kind action adds one row (fresh, rw, compute) by its class: a first statement (a BIND or UNBIND on the
+/// author's UNSET head: words 13-15), a re-bind (a BIND on a BOUND head, transition REBIND: words 16-18) or another
+/// later statement (a mask, a release, a restore: words 19-21); and, when its purpose word equals `surchargePurpose`,
+/// the surcharge's row of the same class (words 23-25, 26-28, 29-31). Every WITHDRAW after the first of a publication
+/// adds the later-statement row. With no principal (`ILedgerCommitments.indexFloor`) every bind takes the largest of
+/// the three rows in each field, surcharge included. A record is new when no earlier admission wrote its header (a
+/// REUSE always names an existing one). Slot counts are true counts (the largest measured for the class); compute
+/// carries no slot. The ingress reads the ABI reply of `IIndexReads.workModel()` as raw words in this order, so the
+/// field order is part of the formula.
 struct WorkModel {
     uint8 formulaVersion;
     uint16 freshPerPublication;
@@ -59,28 +66,52 @@ struct WorkModel {
     /// again writes more fresh index slots than its first admission (measured ≈ 2.4 per action against 0.6).
     uint16 freshPerPublishExisting;
     uint16 rwPerPublish;
-    uint16 freshPerBindFresh;
-    uint16 rwPerBind;
-    /// Charged on a later statement (a re-bind, a number change, a mask, a release, a restore) on top of `rwPerBind`:
-    /// it moves the lists and counts a first statement only appends to, so the per-bind terms, set from first
-    /// statements, under-quote it.
-    uint16 rwPerBindLater;
     uint16 freshPerRef;
     uint16 freshPerDigestSpec;
     uint32 computeBase;
     uint32 computePerAction;
-    uint32 computePerHookEffect;
     uint32 finalComputeBase;
     uint32 finalComputePerBind;
     /// The final phase's compute per PUBLISH or REUSE: the final units see every effect, not only the bind-kind ones.
     uint32 finalComputePerPublish;
+    /// The first-statement row (words 13-15).
+    uint16 freshPerBindFirst;
+    uint16 rwPerBindFirst;
+    uint32 computePerBindFirst;
+    /// The re-bind row (words 16-18): a BIND on a BOUND head (a new target, or the same target with a new number). It
+    /// never searches the author's scope list and moves no live bit, so it does not grow with the list.
+    uint16 freshPerRebind;
+    uint16 rwPerRebind;
+    uint32 computePerRebind;
+    /// The row of every other later statement (words 19-21): a mask, a release or a restore, and every WITHDRAW after a
+    /// publication's first. It is fitted to the list length the floor claims (docs/WORK-MODEL-V3.md §3.5).
+    uint16 freshPerBindLater;
+    uint16 rwPerBindLater;
+    uint32 computePerBindLater;
+    /// One purpose surcharge (word 22; 0 = none): a generation that keeps a list for one purpose reserves for it here,
+    /// so statements of every other purpose pay nothing for it. Its rows, by the same classes: words 23-25, 26-28,
+    /// 29-31.
+    bytes32 surchargePurpose;
+    uint16 surchargeFreshFirst;
+    uint16 surchargeRwFirst;
+    uint32 surchargeComputeFirst;
+    uint16 surchargeFreshRebind;
+    uint16 surchargeRwRebind;
+    uint32 surchargeComputeRebind;
+    uint16 surchargeFreshLater;
+    uint16 surchargeRwLater;
+    uint32 surchargeComputeLater;
 }
 
 // `WorkModel`'s ABI size in words: a static struct, one word per field, returned inline by `IIndexReads.manifest()`
 // between the three array offsets and the two profiles, so a reader that checks the profiles from the raw reply finds
 // them at words 4 + WORK_MODEL_WORDS and 5 + WORK_MODEL_WORDS. It must change with the struct;
 // `test/index/IndexReadsSplit.t.sol` fails when the two drift.
-uint256 constant WORK_MODEL_WORDS = 17;
+uint256 constant WORK_MODEL_WORDS = 32;
+
+// The work-model formula this build implements (word 0 of `WorkModel`). The ingress refuses a work model of any other
+// version (`E_WORK_MODEL` 3) and activation refuses an index whose work model it is not (`E_INDEX_NOT_READY` 15).
+uint8 constant FORMULA_VERSION = 3;
 
 /// Constructor-fixed; the core folds family 15 from body word `wordIndex` (one cold SLOAD, priced).
 struct DigestSpec {

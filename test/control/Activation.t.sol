@@ -326,13 +326,17 @@ contract ActivationTest is ControlFixture {
         );
     }
 
-    function test_unchanged_index_not_idle_E_INDEX_NOT_READY_2() public {
+    /// Keeping the live index never asks its readiness; only its work model is read (docs INDEX-BUILD §5.3): a kept
+    /// index whose readiness reports a phase other than IDLE is not asked, so the activation passes; reason 2 is the ledger's own lock, which `activate`'s
+    /// `idle` gate already holds IDLE here (it is reached in `test/index/Liveness.t.sol::test_reason_2_is_the_ledgers_own_phase`).
+    function test_unchanged_index_is_not_asked_its_phase() public {
         Readiness memory r = liveReadiness(index);
         r.phase = 2;
         index.setReadiness(r);
-        expectActivateRevert(
-            nextSet(), abi.encodeWithSelector(E_INDEX_NOT_READY.selector, uint8(2))
-        );
+        ActivationSet memory set = nextSet();
+        activate(set);
+        assertEq(hot.revision(), set.revision);
+        assertEq(hot.index(), address(index));
     }
 
     function test_new_index_wrong_ledger_E_INDEX_NOT_READY_3() public {

@@ -2635,6 +2635,22 @@
     },
     {
       "type": "error",
+      "name": "E_WORK_MODEL",
+      "inputs": [
+        {
+          "name": "code",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "value",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
       "name": "E_CODE_SHAPE",
       "inputs": [
         {

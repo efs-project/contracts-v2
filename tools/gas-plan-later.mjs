@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 // The planning rule (tools/gas-plan.mjs, unchanged) applied to the work model of a generation that adds one list LATER
 // (docs/INDEX-BUILD.md §6, step 4, part D): the example generation of step 3b, `head-authors` in a third store
-// (test/harness/HeadAuthors.sol `HeadAuthorsGenesis.workModel`), whose model has no per-purpose term, so the list's
-// reservation is charged on every bind-kind action. For each shape it prints the largest publication the rule plans
-// under generation 1's model (gas/model.json as committed) and under the example generation's, on both schedules.
+// (test/harness/HeadAuthors.sol `HeadAuthorsGenesis.workModel`). Under work-model formula 3 the list's reservation is
+// the HEAD purpose surcharge, so only HEAD statements pay it (under formula 2, which had no per-purpose term, it was
+// charged on every bind-kind action). For each shape it prints the largest publication the rule plans under
+// generation 1's model (gas/model.json as committed) and under the example generation's, on both schedules.
 //
 // Two readings of the example generation:
 //   - "reservation only": only floor.workModel changes (E and K are generation 1's), which isolates what the
@@ -16,12 +17,15 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { planner, shapes } from "./gas-plan.mjs";
+import { PURPOSE, planner, shapes } from "./gas-plan.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** HeadAuthorsGenesis.workModel(): generation 1's model plus these increments (every bind-kind action). */
-export const EXAMPLE_WORK_DELTA = { freshPerBindFresh: 10, rwPerBind: 10, rwPerBindLater: 10, computePerHookEffect: 27_000 };
+/** HeadAuthorsGenesis.workModel(): generation 1's model with this surcharge on HEAD (formula 3). */
+export const EXAMPLE_SURCHARGE = {
+  surchargePurpose: PURPOSE.HEAD, surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 27_000,
+  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 10, surchargeComputeLater: 27_000,
+};
 
 /** The list's live execution gas per HEAD statement (measured cold, test/index/HeadAuthorsFloor.t.sol, E of the example
  *  generation − E of generation 1, the same shape from the same state): a first statement on a new list (create file),
@@ -36,8 +40,7 @@ export const LIST_LIVE = {
 export function exampleModel(model, { list = false } = {}) {
   const m = structuredClone(model);
   for (const [schedule, p] of Object.entries(m.profiles)) {
-    const wm = p.floor.workModel;
-    for (const [k, v] of Object.entries(EXAMPLE_WORK_DELTA)) wm[k] += v;
+    Object.assign(p.floor.workModel, EXAMPLE_SURCHARGE);
     if (!list) continue;
     const l = LIST_LIVE[schedule];
     const exec = schedule === "prague" ? p.constants : p.split.executionGas;

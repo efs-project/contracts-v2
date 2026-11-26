@@ -20,7 +20,8 @@ import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
 import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {IPostingStore} from "../interfaces/IPostingStore.sol";
-import {FamilyEntry, Readiness, Unit} from "../interfaces/Index.sol";
+import {FamilyEntry, Readiness, Unit, WORK_MODEL_WORDS} from "../interfaces/Index.sol";
+import {ILedgerIngress} from "../interfaces/internal/ILedgerIngress.sol";
 import {ILedgerControlDelegate} from "../interfaces/internal/ILedgerControlDelegate.sol";
 import {
     E_DEADLINE_BOUND,
@@ -275,14 +276,18 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             CodeScan.requirePlainRuntime(set.components.steward);
         }
         if (index == $.index) {
+            // keeping the live index never asks its readiness: it is pinned by the code and manifest it was
+            // activated with, and the phase its readiness would echo is this ledger's own (docs INDEX-BUILD §5.3)
             RevisionRow storage current = _revisions().rows[$.revision];
             if (
                 current.indexCodehash != set.components.indexCodehash
                     || current.indexManifestHash != set.components.indexManifestHash
             ) revert E_INDEX_NOT_READY(1);
-            if (IRealmIndex(index).replayReadiness().phase != Phase.IDLE) {
-                revert E_INDEX_NOT_READY(2);
-            }
+            (uint8 phase,,,) = _unpackLock(_lockWord());
+            if (phase != Phase.IDLE) revert E_INDEX_NOT_READY(2);
+            // the one read of a kept index: its work model, the read every publication makes, so an ingress of
+            // another formula is refused here and not at the first publication (reasons 15 and 16)
+            _checkWorkModel(index);
             return;
         }
         CodeScan.requirePlainRuntime(index);
@@ -293,6 +298,7 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         CodePins.requireRealCode(reads);
         if (reads.codehash != readsCodehash) revert E_PIN(reads, 10);
         CodeScan.requirePlainRuntime(reads);
+        _checkWorkModel(index); // after the code scans: never call an index's code before it is scanned
         Readiness memory r = IRealmIndex(index).replayReadiness();
         if (r.ledger != address(this)) revert E_INDEX_NOT_READY(3);
         if (r.layoutId != set.layoutId) revert E_INDEX_NOT_READY(4);
@@ -354,6 +360,45 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         // checked after the families, so a candidate that can never be ready (12, 13) is named as such, not as behind
         if (r.completedAdmission != c.admissions || r.completedPublication != c.publications) {
             revert E_INDEX_NOT_READY(8);
+        }
+    }
+
+    /// The words of `WorkModel` that are `uint32` (the rest of words 1-31 are `uint16`, word 22 a purpose word).
+    uint256 private constant WORK_U32_WORDS = (1 << 8) | (1 << 9) | (1 << 10) | (1 << 11)
+        | (1 << 12) | (1 << 15) | (1 << 18) | (1 << 21) | (1 << 25) | (1 << 28) | (1 << 31);
+    uint256 private constant WORK_PURPOSE_WORD = 22;
+
+    /// The index's work model must be the formula this activation's ingress implements (reason 15), for a kept index
+    /// too, so an implementation never runs its ingress under an index of another formula: the reply of
+    /// `IIndexReads.workModel()` must be `WORK_MODEL_WORDS` words and its word 0 the ingress's `formulaVersion()`.
+    /// Read as raw words, as the ingress reads it, so a formula-2 index (17 words) is refused here by name. Then every
+    /// word must fit its field (reason 16): the ingress reads the words whole on every quote without the ABI
+    /// decoder's range checks, so they are checked once, here.
+    function _checkWorkModel(address index) private view {
+        uint256 version = ILedgerIngress(INGRESS).formulaVersion();
+        uint256 size = WORK_MODEL_WORDS * 32;
+        bool ok;
+        uint256 got;
+        uint256 wm;
+        assembly ("memory-safe") {
+            wm := mload(0x40)
+            mstore(0x40, add(wm, size))
+            mstore(0, 0x82b564f200000000000000000000000000000000000000000000000000000000) // workModel()
+            ok := staticcall(gas(), index, 0, 4, wm, size)
+            got := returndatasize()
+        }
+        uint256 word0;
+        assembly ("memory-safe") {
+            word0 := mload(wm)
+        }
+        if (!ok || got != size || word0 != version) revert E_INDEX_NOT_READY(15);
+        for (uint256 i = 1; i < WORK_MODEL_WORDS; ++i) {
+            if (i == WORK_PURPOSE_WORD) continue;
+            uint256 v;
+            assembly ("memory-safe") {
+                v := mload(add(wm, shl(5, i)))
+            }
+            if (v >> ((WORK_U32_WORDS >> i) & 1 == 1 ? 32 : 16) != 0) revert E_INDEX_NOT_READY(16);
         }
     }
 

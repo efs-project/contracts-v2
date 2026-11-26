@@ -744,7 +744,7 @@ state, rebuilt in the same walk, or write-once ledger facts); **E** reads carrie
 | 18b | the decoder: the withdrawn record's Type word | `_effect` | R: write-once | same | write-once, present: the record was first admitted at the target admission or before (`_applyRecord` writes a cell only when its Type word is 0) |
 | 18c | the decoder: the target publication's principal (evidence word 2) | `_effect` | R: write-once | same | write-once, present: as 15a, for an earlier publication |
 | 19a | the decoder: a PUBLISH/REUSE record's Type word and cell word 1 (`freshRecord` = first admission equals this one) | `_effect` | R: write-once | same | write-once, present: the leaf itself wrote the cell or found it written (`_applyRecord`); `firstAdmission` never changes (`occurrences`, which does, is not used) |
-| 19b | the decoder: the Type's `refCount` (`TypeRegistry.typeInfo`) and the registry address (`registry()`) | `_effect`, `_decode` | R: registration is append-only and never changes a Type (design §8.7) | same | write-once, present: the Type was registered before any record of it was admitted (`validateLeaf`: `E_UNKNOWN_TYPE`); `registerDescribed` returns early on an existing row; `refCount` is the length of the reference Types the id commits to; the registry address is set once, at genesis (`LedgerControl` initialize) |
+| 19b | the decoder: the Type's reference count, **proved** from the Type's descriptor bytes (`TypeRegistry.descriptorBytes`), and the registry address (`registry()`) | `_effect`, `_refCount`, `_decode` | R: the count is proved, not read (since 2026-11-26) | same | fixed by the record's Type id (write-once, row 19a), which commits to the whole descriptor (its shape) and to the reference Types with their count: the decoder recomputes the id from the bytes the registry returns and refuses `E_REPLAY(10)` unless it equals the record's, so the count is the descriptor's whatever the registry's implementation; trusted: only that the registry answers (one that withholds or alters a descriptor makes the decode and the build refuse, never fold another count); the registry address is set once, at genesis (`LedgerControl` initialize) |
 | 19c | the decoder: a record's leading body words (the refs) | `_decode` | R: write-once | same | write-once, present: written once with the record's first admission (`_storeBody`), at or before this one |
 | 20 | the build's own leaf count of the next publication (before decoding) | `RealmIndex.build` | R: the write-once evidence cell | same | write-once, present: as row 15 |
 | 21 | the fold's own progress word (`lastProcessed`, `lastPublication`), the generation's digest specs and topic Type ids | `_foldPublication`, `_foldRecord`, `_firstStatementLists` | R | same | the generation's own state and immutables: the order check and its configuration, the same for every fold; not ledger facts |
@@ -768,10 +768,12 @@ ran. Fixed: on the history path `_walk` reads the subject's cell word 1 (its fir
 makes and stops when that is 0 or not strictly below the statement's admission; a live fold of the same leaf sees no
 such record and stops at the same place, so built equals live on every history. Every other read is of a fact that
 cannot begin or change after the folded admission, by a kernel law named in the column, or of the generation's own
-fresh store, rebuilt in the same walk. No other defect was found. One reach beyond the ledger: row 19b's Type row is
-write-once in the current `TypeRegistry` code, and the registry implementation can be replaced by an activation until
-freeze; a replacement must keep existing rows (a Type's `refCount` is also fixed by its id, which commits to its
-reference Types). Also outside the fold: the store writer rule (row
+fresh store, rebuilt in the same walk. No other defect was found. One reach beyond the ledger was row 19b's Type row, write-once in
+the current `TypeRegistry` code but behind an implementation that an activation can replace until freeze. **Done
+(2026-11-26): the decoder no longer reads that row;** it proves the count from the Type's descriptor (row 19b, §10
+"A build proves a Type's reference count"). What remains true of a replacement registry: one that withholds a
+descriptor (reverts, or answers bytes that do not hash to the Type id) makes every build and replay that meets a record
+of that Type refuse, with its own error or `E_REPLAY(10)`; it can never make one fold a different count. Also outside the fold: the store writer rule (row
 14) and the build's own gates (`counts()`, `phase()`, `index()`, `IndexReads.carriedCheck`) bound or refuse a call and
 are not folded; a fold hook is called from history with the same effects as live and must keep the rule itself (a
 later unit's obligation, docs §3.6; generation 1 has none); final hooks are never called from history.
@@ -808,7 +810,7 @@ The proposal's table, for its argument (its walk row relied on the validator; su
 | `recordHeader(recordId).firstAdmission` | `RealmIndex._foldRecord` | Written once, when the record is first admitted. |
 | a digest body word | `RealmIndex._foldRecord` | Record bodies are write-once. |
 | the ancestor walk: a record's Type word and body word 0 | `RealmIndex._walk` | Write-once records; the validator admitted the tag only if its topic was registered strictly before (code 9; `IndexProfiles.sol:26-34`), so every record on the chain existed at the original admission and has not changed. Records registered later are not on the chain: a parent link is written when its child is registered. |
-| the Type's `refCount` (decoder) | `IndexReplayDecoder._effect` | Registration is append-only and never changes an existing Type (design §8.7). |
+| the Type's `refCount` (decoder) | `IndexReplayDecoder._effect` | Registration is append-only and never changes an existing Type (design §8.7). (Since 2026-11-26 proved from the descriptor: row 19b above.) |
 | position and binding cells (decoder) | `IndexReplayDecoder._effect` | Write-once. |
 
 **The rule this gives a built family:** its fold may read write-once ledger facts that a kernel law makes present at
@@ -971,12 +973,42 @@ and asks for no copy (genesis passes an empty one). No kernel ABI change, no cha
 the Core context. `LedgerControl` 17,830 → 18,042 B. Order: the copy is checked at the first carried family, so a
 replaced candidate that carries any store now reports 14 before a later family's 13 (`HeadAuthorsBuild.t.sol`).
 
-**The unchanged-index path (found, not changed).** An activation that KEEPS the live index (`index == $.index`) still
-calls `IRealmIndex(index).replayReadiness().phase` for reason 2, uncaught: while the live index does not answer, every
-activation that keeps it reverts with the live index's own error (for example a limits or controller change).
-Replacing the index in that same activation is the recovery, and it now works with a correct copy
-(`test/index/Liveness.t.sol::test_keeping_an_index_that_stops_answering_reverts_with_its_error`). The path was left as it
-is: an index that cannot report its phase should not be kept, and the read is the design's §8.3 5h.
+**The unchanged-index path: keeping an index never asks its readiness; only its work model is read (2026-11-26; built on `fable/2026-11-26-decoder-registry`, joined with work-model formula 3 in this release).**
+An activation that KEEPS the live index (`index == $.index`) used to call `IRealmIndex(index).replayReadiness().phase`
+for reason 2, uncaught, so while the live index did not answer every activation that kept it (a limits or controller
+change, for example) reverted with the live index's own error, and the only recovery was to replace the index in the
+same activation. What that read protected, read from the code: `IndexReads.replayReadiness` sets `phase` from
+`ILedgerHot(LEDGER).phase()`, the ledger's own publication lock, and the kernel looked at nothing else in the tuple.
+The generation's `replayStage` (IN_FLIGHT while its own `build` or `replayNextPublication` runs) is not in the tuple,
+and the kept index is the live one, whose `build` refuses (`E_BUILD(1)`) and whose replay refuses (`E_REPLAY(1)`)
+anyway; its `LEDGER` is the ledger the kernel checked at its activation (reason 3, an immutable). Every path to the
+check is `LedgerCore.activate` or `LedgerCore.freeze`, both `onlyController idle notFrozen`, so the lock was already
+IDLE and the read caught nothing the kernel did not know, except the index's failure to answer. **Now the kept branch
+never asks the index's readiness:** it checks the codehash and manifest hash against the current revision row (1, unchanged; the
+address's code is checked against the set's codehash before that, `E_PIN(index, 3)`) and then the ledger's OWN lock
+word (2, reworded: "the ledger's own publication lock is not IDLE"), the control body's own guard beside
+`LedgerCore`'s `idle` gate, and then reads the one thing every publication reads from the index, its work model
+(`_checkWorkModel`: reasons 15 and 16, formula 3, docs/WORK-MODEL-V3.md), so an implementation is never activated over
+an index whose work model its ingress would refuse at the first publication. Tests (`test/index/Liveness.t.sol`,
+section 6): an activation that keeps an index whose readiness reverts succeeds, changes the notice principal and the limits (a three-action publication is then refused
+`E_BATCH_SHAPE`), records the same codehash and manifest hash in the new revision row, and the kept index folds the next
+publications exactly as the twin's (`::test_keeping_an_index_that_stops_answering_activates`); with every call to the
+index's address reverting the activation is refused `E_INDEX_NOT_READY(15)`, which is right: an index that cannot answer
+its work model cannot serve a publication either (the ingress would refuse it `E_WORK_MODEL(1)`), and with only its
+readiness reverting the same set activates (`::test_keeping_an_index_whose_every_call_reverts_is_refused_15`); a kept
+index whose readiness reverts and whose work model is of another formula (17 words, or 32 words of version 2) is refused
+15 (`::test_keeping_an_index_of_another_formula_is_refused_15`); a set with another manifest
+hash is refused 1, one with another codehash `E_PIN(index, 3)`, and an index whose code no longer matches the revision
+row is refused 1 even when the set names its new code
+(`::test_a_kept_index_with_another_codehash_or_manifest_hash_is_refused_1`); reason 2 is reached through an
+implementation double that sets the lock and delegates to the real `LedgerControl` without `LedgerCore`'s gate: refused
+2 with the lock APPLYING and activated with it IDLE, the index's readiness reverting throughout and never asked
+(`::test_reason_2_is_the_ledgers_own_phase`).
+The tests that pinned the old behavior (`::test_keeping_an_index_that_stops_answering_reverts_with_its_error`, and
+`test/control/Activation.t.sol::test_unchanged_index_not_idle_E_INDEX_NOT_READY_2`, whose index double reported a
+phase of 2) are replaced; the second is now `::test_unchanged_index_is_not_asked_its_phase` (the same double, activated).
+No ABI change, no new error. `LedgerControl` 18,042 → 17,994 B for this change alone (`_checkIndex` −89,
+`LedgerStorage._lockWord` +41); with formula 3's work-model checks beside it, 18,363 B in this release (§10 item 44).
 
 `LedgerControl` is part of the ledger implementation, replaceable by activation until freeze. After freeze the
 kernel never changes, and a steward activation under posture B (design §8.10) would run the frozen checks; so if
@@ -1056,41 +1088,47 @@ the decode, the self-call, the fold and the CALL.
 
 | publication kind (leaves) | prague walk | prague list | prague total | amsterdam walk | amsterdam list | amsterdam total | amsterdam state gas |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| create file, design §14 recipe (5) | 148,281 | 30,225 | 178,506 | 148,281 | 20,325 | 168,606 | 97,920 |
-| edit: PUBLISH child + HEAD re-bind (2) | 91,484 | 0 | 91,484 | 91,484 | 0 | 91,484 | 0 |
-| second author's own version (2) | 87,911 | 35,527 | 123,438 | 87,911 | 32,727 | 120,638 | 97,920 |
-| HEAD mask of a BOUND head (1) | 61,389 | 12,238 | 73,627 | 61,389 | 19,438 | 80,827 | 0 |
-| HEAD release of a BOUND head (1) | 61,405 | 12,238 | 73,643 | 61,405 | 19,438 | 80,843 | 0 |
-| HEAD restore of a masked head (1) | 61,157 | 12,174 | 73,331 | 61,157 | 19,374 | 80,531 | 0 |
-| first tag on a one-word topic (1) | 55,870 | 0 | 55,870 | 55,870 | 0 | 55,870 | 0 |
-| folder move with a new name: PUBLISH name, RELEASE, BIND FOLDER (3) | 114,431 | 0 | 114,431 | 114,431 | 0 | 114,431 | 0 |
-| plain publish of a name record (1) | 50,104 | 0 | 50,104 | 50,104 | 0 | 50,104 | 0 |
+| create file, design §14 recipe (5) | 148,265 | 30,225 | 178,490 | 148,465 | 20,325 | 168,790 | 97,920 |
+| edit: PUBLISH child + HEAD re-bind (2) | 92,093 | 0 | 92,093 | 92,193 | 0 | 92,193 | 0 |
+| second author's own version (2) | 88,520 | 35,527 | 124,047 | 88,620 | 32,727 | 121,347 | 97,920 |
+| HEAD mask of a BOUND head (1) | 61,409 | 12,238 | 73,647 | 61,409 | 19,438 | 80,847 | 0 |
+| HEAD release of a BOUND head (1) | 61,425 | 12,238 | 73,663 | 61,425 | 19,438 | 80,863 | 0 |
+| HEAD restore of a masked head (1) | 61,177 | 12,174 | 73,351 | 61,177 | 19,374 | 80,551 | 0 |
+| first tag on a one-word topic (1) | 55,890 | 0 | 55,890 | 55,890 | 0 | 55,890 | 0 |
+| folder move with a new name: PUBLISH name, RELEASE, BIND FOLDER (3) | 114,332 | 0 | 114,332 | 114,432 | 0 | 114,432 | 0 |
+| plain publish of a name record (1) | 49,967 | 0 | 49,967 | 50,067 | 0 | 50,067 | 0 |
 
-Re-measured at the final integration (the liveness gate's code, §10 item 39): every marginal publication, EX and FR,
-is 22 gas dearer than step 4 measured (148,259 → 148,281 for a create file's walk), on both schedules; the per-leaf
-figures below did not move.
+Re-measured with this release's code (formula 3 and the proved reference count, §10 items 44 and 45): against the final
+integration's figures (`3ca53ba`), a publication that publishes a record moved with the decoder's proved count (create
+file −16 / +184 on prague / amsterdam, edit and second author's version +609 / +709, folder move −99 / +1, plain publish
+−137 / −37), and the rest by +20 (code placement); the walk was 148,281 for a create file and 91,484 for an edit on both
+schedules at `3ca53ba`.
 
-The walk is the same on both schedules to the gas: it reads, and EIP-8037/8038 did not reprice what it reads here. The
-list's first entry is one fresh slot (prague 30,225 with its code; amsterdam 20,325 of execution and 97,920 of state
+The walk is the same on both schedules to within 200 gas: it reads, and EIP-8037/8038 did not reprice what it reads
+here; the difference is the decoder's proved count, whose descriptor read costs about 100 gas more per record on
+amsterdam. The list's first entry is one fresh slot (prague 30,225 with its code; amsterdam 20,325 of execution and 97,920 of state
 gas); its counter is one rewrite of the list's head (prague 12,238; amsterdam 19,438: a cold rewrite costs 7,200 more
-execution gas there). **The fixed share of a cold call** (C1 − marginal) is 252,738 to 281,227 on prague and 257,338 to
-286,627 on amsterdam; a cold EX call with nothing pending costs 240,428 / 244,628 (its gates, the carried check, which
+execution gas there). **The fixed share of a cold call** (C1 − marginal) is 252,991 to 270,480 on prague and 257,591 to
+276,680 on amsterdam; a cold EX call with nothing pending costs 240,681 / 244,881 (its gates, the carried check, which
 reads the generation's copy of the live index's manifest from code, checks it against the revision row's manifest hash
 and decodes it, and the progress word). Step 4 measured 488,026 to 516,515 and 492,926 to 522,215, and 475,716 /
 480,216 with nothing pending, when the carried check called the live index's `replayReadiness()`; reading the copy
-saves about 235k a cold call. FR's fixed share is 91,690 to 181,914 (prague) and 95,290 to 297,079 (amsterdam); FR with
-nothing pending 77,380 / 80,580 (it carries nothing, so it reads no copy; step 4: 91,588 to 181,812, 95,188 to 296,977,
-77,278 / 80,478).
+saves about 235k a cold call. At `3ca53ba` the fixed share was 252,738 to 281,227 and 257,338 to 286,627, with
+nothing pending 240,428 / 244,628: the proved count saves 5,500 / 5,100 per distinct Type a call meets (the create file
+meets two), and formula 3's example generation adds 253 to every cold EX call. FR's fixed share is 91,690 to 176,414
+(prague) and 95,290 to 286,879 (amsterdam); FR with nothing pending 77,380 / 80,580 (it carries nothing, so it reads no
+copy; step 4: 91,588 to 181,812, 95,188 to 296,977, 77,278 / 80,478).
 
 **Per leaf that touches nothing the list keeps** (the term of "a list on one purpose is dear to add to a long history";
-marginal leaf inside one publication, EX, the same on both schedules): a first tag 29,860, a plain publish 24,155, a
-CREATE 10,983. The same leaf as a publication of its own costs 55,870 (tag) and 50,104 (publish): about 26k of every
-publication is its own decode (evidence cell, revision row, decoder and self-call). A HEAD mask leaf, which does touch
-the list, is 47,612 (prague) / 54,812 (amsterdam), of which the walk is 35,374.
+marginal leaf inside one publication, EX): a first tag 29,874, a plain publish 24,069 (prague) / 24,169 (amsterdam), a
+CREATE 11,019. The same leaf as a publication of its own costs 55,890 (tag) and 49,967 / 50,067 (publish): about 26k of
+every publication is its own decode (evidence cell, revision row, decoder and self-call). A HEAD mask leaf, which does
+touch the list, is 47,626 (prague) / 54,826 (amsterdam), of which the walk is 35,388. (`3ca53ba`: 29,860, 24,155,
+10,983, 47,612 / 54,812.)
 
 **What the estimate said (§6.1 before step 4):** decode ≈ 20,000 per publication, ≈ 12,000 per non-bind leaf, ≈ 20,000
 per bind leaf; a new list's entry 27,139 / 115,156; a counter write ≈ 14,700 / ≈ 21,900. Measured, a publication's own
-decode is about 26k, a non-bind leaf 11k to 24k, the walk of a whole create-file recipe 148,281 and of an edit 91,484 (148,259 and 91,462 at step 4);
+decode is about 26k, a non-bind leaf 11k to 24k, the walk of a whole create-file recipe 148,265 and of an edit 92,093 on prague (148,259 and 91,462 at step 4);
 the list's first entry 30,225 (prague) and 20,325 + 97,920 of state gas (amsterdam), its counter 12,238 / 19,438.
 
 ### 6.2 `head-authors` for a Realm of 1 million files (**measured** unit costs, the same assumed history)
@@ -1107,53 +1145,58 @@ state gas comes from the reservoir), each paying the fixed share of the create-f
 | new lists (one per file) | 1.0M × 30,225 / 20,325 + 97,920 | 30.23B | 20.33B | 97.92B | 27.1B / 115.2B |
 | second entries (word 0) | 0.1M × 35,527 / 32,727 + 97,920 | 3.55B | 3.27B | 9.79B | 2.7B / 11.5B |
 | counter writes | 0.06M × 12,217 / 19,417 | 0.73B | 1.17B | 0 | 0.9B / 1.3B |
-| walk of the create-file publications | 1.0M × 148,281 | 148.28B | 148.28B | 0 | (decode, three rows: |
-| walk of the edits | 3.0M × 91,484 | 274.45B | 274.45B | 0 | 83B publications, |
-| walk of the second authors' versions | 0.1M × 87,911 | 8.79B | 8.79B | 0 | 104B bind leaves, |
-| walk of the HEAD transitions | 0.06M × 61,317 | 3.68B | 3.68B | 0 | 73B other leaves) |
-| fixed share of each call | 28,513 × 281,227 / 27,930 × 286,627 | 8.02B | 8.01B | 0 | — |
-| **total** | | **477.73B** | **467.97B** | **107.71B** | **≈ 290B / ≈ 390B** |
-| transactions of 2^24 | | **28,513** | **27,930** | | ≈ 17,000 / ≈ 23,000 |
-| per file | | **477,732** | **467,971** | **107,712** | ≈ 290k / ≈ 390k |
+| walk of the create-file publications | 1.0M × 148,265 / 148,465 | 148.27B | 148.47B | 0 | (decode, three rows: |
+| walk of the edits | 3.0M × 92,093 / 92,193 | 276.28B | 276.58B | 0 | 83B publications, |
+| walk of the second authors' versions | 0.1M × 88,520 / 88,620 | 8.85B | 8.86B | 0 | 104B bind leaves, |
+| walk of the HEAD transitions | 0.06M × 61,337 | 3.68B | 3.68B | 0 | 73B other leaves) |
+| fixed share of each call | 28,608 × 270,480 / 28,058 × 276,680 | 7.74B | 7.76B | 0 | — |
+| **total** | | **479.32B** | **470.11B** | **107.71B** | **≈ 290B / ≈ 390B** |
+| transactions of 2^24 | | **28,608** | **28,058** | | ≈ 17,000 / ≈ 23,000 |
+| per file | | **479,325** | **470,112** | **107,712** | ≈ 290k / ≈ 390k |
 
-So on amsterdam the build costs 575.68B gas in all (575,683 per file), 467.97B of it execution. At 1 gwei that is 477.7
-ETH on prague and 575.7 ETH on amsterdam. **What the manifest copy moved** (the final integration, §10 item 39): the
+So on amsterdam the build costs 577.82B gas in all (577,824 per file), 470.11B of it execution. At 1 gwei that is 479.3
+ETH on prague and 577.8 ETH on amsterdam. **What this release moved** (the proved reference count and formula 3, §10
+items 44 and 45): 477.73B in 28,513 transactions → 479.32B in 28,608 on prague (+1.59B, +0.33%), and 467.97B of execution
+in 27,930 transactions → 470.11B in 28,058 on amsterdam (+2.14B, +0.46%; 575.68B → 577.82B in all, +0.37%): the edits'
+proved count (+609 / +709 each) outweighs the cheaper fixed share. **What the manifest copy moved** (the final integration, §10 item 39): the
 fixed share of a call fell from 516,515 / 522,215 to 281,227 / 286,627 (the carried check reads the copy from code
 instead of calling the live index), and every walk rose by 22 gas; together the 1,000,000-file totals fell by 6.83B
 on prague (484.56B in 28,920 transactions → 477.73B in 28,513) and 6.70B of execution on amsterdam (474.67B in 28,330
 → 467.97B in 27,930; 582.38B → 575.68B in all): 1.4% on prague, and on amsterdam 1.4% of the execution
 and 1.2% of all gas. **Cross-check** (`::test_mixed_segment`): one cold EX
 call over a segment of the mix (20 files: 20 recipes, 60 edits, 2 second authors' versions, a mask, a release and a
-restore; 85 publications, 227 leaves) costs 9,652,927 on prague (9,440,327 + 2,154,240 of state gas on amsterdam; step
-4: 9,886,345 and 9,674,045) and fits one call; the per-kind figures above add up to 9,807,864 for it (prague), 1.6%
-more: the marginal figures do not grow over a call of 85 publications.
+restore; 85 publications, 227 leaves) costs 9,674,178 on prague (9,472,978 + 2,154,240 of state gas on amsterdam;
+`3ca53ba`: 9,652,927 and 9,440,327; step 4: 9,886,345 and 9,674,045) and fits one call; the per-kind figures above add
+up to 9,834,615 for it (prague), 1.7% more: the marginal figures do not grow over a call of 85 publications.
 
 **The price of "add it later"** (per file, this history):
 
 | | prague | amsterdam |
 |---|---:|---:|
-| kept from genesis (the list's live cost, measured cold) | 51,167 | 41,896 execution + 107,712 state = 149,608 |
-| built later (EX) | 477,732 | 467,971 execution + 107,712 state = 575,683 |
-| later against genesis | **9.3×** | **3.8×** in all gas (11.2× in execution gas) |
+| kept from genesis (the list's live cost, measured cold) | 51,351 | 42,178 execution + 107,712 state = 149,890 |
+| built later (EX) | 479,325 | 470,112 execution + 107,712 state = 577,824 |
+| later against genesis | **9.3×** | **3.9×** in all gas (11.1× in execution gas) |
 | what the estimate said | ≈ 31k kept, ≈ 290k later, 8× to 9× | ≈ 128k kept, ≈ 390k later, ≈ 3× |
 
 Kept from genesis is the list's live price, measured cold by `test/index/HeadAuthorsFloor.t.sol` (`FloorBase._need`:
 every account of the Realm cooled; E of the example generation minus E of generation 1 for the same shape from the same
-state): a first HEAD statement (create file) 41,683 (prague) / 32,195 + 97,920 state (amsterdam), a second author's
-first statement 46,554 / 44,154 + 97,920, a later statement (mask, release, restore) 22,925 to 23,100 / 30,525 to 30,712,
-an edit's re-bind 1,149 / 1,149; weighted by the history above. The estimate's "kept" counted only the list's storage;
+state): a first HEAD statement (create file) 41,727 (prague) / 32,263 + 97,920 state (amsterdam), a second author's
+first statement 46,598 / 44,222 + 97,920, a later statement (mask, release, restore) 22,981 to 23,144 / 30,593 to 30,768,
+an edit's re-bind 1,193 / 1,217; weighted by the history above. Under formula 3 the example generation's work model
+names HEAD as its surcharged purpose, and the ingress's quote of that row costs 32 to 44 gas a HEAD statement (80 to 92
+on amsterdam) more than under generation 1's model: so "kept" is 51,351 / 149,890, was 51,167 / 149,608 at `3ca53ba`. The estimate's "kept" counted only the list's storage;
 the measured live price also pays the CALL to the third store and its writer rule.
 
-**What the measurement changes.** The walk, not the storage, is the price, and it is dearer than estimated: 435.20B of
-the 477.73B on prague (91%), the same 435.20B on amsterdam. It is paid per publication and per leaf of the whole
-history, whatever the list keeps: here the edits alone, which the list ignores (a re-bind changes nothing in it), cost
-274.45B, more than half. The storage part is what keeping the list from genesis would have cost anyway, so "later" adds
+**What the measurement changes.** The walk, not the storage, is the price, and it is dearer than estimated: 437.08B of
+the 479.32B on prague (91%), 437.59B on amsterdam. It is paid per publication and per leaf of the whole history,
+whatever the list keeps: here the edits alone, which the list ignores (a re-bind changes nothing in it), cost 276.28B,
+more than half. The storage part is what keeping the list from genesis would have cost anyway, so "later" adds
 the walk, paid by one operator at once.
 
 **The rule this gives** (unchanged, with measured figures). Adding an on-chain list later is affordable for a small or
-young Realm and not for a large one. For 10,000 files of this history: 4.78B gas in 286 transactions on prague (4.78 ETH
-at 1 gwei); on amsterdam 4.68B of execution in 280 transactions plus 1.08B of state gas, 5.76B in all. For 1,000,000
-files: 477.7B gas, 28,513 transactions (prague); 575.7B, 27,930 transactions (amsterdam). For a large Realm the realistic
+young Realm and not for a large one. For 10,000 files of this history: 4.79B gas in 287 transactions on prague (4.79 ETH
+at 1 gwei); on amsterdam 4.70B of execution in 281 transactions plus 1.08B of state gas, 5.78B in all. For 1,000,000
+files: 479.3B gas, 28,608 transactions (prague); 577.8B, 28,058 transactions (amsterdam). For a large Realm the realistic
 route to a list nobody kept is an indexer, or a new Realm that keeps it from genesis.
 
 **The third part of the price: the reservation a later list adds to every other statement** (step 3b, §10 item 27;
@@ -1180,6 +1223,23 @@ the same with the list's own live execution added to E on HEAD statements (`LIST
 because those shapes are bounded by V. The edits shape is planner arithmetic only (no FloorPlan test builds it); the
 other four are FloorPlan's shapes. A per-purpose term in the ingress's quote (a formula change, replaceable until
 freeze) would leave every non-HEAD shape at generation 1's batch.
+
+**Cured by work-model formula 3 (2026-11-26, docs/WORK-MODEL-V3.md).** The example generation's model now puts the
+list's reservation in the HEAD purpose surcharge (first +10 fresh, +10 rewrites, +27,000; re-bind nothing, since the list
+does nothing on an edit; other later +10 rewrites, +27,000), so TAG and FOLDER statements are quoted exactly as
+generation 1 quotes them (`test/index/HeadAuthorsFloor.t.sol`, `test_other_purposes_are_not_reserved_for_the_list`).
+The same table under formula 3 (generation 1 → the example generation; the same with the list's E):
+
+| shape | prague | amsterdam |
+|---|---|---|
+| lone negatives on a one-word topic | 38 → 38 | 53 → 53 |
+| first tags, depth 8, everything new | 18 → 18 | 19 → 19 |
+| first tags, depth 64, everything new | 3 → 3 | 3 → 3 |
+| create-file recipes (5 actions each) | 10 → **9** | 12 → 12 |
+| plain edits (PUBLISH files-child/1, HEAD re-bind; 2 actions each) | 24 → 24 | 28 → 28 |
+
+Only the HEAD statements' own shape (create file, on prague) pays the list's reservation; the lone negatives keep their
+batch.
 
 ### 6.3 Who pays
 
@@ -1724,9 +1784,10 @@ a fresh copy. The storage form chosen is code (item 34).
     since step 4: the liveness gate and the fold-hook gap (Option A, items 34–38) and item 29's amsterdam rewrite price
     (fixed in this release). Open: case (d), a digest spec rebuilt in a fresh store (§8 test 9); the above-cap
     state-gas path on a client that implements EIP-8037 (anvil 1.8.3 accepts `--hardfork amsterdam` but applies prague
-    pricing); the work model's missing compute and per-purpose terms for later statements (item 41); until freeze any
-    replacement Type registry must keep existing Type rows (§4.3); an activation that keeps a live index which no
-    longer answers still reverts (§5.3; replacing the index is the recovery).
+    pricing). Done since: the work model's compute and per-purpose terms for later statements (formula 3, item 43);
+    keeping a live index never asks its readiness and reads only its work model, so an index whose readiness no longer
+    answers can still be kept (§5.3); and a build proves a Type's reference count instead of
+    reading the registry's row, so a replacement Type registry no longer has to keep it (§4.3).
 
 ### The liveness gate and Option A (2026-11-26, branch `fable/2026-11-26-liveness`)
 
@@ -1783,8 +1844,8 @@ a fresh copy. The storage form chosen is code (item 34).
     unit is refused 7 (Option A). `HeadAuthorsHooks.t.sol::test_a_re_pin_cannot_build_a_new_units_hook`: refused 7 / 8
     (was activated). Every plan builder fills the copy (`test/harness/ManifestCopy.sol`); `HeadAuthorsReads` names its
     new units through `_builtHooks`.
-38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule; the unchanged
-    index path's reason-2 read (§5.3, left as it is); a copy over 24,575 B (refused, not split).
+38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule (done since: a build proves the count, §4.3); the unchanged
+    index path's reason-2 read (§5.3; done since: keeping an index never asks its readiness; only its work model is read); a copy over 24,575 B (refused, not split).
 
 ### The final integration (2026-11-26, branch `fable/2026-11-26-final`)
 
@@ -1837,3 +1898,111 @@ alone; merged on `main` at `726993e` (step 4), they were built, tested together 
     tag-level terms count, and prague's edits +7.5% to +8.0% at 20k to 24k. A real term would need a row measured
     independently of the composites it is judged against. Not pursued in this release; the model stays as it is,
     with no re-fit and no new term (tools/RELEASE.md item 40).
+43. **FIXED BY WORK-MODEL FORMULA 3 (2026-11-26): the released floor is below the spend of later statements at distinct
+    places and in long lists, on today's schedule too.** In the current release a later statement's quote (formula 2:
+    122.0k on prague, 235.6k on amsterdam) is below its callbacks' spend when the statements are at distinct places or
+    in long lists: 0.91 on prague for a restore of entry 48 across places (134.0k), 0.75 at 4,096 entries (162.8k),
+    measured by `test/integration/FloorSplit.t.sol`. Every later measurement before it was in one place with short
+    lists, where one scope head is rewritten once per publication and the author's scope list is searched in six
+    probes. So today a later-statement publication sent near the floor can be refused (`E_INDEX_GAS`), but it can never
+    be admitted unindexed; and prague's later batches were planned on that under-quote. Formula 3 fits the later row to
+    the dearest later statement in lists of up to 1,024 entries per author per place (docs/WORK-MODEL-V3.md §3.5), which
+    makes prague's masks, releases and restores smaller (64 → 58, 60 → 51) and keeps every re-bind batch at or above
+    today's with a row of its own. Item 41's over-reservation on amsterdam is cured by the same change.
+
+### A build proves a Type's reference count (2026-11-26, branch `fable/2026-11-26-decoder-registry`)
+
+**What changed.** `IndexReplayDecoder._refCount`: for a PUBLISH or REUSE leaf the decoder asks the registry only for
+`descriptorBytes(typeId)`, projects the rule id (header bytes 66..98) and the leading REF32 fields (kind byte 1, at most
+eight: the codec requires references to lead), recomputes `Keys.typeId(keccak(DOM_DESCRIBED_SHAPE, d), refs, ruleId)`,
+compares it with the record's Type id read from the ledger (row 19a) and refuses `E_REPLAY(10)` on a mismatch (or bytes
+shorter than the 134-byte header); the count is `refs.length`. It no longer calls `typeInfo`. **Trusted:** that the
+registry answers with some bytes. **Proved:** that they are the registered descriptor and that the count is its number
+of declared references, because the Type id commits to both (its shape hashes the whole descriptor, and it hashes the
+reference Types with their count). The projection is not the full `DescribedCodec.parse`: a registered descriptor
+parsed at registration, and bytes that are not it cannot hash to its id. A record whose Type id no descriptor derives
+cannot be decoded; on a real Realm none exists, because `TypeRegistry._retain` registers a Type only under
+`Keys.typeId(Keys.shape(descriptor), refs, h.ruleCodehash)` and the kernel admits a record only of a registered Type
+(`E_UNKNOWN_TYPE`). Decoded effects are identical to before: every suite that decodes or builds on the real registry
+(`BuildWalk`, `BuildAsOf`, `TopicListsReplay`, the `HeadAuthors*` suites, `DroppedList`, `BuildGas`) passes unchanged.
+
+**The stand-in Types.** Four suites run on `MockRegistry` with a made-up Type id (`keccak256("test/type/ok")`), which no
+descriptor derives, so the proving decoder refused their records (20 tests, `MockUnsupported` from the mock's
+`descriptorBytes`). Their `TYPE_OK` is now `StandInTypes.OK_ID`, the id of a real codec-1 descriptor with no references
+(as `TYPE_OK` always had), registered on the mock by `setDescriptor` (which refuses a descriptor that does not derive
+the id); nothing else in those suites changed (`Replay`, `Carried`, `Liveness`, `BuildWalkRefusals`: one import, the
+constant, one `setDescriptor` line each). `testReplayRefusals` sees `E_REPLAY(6)` again, and the decode-equals-live checks
+(`testReplayEqualsLiveAcrossEveryNewTransition`, `testDecoderMatchesTheLiveStream`) pass as they are.
+
+**Tests** (`test/index/ProvedRefCount.t.sol`): the thirteen release Types' stored counts are pinned (0, 1, 0, 0, 0, 1,
+1, 0, 0, 2, 0, 2, 0 in `FilesFixture` order) and the proved count equals each; a registry whose `typeInfo` answers a
+wrong count (7) for every Type is never asked (`vm.expectCall` count 0), every publication of the mixed history decodes
+to the same payload, and a full replay builds to the end; altered bytes (a name byte, a rule-id byte), the last byte cut,
+bytes cut below the header, another Type's descriptor (`topic/1`, two references) and empty bytes are each refused
+`E_REPLAY(10)`; a `build` over a registry that answers wrongly refuses `E_REPLAY(10)` and its frontier does not move,
+and builds to the end once the registry answers truly; a registry whose `descriptorBytes` reverts is bubbled (the decode
+and the `build` revert with the registry's own error, nothing changes); a 4,096-byte descriptor with eight references,
+registered as a real NATIVE Type, is proved 8; and a record of a made-up Type id on a `MockRegistry` that serves a
+descriptor deriving another id cannot be decoded (`UnderivedTypeTest`, `E_REPLAY(10)`).
+
+**Gas** (measured; the count read alone, a probe calling the registry and the proof, cold then warm in one call; today =
+`typeInfo(id).refCount`):
+
+| descriptor | prague today | prague proved | amsterdam today | amsterdam proved |
+|---|---|---|---|---|
+| smallest, `realm-notice/1` (239 B) | 25,050 / 5,541 | 19,461 / 5,452 | 26,250 / 5,541 | 21,161 / 5,552 |
+| largest of the release, `files-content/1` (698 B) | 25,050 / 5,541 | 20,392 / 6,383 | 26,250 / 5,541 | 22,092 / 6,483 |
+| the codec's largest (4,096 B, 8 references) | 25,050 / 5,541 | 27,634 / 13,625 | 26,250 / 5,541 | 29,334 / 13,725 |
+
+Cold is cheaper (`descriptorBytes` reads one slot of the Type row; `typeInfo` reads about six); warm costs −89 to +942
+on the release's Types. In a build (`BuildGas.t.sol`, both profiles, against `63fa839`): per marginal publication,
+create file −16 (prague) / +184 (amsterdam), edit and second author's version +609 / +709, folder move −99 / +1, plain
+publish −137 / −37, HEAD transitions and first tag +20 / +20 (code placement: they publish no record); the fixed share of a
+cold call falls by 5,500 (prague) / 5,100 (amsterdam) per distinct Type it meets (create file −11,000 / −10,200); the
+mixed segment +20,998 / +32,398 (+0.22% / +0.34%). Applied to §6.2's history: ≈ +1,560 a file on prague (477,732 →
+≈ 479,290, +0.33%) and ≈ +2,100 of execution on amsterdam (467,971 → ≈ 470,070, +0.45%; +0.36% of all gas), an
+extrapolation from the marginal figures, not a measured run; measured in this release, with formula 3 beside it: 479,325
+(+0.33%) and 470,112 (+0.46%; +0.37% of all gas), §6.2 and item 45 below. Every band of `BuildGas.t.sol` holds unchanged. No cache:
+the decoder is STATICCALLed once per publication (so no transient storage), and a warm proof costs about what the old
+read did. Size: `IndexReplayDecoder` 5,404 → 5,578 B (budget 19,660 B).
+
+### This release: formula 3, the registry rule, the kept-index fix and the list tiers, integrated (2026-11-26)
+
+Three pieces, work-model formula 3 (docs/WORK-MODEL-V3.md), the proved reference count (above) with the kept-index path
+(§5.3), and the gas model's list tiers (tools/RELEASE.md item 47), were each reviewed alone, merged onto one branch on
+`63fa839`, built and
+tested together on both schedules and regenerated once (tools/RELEASE.md items 42 to 48).
+
+44. **What had to change where the pieces met.** No behavior conflict; one ruling, already in the merge. (a) **A kept
+    index is read once, for its work model.** Formula 3 checks the work model of a kept index too (reasons 15 and 16),
+    and the kept-index fix stopped asking its readiness; `LedgerControl._checkIndex`'s kept branch now checks the
+    revision row (1), the ledger's own lock (2) and then the work model, and nothing else. So the kept-index test whose
+    every call to the index reverts, which activated on the kept-index branch, is now refused `E_INDEX_NOT_READY(15)`
+    (`test/index/Liveness.t.sol::test_keeping_an_index_whose_every_call_reverts_is_refused_15`: an index that cannot
+    answer its work model cannot serve a publication either), the reason-2 test breaks only the readiness, and a new
+    test keeps an index whose readiness reverts and whose work model is of another formula and is refused 15. The doubles
+    and stand-ins of the registry piece already answered formula 3's 32 words (they take
+    `IndexDoubleDefaults.workModel()`), so nothing else in the tests changed. (b) **Texts that were stale in the merged
+    tree:** the floor formula in `gas/model.json` (`tools/gas-model.mjs` `FLOOR_FORMULA`) named two rows and 26 words, and
+    `indexFloor` as pricing every bind as a first statement; it now states the three rows, the surcharge rows, WITHDRAW
+    after the first, the largest-row rule without a principal and 32 words. `planning.headroomCovers` named the
+    maximum-error fields as the ones the cap condition is tested against; it now names `maxUnderErrorPercent` and
+    `maxUnderExecutionErrorPercent`, as the list-tier piece's planning rule says (`tools/test/gas-plan.test.mjs` asserts
+    both names). Two source comments said 26 words (no bytecode change). (c) The planner's `quote()` (formula 3) and
+    `cost()` (the tiers) live in one file and needed nothing beyond the merged action comment; `tools/gas-model.mjs` and
+    the schema carry both pieces' changes, checked hunk by hunk against each branch. (d) The two claims agree: the floor
+    claims lists of up to 1,024 entries and covers up to 4,096 (`FloorSplit.t.sol`), and the gas model's
+    `laterLists.claimEntries` is 1,024 with its `beyondClaim` composites at 4,097 entries, excluded from the stated
+    maxima. (e) `BuildGas.t.sol`'s bands hold on both profiles unchanged: formula 3 touches only the live fold's
+    reservation, and the decoder's proved read moved the marginal figures by −137 to +709.
+45. **What the regeneration measured that moved here** (§6.1, §6.2). The build of `head-authors` over 1,000,000 files:
+    479,325 a file on prague (was 477,732), 470,112 of execution and 107,712 of state gas on amsterdam (was 467,971);
+    28,608 / 28,058 transactions (was 28,513 / 27,930). The fixed share of a cold EX call fell (create file 281,227 →
+    270,480 on prague, 286,627 → 276,680 on amsterdam: the proved count reads one slot per Type instead of six) but rose
+    by 253 for the example generation's own code, and the edits' proved count (+609 / +709 each) outweighs both. The
+    list's live price under the example generation's own model: 51,351 a file on prague and 149,890 on amsterdam (was
+    51,167 / 149,608), because the ingress now quotes a HEAD surcharge row; later against genesis 9.3× / 3.9×. The
+    kernel's own share of every publication fell (the gas model's `fixed` 315,854 → 311,787 on prague, 899,174 → 895,683
+    on amsterdam): the index serves the work model the ingress reads on every quote from a data contract, one EXTCODECOPY
+    instead of storage reads.
+

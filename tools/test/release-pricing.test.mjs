@@ -19,7 +19,7 @@ function solidityFields() {
   const src = readFileSync(join(root, "src/interfaces/Index.sol"), "utf8");
   const body = src.match(/struct WorkModel \{([\s\S]*?)\n\}/);
   assert.ok(body, "src/interfaces/Index.sol declares struct WorkModel");
-  return [...body[1].matchAll(/^\s*uint\d+\s+(\w+);/gm)].map((m) => m[1]);
+  return [...body[1].matchAll(/^\s*(?:uint\d+|bytes32)\s+(\w+);/gm)].map((m) => m[1]);
 }
 
 test("every release document carries the WorkModel the index's ABI returns, field for field", () => {
