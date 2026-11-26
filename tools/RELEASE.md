@@ -242,6 +242,14 @@ rule, never from `indexFloor`.
 - **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
   16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
 
+- **The above-cap state-gas path on a real Glamsterdam chain.** EIP-8037 counts intrinsic gas and calldata as
+  execution gas inside the 2^24 cap and funds state gas from a reservoir only when `tx.gas` exceeds the cap
+  (docs/GAS-SCHEDULES.md); a transaction at or below the cap pays state gas from ordinary gas, which is what
+  Foundry's amsterdam profile emulates. The floor quote stays in execution gas (the integration owner's ruling): a
+  transaction with much state gas funds it by setting `tx.gas` above 2^24. What remains is to confirm that path end to
+  end on a chain that runs the new rules (Foundry's amsterdam profile has no reservoir; the fixture tool runs only
+  osaka and prague).
+
 **16. A gap in CI, now closed (it predates this release).** `pnpm check` ran only before the build in CI, so its
 artifact checks were reported as pending and never ran there: the opcode lint that the ingress writes nothing, the
 opcode lint that the apply delegate calls nothing, and the rule that profile rules carry no immutables. They pass on
@@ -592,6 +600,52 @@ own that survives paging.
 
 For consumers, in one line: a served topic page can be trusted to come from complete lists, and UNKNOWN on a topic view
 now also covers "the index is still building this list".
+
+**The Glamsterdam floor price and the ordinary-state composites.** A consumer re-vendors `gas/model.json`,
+`schemas/`, `test/vectors/` and the release digest once this lands; nothing a client calls changes (no ABI, action,
+read, error, Type id or `src/` file moved). **The regenerated figures below are marked PLACEHOLDER: the integration
+step regenerates `gas/model.json`, `release/` and `test/vectors/floor-plan.json` once and fills them in.**
+
+**39. The Glamsterdam floor prices a rewrite at 12,100, not 5,000.** On Glamsterdam (EIP-8038) a cold rewrite of an
+existing slot costs 12,100 of execution gas, the same as the execution part of a fresh slot (prague 5,000 and 22,100);
+the floor's `floorRewriteGas` for a Glamsterdam Realm (`tools/deploy-plan.mjs` `GLAMSTERDAM_FLOOR`, the harness's
+`s1Limits()` under `FOUNDRY_PROFILE=amsterdam`, `profiles.amsterdam.floor.limits` in `gas/model.json`) was 5,000. Both
+prices of both schedules are now read from one table, `tools/deploy-plan.mjs` `GAS_SCHEDULES` (mirrored for the
+Solidity suites in `test/vectors/gas-schedules.json`; `tools/test/gas-schedules.test.mjs` checks the mirror, the
+docs/GAS-SCHEDULES.md table and the floor constants against it, `test/integration/FloorPrices.t.sol` checks the
+harness against the mirror and measures both prices on each profile, and `tools/release.mjs` refuses a model whose
+amsterdam `floor.limits` differ). What it changes for a consumer: **on amsterdam only** (prague's quote, plan and
+vectors are byte-for-byte unchanged), the floor quote P of a publication grows by 7,100 per quoted rewrite, so its
+requirement V grows and the planning rule's largest batch falls for the rewrite-heavy shapes: lone negatives 54 → 50,
+masks, releases and masks of masks of tags 64 → 44, restores and number changes 64 → 41, folder re-binds 61 → 40,
+a name record and a first tag 30 → 27 units, edits (PUBLISH child + HEAD re-bind) 30 → 23; first tags, name records,
+repeat publishes, registration chunks and create-file recipes keep their k (docs/TAG-NUMBERS.md has the full table).
+64 lone negatives no longer fit one amsterdam publication by V (18.34M against 16.60M; they did at 16.46M). Why it
+matters: with 5,000 a create-file recipe in a folder that already holds the author's files was quoted at 0.969× its
+callbacks' prefix spend on amsterdam (it can refuse a transaction sent near the floor, never admit an unindexed one);
+after the fix the lowest P / spend of any shape the floor claims, in both states and on both schedules, is 1.02
+(prague, unchanged) and on amsterdam 1.26 (`test/integration/FloorStates.t.sol`). The cost: later statements on
+amsterdam are over-quoted 2.0–4.3× (the work model's `rwPerBindLater` is a compute margin expressed as twelve
+rewrites), which only lowers their batch sizes above.
+
+**40. Validation composites in the ordinary state; the model's stated maximum error.** `gas/model.json` validation
+rows carry `state` (`listsNew` | `listsExist`; schema `efs-gas-model/1`, a required field), and four composites are
+measured in the state where the author's lists exist: a create file in a folder that already holds one of the author's
+files, a second edit of a file, a rename + move into a folder holding the author's entries, and a first tag on an
+existing 6-word path whose roll-ups hold entries (`GasModel.t.sol` `test_model_validate_recipes_lists_exist`,
+`test_model_validate_deep_tag_lists_exist`). No constant is refitted (`fixed` stays on its forty anchor pairs). Errors
+with the current constants (measured on an incremental build; PLACEHOLDER until the regeneration): prague create file
+−4.43%, edit +4.99%, rename move −2.41%, deep tag +2.58%; amsterdam all gas −3.89%, +12.03%, −1.83%, +4.29%, and
+execution gas (what the rule plans by there) −10.62%, −3.11%, −8.37%, +0.25%. `maxAbsErrorPercent` becomes 5.80%
+prague (unchanged) and 12.03% amsterdam (was 7.56%: the second edit's state gas is predicted 17.65% high); the largest
+execution-gas error is the ordinary create file, predicted low by 10.62%. Both stay under the rule's 15% headroom,
+which also covers intrinsic gas and calldata; `planning.headroomCovers` says so. Why the model is low there (both
+states, both schedules): the kernel's share is predicted within 0.6%, and the gap is in the index callbacks and the
+final phase, which spend 20–40k more per extra distinct action kind in a publication than the sum of per-action
+marginals (each kind's first touch of its index state is cold; a k2 − k1 marginal sees it once, inside `fixed`).
+
+**41. Identities of this release.** PLACEHOLDER, written once at regeneration: against `cbf5b78` (the commit the SDK
+is pinned to), every identity that moved and every one that did not, for items 32 to 40 together.
 
 ### The identity table (this release against `0fb4804`)
 

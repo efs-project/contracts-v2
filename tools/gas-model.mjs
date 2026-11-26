@@ -135,24 +135,35 @@ const ACTIONS = {
 const LEVEL_SPAN = 4;
 const LEVEL_ROWS = { allNew: "tag level all new", allExisting: "tag level all existing", mineNew: "tag level mine new", mineExisting: "tag level mine existing" };
 
-// The composites (GasModel.t.sol `test_model_validate_*`), as the planner would describe them.
+// The composites (GasModel.t.sol `test_model_validate_*`), as the planner would describe them, each in the state it
+// is measured in: "listsNew" (the author's lists at the positions it touches are new) or "listsExist" (the ordinary case).
 const pub = (shape, n) => ({ publish: shape, n });
 const levels = (level, n) => ({ level, n });
 const VALIDATION = [
-  { key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
+  { state: "listsNew", key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
     actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
-  { key: "validate edit", what: "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
+  { state: "listsNew", key: "validate edit", what: "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
     actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
-  { key: "validate rename move", what: "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
+  { state: "listsNew", key: "validate rename move", what: "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
     actions: [pub("files-name/2", 9), "releaseFolder", "bindFolderFreshFile"] },
-  { key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
+  { state: "listsNew", key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
     actions: [pub("files-bytes/1", 8192), pub("files-bytes/1", 8192)] },
-  { key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
+  { state: "listsNew", key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
     actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
-  { key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
+  { state: "listsNew", key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
     actions: ["bindTagFresh", levels("mineNew", 5), levels("sharedNew", 5)] },
-  { key: "validate label new text", what: "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
+  { state: "listsNew", key: "validate label new text", what: "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
     actions: [pub("text/1", 24), "bindPropertyFresh"] },
+  // the ordinary state: the author's lists exist (a folder that already holds one of the author's files, a file
+  // already edited, a folder that already holds the author's entries, roll-ups that already hold entries)
+  { state: "listsExist", key: "validate create file lists exist", what: "M1 create file in a folder that already holds one of the author's files: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER",
+    actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
+  { state: "listsExist", key: "validate edit lists exist", what: "a second edit of a file: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
+    actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
+  { state: "listsExist", key: "validate rename move lists exist", what: "rename + move into a folder that already holds the author's entries: PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh",
+    actions: [pub("files-name/2", 9), "releaseFolder", "bindFolderFreshFile"] },
+  { state: "listsExist", key: "validate tag 6 words all existing", what: "a first tag on an existing 6-word path, every per-author and shared roll-up holding two entries: the fresh-position term plus five existing levels",
+    actions: ["bindTagFresh", levels("mineExisting", 5), levels("sharedExisting", 5)] },
 ];
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */
@@ -292,7 +303,7 @@ function profile({ rows, types }, name) {
     assert.ok(m, `no "model ${v.key}" measurement`);
     const measured = total(m);
     const predicted = round(predict(c, v.actions));
-    const row = { key: v.key, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)) };
+    const row = { key: v.key, state: v.state, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)) };
     if (amsterdam) {
       row.measuredExecutionGas = m.frameGas;
       row.predictedExecutionGas = round(predict(ex, v.actions));
@@ -312,7 +323,7 @@ const PLANNING = {
   txGasCap: 16777216,
   txGasCapRule: "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
   headroomPercent: 15,
-  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error (under 9% on both schedules, maxAbsErrorPercent)",
+  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error (maxAbsErrorPercent over composites in both states, the author's lists new and existing: 5.8% on prague, 12.03% on amsterdam all gas; amsterdam execution gas, what the rule plans by there, at most 10.62%: a create file in a folder that already holds the author's files, predicted low)",
   limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication },
 };
 /** Read by the planner with the tagLevel terms (design §10.4). */

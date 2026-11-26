@@ -242,8 +242,15 @@
               "minItems": 1,
               "items": {
                 "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["listsNew", "listsExist"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case)."
+                  }
+                },
                 "required": [
                   "key",
+                  "state",
                   "what",
                   "measured",
                   "predicted",
@@ -411,8 +418,15 @@
               "minItems": 1,
               "items": {
                 "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["listsNew", "listsExist"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case)."
+                  }
+                },
                 "required": [
                   "key",
+                  "state",
                   "what",
                   "measured",
                   "predicted",

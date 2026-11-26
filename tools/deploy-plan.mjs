@@ -110,12 +110,39 @@ export const HOT_ABI_ID_STRING = "efs/ledger-hot/2";
 export const HOT_ABI_ID = "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856";
 /** ReaderDirectory kind labels (the directory does not interpret them; the strings of test/periphery/ReaderDirectory.t.sol). */
 export const READER_KINDS = { lens: h("efs/reader/lens/1"), filesPage: h("efs/reader/files-page/1"), topicMine: h("efs/reader/topic-mine/1"), topicEveryone: h("efs/reader/topic-everyone/1"), topicLookup: h("efs/reader/topic-lookup/1") };
-/** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values. */
+/** The per-schedule storage prices, the single source (docs/GAS-SCHEDULES.md; design §4.2, §10.4): execution gas is what
+ *  the GAS opcode sees and EIP-7825's 2^24 cap counts, state gas EIP-8037's second dimension. The Realm's floor prices
+ *  are read from here (LIMITS, GLAMSTERDAM_FLOOR); test/vectors/gas-schedules.json mirrors it for the Solidity suites
+ *  (test/integration/FloorPrices.t.sol checks KernelDeploy.s1Limits() against it and measures both prices), and
+ *  tools/test/gas-schedules.test.mjs fails when the mirror, the docs table or a floor price differs from it. On
+ *  Glamsterdam a cold rewrite of an existing slot costs the same execution gas as a fresh slot (EIP-8038). */
+export const GAS_SCHEDULES = {
+  prague: {
+    name: "Prague/Osaka (Fusaka)",
+    freshSlot: { executionGas: 22100, stateGas: 0 },
+    rewriteColdSlot: { executionGas: 5000 },
+    codeDepositPerByte: { executionGas: 200, stateGas: 0 },
+    newAccount: { executionGas: 25000, stateGas: 0 },
+  },
+  amsterdam: {
+    name: "Glamsterdam (EIP-8037 + EIP-8038, with EIP-7954 and EIP-7997)",
+    freshSlot: { executionGas: 12100, stateGas: 97920 },
+    rewriteColdSlot: { executionGas: 12100 },
+    codeDepositPerByte: { executionGas: 0, stateGas: 1530 },
+    newAccount: { executionGas: 0, stateGas: 183600 },
+  },
+};
+/** The floor prices of one schedule's Realm (`Limits.floorFreshGas`, `floorRewriteGas`): execution-gas prices only. */
+export const floorPrices = (schedule) => ({
+  floorFreshGas: GAS_SCHEDULES[schedule].freshSlot.executionGas,
+  floorRewriteGas: GAS_SCHEDULES[schedule].rewriteColdSlot.executionGas,
+});
+/** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values (prague floor prices). */
 export const LIMITS = {
   maxActions: 64, maxBody: 8192, maxRefs: 8, maxReadSetPrincipals: 64, maxReadSetPositions: 4, maxWitness: 4096,
   maxTransitionBlocks: 7200, inlineWordMax: 256, witnessRetention: 1, maxBindsPerPublication: 64,
   maxBodyBytesPerPublication: 16384, maxFreshSlotsPerPublication: 600, maxReadIds: 64, maxReadCount: 256,
-  floorFreshGas: 22100, floorRewriteGas: 5000, kernelTail: 20000,
+  ...floorPrices("prague"), kernelTail: 20000,
 };
 /** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): slot counts (×10) and compute
  *  terms measured with the step-3b lists on both schedules plus a margin (docs/TAG-NUMBERS.md "The floor"); no release
@@ -128,9 +155,9 @@ export const WORK_MODEL = {
 };
 /** The floor prices a Realm on a Glamsterdam (EIP-8037/8038) chain activates: execution-gas prices only, because the GAS
  *  opcode never sees the state-gas reservoir (design §10.4): the regular 12,100 of a fresh slot, never the all-in
- *  ≈ 110,020. `KernelDeploy.s1Limits()` uses them under FOUNDRY_PROFILE=amsterdam. The fixture's chains (osaka,
- *  prague) use LIMITS. */
-export const GLAMSTERDAM_FLOOR = { floorFreshGas: 12100, floorRewriteGas: 5000, kernelTail: 20000 };
+ *  ≈ 110,020, and the 12,100 of a cold rewrite (GAS_SCHEDULES). `KernelDeploy.s1Limits()` uses them under
+ *  FOUNDRY_PROFILE=amsterdam. The fixture's chains (osaka, prague) use LIMITS. */
+export const GLAMSTERDAM_FLOOR = { ...floorPrices("amsterdam"), kernelTail: LIMITS.kernelTail };
 /** The floor fields of `Limits` the quote reads (the Realm's prices; `floor.limits` in the gas model). */
 export const FLOOR_LIMIT_FIELDS = ["floorFreshGas", "floorRewriteGas", "kernelTail"];
 

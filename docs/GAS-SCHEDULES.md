@@ -7,6 +7,15 @@ EFS contracts are priced on **two** schedules, because the chain is changing und
 | Prague/Osaka (Fusaka) | mainnet and Sepolia | 22,100 | 5,000 | 200 / byte | 25,000 |
 | Glamsterdam (EIP-8037 + EIP-8038, with EIP-7954 and EIP-7997) | **live on Sepolia since 2026-10-06; no Hoodi or mainnet date; EIPs in Last Call** | ≈ 110,020 (97,920 state gas + 12,100) | 12,100 | 1,530 / byte state gas | 183,600 state gas |
 
+The table is the docs copy of one machine-readable table, `tools/deploy-plan.mjs` `GAS_SCHEDULES` (mirrored for the
+Solidity suites in `test/vectors/gas-schedules.json`). The Realm's floor prices are read from it (`floorFreshGas` = the
+fresh slot's execution gas, `floorRewriteGas` = the cold rewrite: 22,100 / 5,000 on prague, 12,100 / 12,100 on
+Glamsterdam) and checked against it: `tools/test/gas-schedules.test.mjs` checks this table, the mirror and the tool
+constants, and `test/integration/FloorPrices.t.sol` checks the Solidity harness against the mirror and measures both
+prices on each profile (prague 22,100 and 5,000; amsterdam 12,100 + 97,920 state gas and 12,100). A "rewrite" here is
+the first write in a transaction of a slot that already holds a nonzero value, cold or read first (a later write of the
+same slot in the same transaction is 100 on both schedules).
+
 Facts from EIP-8037 that matter for the design (read from the EIP text):
 
 - State gas is a second dimension. EIP-7825's 16,777,216 cap applies to **execution gas only**; a transaction's
