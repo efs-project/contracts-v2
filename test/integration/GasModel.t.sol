@@ -1210,6 +1210,350 @@ contract GasModelTest is FilesRecipesBase {
         _exec("model validate 40kb last publication", la, lb);
     }
 
+    // ---- 8. later statements across places and in long lists (validation composites, never fitted) -------------
+    // The later-statement rows (masks, releases, restores, number changes; folder masks, releases, re-binds) are
+    // measured at ONE topic or folder whose lists are short. Two ordinary states cost more per statement: the bitmap
+    // store rewrites a scope head on every later statement (`setBit` and `stamp` write `lastMutation`), so statements
+    // at distinct places rewrite one head each, where statements at one place rewrite one between them; and from an
+    // author's entry 48 at a place the live bit is in a bits word of its own (a restore of an entry alone in its word
+    // writes a fresh slot), found by `RealmIndex._entryIndex`, a bisection of the author's list there with one store
+    // call per probe. The composites below are whole publications in those states. Each builds its state unmeasured
+    // with gas metering paused (fillers are first tags of address-shaped things, or folder entries naming s[39], in
+    // publications of at most 64 actions); the measured statements are about file subjects, as the rows' are.
+    //
+    // Sizes: 32 statements for the homogeneous shapes across places (a bulk edit: half the action limit, where the
+    // per-statement error has nearly reached its asymptote), 16 at 1,024 entries and 8 at 4,096 (the state those
+    // lists need: 16,400 and 32,776 filler tags), and six statements for the two mixed publications (what a person
+    // sends: untag one file from six topics, delete six files from three folders).
+
+    uint256 internal constant ACROSS = 32;
+
+    /// `a` and `b` in unmeasured publications of at most `per` actions.
+    function _doIn(Action[] memory a, bytes[] memory b, uint256 per) internal {
+        for (uint256 from; from < a.length; from += per) {
+            uint256 m = a.length - from < per ? a.length - from : per;
+            Action[] memory x = new Action[](m);
+            bytes[] memory y = new bytes[](m);
+            for (uint256 j; j < m; ++j) {
+                (x[j], y[j]) = (a[from + j], b[from + j]);
+            }
+            _do(x, y);
+        }
+    }
+
+    /// `n` one-word topics `<seed><i>`, registered unmeasured.
+    function _topicsN(string memory seed, uint256 n) internal returns (bytes32[] memory t) {
+        _rememberTopics();
+        EfsTopics.Types memory tt = _topicTypes();
+        t = new bytes32[](n);
+        Action[] memory a = new Action[](n);
+        bytes[] memory b = new bytes[](n);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 id) =
+                EfsTopics.registerWord(tt, bytes(string.concat(seed, vm.toString(i))));
+            (a[i], b[i], t[i]) = (x[0], y[0], id);
+        }
+        _doIn(a, b, 32);
+    }
+
+    /// An address-shaped thing (target kind ADDRESS), distinct per (seed, i, j).
+    function _filler(string memory seed, uint256 i, uint256 j) internal pure returns (bytes32) {
+        return
+            bytes32(
+                uint256(uint160(uint256(keccak256(abi.encode("gas-model filler", seed, i, j)))))
+            );
+    }
+
+    /// The author's tags at `k` new topics: at topic i, `fill` first tags of fillers, then a first tag of s[i]
+    /// (entry `fill` of the author's list there). Unmeasured, gas metering paused. Returns (topics, things).
+    function _tagsAcross(string memory seed, uint256 k, uint256 fill)
+        internal
+        returns (bytes32[] memory t, bytes32[] memory th)
+    {
+        vm.pauseGasMetering();
+        t = _topicsN(seed, k);
+        th = new bytes32[](k);
+        if (fill != 0) {
+            Action[] memory f = new Action[](k * fill);
+            for (uint256 i; i < k; ++i) {
+                for (uint256 j; j < fill; ++j) {
+                    bytes32 x = _filler(seed, i, j);
+                    f[i * fill + j] = _bind(Purpose.TAG, t[i], x, x, 0);
+                }
+            }
+            _doIn(f, new bytes[](k * fill), 64);
+        }
+        Action[] memory a = new Action[](k);
+        for (uint256 i; i < k; ++i) {
+            th[i] = s[i];
+            a[i] = _bind(Purpose.TAG, t[i], s[i], s[i], 0);
+        }
+        _do(a, new bytes[](k));
+        vm.resumeGasMetering();
+    }
+
+    /// One later statement per (topics[i], things[i]) on the author's asserted (revision 1) or, for a restore,
+    /// masked (revision 2) head: `which` 0 a mask, 1 a release, 2 a restore, 3 a number change (0 -> 75).
+    function _tagLater(bytes32[] memory tp, bytes32[] memory th, uint256 which)
+        internal
+        pure
+        returns (Action[] memory a)
+    {
+        a = new Action[](tp.length);
+        for (uint256 i; i < tp.length; ++i) {
+            a[i] = which == 0
+                ? EfsFiles.unbind(Purpose.TAG, tp[i], th[i], 1)
+                : which == 1
+                    ? EfsFiles.release(Purpose.TAG, tp[i], th[i], 1)
+                    : which == 2
+                        ? _bind(Purpose.TAG, tp[i], th[i], th[i], 2)
+                        : EfsFiles.bindWithStrength(Purpose.TAG, tp[i], th[i], th[i], 1, 75);
+        }
+    }
+
+    /// Measures, each from the current state: masks, releases, restores (after unmeasured masks) and, when
+    /// `numbers`, number changes of the author's tags (tp[i], th[i]), as "model validate tag <kind> <what>".
+    function _measureTagLater(
+        string memory what,
+        bytes32[] memory tp,
+        bytes32[] memory th,
+        bool numbers
+    ) internal {
+        uint256 n = tp.length;
+        uint256 snap = vm.snapshotState();
+        _exec(
+            string.concat("model validate tag masks ", what), _tagLater(tp, th, 0), new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate tag releases ", what),
+            _tagLater(tp, th, 1),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        vm.pauseGasMetering();
+        _do(_tagLater(tp, th, 0), new bytes[](n));
+        vm.resumeGasMetering();
+        _exec(
+            string.concat("model validate tag restores ", what),
+            _tagLater(tp, th, 2),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        if (numbers) {
+            _exec(
+                string.concat("model validate tag number changes ", what),
+                _tagLater(tp, th, 3),
+                new bytes[](n)
+            );
+            vm.revertToState(snap);
+        }
+    }
+
+    /// 32 topics, the author's list at each holding one entry (the measured tag): the cross-place case alone.
+    function test_model_validate_later_tags_across() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("lx-", ACROSS, 0);
+        _measureTagLater("across topics", t, th, true);
+    }
+
+    /// 32 topics, the author's list at each holding 49 entries, the measured tag entry 48: alone in its bits word,
+    /// so a mask clears that word to zero and a restore after it writes a fresh slot.
+    function test_model_validate_later_tags_entry48() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("l48-", ACROSS, 48);
+        _measureTagLater("at entry 48 across topics", t, th, false);
+    }
+
+    /// 16 topics, the author's list at each holding 1,025 entries, the measured tag entry 1,024 (the floor's claim:
+    /// eleven bisection probes, alone in its bits word).
+    function test_model_validate_later_tags_entry1024() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("lk-", 16, 1024);
+        _measureTagLater("at entry 1024 across topics", t, th, false);
+    }
+
+    /// BEYOND THE CLAIM (the floor's documented exception): 8 topics, the author's list at each holding 4,097
+    /// entries, the measured tag entry 4,096 (thirteen probes, alone in its bits word).
+    function test_model_validate_later_tags_entry4096() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("l4k-", 8, 4096);
+        _measureTagLater("at entry 4096 across topics", t, th, false);
+    }
+
+    /// One topic whose author's list holds 1,025 entries; the measured tags are entries 32, 64, ..., 1,024 (spread,
+    /// so the bisections share few probes): a long list at one place.
+    function test_model_validate_later_tags_one_topic_1024() public {
+        vm.pauseGasMetering();
+        bytes32 t = _topicsN("l1k-", 1)[0];
+        Action[] memory f = new Action[](1025);
+        bytes32[] memory tp = new bytes32[](ACROSS);
+        bytes32[] memory th = new bytes32[](ACROSS);
+        for (uint256 e; e < 1025; ++e) {
+            bytes32 x = _filler("l1k", 0, e);
+            if (e != 0 && e % 32 == 0) {
+                x = s[e / 32 - 1];
+                (tp[e / 32 - 1], th[e / 32 - 1]) = (t, x);
+            }
+            f[e] = _bind(Purpose.TAG, t, x, x, 0);
+        }
+        _doIn(f, new bytes[](1025), 64);
+        vm.resumeGasMetering();
+        _measureTagLater("of 32 entries of 1025 at one topic", tp, th, false);
+    }
+
+    /// Folder entries of the author: name record `_nm(base + i, 12)` bound in `d` to `target`.
+    function _entry(bytes32 d, uint256 nameIndex, bytes32 target)
+        internal
+        pure
+        returns (Action memory)
+    {
+        return _bind(Purpose.FOLDER, d, keccak256(_nm(nameIndex, 12)), target, 0);
+    }
+
+    /// PUBLISHes of the name records `_nm(from .. from + n, 12)` and of `k` folders of p (salts `<seed>` i).
+    function _namesAndFolders(string memory seed, uint256 from, uint256 n, uint256 k)
+        internal
+        returns (bytes32[] memory d)
+    {
+        Action[] memory a = new Action[](n + k);
+        bytes[] memory b = new bytes[](n + k);
+        for (uint256 i; i < n; ++i) {
+            (a[i], b[i]) = _name(_nm(from + i, 12));
+        }
+        d = new bytes32[](k);
+        for (uint256 i; i < k; ++i) {
+            (a[n + i], b[n + i]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt(seed, i)));
+            d[i] = _id(T_DIRECTORY, b[n + i]);
+        }
+        _doIn(a, b, 64);
+    }
+
+    /// `which` 0 a mask, 1 a release, 2 a re-bind (to s[32 + i % 8]) of the author's entries (d[i], name `names[i]`).
+    function _folderLater(bytes32[] memory d, uint256[] memory names, uint256 which)
+        internal
+        view
+        returns (Action[] memory a)
+    {
+        a = new Action[](d.length);
+        for (uint256 i; i < d.length; ++i) {
+            bytes32 role = keccak256(_nm(names[i], 12));
+            a[i] = which == 0
+                ? _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d[i], role, 0, 1)
+                : which == 1
+                    ? _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d[i], role, 0, 1)
+                    : _bind(Purpose.FOLDER, d[i], role, s[32 + i % 8], 1);
+        }
+    }
+
+    /// Measures masks, releases and re-binds of the author's entries, each from the current state, as
+    /// "model validate folder <kind> <what>".
+    function _measureFolderLater(string memory what, bytes32[] memory d, uint256[] memory names)
+        internal
+    {
+        uint256 n = d.length;
+        uint256 snap = vm.snapshotState();
+        _exec(
+            string.concat("model validate folder masks ", what),
+            _folderLater(d, names, 0),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate folder releases ", what),
+            _folderLater(d, names, 1),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate folder re-binds ", what),
+            _folderLater(d, names, 2),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+    }
+
+    /// 32 folders of the author, each holding one of the author's entries (name i → s[i]).
+    function test_model_validate_later_folders_across() public {
+        vm.pauseGasMetering();
+        bytes32[] memory d = _namesAndFolders("lfx", 7000, ACROSS, ACROSS);
+        Action[] memory a = new Action[](ACROSS);
+        uint256[] memory names = new uint256[](ACROSS);
+        for (uint256 i; i < ACROSS; ++i) {
+            names[i] = 7000 + i;
+            a[i] = _entry(d[i], names[i], s[i]);
+        }
+        _do(a, new bytes[](ACROSS));
+        vm.resumeGasMetering();
+        _measureFolderLater("across folders", d, names);
+    }
+
+    /// One folder holding 1,025 of the author's entries; the measured entries are 128, 256, ..., 1,024 (eight
+    /// files, spread): deleting, hiding or re-pointing files in a big folder.
+    function test_model_validate_later_folder_1024() public {
+        vm.pauseGasMetering();
+        bytes32 dir = _namesAndFolders("lf1k", 8000, 1025, 1)[0];
+        Action[] memory f = new Action[](1025);
+        bytes32[] memory d = new bytes32[](8);
+        uint256[] memory names = new uint256[](8);
+        for (uint256 e; e < 1025; ++e) {
+            bytes32 target = s[39];
+            if (e != 0 && e % 128 == 0) {
+                target = s[e / 128 - 1];
+                (d[e / 128 - 1], names[e / 128 - 1]) = (dir, 8000 + e);
+            }
+            f[e] = _entry(dir, 8000 + e, target);
+        }
+        _doIn(f, new bytes[](1025), 64);
+        vm.resumeGasMetering();
+        _measureFolderLater("of 8 entries of 1025 in one folder", d, names);
+    }
+
+    /// Mixed, ordinary: untag one file (s[0]) from six topics, the author's list at each holding three entries
+    /// (two other things, then the file): six RELEASEs.
+    function test_model_validate_untag_file_six_topics() public {
+        vm.pauseGasMetering();
+        bytes32[] memory t = _topicsN("lu-", 6);
+        Action[] memory f = new Action[](18);
+        bytes32[] memory th = new bytes32[](6);
+        for (uint256 i; i < 6; ++i) {
+            bytes32 x0 = _filler("lu", i, 0);
+            bytes32 x1 = _filler("lu", i, 1);
+            f[3 * i] = _bind(Purpose.TAG, t[i], x0, x0, 0);
+            f[3 * i + 1] = _bind(Purpose.TAG, t[i], x1, x1, 0);
+            f[3 * i + 2] = _bind(Purpose.TAG, t[i], s[0], s[0], 0);
+            th[i] = s[0];
+        }
+        _do(f, new bytes[](18));
+        vm.resumeGasMetering();
+        _exec("model validate untag a file from six topics", _tagLater(t, th, 1), new bytes[](6));
+    }
+
+    /// Mixed, ordinary: delete (RELEASE) six files from three folders, two from each, each folder holding four of
+    /// the author's entries (the deleted ones are entries 1 and 3).
+    function test_model_validate_delete_files_three_folders() public {
+        vm.pauseGasMetering();
+        bytes32[] memory dirs = _namesAndFolders("ld", 9000, 12, 3);
+        Action[] memory f = new Action[](12);
+        bytes32[] memory d = new bytes32[](6);
+        uint256[] memory names = new uint256[](6);
+        for (uint256 i; i < 3; ++i) {
+            for (uint256 e; e < 4; ++e) {
+                uint256 nm = 9000 + 4 * i + e;
+                bytes32 target = s[39];
+                if (e % 2 == 1) {
+                    uint256 m = 2 * i + e / 2;
+                    target = s[m];
+                    (d[m], names[m]) = (dirs[i], nm);
+                }
+                f[4 * i + e] = _entry(dirs[i], nm, target);
+            }
+        }
+        _do(f, new bytes[](12));
+        vm.resumeGasMetering();
+        _exec(
+            "model validate delete six files from three folders",
+            _folderLater(d, names, 1),
+            new bytes[](6)
+        );
+    }
+
     function _types() internal view returns (EfsFiles.Types memory t) {
         t = EfsFiles.Types({
             root: typeIds[T_ROOT],
