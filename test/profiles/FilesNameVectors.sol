@@ -3,8 +3,11 @@ pragma solidity 0.8.37;
 
 /// @notice The 50 name vectors of the naming experiment (`planning/Reviews/2026-09-26-efs-v2-naming-reconciliation/
 ///         experiment/test/Vectors.sol`, generated there by `vectors.mjs`, an independent JavaScript oracle), reduced to
-///         the `files-name/2` verdict (the oracle's `v2` column; `NameV2F` agrees with it on every vector) and the
-///         keccak role. Copied, not regenerated: the oracle and its Node ICU tables stay in the review.
+///         a verdict and the keccak role. Copied, not regenerated: the oracle and its Node ICU tables stay in the review.
+///         The verdict was the `files-name/2` one (the oracle's `v2` column; `NameV2F` agrees with it on every vector);
+///         it is now `files-name/3`'s, and the six vectors `/3` refuses and `/2` admitted say so in their comment
+///         (5, 6, 12, 45, 46, 47). `tools/name-vectors.mjs` reads this file into `test/vectors/names.json` and refuses to
+///         generate when its own grammar disagrees with a verdict here.
 library FilesNameVectors {
     struct V {
         bytes data;
@@ -44,16 +47,16 @@ library FilesNameVectors {
             false,
             0x1daa7034adab66d9ec9e03e2c89201b83a7497e85dc5b971aa9dae2ccbb7a208
         );
-        // ASCII punctuation, spaces
+        // ASCII punctuation, spaces (refused since files-name/3: '#'; files-name/2 admitted it)
         v[5] = V(
             hex"512641202331202866696e616c292e6a7067",
-            true,
+            false,
             0x46216254ccddb7100c31c5918e6844b9b65e537462c0a0608fe01c82440fa6b0
         );
-        // percent and question mark
+        // percent and question mark (refused since files-name/3; files-name/2 admitted it)
         v[6] = V(
             hex"3130302520646f6e653f2e747874",
-            true,
+            false,
             0x162e07b838f16465672f22fdf44d2adbba8a84c25927b6ceb2b46be17e6ba365
         );
         // plus, equals, ampersand
@@ -86,9 +89,9 @@ library FilesNameVectors {
             true,
             0xa8ae42f1d0f5d3fc036bafb30ed3fcc9bd6e9ade46f5121c1945b13ed277b466
         );
-        // three dots
+        // three dots (refused since files-name/3: a trailing '.'; files-name/2 admitted it)
         v[12] = V(
-            hex"2e2e2e", true, 0xabb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f
+            hex"2e2e2e", false, 0xabb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f
         );
         // dot
         v[13] =
@@ -266,22 +269,22 @@ library FilesNameVectors {
             true,
             0xc29802868d3be34f3f4d5aae69462bbe4c794b881de3ede038deefd0c51a6ac7
         );
-        // trailing dot (allowed by EFS)
+        // trailing dot (refused since files-name/3; files-name/2 admitted it)
         v[45] = V(
             hex"656e64732e",
-            true,
+            false,
             0x8bdc1857f8dc623682b824a19a2a500321252865f61fda7f907b8bfca812d1b6
         );
-        // literal percent sequence as a name
+        // literal percent sequence as a name (refused since files-name/3: '%'; files-name/2 admitted it)
         v[46] = V(
             hex"2545372538432541422e6a7067",
-            true,
+            false,
             0xf7576b2f1a856935b278b32c92e1110d8c84eff765079a1b895d91a869a3af3b
         );
-        // literal %2F as a name
+        // literal %2F as a name (refused since files-name/3: '%'; files-name/2 admitted it)
         v[47] = V(
             hex"2532462e747874",
-            true,
+            false,
             0xb2f59fea85e8953f6e8bdfec4ce58ef1f4f054fad96b6a80b88ea214fda17fce
         );
         // ZWNJ+ZWJ (allowed, DI)

@@ -32,7 +32,7 @@ error E_FILES_STATUS(uint8 status); // none
 /// @title FilesPageReader/1 — Files directory pages and name lookup (design §5.13, §11, §12)
 /// @notice Immutable and stateless. The ledger, the two read facets (`LedgerViews` for `headsAt`, `LedgerReads` for
 ///         `basis`, `bindingPosition`, `positionCell`, `bodySlice`, `bodyWords`, `recordHeader`) and the three Files
-///         Type ids it interprets (`files-name/2`, `files-root/1`, `files-child/1`) are constructor immutables; the
+///         Type ids it interprets (`files-name/3`, `files-root/1`, `files-child/1`) are constructor immutables; the
 ///         live index is resolved per call from `ILedgerHot(ledger).index()` and never cached, its bitmap store
 ///         from `IIndexReads.bitmapStore()`. The reader never reads raw slots.
 ///
@@ -162,7 +162,7 @@ contract FilesPageReader is IFilesPageReader {
     /// @param ledger_ the ledger proxy this reader serves (its layout is pinned here: `layoutId()`)
     /// @param views_ the `LedgerViews` facet the reader calls for `headsAt`
     /// @param reads_ the `LedgerReads` facet the reader calls for rows, bodies and the basis
-    /// @param nameType_ the `files-name/2` Type id; @param rootType_ `files-root/1`; @param childType_ `files-child/1`
+    /// @param nameType_ the `files-name/3` Type id; @param rootType_ `files-root/1`; @param childType_ `files-child/1`
     constructor(
         address ledger_,
         address views_,
@@ -568,7 +568,7 @@ contract FilesPageReader is IFilesPageReader {
         row.rowKind = rowKind;
     }
 
-    /// The name bytes of `role`; false when no `files-name/2` record carries it.
+    /// The name bytes of `role`; false when no `files-name/3` record carries it.
     function _name(bytes32 role, Row memory row) private view returns (bool) {
         bytes memory ret = _sc(
             READS,

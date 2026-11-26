@@ -20,7 +20,7 @@ import {Keys} from "../lib/Keys.sol";
 ///         the rules pure over calldata, `refHeaders` and constructor state.
 ///         `flags` (header byte 133) bit 0 is `ClosureConstants.TYPE_FLAG_EMITS_BODY`: the kernel logs a fresh
 ///         record's body (at most 256 bytes) in `Body`. It is meant for the small records an indexer must follow
-///         from events alone: names, words and topic records. Of these ten only `files-name/2` sets it; the topic
+///         from events alone: names, words and topic records. Of these ten only `files-name/3` sets it; the topic
 ///         and text Types the tag profile adds set it there; directories, content, bytes and file revisions never.
 ///
 ///         Dependency order (a rule's constructor state names sibling Type ids, so the Type it names must be derived
@@ -177,7 +177,7 @@ library FilesTypes {
     }
 
     function nameSpec() internal pure returns (Spec memory s) {
-        s.name = "files-name/2";
+        s.name = "files-name/3";
         s.description =
             "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved";
         s.dependencyClass = 1;

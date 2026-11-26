@@ -476,7 +476,7 @@ contract FilesRecordRulesTest is FilesUnitBase {
     }
 
     function test_alias_never_targets_a_name_or_a_missing_object() public {
-        bytes32 nameRecord = keccak256("a files-name/2 record");
+        bytes32 nameRecord = keccak256("a files-name/3 record");
         stub.setRecord(nameRecord, keccak256("test/files/name-type"), 5, 9);
         _refuses(alias_, _ctx(), abi.encode(nameRecord, uint256(1)), _none(), _noHeaders(), 5);
         _refuses(

@@ -117,39 +117,68 @@ contract TopicRulesTest is Test {
         assertEq(_code(hex"c341"), 2, "lead then ASCII");
     }
 
-    // ---- word: 3 forbidden ASCII ------------------------------------------------------------------------------
+    // ---- word: 3 an ASCII byte outside the 39 ------------------------------------------------------------------
+
+    /// The 39 ASCII characters a word admits: `a`-`z`, `0`-`9`, `-`, `_`, `.`.
+    function _wordAscii(uint256 c) internal pure returns (bool) {
+        return
+            (c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || c == 0x2d || c == 0x5f
+                || c == 0x2e;
+    }
 
     function test_word_forbidden_ascii() public view {
+        uint256 admitted;
         for (uint256 c; c < 0x80; ++c) {
-            bool bad = c <= 0x20 || c == 0x7f || c == 0x2f || c == 0x5c || (c >= 0x41 && c <= 0x5a);
-            uint256 code = _code(abi.encodePacked(bytes1(uint8(c)), "x"));
-            if (c == 0x7e) assertEq(code, 5, "~x"); // admitted byte, refused shape
-            else assertEq(code == 3, bad, "every ASCII byte");
+            bool ok = _wordAscii(c);
+            if (ok) ++admitted;
+            assertEq(_code(abi.encodePacked(bytes1(uint8(c)), "x")), ok ? 0 : 3, "first");
+            assertEq(_code(abi.encodePacked("x", bytes1(uint8(c)), "x")), ok ? 0 : 3, "inside");
+            // last: '.' is the shape refusal 4
+            assertEq(
+                _code(abi.encodePacked("x", bytes1(uint8(c)))), ok ? (c == 0x2e ? 4 : 0) : 3, "last"
+            );
         }
+        assertEq(admitted, 39, "39 characters");
         assertEq(_code("~A"), 3, "a byte refusal comes before the shape refusals");
+        assertEq(_code("A."), 3, "a byte refusal before a trailing dot");
         assertEq(_code("e\xcc\x81\x2f"), 3, "a / after a multi-byte scalar");
         assertEq(_code("a\\b"), 3, "a backslash reads as a path separator");
         assertEq(_code("\\"), 3, "only a backslash");
+        assertEq(_code("c++"), 3, "c++ is not a word");
+        assertEq(_code("c#"), 3, "c# is not a word");
+        assertEq(_code("q&a"), 3, "& is not a word character");
+        assertEq(_code("-a"), 0, "a leading - is admitted");
         assertEq(_text("C:\\x"), 0, "a text admits a backslash");
     }
 
-    // ---- word: 4, 5, 6 whole-word shapes ------------------------------------------------------------------------
+    // ---- word: 4, 6 whole-word shapes (5 is unused) --------------------------------------------------------------
 
     function test_word_shapes() public view {
         assertEq(_code("."), 4);
         assertEq(_code(".."), 4);
-        assertEq(_code("..."), 0);
+        assertEq(_code("..."), 4);
+        assertEq(_code("a."), 4);
         assertEq(_code(".a"), 0);
-        assertEq(_code("~"), 5);
-        assertEq(_code("~efs"), 5);
-        assertEq(_code("a~"), 0);
+        assertEq(_code("a.b"), 0);
+        assertEq(_code("a..b"), 0);
+        // a `~` is a byte refusal anywhere: code 5 (once "starts with ~") is never returned
+        assertEq(_code("~"), 3);
+        assertEq(_code("~efs"), 3);
+        assertEq(_code("a~"), 3);
+        assertEq(_code("a~b"), 3);
         bytes memory hex40 = "00112233445566778899aabbccddeeff00112233";
         assertEq(_code(bytes.concat("0x", hex40)), 6);
         assertEq(_code(bytes.concat("0x", _repeat("f", 39))), 0, "39 hex");
         assertEq(_code(bytes.concat("0x", _repeat("f", 41))), 0, "41 hex");
         assertEq(_code(bytes.concat("0x", _repeat("f", 39), "g")), 0, "a non-hex character");
         assertEq(_code(bytes.concat("0X", hex40)), 3, "uppercase X is a byte refusal");
+        assertEq(_code(bytes.concat("0x", _repeat("f", 39), ".")), 4, "a trailing dot first");
         assertEq(_code("0x"), 0);
+        assertEq(_code("0xsplits"), 0, "only 0x and 40 hex is refused");
+    }
+
+    function testFuzz_word_never_answers_5(bytes memory w) public view {
+        assertTrue(probe.wordRefusal(w) != 5);
     }
 
     // ---- word: 7 refused code points; the table -----------------------------------------------------------------
@@ -353,7 +382,7 @@ contract TopicRulesTest is Test {
         assertEq(_text(_utf8(0x10fffd)), 0, "U+10FFFD");
     }
 
-    /// Every non-ASCII scalar `files-name/2` refuses, a word refuses too ("at least as strictly as names").
+    /// Every non-ASCII scalar `files-name/3` refuses, a word refuses too ("at least as strictly as names").
     function testFuzz_word_at_least_as_strict_as_names(uint24 raw) public view {
         uint256 s = uint256(raw) % 0x110000;
         vm.assume(s >= 0x80 && (s < 0xd800 || s > 0xdfff));
@@ -400,8 +429,8 @@ contract TopicRulesTest is Test {
             bytes(""),
             bytes(hex"c080"),
             bytes("Tesla"),
-            bytes(".."),
-            bytes("~x"),
+            bytes("inc."),
+            bytes("~x"), // code 3 again: code 5 is unused
             bytes.concat("0x", _repeat("a", 40)),
             bytes.concat("a", _utf8(0x200d))
         ];
@@ -413,8 +442,9 @@ contract TopicRulesTest is Test {
             new bytes32[](0),
             new RefHeader[](0)
         );
+        uint8[7] memory codes = [1, 2, 3, 4, 3, 6, 7];
         for (uint256 i; i < 7; ++i) {
-            vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(i + 1)));
+            vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, codes[i]));
             wordRule.accept(_ctx(WORD_TYPE), bad[i], new bytes32[](0), new RefHeader[](0));
         }
         vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(8)));

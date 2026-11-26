@@ -556,7 +556,7 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     readers: {
       ledgerReads: a.ledgerReads, ledgerViews: a.ledgerViews, readerDirectory: a.readerDirectory, keysView: a.keysView,
       lensReader: { address: a.lensReader, runtimeCodehash: plan.readers.lens.runtimeCodehash, kind: plan.readers.lens.kind, kindLabel: plan.readers.lens.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R1?.txHash ?? null },
-      filesPageReader: { address: a.filesPageReader, runtimeCodehash: plan.readers.filesPage.runtimeCodehash, kind: plan.readers.filesPage.kind, kindLabel: plan.readers.filesPage.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, nameType: typeIds["files-name/2"], rootType: typeIds["files-root/1"], childType: typeIds["files-child/1"], txHash: tx.R2?.txHash ?? null },
+      filesPageReader: { address: a.filesPageReader, runtimeCodehash: plan.readers.filesPage.runtimeCodehash, kind: plan.readers.filesPage.kind, kindLabel: plan.readers.filesPage.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, nameType: typeIds["files-name/3"], rootType: typeIds["files-root/1"], childType: typeIds["files-child/1"], txHash: tx.R2?.txHash ?? null },
       topicMineReader: { address: a.topicMineReader, runtimeCodehash: plan.readers.topicMine.runtimeCodehash, kind: plan.readers.topicMine.kind, kindLabel: plan.readers.topicMine.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R6?.txHash ?? null },
       topicEveryoneReader: { address: a.topicEveryoneReader, runtimeCodehash: plan.readers.topicEveryone.runtimeCodehash, kind: plan.readers.topicEveryone.kind, kindLabel: plan.readers.topicEveryone.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, txHash: tx.R7?.txHash ?? null },
       topicLookupReader: { address: a.topicLookupReader, runtimeCodehash: plan.readers.topicLookup.runtimeCodehash, kind: plan.readers.topicLookup.kind, kindLabel: plan.readers.topicLookup.kindLabel, ledger: a.ledgerProxy, views: a.ledgerViews, reads: a.ledgerReads, layoutId: plan.layoutId, topicType: typeIds["topic/1"], wordType: typeIds["topic-word/1"], txHash: tx.R8?.txHash ?? null },
@@ -594,11 +594,11 @@ function expectedDocument(plan, deployment) {
   const records = [
     { id: s.root.directoryRecordId, typeId: t["files-directory/1"] },
     { id: s.folder.directoryRecordId, typeId: t["files-directory/1"] },
-    { id: s.folder.nameRecordId, typeId: t["files-name/2"] },
+    { id: s.folder.nameRecordId, typeId: t["files-name/3"] },
   ];
   const heads = [{ key: s.folder.bindingKey, state: 1, revision: 1, target: s.folder.directoryRecordId, what: "FOLDER root/docs → docs directory" }];
   for (const f of s.files) {
-    records.push({ id: f.headRecordId, typeId: t["files-root/1"] }, { id: f.nameRecordId, typeId: t["files-name/2"] });
+    records.push({ id: f.headRecordId, typeId: t["files-root/1"] }, { id: f.nameRecordId, typeId: t["files-name/3"] });
     if (f.contentRecordId) records.push({ id: f.contentRecordId, typeId: t["files-content/1"] }, { id: f.spanRootId, typeId: f.spanCount ? t["files-span/1"] : t["files-bytes/1"] });
     if (f.externalRecordId) records.push({ id: f.externalRecordId, typeId: t["files-external/1"] }, { id: f.sentinelRecordId, typeId: t["files-bytes/1"] });
     heads.push(
@@ -931,7 +931,7 @@ export async function verify(o = {}) {
   eq("readers lens.VIEWS", await read(pub, lensR, "LensReader", "VIEWS"), a.ledgerViews);
   eq("readers lens.READS", await read(pub, lensR, "LensReader", "READS"), a.ledgerReads);
   eq("readers lens.layoutId", await read(pub, lensR, "LensReader", "layoutId"), plan.layoutId);
-  for (const [fn, value] of [["LEDGER", a.ledgerProxy], ["VIEWS", a.ledgerViews], ["READS", a.ledgerReads], ["LAYOUT", plan.layoutId], ["NAME_TYPE", dep.typeIds["files-name/2"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]]]) {
+  for (const [fn, value] of [["LEDGER", a.ledgerProxy], ["VIEWS", a.ledgerViews], ["READS", a.ledgerReads], ["LAYOUT", plan.layoutId], ["NAME_TYPE", dep.typeIds["files-name/3"]], ["ROOT_TYPE", dep.typeIds["files-root/1"]], ["CHILD_TYPE", dep.typeIds["files-child/1"]]]) {
     eq(`readers page.${fn}`, await read(pub, pageR, "FilesPageReader", fn), value);
   }
   for (const [r, name, extra] of [[a.topicMineReader, "TopicMineReader", []], [a.topicEveryoneReader, "TopicEveryoneReader", []], [a.topicLookupReader, "TopicLookupReader", [["TOPIC_TYPE", dep.typeIds["topic/1"]], ["WORD_TYPE", dep.typeIds["topic-word/1"]]]]]) {

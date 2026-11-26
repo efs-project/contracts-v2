@@ -230,13 +230,13 @@ const repeat = (a) => (k) => range(k).map(() => ({ ...a }));
 const atOnePlace = (cost) => (k) => range(k).map((j) => ({ kind: "bind", cost, first: false, firstAtPlace: j === 0, entries: Math.min(k + 1, 64) }));
 
 /** FloorPlan.t.sol's create-file recipe: CREATE, PUBLISH files-root/1 form 0 (64-byte header + 18-byte document),
- *  PUBLISH a 10-byte files-name/2, BIND HEAD (first), BIND FOLDER (first entry of that name in the root). */
+ *  PUBLISH a 10-byte files-name/3, BIND HEAD (first), BIND FOLDER (first entry of that name in the root). */
 export const CREATE_FILE_ROOT_BYTES = 82;
 export const CREATE_FILE_NAME_BYTES = 10;
 /** FloorPlan.t.sol's registration chunk: one PUBLISH of a fresh 12-byte topic-word/1 page per unit. */
 export const WORD_PAGE_BYTES = 12;
 
-/** FloorPlan.t.sol's name records: a 10-byte files-name/2 (`np-xyz.md0`-style, distinct per unit). */
+/** FloorPlan.t.sol's name records: a 10-byte files-name/3 (`np-xyz.md0`-style, distinct per unit). */
 export const NAME_BYTES = 10;
 
 export function shapes(model) {
@@ -253,12 +253,12 @@ export function shapes(model) {
     tagNumberChanges: { what: "number changes on asserted tags on a one-word topic (a REBIND to the same target with a new number)", units: 1, of: atOnePlace("bindTagNumberChange") },
     masksOfMasks: { what: "masks of masks on a one-word topic (UNBIND from MASKED with a new number; priced as masks of asserted tags, an upper bound)", units: 1, of: atOnePlace("unbindTag") },
     folderRebinds: { what: "re-binds of root-folder entries to another file", units: 1, of: atOnePlace("bindFolderRebind") },
-    repeatPublishes: { what: "repeat PUBLISHes of existing 10-byte files-name/2 records", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: false }) },
-    nameRecords: { what: "fresh 10-byte files-name/2 records (publish-heavy)", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true }) },
+    repeatPublishes: { what: "repeat PUBLISHes of existing 10-byte files-name/3 records", units: 1, of: repeat({ kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: false }) },
+    nameRecords: { what: "fresh 10-byte files-name/3 records (publish-heavy)", units: 1, of: repeat({ kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: true }) },
     publishesAndTags: {
       what: "a fresh 10-byte name record and a first tag on a one-word topic per unit (2 actions each)", units: 2,
       of: (k) => range(k).flatMap(() => [
-        { kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true },
+        { kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: true },
         { kind: "bind", cost: "bindTagFresh", first: true, levels: {} },
       ]),
     },
@@ -268,7 +268,7 @@ export function shapes(model) {
       of: (k) => range(k).flatMap(() => [
         { kind: "create" },
         { kind: "publish", shape: "files-root/1 form 0", bytes: CREATE_FILE_ROOT_BYTES, fresh: true },
-        { kind: "publish", shape: "files-name/2", bytes: CREATE_FILE_NAME_BYTES, fresh: true },
+        { kind: "publish", shape: "files-name/3", bytes: CREATE_FILE_NAME_BYTES, fresh: true },
         { kind: "bind", cost: "bindHeadFresh", first: true },
         { kind: "bind", cost: "bindFolderFreshFile", first: true },
       ]),

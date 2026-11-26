@@ -11,7 +11,7 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 
 /// @title FilesFinalValidator — generation 1's one index unit: the profile's final hook (design §10.7, §12.2, §12.5)
 /// @notice §12.2: "`FilesFinalValidator` (gen 1, `purposeFilter = FOLDER`): for every FOLDER bind, a valid
-///         `files-name/2` record whose id is `recordFromHash(nameType, role)` is admitted at or before the terminal
+///         `files-name/3` record whose id is `recordFromHash(nameType, role)` is admitted at or before the terminal
 ///         admission, the parent is a validated directory record, the target (`Effect.target`/`targetKind`) is a
 ///         file subject or directory record, no self-link; it reads only `recordHeader`/`subjectCreatedAt` on the
 ///         ledger and the effects (write-once facts)." §12.5 adds the HEAD law, homes, and the subjects of tags and
@@ -88,7 +88,7 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      initcode ‖ ids) and the manifest pins its address and codehash, so the configuration is fixed by the
 ///      manifest hash. Each pair of ids is loaded (two cold `SLOAD`s) the first time a publication needs it.
 ///      Refusal codes (`E_FILES_FINAL(code, leaf)`):
-///       1 FOLDER: no `files-name/2` record for the role at or before the terminal admission;
+///       1 FOLDER: no `files-name/3` record for the role at or before the terminal admission;
 ///       2 FOLDER: the parent is neither a directory record admitted by then nor an address-shaped home;
 ///       3 FOLDER: self-link (target == parent);
 ///       4 FOLDER: a subject target not created by then;
@@ -278,7 +278,7 @@ contract FilesFinalValidator is IIndexHook {
             l.name = nameTypeId;
             l.directory = directoryTypeId;
         }
-        // the name: a files-name/2 record whose body hash is the role
+        // the name: a files-name/3 record whose body hash is the role
         if (!_record(hot, Keys.recordFromHash(l.name, e.role), l.name, terminal)) {
             revert E_FILES_FINAL(1, e.leaf);
         }

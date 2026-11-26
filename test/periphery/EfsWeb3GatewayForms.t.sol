@@ -82,7 +82,7 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
         assertEq(_status(_byId(bigRoot, ""), 501).body, "object not served");
         assertEq(_status(_byId(extDescriptor, ""), 501).body, "object not served");
         assertEq(_status(_byId(helloRoot, "/x"), 501).body, "object not served");
-        // a record of another Type: hello.txt's files-name/2 record
+        // a record of another Type: hello.txt's files-name/3 record
         bytes32 name = Keys.recordFromHash(t.name, keccak256("hello.txt"));
         (bytes32 typeId,,,,) = r.hot.recordHeader(name);
         assertEq(typeId, t.name, "the name record exists");
@@ -143,6 +143,19 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
         );
         assertEq(_status(string.concat("/0x", P, "/hello.txt"), 400).body, "malformed id");
         assertEq(_status(string.concat("/0X", _hexAddr(alice), "/x"), 404).body, "not found");
+    }
+
+    /// PINNED, today's behavior, not the chain's word rule: the chain admits `0xsplits` and every other `0x` word
+    /// except `0x` and exactly 40 of `0-9a-f` (`TopicProfile.wordRefusal` rule 6), and the SDK reads such a first
+    /// segment as a topic word, so by that rule these are topic paths (501). The gateway decides the kind on the
+    /// first two bytes alone and answers 400 "malformed id". Reported to the integration owner (2026-11-26) with the
+    /// size of a fix; this test changes when the gateway does.
+    function test_pinned_an_0x_word_first_segment_is_400_today() public view {
+        assertEq(_status("/0xsplits", 400).body, "malformed id");
+        assertEq(_status("/0xsplits/hello.txt", 400).body, "malformed id");
+        assertEq(_status("/0xdeadbeef", 400).body, "malformed id");
+        // 42 bytes that are not all hex: a word on chain (rule 6 needs 40 hex), 400 here
+        assertEq(_status("/0xsplitssplitssplitssplitssplitssplitsspli", 400).body, "malformed id");
     }
 
     // ---- helpers ------------------------------------------------------------------------------------------------

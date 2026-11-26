@@ -141,7 +141,7 @@ contract GasModelTest is FilesRecipesBase {
         }
     }
 
-    /// A valid `files-name/2` name of exactly `len` bytes (3 ≤ len ≤ 255), distinct per `i` (< 26^3).
+    /// A valid `files-name/3` name of exactly `len` bytes (3 ≤ len ≤ 255), distinct per `i` (< 26^3).
     function _nm(uint256 i, uint256 len) internal pure returns (bytes memory n) {
         n = new bytes(len);
         for (uint256 j; j < len; ++j) {
@@ -1080,7 +1080,7 @@ contract GasModelTest is FilesRecipesBase {
             "files-root/1",
             "files-child/1",
             "files-directory/1",
-            "files-name/2",
+            "files-name/3",
             "files-bytes/1",
             "files-content/1",
             "files-external/1",

@@ -361,7 +361,7 @@ export function runtimeOf(name, values = {}) {
 // ---- the Files and Topics profiles: a JS twin of src/profiles/FilesTypes.sol and TopicTypes.sol ----------------------
 
 export const T = { ROOT: 0, CHILD: 1, DIRECTORY: 2, NAME: 3, BYTES: 4, CONTENT: 5, EXTERNAL: 6, ALIAS: 7, NOTICE: 8, SPAN: 9, TOPIC_WORD: 10, TOPIC: 11, TEXT: 12 };
-export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/2", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1", "topic-word/1", "topic/1", "text/1"];
+export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/3", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1", "topic-word/1", "topic/1", "text/1"];
 export const RULES = ["FilesRootRule", "FilesChildRule", "FilesDirectoryRule", "FilesNameRule", "FilesBytesRule", "FilesContentRule", "FilesExternalContentRule", "DirectoryAliasRule", "RealmNoticeRule", "FilesSpanRule", "TopicWordRule", "TopicRule", "TextRule"];
 const NAMESPACE = h("efs/files/1");
 const TOPICS_NAMESPACE = h("efs/topics/1");

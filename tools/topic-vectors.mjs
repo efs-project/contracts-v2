@@ -95,9 +95,14 @@ function scalar(b, i) {
   return u < 0x10000 || u > 0x10ffff ? [0, 0] : [u, 4];
 }
 
+/** The ASCII a word admits: exactly these 39 characters (James, 2026-11-26: nothing that breaks URLs or OS paths). */
+export const WORD_ASCII = "abcdefghijklmnopqrstuvwxyz0123456789-_.";
+const WORD_OK = new Set([...WORD_ASCII].map((c) => c.charCodeAt(0)));
+
 /** The `topic-word/1` grammar (`TopicProfile.wordRefusal`, hex in): 0 admitted, else 1 length; scanning in order
- *  2 malformed UTF-8, 3 a forbidden ASCII byte or 7 a refused scalar; then 4 `.`/`..`, 5 a leading `~`, 6 `0x` and
- *  exactly 40 lowercase hex characters. */
+ *  2 malformed UTF-8, 3 an ASCII byte outside `WORD_ASCII` or 7 a refused scalar; then 4 the word ends with `.`
+ *  (so `.` and `..` too), 6 `0x` and exactly 40 lowercase hex characters. Code 5 (once a leading `~`) is unused:
+ *  a `~` is code 3. */
 export function wordRefusal(hex) {
   const b = bytesOf(hex);
   const n = b.length;
@@ -105,7 +110,7 @@ export function wordRefusal(hex) {
   for (let i = 0; i < n;) {
     const c = b[i];
     if (c < 0x80) {
-      if (c <= 0x20 || c === 0x7f || c === 0x2f || c === 0x5c || (c >= 0x41 && c <= 0x5a)) return 3;
+      if (!WORD_OK.has(c)) return 3;
       i++;
     } else {
       const [s, w] = scalar(b, i);
@@ -114,8 +119,7 @@ export function wordRefusal(hex) {
       i += w;
     }
   }
-  if (b[0] === 0x2e && (n === 1 || (n === 2 && b[1] === 0x2e))) return 4;
-  if (b[0] === 0x7e) return 5;
+  if (b[n - 1] === 0x2e) return 4;
   if (n === 42 && b[0] === 0x30 && b[1] === 0x78 && [...b.subarray(2)].every((c) => (c >= 0x30 && c <= 0x39) || (c >= 0x61 && c <= 0x66))) return 6;
   return 0;
 }
@@ -157,7 +161,10 @@ const WORDS = [
   ["one ASCII letter", "a", ""],
   ["a lowercase word", "tesla", ""],
   ["digits, '-', '_' and '.' inside", "model-3_v1.0", ""],
-  ["every admitted punctuation byte", "!\"#$%&'()*+,-.:;<=>?@[]^_`{|}~x", "'~' is admitted anywhere but first; '/' and '\\' are not"],
+  ["every admitted punctuation byte", "a-b_c.d", "'-', '_' and '.' are the only ASCII punctuation a word admits"],
+  ["c++ is not a word", "c++", "code 3"],
+  ["c# is not a word", "c#", "code 3"],
+  ["a leading '-'", "-a", "admitted (a leading '-' is not refused by this release)"],
   ["255 ASCII bytes", rep("a", 255), "the longest word"],
   ["Latin-1 letter (2 bytes)", "café", ""],
   ["CJK, 3 bytes each", "東京", ""],
@@ -166,10 +173,14 @@ const WORDS = [
   ["U+10FFFD", cp(0x10fffd), "the last scalar a word admits (U+10FFFE and U+10FFFF are noncharacters)"],
   ["tesla and a NO-BREAK SPACE", cat("tesla", cp(0xa0)), "code 7: a look-alike of tesla; every fold rule turns whitespace into _"],
   ["U+00A9 COPYRIGHT SIGN", cp(0xa9), ""],
-  ["...", "...", "only . and .. are refused"],
-  [".a", ".a", ""],
-  ["a.", "a.", ""],
-  ["a~", "a~", ""],
+  ["...", "...", "code 4: a word never ends with '.'"],
+  [".a", ".a", "a leading '.' is admitted"],
+  ["a.", "a.", "code 4"],
+  ["a.b", "a.b", ""],
+  ["a..b", "a..b", "inner dots are admitted"],
+  ["~ first", "~a", "code 3: '~' is refused wherever it stands"],
+  ["~ inside", "a~b", "code 3"],
+  ["~ last", "a~", "code 3"],
   ["0x and 39 hex", cat("0x", rep("f", 39)), ""],
   ["0x and 41 hex", cat("0x", rep("f", 41)), ""],
   ["0x, 39 hex and a non-hex letter", cat("0x", rep("f", 39), "g"), ""],
@@ -202,21 +213,30 @@ const WORDS = [
   ["DEL", x("0x7f"), ""],
   ["uppercase first", "Tesla", ""],
   ["uppercase last", "teslA", ""],
-  ["a byte refusal before a shape refusal", "~A", "code 3, not 5"],
+  ["a byte refusal before a shape refusal", "A.", "code 3, not 4"],
   ["uppercase X in 0x", cat("0X", rep("a", 40)), "a byte refusal"],
   ["uppercase hex after 0x", cat("0x", rep("F", 40)), "a byte refusal"],
   ["a slash after a multi-byte scalar", cat("e", cp(0x301), "/"), ""],
-  [".", ".", "code 4"],
-  ["..", "..", ""],
-  ["~", "~", "code 5"],
-  ["~efs", "~efs", ""],
-  ["~ then a word", "~tesla", ""],
+  [".", ".", "code 4: '.' ends with '.' (a URL resolver also removes it as a dot-segment)"],
+  ["con", "con", "a Windows device name is a word"],
+  ["nul.txt", "nul.txt", ""],
+  ["..", "..", "code 4"],
+  ["~", "~", "code 3 (code 5 is unused)"],
+  ["~efs", "~efs", "code 3"],
+  ["~ then a word", "~tesla", "code 3"],
   ["an address-shaped word", "0x00112233445566778899aabbccddeeff00112233", "code 6"],
   ["40 f after 0x", cat("0x", rep("f", 40)), ""],
   ["the zero address", cat("0x", rep("0", 40)), ""],
   ["a refused scalar before a malformed byte", cat("a", cp(0x200b), x("0xc0")), "code 7: the scan stops at the first refusal"],
   ["a malformed byte before a forbidden ASCII byte", x("0xc0412f"), "code 2"],
 ];
+// every ASCII byte as a one-byte word and between two letters (admitted, or code 3; '.' alone is code 4)
+for (let c = 0; c < 0x80; c++) {
+  const name = `0x${c.toString(16).padStart(2, "0")}`;
+  const one = x(`0x${c.toString(16).padStart(2, "0")}`);
+  WORDS.push([`ASCII ${name} alone`, one, ""]);
+  WORDS.push([`ASCII ${name} inside`, cat("a", one, "b"), ""]);
+}
 // rule 7: the first, last and (when wider) a middle scalar of every entry of the table, each alone and inside a word
 for (const [lo, hi, , what] of REFUSED) {
   const pts = [...new Set([lo, Math.floor((lo + hi) / 2), hi])];
@@ -348,7 +368,13 @@ export function topicVectors(plan) {
     if (row.code === 0) row.pageId = keys.record(t.word, hex);
     return row;
   });
-  for (let c = 1; c <= 7; c++) if (!words.some((w) => w.code === c)) throw new Error(`topic vectors: no word with code ${c}`);
+  for (const c of [1, 2, 3, 4, 6, 7]) if (!words.some((w) => w.code === c)) throw new Error(`topic vectors: no word with code ${c}`);
+  if (words.some((w) => w.code === 5)) throw new Error("topic vectors: code 5 is unused");
+  // the ASCII rows agree with the 39 characters
+  for (let c = 0; c < 0x80; c++) {
+    const inside = words.find((w) => w.label === `ASCII 0x${c.toString(16).padStart(2, "0")} inside`);
+    if (inside.code !== (WORD_OK.has(c) ? 0 : 3)) throw new Error(`topic vectors: ASCII 0x${c.toString(16)} inside`);
+  }
   const texts = TEXTS.map(([label, v, note]) => {
     const hex = hexOf(v);
     const row = { label, hex, length: (hex.length - 2) / 2, code: textRefusal(hex) };
@@ -403,14 +429,22 @@ export function topicVectors(plan) {
     generator: "tools/topic-vectors.mjs via tools/release.mjs (viem encodeAbiParameters + keccak256; the grammars from the NatSpec of src/profiles/TopicProfile.sol)",
     spec: "docs/DESIGN.md §12.5; docs/TAG-DESIGN.md §1, §8; TopicProfile.wordRefusal / textRefusal; EfsTopics",
     grammar: {
-      word: "1..255 bytes of strict UTF-8; no '/' or '\\', no ASCII control, space or A-Z; no scalar of `refused` (so no Unicode whitespace); not '.' or '..'; not starting with '~'; not '0x' and exactly 40 of 0-9a-f",
-      wordCodes: { 0: "admitted", 1: "empty or longer than 255 bytes", 2: "malformed UTF-8", 3: "a forbidden ASCII byte", 4: "'.' or '..'", 5: "starts with '~'", 6: "'0x' and 40 lowercase hex characters (an address)", 7: "a refused scalar (any class of `refused`)" },
+      word: "1..255 bytes of strict UTF-8; of ASCII only the 39 characters of `wordAscii` (a-z 0-9 - _ .); no scalar of `refused` (so no Unicode whitespace); not ending with '.' (so not '.' or '..'); not '0x' and exactly 40 of 0-9a-f",
+      wordAscii: WORD_ASCII,
+      wordAsciiRulings: [
+        "James, 2026-11-26: \"? # etc shouldn't be allowed as they are literally urlencode protected params. Nothing that breaks URLs. Nothing that breaks OS file paths.\"",
+        "James, 2026-11-26, later the same day (withdraws the OS-path test): \"Don't refuse windows reserved names. I only care about URI safety and us having some delimiters we can use for URL syntax\"",
+      ],
+      wordAsciiNote: "the 39 characters never need escaping in a link and leave every delimiter free. The non-ASCII side (`refused`) is unchanged and will be replaced by a generated table in a later release; a leading '-' is still admitted; Windows device names are words",
+      wordTrailingDot: "code 4 refuses a word ending in '.' for link trimming (an auto-linker drops a full stop after a pasted link, so /inc. would open /inc): the tag design session's proposal, not a ruling; it also refuses '.' and '..'",
+      wordCodes: { 0: "admitted", 1: "empty or longer than 255 bytes", 2: "malformed UTF-8", 3: "an ASCII byte outside the 39 of `wordAscii`", 4: "ends with '.' (so '.' and '..' too)", 6: "'0x' and 40 lowercase hex characters (an address)", 7: "a refused scalar (any class of `refused`)" },
+      wordCodeUnused: { 5: "once 'starts with ~'; a '~' is now code 3 wherever it stands. The number is left unused, never reused" },
       wordRuleCodes: { 8: "refs present (checked before the grammar)" },
       pathRuleCodes: { 10: "not exactly two refs and headers", 11: "body not exactly 64 bytes", 12: "the parent is neither topic/1 nor topic-word/1", 13: "the second ref is not a topic-word/1 record (the kernel refuses it first: E_REF code 2)" },
       text: "1..255 bytes of strict UTF-8; no C0, DEL or C1 control; no scalar of `refused` classes 2, 3 and 5; '/', '\\', U+0020, class 6 (no-break and typographic spaces), uppercase, joiners and variation selectors admitted",
       textCodes: { 0: "admitted", 20: "empty or longer than 255 bytes", 21: "malformed UTF-8", 22: "a control character (C0, DEL, C1)", 23: "a bidi control, an invisible scalar or a noncharacter (classes 2, 3, 5)" },
       textRuleCodes: { 24: "refs present (checked before the grammar)" },
-      order: "the byte codes (2, 3, 7; 21, 22, 23) are the first found scanning from the start; the length code comes first and the whole-word shapes (4, 5, 6) last",
+      order: "the byte codes (2, 3, 7; 21, 22, 23) are the first found scanning from the start; the length code comes first and the whole-word shapes (4, then 6) last",
       error: "E_TOPIC_REFUSED(uint8 code) on a direct call; through the kernel E_REJECTED(leaf, typeId)",
       sdk: "fold (lowercase, NFC, the SDK's fold rule) and refuse before building a plan; the chain never normalizes",
     },

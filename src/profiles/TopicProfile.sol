@@ -3,8 +3,8 @@ pragma solidity 0.8.37;
 
 import {FilesName} from "./FilesNameRule.sol";
 
-/// A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-7),
-/// `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24).
+/// A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-4, 6, 7; 5 is
+/// unused), `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24).
 error E_TOPIC_REFUSED(uint8 code); // none
 
 /// @title TopicProfile — the grammars of the Topics Types (docs/TAG-DESIGN.md §1, §8; design §12.5)
@@ -18,17 +18,20 @@ error E_TOPIC_REFUSED(uint8 code); // none
 ///         admitted and two spellings the SDK folds alike are never both needed.
 /// @dev Internal only; no storage, no immutables (the profile immutables gate, `tools/checks.mjs`). Pure over
 ///      calldata: one byte at a time on the ASCII path (one bitmap test), one calldata word per multi-byte scalar
-///      (`FilesName.scalar`, the strict decoder `files-name/2` already ships: no overlong form, no surrogate, nothing
-///      above U+10FFFF, no stray continuation byte, no truncated sequence), and for each such scalar a scan of
-///      `REFUSED` (a binary search: the table is sorted and disjoint).
+///      (`FilesName.scalar`, the strict decoder `files-name/3` ships, unchanged since `files-name/2`: no overlong
+///      form, no surrogate, nothing above U+10FFFF, no stray continuation byte, no truncated sequence), and for each
+///      such scalar a scan of `REFUSED` (a binary search: the table is sorted and disjoint).
 library TopicProfile {
     /// The longest word and the longest text, in bytes.
     uint256 internal constant WORD_MAX = 255;
     uint256 internal constant TEXT_MAX = 255;
-    /// Bit c set for an ASCII byte a word admits: 0x21..0x7e minus `/` (0x2f), `\` (0x5c: it reads as a path
-    /// separator too) and `A`-`Z` (0x41..0x5a). Space, the C0 controls (ASCII whitespace U+0009-000D among them) and
-    /// DEL are refused with the rest.
-    uint256 internal constant WORD_ASCII_OK = 0x7fffffffe8000001ffff7ffe00000000;
+    /// Bit c set for an ASCII byte a word admits: exactly the 39 characters `a`-`z`, `0`-`9`, `-`, `_` and `.`
+    /// (James, 2026-11-26: "? # etc shouldn't be allowed as they are literally urlencode protected params. Nothing
+    /// that breaks URLs.", and later "I only care about URI safety and us having some delimiters we can use for URL
+    /// syntax"). Every other ASCII byte is refused: `A`-`Z`, space, the C0 controls (ASCII whitespace U+0009-000D
+    /// among them), DEL, `/`, `\`, `~` and every other punctuation character, so a word never needs escaping in a
+    /// link and leaves every delimiter free (`c++` and `c#` are not words).
+    uint256 internal constant WORD_ASCII_OK = 0x7fffffe8000000003ff600000000000;
     /// Bit c set for `0-9a-f` (the address-shaped word of rule 6).
     uint256 internal constant HEX_LOWER = 0x7e0000000003ff000000000000;
 
@@ -48,7 +51,7 @@ library TopicProfile {
     /// control; 3 invisible (a format character Cf, a line or paragraph separator, a default-ignorable code point);
     /// 4 a joiner or variation selector; 5 a noncharacter, or the object and replacement characters; 6 a
     /// whitespace character a text admits. The set is Unicode 15.1's C1 controls, `Cf`, `Zl`, `Zp`,
-    /// `Default_Ignorable_Code_Point` and `White_Space`, plus every non-ASCII scalar `files-name/2` refuses
+    /// `Default_Ignorable_Code_Point` and `White_Space`, plus every non-ASCII scalar `files-name/3` refuses
     /// (`FilesName.excluded`: so this is at least as strict as names), plus the joiners and variation selectors names
     /// allow (U+034F, U+180B-180D, U+180F, U+200C, U+200D, U+FE00-FE0F, U+E0100-E01EF), which a folded word never
     /// contains. `White_Space` in 15.1 is U+0009-000D, U+0020, U+0085, U+00A0, U+1680, U+2000-200A, U+2028, U+2029,
@@ -128,11 +131,15 @@ library TopicProfile {
     /// The `topic-word/1` grammar. Returns 0 when `w` is admitted, else the first refusal in this order: 1 empty
     /// or longer than 255 bytes; then, scanning in order, whichever comes first of 2 malformed UTF-8 (an overlong
     /// form, a surrogate U+D800..U+DFFF, a value above U+10FFFF, a stray continuation byte or a truncated sequence),
-    /// 3 a forbidden ASCII byte (`/`, `\`, a control 0x00..0x1f or 0x7f, space, `A`-`Z`) and 7 a scalar of `REFUSED` (any
-    /// class, so no Unicode whitespace at all: ASCII whitespace is code 3, the rest code 7);
-    /// then 4 the word is `.` or `..`; 5 it starts with `~`; 6 it is `0x` followed by exactly 40 characters of
-    /// `0-9a-f` (it would read as an address: an address is a tag's target or a home, never a word). Rules 5 and 6
-    /// apply to every word, not only the first of a path, because every word has a root-level page.
+    /// 3 an ASCII byte outside the 39 of `WORD_ASCII_OK` (`a`-`z`, `0`-`9`, `-`, `_`, `.`; so `A`-`Z`, space, a
+    /// control, `/`, `\`, `~` and all other punctuation) and 7 a scalar of `REFUSED` (any class, so no Unicode
+    /// whitespace at all: ASCII whitespace is code 3, the rest code 7);
+    /// then 4 the word ends with `.` (link trimming: an auto-linker drops a full stop after a pasted link; the tag
+    /// design session's proposal, not a ruling; it also refuses `.` and `..`, the dot-segments a URL resolver
+    /// removes); 6 it is `0x` followed by exactly 40 characters of `0-9a-f` (it would read as an address: an
+    /// address is a tag's target or a home, never a word). Code 5 (once "starts with `~`") is unused and never reused: a `~` is a code 3
+    /// refusal wherever it stands. Rules 4 and 6 apply to every word, not only the first of a path, because every
+    /// word has a root-level page.
     function wordRefusal(bytes calldata w) internal pure returns (uint256) {
         uint256 n = w.length;
         if (n == 0 || n > WORD_MAX) return 1;
@@ -200,15 +207,13 @@ library TopicProfile {
         return 0;
     }
 
-    /// Rules 4-6 on a word whose bytes already passed (the whole-word shapes).
+    /// Rules 4 and 6 on a word whose bytes already passed (the whole-word shapes).
     function _shape(bytes calldata w, uint256 n) private pure returns (uint256) {
+        if (w[n - 1] == ".") return 4;
         uint256 head;
         assembly ("memory-safe") {
             head := calldataload(w.offset)
         }
-        uint256 b0 = head >> 248;
-        if (b0 == 0x2e && (n == 1 || (n == 2 && (head >> 240) & 0xff == 0x2e))) return 4;
-        if (b0 == 0x7e) return 5;
         if (n == 42 && head >> 240 == 0x3078) {
             for (uint256 i = 2; i < 42; ++i) {
                 uint256 c;

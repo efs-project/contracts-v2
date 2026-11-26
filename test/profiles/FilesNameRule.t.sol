@@ -6,9 +6,11 @@ import {FilesName, FilesNameRule} from "../../src/profiles/FilesNameRule.sol";
 import {FilesUnitBase} from "./FilesUnitBase.sol";
 import {FilesNameVectors} from "./FilesNameVectors.sol";
 
-/// @notice `files-name/2`: agreement with the naming experiment's 50 oracle vectors, the prototype's exhaustive
-///         byte and 255-boundary canary (rewritten for the UTF-8 grammar), malformed UTF-8 classes, the reserved
-///         prefix, a differential fuzz against the experiment's naive arm (`NameV2`), measured gas and code shape.
+/// @notice `files-name/3`: agreement with the naming experiment's 50 oracle vectors (verdicts now `/3`'s), the
+///         prototype's exhaustive byte and 255-boundary canary (rewritten for the UTF-8 grammar and for `/3`'s refused
+///         ASCII), malformed UTF-8 classes, the reserved prefix, the trailing `.`, device names as ordinary names, a
+///         differential fuzz against the experiment's naive arm (`NameV2`, extended to `/3`), measured gas and code
+///         shape. `NameVectors.t.sol` checks every vector of `test/vectors/names.json`.
 contract FilesNameRuleTest is FilesUnitBase {
     FilesNameRule internal rule;
 
@@ -41,14 +43,24 @@ contract FilesNameRuleTest is FilesUnitBase {
         }
     }
 
-    // ---- L FilesNames test_name_grammar_exhaustive_bytes_and_255_boundaries, for files-name/2 ---------------
+    /// Printable ASCII a name admits: 0x20..0x7e minus `/ \ # ? %` (link meaning) and `< > " | : * ;` (delimiters).
+    function _printable(uint256 c) internal pure returns (bool) {
+        if (c < 0x20 || c > 0x7e) return false;
+        bytes memory bad = bytes("/\\#%?<>:\"|*;");
+        for (uint256 i; i < bad.length; ++i) {
+            if (uint8(bad[i]) == c) return false;
+        }
+        return true;
+    }
+
+    // ---- L FilesNames test_name_grammar_exhaustive_bytes_and_255_boundaries, for files-name/3 ---------------
 
     function test_name_exhaustive_single_bytes_and_255_boundaries() public view {
         for (uint256 c; c < 256; ++c) {
-            bool printable = c >= 0x20 && c <= 0x7e && c != 0x2f && c != 0x5c;
+            bool printable = _printable(c);
             bytes memory one = new bytes(1);
             one[0] = bytes1(uint8(c));
-            // one byte: printable ASCII except '/', '\', the dot name and a lone space (whitespace at the ends)
+            // one byte: admitted printable ASCII except the dot name and a lone space (whitespace at the ends)
             assertEq(this.valid(one), printable && c != 0x2e && c != 0x20, "single-byte grammar");
             bytes memory two = new bytes(2);
             two[0] = bytes1(uint8(c));
@@ -57,12 +69,12 @@ contract FilesNameRuleTest is FilesUnitBase {
             assertEq(this.valid(two), printable && c != 0x20, "leading-byte grammar");
             two[0] = "a";
             two[1] = bytes1(uint8(c));
-            assertEq(this.valid(two), printable && c != 0x20, "trailing-byte grammar");
+            // a trailing byte: neither a space nor '.'
+            assertEq(this.valid(two), printable && c != 0x20 && c != 0x2e, "trailing-byte grammar");
         }
         assertFalse(this.valid(".") || this.valid(".."), "the dot names");
-        assertTrue(
-            this.valid("...") && this.valid(".hidden") && this.valid("ends."), "literal dots"
-        );
+        assertFalse(this.valid("...") || this.valid("ends."), "a trailing dot");
+        assertTrue(this.valid(".hidden") && this.valid("a..b") && this.valid("..a"), "other dots");
         bytes memory edge = new bytes(255);
         for (uint256 i; i < 255; ++i) {
             edge[i] = "a";
@@ -174,12 +186,71 @@ contract FilesNameRuleTest is FilesUnitBase {
                 (w == 2 && s < 0x80) || (w == 3 && s < 0x800)
                     || (w == 4 && (s < 0x10000 || s > 0x10ffff)) || (s >= 0xd800 && s <= 0xdfff)
             ) return false;
-            if (FilesName.excluded(s)) return false;
+            if (w == 1 ? !_printable(s) : FilesName.excluded(s)) return false;
             if (i == 0) first = s;
             last = s;
             i += w;
         }
+        if (last == 0x2e) return false;
         return !FilesName.whitespace(first) && !FilesName.whitespace(last);
+    }
+
+    function test_name_trailing_dot() public view {
+        string[5] memory refused = ["inc.", "ends.", "...", "a.", "docs/inc."];
+        for (uint256 i; i < refused.length; ++i) {
+            assertFalse(this.valid(bytes(refused[i])), refused[i]);
+        }
+        string[5] memory admitted = [".env", "a.b", "a..b", "..a", "v1.0.tar.gz"];
+        for (uint256 i; i < admitted.length; ++i) {
+            assertTrue(this.valid(bytes(admitted[i])), admitted[i]);
+        }
+    }
+
+    /// Windows' reserved device names are ordinary names (James, 2026-11-26: "Don't refuse windows reserved names.").
+    function test_name_device_names_are_names() public view {
+        string[9] memory names = [
+            "con",
+            "aux.c",
+            "nul.txt",
+            "COM1",
+            "NUL .txt",
+            "console.txt",
+            "auxiliary",
+            "com10",
+            "LPT9"
+        ];
+        for (uint256 i; i < names.length; ++i) {
+            assertTrue(this.valid(bytes(names[i])), names[i]);
+        }
+    }
+
+    function test_name_ruled_characters() public view {
+        assertFalse(this.valid("Q&A #3.pdf"), "#");
+        assertTrue(this.valid("Q&A 3.pdf"), "& and an inner space");
+        assertTrue(
+            this.valid("logo@2x.png") && this.valid("~$Budget.xlsx") && this.valid("Sale!.png")
+        );
+        assertTrue(
+            this.valid("a&b(c)'d,e+f=g!h@i[j]k{l}m^n`o~p$q-r_s.txt"), "the admitted punctuation"
+        );
+        assertTrue(this.valid("-rf") && this.valid(".env"), "a leading - or .");
+        string[12] memory bad = [
+            "a#b",
+            "50%.txt",
+            "what?.md",
+            "a<b",
+            "a>b",
+            "a:b",
+            "a\"b",
+            "a|b",
+            "a*b",
+            "a;b",
+            "a/b",
+            "a\\b"
+        ];
+        for (uint256 i; i < bad.length; ++i) {
+            assertFalse(this.valid(bytes(bad[i])), bad[i]);
+        }
     }
 
     function testFuzz_name_fast_path_matches_the_naive_decoder(bytes memory d) public view {
@@ -210,14 +281,14 @@ contract FilesNameRuleTest is FilesUnitBase {
     function test_name_gas() public {
         FilesNameVectors.V[] memory vs = FilesNameVectors.all();
         _accept(vs[0].data); // warm the rule and the stub
-        uint256[6] memory pick = [uint256(0), 3, 5, 27, 28, 36];
+        uint256[6] memory pick = [uint256(0), 3, 7, 27, 28, 36];
         for (uint256 i; i < pick.length; ++i) {
             bytes memory name = vs[pick[i]].data;
             assertTrue(_accept(name));
             uint256 used = vm.lastFrameGas().gasTotalUsed; // the rule's own frame, warm
             emit log_named_uint(
                 string.concat(
-                    "files-name/2 accept frame gas, vector ",
+                    "files-name/3 accept frame gas, vector ",
                     vm.toString(pick[i]),
                     ", bytes ",
                     vm.toString(name.length)
