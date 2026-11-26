@@ -114,6 +114,9 @@ contract IndexReads {
         _declare("scope-below", 19, 3, SHAPE_APPEND, 1, posting, topics);
         _declare("position-authors", 20, 3, SHAPE_APPEND, 3, posting, live); // HEADS: live = the yes-count
         _declare("role-places", 21, 4, SHAPE_APPEND, 1, posting, live);
+        // everyone's versions of a file (QUESTIONS Q52, ruled 2026-11-26): its own family, so a later generation can
+        // leave it undeclared and every reader then answers UNKNOWN for it
+        _declare("head-authors", 22, 3, SHAPE_APPEND, 3, posting, live); // HEADS: live = the yes-count
         for (uint256 i; i < units.length; ++i) {
             _units.push(units[i]);
         }

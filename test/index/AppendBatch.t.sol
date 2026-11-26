@@ -163,20 +163,20 @@ contract AppendBatchTest is Test {
         vm.prank(GEN);
         vm.expectRevert(abi.encodeWithSelector(E_FAMILY.selector, bytes32(0)));
         s.append(FamilyId.wrap(0), _k(0), 1, 0); // the zero padding of unused slots never matches
-        bytes32[] memory f = new bytes32[](17);
-        for (uint256 i; i < 17; ++i) {
+        bytes32[] memory f = new bytes32[](18);
+        for (uint256 i; i < 18; ++i) {
             f[i] = keccak256(abi.encode(i));
         }
-        vm.expectRevert(abi.encodeWithSelector(E_FAMILY.selector, bytes32(uint256(17))));
+        vm.expectRevert(abi.encodeWithSelector(E_FAMILY.selector, bytes32(uint256(18))));
         new PostingStore(address(ledger), address(0), f);
-        bytes32[] memory full = new bytes32[](16);
-        for (uint256 i; i < 16; ++i) {
+        bytes32[] memory full = new bytes32[](17);
+        for (uint256 i; i < 17; ++i) {
             full[i] = f[i];
         }
-        PostingStore sixteen = new PostingStore(address(ledger), address(0), full);
+        PostingStore seventeen = new PostingStore(address(ledger), address(0), full);
         vm.startPrank(GEN);
-        for (uint256 i; i < 16; ++i) {
-            sixteen.append(FamilyId.wrap(full[i]), _k(i), 1, 0); // every slot is a member
+        for (uint256 i; i < 17; ++i) {
+            seventeen.append(FamilyId.wrap(full[i]), _k(i), 1, 0); // every slot is a member
         }
         vm.stopPrank();
         full[3] = 0;

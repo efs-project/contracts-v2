@@ -31,13 +31,15 @@ import {IPostingStore} from "../../src/interfaces/IPostingStore.sol";
 import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 
 /// @notice The shared setting of the step-3b suites (docs INDEX-BUILD §2.2, §8): the Files Realm of `TopicListsHistory`
-///         with a HEAD history that moves every counter of the example list `head-authors` (provisional kind 22, a test
-///         harness, not product: `test/harness/HeadAuthors.sol`), the example generation over three stores (the two
-///         genesis stores carried or fresh, a third `PostingStore` for `head-authors`) from `ListIndexDeployer`, a Realm
-///         L that runs the example generation from genesis, and a capture of every recorded key of every family in the
-///         three stores.
+///         with a HEAD history that moves every counter of the example list `file-versions` (provisional kind 24, a
+///         test harness, not product: `test/harness/HeadAuthors.sol`; generation 1's own `head-authors`, family 22,
+///         kept a second time under another id), the example generation over three stores (the two genesis stores
+///         carried or fresh, a third `PostingStore` for `file-versions`) from `ListIndexDeployer`, a Realm L that runs
+///         the example generation from genesis, and a capture of every recorded key of every family in the three
+///         stores.
 abstract contract HeadAuthorsBase is TopicListsHistory {
-    bytes32 internal F_HEAD_AUTHORS = Keys.familyId("head-authors");
+    /// The example list (`F_HEAD_AUTHORS` names it in the suites, as before the list release).
+    bytes32 internal F_HEAD_AUTHORS = Keys.familyId("file-versions");
     uint256 internal constant BUILD_BUDGET = 64;
 
     /// When set before `_realm`, the Realm's genesis index is the example generation over three new stores whose
@@ -45,7 +47,8 @@ abstract contract HeadAuthorsBase is TopicListsHistory {
     bool internal headAtGenesis;
     address internal genesisThird;
 
-    PostingKey[] internal headKeys; // every head-authors list the history touches
+    PostingKey[] internal headKeys; // every example list the history touches
+    bytes32[] internal headFiles; // the file of each, in the same order
     EfsFiles.Types internal ft;
     bytes32 internal f1; // the shared file of the HEAD history (created by this contract's principal)
     bytes32 internal f1Root;
@@ -70,7 +73,7 @@ abstract contract HeadAuthorsBase is TopicListsHistory {
 
     function _headFamilies() internal pure returns (bytes32[] memory f) {
         f = new bytes32[](1);
-        f[0] = Keys.familyId("head-authors");
+        f[0] = Keys.familyId("file-versions");
     }
 
     /// The example generation's work model (`HeadAuthorsGenesis.workModel`).
@@ -204,16 +207,24 @@ abstract contract HeadAuthorsBase is TopicListsHistory {
         delete scopeKeys;
         delete topicIds;
         delete headKeys;
+        delete headFiles;
         assertEq(IHeadAuthorsGeneration(address(r.g.index)).THIRD(), genesisThird);
     }
 
     // ---- the HEAD history ---------------------------------------------------------------------------------------
 
+    /// The example list's key for `file` (kind 24, in the third store).
     function _headKey(bytes32 file) internal pure returns (PostingKey) {
-        return PostingKey.wrap(Keys.posting(0, 22, 0, Keys.position(Purpose.HEAD, file, 0)));
+        return PostingKey.wrap(Keys.posting(0, 24, 0, Keys.position(Purpose.HEAD, file, 0)));
     }
 
-    /// The keys a bind-kind statement can touch (as `_say` records them) and, at HEAD, its head-authors list.
+    /// Generation 1's `head-authors` key for `file` (kind 22, in the genesis posting store).
+    function _genesisKey(bytes32 file) internal pure returns (PostingKey) {
+        return PostingKey.wrap(Keys.headAuthorsList(Keys.position(Purpose.HEAD, file, 0)));
+    }
+
+    /// The keys a bind-kind statement can touch (as `_say` records them) and, at HEAD, both lists of its file's
+    /// authors (generation 1's in the posting store, the example's in the third store).
     function _recordKeys(address who, Action memory x) internal {
         bytes32 pid = _pid(who);
         bytes32 position = Keys.position(x.purpose, x.subject, x.role);
@@ -228,7 +239,11 @@ abstract contract HeadAuthorsBase is TopicListsHistory {
             postingKeys.push(PostingKey.wrap(Keys.backlinkList(x.purpose, x.target)));
         }
         scopeKeys.push(Keys.scope(pid, x.purpose, x.subject));
-        if (x.purpose == Purpose.HEAD) headKeys.push(_headKey(x.subject));
+        if (x.purpose == Purpose.HEAD) {
+            headKeys.push(_headKey(x.subject));
+            headFiles.push(x.subject);
+            postingKeys.push(_genesisKey(x.subject));
+        }
     }
 
     /// Executes one publication as `who` and records the keys of each of its actions (by-record for each record).
@@ -388,9 +403,12 @@ abstract contract HeadAuthorsBase is TopicListsHistory {
         return c == 0 ? new uint64[](0) : s.postingSlice(key, 0, uint16(c));
     }
 
-    /// Every counter of `head-authors` moved (docs INDEX-BUILD §2.2): f1 has three authors (two counted appends, one
-    /// uncounted), two of them BOUND after two releases and two restores; f2 has two.
+    /// Every counter of the example list moved (docs INDEX-BUILD §2.2): f1 has three authors (two counted appends, one
+    /// uncounted), two of them BOUND after two releases and two restores; f2 has two. And every example list in
+    /// `third` equals generation 1's `head-authors` list of the same file in the live posting store, entry by entry
+    /// with every counter: the list built from history (or kept by the example) is the list generation 1 keeps.
     function _assertHeadCountersMoved(IPostingStore third) internal view {
+        _assertSameAsGenesisList(third);
         (uint64 c, uint64 l, uint64 last) = _headOf(third, f1);
         assertEq(abi.encode(c, l), abi.encode(uint64(3), uint64(2)), "f1: three authors, two BOUND");
         uint64[] memory e = _entriesOf(third, _headKey(f1));
@@ -398,6 +416,18 @@ abstract contract HeadAuthorsBase is TopicListsHistory {
         assertEq(last, e[2], "f1: last is the third author's");
         (c, l,) = _headOf(third, f2);
         assertEq(abi.encode(c, l), abi.encode(uint64(2), uint64(2)), "f2: two authors, both BOUND");
+    }
+
+    /// Each recorded example list in `third` against generation 1's `head-authors` list of its file.
+    function _assertSameAsGenesisList(IPostingStore third) internal view {
+        IPostingStore genesis = IPostingStore(address(r.g.posting));
+        for (uint256 i; i < headFiles.length; ++i) {
+            assertEq(
+                _list(third, headKeys[i]),
+                _list(genesis, _genesisKey(headFiles[i])),
+                "the example list equals generation 1's head-authors"
+            );
+        }
     }
 
     /// The admission of `who`'s first HEAD statement on f1: its history list's entry 0.

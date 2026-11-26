@@ -120,7 +120,7 @@ contract IndexReadsSplitTest is Test {
         assertEq(reads, address(g.reads));
         assertEq(codehash, address(g.reads).codehash);
         assertEq(header, keccak256("efs/index-manifest/2"));
-        assertEq(families.length, 18);
+        assertEq(families.length, 19);
         assertEq(
             g.index.manifestHash(),
             keccak256(

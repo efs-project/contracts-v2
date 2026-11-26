@@ -128,8 +128,10 @@ export function planner(model, schedule) {
       acc.compute += wm[`surchargeCompute${cls}`];
     }
   };
-  const zeroPurpose = /^0x0{64}$/;
-  /** The kernel's own quote (LedgerIngress._foldAndQuote, design §10.4, work-model formula 3), exactly. */
+  /** The kernel's own quote (LedgerIngress._foldAndQuote, design §10.4, work-model formula 3), exactly. The surcharge
+   *  applies when the action's purpose word equals `surchargePurpose`, with no special case for zero, as
+   *  `LedgerIngress._foldOne` compares them; a statement's purpose is never zero (the kernel refuses it, `E_SHAPE`), so a
+   *  zero `surchargePurpose` surcharges nothing that can be admitted. */
   function quote(actions) {
     const acc = { fresh10: wm.freshPerPublication, rw10: wm.rwPerPublication, compute: wm.computeBase + wm.computePerAction * actions.length };
     let binds = 0;
@@ -148,7 +150,7 @@ export function planner(model, schedule) {
       } else if (a.kind === "bind") {
         ++binds;
         // first: the author's head at the position is UNSET (never for a RELEASE); every other one is a later statement
-        const surcharged = !zeroPurpose.test(wm.surchargePurpose) && purposeOf(a).toLowerCase() === wm.surchargePurpose.toLowerCase();
+        const surcharged = purposeOf(a).toLowerCase() === wm.surchargePurpose.toLowerCase();
         row(acc, a.first ? "First" : isRebind(a) ? "Rebind" : "Later", surcharged);
       } else if (a.kind === "withdraw") {
         // the first WITHDRAW of a publication is covered by the per-publication terms; every later one is a later row

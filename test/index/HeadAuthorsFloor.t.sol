@@ -16,13 +16,15 @@ import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {IIndexReads} from "../../src/interfaces/IIndexReads.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 
-/// @notice The work model of the example generation (`head-authors`, docs INDEX-BUILD §2.2, §6.3; a test harness, not
-///         product) against what its callbacks really spend, by `FloorBase`'s method: for each HEAD shape, from one
-///         cooled state, E (execution gas), K (the callbacks mocked) and the final phase; the callbacks' prefix spend
-///         is E − K − the final phase, and the kernel's prefix quote P must be at or above it (the floor is honest, as
-///         design §10.4 asks of every shape it claims). Three settings run the same shapes: the example generation
-///         with its own model (asserted), the example generation with generation 1's model (logged: what the new list
-///         costs that the old model does not quote) and generation 1 itself (logged: the spend without the list).
+/// @notice The HEAD surcharge against what the callbacks really spend, by `FloorBase`'s method: for each HEAD shape, from
+///         one cooled state, E (execution gas), K (the callbacks mocked) and the final phase; the callbacks' prefix
+///         spend is E − K − the final phase, and the kernel's prefix quote P must be at or above it (the floor is
+///         honest, as design §10.4 asks of every shape it claims). Three settings run the same shapes: generation 1
+///         itself, which keeps `head-authors` (everyone's versions of a file) and reserves for it with its HEAD
+///         surcharge (asserted; its spend against the same code without the list is what the surcharge values are
+///         measured from); the example generation (`file-versions` in a third store, docs INDEX-BUILD §2.2, §6.3; a
+///         test harness, not product) with its own model (asserted); and the example with generation 1's model
+///         (logged: what the second list costs that generation 1's model does not quote).
 abstract contract HeadAuthorsFloorBase is FloorBase {
     uint8 internal constant OWN_MODEL = 0;
     uint8 internal constant GEN1_MODEL = 1;
@@ -126,7 +128,7 @@ abstract contract HeadAuthorsFloorBase is FloorBase {
         emit log_named_uint(
             string.concat("floor ", label, " quote / spend (x1000)"), quote * 1000 / spend
         );
-        if (_setting() == OWN_MODEL) {
+        if (_setting() != GEN1_MODEL) {
             assertGe(quote, spend, string.concat(label, ": the prefix quote covers the spend"));
             assertLe(w.visible, w.room, string.concat(label, ": V fits a 2^24 transaction"));
             if (!_amsterdam()) {

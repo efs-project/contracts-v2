@@ -87,6 +87,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     bytes32 private immutable F_SCOPE_BELOW;
     bytes32 private immutable F_POSITION_AUTHORS;
     bytes32 private immutable F_ROLE_PLACES;
+    bytes32 private immutable F_HEAD_AUTHORS;
     /// The Topics Type ids the ancestor walk follows (`topic/1`: parent = body word 0; `topic-word/1`: a root),
     /// copied from READS; both zero when the generation keeps no topic lists (no walk happens).
     bytes32 private immutable TOPIC_T;
@@ -141,6 +142,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         F_SCOPE_BELOW = Keys.familyId("scope-below");
         F_POSITION_AUTHORS = Keys.familyId("position-authors");
         F_ROLE_PLACES = Keys.familyId("role-places");
+        F_HEAD_AUTHORS = Keys.familyId("head-authors");
         // the topic lists only beside the final hook that refuses, live, a first tag under a topic not registered
         // strictly before it (so no live tag silently misses its roll-up); re-checked here over the units this
         // generation copies, so no reads contract can switch it on. A fold from history does not rely on it: it
@@ -435,15 +437,15 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             _firstStatementLists(e, b);
         } else if (tk == T_RESTORE) {
             // a head returns to BOUND: one more author says yes at the position
-            if (_authorsKept(e.purpose)) {
-                ps.retain(FamilyId.wrap(F_POSITION_AUTHORS), _pk(0, 20, 0, e.position), 1);
-            }
+            (bytes32 family, uint8 kind) = _authorsList(e.purpose);
+            if (family != 0) ps.retain(FamilyId.wrap(family), _pk(0, kind, 0, e.position), 1);
         } else if (tk != T_REBIND) {
             // MASK (from BOUND, MASKED or RELEASED) or RELEASE: a head leaves BOUND (the kernel sets `oldTarget` only
             // from a BOUND head, and a BIND's target is never zero): one fewer author says yes at the position; a
             // mask or release of a masked or released head changes nothing
-            if (e.oldTarget != 0 && _authorsKept(e.purpose)) {
-                ps.release(FamilyId.wrap(F_POSITION_AUTHORS), _pk(0, 20, 0, e.position), 1);
+            (bytes32 family, uint8 kind) = _authorsList(e.purpose);
+            if (e.oldTarget != 0 && family != 0) {
+                ps.release(FamilyId.wrap(family), _pk(0, kind, 0, e.position), 1);
             }
         }
         if (e.kind == ActionKind.BIND && !sameTarget) {
@@ -481,15 +483,23 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         }
     }
 
-    /// Whether the purpose keeps the first-statement lists (TAG and FOLDER).
-    function _authorsKept(bytes32 purpose) private pure returns (bool) {
-        return purpose == Purpose.TAG || purpose == Purpose.FOLDER;
+    /// The list of a position's authors that the purpose keeps, by family id and key kind (design §10.2):
+    /// `position-authors` (kind 20) for TAG and FOLDER, `head-authors` (kind 22) for HEAD, none (family 0) for every
+    /// other purpose. Both lists have one entry per author's first statement at the position and the same yes-count.
+    function _authorsList(bytes32 purpose) private view returns (bytes32 family, uint8 kind) {
+        if (purpose == Purpose.TAG || purpose == Purpose.FOLDER) return (F_POSITION_AUTHORS, 20);
+        if (purpose == Purpose.HEAD) return (F_HEAD_AUTHORS, 22);
     }
 
-    /// The five first-statement lists (design §10.2 kinds 6, 7, 19, 20, 21), appended only at an author's FIRST
+    /// The six first-statement lists (design §10.2 kinds 6, 7, 19, 20, 21, 22), appended only at an author's FIRST
     /// statement on a position (FIRST_BIND or FIRST_MASK). A binding's ordinal is allocated once and a head never
     /// returns to UNSET, so no later re-bind, mask, release or restore of the author's appends to them, and no author
     /// adds more than one entry per position to any of them. Readers take the state and the number from the head.
+    ///   - `head-authors` (HEAD): key = the file's HEAD position; entry = this admission ordinal, for either sign:
+    ///     everyone's versions of the file. `count` = the authors who ever made a HEAD statement on it; `live` = the
+    ///     authors whose HEAD there is BOUND now, moved exactly as `position-authors`' (`_foldBind`). It is a family of
+    ///     its own so that a later generation can stop keeping it (declare and fold it no more: its readers then answer
+    ///     UNKNOWN). HEAD keeps none of the other five.
     ///   - `position-authors` (TAG, FOLDER): key = the position; entry = this admission ordinal, for either sign.
     ///     Its head, read before the append, says whether the position is fresh (no author has stated anything
     ///     there). `count` = the authors who ever made a statement there; `live` = the authors whose head there is
@@ -510,13 +520,18 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// of the publication is flushed before this one folds, so the head read sees every earlier statement.
     function _firstStatementLists(Effect calldata e, Appends memory b) private {
         bytes32 purpose = e.purpose;
+        bool yes = e.transitionKind == T_FIRST_BIND;
+        uint64 entry = yes ? e.admission : e.admission | UNCOUNTED;
+        if (purpose == Purpose.HEAD) {
+            _add(b, F_HEAD_AUTHORS, _pk(0, 22, 0, e.position), entry);
+            return;
+        }
         bool tag = purpose == Purpose.TAG;
         if (!tag && purpose != Purpose.FOLDER) return;
         PostingKey authors = _pk(0, 20, 0, e.position);
         (uint64 count,,,) = IPostingStore(POSTING).postingHead(authors);
         bool fresh = count == 0;
-        bool yes = e.transitionKind == T_FIRST_BIND;
-        _add(b, F_POSITION_AUTHORS, authors, yes ? e.admission : e.admission | UNCOUNTED);
+        _add(b, F_POSITION_AUTHORS, authors, entry);
         // a filing: the position's first statement (counted: a new distinct position) or a later author's first yes
         uint64 filing = fresh ? e.bindingOrdinal : e.bindingOrdinal | UNCOUNTED;
         if (fresh || yes) _add(b, F_PLACE, _pk(purpose, 6, 0, e.subject), filing);

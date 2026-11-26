@@ -11,9 +11,9 @@ import {E_ORDER, E_WRITER} from "../interfaces/Errors.sol";
 /// @notice One per Realm and family set. Entries are strictly increasing ordinals, five per word; the first
 ///         entry of a key lives in the head word (`last`) until a second append materializes word 0, so a
 ///         singleton list costs one slot. Writes come only through the authorization of `StoreBase`. The family
-///         set (at most `FAMILY_CAPACITY` ids: the ten generation-1 APPEND families with room for the five lists
-///         of the tag design) is held as immutables, so a family check reads no storage; `familyIds()` keeps the
-///         same ids in the same order in storage for readiness checks.
+///         set (at most `FAMILY_CAPACITY` ids: generation 1's sixteen APPEND families, the ten of the core, the five
+///         lists of the tag design and `head-authors`, with room for one more) is held as immutables, so a family
+///         check reads no storage; `familyIds()` keeps the same ids in the same order in storage for readiness checks.
 contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
     /// keccak("efs/posting-store/2" ‖ for each IPostingStore function by selector: selector ‖ keccak(output tuple))
     /// (tools/abi-id.mjs; `pnpm abi:check` recomputes it from the committed snapshot).
@@ -23,7 +23,7 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
     uint256 private constant MASK48 = (1 << 48) - 1;
     /// Bit 63 of an appended ordinal: append the entry without raising `live` (`IPostingStore.append`).
     uint64 public constant UNCOUNTED = uint64(1) << 63;
-    uint256 public constant FAMILY_CAPACITY = 16;
+    uint256 public constant FAMILY_CAPACITY = 17;
 
     bytes32 private immutable F0;
     bytes32 private immutable F1;
@@ -41,6 +41,7 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
     bytes32 private immutable F13;
     bytes32 private immutable F14;
     bytes32 private immutable F15;
+    bytes32 private immutable F16;
 
     constructor(address ledger_, address initialWriter_, bytes32[] memory families)
         StoreBase(ledger_, initialWriter_)
@@ -62,6 +63,7 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
         F13 = _familyAt(families, 13);
         F14 = _familyAt(families, 14);
         F15 = _familyAt(families, 15);
+        F16 = _familyAt(families, 16);
         PostingStorage storage $ = _posting();
         for (uint256 i; i < families.length; ++i) {
             $.familyIds.push(families[i]);
@@ -91,7 +93,8 @@ contract PostingStore is IPostingStore, PostingStoreStorage, StoreBase {
                 || f == F12
                 || f == F13
                 || f == F14
-                || f == F15);
+                || f == F15
+                || f == F16);
     }
 
     function _writers() internal view override returns (WriterRange[] storage) {

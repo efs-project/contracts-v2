@@ -54,8 +54,10 @@ struct Effect {
 /// the surcharge's row of the same class (words 23-25, 26-28, 29-31). Every WITHDRAW after the first of a publication
 /// adds the later-statement row. With no principal (`ILedgerCommitments.indexFloor`) every bind takes the largest of
 /// the three rows in each field, surcharge included. A record is new when no earlier admission wrote its header (a
-/// REUSE always names an existing one). Slot counts are true counts (the largest measured for the class); compute
-/// carries no slot. The ingress reads the ABI reply of `IIndexReads.workModel()` as raw words in this order, so the
+/// REUSE always names an existing one). Slot counts are true counts: each is the largest number of index slots a
+/// statement of its class writes, measured per statement on both schedules (`test/integration/FloorSplit.t.sol`); the
+/// later row's three fresh slots are a yes after a lone no's (the binding's second statement), its five rewrites a
+/// restore's at a place of its own. Compute carries no slot. The ingress reads the ABI reply of `IIndexReads.workModel()` as raw words in this order, so the
 /// field order is part of the formula.
 struct WorkModel {
     uint8 formulaVersion;
@@ -84,7 +86,8 @@ struct WorkModel {
     uint16 rwPerRebind;
     uint32 computePerRebind;
     /// The row of every other later statement (words 19-21): a mask, a release or a restore, and every WITHDRAW after a
-    /// publication's first. It is fitted to the list length the floor claims (docs/WORK-MODEL-V3.md §3.5).
+    /// publication's first. Its compute is fitted to the list length the floor claims (docs/WORK-MODEL-V3.md §3.5), at
+    /// which a yes after a lone no and a restore across places are the dearest it covers.
     uint16 freshPerBindLater;
     uint16 rwPerBindLater;
     uint32 computePerBindLater;

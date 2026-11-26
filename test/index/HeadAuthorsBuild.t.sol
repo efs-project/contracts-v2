@@ -15,14 +15,15 @@ import {IPostingStore} from "../../src/interfaces/IPostingStore.sol";
 import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 import {E_BUILD, E_INDEX_NOT_READY} from "../../src/interfaces/Errors.sol";
 
-/// @notice Docs INDEX-BUILD step 3b, case (b) of §2.2: a generation that adds a NEW list (`head-authors`, provisional
-///         kind 22; an example in a test harness, not product) in a third store and builds it from history, carrying the
-///         two genesis stores. Over the mixed history of `TopicListsHistory` plus a HEAD history that moves every
-///         counter of the new list:
+/// @notice Docs INDEX-BUILD step 3b, case (b) of §2.2: a generation that adds a NEW list (`file-versions`, provisional
+///         kind 24; an example in a test harness, not product: generation 1's `head-authors` kept a second time under
+///         another id) in a third store and builds it from history, carrying the two genesis stores. Over the mixed
+///         history of `TopicListsHistory` plus a HEAD history that moves every counter of the new list:
 ///
 ///         1. built equals live (§8 test 1): Realm B runs generation 1, then builds and activates the example
 ///            generation; Realm L runs the example generation from genesis; every recorded key of every family in the
-///            three stores is equal, before and after more traffic;
+///            three stores is equal, before and after more traffic; and the built list equals generation 1's own
+///            `head-authors` list of the same file, kept from genesis (`_assertHeadCountersMoved`);
 ///         2. the §2.2 trace, live and built;
 ///         3. interrupted builds (fuzzed budgets, one publication per call) equal one build;
 ///         4. racing and switching on: coverage per family while building, refusal of an unfinished build (8), build and
@@ -79,7 +80,7 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
         _assertHeadCountersMoved(lt);
         _assertSame3(b1, l1, "built on B vs live on L");
         _traffic();
-        assertEq(headKeys.length, headLists, "the same head-authors lists recorded");
+        assertEq(headKeys.length, headLists, "the same example lists recorded");
         bytes32[] memory l2 =
             _capture3(IPostingStore(address(r.g.posting)), IBitmapStore(address(r.g.bitmap)), lt);
         _assertSame3(b2, l2, "after more traffic, B vs L");
@@ -281,13 +282,13 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
             _headGen(address(r.g.posting), address(r.g.bitmap), address(0));
         (,, IPostingStore third) = _three(d);
         // unbuilt: the built family PARTIAL through 0; the carried families too (the check passes, frontier 0)
-        _assertCoverage(ix, F_HEAD_AUTHORS, Coverage.PARTIAL, 0, "head-authors, unbuilt");
+        _assertCoverage(ix, F_HEAD_AUTHORS, Coverage.PARTIAL, 0, "file-versions, unbuilt");
         _assertCoverage(ix, F_PLACE, Coverage.PARTIAL, 0, "carried posting family, unbuilt");
         assertTrue(ix.carriedCheck(), "the carried check passes");
         uint64 frontier = ix.build(bytes32(0), 64);
         assertGt(frontier, 0);
         assertLt(frontier, admissions);
-        _assertCoverage(ix, F_HEAD_AUTHORS, Coverage.PARTIAL, frontier, "head-authors, mid-build");
+        _assertCoverage(ix, F_HEAD_AUTHORS, Coverage.PARTIAL, frontier, "file-versions, mid-build");
         _assertCoverage(ix, F_PLACE, Coverage.PARTIAL, frontier, "carried, mid-build");
         _assertCoverage(
             ix, Keys.familyId("live-scope"), Coverage.PARTIAL, frontier, "carried bitmap, mid-build"
@@ -379,7 +380,7 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
     }
 
     /// With admissions, another contract's third store is "carried", and the live index does not declare
-    /// `head-authors` in it: 12, and `build` 7.
+    /// `file-versions` in it: 12, and `build` 7.
     function test_admissions_refuse_another_writers_third_store() public {
         _history();
         (, IHeadAuthorsGeneration bad) =
@@ -407,7 +408,7 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
         this.activateNow(address(c));
         (, IHeadAuthorsGeneration dgen) =
             _headGen(address(r.g.posting), address(r.g.bitmap), address(third));
-        assertTrue(dgen.carriedCheck(), "the live C declares head-authors in its store from 1");
+        assertTrue(dgen.carriedCheck(), "the live C declares file-versions in its store from 1");
         _buildAll(dgen); // nothing to walk: every store carried
         this.activateNow(address(dgen));
         assertEq(r.hot.index(), address(dgen));
@@ -434,7 +435,7 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
 
     /// Check 12 and 13 judge the third store on its own: a candidate whose genesis stores pass and whose third store
     /// fails is refused for the third store alone (shown by the two tests above), and a candidate carrying all three
-    /// stores of a live three-store index passes (D above). Here: an index that does not keep `head-authors` (the
+    /// stores of a live three-store index passes (D above). Here: an index that does not keep `file-versions` (the
     /// live generation 1) cannot vouch for a candidate carrying a third store it never named, even an unwritten one.
     function test_a_third_store_the_live_index_never_named_is_refused() public {
         _history();

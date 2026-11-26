@@ -76,6 +76,7 @@ library Keys {
     uint8 internal constant KIND_SCOPE_BELOW = 19;
     uint8 internal constant KIND_POSITION_AUTHORS = 20;
     uint8 internal constant KIND_ROLE_PLACES = 21;
+    uint8 internal constant KIND_HEAD_AUTHORS = 22;
 
     /// Key principal id: the left-padded address. The same key names the same principal on every Realm.
     function principal(address account) internal pure returns (bytes32) {
@@ -302,5 +303,12 @@ library Keys {
     /// distinct position with that role, whatever its subject (for a tag the role is the thing tagged).
     function rolePlacesList(bytes32 purpose, bytes32 role) internal pure returns (bytes32) {
         return posting(purpose, KIND_ROLE_PLACES, 0, role);
+    }
+
+    /// Family 22 (`head-authors`), keyed by a file's HEAD position (`position(HEAD, file, 0)`): everyone's versions of
+    /// the file, one entry per author's first HEAD statement there (either sign). `count` = the authors who ever made
+    /// a HEAD statement on the file; `live` = the authors whose HEAD there is BOUND now (moved as family 20's).
+    function headAuthorsList(bytes32 positionKey) internal pure returns (bytes32) {
+        return posting(bytes32(0), KIND_HEAD_AUTHORS, 0, positionKey);
     }
 }

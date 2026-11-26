@@ -369,49 +369,44 @@ Newly done in this release (items 42 to 47):
   9.69% on prague, 10.65% of execution gas on amsterdam), and the headroom check reads the under-prediction fields. A
   yes after a lone no has no composite and is outside those figures (item 42).
 
+Newly done in the list release (items 49 to 53; the gas model's rows for a yes after a lone no follow in its second
+piece):
+
+- **The per-purpose surcharge's use: the all-authors HEAD list** (item 49; QUESTIONS Q52, ruled by James on
+  2026-11-26). Generation 1 keeps `head-authors` (family kind 22, everyone's versions of a file) from genesis, as its
+  own family in the genesis posting store, with the work model still served from a data contract; the HEAD
+  surcharge reserves for it with rows measured on the real code (item 50).
+- **The later row made true** (item 50; ruled by the integration owner): 3.0 fresh slots, 5.0 rewrites and 78,000 of
+  compute fitted by measurement, so a yes after a lone no is covered within the claim on both schedules at the floor's
+  per-action margin and is no longer an exception; `src/interfaces/Index.sol`'s comment on the rows says what is now
+  measured (the slot counts are the largest a statement of the class writes).
+- **The planner's surcharge comparison** (item 52): `tools/gas-plan.mjs` applies the surcharge on plain equality with
+  `surchargePurpose`, as the ingress does.
+
 **Open:**
 
-- **The per-purpose surcharge's use: the all-authors HEAD list** is ruled (QUESTIONS Q52, answered yes by James on
-  2026-11-26) and is built in the next release, as its own family, with the work model served from a data contract as
-  it is now. The surcharge itself is built (formula 3, item 42; zero for generation 1).
-- **The list release: make the later row true, and give the gas model rows for a yes after a lone no** (item 42;
-  ruled for the next regeneration). (1) The later row's fresh count goes to 3.0 with its compute fitted BY
-  MEASUREMENT, and it must clear the 1.05 assertion of `test_split_claim_restores_across_lists_at_the_claim` on both
-  schedules. The starting evidence, two candidate rows (fresh ×10, rewrites ×10, compute); quotes computed from the
-  formula and `GAS_SCHEDULES`, ratios computed from the measured per-statement spends of `FloorSplit.t.sol`, batch
-  sizes from `tools/gas-plan.mjs` over the committed `gas/model.json` with `floor.workModel` overridden in a scratch
-  run (nothing committed was regenerated):
-
-  | row | quote p / a | yes after a lone no, 1,025 | claim restore, 1,025 | claim mask, 1,025 | restore at 4,096 | restore at 4,097 |
-  |---|---:|---:|---:|---:|---:|---:|
-  | released (20, 50, 85,000) | 162,200 / 177,700 | 0.955 / 1.052 | 1.062 / 1.052 | 1.190 / 1.094 | 1.008 / 1.003 | 0.995 / 0.991 |
-  | (30, 50, 72,500) | 171,800 / 177,300 | 1.012 / 1.050 | 1.126 / **1.0497** | 1.261 / 1.092 | 1.068 / 1.001 | 1.055 / 0.990 |
-  | (30, 50, 79,000) | 178,300 / 183,800 | 1.051 / 1.089 | 1.168 / 1.088 | 1.309 / 1.132 | 1.108 / 1.038 | 1.095 / 1.026 |
-
-  The first candidate fails the claim test on amsterdam (1,049 thousandths against 1,050). Largest planned batches,
-  released → (30, 50, 72,500) → (30, 50, 79,000): prague tag masks and masks of masks 58 → 55 → 54, releases 58 → 56
-  → 54, restores 51 → 49 → 48; amsterdam masks, releases and masks of masks 55 → 55 → 54, restores 51 → 51 → 49;
-  every other planned shape unchanged. (2) The gas model's rows for a yes after a lone no, for every purpose that has
-  restore rows, with their tiers; the no-then-release variant; folders (a hide of an entry never bound, then a bind:
-  to be measured, not assumed); and composites for them inside the stated maxima, so the maxima are honest again.
-  Today the restore rows are two fresh slots short for this shape (item 42: −21.57% prague all gas at the worst
-  measured composite, −29.74% amsterdam all gas, −11.47% amsterdam execution gas), and the interim consumer rule of
-  this release ends with these rows. (3) The `src/interfaces/Index.sol` comment on the later row ("the largest
-  measured for the class") is corrected with them: it is hashed into the release, so it waits for that regeneration.
-  (4) A planner must be able to see which shape it has, and it can, with no new read: `Head.targetKind` is 0 exactly
-  for a non-UNSET head that never bound, and the head's revision gives the statement's position. The list release
-  pins that with a reader test over five sequences (a lone no; no, release; no, no; yes, mask; yes, release), and
-  every later row in `gas/model.json` states the statement position it was measured at as a field, so a planner
-  never adds a slot by hand.
+- **The list release, second piece: the gas model's rows for a yes after a lone no** (item 42; ruled for the same
+  regeneration). (1) Rows for every purpose that has restore rows, with their tiers; the no-then-release and no-then-no
+  variants; folders (a hide of an entry never bound, then a bind: to be measured, not assumed); and composites for them
+  inside the stated maxima, so the maxima are honest again. Today the restore rows are two fresh slots short for this
+  shape (item 42: −21.57% prague all gas at the worst measured composite, −29.74% amsterdam all gas, −11.47% amsterdam
+  execution gas), and the interim consumer rule ends with these rows. (2) A planner must be able to see which shape it
+  has, and it can, with no new read: `Head.targetKind` is 0 exactly for a non-UNSET head that never bound, and the
+  head's revision gives the statement's position. The second piece pins that with a reader test over five sequences (a
+  lone no; no, release; no, no; yes, mask; yes, release), and every later row in `gas/model.json` states the statement
+  position it was measured at as a field, so a planner never adds a slot by hand. (The floor's part of the ruling, the
+  later row at 3.0 fresh slots, and the `Index.sol` comment are done: items 50 and 52.)
 - **The gateway's header comment on a first segment starting `0x`.** `src/periphery/EfsWeb3Gateway.sol`'s NatSpec says
   any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id"; when it serves topics the gateway
   follows the chain's word rule 6 (only `0x` followed by 40 hex digits is refused). The comment is hashed and is
   corrected in the next release (handled on another branch).
 - **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
-  it covers up to 4,096 and stops covering from 4,097 (measured: 1.008 at 4,096, 0.995 at 4,097 on prague; 1.003 and
-  0.991 on amsterdam). The entry search (`RealmIndex._entryIndex` bisects the author's scope list, one store call per
-  probe: about 2.2k per doubling within one place, 4.2k to 5.1k across places) is what makes a later statement grow with
-  the list; reading a whole word of five entries per probe near the end of the search, or storing a binding's entry
+  since the list release (item 50) it covers every later statement across places up to 3,586 entries on prague (a yes
+  after a lone no stops from 3,587: 1.007, then 0.996) and up to 8,191 on amsterdam (that yes and a restore of a far
+  entry stop from 8,192: 1.008 and 1.007, then 0.997 and 0.996); before it, up to 4,096 on both (0.995 / 0.991 at
+  4,097). The entry search (`RealmIndex._entryIndex` bisects the author's scope list, one store call per probe, each
+  probe reading the word that holds its entry: about 2.1k per probe and 2.0k per distinct word across places, so a list's
+  cost goes with its probes and words, not only its length) is what makes a later statement grow with the list; reading a whole word of five entries per probe near the end of the search, or storing a binding's entry
   index, would shorten or remove it. An index change for a later generation (docs/WORK-MODEL-V3.md, "Landed").
 - **A planned full batch that meets lists longer than the planner knows.** A planner cannot see list lengths it has not
   read; a batch planned at its largest size whose statements hit lists beyond what the planner knows can need more
@@ -919,8 +914,11 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
   a later statement. A reader that finds the manifest's profiles from the raw reply finds them at words 36 and 37.
 - **Each BIND, UNBIND or RELEASE adds one row by class:** first statement (the author's head UNSET), re-bind (a BIND on a
   BOUND head: a new target, or the same target with a new number), or another later statement (a mask, a release, a
-  restore; a RELEASE always). When the action's purpose word equals `surchargePurpose` (never when it is zero), the
-  surcharge's row of the same class is added too. With no principal (`indexFloor`), every bind adds the largest of the
+  restore; a RELEASE always). When the action's purpose word equals `surchargePurpose` (plain equality, as the kernel
+  compares them: a statement's purpose is never zero, it is refused `E_SHAPE(leaf, 1)`, so a zero `surchargePurpose`
+  surcharges nothing that can be admitted; `test/unit/kernel/Shape.t.sol`
+  `test_missing_required_field_is_E_SHAPE_1_for_every_kind` refuses a BIND, an UNBIND and a RELEASE with a zero
+  purpose), the surcharge's row of the same class is added too. With no principal (`indexFloor`), every bind adds the largest of the
   three rows field by field, surcharge included.
 - **WITHDRAW:** every WITHDRAW after the first of a publication adds the later row (formula 2 charged a withdraw
   `computePerAction` only, 0.12× its callbacks' spend).
@@ -1864,8 +1862,9 @@ gas: every `GasModel.t.sol` publication is also run from the same state with the
   compute`, where each BIND, UNBIND or RELEASE adds one row by class, first statement (head UNSET: `freshPerBindFirst`,
   `rwPerBindFirst`, `computePerBindFirst`), re-bind (a BIND on a BOUND head: `freshPerRebind`, `rwPerRebind`,
   `computePerRebind`) or other later statement (`freshPerBindLater`, `rwPerBindLater`, `computePerBindLater`; a RELEASE
-  always), plus the surcharge's row of the same class when its purpose word equals `surchargePurpose` (never when that
-  is zero), and every WITHDRAW after the first adds the later row (a REUSE always names an existing record); with no
+  always), plus the surcharge's row of the same class when its purpose word equals `surchargePurpose` (plain
+  equality: a statement's purpose is never zero, `E_SHAPE`, so a zero `surchargePurpose` surcharges nothing that can
+  be admitted), and every WITHDRAW after the first adds the later row (a REUSE always names an existing record); with no
   principal every bind-kind action adds the largest of the three rows field by field; `P = compute +
   ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase + binds·finalComputePerBind +
   publishes·finalComputePerPublish`;

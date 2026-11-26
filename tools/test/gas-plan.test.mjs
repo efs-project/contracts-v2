@@ -44,6 +44,19 @@ const formula3 = () => {
   for (const p of Object.values(m.profiles)) p.floor.workModel = { ...WORK_MODEL };
   return m;
 };
+const ZERO = `0x${"0".repeat(64)}`;
+/** The surcharge fields of a work model, all zero (no purpose surcharged). */
+const NO_SURCHARGE = {
+  surchargePurpose: ZERO, surchargeFreshFirst: 0, surchargeRwFirst: 0, surchargeComputeFirst: 0,
+  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0,
+  surchargeFreshLater: 0, surchargeRwLater: 0, surchargeComputeLater: 0,
+};
+/** `formula3()` with the surcharge cleared. */
+const withoutSurcharge = () => {
+  const m = formula3();
+  for (const p of Object.values(m.profiles)) Object.assign(p.floor.workModel, NO_SURCHARGE);
+  return m;
+};
 
 test("the planner's purpose words are the deploy plan's", () => {
   assert.deepEqual(PURPOSE, PLAN_PURPOSE);
@@ -75,26 +88,28 @@ test("the quote is the kernel's formula (design §10.4, formula 3) on a hand-com
     const t = types["files-child/1"];
     // the existing files-bytes/1 pays freshPerPublishExisting; the first HEAD statement the first row, the HEAD
     // re-bind the re-bind row
-    const fresh10 = w.freshPerPublication + w.freshPerPublishFresh + w.freshPerDigestSpec * t.specs + w.freshPerRef * t.refs + w.freshPerRef * types["files-bytes/1"].refs + w.freshPerPublishExisting + w.freshPerBindFirst + w.freshPerRebind;
-    const rw10 = w.rwPerPublication + 2 * w.rwPerPublish + w.rwPerBindFirst + w.rwPerRebind;
+    // both HEAD statements also pay generation 1's HEAD surcharge (the all-authors list) of their class
+    assert.equal(w.surchargePurpose, PURPOSE.HEAD, "generation 1 surcharges HEAD");
+    const fresh10 = w.freshPerPublication + w.freshPerPublishFresh + w.freshPerDigestSpec * t.specs + w.freshPerRef * t.refs + w.freshPerRef * types["files-bytes/1"].refs + w.freshPerPublishExisting + w.freshPerBindFirst + w.freshPerRebind + w.surchargeFreshFirst + w.surchargeFreshRebind;
+    const rw10 = w.rwPerPublication + 2 * w.rwPerPublish + w.rwPerBindFirst + w.rwPerRebind + w.surchargeRwFirst + w.surchargeRwRebind;
     const fresh = Math.ceil(fresh10 / 10);
     const rw = Math.ceil(rw10 / 10);
     const q = planner(model, s).quote(acts);
     assert.equal(q.freshSlots, fresh);
     assert.equal(q.rewrites, rw);
-    assert.equal(q.prefixFloor, w.computeBase + 5 * w.computePerAction + w.computePerBindFirst + w.computePerRebind + fresh * l.floorFreshGas + rw * l.floorRewriteGas);
+    assert.equal(q.prefixFloor, w.computeBase + 5 * w.computePerAction + w.computePerBindFirst + w.computePerRebind + w.surchargeComputeFirst + w.surchargeComputeRebind + fresh * l.floorFreshGas + rw * l.floorRewriteGas);
     assert.equal(q.finalReserve, w.finalComputeBase + 2 * w.finalComputePerBind + 2 * w.finalComputePerPublish);
   }
 });
 
 test("the surcharge charges its purpose only, and every WITHDRAW after the first pays the later row", () => {
-  const model = formula3();
+  const model = withoutSurcharge();
   for (const s of schedules(model)) {
     const w = model.profiles[s].floor.workModel;
     const plain = planner(model, s);
     const tag = [{ kind: "bind", cost: "unbindTagLone", first: true }, { kind: "bind", cost: "unbindTag", first: false }];
     const head = [{ kind: "bind", cost: "bindHeadFresh", first: true }, { kind: "bind", cost: "bindHeadRebind", first: false }];
-    const m = formula3();
+    const m = withoutSurcharge();
     Object.assign(m.profiles[s].floor.workModel, {
       surchargePurpose: PURPOSE.HEAD, surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 4500,
       surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0,
@@ -115,6 +130,24 @@ test("the surcharge charges its purpose only, and every WITHDRAW after the first
     const two = plain.quote([{ kind: "withdraw" }, { kind: "withdraw" }]);
     assert.equal(two.prefixFloor - one.prefixFloor, w.computePerAction + w.computePerBindLater
       + (two.freshSlots - one.freshSlots) * l.floorFreshGas + (two.rewrites - one.rewrites) * l.floorRewriteGas);
+  }
+});
+
+test("the surcharge applies on plain equality with surchargePurpose, zero included, as the kernel compares them", () => {
+  // LedgerIngress._foldOne: `a.purpose == bytes32(_w(wm, W_SURCHARGE_PURPOSE))`, no special case for zero. A statement's
+  // purpose is never zero (the kernel refuses it, E_SHAPE(leaf, 1): test/unit/kernel/Shape.t.sol
+  // test_missing_required_field_is_E_SHAPE_1_for_every_kind, for a BIND, an UNBIND and a RELEASE), so a zero
+  // surchargePurpose surcharges nothing that can be admitted; the planner still compares exactly as the kernel does.
+  for (const s of schedules(withoutSurcharge())) {
+    const m = withoutSurcharge();
+    Object.assign(m.profiles[s].floor.workModel, { surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 7_000 });
+    const pl = planner(m, s);
+    const plain = planner(withoutSurcharge(), s);
+    const zero = [{ kind: "bind", cost: "bindTagFresh", first: true, purpose: ZERO }];
+    const tag = [{ kind: "bind", cost: "bindTagFresh", first: true }];
+    const l = m.profiles[s].floor.limits;
+    assert.equal(pl.quote(zero).prefixFloor - plain.quote(zero).prefixFloor, l.floorFreshGas + l.floorRewriteGas + 7_000, `${s}: a zero purpose equals a zero surchargePurpose`);
+    assert.deepEqual(pl.quote(tag), plain.quote(tag), `${s}: a real purpose never equals a zero surchargePurpose`);
   }
 });
 

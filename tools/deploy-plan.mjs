@@ -149,17 +149,18 @@ export const LIMITS = {
  *  order is part of the formula). The first-statement, re-bind and later-statement rows are measured per action on both
  *  schedules (test/integration/FloorSplit.t.sol): each slot count is the largest of its class, and compute covers the
  *  dearest whole shape of the class the floor claims (later statements: lists of up to LIST_LENGTH_CLAIM = 1,024
- *  entries per author per place, test/harness/doubles/IndexDoubles.sol). Generation 1 keeps no list for one purpose, so
- *  the surcharge is zero. No release work model exists in src/. */
+ *  entries per author per place, test/harness/doubles/IndexDoubles.sol). The surcharge is HEAD's (`PURPOSE.HEAD`,
+ *  written out here because PURPOSE is declared below): generation 1 keeps `head-authors` for HEAD alone, and the surcharge
+ *  rows are that list's measured cost. No release work model exists in src/. */
 export const WORK_MODEL = {
   formulaVersion: 3, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, freshPerPublishExisting: 29,
   rwPerPublish: 46, freshPerRef: 30, freshPerDigestSpec: 10, computeBase: 54000, computePerAction: 8000,
   finalComputeBase: 20000, finalComputePerBind: 7400, finalComputePerPublish: 2800,
   freshPerBindFirst: 55, rwPerBindFirst: 20, computePerBindFirst: 44000,
   freshPerRebind: 20, rwPerRebind: 40, computePerRebind: 42000,
-  freshPerBindLater: 20, rwPerBindLater: 50, computePerBindLater: 85000,
-  surchargePurpose: ZERO, surchargeFreshFirst: 0, surchargeRwFirst: 0, surchargeComputeFirst: 0,
-  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 0, surchargeComputeLater: 0,
+  freshPerBindLater: 30, rwPerBindLater: 50, computePerBindLater: 78000,
+  surchargePurpose: h("efs/purpose/head/1"), surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 4500,
+  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 10, surchargeComputeLater: 10000,
 };
 /** src/interfaces/Index.sol WORK_MODEL_WORDS and FORMULA_VERSION: the work model's ABI words (one per field) and the
  *  formula the ingress implements. */
@@ -206,7 +207,7 @@ export const PURPOSE = {
 };
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
 export const familyId = (name) => h(`efs/family/${name}/1`);
-export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "place", "place-below", "scope-below", "position-authors", "role-places"];
+export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "place", "place-below", "scope-below", "position-authors", "role-places", "head-authors"];
 export const BITMAP_FAMILIES = ["scope", "roster", "live-scope"];
 export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 export const ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
@@ -493,6 +494,8 @@ const FAMILY_TABLE = [
   // the first-statement lists (design §10.2); the two topic roll-ups are maintained because the Topics Types are in the release
   ["place", 6, 3, 1, 4, "posting", 1n], ["place-below", 7, 3, 1, 4, "posting", 1n], ["scope-below", 19, 3, 1, 1, "posting", 1n],
   ["position-authors", 20, 3, 1, 3, "posting", 1n], ["role-places", 21, 4, 1, 1, "posting", 1n],
+  // everyone's versions of a file (QUESTIONS Q52, ruled 2026-11-26), its own family so a later generation can drop it
+  ["head-authors", 22, 3, 1, 3, "posting", 1n],
 ];
 
 // ---- the plan ------------------------------------------------------------------------------------------------------
@@ -609,7 +612,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   // G16–G17: the stores name the predicted ledger proxy, INITIAL_WRITER = 0
   // each store also holds its family set as immutables F0.. (zero padding beyond the set; PostingStore 16, BitmapStore 4)
   const familySlots = (names, capacity) => Object.fromEntries(Array.from({ length: capacity }, (_, i) => [`F${i}`, i < names.length ? familyId(names[i]) : ZERO]));
-  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, ...familySlots(POSTING_FAMILIES, 16) });
+  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, ...familySlots(POSTING_FAMILIES, 17) });
   const bitmap = add("G17", "BitmapStore", [ledgerProxy, zeroAddress, BITMAP_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, FAMILY_LIVE_SCOPE: familyId("live-scope"), ...familySlots(BITMAP_FAMILIES, 4) });
 
   // G18: RealmGenesis.run — the controller, the registry proxy, the ledger proxy (each initialized in its creation)

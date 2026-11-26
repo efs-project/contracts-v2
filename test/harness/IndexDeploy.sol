@@ -39,7 +39,7 @@ library IndexDeploy {
     }
 
     function postingFamilies() internal pure returns (bytes32[] memory f) {
-        f = new bytes32[](15);
+        f = new bytes32[](16);
         f[0] = Keys.familyId("by-type");
         f[1] = Keys.familyId("by-author");
         f[2] = Keys.familyId("backlink");
@@ -55,6 +55,7 @@ library IndexDeploy {
         f[12] = Keys.familyId("scope-below");
         f[13] = Keys.familyId("position-authors");
         f[14] = Keys.familyId("role-places");
+        f[15] = Keys.familyId("head-authors");
     }
 
     function bitmapFamilies() internal pure returns (bytes32[] memory f) {

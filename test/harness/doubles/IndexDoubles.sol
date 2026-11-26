@@ -10,6 +10,7 @@ import {
     ActionKind,
     FamilyId,
     Native,
+    Purpose,
     ScopeKey,
     TypeId
 } from "../../../src/interfaces/Actions.sol";
@@ -43,10 +44,11 @@ bytes32 constant CALLBACK_PROFILE_4 =
     keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
 // The length of an author's scope list at one place up to which the floor claims to cover a later statement
-// (docs/WORK-MODEL-V3.md §3.5): the later-statement row's compute below is fitted to the dearest later statement at
-// this length, a restore of a far entry across distinct places. The one place the claim's number lives: a different
-// claim is a different `computePerBindLater` (and the vectors), and `test/integration/FloorSplit.t.sol` pins both the
-// claim and the measured length where the quote stops covering.
+// (docs/WORK-MODEL-V3.md §3.5): the later-statement row's compute below is fitted to the dearest later statement in a
+// list of at most this length, a yes after a lone no across distinct places (in a list of 1,023 entries, the dearest by
+// the bisection's probes and words). The one place the claim's number lives: a different claim is a different
+// `computePerBindLater` (and the vectors), and `test/integration/FloorSplit.t.sol` pins both the claim and the measured
+// lengths where the quote stops covering.
 uint256 constant LIST_LENGTH_CLAIM = 1024;
 
 /// The generation-1 work model of design §10.4 (formula 3, docs/WORK-MODEL-V3.md §3.4), slot counts ×10 as the
@@ -55,13 +57,18 @@ uint256 constant LIST_LENGTH_CLAIM = 1024;
 /// (a first yes), 2.00 rewrites (a second author's first yes), and compute so that prague's first quote is formula 2's
 /// to the gas. The re-bind row (a BIND on a BOUND head, which never searches the scope list): 2.00 fresh, 4.00 rewrites
 /// (at a place of its own), and the least compute that quotes every re-bind at 1.05× (a folder re-bind across folders
-/// on amsterdam, 115.8k). The row of every other later statement: 2.00 fresh (a re-bind, or a restore whose live-bits word is empty), 5.00
-/// rewrites (a restore at a place of its own: the scope head moves once per place), and the least compute that quotes
-/// every later statement the floor claims at 1.05× its spend on both schedules; the binding case is a restore of a far
-/// entry across distinct places in lists of `LIST_LENGTH_CLAIM` entries (amsterdam, 168.9k), whose bisection of the
-/// author's scope list is the part that grows with length. The publish terms are formula 2's: a repeat PUBLISH or
+/// on amsterdam, 115.8k). The row of every other later statement: 3.00 fresh (a yes after a lone no, the binding's
+/// second statement: its history word, its live-bits word and its thing's backlink word), 5.00 rewrites (a restore at a
+/// place of its own: the scope head moves once per place), and the least compute that quotes every later statement the
+/// floor claims at the floor's per-action margin (1.03 on prague, 1.05 on amsterdam); the binding case is a yes after a
+/// lone no across distinct places in the dearest list within the claim, 1,023 entries (prague, 171.8k, quoted 1.031),
+/// whose bisection of the author's scope list is the part that grows with length (and with the words its probes read,
+/// so the longest list is not the dearest). The publish terms are formula 2's: a repeat PUBLISH or
 /// REUSE (≈ 87k / 63k) for `freshPerPublishExisting`, name records (≈ 2.6k in the final phase) for
-/// `finalComputePerPublish`. Generation 1 keeps no list for one purpose, so the surcharge is zero. The final per-bind
+/// `finalComputePerPublish`. The surcharge is HEAD's: generation 1 keeps `head-authors` (everyone's versions of a file)
+/// for HEAD alone, and its rows are that list's measured cost per HEAD statement (`test/index/HeadAuthorsFloor.t.sol`,
+/// generation 1 against the same code without the list): a first statement one fresh slot and one rewrite, a mask,
+/// release or restore of a BOUND head the counter's rewrite, a re-bind nothing. The final per-bind
 /// reserve is set from first tags on distinct topics, so the Files validator's first masks about records and subjects
 /// and its folder and HEAD re-binds (11-15k) are under-reserved; that is safe (design §10.4: the final call receives all
 /// remaining gas and the planning rule's V includes E).
@@ -86,9 +93,15 @@ library IndexDoubleDefaults {
         w.freshPerRebind = 20;
         w.rwPerRebind = 40;
         w.computePerRebind = 42_000;
-        w.freshPerBindLater = 20;
+        w.freshPerBindLater = 30;
         w.rwPerBindLater = 50;
-        w.computePerBindLater = 85_000;
+        w.computePerBindLater = 78_000;
+        w.surchargePurpose = Purpose.HEAD;
+        w.surchargeFreshFirst = 10;
+        w.surchargeRwFirst = 10;
+        w.surchargeComputeFirst = 4500;
+        w.surchargeRwLater = 10;
+        w.surchargeComputeLater = 10_000;
     }
 }
 

@@ -145,7 +145,7 @@ contract KeysTest is Test {
     }
 
     function testFamilyIds() public view {
-        string[18] memory names = [
+        string[19] memory names = [
             "by-type",
             "by-author",
             "backlink",
@@ -163,7 +163,8 @@ contract KeysTest is Test {
             "place-below",
             "scope-below",
             "position-authors",
-            "role-places"
+            "role-places",
+            "head-authors"
         ];
         for (uint256 i; i < names.length; ++i) {
             assertEq(Keys.familyId(names[i]), b32(string.concat(".families.", names[i])), names[i]);
@@ -175,7 +176,7 @@ contract KeysTest is Test {
 
     /// Posting kinds 2, 3 and 9 are reserved: no list helper mints them.
     function testPostingKindsAreDistinctAndReservedOnesUnused() public pure {
-        uint8[15] memory kinds = [
+        uint8[16] memory kinds = [
             Keys.KIND_BY_TYPE,
             Keys.KIND_BY_AUTHOR,
             Keys.KIND_BACKLINK,
@@ -190,7 +191,8 @@ contract KeysTest is Test {
             Keys.KIND_PLACE_BELOW,
             Keys.KIND_SCOPE_BELOW,
             Keys.KIND_POSITION_AUTHORS,
-            Keys.KIND_ROLE_PLACES
+            Keys.KIND_ROLE_PLACES,
+            Keys.KIND_HEAD_AUTHORS
         ];
         uint256 seen;
         for (uint256 i; i < kinds.length; ++i) {
@@ -201,7 +203,7 @@ contract KeysTest is Test {
             seen,
             (1 << 1) | (1 << 4) | (1 << 5) | (1 << 8) | (1 << 10) | (1 << 11) | (1 << 12)
                 | (1 << 13) | (1 << 14) | (1 << 15) | (1 << 6) | (1 << 7) | (1 << 19) | (1 << 20)
-                | (1 << 21)
+                | (1 << 21) | (1 << 22)
         );
     }
 

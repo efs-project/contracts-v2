@@ -149,7 +149,7 @@ contract DroppedListTest is TopicListsHistory {
         // G: T fresh (generation 1's lists + X), the genesis bitmap store carried; built and activated
         (IndexDeployer dg, IGeneration1 g) = _creators(address(0), address(b0));
         IPostingStore t = IPostingStore(dg.postingStore());
-        assertEq(t.familyIds().length, 16, "T: generation 1's fifteen posting lists and X");
+        assertEq(t.familyIds().length, 17, "T: generation 1's sixteen posting lists and X");
         _buildAll(g);
         _assertSameStores(p0, b0, t, b0, "G's T vs the genesis posting store");
         (uint64 x0,,,) = t.postingHead(_xKey(p));

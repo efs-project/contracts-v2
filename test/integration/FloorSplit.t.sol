@@ -25,13 +25,17 @@ import {IndexDoubleDefaults, LIST_LENGTH_CLAIM} from "../harness/doubles/IndexDo
 ///         What it asserts, so that a change which thins the floor's margin or hides compute in a slot count fails:
 ///         - the quote covers the spend at one action (≥ 1.03) and per action (first and later statements and every
 ///           WITHDRAW after the first ≥ 1.03 on prague and ≥ 1.05 on amsterdam; PUBLISH, REUSE and CREATE, whose terms
-///           formula 3 did not change, ≥ 1.005). Measured at formula 3: per action 1.035 (prague, a first yes) and
-///           1.053 (amsterdam, a restore); at one action 1.034 (amsterdam, a WITHDRAW);
+///           formula 3 did not change, ≥ 1.005). Measured at the list release: per action 1.031 (prague, a yes after a
+///           lone no in the dearest list within the claim), 1.034 (prague, a first yes) and 1.057 (amsterdam, a
+///           folder re-bind across folders); at one action 1.034 (amsterdam, a WITHDRAW);
 ///         - the slot counts are true: the fresh slots and rewrites a statement makes per action are at most its row's;
 ///         - a later statement writes a fresh index slot (formula 2 quoted none), a re-bind two;
-///         - the exceptions are pinned inside bands, so a change either way shows: lists beyond 4,096 entries, two
-///           statements at one position, and a yes after a lone no (3 fresh index slots, the later row's 2.0; prague
-///           covers it in lists of up to 256 entries, amsterdam at the claim).
+///         - a yes after a lone no (the binding's second statement: 3 fresh index slots, the most of any later
+///           statement, and the later row's 3.0 since the list release) is covered at the claim like every other later
+///           statement;
+///         - the exceptions are pinned inside bands, so a change either way shows: lists beyond 8,192 entries (where
+///           a yes after a lone no stops being covered on prague and a restore across places on amsterdam) and two
+///           statements at one position.
 contract FloorSplitTest is FloorBase {
     uint256 internal constant N = 33;
     uint8 internal constant FIRST = 1;
@@ -132,7 +136,7 @@ contract FloorSplitTest is FloorBase {
     }
 
     /// A row the floor does not claim (a list longer than the claim): measured and pinned inside [lo, hi] thousandths
-    /// per action (the documented exception, docs/WORK-MODEL-V3.md §3.5), so a change to the quote or the index shows.
+    /// per action (docs/WORK-MODEL-V3.md §3.5), so a change to the quote or the index shows.
     function _beyond(
         string memory label,
         Action[] memory a,
@@ -160,6 +164,15 @@ contract FloorSplitTest is FloorBase {
             : cls == REBIND ? wm.freshPerRebind : wm.freshPerBindLater;
         uint256 rowRw =
             cls == FIRST ? wm.rwPerBindFirst : cls == REBIND ? wm.rwPerRebind : wm.rwPerBindLater;
+        // a statement of the surcharged purpose is quoted its surcharge row too (a WITHDRAW never is)
+        if (cls != WITHDRAW && a[0].purpose == wm.surchargePurpose) {
+            rowFresh += cls == FIRST
+                ? wm.surchargeFreshFirst
+                : cls == REBIND ? wm.surchargeFreshRebind : wm.surchargeFreshLater;
+            rowRw += cls == FIRST
+                ? wm.surchargeRwFirst
+                : cls == REBIND ? wm.surchargeRwRebind : wm.surchargeRwLater;
+        }
         // ×100 measured against ×10 quoted
         assertLe(
             perFresh, rowFresh * 10, string.concat(label, ": no more fresh slots than its row")
@@ -776,7 +789,7 @@ contract FloorSplitTest is FloorBase {
     }
 
     /// The claim: a restore of a far entry across nine places, in lists just past `LIST_LENGTH_CLAIM` entries, is quoted
-    /// at the floor's per-action margin (≥ 1.05 on amsterdam; measured 1.062 / 1.052).
+    /// at the floor's per-action margin (measured 1.160 / 1.081).
     function test_split_claim_restores_across_lists_at_the_claim() public {
         _row(
             "claim: restores of a far entry across places",
@@ -795,19 +808,54 @@ contract FloorSplitTest is FloorBase {
         );
     }
 
-    // ---- a yes after a lone no: the documented exception ----------------------------------------------------------
+    /// Restores of the LAST entry of a `len`-entry list at each of `n` places, every entry of its live-bits word masked
+    /// first, so the restore writes the word from zero (the dearest a restore can be at that length).
+    function _lastRestored(uint256 n, uint256 len) internal returns (Action[] memory a) {
+        vm.pauseGasMetering();
+        string memory seed = string.concat("lr-", vm.toString(len), "-");
+        bytes32[] memory t = _topics(seed, n);
+        a = new Action[](n);
+        for (uint256 i; i < n; ++i) {
+            bytes32[] memory x = _list(t[i], string.concat(seed, vm.toString(i)), len);
+            Action[] memory m = new Action[](256);
+            for (uint256 j; j < 256; ++j) {
+                m[j] = EfsTopics.deny(t[i], x[len - 256 + j], 1, 0);
+            }
+            _sendIn(m, new bytes[](256), 64);
+            a[i] = EfsTopics.tag(t[i], x[len - 1], 2, 0);
+        }
+        vm.resumeGasMetering();
+    }
+
+    /// The dearest list within the claim is not the longest. `RealmIndex._entryIndex` bisects the scope list and each
+    /// probe reads the word that holds its entry (entry e ≥ 1 is in word (e − 1) / 5), so the spend is the probes (about
+    /// 2.1k each across places) plus the distinct words they read (about 2.0k each, cold). For the last entry of a list
+    /// that is 10 probes and 9 words at 1,023 entries against 10 and 8 at 1,024 and 1,025: the 1,023-entry list is the
+    /// dearest a list of up to `LIST_LENGTH_CLAIM` entries can be (by that count, checked from 2 to 1,025 entries), and
+    /// the later row's compute is fitted to it. Measured 1.145 / 1.068.
+    function test_split_claim_restores_at_the_dearest_list_within_the_claim() public {
+        _row(
+            "claim: restores of the last of 1,023 entries across places",
+            LATER,
+            _lastRestored(9, LIST_LENGTH_CLAIM - 1),
+            new bytes[](9)
+        );
+    }
+
+    // ---- a yes after a lone no -------------------------------------------------------------------------------------
     // A yes after a lone no is a restore that is the binding's SECOND statement. `PostingStore._append` at count 1
-    // materializes the binding's history word 0, a fresh slot; every restore the rows above measure is a binding's third
-    // statement (yes, mask, yes), whose append rewrites that word. In a list of lone noes no live bit is ever set, so the
-    // entry's live-bits word is empty and the yes writes it fresh; with the thing's backlink list holding one entry, the
-    // yes writes that list's word 0 fresh too. The yes then writes 3 fresh index slots and rewrites 4, against the later
-    // row's 2.0 and 5.0. Measured per action across nine topics (prague / amsterdam; quote 162,200 / 177,700): lists of
-    // 48 lone noes 1.258 / 1.289 (2 fresh: the live bit is in the head word); 256 entries 1.004 / 1.106; 257 entries
-    // 0.992 / 1.093; 1,025 entries 0.955 / 1.052 (spend 169,693 / 168,771). Prague covers this shape in lists of up to
-    // 256 entries; amsterdam (a fresh slot and a rewrite both cost 12,100 of execution there) covers it at the claim.
-    // At one topic of 1,025, nine spread entries: 1.106 / 1.238. The same yes with the lone no last in a list of 1,024
-    // first yeses spends what the all-noes list spends (the entry is alone in its bits word either way); with the
-    // thing unlinked it writes 3 fresh and 3 rewritten (0.986 / 1.136 at 1,025).
+    // materializes the binding's history word 0, a fresh slot; the restores above are a binding's third statement (yes,
+    // mask, yes), whose append rewrites that word. In a list of lone noes no live bit is ever set, so the entry's live-bits
+    // word is empty and the yes writes it fresh; with the thing's backlink list holding one entry, the yes writes that
+    // list's word 0 fresh too. So it writes 3 fresh index slots and rewrites 4, the most fresh slots of any later
+    // statement: the later row's fresh count is 3.0 for it since the list release (it was 2.0, and this shape was the
+    // documented exception: prague covered it only in lists of up to 256 entries). Measured per action across places
+    // (prague / amsterdam; quote 177,300 / 182,800): lists of 48 lone noes 1.374 / 1.324 (2 fresh: the live bit is in the
+    // head word); 1,025 entries 1.043 / 1.082; the dearest list within the claim (1,023 entries) 1.031 / 1.069, which
+    // sets the later row's compute (prague, spend 171,832); prague covers it in lists of up to 3,586 entries and not from
+    // 3,587, amsterdam up to 8,191 and not from 8,192. At one topic of 1,025, nine spread entries: 1.208 / 1.273. The same
+    // yes with the lone no last in a list of 1,024 first yeses spends what the all-noes list spends (the entry is alone in
+    // its bits word either way); with the thing unlinked it writes 3 fresh and 3 rewritten (1.077 / 1.168 at 1,025).
 
     /// `len` lone noes by this principal at `topic_` (things `seed`/0..len-1), in publications of 64.
     function _noList(bytes32 topic_, string memory seed, uint256 len)
@@ -883,160 +931,189 @@ contract FloorSplitTest is FloorBase {
         a = _across(t, last, 1, 0, true);
     }
 
-    /// The exception pinned: per action, the ratio inside [band[0], band[1]] thousandths on prague and [band[2],
-    /// band[3]] on amsterdam, and exactly `fresh` and `rewritten` index slots (×100), so a change either way shows.
+    /// The shape pinned: per action, the ratio inside [band[0], band[1]] thousandths on prague and [band[2], band[3]] on
+    /// amsterdam and exactly `fresh` and `rewritten` index slots (×100), so a change either way shows; and, when
+    /// `claimed`, the floor's rules for a later statement (`_row`: the per-action margin, at most the row's slots).
     function _loneNo(
         string memory label,
         Action[] memory a,
         uint256[4] memory band,
         uint256 fresh,
-        uint256 rewritten
+        uint256 rewritten,
+        bool claimed
     ) internal returns (uint256 perRatio) {
         uint256 perFresh;
         uint256 perRw;
-        (perFresh, perRw,, perRatio) = _split(label, a, new bytes[](a.length));
+        uint256 oneRatio;
+        (perFresh, perRw, oneRatio, perRatio) = _split(label, a, new bytes[](a.length));
+        if (claimed) {
+            // `_row`'s rules for a later statement of an unsurcharged purpose (TAG)
+            WorkModel memory wm = r.g.index.workModel();
+            assertLe(perFresh, wm.freshPerBindLater * 10, string.concat(label, ": fresh, the row"));
+            assertLe(perRw, wm.rwPerBindLater * 10, string.concat(label, ": rewrites, the row"));
+            assertGe(
+                oneRatio, 1030, string.concat(label, ": one action, the quote covers the spend")
+            );
+            assertGe(
+                perRatio,
+                _amsterdam() ? 1050 : 1030,
+                string.concat(label, ": per action, the quote covers the spend")
+            );
+        }
         (uint256 lo, uint256 hi) = _amsterdam() ? (band[2], band[3]) : (band[0], band[1]);
-        assertGe(perRatio, lo, string.concat(label, ": the exception's ratio moved down"));
-        assertLe(perRatio, hi, string.concat(label, ": the exception's ratio moved up"));
+        assertGe(perRatio, lo, string.concat(label, ": the ratio moved down"));
+        assertLe(perRatio, hi, string.concat(label, ": the ratio moved up"));
         assertEq(perFresh, fresh, string.concat(label, ": fresh index slots per yes"));
         assertEq(perRw, rewritten, string.concat(label, ": rewritten index slots per yes"));
     }
 
-    /// The length up to which prague covers a yes after a lone no across places (measured 1.004 at 256 entries, 0.992
-    /// at 257; the search makes one more store call there, and 512 and 513 entries measure alike, 0.967).
-    uint256 internal constant LONE_NO_COVERED_UP_TO = 256;
-
-    /// A short list (48 lone noes, the short tier's top): covered on both schedules (measured 1.258 / 1.289).
+    /// A short list (48 lone noes, the short tier's top): measured 1.374 / 1.324.
     function test_split_lone_no_yes_short_list() public {
-        uint256 r = _loneNo(
+        _loneNo(
             "lone no: yeses across places, lists of 48",
             _loneNoAcross(9, 48, true),
-            [uint256(1230), 1290, 1260, 1320],
+            [uint256(1350), 1400, 1300, 1350],
             200,
-            400
+            400,
+            true
         );
-        assertGe(r, 1000, "covered in a short list");
     }
 
-    function test_split_lone_no_yes_covered_at_256() public {
-        uint256 r = _loneNo(
-            "lone no: yeses across places, lists of 256",
-            _loneNoAcross(9, LONE_NO_COVERED_UP_TO, true),
-            [uint256(1000), 1030, 1080, 1130],
-            300,
-            400
-        );
-        assertGe(r, 1000, "covered at 256 entries");
-    }
-
-    function test_split_lone_no_yes_not_covered_at_257() public {
-        uint256 r = _loneNo(
-            "lone no: yeses across places, lists of 257",
-            _loneNoAcross(9, LONE_NO_COVERED_UP_TO + 1, true),
-            [uint256(970), 999, 1070, 1120],
-            300,
-            400
-        );
-        if (_amsterdam()) assertGe(r, 1000, "amsterdam: covered at 257 entries");
-        else assertLt(r, 1000, "prague: the documented exception, not covered from 257 entries");
-    }
-
-    /// At the claim (lists of 1,025): measured 0.955 on prague (not covered), 1.052 on amsterdam (covered).
+    /// At the claim (lists of 1,025): measured 1.043 / 1.082.
     function test_split_lone_no_yes_at_the_claim() public {
-        uint256 r = _loneNo(
+        _loneNo(
             "lone no: yeses across places, lists of 1,025",
             _loneNoAcross(9, LIST_LENGTH_CLAIM + 1, true),
-            [uint256(935), 975, 1030, 1075],
+            [uint256(1030), 1060, 1065, 1100],
             300,
-            400
+            400,
+            true
         );
-        if (_amsterdam()) assertGe(r, 1000, "amsterdam: covered at the claim");
-        else assertLt(r, 1000, "prague: the documented exception, not covered at the claim");
+    }
+
+    /// The dearest list within the claim (1,023 entries; see the restore of the same name): measured 1.031 / 1.069. The
+    /// binding case of the later row's compute.
+    function test_split_lone_no_yes_at_the_dearest_list_within_the_claim() public {
+        _loneNo(
+            "lone no: yeses across places, lists of 1,023",
+            _loneNoAcross(9, LIST_LENGTH_CLAIM - 1, true),
+            [uint256(1030), 1045, 1055, 1085],
+            300,
+            400,
+            true
+        );
     }
 
     /// The thing unlinked (its backlink list empty: the yes writes the list's head, no word): 3 fresh, 3 rewritten;
-    /// measured 0.986 / 1.136, so the linked case is the dearer.
+    /// measured 1.077 / 1.168, so the linked case is the dearer.
     function test_split_lone_no_yes_at_the_claim_unlinked() public {
         _loneNo(
             "lone no: yeses across places, lists of 1,025, things unlinked",
             _loneNoAcross(9, LIST_LENGTH_CLAIM + 1, false),
-            [uint256(965), 999, 1110, 1160],
+            [uint256(1060), 1095, 1150, 1185],
             300,
-            300
+            300,
+            true
         );
     }
 
-    /// A lone no last in a list of 1,024 first yeses: the same spend as in a list of lone noes (0.955 / 1.052).
+    /// A lone no last in a list of 1,024 first yeses: the same spend as in a list of lone noes (1.043 / 1.082).
     function test_split_lone_no_yes_after_yeses_at_the_claim() public {
         _loneNo(
             "lone no: yeses across places, a lone no after 1,024 first yeses",
             _loneNoAfterYeses(9, LIST_LENGTH_CLAIM),
-            [uint256(935), 975, 1030, 1075],
+            [uint256(1030), 1060, 1065, 1100],
             300,
-            400
+            400,
+            true
         );
     }
 
-    /// At ONE topic of 1,025 lone noes, nine spread entries: covered on both (measured 1.106 / 1.238; the scope head
-    /// is warm after the first, and the nine share five live-bits words).
+    /// At ONE topic of 1,025 lone noes, nine spread entries: measured 1.208 / 1.273 (the scope head is warm after the
+    /// first, and the nine share five live-bits words).
     function test_split_lone_no_yes_one_place_at_the_claim() public {
-        uint256 r = _loneNo(
+        _loneNo(
             "lone no: yeses at one topic of 1,025",
             _loneNoOnePlace(9, LIST_LENGTH_CLAIM + 1),
-            [uint256(1080), 1130, 1210, 1260],
+            [uint256(1190), 1230, 1255, 1295],
             250,
-            300
+            300,
+            true
         );
-        assertGe(r, 1000, "covered at one place");
     }
 
-    /// The length where the quote stops covering, pinned: the bisection makes one more store call each time a list
-    /// passes a power of two, so a restore of a far entry across places is covered in lists of up to 4,096 entries
-    /// (twelve probes) and not from 4,097 (thirteen; measured 0.995 / 0.991; at 4,096: 1.008 / 1.003). The restore sets it: it writes the most
-    /// (2 fresh, 5 rewritten) on top of the bisection.
-    uint256 internal constant COVERED_UP_TO = 4096;
+    /// The length up to which a yes after a lone no across places is covered: 3,586 entries on prague (measured 1.007;
+    /// 0.996 at 3,587, where the bisection of the last entry reads one more word: 11 probes and 11 words), 8,191 on
+    /// amsterdam (1.008; 0.997 at 8,192: 13 probes and 12 words).
+    function _loneNoCoveredUpTo() internal view returns (uint256) {
+        return _amsterdam() ? 8191 : 3586;
+    }
 
-    /// At exactly `COVERED_UP_TO` entries: the far entry is 4,095 and every entry of its bits word (3,840-4,095) is
-    /// masked first, so its restore writes the word from zero as at the claim.
-    function test_split_break_even_covered_at_4096() public {
-        uint256 n = 9;
-        vm.pauseGasMetering();
-        bytes32[] memory t = _topics("be-", n);
-        Action[] memory a = new Action[](n);
-        for (uint256 i; i < n; ++i) {
-            bytes32[] memory x = _list(t[i], string.concat("be-", vm.toString(i)), COVERED_UP_TO);
-            Action[] memory m = new Action[](256);
-            for (uint256 j; j < 256; ++j) {
-                m[j] = EfsTopics.deny(t[i], x[COVERED_UP_TO - 256 + j], 1, 0);
-            }
-            _sendIn(m, new bytes[](256), 64);
-            a[i] = EfsTopics.tag(t[i], x[COVERED_UP_TO - 1], 2, 0);
+    function test_split_lone_no_yes_covered_up_to_the_limit() public {
+        uint256 r = _loneNo(
+            "lone no: yeses across places, the last list covered",
+            _loneNoAcross(9, _loneNoCoveredUpTo(), true),
+            [uint256(1000), 1015, 1000, 1015],
+            300,
+            400,
+            false
+        );
+        assertGe(r, 1000, "covered up to the limit");
+    }
+
+    function test_split_lone_no_yes_not_covered_past_the_limit() public {
+        uint256 r = _loneNo(
+            "lone no: yeses across places, the first list not covered",
+            _loneNoAcross(9, _loneNoCoveredUpTo() + 1, true),
+            [uint256(985), 999, 985, 999],
+            300,
+            400,
+            false
+        );
+        assertLt(r, 1000, "not covered past the limit");
+    }
+
+    /// The length up to which a restore of a far entry across places is covered on amsterdam: 8,191 entries (measured
+    /// 1.007; 0.996 at 8,192). On prague, where a rewrite is cheaper, the same restore is still covered at 8,192
+    /// (measured 1.060) and, by the same count of probes and words, up to 57,346 entries (computed, not measured).
+    /// Since the list release the limits are set by a yes after a lone no on prague (3,586) and by both shapes on
+    /// amsterdam (8,191); before it, by this restore at 4,096 on both (0.995 / 0.991 at 4,097).
+    uint256 internal constant COVERED_UP_TO = 8191;
+
+    function test_split_break_even_covered_at_8191() public {
+        (,, uint256 perRatio) = _measure(
+            "break-even: restores at 8,191 entries",
+            LATER,
+            _lastRestored(9, COVERED_UP_TO),
+            new bytes[](9)
+        );
+        assertGe(perRatio, 1000, "covered at 8,191 entries");
+    }
+
+    function test_split_break_even_not_covered_at_8192() public {
+        (,, uint256 r) = _measure(
+            "beyond: restores at 8,192 entries",
+            LATER,
+            _lastRestored(9, COVERED_UP_TO + 1),
+            new bytes[](9)
+        );
+        if (_amsterdam()) {
+            assertGe(r, 985, "beyond: the ratio moved down");
+            assertLt(r, 1000, "amsterdam: not covered from 8,192 entries");
+        } else {
+            assertGe(r, 1050, "prague: the ratio moved down");
+            assertLe(r, 1070, "prague: the ratio moved up");
         }
-        vm.resumeGasMetering();
-        (,, uint256 perRatio) =
-            _measure("break-even: restores at 4,096 entries", LATER, a, new bytes[](n));
-        assertGe(perRatio, 1000, "covered at 4,096 entries");
     }
 
-    function test_split_break_even_not_covered_at_4097() public {
-        uint256 r = _beyond(
-            "beyond: restores at 4,097 entries",
-            _farAcross(9, COVERED_UP_TO, true),
-            new bytes[](9),
-            960,
-            999
-        );
-        assertLt(r, 1000, "the documented exception: not covered from 4,097 entries");
-    }
-
-    function test_split_beyond_masks_at_4097() public {
-        // a mask writes less than a restore, so it is still covered here (measured 1.107 / 1.029)
+    function test_split_beyond_masks_at_8193() public {
+        // a mask writes less than a restore, so it is still covered here
         _beyond(
-            "beyond: masks at 4,097 entries",
-            _farAcross(9, COVERED_UP_TO, false),
+            "beyond: masks at 8,193 entries",
+            _farAcross(9, COVERED_UP_TO + 1, false),
             new bytes[](9),
-            1000,
-            1150
+            1020,
+            1200
         );
     }
 
