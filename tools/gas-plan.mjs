@@ -18,7 +18,7 @@
 //   { kind: "publish", shape, bytes, fresh }  shape = a publishNew key ("files-root/1 form 0"); fresh = the record is new
 //   { kind: "reuse", type }                   REUSE of an existing record of `type`
 //   { kind: "create" } | { kind: "withdraw" }
-//   { kind: "bind", cost, first, levels, purpose }
+//   { kind: "bind", cost, first, levels, purpose, firstAtPlace, entries }
 //                                             any BIND, UNBIND or RELEASE: cost = a constants key ("bindTagFresh",
 //                                             "unbindTagLone", "releaseTag", "bindPropertyFresh", "bindSameFreshWord",
 //                                             "restoreBroader", ...), purpose = the action's purpose word (bytes32
@@ -29,7 +29,13 @@
 //                                             position is UNSET (a first statement of either sign; false for every
 //                                             later statement, a RELEASE always), levels = the
 //                                             tagLevel counts of a first TAG statement ({ mineNew, mineExisting,
-//                                             sharedNew, sharedExisting }; see tagLists.priceAsNew)
+//                                             sharedNew, sharedExisting }; see tagLists.priceAsNew).
+//                                             A later statement (first false) is priced by the list tiers
+//                                             (laterLists, laterKey below): firstAtPlace = no earlier later
+//                                             statement of this publication is at the same place (purpose, subject)
+//                                             (omitted: true, the dearer reading); entries = the author's entry
+//                                             count at that place, the length of its own scope list there, from a
+//                                             read the planner trusts (omitted: unknown, priced at the claim's tier)
 import assert from "node:assert/strict";
 
 const ceilDiv = (a, b) => Math.floor((a + b - 1) / b);
@@ -58,6 +64,24 @@ export function purposeOf(a) {
   return PURPOSE[name];
 }
 
+/** The constants key that prices a LATER statement (`a.first` false) under `laterLists` (design §10.4; tools/RELEASE.md
+ *  "The list tiers"). `has(key)` says whether the constants carry `key`. A row with list-tier rows (`<cost>LongNewPlace`)
+ *  in the short tier (a known `entries` ≤ shortTierMaxEntries) is its own row, or `<cost>NewPlace` for the first later
+ *  statement at its place when the model carries one; in the long tier (more entries, or `entries` unknown) it is
+ *  `<cost>LongNewPlace` for the first later statement at its place and `<cost>LongSamePlace` for the rest. A row without
+ *  list-tier rows (a re-bind: it never searches the list) has no tier: `<cost>NewPlace` when first at its place and the
+ *  model carries one, else its own row. A model without `laterLists` prices every later statement by its row. */
+export function laterKey(has, a, laterLists) {
+  const k = a.cost;
+  if (a.first || !laterLists) return k;
+  const firstAtPlace = a.firstAtPlace ?? true;
+  if (has(`${k}LongNewPlace`)) {
+    const short = Number.isInteger(a.entries) && a.entries <= laterLists.shortTierMaxEntries;
+    if (!short) return firstAtPlace ? `${k}LongNewPlace` : `${k}LongSamePlace`;
+  }
+  return firstAtPlace && has(`${k}NewPlace`) ? `${k}NewPlace` : k;
+}
+
 /** `tagLists.priceAsNew`: whether a roll-up list holding `entries` entries is priced as a new list. */
 export function priceAsNew(model, entries) {
   const r = model.tagLists.priceAsNew;
@@ -80,8 +104,9 @@ export function planner(model, schedule) {
       case "create": return c.create;
       case "withdraw": return c.withdraw;
       case "bind": {
-        assert.ok(a.cost in c, `no constant ${a.cost}`);
-        let g = c[a.cost];
+        const key = laterKey((k) => k in c, a, model.laterLists);
+        assert.ok(key in c, `no constant ${key}`);
+        let g = c[key];
         for (const [k, n] of Object.entries(a.levels ?? {})) g += c.tagLevel[k] * n;
         return g;
       }
@@ -199,6 +224,10 @@ const firstTagsSecond = (model, depth, mine0) => (k) => range(k).map((j) => {
   return { kind: "bind", cost: "bindTagSecondAuthor", first: true, levels: depth > 1 ? { [mine]: depth - 1, [shared]: depth - 1 } : {} };
 });
 const repeat = (a) => (k) => range(k).map(() => ({ ...a }));
+/** k later statements `cost` at ONE place (FloorPlan.t.sol's topic or root folder) whose author's list holds
+ *  min(k + 1, 64) entries before them (the builder states one more thing than it later changes, at most 64): the first
+ *  is the first later statement at that place, the rest are not. */
+const atOnePlace = (cost) => (k) => range(k).map((j) => ({ kind: "bind", cost, first: false, firstAtPlace: j === 0, entries: Math.min(k + 1, 64) }));
 
 /** FloorPlan.t.sol's create-file recipe: CREATE, PUBLISH files-root/1 form 0 (64-byte header + 18-byte document),
  *  PUBLISH a 10-byte files-name/2, BIND HEAD (first), BIND FOLDER (first entry of that name in the root). */
@@ -218,12 +247,12 @@ export function shapes(model) {
     firstTagsDepth8Existing: { what: "first tags at existing positions of an 8-word topic, the author's roll-ups existing (case iv)", units: 1, depth: 8, of: firstTagsSecond(model, 8, 6) },
     firstTagsDepth64Existing: { what: "first tags at existing positions of a 64-word topic, the author's roll-ups existing (case iv)", units: 1, depth: 64, of: firstTagsSecond(model, 64, 6) },
     secondAuthorDepth8: { what: "a second author's first tags at existing positions of an 8-word topic, its roll-ups new (case iii)", units: 1, depth: 8, of: firstTagsSecond(model, 8, 0) },
-    tagMasks: { what: "masks of asserted tags on a one-word topic (UNBIND from BOUND)", units: 1, of: repeat({ kind: "bind", cost: "unbindTag", first: false }) },
-    tagReleases: { what: "releases of asserted tags on a one-word topic", units: 1, of: repeat({ kind: "bind", cost: "releaseTag", first: false }) },
-    tagRestores: { what: "restores of masked tags on a one-word topic (BIND from MASKED)", units: 1, of: repeat({ kind: "bind", cost: "restoreTag", first: false }) },
-    tagNumberChanges: { what: "number changes on asserted tags on a one-word topic (a REBIND to the same target with a new number)", units: 1, of: repeat({ kind: "bind", cost: "bindTagNumberChange", first: false }) },
-    masksOfMasks: { what: "masks of masks on a one-word topic (UNBIND from MASKED with a new number; priced as masks of asserted tags, an upper bound)", units: 1, of: repeat({ kind: "bind", cost: "unbindTag", first: false }) },
-    folderRebinds: { what: "re-binds of root-folder entries to another file", units: 1, of: repeat({ kind: "bind", cost: "bindFolderRebind", first: false }) },
+    tagMasks: { what: "masks of asserted tags on a one-word topic (UNBIND from BOUND)", units: 1, of: atOnePlace("unbindTag") },
+    tagReleases: { what: "releases of asserted tags on a one-word topic", units: 1, of: atOnePlace("releaseTag") },
+    tagRestores: { what: "restores of masked tags on a one-word topic (BIND from MASKED)", units: 1, of: atOnePlace("restoreTag") },
+    tagNumberChanges: { what: "number changes on asserted tags on a one-word topic (a REBIND to the same target with a new number)", units: 1, of: atOnePlace("bindTagNumberChange") },
+    masksOfMasks: { what: "masks of masks on a one-word topic (UNBIND from MASKED with a new number; priced as masks of asserted tags, an upper bound)", units: 1, of: atOnePlace("unbindTag") },
+    folderRebinds: { what: "re-binds of root-folder entries to another file", units: 1, of: atOnePlace("bindFolderRebind") },
     repeatPublishes: { what: "repeat PUBLISHes of existing 10-byte files-name/2 records", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: false }) },
     nameRecords: { what: "fresh 10-byte files-name/2 records (publish-heavy)", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true }) },
     publishesAndTags: {

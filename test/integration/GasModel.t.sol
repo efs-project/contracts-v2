@@ -516,6 +516,26 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("release folder", x);
     }
 
+    /// A restore of a folder entry: BIND from MASKED to the kept target (transition RESTORE). The entries (d1, names
+    /// 0..3 → s[0..3)) are bound and masked unmeasured first, so each target is named by one entry, the ordinary case
+    /// of a file in one folder: the restore's backlink append then takes a fresh word, as a tag restore's does.
+    function test_model_restore_folder() public {
+        Action[] memory m = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[i], 0);
+        }
+        _do(m, new bytes[](3));
+        for (uint256 i; i < 3; ++i) {
+            m[i] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(i)), 0, 1);
+        }
+        _do(m, new bytes[](3));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[i], 2);
+        }
+        _actionPair("restore folder", x);
+    }
+
     bool internal _topicsRegistered;
 
     /// Registers the Topics Types (once), and their rule instances join the cooled set inside the rows that publish topics (`setUp` has no headroom
@@ -1208,6 +1228,715 @@ contract GasModelTest is FilesRecipesBase {
         assertEq(la.length, 11);
         assertEq(lb[0].length, 7392);
         _exec("model validate 40kb last publication", la, lb);
+    }
+
+    // ---- 8. later statements across places and in long lists (validation composites, never fitted) -------------
+    // The later-statement rows (masks, releases, restores, number changes; folder masks, releases, re-binds) are
+    // measured at ONE topic or folder whose lists are short. Two ordinary states cost more per statement: the bitmap
+    // store rewrites a scope head on every later statement (`setBit` and `stamp` write `lastMutation`), so statements
+    // at distinct places rewrite one head each, where statements at one place rewrite one between them; and from an
+    // author's entry 48 at a place the live bit is in a bits word of its own (a restore of an entry alone in its word
+    // writes a fresh slot), found by `RealmIndex._entryIndex`, a bisection of the author's list there with one store
+    // call per probe. The composites below are whole publications in those states. Each builds its state unmeasured
+    // with gas metering paused (fillers are first tags of address-shaped things, or folder entries naming s[39], in
+    // publications of at most 64 actions); the measured statements are about file subjects, as the rows' are.
+    //
+    // Sizes: 32 statements for the homogeneous shapes across places (a bulk edit: half the action limit, where the
+    // per-statement error has nearly reached its asymptote), 16 at 1,024 entries and 8 at 4,096 (the state those
+    // lists need: 16,400 and 32,776 filler tags), and six statements for the two mixed publications (what a person
+    // sends: untag one file from six topics, delete six files from three folders).
+
+    uint256 internal constant ACROSS = 32;
+
+    /// `a` and `b` in unmeasured publications of at most `per` actions.
+    function _doIn(Action[] memory a, bytes[] memory b, uint256 per) internal {
+        for (uint256 from; from < a.length; from += per) {
+            uint256 m = a.length - from < per ? a.length - from : per;
+            Action[] memory x = new Action[](m);
+            bytes[] memory y = new bytes[](m);
+            for (uint256 j; j < m; ++j) {
+                (x[j], y[j]) = (a[from + j], b[from + j]);
+            }
+            _do(x, y);
+        }
+    }
+
+    /// `n` one-word topics `<seed><i>`, registered unmeasured.
+    function _topicsN(string memory seed, uint256 n) internal returns (bytes32[] memory t) {
+        _rememberTopics();
+        EfsTopics.Types memory tt = _topicTypes();
+        t = new bytes32[](n);
+        Action[] memory a = new Action[](n);
+        bytes[] memory b = new bytes[](n);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 id) =
+                EfsTopics.registerWord(tt, bytes(string.concat(seed, vm.toString(i))));
+            (a[i], b[i], t[i]) = (x[0], y[0], id);
+        }
+        _doIn(a, b, 32);
+    }
+
+    /// An address-shaped thing (target kind ADDRESS), distinct per (seed, i, j).
+    function _filler(string memory seed, uint256 i, uint256 j) internal pure returns (bytes32) {
+        return
+            bytes32(
+                uint256(uint160(uint256(keccak256(abi.encode("gas-model filler", seed, i, j)))))
+            );
+    }
+
+    /// The author's tags at `k` new topics: at topic i, `fill` first tags of fillers, then a first tag of s[i]
+    /// (entry `fill` of the author's list there). Unmeasured, gas metering paused. Returns (topics, things).
+    function _tagsAcross(string memory seed, uint256 k, uint256 fill)
+        internal
+        returns (bytes32[] memory t, bytes32[] memory th)
+    {
+        vm.pauseGasMetering();
+        t = _topicsN(seed, k);
+        th = new bytes32[](k);
+        if (fill != 0) {
+            Action[] memory f = new Action[](k * fill);
+            for (uint256 i; i < k; ++i) {
+                for (uint256 j; j < fill; ++j) {
+                    bytes32 x = _filler(seed, i, j);
+                    f[i * fill + j] = _bind(Purpose.TAG, t[i], x, x, 0);
+                }
+            }
+            _doIn(f, new bytes[](k * fill), 64);
+        }
+        Action[] memory a = new Action[](k);
+        for (uint256 i; i < k; ++i) {
+            th[i] = s[i];
+            a[i] = _bind(Purpose.TAG, t[i], s[i], s[i], 0);
+        }
+        _do(a, new bytes[](k));
+        vm.resumeGasMetering();
+    }
+
+    /// One later statement per (topics[i], things[i]) on the author's asserted (revision 1) or, for a restore,
+    /// masked (revision 2) head: `which` 0 a mask, 1 a release, 2 a restore, 3 a number change (0 -> 75).
+    function _tagLater(bytes32[] memory tp, bytes32[] memory th, uint256 which)
+        internal
+        pure
+        returns (Action[] memory a)
+    {
+        a = new Action[](tp.length);
+        for (uint256 i; i < tp.length; ++i) {
+            a[i] = which == 0
+                ? EfsFiles.unbind(Purpose.TAG, tp[i], th[i], 1)
+                : which == 1
+                    ? EfsFiles.release(Purpose.TAG, tp[i], th[i], 1)
+                    : which == 2
+                        ? _bind(Purpose.TAG, tp[i], th[i], th[i], 2)
+                        : EfsFiles.bindWithStrength(Purpose.TAG, tp[i], th[i], th[i], 1, 75);
+        }
+    }
+
+    /// Measures, each from the current state: masks, releases, restores (after unmeasured masks) and, when
+    /// `numbers`, number changes of the author's tags (tp[i], th[i]), as "model validate tag <kind> <what>".
+    function _measureTagLater(
+        string memory what,
+        bytes32[] memory tp,
+        bytes32[] memory th,
+        bool numbers
+    ) internal {
+        uint256 n = tp.length;
+        uint256 snap = vm.snapshotState();
+        _exec(
+            string.concat("model validate tag masks ", what), _tagLater(tp, th, 0), new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate tag releases ", what),
+            _tagLater(tp, th, 1),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        vm.pauseGasMetering();
+        _do(_tagLater(tp, th, 0), new bytes[](n));
+        vm.resumeGasMetering();
+        _exec(
+            string.concat("model validate tag restores ", what),
+            _tagLater(tp, th, 2),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        if (numbers) {
+            _exec(
+                string.concat("model validate tag number changes ", what),
+                _tagLater(tp, th, 3),
+                new bytes[](n)
+            );
+            vm.revertToState(snap);
+        }
+    }
+
+    /// 32 topics, the author's list at each holding one entry (the measured tag): the cross-place case alone.
+    function test_model_validate_later_tags_across() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("lx-", ACROSS, 0);
+        _measureTagLater("across topics", t, th, true);
+    }
+
+    /// 32 topics, the author's list at each holding 49 entries, the measured tag entry 48: alone in its bits word,
+    /// so a mask clears that word to zero and a restore after it writes a fresh slot.
+    function test_model_validate_later_tags_entry48() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("l48-", ACROSS, 48);
+        _measureTagLater("at entry 48 across topics", t, th, false);
+    }
+
+    /// 16 topics, the author's list at each holding 1,025 entries, the measured tag entry 1,024 (the floor's claim:
+    /// eleven bisection probes, alone in its bits word).
+    function test_model_validate_later_tags_entry1024() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("lk-", 16, 1024);
+        _measureTagLater("at entry 1024 across topics", t, th, false);
+    }
+
+    /// BEYOND THE CLAIM (the floor's documented exception): 8 topics, the author's list at each holding 4,097
+    /// entries, the measured tag entry 4,096 (thirteen probes, alone in its bits word).
+    function test_model_validate_later_tags_entry4096() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("l4k-", 8, 4096);
+        _measureTagLater("at entry 4096 across topics", t, th, false);
+    }
+
+    /// One topic whose author's list holds 1,025 entries; the measured tags are entries 32, 64, ..., 1,024 (spread,
+    /// so the bisections share few probes): a long list at one place.
+    function test_model_validate_later_tags_one_topic_1024() public {
+        vm.pauseGasMetering();
+        bytes32 t = _topicsN("l1k-", 1)[0];
+        Action[] memory f = new Action[](1025);
+        bytes32[] memory tp = new bytes32[](ACROSS);
+        bytes32[] memory th = new bytes32[](ACROSS);
+        for (uint256 e; e < 1025; ++e) {
+            bytes32 x = _filler("l1k", 0, e);
+            if (e != 0 && e % 32 == 0) {
+                x = s[e / 32 - 1];
+                (tp[e / 32 - 1], th[e / 32 - 1]) = (t, x);
+            }
+            f[e] = _bind(Purpose.TAG, t, x, x, 0);
+        }
+        _doIn(f, new bytes[](1025), 64);
+        vm.resumeGasMetering();
+        _measureTagLater("of 32 entries of 1025 at one topic", tp, th, false);
+    }
+
+    /// Folder entries of the author: name record `_nm(base + i, 12)` bound in `d` to `target`.
+    function _entry(bytes32 d, uint256 nameIndex, bytes32 target)
+        internal
+        pure
+        returns (Action memory)
+    {
+        return _bind(Purpose.FOLDER, d, keccak256(_nm(nameIndex, 12)), target, 0);
+    }
+
+    /// PUBLISHes of the name records `_nm(from .. from + n, 12)` and of `k` folders of p (salts `<seed>` i).
+    function _namesAndFolders(string memory seed, uint256 from, uint256 n, uint256 k)
+        internal
+        returns (bytes32[] memory d)
+    {
+        Action[] memory a = new Action[](n + k);
+        bytes[] memory b = new bytes[](n + k);
+        for (uint256 i; i < n; ++i) {
+            (a[i], b[i]) = _name(_nm(from + i, 12));
+        }
+        d = new bytes32[](k);
+        for (uint256 i; i < k; ++i) {
+            (a[n + i], b[n + i]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt(seed, i)));
+            d[i] = _id(T_DIRECTORY, b[n + i]);
+        }
+        _doIn(a, b, 64);
+    }
+
+    /// `which` 0 a mask, 1 a release, 2 a re-bind (to s[32 + i % 8]), 3 a restore (after a mask, to its kept target
+    /// s[i]) of the author's entries (d[i], name `names[i]` → s[i]).
+    function _folderLater(bytes32[] memory d, uint256[] memory names, uint256 which)
+        internal
+        view
+        returns (Action[] memory a)
+    {
+        a = new Action[](d.length);
+        for (uint256 i; i < d.length; ++i) {
+            bytes32 role = keccak256(_nm(names[i], 12));
+            a[i] = which == 0
+                ? _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d[i], role, 0, 1)
+                : which == 1
+                    ? _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d[i], role, 0, 1)
+                    : which == 2
+                        ? _bind(Purpose.FOLDER, d[i], role, s[32 + i % 8], 1)
+                        : _bind(Purpose.FOLDER, d[i], role, s[i], 2);
+        }
+    }
+
+    /// Measures masks, releases and re-binds of the author's entries, each from the current state, as
+    /// "model validate folder <kind> <what>".
+    function _measureFolderLater(string memory what, bytes32[] memory d, uint256[] memory names)
+        internal
+    {
+        uint256 n = d.length;
+        uint256 snap = vm.snapshotState();
+        _exec(
+            string.concat("model validate folder masks ", what),
+            _folderLater(d, names, 0),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate folder releases ", what),
+            _folderLater(d, names, 1),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate folder re-binds ", what),
+            _folderLater(d, names, 2),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+        _folderRestores(what, d, names);
+    }
+
+    /// Unmeasured masks of the author's entries, then their restores measured as "model validate folder restores <what>".
+    function _folderRestores(string memory what, bytes32[] memory d, uint256[] memory names)
+        internal
+    {
+        uint256 n = d.length;
+        uint256 snap = vm.snapshotState();
+        vm.pauseGasMetering();
+        _do(_folderLater(d, names, 0), new bytes[](n));
+        vm.resumeGasMetering();
+        _exec(
+            string.concat("model validate folder restores ", what),
+            _folderLater(d, names, 3),
+            new bytes[](n)
+        );
+        vm.revertToState(snap);
+    }
+
+    /// 32 folders of the author, each holding one of the author's entries (name i → s[i]).
+    function test_model_validate_later_folders_across() public {
+        vm.pauseGasMetering();
+        bytes32[] memory d = _namesAndFolders("lfx", 7000, ACROSS, ACROSS);
+        Action[] memory a = new Action[](ACROSS);
+        uint256[] memory names = new uint256[](ACROSS);
+        for (uint256 i; i < ACROSS; ++i) {
+            names[i] = 7000 + i;
+            a[i] = _entry(d[i], names[i], s[i]);
+        }
+        _do(a, new bytes[](ACROSS));
+        vm.resumeGasMetering();
+        _measureFolderLater("across folders", d, names);
+    }
+
+    /// One folder holding 1,025 of the author's entries; the measured entries are 128, 256, ..., 1,024 (eight
+    /// files, spread): deleting, hiding or re-pointing files in a big folder.
+    function test_model_validate_later_folder_1024() public {
+        vm.pauseGasMetering();
+        bytes32 dir = _namesAndFolders("lf1k", 8000, 1025, 1)[0];
+        Action[] memory f = new Action[](1025);
+        bytes32[] memory d = new bytes32[](8);
+        uint256[] memory names = new uint256[](8);
+        for (uint256 e; e < 1025; ++e) {
+            bytes32 target = s[39];
+            if (e != 0 && e % 128 == 0) {
+                target = s[e / 128 - 1];
+                (d[e / 128 - 1], names[e / 128 - 1]) = (dir, 8000 + e);
+            }
+            f[e] = _entry(dir, 8000 + e, target);
+        }
+        _doIn(f, new bytes[](1025), 64);
+        vm.resumeGasMetering();
+        _measureFolderLater("of 8 entries of 1025 in one folder", d, names);
+    }
+
+    /// Mixed, ordinary: untag one file (s[0]) from six topics, the author's list at each holding three entries
+    /// (two other things, then the file): six RELEASEs.
+    function test_model_validate_untag_file_six_topics() public {
+        vm.pauseGasMetering();
+        bytes32[] memory t = _topicsN("lu-", 6);
+        Action[] memory f = new Action[](18);
+        bytes32[] memory th = new bytes32[](6);
+        for (uint256 i; i < 6; ++i) {
+            bytes32 x0 = _filler("lu", i, 0);
+            bytes32 x1 = _filler("lu", i, 1);
+            f[3 * i] = _bind(Purpose.TAG, t[i], x0, x0, 0);
+            f[3 * i + 1] = _bind(Purpose.TAG, t[i], x1, x1, 0);
+            f[3 * i + 2] = _bind(Purpose.TAG, t[i], s[0], s[0], 0);
+            th[i] = s[0];
+        }
+        _do(f, new bytes[](18));
+        vm.resumeGasMetering();
+        _exec("model validate untag a file from six topics", _tagLater(t, th, 1), new bytes[](6));
+    }
+
+    /// Mixed, ordinary: delete (RELEASE) six files from three folders, two from each, each folder holding four of
+    /// the author's entries (the deleted ones are entries 1 and 3).
+    function test_model_validate_delete_files_three_folders() public {
+        vm.pauseGasMetering();
+        bytes32[] memory dirs = _namesAndFolders("ld", 9000, 12, 3);
+        Action[] memory f = new Action[](12);
+        bytes32[] memory d = new bytes32[](6);
+        uint256[] memory names = new uint256[](6);
+        for (uint256 i; i < 3; ++i) {
+            for (uint256 e; e < 4; ++e) {
+                uint256 nm = 9000 + 4 * i + e;
+                bytes32 target = s[39];
+                if (e % 2 == 1) {
+                    uint256 m = 2 * i + e / 2;
+                    target = s[m];
+                    (d[m], names[m]) = (dirs[i], nm);
+                }
+                f[4 * i + e] = _entry(dirs[i], nm, target);
+            }
+        }
+        _do(f, new bytes[](12));
+        vm.resumeGasMetering();
+        _exec(
+            "model validate delete six files from three folders",
+            _folderLater(d, names, 1),
+            new bytes[](6)
+        );
+    }
+
+    // ---- 9. the list tiers: rows for later statements by place and list length (design §10.4) -------------------
+    // Each row is its own k1/k2 pair (never an anchor: `fixed` stays on its forty anchor pairs). A place is the
+    // author's scope (purpose, subject); its list holds one entry per position the author ever stated there.
+    //   `<row> new place`: k1 one statement at place 0, k2 one at each of places 1 and 2, each list holding one entry
+    //     (TAG and FOLDER only: their single-place rows are measured at ONE topic or folder; the PROPERTY, SAME and
+    //     BROADER rows are already measured at distinct subjects, so they are new-place rows as they stand).
+    //   `<row> long new place`: the same at three places whose lists hold 1,025 entries, each statement at entry
+    //     1,024 (eleven bisection probes, alone in its bits word): the floor's claim, first statement at a place.
+    //   `<row> long same place`: one place whose list holds 1,025 entries; k1 the entry at 512, k2 the entries at 256
+    //     and 768 (spread, so the searches share few probes): further statements at a place already touched.
+
+    uint8 internal constant FAM_TAG = 0;
+    uint8 internal constant FAM_FOLDER = 1;
+    uint8 internal constant FAM_PROPERTY = 2;
+    uint8 internal constant FAM_SAME = 3;
+    uint8 internal constant FAM_BROADER = 4;
+    uint256 internal constant NAME0 = 10_000; // folder entry names _nm(NAME0 + e, 12)
+
+    bytes32[] internal others; // word pages: the roles (and targets) of SAME and BROADER entries
+    bool internal rebindTargets; // FOLDER measured entries name s[29 + m] (the re-bind row's pattern), else s[m]
+
+    function _famPurpose(uint8 f) internal pure returns (bytes32) {
+        return f == FAM_TAG
+            ? Purpose.TAG
+            : f == FAM_FOLDER
+                ? Purpose.FOLDER
+                : f == FAM_PROPERTY
+                    ? Purpose.PROPERTY
+                    : f == FAM_SAME ? Purpose.SAME : Purpose.BROADER;
+    }
+
+    /// `n` places of family `f` (word pages, or folders of p), and what entries up to `len` need: the folder names,
+    /// or `len` other word pages. Unmeasured (call with gas metering paused).
+    function _famPlaces(uint8 f, string memory seed, uint256 n, uint256 len)
+        internal
+        returns (bytes32[] memory places)
+    {
+        if (f == FAM_FOLDER) return _namesAndFolders(seed, NAME0, len, n);
+        places = _topicsN(string.concat(seed, "-"), n);
+        if ((f == FAM_SAME || f == FAM_BROADER) && others.length < len) {
+            bytes32[] memory o = _topicsN(string.concat(seed, "-o"), len);
+            for (uint256 i; i < len; ++i) {
+                others.push(o[i]);
+            }
+        }
+    }
+
+    /// Entry e's position at a place of family `f`, and its target; `m` < 40 marks a measured entry (TAG entries then
+    /// name the file subject s[m]; FOLDER entries name s[m], each named by that entry only, as a file in one folder,
+    /// or with `rebindTargets` s[29 + m], the existing re-bind row's old targets).
+    function _famEntry(uint8 f, uint256 e, uint256 m)
+        internal
+        view
+        returns (bytes32 role, bytes32 target)
+    {
+        if (f == FAM_TAG) {
+            role = m < 40 ? s[m] : _filler("fam", 0, e);
+            target = role;
+        } else if (f == FAM_FOLDER) {
+            role = keccak256(_nm(NAME0 + e, 12));
+            target = m < 40 ? (rebindTargets ? s[29 + m] : s[m]) : s[39];
+        } else if (f == FAM_PROPERTY) {
+            role = keccak256(abi.encode("gas-model property", e));
+            target = _filler("prop", 0, e);
+        } else {
+            role = others[e];
+            target = role;
+        }
+    }
+
+    /// The author's list at each place: `len` first statements (entries 0 .. len − 1), `measured[e]` the subject
+    /// index of a measured entry (or ≥ 40). Publications of at most 64 actions.
+    function _famLists(uint8 f, bytes32[] memory places, uint256 len, uint256[] memory measuredAt)
+        internal
+    {
+        Action[] memory a = new Action[](places.length * len);
+        bytes32 purpose = _famPurpose(f);
+        for (uint256 i; i < places.length; ++i) {
+            for (uint256 e; e < len; ++e) {
+                uint256 m = 40;
+                for (uint256 q; q < measuredAt.length; ++q) {
+                    if (measuredAt[q] == i * len + e) m = q;
+                }
+                (bytes32 role, bytes32 target) = _famEntry(f, e, m);
+                a[i * len + e] = _bind(purpose, places[i], role, target, 0);
+            }
+        }
+        _doIn(a, new bytes[](a.length), 64);
+    }
+
+    /// The later statement `which` (0 mask, 1 release, 2 restore, 3 re-bind) at `place` on entry e (measured index m).
+    function _famLater(uint8 f, bytes32 place, uint256 e, uint256 m, uint256 which)
+        internal
+        view
+        returns (Action memory)
+    {
+        bytes32 purpose = _famPurpose(f);
+        (bytes32 role, bytes32 target) = _famEntry(f, e, m);
+        if (which == 0) return EfsFiles.unbind(purpose, place, role, 1);
+        if (which == 1) return EfsFiles.release(purpose, place, role, 1);
+        if (which == 2) return _bind(purpose, place, role, target, 2);
+        // re-binds: a tag number change (same target, 0 -> 75); a folder entry to s[32 + m] (the existing row's
+        // pattern: old targets s[29..32), new s[32..35))
+        if (f == FAM_TAG) return EfsFiles.bindWithStrength(purpose, place, role, role, 1, 75);
+        return _bind(purpose, place, role, s[32 + m], 1);
+    }
+
+    function _famName(uint8 f, uint256 which) internal pure returns (string memory) {
+        string[5] memory fam = ["tag", "folder", "property", "same", "broader"];
+        if (which == 3) {
+            return f == FAM_TAG ? "bind tag number change" : "bind folder rebind";
+        }
+        string[3] memory w = ["unbind", "release", "restore"];
+        return string.concat(w[which], " ", fam[f]);
+    }
+
+    /// The rows `<kind> <suffix>` for each `which` in `kinds` (bit mask), each from the same state: k1 the statement
+    /// at (places[p1[0]], entry e1[0]), k2 those at p1/e1[1..3).
+    function _famPairs(
+        uint8 f,
+        string memory suffix,
+        bytes32[] memory pl,
+        uint256[3] memory e,
+        uint256 kinds
+    ) internal {
+        uint256 snap = vm.snapshotState();
+        for (uint256 w; w < 4; ++w) {
+            if ((kinds >> w) & 1 == 0) continue;
+            if (w == 2) {
+                vm.pauseGasMetering();
+                Action[] memory masks = new Action[](3);
+                for (uint256 q; q < 3; ++q) {
+                    masks[q] = _famLater(f, pl[q], e[q], q, 0);
+                }
+                _do(masks, new bytes[](3));
+                vm.resumeGasMetering();
+            }
+            string memory key = string.concat("model ", _famName(f, w), " ", suffix);
+            _exec(string.concat(key, " k1"), _one1(_famLater(f, pl[0], e[0], 0, w)), new bytes[](1));
+            Action[] memory a2 = new Action[](2);
+            a2[0] = _famLater(f, pl[1], e[1], 1, w);
+            a2[1] = _famLater(f, pl[2], e[2], 2, w);
+            _exec(string.concat(key, " k2"), a2, new bytes[](2));
+            vm.revertToState(snap);
+        }
+    }
+
+    /// Three places, each list holding `len` entries, the measured statements at entry len − 1 of each.
+    function _famNewPlace(
+        uint8 f,
+        string memory seed,
+        uint256 len,
+        string memory suffix,
+        uint256 kinds
+    ) internal {
+        vm.pauseGasMetering();
+        bytes32[] memory places = _famPlaces(f, seed, 3, len);
+        uint256[] memory at = new uint256[](3);
+        for (uint256 i; i < 3; ++i) {
+            at[i] = i * len + len - 1;
+        }
+        _famLists(f, places, len, at);
+        vm.resumeGasMetering();
+        _famPairs(f, suffix, places, [len - 1, len - 1, len - 1], kinds);
+    }
+
+    /// One place, its list holding 1,025 entries, the measured statements at entries 512 (k1), 256 and 768 (k2).
+    function _famSamePlace(uint8 f, string memory seed, uint256 kinds) internal {
+        vm.pauseGasMetering();
+        bytes32[] memory one = _famPlaces(f, seed, 1, 1025);
+        uint256[] memory at = new uint256[](3);
+        (at[0], at[1], at[2]) = (512, 256, 768);
+        _famLists(f, one, 1025, at);
+        vm.resumeGasMetering();
+        bytes32[] memory pl = new bytes32[](3);
+        (pl[0], pl[1], pl[2]) = (one[0], one[0], one[0]);
+        _famPairs(f, "long same place", pl, [uint256(512), 256, 768], kinds);
+    }
+
+    // kinds: bit 0 mask, 1 release, 2 restore, 3 re-bind
+    function test_model_tier_tag_new_place() public {
+        _famNewPlace(FAM_TAG, "tnp", 1, "new place", 15);
+    }
+
+    function test_model_tier_tag_long_new_place() public {
+        _famNewPlace(FAM_TAG, "tln", 1025, "long new place", 7);
+    }
+
+    function test_model_tier_tag_long_same_place() public {
+        _famSamePlace(FAM_TAG, "tls", 7);
+    }
+
+    function test_model_tier_folder_new_place() public {
+        _famNewPlace(FAM_FOLDER, "fnp", 1, "new place", 7);
+    }
+
+    /// The folder re-bind's new-place row, with the existing re-bind row's target pattern (old s[29..32), new
+    /// s[32..35)).
+    function test_model_tier_folder_rebind_new_place() public {
+        rebindTargets = true;
+        _famNewPlace(FAM_FOLDER, "frp", 1, "new place", 8);
+    }
+
+    function test_model_tier_folder_long_new_place() public {
+        _famNewPlace(FAM_FOLDER, "fln", 1025, "long new place", 7);
+    }
+
+    function test_model_tier_folder_long_same_place() public {
+        _famSamePlace(FAM_FOLDER, "fls", 7);
+    }
+
+    function test_model_tier_property_long_new_place() public {
+        _famNewPlace(FAM_PROPERTY, "pln", 1025, "long new place", 3);
+    }
+
+    function test_model_tier_property_long_same_place() public {
+        _famSamePlace(FAM_PROPERTY, "pls", 3);
+    }
+
+    function test_model_tier_same_long_new_place() public {
+        _famNewPlace(FAM_SAME, "sln", 1025, "long new place", 7);
+    }
+
+    function test_model_tier_same_long_same_place() public {
+        _famSamePlace(FAM_SAME, "sls", 7);
+    }
+
+    function test_model_tier_broader_long_new_place() public {
+        _famNewPlace(FAM_BROADER, "bln", 1025, "long new place", 7);
+    }
+
+    function test_model_tier_broader_long_same_place() public {
+        _famSamePlace(FAM_BROADER, "bls", 7);
+    }
+
+    // ---- 9b. composites for the tiers' edges and the other purposes (never fitted) ------------------------------
+
+    /// The top of the short tier: 32 topics, the author's list at each holding 48 entries, the measured tag entry 47
+    /// (its live bit still in the head word, six bisection probes).
+    function test_model_validate_later_tags_entry47() public {
+        (bytes32[] memory t, bytes32[] memory th) = _tagsAcross("l47-", ACROSS, 47);
+        _measureTagLater("at entry 47 across topics", t, th, false);
+    }
+
+    /// `k` folders of the author, each list holding `fill` + 1 entries (fillers name s[39]; the measured entry, the
+    /// last, names s[i]): masks and releases at entry `fill` across folders.
+    function _foldersLong(string memory seed, uint256 k, uint256 fill, string memory what)
+        internal
+    {
+        vm.pauseGasMetering();
+        bytes32[] memory d = _namesAndFolders(seed, NAME0, fill + 1, k);
+        Action[] memory a = new Action[](k * (fill + 1));
+        uint256[] memory names = new uint256[](k);
+        for (uint256 i; i < k; ++i) {
+            for (uint256 e; e <= fill; ++e) {
+                a[i * (fill + 1) + e] = _entry(d[i], NAME0 + e, e == fill ? s[i] : s[39]);
+            }
+            names[i] = NAME0 + fill;
+        }
+        _doIn(a, new bytes[](a.length), 64);
+        vm.resumeGasMetering();
+        uint256 snap = vm.snapshotState();
+        _exec(
+            string.concat("model validate folder masks ", what),
+            _folderLater(d, names, 0),
+            new bytes[](k)
+        );
+        vm.revertToState(snap);
+        _exec(
+            string.concat("model validate folder releases ", what),
+            _folderLater(d, names, 1),
+            new bytes[](k)
+        );
+        vm.revertToState(snap);
+        _folderRestores(what, d, names);
+    }
+
+    function test_model_validate_later_folders_entry48() public {
+        _foldersLong("lf48", ACROSS, 48, "at entry 48 across folders");
+    }
+
+    function test_model_validate_later_folders_entry1024() public {
+        _foldersLong("lfk", 16, 1024, "at entry 1024 across folders");
+    }
+
+    /// Number changes (re-binds: they never search the list) of 32 spread entries of a 1,025-entry list at one topic.
+    function test_model_validate_later_tag_number_changes_one_topic_1024() public {
+        vm.pauseGasMetering();
+        bytes32 t = _topicsN("lnk-", 1)[0];
+        Action[] memory f = new Action[](1025);
+        bytes32[] memory tp = new bytes32[](ACROSS);
+        bytes32[] memory th = new bytes32[](ACROSS);
+        for (uint256 e; e < 1025; ++e) {
+            bytes32 x = _filler("lnk", 0, e);
+            if (e != 0 && e % 32 == 0) {
+                x = s[e / 32 - 1];
+                (tp[e / 32 - 1], th[e / 32 - 1]) = (t, x);
+            }
+            f[e] = _bind(Purpose.TAG, t, x, x, 0);
+        }
+        _doIn(f, new bytes[](1025), 64);
+        vm.resumeGasMetering();
+        _exec(
+            "model validate tag number changes of 32 entries of 1025 at one topic",
+            _tagLater(tp, th, 3),
+            new bytes[](ACROSS)
+        );
+    }
+
+    /// One place of family `f` whose list holds 1,025 entries; 8 spread entries (128, 256, ..., 1,024) masked.
+    function _famComposite(uint8 f, string memory seed, string memory key) internal {
+        vm.pauseGasMetering();
+        bytes32[] memory one = _famPlaces(f, seed, 1, 1025);
+        uint256[] memory at = new uint256[](8);
+        for (uint256 q; q < 8; ++q) {
+            at[q] = 128 * (q + 1);
+        }
+        _famLists(f, one, 1025, at);
+        vm.resumeGasMetering();
+        Action[] memory a = new Action[](8);
+        for (uint256 q; q < 8; ++q) {
+            a[q] = _famLater(f, one[0], at[q], q, 0);
+        }
+        _exec(key, a, new bytes[](8));
+    }
+
+    function test_model_validate_later_property_1024() public {
+        _famComposite(
+            FAM_PROPERTY, "lpk", "model validate property masks of 8 entries of 1025 at one topic"
+        );
+    }
+
+    function test_model_validate_later_same_1024() public {
+        _famComposite(
+            FAM_SAME, "lsk", "model validate same masks of 8 entries of 1025 at one topic"
+        );
+    }
+
+    function test_model_validate_later_broader_1024() public {
+        _famComposite(
+            FAM_BROADER, "lbk", "model validate broader masks of 8 entries of 1025 at one topic"
+        );
     }
 
     function _types() internal view returns (EfsFiles.Types memory t) {

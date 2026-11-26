@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { PURPOSE, isRebind, planVectors, planner, priceAsNew, purposeOf, shapes } from "../gas-plan.mjs";
+import { PURPOSE, isRebind, laterKey, planVectors, planner, priceAsNew, purposeOf, shapes } from "../gas-plan.mjs";
 import { PURPOSE as PLAN_PURPOSE, WORK_MODEL } from "../deploy-plan.mjs";
 
 const root = join(fileURLToPath(import.meta.url), "../../..");
@@ -154,7 +154,9 @@ test("labels, SAME and BROADER statements are priced from the model alone, on ev
     const pl = planner(model, s);
     for (const [cost, first] of Object.entries(STATEMENTS)) {
       for (const c of [p.constants, exec, p.floor.kernel]) assert.ok(Number.isInteger(c[cost]), `${s}: ${cost}`);
-      const one = pl.check([{ kind: "bind", cost, first }]);
+      // a later statement in a short list (the list tiers: these rows are measured at distinct subjects, so they are
+      // their own new-place rows)
+      const one = pl.check([{ kind: "bind", cost, first, ...(first ? {} : { firstAtPlace: true, entries: 1 }) }]);
       assert.ok(one.fits, `${s} ${cost}`);
       assert.equal(one.E, exec.fixed + exec[cost]);
       assert.equal(one.K, p.floor.kernel.fixed + p.floor.kernel[cost]);
@@ -189,10 +191,24 @@ test("the stated maximum errors: all gas on every schedule, execution gas on ams
   const model = committed();
   const pct = (pred, meas) => Number((((pred - meas) / meas) * 100).toFixed(2));
   const worst = (rows, field) => rows.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
+  const under = (rows, field) => { const v = rows.reduce((a, x) => (x[field] < a[field] ? x : a)); return v[field] < 0 ? [Number((-v[field]).toFixed(2)), v.key] : [0, null]; };
   for (const s of schedules(model)) {
     const p = model.profiles[s];
     for (const v of p.validation) assert.equal(v.errorPercent, pct(v.predicted, v.measured), `${s} ${v.key}: errorPercent is all gas`);
-    const all = worst(p.validation, "errorPercent");
+    // the maxima count every composite within the claim; beyondClaim ones are listed and excluded (maximaExcludeStates)
+    const excluded = p.maximaExcludeStates ?? [];
+    const rows = p.validation.filter((v) => !excluded.includes(v.state));
+    if (model.laterLists) {
+      assert.deepEqual(excluded, ["beyondClaim"], `${s}: only beyondClaim is excluded`);
+      assert.ok(p.validation.some((v) => v.state === "beyondClaim"), `${s}: the beyond-the-claim composites are still reported`);
+      assert.deepEqual([p.maxUnderErrorPercent, p.maxUnderErrorComposite], under(rows, "errorPercent"), `${s}: maxUnderErrorPercent names the largest under-prediction`);
+      assert.ok(p.maxUnderErrorPercent <= model.planning.headroomPercent, `${s}: the all-gas under-prediction is inside the headroom`);
+      if (s === "amsterdam") {
+        assert.deepEqual([p.maxUnderExecutionErrorPercent, p.maxUnderExecutionErrorComposite], under(rows, "executionErrorPercent"), `${s}: maxUnderExecutionErrorPercent`);
+        assert.ok(p.maxUnderExecutionErrorPercent <= model.planning.headroomPercent, `${s}: the execution-gas under-prediction (the cap condition's) is inside the headroom`);
+      } else assert.equal(p.maxUnderExecutionErrorPercent, undefined);
+    }
+    const all = worst(rows, "errorPercent");
     assert.equal(p.maxAbsErrorPercent, Math.abs(all.errorPercent), `${s}: maxAbsErrorPercent`);
     assert.equal(p.maxAbsErrorComposite, all.key, `${s}: maxAbsErrorComposite names the composite that sets it`);
     assert.ok(p.maxAbsErrorPercent <= model.planning.headroomPercent, `${s}: the all-gas maximum is inside the headroom`);
@@ -201,10 +217,56 @@ test("the stated maximum errors: all gas on every schedule, execution gas on ams
       continue;
     }
     for (const v of p.validation) assert.equal(v.executionErrorPercent, pct(v.predictedExecutionGas, v.measuredExecutionGas), `${s} ${v.key}: executionErrorPercent`);
-    const ex = worst(p.validation, "executionErrorPercent");
+    const ex = worst(rows, "executionErrorPercent");
     assert.equal(p.maxAbsExecutionErrorPercent, Math.abs(ex.executionErrorPercent), `${s}: maxAbsExecutionErrorPercent`);
     assert.equal(p.maxAbsExecutionErrorComposite, ex.key, `${s}: maxAbsExecutionErrorComposite`);
     assert.ok(p.maxAbsExecutionErrorPercent <= model.planning.headroomPercent, `${s}: the execution-gas maximum (the cap condition's) is inside the headroom`);
     assert.match(model.planning.headroomCovers, /maxAbsExecutionErrorPercent/, "headroomCovers names the figure that bounds the cap on amsterdam");
+  }
+});
+
+test("the list tiers (laterLists): which row prices a later statement", () => {
+  const lists = { shortTierMaxEntries: 48, claimEntries: 1024 };
+  const c = { unbindTag: 1, unbindTagNewPlace: 2, unbindTagLongNewPlace: 3, unbindTagLongSamePlace: 4, unbindProperty: 5, unbindPropertyLongNewPlace: 6, unbindPropertyLongSamePlace: 7, bindFolderRebind: 8, bindFolderRebindNewPlace: 9, bindHeadRebind: 10 };
+  const key = (a) => laterKey((k) => k in c, { kind: "bind", first: false, ...a }, lists);
+  // short tier: a known count of at most 48
+  assert.equal(key({ cost: "unbindTag", firstAtPlace: true, entries: 48 }), "unbindTagNewPlace");
+  assert.equal(key({ cost: "unbindTag", firstAtPlace: false, entries: 1 }), "unbindTag");
+  assert.equal(key({ cost: "unbindProperty", firstAtPlace: true, entries: 3 }), "unbindProperty", "a row measured at distinct subjects is its own new-place row");
+  // long tier: more than 48, a count above the claim (still the 1,024 rows: the claim's cap, not a third tier), or unknown
+  for (const entries of [49, 1025, 5000, undefined]) {
+    assert.equal(key({ cost: "unbindTag", firstAtPlace: true, entries }), "unbindTagLongNewPlace");
+    assert.equal(key({ cost: "unbindTag", firstAtPlace: false, entries }), "unbindTagLongSamePlace");
+  }
+  // omitted firstAtPlace is the dearer reading
+  assert.equal(key({ cost: "unbindTag" }), "unbindTagLongNewPlace");
+  assert.equal(key({ cost: "unbindTag", entries: 2 }), "unbindTagNewPlace");
+  // re-binds never search the list: no tier, only their own new-place row when the model carries one
+  assert.equal(key({ cost: "bindFolderRebind", firstAtPlace: true }), "bindFolderRebindNewPlace");
+  assert.equal(key({ cost: "bindFolderRebind", firstAtPlace: false, entries: 4096 }), "bindFolderRebind");
+  assert.equal(key({ cost: "bindHeadRebind", firstAtPlace: true }), "bindHeadRebind");
+  // first statements are never tiered, and a model without laterLists prices by the row
+  assert.equal(laterKey((k) => k in c, { cost: "unbindTag", first: true }, lists), "unbindTag");
+  assert.equal(laterKey((k) => k in c, { cost: "unbindTag", first: false }, undefined), "unbindTag");
+});
+
+test("every list-tier row of the model comes in pairs and the planner reads the tier from the model", (t) => {
+  const model = committed();
+  if (!model.laterLists) return t.skip("the committed gas/model.json predates the list tiers (regenerate with pnpm run gas:model)");
+  assert.equal(model.laterLists.shortTierMaxEntries, 48);
+  assert.equal(model.laterLists.claimEntries, 1024);
+  for (const s of schedules(model)) {
+    const p = model.profiles[s];
+    const exec = s === "prague" ? p.constants : p.split.executionGas;
+    for (const c of [p.constants, exec, p.floor.kernel]) {
+      for (const k of Object.keys(c).filter((x) => x.endsWith("LongNewPlace"))) {
+        const row = k.slice(0, -"LongNewPlace".length);
+        assert.ok(Number.isInteger(c[row]) && Number.isInteger(c[`${row}LongSamePlace`]), `${s}: ${row} has its row and both long rows`);
+      }
+    }
+    const pl = planner(model, s);
+    const one = (a) => pl.check([{ kind: "bind", cost: "unbindTag", first: false, ...a }]).E - exec.fixed;
+    assert.equal(one({ firstAtPlace: true, entries: 2 }), exec.unbindTagNewPlace);
+    assert.equal(one({ firstAtPlace: true }), exec.unbindTagLongNewPlace, "an unknown count is priced at the claim");
   }
 });

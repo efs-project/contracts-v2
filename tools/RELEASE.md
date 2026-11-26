@@ -269,6 +269,11 @@ this release.
   keeps the live index never calls it; reason 2 is the ledger's own phase, so a live index that no longer answers can
   still be kept while another component or the limits change (docs/INDEX-BUILD.md §5.3).
 
+- **The gas model prices later statements across places and in long lists** (the unnumbered item above; tools/RELEASE.md
+  "The list tiers"): the model's E for masks, releases and restores was 14–24% low at an author's entry 48 and beyond
+  and in lists of up to 1,024 entries; the list tiers bring every composite within the claim inside 15%, and the
+  headroom check reads the new under-prediction fields.
+
 - **The above-cap state-gas path, confirmed on a real chain** (2026-11-26, `tools/state-gas-probe.mjs`,
   docs/GAS-SCHEDULES.md): on Sepolia, under both Geth and reth, a transaction whose gas limit is above 2^24 starts
   with the cap less intrinsic gas as ordinary gas and pays state gas from the reservoir; at or below the cap it pays
@@ -819,6 +824,42 @@ once; the release digest, plan hash, execution set, manifest hash and index obli
 the ingress, the control delegate, `RealmIndex`, `IndexReads` or `LensReader` (whose code carries `WORK_MODEL_WORDS`),
 `gas/model.json`, `release/errors.json`, `test/vectors/floor-plan.json` and the ABI snapshots move then and are recorded
 in that release's identity item. The layout id, the hot ABI ids and both store ABI ids do not move.
+
+**The gas model prices later statements across places and in long lists.** (Number at integration.) Consumer change:
+`gas/model.json` gains the list tiers (tools/RELEASE.md "The list tiers"; design §10.4), so a planner's E for masks,
+releases and restores no longer comes out 14–24% low for later statements at an author's entry 48 or beyond, or in
+lists of up to 1,024 entries.
+
+- **New fields** (exact names, `efs-gas-model/1`, all required): top-level `laterLists` (`shortTierMaxEntries` 48,
+  `claimEntries` 1,024, `rule`, `note`); per profile `maxUnderErrorPercent`, `maxUnderErrorComposite`,
+  `maximaExcludeStates` (`["beyondClaim"]`), and on amsterdam `maxUnderExecutionErrorPercent`,
+  `maxUnderExecutionErrorComposite`; `method.laterLists` and `method.maxima` (text). New constants (in `constants`,
+  `split.executionGas`, `split.stateGas` and `floor.kernel`): `unbindTagNewPlace`, `releaseTagNewPlace`,
+  `restoreTagNewPlace`, `bindTagNumberChangeNewPlace`, `unbindFolderNewPlace`, `releaseFolderNewPlace`,
+  `restoreFolderNewPlace`, `bindFolderRebindNewPlace`, and `<row>LongNewPlace` and `<row>LongSamePlace` for
+  `unbindTag`, `releaseTag`, `restoreTag`, `unbindFolder`, `releaseFolder`, `restoreFolder`, `unbindProperty`,
+  `releaseProperty`, `unbindSame`, `releaseSame`, `restoreSame`, `unbindBroader`, `releaseBroader`, `restoreBroader`
+  (36 rows), and `restoreFolder` itself (a folder restore had no row); 37 new constants, each its own pair, none an
+  anchor: `fixed` and every existing row are unchanged. New validation `state` values: `acrossPlaces`,
+  `acrossPlacesBitsWord`, `longLists`, `beyondClaim`; 39 new composites.
+- **What a planner passes** for each later statement: `firstAtPlace` (no earlier later statement of the same
+  publication at the same (purpose, subject); omitted: true) and `entries` (the author's entry count at the place,
+  `TopicLookupReader.entryCount(author, purpose, place, false, …).count`, when it holds one it trusts; omitted:
+  unknown, priced at the 1,024 tier, which is safe). A stale, low count under-prices (up to about 21%), so a count
+  older than what the planner trusts is treated as unknown. Re-binds have no tier.
+- **The headroom check reads the under-prediction fields**: `maxUnderErrorPercent` on prague and
+  `maxUnderExecutionErrorPercent` on amsterdam. The maxima (`maxAbs*` and `maxUnder*`) leave out `beyondClaim`
+  composites, which stay listed with their errors; `tools/gas-model.mjs` refuses a model in which any of the four
+  exceeds 15%.
+- **Regenerated figures** (PLACEHOLDER: fill in at integration from the regenerated `gas/model.json`): prague
+  maxAbsErrorPercent ⟨…⟩ (⟨composite⟩), maxUnderErrorPercent ⟨…⟩ (⟨composite⟩); amsterdam maxAbsErrorPercent ⟨…⟩,
+  maxAbsExecutionErrorPercent ⟨…⟩, maxUnderErrorPercent ⟨…⟩, maxUnderExecutionErrorPercent ⟨…⟩ (each with its
+  composite); the largest batches that moved in `test/vectors/floor-plan.json` ⟨…⟩. Measured on the branch before
+  integration (local regeneration, not committed): prague 11.13% (`validate property masks of 8 entries of 1025 at one
+  topic`, an over-prediction) and under 9.69% (`validate tag releases at entry 47 across topics`); amsterdam 12.03%
+  (`validate edit lists exist`), execution 13.91% (`validate tag releases of 32 entries of 1025 at one topic`), under
+  6.72% (`validate create file`), execution under 10.62% (`validate create file lists exist`); prague tag restores
+  60 → 59 (their 61 entries put them in the long tier), every other shape unchanged on both schedules.
 
 ### The identity table (this release against `cbf5b78`)
 
@@ -1528,6 +1569,84 @@ which also writes the topic lists. `tools/gas-plan.mjs` prices every one of them
 "bind", cost: "bindSameFreshWord", first: true }`) with no purpose-specific code; `first` is true for the three first
 statements and false for every later one.
 
+**The list tiers: later statements across places and in long lists (design §10.4).** A later statement (a mask, a
+release, a restore, a re-bind) costs more than its single-place row in two ordinary states. The index rewrites the
+place's scope head on every later statement, so statements at distinct places rewrite one head each (+4.4k a
+statement on prague, +11.6k on amsterdam); and `RealmIndex._foldScope` finds the changed entry with `_entryIndex`, a
+bisection of the author's scope list at the place (one bitmap-store call per probe), then flips the entry's live bit,
+which from entry 48 up lives in a bits word of its own rather than the head word (a mask, release or restore of entry
+48 of 49 at a new place costs +21.8k to +38.9k on prague over the new-place row; at entry 1,024 of 1,025, +44.8k to
++61.9k over the single-place row). A re-bind (a BIND on a
+BOUND head: a HEAD re-bind, a folder re-bind, a tag number change, a label re-bind) only stamps the scope head
+(`BitmapStore.stamp`) and never searches the list. `gas/model.json` prices this with `laterLists` and the tier rows,
+and `tools/gas-plan.mjs` `laterKey` is the reference implementation.
+
+*The place and the count.* A later statement's **place** is its (purpose, subject): the author's scope list keyed by
+`Keys.scope(author, purpose, subject)`, which `RealmIndex._foldScope` both searches and flips. The **author's entry
+count at that place** is that list's length: one entry per position the author has ever stated at that subject, of
+either sign, masked and released entries included (entries are appended at a first statement and never removed). It
+is not a count of positions, of live entries or of everyone's entries. On chain it is
+`IBitmapStore.scopeHead(Keys.scope(author, purpose, subject)).count`; the read that returns it today is
+`TopicLookupReader.entryCount(author, purpose, place, false, expected)` (`count`; `live` beside it is the live
+entries), for every purpose (the `below = false` path does not restrict the purpose). The cost depends on two things,
+the list's length (the search) and the changed entry's index in it (its bits word); tiering by the LENGTH is safe
+because an entry's index is always below the length, so a count of at most 48 implies both an entry index below 48
+(its live bit in the head word) and a search of at most six probes. **First later statement at its place** is defined
+per publication: no earlier later statement of the same publication (of any kind: mask, release, restore or re-bind)
+is at the same (purpose, subject). An earlier FIRST statement at that place in the same publication does not change
+it (that is the dearer reading). A tag and a label on the same topic are at different places (different purposes).
+Omitted, `firstAtPlace` is true.
+
+*The rule* (`laterLists.shortTierMaxEntries` = 48, `laterLists.claimEntries` = 1,024):
+
+| the author's entry count at the place | first later statement at its place in the publication | any further one at that place |
+|---|---|---|
+| known and ≤ 48 (short tier) | `<row>NewPlace` if the constants carry it, else `<row>` | `<row>` |
+| > 48, or not known (long tier) | `<row>LongNewPlace` | `<row>LongSamePlace` |
+| a row with no `<row>LongNewPlace` (a re-bind: no tier) | `<row>NewPlace` if the constants carry it, else `<row>` | `<row>` |
+
+1,024 is the cap of the claim, not a third tier: a known count above 1,024 is still priced with the long-tier rows,
+and is outside what the stated maxima cover (the composites at 4,097 entries are in state `beyondClaim`, reported with
+their errors and excluded from the maxima and the 15% bound, as the floor's documented exception is). The 1,024-entry
+rows predict publications at entry 4,096 2.9% low on prague and 1.8% low on amsterdam execution gas (0.5% all gas).
+
+*Per purpose.* The tiers apply to every later statement that searches the author's list:
+
+| purpose | tiered rows (short; long first at a place / further) | no tier |
+|---|---|---|
+| TAG | `unbindTag`, `releaseTag`, `restoreTag` (each with `NewPlace`, `LongNewPlace`, `LongSamePlace`) | `bindTagNumberChange` (`bindTagNumberChangeNewPlace` for the first at a place) |
+| FOLDER (hides, removes, restores) | `unbindFolder`, `releaseFolder`, `restoreFolder` (each with `NewPlace`, `LongNewPlace`, `LongSamePlace`) | `bindFolderRebind` (`bindFolderRebindNewPlace`) |
+| PROPERTY | `unbindProperty`, `releaseProperty` (`LongNewPlace`, `LongSamePlace`; the row itself is already a new-place row) | `bindPropertyRebind` |
+| SAME | `unbindSame`, `releaseSame`, `restoreSame` (`LongNewPlace`, `LongSamePlace`) | — |
+| BROADER | `unbindBroader`, `releaseBroader`, `restoreBroader` (`LongNewPlace`, `LongSamePlace`) | — |
+| HEAD | none: a HEAD scope list (subject = the file, role 0) holds at most one entry per author, so it is always the short tier and every HEAD later statement is at its own place; the model has no HEAD mask, release or restore row | `bindHeadRebind` (already measured at distinct files) |
+
+FOLDER is priced on its own rows, measured like TAG's (their long rows come out within 0.1k of TAG's: the same bitmap path), and
+checked by its own composites at entry 48 and 1,024 across folders and in a 1,025-entry folder. The PROPERTY, SAME and
+BROADER rows are measured at distinct subjects already (their existing pairs state at subjects 0, 1, 2), so they have
+no `NewPlace` row; their long rows are their own pairs, and a composite each (masks of 8 spread entries of a
+1,025-entry list) checks them.
+
+*What a planner passes* for each later statement: `firstAtPlace` (as defined above, per publication: a part of a split
+write is a publication) and `entries`, the author's entry count at that place if it has one it trusts. **No count:**
+the long tier, which is safe. **A stale count:** a count lower than the truth puts a long list in the short tier and
+UNDER-prices it, by up to 21.2% on prague and 19.1% on amsterdam execution gas (20.4% all gas) for a publication at
+entry 1,024 (tag restores at 16 topics; folder releases at 16 folders 18.1% / 19.1%), and by up to 16.8% / 13.9% at
+entry 48. So a consumer treats a count from a read older than what it trusts (a basis it no longer holds, or any
+publication of the author's since) as unknown. A count above the truth only moves a short list into the long tier,
+which over-prices it.
+
+*How it was measured.* Every tier row is its own k1/k2 pair (`GasModel.t.sol` section 9): `<row> new place` at three
+places whose lists hold one entry; `<row> long new place` at three places whose lists hold 1,025 entries, each statement
+at entry 1,024 (eleven probes, alone in its bits word); `<row> long same place` at one place of 1,025 entries, k1 the
+entry at 512 and k2 those at 256 and 768 (spread, so the searches share few probes). The folder re-bind's new-place
+pair uses the existing row's target pattern (old targets s[29..32), new s[32..35)). A restore re-appends its target to
+the target's backlink list, which takes a fresh word when the list holds one entry (a file named in one folder, a
+thing the author tagged once); every restore row (`restoreFolder` and the tier rows) is measured in that state, the
+dearer and ordinary one (a first measurement with targets named three times came out 17.9% low on amsterdam all gas
+for folder restores across folders). None is an anchor, so `fixed` and
+every existing row are unchanged (`tools/test/gas-fit.test.mjs`).
+
 **The floor and the planning rule (design §10.4).** Before each index callback the kernel requires a floor of
 execution gas to be visible (`gasleft()`), and on Glamsterdam only execution gas is visible and capped. So that a
 planner never sizes a publication the floor refuses, `gas/model.json` carries, per schedule, `profiles.<schedule>.floor`:
@@ -1547,7 +1666,12 @@ gas: every `GasModel.t.sol` publication is also run from the same state with the
 
 The rule (`planning`): a publication is planned when it is inside `planning.limits` (64 actions, 64 bind-kind actions,
 16,384 body bytes) and `max(E, V) ≤ ⌊txGasCap × (100 − headroomPercent) / 100⌋` (2^24 and 15%: intrinsic gas, calldata
-and the model's error); anything larger is split before it is signed. A roll-up list's next append is priced as new
+and the model's error); anything larger is split before it is signed. **A consumer's headroom check of the cap
+condition reads the UNDER-prediction field**: `profiles.prague.maxUnderErrorPercent` on prague (the cap counts all gas)
+and `profiles.amsterdam.maxUnderExecutionErrorPercent` on amsterdam (it counts execution gas only), each with its
+composite (`maxUnderErrorComposite`, `maxUnderExecutionErrorComposite`). Headroom exists to stop a plan coming out too
+small; an over-prediction only costs batch size. The maximum-error fields (`maxAbsErrorPercent`,
+`maxAbsExecutionErrorPercent`) keep their meaning, and the tool refuses a model in which any of the four exceeds 15%. A roll-up list's next append is priced as new
 when it holds a number of entries in `tagLists.priceAsNew.entries` (`[1]`) or a multiple of
 `tagLists.priceAsNew.entriesMultipleOf` (5, zero included); the prose rule above is that field. `tools/gas-plan.mjs` is
 the reference implementation (it imports nothing and reads only the model it is given; `tools/test/gas-plan.test.mjs`);
@@ -1589,7 +1713,12 @@ on execution gas) or when any fitted constant
 or measured row differs from the committed `gas/model.json`, printing the first differences and the regeneration
 commands (`pnpm run gas:model`, then `pnpm run release`). Gas is deterministic for identical bytecode, so the
 comparison is exact; CI runs it after `pnpm release:check` on the prague build the suites left warm, and without
-`--skip-amsterdam 1` it checks the amsterdam profile the same way (locally only: CI never builds amsterdam).
+`--skip-amsterdam 1` it checks the amsterdam profile the same way (locally only: CI never builds amsterdam). The 15%
+bound covers every composite the stated maxima count (all but `maximaExcludeStates`), over- and under-prediction
+alike. An existing row can move by about 12 gas whenever `test/integration/GasModel.t.sol` itself changes, with no
+contract change, because the measured frame depends slightly on the test contract's own compiled code (the Realm's
+execution-set hash read in the test differs between the two compiles); so the gas-model check's exact match depends on
+that file as well as on `src/`.
 
 ## Gas rows written (`gas/report.json`)
 

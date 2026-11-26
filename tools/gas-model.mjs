@@ -16,7 +16,13 @@
 //     + Σ over the n − 1 proper ancestors: tagLevel.mine{New|Existing}
 //       + (fresh position or a first yes ? tagLevel.shared{New|Existing} : 0)
 //
-// and predicts the suite's validation composites (never fitted). Exit 1 when a prague validation error exceeds 15%.
+//   cost(LATER statement) by the list tiers (laterLists; tools/gas-plan.mjs laterKey): the author's list at the place
+//     has ≤ 48 entries: the row, or <row>NewPlace for the first later statement at its place in the publication;
+//     more, or unknown: <row>LongNewPlace (first at its place) | <row>LongSamePlace (the rest), measured at entry 1,024;
+//     a re-bind never searches the list and has no tier
+//
+// and predicts the suite's validation composites (never fitted). Exit 1 when a validation error within the claim
+// exceeds 15% (all gas, and execution gas on amsterdam; composites in state beyondClaim are reported, not bounded).
 //
 // The floor (design §10.4). Every measured publication is also run with the index's callbacks answered by
 // `vm.mockCall` ("model <key> kernel frame gas"); the same fit of those rows is `floor.<schedule>.kernel`, the kernel's
@@ -37,6 +43,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GLAMSTERDAM_FLOOR, LIMITS, WORK_MODEL, parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
 import { FIXED_ANCHORS, fixedFrom } from "./gas-fit.mjs";
+import { laterKey } from "./gas-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-amsterdam", "check"]);
 const CHECK = !!o.check && o.check !== "0";
@@ -104,6 +111,7 @@ const ACTIONS = {
   bindFolderRebind: "bind folder rebind",
   unbindFolder: "unbind folder",
   releaseFolder: "release folder",
+  restoreFolder: "restore folder",
   bindTagFresh: "bind tag fresh",
   bindTagSecondAuthor: "bind tag second author",
   bindTagNumberChange: "bind tag number change",
@@ -128,6 +136,30 @@ const ACTIONS = {
   releaseBroader: "release broader",
   restoreBroader: "restore broader",
   withdraw: "withdraw",
+  // the list tiers (laterLists; GasModel.t.sol section 9): TAG and FOLDER rows at a place new to the publication (their
+  // single-place rows are measured at ONE topic or folder), and for every later statement that searches the author's
+  // list (masks, releases, restores) the rows at entry 1,024 of a 1,025-entry list, first at its place and not
+  unbindTagNewPlace: "unbind tag new place",
+  releaseTagNewPlace: "release tag new place",
+  restoreTagNewPlace: "restore tag new place",
+  bindTagNumberChangeNewPlace: "bind tag number change new place",
+  unbindFolderNewPlace: "unbind folder new place",
+  releaseFolderNewPlace: "release folder new place",
+  restoreFolderNewPlace: "restore folder new place",
+  bindFolderRebindNewPlace: "bind folder rebind new place",
+  ...Object.fromEntries(
+    [["unbindTag", "unbind tag"], ["releaseTag", "release tag"], ["restoreTag", "restore tag"], ["unbindFolder", "unbind folder"], ["releaseFolder", "release folder"], ["restoreFolder", "restore folder"],
+      ["unbindProperty", "unbind property"], ["releaseProperty", "release property"], ["unbindSame", "unbind same"], ["releaseSame", "release same"], ["restoreSame", "restore same"],
+      ["unbindBroader", "unbind broader"], ["releaseBroader", "release broader"], ["restoreBroader", "restore broader"]]
+      .flatMap(([name, key]) => [[`${name}LongNewPlace`, `${key} long new place`], [`${name}LongSamePlace`, `${key} long same place`]]),
+  ),
+};
+/** The list tiers (design §10.4; read by tools/gas-plan.mjs laterKey). */
+const LATER_LISTS = {
+  shortTierMaxEntries: 48,
+  claimEntries: 1024,
+  rule: "A LATER statement (a planner bind action with first false: a mask, release, restore or re-bind) is priced by its place and the author's entry count there. Its place is (purpose, subject): the author's scope list keyed by (author, purpose, subject), which holds one entry per position the author has ever stated at that subject (masked and released ones included); `entries` is that list's length (IBitmapStore.scopeHead(Keys.scope(author, purpose, subject)).count, as TopicLookupReader.entryCount(author, purpose, place, false, …) returns it). `firstAtPlace` is true when no earlier later statement of the same publication is at the same place, of any kind. Short tier (entries known and ≤ shortTierMaxEntries): the row, or <row>NewPlace for the first later statement at its place when the constants carry one. Long tier (entries > shortTierMaxEntries, or unknown): <row>LongNewPlace when first at its place, else <row>LongSamePlace, measured at entry 1,024 of a 1,025-entry list (claimEntries). A row with no <row>LongNewPlace (a re-bind: a BIND on a BOUND head, which never searches the list) has no tier: <row>NewPlace when first at its place and the constants carry one, else the row.",
+  note: "Cost depends on the list's length (RealmIndex._entryIndex bisects it, one store call per probe) and on the changed entry's index (an entry from 48 up has its live bit in a word of its own); a list of at most 48 entries bounds both. A count lower than the truth (a stale read) puts a long list in the short tier and under-prices it, so treat a count older than what the planner trusts as unknown. Above claimEntries the long tier is still applied but is outside what the stated maxima cover (state beyondClaim), as the floor's documented exception is.",
 };
 
 // The per-level terms of a first tag (design §10.4): each row's k1 tags a 2-word topic and k2 a 6-word topic from the
@@ -136,16 +168,26 @@ const LEVEL_SPAN = 4;
 const LEVEL_ROWS = { allNew: "tag level all new", allExisting: "tag level all existing", mineNew: "tag level mine new", mineExisting: "tag level mine existing" };
 
 // The composites (GasModel.t.sol `test_model_validate_*`), as the planner would describe them, each in the state it
-// is measured in: "listsNew" (the author's lists at the positions it touches are new) or "listsExist" (the ordinary case).
+// is measured in: "listsNew" (the author's lists at the positions it touches are new), "listsExist" (the ordinary
+// case), and for later statements (section 8) "acrossPlaces" (at distinct places, the author's lists short: at most 48
+// entries), "acrossPlacesBitsWord" (at entry 48 of 49, alone in its bits word), "longLists" (lists of 1,025 entries,
+// the floor's claim) and "beyondClaim" (4,097 entries: reported, never counted in the stated maxima or the bound).
 const pub = (shape, n) => ({ publish: shape, n });
 const levels = (level, n) => ({ level, n });
+/** A later statement as the planner describes it (tools/gas-plan.mjs laterKey). */
+const later = (cost, firstAtPlace, entries) => ({ later: cost, firstAtPlace, entries });
+/** k later statements `cost`, each at its own place whose list holds `entries`. */
+const acrossK = (cost, k, entries) => Array.from({ length: k }, () => later(cost, true, entries));
+/** k later statements `cost` at one place whose list holds `entries`. */
+const oneK = (cost, k, entries) => Array.from({ length: k }, (_, i) => later(cost, i === 0, entries));
+const BEYOND_CLAIM = "beyondClaim";
 const VALIDATION = [
   { state: "listsNew", key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
     actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
   { state: "listsNew", key: "validate edit", what: "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
     actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
   { state: "listsNew", key: "validate rename move", what: "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
-    actions: [pub("files-name/2", 9), "releaseFolder", "bindFolderFreshFile"] },
+    actions: [pub("files-name/2", 9), later("releaseFolder", true, 1), "bindFolderFreshFile"] },
   { state: "listsNew", key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
     actions: [pub("files-bytes/1", 8192), pub("files-bytes/1", 8192)] },
   { state: "listsNew", key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
@@ -161,9 +203,33 @@ const VALIDATION = [
   { state: "listsExist", key: "validate edit lists exist", what: "a second edit of a file: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
     actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
   { state: "listsExist", key: "validate rename move lists exist", what: "rename + move into a folder that already holds the author's entries: PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh",
-    actions: [pub("files-name/2", 9), "releaseFolder", "bindFolderFreshFile"] },
+    actions: [pub("files-name/2", 9), later("releaseFolder", true, 2), "bindFolderFreshFile"] },
   { state: "listsExist", key: "validate tag 6 words all existing", what: "a first tag on an existing 6-word path, every per-author and shared roll-up holding two entries: the fresh-position term plus five existing levels",
     actions: ["bindTagFresh", levels("mineExisting", 5), levels("sharedExisting", 5)] },
+  // later statements across places and in long lists (GasModel.t.sol sections 8 and 9b)
+  ...[
+    ["across topics", "acrossPlaces", (c) => acrossK(c, 32, 1), true],
+    ["at entry 47 across topics", "acrossPlaces", (c) => acrossK(c, 32, 48), false],
+    ["at entry 48 across topics", "acrossPlacesBitsWord", (c) => acrossK(c, 32, 49), false],
+    ["at entry 1024 across topics", "longLists", (c) => acrossK(c, 16, 1025), false],
+    ["at entry 4096 across topics", BEYOND_CLAIM, (c) => acrossK(c, 8, 4097), false],
+    ["of 32 entries of 1025 at one topic", "longLists", (c) => oneK(c, 32, 1025), false],
+  ].flatMap(([what, state, of, numbers]) => [
+    ["masks", "unbindTag"], ["releases", "releaseTag"], ["restores", "restoreTag"], ...(numbers ? [["number changes", "bindTagNumberChange"]] : []),
+  ].map(([kind, cost]) => ({ state, key: `validate tag ${kind} ${what}`, what: `tag ${kind} ${what}${state === BEYOND_CLAIM ? " (BEYOND THE CLAIM: reported, not in the stated maxima)" : ""}`, actions: of(cost) }))),
+  { state: "longLists", key: "validate tag number changes of 32 entries of 1025 at one topic", what: "tag number changes (re-binds: no tier) of 32 spread entries of a 1,025-entry list at one topic", actions: oneK("bindTagNumberChange", 32, 1025) },
+  ...[
+    ["across folders", "acrossPlaces", (c) => acrossK(c, 32, 1), ["masks", "releases", "re-binds", "restores"]],
+    ["at entry 48 across folders", "acrossPlacesBitsWord", (c) => acrossK(c, 32, 49), ["masks", "releases", "restores"]],
+    ["at entry 1024 across folders", "longLists", (c) => acrossK(c, 16, 1025), ["masks", "releases", "restores"]],
+    ["of 8 entries of 1025 in one folder", "longLists", (c) => oneK(c, 8, 1025), ["masks", "releases", "re-binds", "restores"]],
+  ].flatMap(([what, state, of, kinds]) => kinds.map((kind) => ({ state, key: `validate folder ${kind} ${what}`, what: `folder ${kind} ${what}`,
+    actions: of({ masks: "unbindFolder", releases: "releaseFolder", "re-binds": "bindFolderRebind", restores: "restoreFolder" }[kind]) }))),
+  ...[["property", "unbindProperty"], ["same", "unbindSame"], ["broader", "unbindBroader"]].map(([p, cost]) => ({ state: "longLists", key: `validate ${p} masks of 8 entries of 1025 at one topic`,
+    what: `${p.toUpperCase()} masks of 8 spread entries of a 1,025-entry list at one topic`, actions: oneK(cost, 8, 1025) })),
+  { state: "acrossPlaces", key: "validate untag a file from six topics", what: "untag one file from six topics (six RELEASEs), the author's list at each holding three entries", actions: acrossK("releaseTag", 6, 3) },
+  { state: "acrossPlaces", key: "validate delete six files from three folders", what: "delete (RELEASE) six files from three folders, two from each, each folder holding four of the author's entries",
+    actions: Array.from({ length: 6 }, (_, i) => later("releaseFolder", i % 2 === 0, 4)) },
 ];
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */
@@ -217,6 +283,11 @@ function predict(c, actions) {
   let g = c.fixed;
   for (const a of actions) {
     if (typeof a === "string") g += c.action[a];
+    else if (a.later) {
+      const key = laterKey((k) => k in c.action, { cost: a.later, first: false, firstAtPlace: a.firstAtPlace, entries: a.entries }, LATER_LISTS);
+      assert.ok(key in c.action, `no constant ${key}`);
+      g += c.action[key];
+    }
     else if (a.level) g += c.tagLevel[a.level] * a.n;
     else g += c.publishBase[a.publish] + c.perWord * words(a.n) + c.perByte * a.n;
   }
@@ -313,16 +384,25 @@ function profile({ rows, types }, name) {
     }
     return row;
   });
+  // The stated maxima cover every composite within the claim; composites in state beyondClaim are reported with their
+  // errors and excluded (maximaExcludeStates), as the floor excludes lists beyond its claim.
+  out.maximaExcludeStates = [BEYOND_CLAIM];
+  const counted = out.validation.filter((v) => !out.maximaExcludeStates.includes(v.state));
   // the largest composite error on ALL gas (prague: all gas is what the cap counts; amsterdam: execution + state gas,
   // the constants), and the composite that sets it
-  const worst = (field) => out.validation.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
+  const worst = (field) => counted.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
+  // the largest UNDER-prediction (predicted below measured), as a positive percent (0 when no composite is low)
+  const under = (field) => counted.reduce((a, v) => (v[field] < a[field] ? v : a));
+  const underOf = (field) => { const v = under(field); return v[field] < 0 ? [Number((-v[field]).toFixed(2)), v.key] : [0, null]; };
   out.maxAbsErrorPercent = Math.abs(worst("errorPercent").errorPercent);
   out.maxAbsErrorComposite = worst("errorPercent").key;
+  [out.maxUnderErrorPercent, out.maxUnderErrorComposite] = underOf("errorPercent");
   if (amsterdam) {
     // amsterdam only: the largest composite error on EXECUTION gas (split.executionGas against the measured frame gas),
     // the figure that bounds the EIP-7825 2^24 cap condition there (the cap counts execution gas only)
     out.maxAbsExecutionErrorPercent = Math.abs(worst("executionErrorPercent").executionErrorPercent);
     out.maxAbsExecutionErrorComposite = worst("executionErrorPercent").key;
+    [out.maxUnderExecutionErrorPercent, out.maxUnderExecutionErrorComposite] = underOf("executionErrorPercent");
   }
   return out;
 }
@@ -360,9 +440,12 @@ const model = {
     firstWriteSurcharge: "(CREATE + PUBLISH files-directory/1 as a principal's first publication ever) − (the same shape by a principal that has written once)",
     keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; restore = BIND from MASKED to the kept target; PROPERTY binds are a label (labelKey(\"en\") on a word page → an existing text/1; a label with a new text is publishNew[\"text/1\"] + its body terms + bindPropertyFresh, validated by \"validate label new text\"); SAME and BROADER first statements run FilesFinalValidator's topic checks on subject and role (word page to word page; bindSameFreshPath 2-word path to path), their later statements are on word pages; WITHDRAW of one occurrence",
     tagLevels: TAG_LEVELS_METHOD,
+    laterLists: "later statements are priced by laterLists (the list tiers); the tier rows are their own k1/k2 pairs (GasModel.t.sol section 9: `<row> new place` at three places whose lists hold one entry; `<row> long new place` at three places whose lists hold 1,025 entries, each statement at entry 1,024; `<row> long same place` at one place of 1,025 entries, k1 the entry at 512, k2 those at 256 and 768), never anchors, so no tier row moves `fixed` or an existing row; PROPERTY, SAME and BROADER rows are already measured at distinct subjects, so they carry no `NewPlace` row",
+    maxima: "maxAbsErrorPercent, maxUnderErrorPercent (and on amsterdam maxAbsExecutionErrorPercent, maxUnderExecutionErrorPercent) are taken over every validation composite whose state is not in maximaExcludeStates (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception), and tools/gas-model.mjs refuses a model in which any of them exceeds 15%; the excluded composites are listed with their errors",
   },
   planning: PLANNING,
   tagLists: TAG_LISTS,
+  laterLists: LATER_LISTS,
   profiles: { prague, ...(amsterdam ? { amsterdam } : {}) },
   source: { test: SUITE, commit: git("rev-parse", "HEAD"), dirtyFiles: (git("status", "--porcelain") || "").split("\n").filter(Boolean).length, date: new Date().toISOString(), foundry: execFileSync("forge", ["--version"]).toString().split("\n")[0].trim() },
 };
@@ -386,6 +469,7 @@ for (const [name, p] of Object.entries(model.profiles)) {
   console.log(`  ${name}: ${JSON.stringify(p.constants)}`);
   for (const v of p.validation) console.log(`    ${v.key.padEnd(32)} measured ${String(v.measured).padStart(10)} predicted ${String(v.predicted).padStart(10)} ${v.errorPercent.toFixed(2).padStart(7)}%${v.executionErrorPercent === undefined ? "" : ` (execution ${v.executionErrorPercent.toFixed(2)}%)`}`);
   console.log(`    max |error| ${p.maxAbsErrorPercent}% (${p.maxAbsErrorComposite})${p.maxAbsExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxAbsExecutionErrorPercent}% (${p.maxAbsExecutionErrorComposite})`}`);
+  console.log(`    max under-prediction ${p.maxUnderErrorPercent}% (${p.maxUnderErrorComposite})${p.maxUnderExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxUnderExecutionErrorPercent}% (${p.maxUnderExecutionErrorComposite})`} (excluding ${p.maximaExcludeStates.join(", ")})`);
 }
 const bad = overBound(model.profiles);
 if (bad.length) {
@@ -393,11 +477,16 @@ if (bad.length) {
   process.exit(1);
 }
 
-/** Every composite error over ±LIMIT_PERCENT, all gas on every profile and execution gas on amsterdam. */
+/** Every composite error over ±LIMIT_PERCENT (so every stated maximum, over- and under-prediction alike), all gas on
+ *  every profile and execution gas on amsterdam, for the composites the maxima count (not maximaExcludeStates). */
 function overBound(profiles) {
   const out = [];
   for (const [name, p] of Object.entries(profiles)) {
+    for (const k of ["maxAbsErrorPercent", "maxUnderErrorPercent", "maxAbsExecutionErrorPercent", "maxUnderExecutionErrorPercent"]) {
+      if (p[k] !== undefined && p[k] > LIMIT_PERCENT) out.push(`${name} ${k} ${p[k]}% exceeds ${LIMIT_PERCENT}%`);
+    }
     for (const v of p.validation) {
+      if ((p.maximaExcludeStates ?? []).includes(v.state)) continue;
       if (Math.abs(v.errorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
       if (v.executionErrorPercent !== undefined && Math.abs(v.executionErrorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: ${v.executionErrorPercent}% exceeds ±${LIMIT_PERCENT}%`);
     }
@@ -427,7 +516,7 @@ function check(committed) {
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
     for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
   }
-  for (const k of ["planning", "tagLists"]) diff(committed[k], fresh[k], k, differences);
+  for (const k of ["planning", "tagLists", "laterLists"]) diff(committed[k], fresh[k], k, differences);
   for (const m of bound) console.error(`gas-model --check: ${m}`);
   if (differences.length) {
     const shown = Math.min(8, differences.length);
