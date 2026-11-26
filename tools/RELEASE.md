@@ -189,13 +189,17 @@ rule, never from `indexFloor`.
 **15. Pre-freeze gates** (none blocks a disposable testnet; each blocks freezing a Realm):
 
 - **The build-from-history step and its three counters.** A later index generation builds its new families from
-  history before it is attached (design §10.6); that step is specified, not written (generation 1 refuses `build`
-  and `backfill`). It must rebuild three COUNTERS, not only list entries: family 5's `live`, family 20's yes-count
-  and the distinct figure of families 6 and 7. Until it is written and tested, "a later generation can add this list"
-  (for example the all-authors list on a file's versions, QUESTIONS Q52) is not yet true. The design is
-  `docs/INDEX-BUILD.md` (a proposal, reviewed 2026-11-25): a build in `MODE_BUILD` already has every counter
-  operation, the missing parts are a generation that can carry some stores and build others, and one more
-  readiness check in `LedgerControl`. A build walks the whole history, so a later list has a price (its §6.2).
+  history before it is attached (design §10.6). It must rebuild three COUNTERS, not only list entries: family 5's
+  `live`, family 20's yes-count and the distinct figure of families 6 and 7. The design is `docs/INDEX-BUILD.md`
+  (reviewed 2026-11-25), built in four steps. **Done (step 1, item 23):** a generation that carries every store it
+  names (a re-pin, for example generation 1's code with a fixed hook) can be built and activated on a Realm with
+  history, and the kernel's two readiness checks of carried and fresh stores (`E_INDEX_NOT_READY` 12 and 13) are in
+  `LedgerControl`. **Not done:** the walk of history into a generation's fresh stores (step 2; such a generation's
+  `build` refuses with `E_BUILD(4)`), a generation that carries some stores and builds a new family into a fresh one,
+  with its deployer plan and the built-equals-live tests that prove the three counters (step 3), and the measured
+  cost of a build (step 4). Until steps 2 and 3 land, "a later generation can add this list" (for example the
+  all-authors list on a file's versions, QUESTIONS Q52) is not yet true. A build walks the whole history, so a later
+  list has a price (its §6.2).
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
   QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
@@ -252,6 +256,49 @@ runtime codehash), the bitmap store ABI id, and in `artifacts/` only `BitmapStor
 Not moved: the layout id, the hot ABI ids, the posting store ABI id, every Type id, the ledger proxy and
 implementation, the registry, every reader and the gateway, the seed (`efs-fixture-seed/4`, the root directory record
 `0xf7547aa6…c037`, `docs`, `readme.txt`, `big.bin`, `remote.txt`). The table below has the values.
+
+### Since the statement-rows release (this release against `0fb4804`)
+
+**A consumer does not re-vendor for this step.** Nothing an SDK or a client calls or does changes: no ABI, no
+action, no read, no gas row a planner uses. Only the release digest, some addresses and the meaning lists of
+`E_INDEX_NOT_READY` and `E_BUILD` move. The same holds for the following build-from-history steps (docs/INDEX-BUILD.md
+steps 2 to 4) on their own account: a consumer re-vendors once the build work is finished, or earlier only if it
+needs something else from a later commit.
+
+**23. A re-pinned generation can be switched on (build from history, step 1).** A later index generation that carries
+the stores it names (a store is *carried* unless it names the generation as `INITIAL_WRITER` and is not attached)
+becomes ready on a Realm with admissions: `build(0, maxFacts)`, permissionless and only between publications, moves
+its frontier to the ledger's counts once its *carried check* passes (every family it keeps in a carried store is
+declared by the live index in the same store from admission 1), and activation then accepts it. A generation whose
+carried check fails reports `completedAdmission` and `completedPublication` 0 and is not ready, at the moment it is
+read. Activation of a new index checks the same thing itself, from the live index's own readiness, and refuses two
+new reasons: **`E_INDEX_NOT_READY(12)`**, a carried family is not the live index's (with admissions; also when the
+live index has no code), and **`E_INDEX_NOT_READY(13)`**, a store that names the candidate as `INITIAL_WRITER` is
+already attached. The catch-up check (8) now runs after the family checks, so such a candidate is named 12 or 13, not
+8. Reasons 1 to 13 are listed in `src/interfaces/Errors.sol` (and in `release/errors.json`).
+
+**24. `E_BUILD` codes.** `build` no longer reverts `E_BUILD(0)`. Codes: 1 the generation is live or was activated, 3
+the ledger is not idle or a replay or build call is in flight, 4 the generation has a fresh store (the walk of history
+is step 2), 7 the carried check fails, 8 a nonzero `familyId`. `backfill` still reverts `E_BACKFILL(0)`;
+`replayNextPublication` is unchanged.
+
+**25. Identities.** Moved, against `0fb4804`: the release digest (`0xd50c77b585e2b17259efa36b0a15c3ca4d7f9b4de9e54f86258f8d79f7cca309`, was
+`0x580ede64…d04e`), the plan hash (`0x234fa462baf382fe8cf9e797cd9cac7f3b86168136de7bcfe5b5d19f5e295b31`), the execution set
+(`0x3b4805c6d2f8a3bebddb6a8dc4c779f6c7e84bbfd20394a3f37f5a8f6b4fb318`), the index obligations
+(`0xf189d4e2f86c09338453e81c419e38b3ba1627384ffea7999f3460c5b0a04255`) and manifest hash
+(`0x4399e87208e345d5a54d63e5cb6f18e587aba371135110faf1ebdcb408e5979a`); the code of `LedgerControl`, `RealmIndex` and
+`IndexReads` (in `artifacts/` only these three files changed). Because the genesis contract embeds the control
+delegate's address, every address genesis creates moved with it on the fixture Realm: the ledger implementation and
+proxy (`0xa224Bcd8d58899D720a59E9D53Cf4bCF2EE5F482`), both ProxyAdmins, the registry proxy, the controller, both
+stores, the index (`0xAF40DA654696378e460b4cc3C7D3FCF1c06177d8`) and its reads contract, and every reader that embeds
+the ledger's address (`lensReader`, `filesPageReader`, the three topic readers, the gateway and its content contract);
+their runtime codehashes move only through those embedded addresses. Not moved: the layout id, the hot ABI ids, both
+store ABI ids (no store code changed), every Type id, the ingress and apply delegates, the registry implementation,
+`ledgerReads`, `ledgerViews`, `readerDirectory`, `keysView`, every Files rule and the validator, and the seed
+(`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Gas: the measured publication rows rose by 12 to 132 gas on both schedules
+(the index's dispatch changed; fitted values moved by −24 to +132); `fixed` is 315,790 on prague (315,778 at `0fb4804`) and 899,110 on amsterdam
+(unchanged); the validation composites moved by at most 0.01 points (max error 5.80% prague, 7.56% amsterdam); the
+read rows rose by up to 2,352 gas (the reads contract's dispatch), and one read bound fell by one skipped entry.
 
 ### The identity table (this release against `cc59d0c`)
 

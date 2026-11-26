@@ -1,9 +1,18 @@
 # Building a later index family from history: a proposal
 
-**Status: PROPOSAL. Nothing in this document is implemented.** It designs the step that design §10.1 and §10.6
-defer ("a later generation builds its later families from history into its fresh stores before attachment") and
-that `tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the code", it means `main` at `899767e`.
+**Status: PROPOSAL, step 1 of 4 implemented (2026-11-26, branch `fable/2026-11-26-index-build-1`).** It designs
+the step that design §10.1 and §10.6 defer ("a later generation builds its later families from history into its
+fresh stores before attachment") and that `tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the
+code", it means `main` at `899767e`, except in the paragraphs marked **Landed**, which describe the code after step 1.
 Where the code and `docs/DESIGN.md` disagree, this document follows the code and says so (§1.4).
+
+The work is built in four steps. **Step 1 (landed):** a generation that carries stores becomes ready and can be
+activated on a Realm with admissions, and one that carries an abandoned store cannot: the carried check (§3.5), the
+no-fresh-store half of `build` (§3.2, §3.4) and the two kernel checks of §5.3. **Step 2:** `build(0, maxFacts)`
+becomes the budgeted walk of history into the generation's fresh stores (§3.2, §3.3). **Step 3:** a generation with
+an extra fresh `PostingStore` and a new APPEND family (the `head-authors` example, §2.2), with the deployer plan it
+needs (§3.1) and the built-equals-live tests (§8). **Step 4:** the measured gas of a build (§8 test 11). §10 lists
+where step 1 differs from this proposal.
 
 Figures are marked **measured** (with the file they come from) or **estimated** (with how). No figure here was
 measured for this document.
@@ -79,12 +88,17 @@ replay refuses because its stores are not all fresh (`RealmIndex.sol:537, 580-58
 ### 1.2 What generation 1 cannot do
 
 - `build` and `backfill` revert `E_BUILD(0)` / `E_BACKFILL(0)` (`RealmIndex.sol:597-605`). `buildDelegate()` is 0
-  and `Readiness.build` is 0 (`IndexReads.sol:186-188, 227-228`).
+  and `Readiness.build` is 0 (`IndexReads.sol:186-188, 227-228`). **Landed (step 1):** `build(0, maxFacts)` now moves
+  the frontier of a generation that carries both of its stores (§3.5) and refuses one with a fresh store,
+  `E_BUILD(4)`, until step 2; `backfill` still reverts `E_BACKFILL(0)`; `buildDelegate()` and `Readiness.build` are
+  still 0.
 - It holds exactly one posting store and one bitmap store (`RealmIndex.sol:44-45, 109-110`), so it cannot fold
   some families into a carried store and others into a fresh one.
 - A generation-1-shaped generation that re-pins any store cannot reach readiness on a Realm with admissions (§0).
   `test/index/IndexDeployer.t.sol:74-87` deploys such a generation (re-pinned posting store, fresh bitmap store) but
-  never activates it, and could not.
+  never activates it, and could not. **Landed (step 1):** one that re-pins *both* stores can (`build`, §3.5;
+  `test/index/Carried.t.sol`); one that re-pins one store and creates the other still cannot until step 2 builds the
+  fresh one.
 - `GenerationStorage.buildFrontier` is declared (`src/index/storage/GenerationStorage.sol:16-25`) and never used.
 
 ### 1.3 What the tests prove and what they do not
@@ -314,6 +328,37 @@ family (case (a)), `build(0, maxFacts)` folds nothing and moves the frontier str
 carried check passes. Readiness reports `completedAdmission = lastProcessed` and is ready only if the carried check
 passes at the moment it is read.
 
+**Landed (step 1).** How the code does it:
+
+- **Where.** The check is `IndexReads.carriedCheck()`, in the generation's reads contract, which holds the family
+  table; like every other read it judges `msg.sender` as the generation, so it is answered at the generation's
+  address through its fallback. `RealmIndex.build` calls it directly; `IndexReads.replayReadiness` applies it.
+- **Fresh and carried.** A store is fresh when it names the generation as `INITIAL_WRITER` and is not attached
+  (`RealmIndex._isFresh`, `IndexReads._isFresh`); every other store the generation names is carried, including the
+  genesis stores (`INITIAL_WRITER = 0`), so generation 1 itself "carries" its stores.
+- **The edge cases.** With no admissions the check passes: there is no history to miss. That is also why genesis
+  needs no special case: generation 1 is checked at genesis like any later generation, on a Realm with no admissions,
+  and the kernel's check 12 has the same rule. When the generation is the live index the check passes (it folds its
+  stores itself; this also stops the check from asking itself). A generation with no carried store passes. A live
+  index without code, or whose readiness read reverts, fails the check (with admissions).
+- **Readiness when the check fails.** `completedAdmission` and `completedPublication` are 0 and `ready` is false,
+  whatever the progress word says. The tuple has one frontier for the whole generation, and the kernel trusts
+  `completedAdmission` (§5.2); a generation whose carried families are not proven claims nothing. The progress word
+  itself (`progress()`) is unchanged, so a re-pin that was built and then lost its proof keeps its frontier and is
+  ready again if the proof returns. The check is made at the moment readiness is read.
+- **`build` with no fresh store** (`RealmIndex.build`): `familyId` must be 0 (`E_BUILD(8)`); refused once this
+  generation is `ledger.index()` or has folded live (`E_BUILD(1)`), inside a publication or while a replay call of this
+  generation is in flight (`E_BUILD(3)`), when the generation has any fresh store (`E_BUILD(4)`, step 2), and when the
+  carried check fails (`E_BUILD(7)`). Otherwise it sets `lastProcessed` and `lastPublication` to `counts()`, sets
+  `replayStage` to CAUGHT_UP and returns the admission frontier. `maxFacts` bounds nothing here, because nothing is
+  folded. After more publications land, calling it again moves the frontier again.
+
+Coverage reads (`coverage`, `coverageOfType`, …) do **not** apply the check in step 1: they report the progress
+frontier as before. For a live generation that is exact (the check passes); a generation that is not live and
+whose carried check fails would still report its stale frontier there. Readers read the live index, and the kernel
+reads only readiness, so step 1 leaves coverage unchanged; step 3, which gives coverage a per-family frontier, should
+apply the check to carried families there.
+
 Why not trust the writers history instead? Because it cannot tell "complete" from "abandoned". Example: generation
 1 writes store S; generation 2 replays into fresh stores and goes live; S stops receiving writes; generation 3
 re-pins S. S's writers list is `[(gen1, 1, open)]`: contiguous, and missing everything since generation 2's
@@ -461,6 +506,15 @@ Two checks belong in `LedgerControl._checkIndex`, as defense beside the generati
 - **Fresh stores are the candidate's** (new `E_INDEX_NOT_READY(13)`): a store that names the candidate as
   `INITIAL_WRITER` is not attached.
 
+**Landed (step 1),** in `LedgerControl._checkIndex`, inside the loop over the candidate's maintained families, after
+the store's pins, family list and writer ranges: a store whose `initialWriter()` is the candidate must not be
+`attached()` (13); otherwise, when the ledger has admissions, the live index's own `replayReadiness().families`
+(read from `$.index`, once, only when a carried family needs it) must hold an entry with the same family id, the
+same store address and `fromAdmission == 1` (12); a live index without code is 12. With no admissions, 12 checks
+nothing (genesis: `$.index` is 0 and nothing can be missing). The exact catch-up check (8) now runs **after** the
+family loop, so a candidate that can never be ready is named 12 or 13 instead of "behind". Reasons 1 to 13 are listed
+in `src/interfaces/Errors.sol`.
+
 `LedgerControl` is part of the ledger implementation, replaceable by activation until freeze. After freeze the
 kernel never changes, and a steward activation under posture B (design §8.10) would run the frozen checks; so if
 posture B is chosen, these must be in the terminal implementation.
@@ -587,13 +641,16 @@ set are refused, QUESTIONS Q11).
   (self-call only). `replayNextPublication` stays for case (e). `backfill` keeps reverting until a BITMAP family
   exists. New `E_BUILD` codes (provisional): 1 already live or activated, 2 a fresh store is not fresh, 3 not idle
   or in flight, 5 no decoder, 6 `maxFacts` below the next publication, 7 a carried family is not the live index's,
-  8 nonzero `familyId`. `IRealmIndex`'s ABI is not pinned by the kernel (the ledger calls only `onAdmission`,
+  8 nonzero `familyId`. **Landed (step 1):** 1, 3, 7 and 8 as listed, and a new 4, "the generation has a fresh store:
+  the walk is not built yet", which step 2 removes; 2, 5 and 6 belong to the walk (step 2). `E_BUILD(0)` is gone. `IRealmIndex`'s ABI is not pinned by the kernel (the ledger calls only `onAdmission`,
   `afterPublication`, `replayReadiness` and `readsContract`), so this changes no kernel id. Its size is estimated at
   generation 1's 13,686 B plus 3–5 KB, under 24,576 B.
 - **Its reads contract**: per-family store routing; coverage of built families PARTIAL until the frontier; the
   carried check inside `ready`.
 - **A deployer** whose plan takes lists of carried and fresh stores (§3.1).
 - **`LedgerControl`**: the two checks of §5.3. A new revision of the ledger implementation, not a layout change.
+  **Landed (step 1):** 17,091 B → 17,674 B (budget 19,660); `RealmIndex` 16,582 B → 17,144 B; `IndexReads` 8,894 B →
+  10,671 B. The deployer was not changed: its plan already expresses "carry both" and "carry one, create the other".
 
 ### 7.2 The stores
 
@@ -614,7 +671,13 @@ set are refused, QUESTIONS Q11).
 
 ## 8. Tests that would prove it
 
-Each runs on both fee profiles.
+Each runs on both fee profiles. **Landed (step 1),** in `test/index/Carried.t.sol` (default profile; the amsterdam
+profile runs the same suite with the rest): test 5 in full; test 6 in full, plus a lying test double refused by the
+kernel alone; of test 4, a publication between `build` and activation (`E_INDEX_NOT_READY(8)`, then built again) and
+build-then-activate in one transaction (through a batching controller); of test 7, `build` after activation, from
+inside a publication (a fold hook of the live generation), with a nonzero `familyId`, and on a generation with a
+fresh store (`E_BUILD(4)`, step 1 only); of test 8, a fresh store already attached (`E_INDEX_NOT_READY(13)`) and an
+unbuilt frontier (8). Also: a Realm with no admissions activates a carried generation, with or without `build`.
 
 1. **Built equals live, every family and counter.** Two Realms take the same mixed history: Realm L runs
    generation 2 from genesis (live); Realm B runs generation 1, then builds generation 2 and activates it. Compare
@@ -679,3 +742,34 @@ Each runs on both fee profiles.
     first build.*
 12. **Who funds a large build.** *Recommend the operator; record the measured cost (test 11) in the release notes so
     "we can add it later" comes with a price.*
+
+---
+
+## 10. Where step 1 differs from this proposal, and what the proposal had wrong
+
+1. **Readiness of a failed carried check.** §3.5 says readiness reports `completedAdmission = lastProcessed` and is
+   ready only if the check passes. The code reports 0 for both `completedAdmission` and `completedPublication` when
+   the check fails. The kernel trusts `completedAdmission` and ignores `ready` (§5.2), so a tuple that kept the
+   frontier would claim, to the one reader that acts on it, that the carried families are complete.
+2. **The order of the kernel's checks.** The exact catch-up check (`E_INDEX_NOT_READY(8)`) moved after the loop
+   over families, so an abandoned carried store is reported as 12 (it can never be fixed by building) rather than as
+   8 (behind). §8 test 6 expects 12 for an honest generation 3, whose frontier can never move; with the old order it
+   would have been 8.
+3. **Where the generation's check lives.** In the reads contract (`IndexReads.carriedCheck`), which holds the family
+   table, not in `RealmIndex`, which holds only its two store addresses. Both are the generation's own code and are
+   redeployed together, so a re-pin of generation 1's code (case (a)) carries the check.
+4. **A genesis store's first writer range starts at its first write, not at 1.** A live write opens a range at the
+   admission that makes it (`StoreBase._attach`), so generation 1's posting range starts at the first admission that
+   writes the store (2 in the test history, whose admission 1 is a CREATE) and its bitmap range at the first bind.
+   §5.4's "closes the old index's range at (that admission − 1)" is exact.
+5. **`E_BUILD(4)`** is new: "a fresh store, the walk is not built yet". It exists only until step 2.
+6. **The proposal's size figure was stale.** §7.1 estimates generation 2 from "generation 1's 13,686 B"; generation
+   1's `RealmIndex` was 16,582 B at `0fb4804` and is 17,144 B after step 1.
+7. **Not done in step 1, though §1.4 item 6 names it:** the kernel still does not check that a store's last writer
+   range belongs to the live index. Check 12 makes that unnecessary for carried families (it asks the live index's
+   manifest, which is stronger), and check 13 covers fresh stores.
+8. **A residual at zero admissions.** With no admissions, neither check proves anything about a carried store, by
+   design: nothing can be missing. A store whose `INITIAL_WRITER` is some third generation could, in principle, hold
+   entries that generation wrote in `MODE_BUILD` while the Realm was idle and empty, and a candidate that carries it
+   would be accepted. A genesis store (`INITIAL_WRITER = 0`) cannot hold any. Requiring an empty writers list for a
+   carried store at zero admissions would close it; step 1 does not add that rule.
