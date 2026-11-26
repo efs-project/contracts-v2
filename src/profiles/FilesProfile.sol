@@ -12,7 +12,8 @@ import {AcceptContext} from "../interfaces/IAcceptor.sol";
 error E_FILES_CONTEXT(address ledger, address caller); // none
 /// A rule's law refused the record; `code` is listed in each rule's NatSpec.
 error E_FILES_REFUSED(uint8 code); // none
-/// `FilesFinalValidator` refused the FOLDER bind at publication leaf `leaf`; codes on the validator.
+/// `FilesFinalValidator` refused the statement (a FOLDER, HEAD, TAG, SAME or BROADER bind or first mask) at
+/// publication leaf `leaf`; codes 1 to 16 on the validator.
 error E_FILES_FINAL(uint8 code, uint8 leaf); // reprepare
 /// `RefuseAllPolicy`: the explicit sunset policy refuses every record.
 error E_FILES_SUNSET(); // none
