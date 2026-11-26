@@ -201,10 +201,10 @@ itself.
   carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
   history and is switched on, and its lists equal those of a Realm that kept the list from genesis, key by key
   ([INDEX-BUILD.md](INDEX-BUILD.md) §2.2, §8; the list and its generation are an example, not product). The build's cost
-  is measured (step 4, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the Realm's whole history, about 485k gas
-  per file today (582k on Glamsterdam, state gas included) against about 51k (150k) to keep the list from the start,
-  9.5 times (3.9 times) as much; 10,000 files cost about 4.8 billion gas in some 290 transactions, a million files
-  about 485 billion in some 29,000. So adding it later is realistic for a small or young Realm and an indexer is the
+  is measured (step 4, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the Realm's whole history, about 478k gas
+  per file today (576k on Glamsterdam, state gas included) against about 51k (150k) to keep the list from the start,
+  9.3 times (3.8 times) as much; 10,000 files cost about 4.8 billion gas in some 286 transactions, a million files
+  about 478 billion in some 28,500. So adding it later is realistic for a small or young Realm and an indexer is the
   route for a large one. The condition: adding a
   generation is an act of the Realm's controller, possible until the Realm is frozen, so the option exists only while
   the Realm is not frozen (Q52).
@@ -277,15 +277,18 @@ none. Registration parts are safe to send first and harmless if the save is aban
 
 **The planning rule and the floor.** Before each index call the kernel requires a floor of visible gas, priced from
 the index's work model in slot counts (DESIGN §10.4, formula 2). The release fixes the spike's finding: the final
-reserve per bind is 7,400 (it was 120,000), so 64 lone negatives fit one publication on Glamsterdam, and three terms
+reserve per bind is 7,400 (it was 120,000), and three terms
 keep the quote above what the index spends (later statements, publishes of existing records, the final phase per
 publish). The floor does not know a tag's depth; the gas model does. So the SDK plans every publication from the
 published gas model (`planning`, `floor`, the per-level terms; `tools/gas-plan.mjs` is the reference planner): a
 publication is planned when it is inside the Realm's limits and its estimate and the floor's requirement both fit
 under the cap less 15%, and anything larger is split before it is signed. The largest planned publication of each
 of seventeen shapes is tested on both schedules (TAG-NUMBERS "The largest publication"): for example 38 lone
-negatives today and 54 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
-recipes, and 64 masks, releases or registration pages. `indexFloor` is an upper bound only; the fixture checks that
+negatives today and 50 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
+recipes, 64 masks or releases today and 44 on Glamsterdam, and 64 registration pages on both. On Glamsterdam the floor
+prices a rewrite of an existing slot at 12,100 (its real execution price there; it was 5,000), which makes the quote
+cover what the index spends in every state and lowers the largest batch of later statements (masks, releases,
+restores, number changes) and folder re-binds; 64 lone negatives no longer fit one Glamsterdam publication. `indexFloor` is an upper bound only; the fixture checks that
 the deployed index prices exactly like the published model.
 
 ## 6. Reading
@@ -313,13 +316,25 @@ children).
   comes first, or at its gas reserve. A short or empty page is not the end: every page says whether the list is
   finished and where to resume. One number cannot bound both, because skipping a padded stretch is cheap and a shown
   row under a large lens is not.
+- **Only complete lists are read.** A view answers from a list only when the index reports the list's coverage
+  COMPLETE. A list the index reports PARTIAL (a later index generation still building it from history) is treated
+  exactly like one it reports UNKNOWN: the view, count views included, answers UNKNOWN with no rows and no counts,
+  and one such list refuses the view whatever the others report, including a listing resumed after the list stopped
+  being complete. Two reasons. A list's PARTIAL would not survive paging, because every page that does not start at
+  the origin and finish already says PARTIAL for its own paging, so a listing missing rows would end looking like an
+  ordinary long one. And the rows could not be promised, because Everyone decides from the yes-counts of
+  `position-authors`, and nothing says what a partly built list's counters hold. Reading a partly built list (newest
+  pages while old history is built) would be a new reader contract, designed with that feature, with a list-coverage
+  field of its own that survives paging. A live index is always complete, so no page of a real Realm changes. A
+  page's own coverage is unchanged: COMPLETE only when it started at the origin and finished, PARTIAL otherwise.
 - **The frontier.** Every page also says how far down the listing it got: `frontier` is the entry the next page
   reads first, the newest entry not yet processed, in the number space of the view's row entry (binding ordinals in
   Mine, Everyone and the thing's places; admission ordinals in an item's authors, a word's page and children). A
   view over two or more lists merged gives the largest of each list's next unread entry. On every page that is
   served:
   1. `frontier` is 0 exactly when the listing is finished (scan status EXHAUSTED); entries are never 0, since both
-     ordinals start at 1. Every refusal (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) carries 0.
+     ordinals start at 1. Every refusal (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) carries 0,
+     no continuation and no counts.
   2. Every row of the page has an entry strictly greater than `frontier`, and every row any later page of the
      listing returns has an entry less than or equal to it. The lists one view merges never hold the same entry
      twice: in Everyone the place list holds filings at the place itself and the roll-up filings under a proper
@@ -474,8 +489,8 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 4. **Everyone's versions of one file are not listed on chain today: keep that list from the start, or leave it
    out?** Keeping it costs a storage slot for every file ever created: about 30k gas per file today in the store a
    HEAD statement already writes (about 2% of creating a file; 51k as measured in a separate third store; 118k to
-   150k on Glamsterdam). Adding it later is possible and measured at about 485k per file today (582k on
-   Glamsterdam), 9.5 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 485 billion for a
+   150k on Glamsterdam). Adding it later is possible and measured at about 478k per file today (576k on
+   Glamsterdam), 9.3 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 478 billion for a
    million, so "later" suits only a small or young Realm. Keeping it can be undone (a later generation may drop a
    list); leaving it out cannot, for a large Realm. Your 2026-07-15 ruling (everything written through EFS is
    indexed automatically) bears on it. *The tag design session and the contracts dev both now recommend keeping it

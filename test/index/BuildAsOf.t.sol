@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {TopicListsHistory} from "../integration/TopicListsHistory.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
 import {IndexDeployer} from "../../src/control/IndexDeployer.sol";
@@ -141,6 +142,7 @@ contract BuildAsOfTest is TopicListsHistory {
         plan.work = IndexDoubleDefaults.workModel();
         plan.topicTypeId = typeIds[T_TOPIC];
         plan.topicWordTypeId = typeIds[T_TOPIC_WORD];
+        plan.liveManifest = ManifestCopy.ofLive(address(r.ledger));
         d = new IndexDeployer(address(r.ledger), keccak256(abi.encode(plan)));
         ix = IGeneration1(d.run(plan));
     }

@@ -47,8 +47,8 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         removes repeats across pages (`dedupWithinPageOnly`).
 ///
 ///         Page laws as `TopicPageInfo` states them: a Realm whose index keeps no topic roll-ups (family 19
-///         `NOT_MAINTAINED`) answers a below view UNKNOWN with no rows, never empty; any list of UNKNOWN coverage makes
-///         the page UNKNOWN. Two bounds, whichever comes first: `limit` list entries read (scan status 2 LIMIT) and
+///         `NOT_MAINTAINED`) answers a below view UNKNOWN with no rows, never empty; any list the index does not report
+///         COMPLETE (UNKNOWN or PARTIAL) makes the page UNKNOWN. Two bounds, whichever comes first: `limit` list entries read (scan status 2 LIMIT) and
 ///         `maxRows` rows returned (4 ROWS), 0 = no bound; `gasReserve` is checked before each batch and must cover
 ///         one batch of 16 rows and the return encoding (3 GAS). Each carries a continuation; only 1 EXHAUSTED ends
 ///         the listing, and a page that is not refused reads at least one entry. The continuation's cursor is one
@@ -102,13 +102,10 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             _open(r, expected, lens.length, true, continuation, n, info);
         info.dedupWithinPageOnly = true;
         Src[] memory s;
-        Coverage cov;
         uint256 left;
-        if (st == Status.PRESENT) {
-            (st, s, cov, left) = _sources(r, lens, place, below, cursor, info);
-        }
+        if (st == Status.PRESENT) (st, s, left) = _sources(r, lens, place, below, cursor, info);
         if (st != Status.PRESENT) {
-            info.q.status = st;
+            _refuse(info, st);
             return (info, rows);
         }
         uint256 cap = _capacity(limit, maxRows, left);
@@ -126,10 +123,11 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
         for (uint256 i; i < n; ++i) {
             cursor[i] = s[i].l.hi;
         }
-        _finish(r, info, scan, cov, cursor);
+        _finish(r, info, scan, cursor);
     }
 
-    /// Every lens author's lists: their heads, coverage and the cursor's resume points.
+    /// Every lens author's lists: their heads, coverage and the cursor's resume points; UNKNOWN unless every list is
+    /// COMPLETE (`_served`).
     function _sources(
         Run memory r,
         bytes32[] calldata lens,
@@ -137,14 +135,14 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
         bool below,
         uint64[] memory cursor,
         TopicPageInfo memory info
-    ) private view returns (Status, Src[] memory s, Coverage cov, uint256 left) {
+    ) private view returns (Status, Src[] memory s, uint256 left) {
         uint256 len = lens.length;
         s = new Src[](below ? 2 * len : len);
         address store =
             abi.decode(_sc(r.index, abi.encodeCall(IIndexReads.bitmapStore, ()), 32), (address));
         // live-scope is a genesis family of the served physical profile: its coverage is the family's, the same for
         // every scope (design §10.5), so it is read once
-        cov = _scopeCoverage(r, Keys.scope(lens[0], Purpose.TAG, place));
+        Coverage cov = _scopeCoverage(r, Keys.scope(lens[0], Purpose.TAG, place));
         // shortcut B (see `_scope`) can apply: `_merge` keeps the lens authors whose exact list is all live
         if (below && cov == Coverage.COMPLETE) r.quiet = type(uint256).max;
         for (uint256 i; i < s.length; ++i) {
@@ -165,7 +163,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             cov = _join(cov, c);
             info.rawTotal += x.l.count;
             if (r.resumed) {
-                if (cursor[i] > x.l.count) return (Status.INVALID, s, cov, 0);
+                if (cursor[i] > x.l.count) return (Status.INVALID, s, 0);
                 x.l.hi = cursor[i];
             }
             x.lo = x.l.hi; // no window yet
@@ -177,8 +175,8 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             }
             left += x.l.hi;
         }
-        if (cov == Coverage.UNKNOWN) return (Status.UNKNOWN, s, cov, 0);
-        return (Status.PRESENT, s, cov, left);
+        if (cov != Coverage.COMPLETE) return (Status.UNKNOWN, s, 0);
+        return (Status.PRESENT, s, left);
     }
 
     /// Shortcut B of `_maskedAt` (the bits of `r.quiet`, set in `_sources` for a below view): a lens author whose
@@ -194,7 +192,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
     /// water is folded. So `live == count` means every binding of the author at the place is BOUND now (none MASKED,
     /// none RELEASED), and a position with no entry is one the author never stated anything at (UNSET). live-scope is
     /// a genesis family of the served physical profile, never backfilled (`backfillOr` would set bits uncounted); a
-    /// coverage other than COMPLETE leaves every bit clear and asks as before.
+    /// coverage other than COMPLETE leaves every bit clear (and the page is then refused UNKNOWN in any case).
     /// An exact scope list's head.
     function _scope(Run memory r, address store, Src memory x) private view {
         bytes memory ret =
@@ -211,7 +209,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
         x.l.hi = count;
     }
 
-    /// The live-scope coverage at `key`.
+    /// The live-scope coverage at `key`, checked against the page's high water and served (`_served`).
     function _scopeCoverage(Run memory r, bytes32 key) private view returns (Coverage c) {
         bytes memory ret = _sc(
             r.index,
@@ -225,6 +223,7 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
             through > r.observed.admissionHighWater
                 || (c == Coverage.COMPLETE && through != r.observed.admissionHighWater)
         ) revert E_TOPIC_INCONSISTENT(6);
+        c = _served(c);
     }
 
     /// The newest-first merge of every lens list, resolved in batches of up to WINDOW candidates; leaves each

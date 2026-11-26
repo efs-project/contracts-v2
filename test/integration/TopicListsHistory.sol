@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {TopicListsBase} from "./TopicListsBase.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
@@ -224,6 +225,7 @@ abstract contract TopicListsHistory is TopicListsBase {
         plan.work = IndexDoubleDefaults.workModel();
         plan.topicTypeId = typeIds[T_TOPIC];
         plan.topicWordTypeId = typeIds[T_TOPIC_WORD];
+        plan.liveManifest = ManifestCopy.ofLive(address(r.ledger));
         d = new IndexDeployer(address(r.ledger), keccak256(abi.encode(plan)));
         ix = IGeneration1(d.run(plan));
         assertEq(ix.manifestHash() == r.g.index.manifestHash(), false, "a new generation");

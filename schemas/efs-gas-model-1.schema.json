@@ -48,7 +48,8 @@
             "floor",
             "rows",
             "validation",
-            "maxAbsErrorPercent"
+            "maxAbsErrorPercent",
+            "maxAbsErrorComposite"
           ],
           "properties": {
             "constants": {
@@ -242,8 +243,15 @@
               "minItems": 1,
               "items": {
                 "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["listsNew", "listsExist"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case)."
+                  }
+                },
                 "required": [
                   "key",
+                  "state",
                   "what",
                   "measured",
                   "predicted",
@@ -254,7 +262,12 @@
               }
             },
             "maxAbsErrorPercent": {
-              "type": "number"
+              "type": "number",
+              "description": "The largest |errorPercent| over the validation composites: all gas, which is what the EIP-7825 2^24 cap counts on this schedule."
+            },
+            "maxAbsErrorComposite": {
+              "type": "string",
+              "description": "The key of the validation composite that sets maxAbsErrorPercent."
             },
             "floor": {
               "type": "object",
@@ -381,7 +394,10 @@
             "floor",
             "rows",
             "validation",
-            "maxAbsErrorPercent"
+            "maxAbsErrorPercent",
+            "maxAbsErrorComposite",
+            "maxAbsExecutionErrorPercent",
+            "maxAbsExecutionErrorComposite"
           ],
           "properties": {
             "split": {
@@ -411,8 +427,19 @@
               "minItems": 1,
               "items": {
                 "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["listsNew", "listsExist"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case)."
+                  },
+                  "executionErrorPercent": {
+                    "type": "number",
+                    "description": "(predictedExecutionGas \u2212 measuredExecutionGas) / measuredExecutionGas \u00d7 100, two decimals: the composite's error on execution gas, the gas the 2^24 cap counts on this schedule."
+                  }
+                },
                 "required": [
                   "key",
+                  "state",
                   "what",
                   "measured",
                   "predicted",
@@ -421,13 +448,27 @@
                   "predictedExecutionGas",
                   "measuredStateGas",
                   "predictedStateGas",
+                  "executionErrorPercent",
                   "measuredKernelGas",
                   "predictedKernelGas"
                 ]
               }
             },
             "maxAbsErrorPercent": {
-              "type": "number"
+              "type": "number",
+              "description": "The largest |errorPercent| over the validation composites: ALL gas (execution + state, the constants). It bounds the publication's total against the block, NOT the 2^24 cap condition; for the cap use maxAbsExecutionErrorPercent."
+            },
+            "maxAbsErrorComposite": {
+              "type": "string",
+              "description": "The key of the validation composite that sets maxAbsErrorPercent."
+            },
+            "maxAbsExecutionErrorPercent": {
+              "type": "number",
+              "description": "The largest |executionErrorPercent| over the validation composites: EXECUTION gas (split.executionGas against the measured frame gas). On this schedule the EIP-7825 2^24 cap counts execution gas only, so this is the figure a headroom check of the cap condition tests against."
+            },
+            "maxAbsExecutionErrorComposite": {
+              "type": "string",
+              "description": "The key of the validation composite that sets maxAbsExecutionErrorPercent."
             },
             "floor": {
               "type": "object",

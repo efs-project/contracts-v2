@@ -482,16 +482,21 @@ contract TopicFaultyTest is TopicReadersBase {
         assertFalse(_hasThing(got, things[1]), "UNKNOWN never reads as nobody");
     }
 
-    /// The all-live scope shortcut holds only at COMPLETE live-scope coverage: at PARTIAL every lens author is asked,
-    /// and the rows are the faithful ones (the page says PARTIAL).
-    function test_a_partial_scope_coverage_asks_every_lens_author() public {
+    /// The all-live scope shortcut is read only at COMPLETE live-scope coverage, and a live-scope coverage that is
+    /// not COMPLETE refuses the page (the list-coverage rule: PARTIAL is UNKNOWN), so the shortcut can never stand in
+    /// for a list the index has not finished.
+    function test_a_partial_scope_coverage_refuses_the_page() public {
         // bob's exact list at t[0] is all live (bob is skipped at COMPLETE); a stranger keeps the author list full
         _tag(carol, t[0], things[1]);
-        (, MineRow[] memory want) = _mineF(true);
-        _set(fi, IIndexReads.coverage.selector, M_SET_WORD, 0, uint8(Coverage.PARTIAL));
         (TopicPageInfo memory info, MineRow[] memory got) = _mineF(true);
-        assertEq(uint8(info.listingCoverage), uint8(Coverage.PARTIAL));
-        assertEq(keccak256(abi.encode(got)), keccak256(abi.encode(want)));
+        assertEq(uint8(info.q.status), uint8(Status.PRESENT));
+        assertGt(got.length, 0);
+        _set(fi, IIndexReads.coverage.selector, M_SET_WORD, 0, uint8(Coverage.PARTIAL));
+        (info, got) = _mineF(true);
+        _unknownAsData(info, got.length);
+        assertEq(info.rawTotal, 0, "a refusal carries no counts");
+        assertEq(info.frontier, 0);
+        assertEq(info.next.length, 0);
     }
 
     // ---- refusals as data ------------------------------------------------------------------------------------

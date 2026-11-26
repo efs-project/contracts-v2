@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {TopicListsHistory} from "../integration/TopicListsHistory.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
 import {CreatorsIndex, CreatorsReads} from "../harness/HeadAuthors.sol";
@@ -41,8 +42,10 @@ interface IProgressFlag {
 ///         G (example code, `CreatorsIndex`) keeps generation 1's posting lists PLUS X (`subjects-created`, folded on
 ///         CREATE only) in a fresh posting store T, carries the genesis bitmap store, builds and is activated. Before
 ///         any admission reaches G, G' (generation 1's code) carries T and the bitmap store and is activated: it
-///         declares generation 1's lists in T and not X. A CREATE-only publication then leaves T unattached, so G's
-///         late build is still allowed and folds the CREATE into X, and only X; a bind attaches T and G is refused
+///         declares generation 1's lists in T and not X. A CREATE-only publication then leaves T unattached; G's late
+///         build is refused (`E_BUILD(7)`) because G carries the bitmap store and its copy of the live index's manifest
+///         is stale (docs INDEX-BUILD §10; before the copy it folded the CREATE into X, and only X); a bind attaches T
+///         and G is refused
 ///         (`E_BUILD(2)`, kernel 13); H (G's code again, carrying T) cannot declare X in T again (`E_BUILD(7)`, kernel
 ///         12); every list G' keeps equals a twin Realm that ran generation 1 throughout.
 contract DroppedListTest is TopicListsHistory {
@@ -82,6 +85,7 @@ contract DroppedListTest is TopicListsHistory {
         plan.work = IndexDoubleDefaults.workModel();
         plan.topicTypeId = typeIds[T_TOPIC];
         plan.topicWordTypeId = typeIds[T_TOPIC_WORD];
+        plan.liveManifest = ManifestCopy.ofLive(address(r.ledger));
         d = new IndexDeployer(address(r.ledger), keccak256(abi.encode(plan)));
         ix = IGeneration1(d.run(plan));
     }
@@ -170,24 +174,27 @@ contract DroppedListTest is TopicListsHistory {
         (bytes32[] memory before,,) = _capture(t, b0);
         bytes32 writersBefore = _writersHash(t);
         _createOnly("dropped/create");
-        (uint64 createAdmission,,,) = r.hot.counts();
         assertEq(_writersHash(t), writersBefore, "G' wrote nothing to T");
         assertFalse(t.attached(), "T is still unattached");
         (bytes32[] memory afterCreate,,) = _capture(t, b0);
         _assertSameCapture(before, afterCreate, "the CREATE touched no list of generation 1");
         _assertSameCapture(twinAfterCreate, afterCreate, "T vs the twin after the CREATE");
 
-        // G's late build is still allowed (G never folded live) and folds that CREATE: X's entry is the only change
+        // G's late build: G never folded live, but it carries the bitmap store and its copy of the live index's
+        // manifest is generation 1's, which no longer hashes to the record (G' is live), so its carried check fails
+        // and the build is refused (7) before it writes anything. Before the copy (docs INDEX-BUILD §10) this build was
+        // allowed and folded the CREATE into X; the stale copy closes that route for every G that carries a store.
         (,,, bool liveStarted) = IProgressFlag(address(g)).generationProgress();
         assertFalse(liveStarted, "G never folded live");
-        assertEq(g.build(bytes32(0), 64), createAdmission, "G's late walk folds the CREATE");
-        (uint64 x1,, uint64 xLast,) = t.postingHead(_xKey(p));
-        assertEq(x1, x0 + 1, "X: one more entry");
-        assertEq(xLast, createAdmission, "X: the CREATE's admission");
+        assertFalse(ICarriedCheck(address(g)).carriedCheck(), "G's copy is stale");
+        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
+        g.build(bytes32(0), 64);
+        (uint64 x1,,,) = t.postingHead(_xKey(p));
+        assertEq(x1, x0, "X: unchanged");
         (bytes32[] memory afterWalk,,) = _capture(t, b0);
-        _assertSameCapture(afterCreate, afterWalk, "G's late walk wrote no list of generation 1");
-        _assertSameCapture(twinAfterCreate, afterWalk, "T vs the twin after G's late walk");
-        assertEq(_writersHash(t), writersBefore, "a build write never attaches");
+        _assertSameCapture(afterCreate, afterWalk, "nothing was written");
+        _assertSameCapture(twinAfterCreate, afterWalk, "T vs the twin after the refused build");
+        assertEq(_writersHash(t), writersBefore, "T is still unattached and unwritten");
 
         // a bind: G' folds it live and attaches T; G is refused by its build (2) and by the kernel (13)
         _bindOne();

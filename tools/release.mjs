@@ -30,7 +30,7 @@ import { numberVectors } from "./number-vectors.mjs";
 import { topicVectors } from "./topic-vectors.mjs";
 import { planVectors } from "./gas-plan.mjs";
 import { ABI_IDS, idFromSnapshot } from "./abi-id.mjs";
-import { ARTIFACTS_MODE, AST_OUT, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
+import { ARTIFACTS_MODE, AST_OUT, GLAMSTERDAM_FLOOR, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-script", "check"]);
 const CHECK = !!o.check && o.check !== "0";
@@ -254,6 +254,8 @@ assert.deepEqual(model.profiles.prague.floor.workModel, plan.workModel, `${MODEL
 for (const k of ["floorFreshGas", "floorRewriteGas", "kernelTail"]) assert.equal(model.profiles.prague.floor.limits[k], plan.limits[k], `${MODEL}: prague floor.limits.${k} differs from the plan's limits`);
 for (const k of ["maxActions", "maxBindsPerPublication", "maxBodyBytesPerPublication"]) assert.equal(model.planning.limits[k], plan.limits[k], `${MODEL}: planning.limits.${k} differs from the plan's limits`);
 if (model.profiles.amsterdam) assert.deepEqual(model.profiles.amsterdam.floor.workModel, plan.workModel, `${MODEL}: amsterdam floor.workModel differs from the plan's work model`);
+// a Glamsterdam Realm's floor prices (tools/deploy-plan.mjs GAS_SCHEDULES, the single table): a model planned with others is stale
+if (model.profiles.amsterdam) for (const k of ["floorFreshGas", "floorRewriteGas", "kernelTail"]) assert.equal(model.profiles.amsterdam.floor.limits[k], GLAMSTERDAM_FLOOR[k], `${MODEL}: amsterdam floor.limits.${k} differs from GLAMSTERDAM_FLOOR (tools/deploy-plan.mjs GAS_SCHEDULES); run \`pnpm run gas:model\``);
 // ---- test/vectors/floor-plan.json: the planning rule's largest publication per shape (tools/gas-plan.mjs) ----------
 emit("test/vectors/floor-plan.json", toJSON(planVectors(model)));
 const SHAPES = {
@@ -289,7 +291,7 @@ const gasModel = {
   note: "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
   schedules: {
     prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", hardforks: ["prague", "osaka"], constants: mp.constants, floor: mp.floor, maxAbsErrorPercent: mp.maxAbsErrorPercent },
-    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, floor: ma.floor, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
+    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, floor: ma.floor, maxAbsErrorPercent: ma.maxAbsErrorPercent, maxAbsExecutionErrorPercent: ma.maxAbsExecutionErrorPercent } } : {}),
   },
   planning: model.planning,
   tagLists: model.tagLists,

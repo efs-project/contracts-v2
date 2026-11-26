@@ -26,6 +26,16 @@ import {E_INDEX_GAS} from "../../src/interfaces/Errors.sol";
 ///         never a cap: a quote below the spend can only let a transaction that is too small pass the early check
 ///         and then fail inside a callback with the same named error, consuming nothing.
 ///
+///         Step 4 measured the one quote below the spend: on amsterdam, in state B (the author already has files in
+///         the folder), 0.969× with `floorRewriteGas` 5,000. Since the Glamsterdam floor prices a rewrite at 12,100
+///         (docs/GAS-SCHEDULES.md) every state is covered on both schedules, and this suite asserts it: P / spend ≥ 1
+///         in A (one recipe and the planned batch) and B, and on both schedules the planned batch and one recipe in
+///         state A are admitted with exactly the plan (plus, on amsterdam, the state gas). Relation to
+///         `FloorStates.t.sol`: that suite asserts the same P / spend ≥ 1 rule over every shape the floor claims, the
+///         create-file recipe in both states among them (the same recipe, the same state B, so the one-recipe ratios
+///         agree); this one keeps the create-file recipe's per-leaf split, the slot counts, the least gas that admits
+///         it against the plan, and the sweep below the least.
+///
 ///         "Prefix spend" here is `FloorBase`'s: E − K − the final phase (K = the publication with both callbacks
 ///         mocked, so K still pays each mocked call's dispatch, encoding and CALL). It is split per leaf by mocking
 ///         the callbacks of leaves ≥ i (and the final call): spend_i = M(i+1) − M(i), M(0) = K, M(n) = E − final.
@@ -302,6 +312,15 @@ contract FloorReconcileTest is FloorBase {
         emit log_named_uint("ratio A1 x1000", uint256(a1.w.prefixFloor) * 1000 / a1.spend);
         emit log_named_uint("ratio Ak x1000", uint256(ak.w.prefixFloor) * 1000 / ak.spend);
         emit log_named_uint("ratio B1 x1000", uint256(h.w.prefixFloor) * 1000 / h.spend);
+        // the fixed behavior (measured: prague 1.104 / 1.280 / 1.486, amsterdam 1.437 / 1.697 / 1.259; B on amsterdam
+        // was 0.969 with a rewrite priced at 5,000): the quote covers the spend in every state on both schedules
+        assertGe(
+            uint256(a1.w.prefixFloor) * 1000 / a1.spend, 1000, "A, 1 recipe: P covers the spend"
+        );
+        assertGe(
+            uint256(ak.w.prefixFloor) * 1000 / ak.spend, 1000, "A, k recipes: P covers the spend"
+        );
+        assertGe(uint256(h.w.prefixFloor) * 1000 / h.spend, 1000, "B, 1 recipe: P covers the spend");
     }
 
     function _vec(string memory field) internal view returns (string memory) {
@@ -408,9 +427,11 @@ contract FloorReconcileTest is FloorBase {
             "too little gas is E_INDEX_GAS or out of gas"
         );
         assertTrue(x.atHeadroom, string.concat(label, ": admitted with the plan and its headroom"));
-        // on prague (no state gas) exactly the plan admits it; on amsterdam the plan is execution gas and the
-        // transaction also carries the state gas, drawn by Foundry from the same gas (logged, see the report)
-        if (mustFit && !_amsterdam()) {
+        // exactly the plan admits it: on prague (no state gas) the plan alone; on amsterdam the plan is execution gas
+        // and the transaction also carries the state gas, drawn by Foundry from the same gas. Before the Glamsterdam
+        // rewrite price one recipe sent with exactly plan + state gas was refused on amsterdam in both states
+        // (24,277 and 14,144 short); with it, 114,791 (A) and 78,791 (B) to spare (measured, see the report).
+        if (mustFit) {
             assertTrue(x.atPlan, string.concat(label, ": admitted with exactly the planned gas"));
         }
     }

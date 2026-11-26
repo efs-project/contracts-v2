@@ -135,24 +135,35 @@ const ACTIONS = {
 const LEVEL_SPAN = 4;
 const LEVEL_ROWS = { allNew: "tag level all new", allExisting: "tag level all existing", mineNew: "tag level mine new", mineExisting: "tag level mine existing" };
 
-// The composites (GasModel.t.sol `test_model_validate_*`), as the planner would describe them.
+// The composites (GasModel.t.sol `test_model_validate_*`), as the planner would describe them, each in the state it
+// is measured in: "listsNew" (the author's lists at the positions it touches are new) or "listsExist" (the ordinary case).
 const pub = (shape, n) => ({ publish: shape, n });
 const levels = (level, n) => ({ level, n });
 const VALIDATION = [
-  { key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
+  { state: "listsNew", key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
     actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
-  { key: "validate edit", what: "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
+  { state: "listsNew", key: "validate edit", what: "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
     actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
-  { key: "validate rename move", what: "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
+  { state: "listsNew", key: "validate rename move", what: "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
     actions: [pub("files-name/2", 9), "releaseFolder", "bindFolderFreshFile"] },
-  { key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
+  { state: "listsNew", key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
     actions: [pub("files-bytes/1", 8192), pub("files-bytes/1", 8192)] },
-  { key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
+  { state: "listsNew", key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
     actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
-  { key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
+  { state: "listsNew", key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
     actions: ["bindTagFresh", levels("mineNew", 5), levels("sharedNew", 5)] },
-  { key: "validate label new text", what: "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
+  { state: "listsNew", key: "validate label new text", what: "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
     actions: [pub("text/1", 24), "bindPropertyFresh"] },
+  // the ordinary state: the author's lists exist (a folder that already holds one of the author's files, a file
+  // already edited, a folder that already holds the author's entries, roll-ups that already hold entries)
+  { state: "listsExist", key: "validate create file lists exist", what: "M1 create file in a folder that already holds one of the author's files: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER",
+    actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
+  { state: "listsExist", key: "validate edit lists exist", what: "a second edit of a file: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
+    actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
+  { state: "listsExist", key: "validate rename move lists exist", what: "rename + move into a folder that already holds the author's entries: PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh",
+    actions: [pub("files-name/2", 9), "releaseFolder", "bindFolderFreshFile"] },
+  { state: "listsExist", key: "validate tag 6 words all existing", what: "a first tag on an existing 6-word path, every per-author and shared roll-up holding two entries: the fresh-position term plus five existing levels",
+    actions: ["bindTagFresh", levels("mineExisting", 5), levels("sharedExisting", 5)] },
 ];
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */
@@ -292,16 +303,27 @@ function profile({ rows, types }, name) {
     assert.ok(m, `no "model ${v.key}" measurement`);
     const measured = total(m);
     const predicted = round(predict(c, v.actions));
-    const row = { key: v.key, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)) };
+    const row = { key: v.key, state: v.state, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)) };
     if (amsterdam) {
       row.measuredExecutionGas = m.frameGas;
       row.predictedExecutionGas = round(predict(ex, v.actions));
       row.measuredStateGas = m.frameStateGas ?? 0;
       row.predictedStateGas = round(predict(st, v.actions));
+      row.executionErrorPercent = Number((((row.predictedExecutionGas - row.measuredExecutionGas) / row.measuredExecutionGas) * 100).toFixed(2));
     }
     return row;
   });
-  out.maxAbsErrorPercent = Math.max(...out.validation.map((v) => Math.abs(v.errorPercent)));
+  // the largest composite error on ALL gas (prague: all gas is what the cap counts; amsterdam: execution + state gas,
+  // the constants), and the composite that sets it
+  const worst = (field) => out.validation.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
+  out.maxAbsErrorPercent = Math.abs(worst("errorPercent").errorPercent);
+  out.maxAbsErrorComposite = worst("errorPercent").key;
+  if (amsterdam) {
+    // amsterdam only: the largest composite error on EXECUTION gas (split.executionGas against the measured frame gas),
+    // the figure that bounds the EIP-7825 2^24 cap condition there (the cap counts execution gas only)
+    out.maxAbsExecutionErrorPercent = Math.abs(worst("executionErrorPercent").executionErrorPercent);
+    out.maxAbsExecutionErrorComposite = worst("executionErrorPercent").key;
+  }
   return out;
 }
 
@@ -312,7 +334,7 @@ const PLANNING = {
   txGasCap: 16777216,
   txGasCapRule: "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
   headroomPercent: 15,
-  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error (under 9% on both schedules, maxAbsErrorPercent)",
+  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the error of the gas the cap counts: on prague all gas, profiles.prague.maxAbsErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxAbsExecutionErrorPercent. profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxAbsExecutionErrorComposite), and each is at most headroomPercent",
   limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication },
 };
 /** Read by the planner with the tagLevel terms (design §10.4). */
@@ -362,13 +384,25 @@ writeFileSync(join(root, "gas/model.json"), toJSON(model));
 console.log(`gas-model: gas/model.json (prague${amsterdam ? " + amsterdam" : ""})`);
 for (const [name, p] of Object.entries(model.profiles)) {
   console.log(`  ${name}: ${JSON.stringify(p.constants)}`);
-  for (const v of p.validation) console.log(`    ${v.key.padEnd(32)} measured ${String(v.measured).padStart(10)} predicted ${String(v.predicted).padStart(10)} ${v.errorPercent.toFixed(2).padStart(7)}%`);
-  console.log(`    max |error| ${p.maxAbsErrorPercent}%`);
+  for (const v of p.validation) console.log(`    ${v.key.padEnd(32)} measured ${String(v.measured).padStart(10)} predicted ${String(v.predicted).padStart(10)} ${v.errorPercent.toFixed(2).padStart(7)}%${v.executionErrorPercent === undefined ? "" : ` (execution ${v.executionErrorPercent.toFixed(2)}%)`}`);
+  console.log(`    max |error| ${p.maxAbsErrorPercent}% (${p.maxAbsErrorComposite})${p.maxAbsExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxAbsExecutionErrorPercent}% (${p.maxAbsExecutionErrorComposite})`}`);
 }
-const bad = prague.validation.filter((v) => Math.abs(v.errorPercent) > LIMIT_PERCENT);
+const bad = overBound(model.profiles);
 if (bad.length) {
-  for (const v of bad) console.error(`gas-model: prague "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+  for (const m of bad) console.error(`gas-model: ${m}`);
   process.exit(1);
+}
+
+/** Every composite error over ±LIMIT_PERCENT, all gas on every profile and execution gas on amsterdam. */
+function overBound(profiles) {
+  const out = [];
+  for (const [name, p] of Object.entries(profiles)) {
+    for (const v of p.validation) {
+      if (Math.abs(v.errorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+      if (v.executionErrorPercent !== undefined && Math.abs(v.executionErrorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: ${v.executionErrorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+    }
+  }
+  return out;
 }
 
 /** Paths at which `a` and `b` (parsed JSON) differ, each with both values. */
@@ -387,10 +421,8 @@ function check(committed) {
   const fresh = JSON.parse(toJSON(model));
   const bound = [];
   const differences = [];
+  bound.push(...overBound(fresh.profiles));
   for (const [name, p] of Object.entries(fresh.profiles)) {
-    for (const v of p.validation) {
-      if (Math.abs(v.errorPercent) > LIMIT_PERCENT) bound.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
-    }
     const c = committed.profiles?.[name];
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
     for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);

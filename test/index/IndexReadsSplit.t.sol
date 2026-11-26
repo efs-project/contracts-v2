@@ -177,7 +177,8 @@ contract IndexReadsSplitTest is Test {
             new DigestSpec[](0),
             IndexDoubleDefaults.workModel(),
             0,
-            0
+            0,
+            ""
         );
         vm.expectRevert(abi.encodeWithSelector(E_PIN.selector, address(other), uint8(10)));
         new RealmIndex(k.proxy, address(0), address(other));

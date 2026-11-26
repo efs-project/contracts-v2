@@ -210,9 +210,25 @@ interface IReaderDirectory {
 // position, and the state and the number always come from the head.
 // =============================================================================================
 
-/// The page laws of every topic view: `q.status` PRESENT for a served page, UNKNOWN when a list the view needs has
-/// coverage UNKNOWN (no rows: an UNKNOWN is never empty), BASIS_STALE / UNSUPPORTED / LIMIT_EXCEEDED / INVALID as
-/// refusals with no rows. A page's work is bounded by the list entries it reads (`limit`, 0 = only the gas reserve);
+/// The page laws of every topic view: `q.status` PRESENT for a served page, UNKNOWN when a list the view needs is not
+/// reported COMPLETE by the index (no rows: an UNKNOWN is never empty), BASIS_STALE / UNSUPPORTED / LIMIT_EXCEEDED /
+/// INVALID as refusals with no rows. Every refusal carries coverage UNKNOWN, `frontier` 0, no `next`, no counts
+/// (`scanned`, `rawTotal`, `positionsEver`, `selectedSoFar` and `repeatsSkipped` 0) and `scanStatus` 0.
+/// The list-coverage rule: a topic view answers from a list only when the index reports that list's coverage
+/// COMPLETE; a list the index reports PARTIAL is treated exactly as one it reports UNKNOWN, in every view, the count
+/// views (`placeCount`, `authorCount`, `entryCount`) included, which then return status UNKNOWN, coverage UNKNOWN and
+/// counts 0. One needed list not COMPLETE refuses the page, whatever the others report, and a listing resumed after a
+/// needed list stopped being COMPLETE is refused from that page on. Two reasons. First, a list's PARTIAL would not
+/// survive paging: every page that is not origin-started and finished already says `listingCoverage` PARTIAL, so the
+/// last page of a long complete listing and of a partly covered one would look the same. Second, the rows cannot be
+/// promised: `everyone` decides from the `position-authors` counters, and nothing defines what a partly covered list's
+/// counters hold. A partly covered list being useful (newest pages while old history is built) would be a new reader
+/// contract, designed with that feature, with a list-coverage field of its own that survives paging. On a Realm whose
+/// live index is complete (every live index is) the rule changes nothing. One order is fixed the other way: on a
+/// resumed page the continuation's cursor is checked against each list's count before that list's coverage, so a
+/// list that is not COMPLETE and reports a count below the cursor answers INVALID, not UNKNOWN; only a forged
+/// continuation reaches it (a list's count never falls, and a continuation is bound to the basis it was minted under).
+/// A page's work is bounded by the list entries it reads (`limit`, 0 = only the gas reserve);
 /// the paged views `mine` and `everyone` also take `maxRows` (0 = no cap), and stop at whichever bound comes first.
 /// Repeats, hidden and unaffirmed entries return nothing, so a page may hold fewer rows than `limit`, or none, while
 /// entries remain. The list is finished only when `scanStatus` is 1 EXHAUSTED (and `next` is empty); 2 LIMIT (`limit`
@@ -222,8 +238,9 @@ interface IReaderDirectory {
 /// `[0, index)` are still unread): a list only grows at its end, so entries appended between pages never shift it,
 /// and a later page continues exactly where the previous one stopped (the appended entries are newer than the
 /// listing's origin and are not part of it).
-/// `listingCoverage` COMPLETE only when `completeFromOrigin` (origin-started, exhausted, every list COMPLETE); a page
-/// from a continuation is at most PARTIAL. `scanned`: list entries read on this page; `rawTotal`: the entries
+/// `listingCoverage` is about paging alone (a served page's lists are all COMPLETE): COMPLETE only when
+/// `completeFromOrigin` (origin-started and exhausted), PARTIAL on every other served page (one that stops early, or
+/// one from a continuation, the last one included). `scanned`: list entries read on this page; `rawTotal`: the entries
 /// (filings) of every list at this page's read; `positionsEver`: for the place-list views (`everyone`, `about`), the
 /// lists' `live` counts, the distinct positions ever stated (an "about" figure, never a row count; 0 for other views);
 /// `selectedSoFar`: rows returned so far in the listing. `next` is bound to the query hash, the basis and the origin.

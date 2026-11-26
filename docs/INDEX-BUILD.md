@@ -482,9 +482,33 @@ carried store declared by the live index in the same store from 1), the three-st
 families (carried genesis stores) the same while the check passes, and PARTIAL (1, 0) when it fails
 (`test/index/HeadAuthorsBuild.t.sol::test_build_races_and_switches_on`,
 `::test_admissions_refuse_another_writers_third_store`). What the readers do with PARTIAL and UNKNOWN is pinned per
-view and per family by `test/readers/TopicPartialCoverage.t.sol` (§8): UNKNOWN is a refusal with no rows; PARTIAL is a
-PRESENT page with the faithful rows and its coverage stated (never COMPLETE, never `completeFromOrigin`), as
-`src/interfaces/Readers.sol` specifies; an empty list at PARTIAL is an empty PRESENT page that says PARTIAL.
+view and per family by `test/readers/TopicPartialCoverage.t.sol` (§8): since 2026-11-26 both are a refusal with no
+rows and no counts (PARTIAL is treated exactly as UNKNOWN, docs/TAG-DESIGN.md §6), as `src/interfaces/Readers.sol`
+specifies; an empty list at PARTIAL is UNKNOWN, never an empty page.
+
+**Landed (the liveness gate, 2026-11-26, branch `fable/2026-11-26-liveness`): the check no longer calls the live
+index.** The live index's families are static: they are its manifest, whose hash the kernel recorded in the revision
+row (`indexManifestHash`) when it activated that index. So a generation is deployed with a **copy** of the live index's
+manifest preimage, the bytes `abi.encode(header, families, units, specs, work, physicalProfile, callbackProfile, reads,
+readsCodehash)` that hash to that record (`IIndexReads.liveManifestCopy()`; `IndexDeployer.Plan.liveManifest`; empty at
+genesis). `IndexReads._liveManifest()` reads the recorded hash of the current revision (`ILedgerHot.revision()` and one
+`extsload` of word 8 of the row, `Layout.revisionsRowsSlot`), compares it with the copy's keccak and decodes the
+families and units from the copy; `_carriedCheck` (and the three-store harness override) use it and never call the live
+index. The copy is the canonical encoding (it hashes to what the index computed with `abi.encode`), so decoding its
+leading values is exact; a copy with any byte changed, truncated, extended, empty on a Realm with admissions, or of
+another generation fails (`test/index/Liveness.t.sol::test_a_wrong_copy_is_refused`). **A stale copy is the intended
+failure:** a generation deployed against L1 whose L1 has since been replaced holds a copy that no longer hashes to the
+record, so its check fails (`build` 7, readiness claims nothing, kernel 14) and it must be redeployed with the new live
+index's copy (`::test_a_stale_copy_is_refused_and_a_fresh_one_activates`). One consequence, tested: a REPLACED
+generation that carries any store can no longer build at all (its copy went stale when it was replaced), which closes
+the late-walk route of §5.3 for every such generation (`DroppedList.t.sol`, `HeadAuthorsBuild.t.sol`); an all-fresh
+generation never asks for the copy. The copy is held as code (§10 item 34 has the measurement): `IndexReads`' constructor
+creates a data contract whose runtime is one STOP byte and the copy, as descriptor blobs are held, and records it by
+address and codehash (`LIVE_COPY`, `LIVE_COPY_CODEHASH`; both covered by the reads codehash, so by the manifest hash).
+The copy can be at most 24,575 B (EIP-170's 24,576 B runtime less the STOP byte); a larger one is refused at
+construction, `E_PIN(reads, 12)`. Its size is `896 + 320·families + 320·units + 32·(family ids over all units) +
+96·specs` bytes (measured: 7,168 B for the release's generation 1, 18 families, 1 unit, 2 specs; 16,000 B for 40
+families and 6 units), so at most 72 families with one unit and two specs, or 67 with six one-id units.
 
 Why not trust the writers history instead? Because it cannot tell "complete" from "abandoned". Example: generation
 1 writes store S; generation 2 replays into fresh stores and goes live; S stops receiving writes; generation 3
@@ -530,11 +554,52 @@ generation keeps A and adds a recording hook B; the build calls A never and B on
 then equals A's (same effects, same order, same refs), and after activation both advance together. No change to the
 `Unit` struct: "new" is the generation's own list, not a field. Cost: `RealmIndex` 13 B smaller (18,705 → 18,692);
 live, the loop now always runs and checks `_hookRuns` only for a unit that has a fold hook (none in generation 1).
-**A gap that remains:** a generation that carries every store walks nothing (`build` moves the frontier straight to
-`counts()`), so a unit it adds never sees the history (`::test_a_re_pin_cannot_build_a_new_units_hook`: the kernel
-activates it). A generation that adds a unit with a fold hook needing history must have a fresh store, so that it
-walks; neither the generation nor the kernel refuses the other shape. The hook's companion store is the hook's own
+**A gap that remained at step 3b** (closed by Option A below): a generation that carries every store walks nothing
+(`build` moves the frontier straight to `counts()`), so a unit it adds never saw the history
+(`::test_a_re_pin_cannot_build_a_new_units_hook`: the kernel activated it). The hook's companion store is the hook's own
 business (the recording hooks keep their own storage); a store the generation names is fresh or carried as above.
+
+**Landed (Option A, 2026-11-26, branch `fable/2026-11-26-liveness`): a new fold-hook unit is refused by default.**
+Whenever a generation carries a store (a re-pin, or a build that heals a store), its carried check also asks that every
+unit with a fold hook be **carried**: the live index's manifest, read from the same verified copy as the families (§3.5),
+declares a unit with the **same fold hook address, the same fold codehash and the same `purposeFilter`**
+(`IndexReads._unitsCarried`). Those three are exactly what decides which effects a hook is given: `RealmIndex._foldHooks`
+calls `u.foldHook` (skipped when it is zero) on every effect whose purpose matches `u.purposeFilter` (0 = every effect);
+`_hookRuns` decides only whether the unit runs in this fold at all; nothing else in a `Unit` gates a call. So with the
+three equal, the live index has called that very code with exactly these effects for every admission. A wider filter
+leaves effects the hook never saw; a narrower one leaves folds in the hook's state that the new unit would never give
+it; either way the hook does not hold what it would hold had it run from genesis under the new unit, so both count as
+NEW. Not compared, because they decide no fold call: `familyIds`, the final hook and its codehash, `hotAbiId` and
+`identity`. A NEW unit fails the check (`build` `E_BUILD(7)`, readiness claims nothing, so activation refuses
+`E_INDEX_NOT_READY(8)`; coverage of carried families follows the check as before), with two exceptions: an empty Realm
+(no history to miss; the check has its own rule there) and a unit the generation builds itself. A unit with only a final
+hook is never judged (final hooks never run from history). No kernel change and no hook-interface change.
+
+**The opt-out is an explicit claim by the generation's pinned code.** `IndexReads._builtHooks()` (internal virtual,
+default 0; `builtHooks()` answers it) names, by bit, the units whose fold hooks this generation builds from history. The
+generation reads it once at construction into `RealmIndex.BUILT_HOOKS`, and `_hookRuns` (now private, not virtual)
+runs a hook in a fold that carries a store only when its bit is set; the carried check accepts a NEW unit only when its
+bit is set. So the hooks a build calls and the hooks the check accepts as built are one value and cannot get out of
+step (`HeadAuthorsHooks.t.sol::test_a_new_units_fold_hook_is_built_and_a_carried_units_is_not` asserts both read the
+same mask). The claim is accepted only when the generation **walks** (it has a fresh store, so `build` folds every
+publication from 1 and calls the named hooks on each): a generation that carries every store walks nothing, so no claim
+to build a hook can be true for it and none is accepted (`::test_a_re_pin_cannot_build_a_new_units_hook`, now refused
+7 / 8 even though its reads contract names the hook). Beyond that, claiming the bit for a hook the code does not really
+build from history is the author's lie in pinned code (the manifest hash covers the reads contract's code), not a gap
+in the kernel. Tests (`test/index/HeadAuthorsHooks.t.sol`): refused by default (`build` 7, nothing complete, activation
+8); the same hook address with another codehash is new; a wider and a narrower `purposeFilter` are new; identical units
+(another `identity` only) are carried and build and activate; final-hook-only units, new or changed, are unaffected;
+the step-3b generation that builds its new hook passes through the opt-out; the empty Realm accepts a new fold-hook unit
+(`Liveness.t.sol::test_the_empty_realm_accepts_a_new_fold_hook_unit`). `BuildWalkRefusals.t.sol`'s heal build with a
+new hook unit is now refused 7 (it built with the hook called for nothing).
+
+**Why the kernel does not check a hook frontier instead (rejected; do not propose it again).** The alternative was a
+kernel check that each unit's fold hook reports a frontier equal to the ledger's admission count. (1) The kernel would
+have to pin a hook interface it does not pin today: it calls no hook and pins hooks only by codehash and `hotAbiId`
+(above). (2) The hook would have to keep that frontier: a storage write of about 5,000 gas on every live publication,
+forever, on every Realm. (3) The answer would still be a claim by pinned code, so a generation that forgot to build the
+hook, paired with a hook that reports the ledger's count, would pass. Option A costs nothing live and puts the claim
+where the code that makes it is.
 
 **The rule for a unit's fold hook and history (step 3b; a pre-freeze rule).** A fold hook runs in its own call, so it
 cannot use the generation's `_fromHistory()`, and `IIndexHook.fold(effect, refs, publication)` carries no flag. The
@@ -861,17 +926,23 @@ attach at their first live write and no admission has touched it yet. Who can wr
   generation can declare F in S again, because check 12 needs the live index to declare F in S from admission 1. A
   list the successor still keeps can never be written by G after the switch: any publication touching it was folded
   live first, which attached S. So dropping a list from a carried store is allowed and is not refused; forbidding it
-  would force a whole-history rebuild of the kept lists (§6.2) for an ordinary cost cut. **Tested (step 3b),
+  would force a whole-history rebuild of the kept lists (§6.2) for an ordinary cost cut. **Since the liveness gate
+  this case no longer arises for G:** G carries the genesis bitmap store, and a replaced generation that carries any
+  store can no longer build at all, because its manifest copy is stale (it copies the index G replaced, and the
+  revision row now records G' instead), so `build` refuses 7 before folding anything. Only a generation whose every
+  store is fresh asks for no copy, and so only such a generation can still walk late; the argument above, that what it
+  writes is the honest fold of pinned, activated code, still covers it. **Tested (step 3b, then the liveness gate),
   `test/index/DroppedList.t.sol`, and every step behaved as claimed, so no kernel refusal is added:** G (example code:
   generation 1's posting lists plus X, `subjects-created`, folded on CREATE only, in a fresh posting store T; the genesis
   bitmap store carried) builds and is activated; before any admission reaches it, G' (generation 1's code) carrying T
   and the bitmap store is built (check 12 passes: G declares each of G' s lists in T from 1) and activated; a
   CREATE-only publication leaves T unattached and every generation-1 list in T unchanged (equal to a twin Realm that
-  ran generation 1 throughout); G's late `build` is allowed (G never folded live) and folds that CREATE, and the only
-  change in T is X's one new entry; a bind is folded live by G' and attaches T, after which G's `build` is refused 2
-  and the kernel refuses G 13; H (G's code declaring X in T again) is refused, `build` 7 and activation 12; after more
-  traffic every list G' keeps equals the twin's, key by key; X's entries are dead weight, UNKNOWN through G' and
-  readable only from the store. Shown before step 3b:
+  ran generation 1 throughout); G's late `build` is refused 7 (stale copy; at step 3b, before the liveness gate, it was
+  allowed and folded that CREATE into X), so T keeps no entry of the CREATE; a bind is folded live by G' and attaches
+  T, after which G's `build` is refused 2 and the kernel refuses G 13; H (G's code
+  declaring X in T again) is refused, `build` 7 and activation 12; after more traffic every list G' keeps equals the
+  twin's, key by key; X's entries are dead weight, UNKNOWN through G' and readable only from the store. Shown before
+  step 3b:
   `test/index/BuildWalkRefusals.t.sol::testAFreshStoreAttachedByALiveWriteRefusesTheBuild` (C builds, is activated,
   is replaced by D before any admission; C's `build` then folds nothing; D's first write attaches C's stores; C gets
   2 and the kernel 13).
@@ -884,6 +955,28 @@ No case lets unpinned code write a store of the live index. Tests: `testAnEmptyR
 write the genesis stores the live index uses) and `testAnEmptyRealmStillActivatesARePinAndAFreshGeneration`. The exact catch-up check (8) now runs **after** the
 family loop, so a candidate that can never be ready is named 12 or 13 instead of "behind". Reasons 1 to 13 are listed
 in `src/interfaces/Errors.sol`.
+
+**Landed (the liveness gate): check 12 reads the candidate's verified copy, and reason 14.** With admissions, for the
+first carried family the kernel asks the CANDIDATE for its copy of the live index's manifest
+(`IIndexReads.liveManifestCopy()`, answered through the candidate's fallback by its reads contract), requires
+`keccak256(copy)` to equal `indexManifestHash` of the current revision row (`_revisions().rows[$.revision]`, the row
+that activated or kept the live index), and decodes only the copy's leading `(bytes32, FamilyEntry[])`
+(`LedgerControl._liveFamilies`). A copy that does not hash to the record is **`E_INDEX_NOT_READY(14)`**; it never calls
+the live index. Because the copy is canonical once it hashes to the record, decoding only its prefix is sound; a copy
+with a trailing byte changed is refused 14 (`test/index/Liveness.t.sol::test_a_wrong_copy_is_refused`). The kernel's
+defense does not rest on the candidate's honesty: a lying candidate that reports itself caught up and declares a store
+the live index does not declare is refused 12 with a true copy and 14 with a forged one
+(`::test_a_lying_candidate_is_refused_12_with_a_true_copy_and_14_with_a_forged_one`). The empty-Realm rule is unchanged
+and asks for no copy (genesis passes an empty one). No kernel ABI change, no change to the activation set, no CREATE in
+the Core context. `LedgerControl` 17,830 → 18,042 B. Order: the copy is checked at the first carried family, so a
+replaced candidate that carries any store now reports 14 before a later family's 13 (`HeadAuthorsBuild.t.sol`).
+
+**The unchanged-index path (found, not changed).** An activation that KEEPS the live index (`index == $.index`) still
+calls `IRealmIndex(index).replayReadiness().phase` for reason 2, uncaught: while the live index does not answer, every
+activation that keeps it reverts with the live index's own error (for example a limits or controller change).
+Replacing the index in that same activation is the recovery, and it now works with a correct copy
+(`test/index/Liveness.t.sol::test_keeping_an_index_that_stops_answering_reverts_with_its_error`). The path was left as it
+is: an index that cannot report its phase should not be kept, and the read is the design's §8.3 5h.
 
 `LedgerControl` is part of the ledger implementation, replaceable by activation until freeze. After freeze the
 kernel never changes, and a steward activation under posture B (design §8.10) would run the frozen checks; so if
@@ -963,34 +1056,41 @@ the decode, the self-call, the fold and the CALL.
 
 | publication kind (leaves) | prague walk | prague list | prague total | amsterdam walk | amsterdam list | amsterdam total | amsterdam state gas |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| create file, design §14 recipe (5) | 148,259 | 30,225 | 178,484 | 148,259 | 20,325 | 168,584 | 97,920 |
-| edit: PUBLISH child + HEAD re-bind (2) | 91,462 | 0 | 91,462 | 91,462 | 0 | 91,462 | 0 |
-| second author's own version (2) | 87,889 | 35,527 | 123,416 | 87,889 | 32,727 | 120,616 | 97,920 |
-| HEAD mask of a BOUND head (1) | 61,367 | 12,238 | 73,605 | 61,367 | 19,438 | 80,805 | 0 |
-| HEAD release of a BOUND head (1) | 61,383 | 12,238 | 73,621 | 61,383 | 19,438 | 80,821 | 0 |
-| HEAD restore of a masked head (1) | 61,135 | 12,174 | 73,309 | 61,135 | 19,374 | 80,509 | 0 |
-| first tag on a one-word topic (1) | 55,848 | 0 | 55,848 | 55,848 | 0 | 55,848 | 0 |
-| folder move with a new name: PUBLISH name, RELEASE, BIND FOLDER (3) | 114,409 | 0 | 114,409 | 114,409 | 0 | 114,409 | 0 |
-| plain publish of a name record (1) | 50,082 | 0 | 50,082 | 50,082 | 0 | 50,082 | 0 |
+| create file, design §14 recipe (5) | 148,281 | 30,225 | 178,506 | 148,281 | 20,325 | 168,606 | 97,920 |
+| edit: PUBLISH child + HEAD re-bind (2) | 91,484 | 0 | 91,484 | 91,484 | 0 | 91,484 | 0 |
+| second author's own version (2) | 87,911 | 35,527 | 123,438 | 87,911 | 32,727 | 120,638 | 97,920 |
+| HEAD mask of a BOUND head (1) | 61,389 | 12,238 | 73,627 | 61,389 | 19,438 | 80,827 | 0 |
+| HEAD release of a BOUND head (1) | 61,405 | 12,238 | 73,643 | 61,405 | 19,438 | 80,843 | 0 |
+| HEAD restore of a masked head (1) | 61,157 | 12,174 | 73,331 | 61,157 | 19,374 | 80,531 | 0 |
+| first tag on a one-word topic (1) | 55,870 | 0 | 55,870 | 55,870 | 0 | 55,870 | 0 |
+| folder move with a new name: PUBLISH name, RELEASE, BIND FOLDER (3) | 114,431 | 0 | 114,431 | 114,431 | 0 | 114,431 | 0 |
+| plain publish of a name record (1) | 50,104 | 0 | 50,104 | 50,104 | 0 | 50,104 | 0 |
+
+Re-measured at the final integration (the liveness gate's code, §10 item 39): every marginal publication, EX and FR,
+is 22 gas dearer than step 4 measured (148,259 → 148,281 for a create file's walk), on both schedules; the per-leaf
+figures below did not move.
 
 The walk is the same on both schedules to the gas: it reads, and EIP-8037/8038 did not reprice what it reads here. The
 list's first entry is one fresh slot (prague 30,225 with its code; amsterdam 20,325 of execution and 97,920 of state
 gas); its counter is one rewrite of the list's head (prague 12,238; amsterdam 19,438: a cold rewrite costs 7,200 more
-execution gas there). **The fixed share of a cold call** (C1 − marginal) is 488,026 to 516,515 on prague and 492,926 to
-522,215 on amsterdam; a cold EX call with nothing pending costs 475,716 / 480,216 (its gates, the carried check, which
-asks the live index's `replayReadiness()` and reads its family table, and the progress word). FR's fixed share is
-91,588 to 181,812 (prague) and 95,188 to 296,977 (amsterdam); FR with nothing pending 77,278 / 80,478 (it carries
-nothing, so it asks the live index nothing).
+execution gas there). **The fixed share of a cold call** (C1 − marginal) is 252,738 to 281,227 on prague and 257,338 to
+286,627 on amsterdam; a cold EX call with nothing pending costs 240,428 / 244,628 (its gates, the carried check, which
+reads the generation's copy of the live index's manifest from code, checks it against the revision row's manifest hash
+and decodes it, and the progress word). Step 4 measured 488,026 to 516,515 and 492,926 to 522,215, and 475,716 /
+480,216 with nothing pending, when the carried check called the live index's `replayReadiness()`; reading the copy
+saves about 235k a cold call. FR's fixed share is 91,690 to 181,914 (prague) and 95,290 to 297,079 (amsterdam); FR with
+nothing pending 77,380 / 80,580 (it carries nothing, so it reads no copy; step 4: 91,588 to 181,812, 95,188 to 296,977,
+77,278 / 80,478).
 
 **Per leaf that touches nothing the list keeps** (the term of "a list on one purpose is dear to add to a long history";
 marginal leaf inside one publication, EX, the same on both schedules): a first tag 29,860, a plain publish 24,155, a
-CREATE 10,983. The same leaf as a publication of its own costs 55,848 (tag) and 50,082 (publish): about 26k of every
+CREATE 10,983. The same leaf as a publication of its own costs 55,870 (tag) and 50,104 (publish): about 26k of every
 publication is its own decode (evidence cell, revision row, decoder and self-call). A HEAD mask leaf, which does touch
 the list, is 47,612 (prague) / 54,812 (amsterdam), of which the walk is 35,374.
 
 **What the estimate said (§6.1 before step 4):** decode ≈ 20,000 per publication, ≈ 12,000 per non-bind leaf, ≈ 20,000
 per bind leaf; a new list's entry 27,139 / 115,156; a counter write ≈ 14,700 / ≈ 21,900. Measured, a publication's own
-decode is about 26k, a non-bind leaf 11k to 24k, the walk of a whole create-file recipe 148,259 and of an edit 91,462;
+decode is about 26k, a non-bind leaf 11k to 24k, the walk of a whole create-file recipe 148,281 and of an edit 91,484 (148,259 and 91,462 at step 4);
 the list's first entry 30,225 (prague) and 20,325 + 97,920 of state gas (amsterdam), its counter 12,238 / 19,438.
 
 ### 6.2 `head-authors` for a Realm of 1 million files (**measured** unit costs, the same assumed history)
@@ -1007,29 +1107,34 @@ state gas comes from the reservoir), each paying the fixed share of the create-f
 | new lists (one per file) | 1.0M × 30,225 / 20,325 + 97,920 | 30.23B | 20.33B | 97.92B | 27.1B / 115.2B |
 | second entries (word 0) | 0.1M × 35,527 / 32,727 + 97,920 | 3.55B | 3.27B | 9.79B | 2.7B / 11.5B |
 | counter writes | 0.06M × 12,217 / 19,417 | 0.73B | 1.17B | 0 | 0.9B / 1.3B |
-| walk of the create-file publications | 1.0M × 148,259 | 148.26B | 148.26B | 0 | (decode, three rows: |
-| walk of the edits | 3.0M × 91,462 | 274.39B | 274.39B | 0 | 83B publications, |
-| walk of the second authors' versions | 0.1M × 87,889 | 8.79B | 8.79B | 0 | 104B bind leaves, |
-| walk of the HEAD transitions | 0.06M × 61,295 | 3.68B | 3.68B | 0 | 73B other leaves) |
-| fixed share of each call | 28,920 × 516,515 / 28,330 × 522,215 | 14.94B | 14.79B | 0 | — |
-| **total** | | **484.56B** | **474.67B** | **107.71B** | **≈ 290B / ≈ 390B** |
-| transactions of 2^24 | | **28,920** | **28,330** | | ≈ 17,000 / ≈ 23,000 |
-| per file | | **484,560** | **474,669** | **107,712** | ≈ 290k / ≈ 390k |
+| walk of the create-file publications | 1.0M × 148,281 | 148.28B | 148.28B | 0 | (decode, three rows: |
+| walk of the edits | 3.0M × 91,484 | 274.45B | 274.45B | 0 | 83B publications, |
+| walk of the second authors' versions | 0.1M × 87,911 | 8.79B | 8.79B | 0 | 104B bind leaves, |
+| walk of the HEAD transitions | 0.06M × 61,317 | 3.68B | 3.68B | 0 | 73B other leaves) |
+| fixed share of each call | 28,513 × 281,227 / 27,930 × 286,627 | 8.02B | 8.01B | 0 | — |
+| **total** | | **477.73B** | **467.97B** | **107.71B** | **≈ 290B / ≈ 390B** |
+| transactions of 2^24 | | **28,513** | **27,930** | | ≈ 17,000 / ≈ 23,000 |
+| per file | | **477,732** | **467,971** | **107,712** | ≈ 290k / ≈ 390k |
 
-So on amsterdam the build costs 582.38B gas in all (582,381 per file), 474.67B of it execution. At 1 gwei that is 484.6
-ETH on prague and 582.4 ETH on amsterdam. **Cross-check** (`::test_mixed_segment`): one cold EX call over a segment of the
-mix (20 files: 20 recipes, 60 edits, 2 second authors' versions, a mask, a release and a restore; 85 publications, 227
-leaves) costs 9,886,345 on prague (9,674,045 + 2,154,240 of state gas on amsterdam) and fits one call; the per-kind
-figures above add up to 10,041,282 for it (prague), 1.6% more: the marginal figures do not grow over a call of 85
-publications.
+So on amsterdam the build costs 575.68B gas in all (575,683 per file), 467.97B of it execution. At 1 gwei that is 477.7
+ETH on prague and 575.7 ETH on amsterdam. **What the manifest copy moved** (the final integration, §10 item 39): the
+fixed share of a call fell from 516,515 / 522,215 to 281,227 / 286,627 (the carried check reads the copy from code
+instead of calling the live index), and every walk rose by 22 gas; together the 1,000,000-file totals fell by 6.83B
+on prague (484.56B in 28,920 transactions → 477.73B in 28,513) and 6.70B of execution on amsterdam (474.67B in 28,330
+→ 467.97B in 27,930; 582.38B → 575.68B in all): 1.4% on prague, and on amsterdam 1.4% of the execution
+and 1.2% of all gas. **Cross-check** (`::test_mixed_segment`): one cold EX
+call over a segment of the mix (20 files: 20 recipes, 60 edits, 2 second authors' versions, a mask, a release and a
+restore; 85 publications, 227 leaves) costs 9,652,927 on prague (9,440,327 + 2,154,240 of state gas on amsterdam; step
+4: 9,886,345 and 9,674,045) and fits one call; the per-kind figures above add up to 9,807,864 for it (prague), 1.6%
+more: the marginal figures do not grow over a call of 85 publications.
 
 **The price of "add it later"** (per file, this history):
 
 | | prague | amsterdam |
 |---|---:|---:|
 | kept from genesis (the list's live cost, measured cold) | 51,167 | 41,896 execution + 107,712 state = 149,608 |
-| built later (EX) | 484,560 | 474,669 execution + 107,712 state = 582,381 |
-| later against genesis | **9.5×** | **3.9×** in all gas (11.3× in execution gas) |
+| built later (EX) | 477,732 | 467,971 execution + 107,712 state = 575,683 |
+| later against genesis | **9.3×** | **3.8×** in all gas (11.2× in execution gas) |
 | what the estimate said | ≈ 31k kept, ≈ 290k later, 8× to 9× | ≈ 128k kept, ≈ 390k later, ≈ 3× |
 
 Kept from genesis is the list's live price, measured cold by `test/index/HeadAuthorsFloor.t.sol` (`FloorBase._need`:
@@ -1039,16 +1144,16 @@ first statement 46,554 / 44,154 + 97,920, a later statement (mask, release, rest
 an edit's re-bind 1,149 / 1,149; weighted by the history above. The estimate's "kept" counted only the list's storage;
 the measured live price also pays the CALL to the third store and its writer rule.
 
-**What the measurement changes.** The walk, not the storage, is the price, and it is dearer than estimated: 435.11B of
-the 484.56B on prague (90%), the same 435.11B on amsterdam. It is paid per publication and per leaf of the whole
+**What the measurement changes.** The walk, not the storage, is the price, and it is dearer than estimated: 435.20B of
+the 477.73B on prague (91%), the same 435.20B on amsterdam. It is paid per publication and per leaf of the whole
 history, whatever the list keeps: here the edits alone, which the list ignores (a re-bind changes nothing in it), cost
-274.39B, more than half. The storage part is what keeping the list from genesis would have cost anyway, so "later" adds
+274.45B, more than half. The storage part is what keeping the list from genesis would have cost anyway, so "later" adds
 the walk, paid by one operator at once.
 
 **The rule this gives** (unchanged, with measured figures). Adding an on-chain list later is affordable for a small or
-young Realm and not for a large one. For 10,000 files of this history: 4.85B gas in 290 transactions on prague (4.85 ETH
-at 1 gwei); on amsterdam 4.75B of execution in 284 transactions plus 1.08B of state gas, 5.82B in all. For 1,000,000
-files: 484.6B gas, 28,920 transactions (prague); 582.4B, 28,330 transactions (amsterdam). For a large Realm the realistic
+young Realm and not for a large one. For 10,000 files of this history: 4.78B gas in 286 transactions on prague (4.78 ETH
+at 1 gwei); on amsterdam 4.68B of execution in 280 transactions plus 1.08B of state gas, 5.76B in all. For 1,000,000
+files: 477.7B gas, 28,513 transactions (prague); 575.7B, 27,930 transactions (amsterdam). For a large Realm the realistic
 route to a list nobody kept is an indexer, or a new Realm that keeps it from genesis.
 
 **The third part of the price: the reservation a later list adds to every other statement** (step 3b, §10 item 27;
@@ -1060,14 +1165,17 @@ The largest publication the planning rule plans, generation 1 → the example ge
 
 | shape | prague | amsterdam |
 |---|---|---|
-| lone negatives on a one-word topic | 38 → **32** | 54 → **47** |
+| lone negatives on a one-word topic | 38 → **32** | 50 → **42** |
 | first tags, depth 8, everything new | 18 → 18 | 19 → 19 |
 | first tags, depth 64, everything new | 3 → 3 | 3 → 3 |
-| create-file recipes (5 actions each) | 10 → **9** | 12 → 12 (V 11.79M → 12.88M; 12 is the 64-action limit) |
-| plain edits (PUBLISH files-child/1, HEAD re-bind; 2 actions each) | 24 → **23** | 30 → **28** |
+| create-file recipes (5 actions each) | 10 → **9** | 12 → **11** (V at 11: 13.40M) |
+| plain edits (PUBLISH files-child/1, HEAD re-bind; 2 actions each) | 24 → **23** | 23 → **21** |
 
-The first tags are limited by their own execution estimate (E, the per-level list cost), not by the floor, so the
-reservation does not move them; the lone negatives lose 16% (prague) and 13% (amsterdam) of their batch. The table is
+The amsterdam column is the regenerated model's, with the Glamsterdam rewrite price (§10 item 29: 12,100, was 5,000);
+at step 4, before that fix, it read 54 → 47, 19 → 19, 3 → 3, 12 → 12 (V 11.79M → 12.88M) and 30 → 28. The prague
+column did not move. The first tags are limited by their own execution estimate (E, the per-level list cost), not by
+the floor, so the reservation does not move them; the lone negatives lose 16% (prague) and 16% (amsterdam) of their
+batch. The table is
 the same with the list's own live execution added to E on HEAD statements (`LIST_LIVE` in the tool, the figures above),
 because those shapes are bounded by V. The edits shape is planner arithmetic only (no FloorPlan test builds it); the
 other four are FloorPlan's shapes. A per-purpose term in the ingress's quote (a formula change, replaceable until
@@ -1083,14 +1191,15 @@ set are refused, QUESTIONS Q11).
 
 ### 6.4 A full replay, the heal path (**measured**, FR)
 
-Per marginal publication (prague; amsterdam execution + state gas): create file 461,687; 371,749 + 893,520. Edit
-243,324; 229,212 + 354,960. Second author's version 252,177; 202,827 + 489,600. HEAD mask 132,026; 143,826 + 97,920.
-HEAD release 132,014; 143,814 + 97,920. HEAD restore 132,092; 151,092 + 97,920. First tag on a one-word topic 227,067;
-172,704 + 538,560. Folder move with a new name 374,247; 335,410 + 599,760. Plain publish 85,342; 79,254 + 61,200. Per
+Per marginal publication (prague; amsterdam execution + state gas; re-measured at the final integration, each 22 gas
+above step 4): create file 461,709; 371,771 + 893,520. Edit
+243,346; 229,234 + 354,960. Second author's version 252,199; 202,849 + 489,600. HEAD mask 132,048; 143,848 + 97,920.
+HEAD release 132,036; 143,836 + 97,920. HEAD restore 132,114; 151,114 + 97,920. First tag on a one-word topic 227,089;
+172,726 + 538,560. Folder move with a new name 374,269; 335,432 + 599,760. Plain publish 85,364; 79,276 + 61,200. Per
 leaf inside one publication: first tag 201,266; 146,903 + 538,560. Plain publish 59,446; 53,359 + 61,200. CREATE
-10,877; 10,877. HEAD mask 106,118; 117,918 + 97,920. For the history of §6.2: 1,237.6B gas, 73,865 transactions, 1.24M
-per file on prague; 1,108.1B of execution in 66,134 transactions plus 2,013.2B of state gas, 3.12M per file in all, on
-amsterdam. (The estimate said "about 110k per re-materialized posting on amsterdam".) A full replay re-materializes
+10,877; 10,877. HEAD mask 106,118; 117,918 + 97,920. For the history of §6.2: 1,237.7B gas, 73,871 transactions, 1.24M
+per file on prague; 1,108.2B of execution in 66,140 transactions plus 2,013.2B of state gas, 3.12M per file in all, on
+amsterdam (step 4: 1,237.6B in 73,865, and 1,108.1B in 66,134). (The estimate said "about 110k per re-materialized posting on amsterdam".) A full replay re-materializes
 every list at the fresh-slot price, so it costs 2.6× (prague) and 5.4× (amsterdam, all gas) a later list's build of the
 same history.
 
@@ -1191,10 +1300,13 @@ test of §5.3 (`test/index/DroppedList.t.sol`); the example's work model against
 UNKNOWN and then PARTIAL by a wrapped index). **Not in step 3b:** test 9 (case (d), a digest spec), test 10 (BITMAP
 families) and test 11 (the measured gas of a build, step 4, done below).
 
-**The readers under partial coverage (step 3b), per view.** A family is listed for a view when reporting it UNKNOWN
-or PARTIAL changes the view's answer; for every listed pair the answer is UNKNOWN, no rows and coverage UNKNOWN under
-UNKNOWN, and PRESENT with the faithful rows and coverage PARTIAL (never COMPLETE, never `completeFromOrigin`) under
-PARTIAL; no pair reverts:
+**The readers under partial coverage (step 3b; the rule since 2026-11-26), per view.** A family is listed for a view
+when reporting it UNKNOWN or PARTIAL changes the view's answer. Since the list-coverage rule of 2026-11-26
+(docs/TAG-DESIGN.md §6, the page laws of `src/interfaces/Readers.sol`) PARTIAL is treated exactly as UNKNOWN: for
+every listed pair the answer under either is UNKNOWN, no rows, coverage UNKNOWN, no counts, `frontier` 0 and no
+continuation, and the two answers are identical; a listing resumed after a needed list turned PARTIAL is refused the
+same way; no pair reverts. (Step 3b recorded the earlier behavior, a PRESENT page with the faithful rows and coverage
+PARTIAL; the table of families is unchanged.)
 
 | view | families it needs |
 |---|---|
@@ -1209,7 +1321,7 @@ PARTIAL; no pair reverts:
 | `entryCount` exact / below | live-scope / scope-below |
 | `wordPage`, `children` | place, place-below, reference-position |
 
-An empty list at PARTIAL is an empty PRESENT page that says PARTIAL (`::test_an_empty_list_at_partial_is_never_an_empty_complete_page`).
+An empty list at PARTIAL is UNKNOWN, never an empty PRESENT page (`::test_an_empty_list_at_partial_is_unknown_never_an_empty_page`).
 
 **Test 11 (done, step 4: `test/index/BuildGas.t.sol`, both profiles).** The per-publication and per-leaf costs of a
 build for every publication kind, for a list added later (EX) and a full replay (FR), are §6.1, §6.2 and §6.4. The
@@ -1369,24 +1481,18 @@ needed (§3.3, §9 q1). The step-2 preview (`BuildWalk.t.sol::test_heaviest_publ
     (for example by moving fold code it no longer needs out, or by raising the budget on purpose): plan that
     before promising the lists.
 
-**Pre-freeze gate: activation must not depend on the live index answering.** Check 12 and the generation's carried
-check read the live index's `replayReadiness().families` at run time, whenever the candidate carries a store (a re-pin
-or a build that heals one store; an all-fresh candidate does not read it). If that read reverts (and a bug in the live
-index is the likeliest reason to replace it), the kernel's activation reverts with the live index's own error (it is
-not caught, so the refusal is not even reason 12) and the generation's carried check is false, so every candidate
-that carries a store is refused and only a full replay into all-fresh stores can replace the index, at the price §6.2
-estimates. The list being read is static: it is the live index's manifest family list (`IndexReads._families`,
-written once in its constructor), whose hash the kernel recorded in the revision row (`indexManifestHash`) when it
-activated that index. Proposed fix, not built: the candidate carries a copy of the live index's family list with the
-rest of the manifest's preimage; the kernel recomputes the hash, compares it with the recorded `indexManifestHash` of
-the current revision, and checks the candidate's carried families against that list, without calling the live index.
-The hash already has a form anyone can recompute: it is `keccak256(abi.encode(header, families, units, specs, work,
-physicalProfile, callbackProfile, reads, readsCodehash))` (`RealmIndex` constructor; `IndexReads.manifest`), so what is
-missing is the code that recomputes it in the kernel (today the index computes it and the kernel only compares), and
-the generation's own check can already read the recorded hash through `ILedgerHot.revision()` and `extsload` of the
-revision row (as the decoder reads that row's layout word), though no getter names it. The alternative is for the
-kernel to store the live index's (family, store) pairs at activation, which changes the storage layout. Recovery route
-until then: a full replay (case (e)).
+**Pre-freeze gate: activation must not depend on the live index answering. DONE (2026-11-26, branch
+`fable/2026-11-26-liveness`, items 34–38 below).** Check 12 and the generation's carried check read the live index's
+`replayReadiness().families` at run time; if that read reverted, the kernel's activation reverted with the live index's
+own error and the generation's check failed, so only a full replay could replace a broken index. Shown on the tree
+before the change (`git archive 4003069`, the scenario of `test/index/Liveness.t.sol` test 1 with no copy): `build`
+reverted `E_BUILD(7)` and the activation reverted `BreakableReads.E_BROKEN()`, the live index's error. Now the candidate
+carries a copy of the live index's manifest preimage, the kernel and the generation check it against the
+`indexManifestHash` the kernel recorded and read the families (and, for Option A, the units) from it, and neither calls
+the live index (§3.5, §5.3). The same scenario builds, is ready, activates and folds the next publications live, every
+list equal to a twin Realm's, both when the live index's readiness reverts and when every call to its address reverts.
+A stale copy (the live index replaced after the candidate was deployed) is refused, and the candidate is redeployed with
+a fresh copy. The storage form chosen is code (item 34).
 
 ### Step 3a: the as-of rule (2026-11-26, branch `fable/2026-11-26-index-build-3a`)
 
@@ -1474,7 +1580,8 @@ until then: a full replay (case (e)).
     history is now written (§3.6, rule (i)). (f) The kernel was not changed and needed no change for three stores.
     (g) §8's reader test: the readers answer PARTIAL as a PRESENT page that states its coverage, as
     `src/interfaces/Readers.sol` specifies, not as UNKNOWN; "UNKNOWN with no rows" holds for UNKNOWN only. No reader was
-    changed. (h) Not in this step: case (d), BITMAP families, the measured gas of a build (step 4).
+    changed. (Superseded 2026-11-26: the list-coverage rule treats PARTIAL exactly as UNKNOWN, docs/TAG-DESIGN.md §6;
+    the three topic readers changed for it.) (h) Not in this step: case (d), BITMAP families, the measured gas of a build (step 4).
 27. **The work model (§6.3).** The model has no per-purpose term, so the new list's price is charged on every
     bind-kind action: `freshPerBindFresh` +10 (one fresh slot on a first statement: the list's head, or its word 0),
     `rwPerBind` +10 (the head rewritten by a later author's first statement), `rwPerBindLater` +10 (the counter on a
@@ -1505,8 +1612,10 @@ until then: a full replay (case (e)).
 
 ### Step 4: the measured gas of a build (2026-11-26, branch `fable/2026-11-26-index-build-4`)
 
-29. **OPEN FINDING against the release: on amsterdam, generation 1's prefix quote is below a create-file recipe's
-    callback spend in a folder where the author already has files (0.969×).** Measured by
+29. **FIXED IN THIS RELEASE (the Glamsterdam floor price, tools/RELEASE.md item 39): on amsterdam, generation 1's
+    prefix quote was below a create-file recipe's callback spend in a folder where the author already has files
+    (0.969×); with `floorRewriteGas` 12,100 it is 1.259×.** The finding as step 4 measured it, then the after figures.
+    Measured by
     `test/integration/FloorReconcile.t.sol` (FloorBase's method on both profiles: cold, every Realm account cooled;
     spend = E − K − the final phase, split per leaf by mocking the callbacks of leaves ≥ i):
 
@@ -1569,9 +1678,31 @@ until then: a full replay (case (e)).
     7.56% maximum error, which is over its fitted rows). With the 15% headroom every shape is admitted, and no largest
     planned batch has to shrink. The planning rule already says the gas limit comes from `eth_estimateGas`, never from
     V; a consumer that sends max(E, V) as the gas limit on amsterdam fails every write by the whole state gas.
-    **Not fixed here** (measurement only): raising `floorRewriteGas` for Glamsterdam Realms (with the work model's
-    rewrite tenths re-checked) would make the quote honest in state B; it moves the deploy plan and the floor-plan
-    vectors, so it is a release change for James's queue.
+    **Fixed in this release.** A Glamsterdam Realm's `floorRewriteGas` is 12,100 (`tools/deploy-plan.mjs`
+    `GAS_SCHEDULES`, the one table; `KernelDeploy.s1Limits()` under the amsterdam profile; `profiles.amsterdam.floor
+    .limits` in `gas/model.json`); the work model's rewrite tenths are unchanged. After the fix (the same suite, the
+    regenerated floor-plan vectors; prague did not move):
+
+    | state | prague P / spend | amsterdam P / spend (was) |
+    |---|---:|---:|
+    | A, 1 recipe | 610,600 / 552,952 = 1.104 | 585,500 / 407,284 = 1.437 (1.106) |
+    | A, the planned batch (10 / 12 recipes) | 4,761,500 / 3,719,243 = 1.280 | 5,681,800 / 3,347,637 = 1.697 (1.256) |
+    | B, 1 recipe | 610,600 / 410,644 = 1.486 | 585,500 / 464,876 = **1.259** (0.969) |
+
+    | shape | prague: plan − least | amsterdam: plan + state gas − least (was) | exactly plan (+ state) |
+    |---|---:|---:|---|
+    | A, 10 / 12 recipes | +236,215 | +1,700,376 (+177,803) | admitted |
+    | A, 1 recipe | +45,393 | **+114,791** (−24,277) | admitted (was refused on amsterdam) |
+    | B, 10 / 12 recipes | +230,887 | +1,711,299 (+188,693) | admitted |
+    | B, 1 recipe | +41,524 | **+78,791** (−14,144) | admitted (was refused on amsterdam) |
+
+    So one recipe sent with exactly the plan and its state gas is now admitted on amsterdam in both states, and the
+    suite asserts P / spend ≥ 1 in all three states and admission at exactly the plan in state A on both schedules
+    (`FloorStates.t.sol` asserts P / spend ≥ 1 over every shape the floor claims). The sweep below the least is
+    unchanged in kind: every gas from 2,000 below the least is refused and nothing is admitted; on prague 40 of 40
+    refusals are the early check, on amsterdam 40 of 40 come after every check passed, in both states. The planning
+    rule still takes the gas limit from `eth_estimateGas`, never from V; the cost of the fix is in the batch sizes
+    (tools/RELEASE.md item 39, docs/TAG-NUMBERS.md) and in the over-reservation of later statements (item 41).
 30. **What changed.** No `src/` file and no release file. New: `test/index/BuildGas.t.sol` (the measurement suite of
     §6 and §8 test 11, with upper bands on every per-publication and per-leaf figure, about 25% over the measured
     values), `test/integration/FloorReconcile.t.sol` (item 29) and `tools/gas-plan-later.mjs` (the planning rule on the
@@ -1581,12 +1712,128 @@ until then: a full replay (case (e)).
     list costs 484,560 per file on prague (estimated 290k) and 582,381 on amsterdam in all gas (estimated 390k); kept
     from genesis, measured cold, is 51,167 / 149,608 (estimated 31k / 128k), so later against genesis is 9.5× / 3.9×
     (estimated 8× to 9× / 3×). A cold EX call pays a fixed share of about 0.49M to 0.52M (the carried check asks the live
-    index's `replayReadiness()`), which the estimate did not have; it is 3% of the price at 2^24 a call.
+    index's `replayReadiness()`), which the estimate did not have; it is 3% of the price at 2^24 a call. (Superseded by
+    the manifest copy: 0.25M to 0.29M, and the 1,000,000-file figures 477,732 / 575,683 a file, 9.3× / 3.8×; §6, item
+    39.)
 32. **Correction to item 27.** Step 3b observed "generation 1's own model quotes a create-file recipe at 0.97× its
     prefix spend on amsterdam and 1.10× on prague" in its floor suite. The amsterdam figure reproduces (0.969×, item
     29); on prague that suite measures 1.427× (`HeadAuthorsFloorGen1Test`: 610,600 / 427,634). The example generation's
     own model quotes it at 1.531× (prague) and 1.084× (amsterdam), and the example under generation 1's model at 1.301×
     and 0.906×.
-33. **What remains of the pre-freeze gate** (tools/RELEASE.md §15): the liveness gate (activation must not depend on the
-    live index answering, above); case (d), a digest spec rebuilt in a fresh store (§8 test 9); the gap that a
-    generation carrying every store never builds a new unit's fold hook (§3.6); and item 29's amsterdam rewrite price.
+33. **What remains of the pre-freeze gate** (tools/RELEASE.md §15; brought up to date at the final integration). Done
+    since step 4: the liveness gate and the fold-hook gap (Option A, items 34–38) and item 29's amsterdam rewrite price
+    (fixed in this release). Open: case (d), a digest spec rebuilt in a fresh store (§8 test 9); the above-cap
+    state-gas path on a client that implements EIP-8037 (anvil 1.8.3 accepts `--hardfork amsterdam` but applies prague
+    pricing); the work model's missing compute and per-purpose terms for later statements (item 41); until freeze any
+    replacement Type registry must keep existing Type rows (§4.3); an activation that keeps a live index which no
+    longer answers still reverts (§5.3; replacing the index is the recovery).
+
+### The liveness gate and Option A (2026-11-26, branch `fable/2026-11-26-liveness`)
+
+34. **Where the copy lives: measured, code chosen.** Both forms were measured with holders that do only what each adds
+    (`test/index/LivenessCost.t.sol`; `vm.lastFrameGas`, execution gas and, on amsterdam, state gas separately; the
+    holder with the copy minus the holder with an empty copy; cold reads with the holder and the data contract
+    cooled):
+
+    | copy | form | prague deploy | amsterdam deploy (execution + state) | cold read |
+    |---|---|---|---|---|
+    | 7,168 B (the release's generation 1: 18 families, 1 unit, 2 specs) | (a) storage | 4,934,297 | 2,706,893 + 21,444,480 | 492,700 |
+    | | (b) code | 1,534,724 | 458,752 + 11,152,170 | 7,278 (amsterdam 7,878) |
+    | 16,000 B (40 families, 6 units) | (a) storage | 10,893,586 | 6,054,682 + 47,001,600 | 1,097,614 |
+    | | (b) code | 3,442,663 | 1,024,000 + 24,665,130 | 12,996 (13,596) |
+    | 19,968 B (58 families, 1 unit) | (a) storage | 14,023,691 | 7,796,287 + 60,612,480 | 1,369,775 |
+    | | (b) code | 4,320,568 | 1,277,952 + 30,736,170 | 15,953 (16,553) |
+
+    The real `IndexReads` with the generation-1 copy against an empty one: +1,537,383 deployment gas on prague,
+    +271,177 execution + 11,152,170 state on amsterdam; `liveManifestCopy()` cold 7,374 (7,974). Code is 3.2× cheaper to
+    deploy on prague, 2.1× on amsterdam, and about 68× cheaper to read; every carried check of a generation that has
+    not folded live (readiness, `build`, a carried family's coverage) and the kernel's activation read the copy, so
+    storage would add about 0.5 M gas to each of them for generation 1's shape. Bytecode: the code holder's runtime is
+    179 B larger than the storage holder's (537 vs 358 B), which is the code form's extra in `IndexReads`; the kernel's
+    and `RealmIndex`'s code is the same for both forms. The code form's cost the storage form does not have is the size
+    limit: 24,575 B, so at most 72 families with one unit and two specs, or 67 with six units (§3.5's formula); a
+    plausible later generation of 40 lists and 6 units (16,000 B) fits with 8.5 KB to spare, so the limit does not
+    decide against it; a larger copy is refused at construction with its own code, `E_PIN(reads, 12)`, and would need
+    the copy split over several data contracts (not built). The data contract is not one of the contracts activation
+    scans (it scans the index, its reads contract, the build contract, the units' hooks and the stores), so its data
+    bytes never meet `CodeScan`; it starts with STOP, so it cannot execute, and it would fail a scan (its last two bytes
+    are not a solc trailer), which matters only if a later revision scans it. It is bound twice: the reads contract
+    records its address and codehash as immutables (covered by the reads codehash and so by the manifest hash), and the
+    kernel and the generation hash its content against the record. Nothing in the Core context creates it.
+35. **What changed in `src/`.** `IIndexReads.liveManifestCopy()` (new; the ABI snapshot changed); `IndexReads`: one
+    more constructor argument (the copy), `LIVE_COPY`, `LIVE_COPY_CODEHASH`, `_liveCopy`, `_liveManifest`,
+    `_unitsCarried`, `_builtHooks`, `builtHooks()`; `RealmIndex`: `BUILT_HOOKS`, `_hookRuns` private and reading it;
+    `LedgerControl._liveFamilies` reads the candidate's copy, reason 14; `IndexDeployer.Plan.liveManifest` (and the
+    reads arguments encoded as one struct: the ten arguments were too deep for via-IR in `run`); `Errors.sol`: reason 14,
+    `E_PIN` 12, reworded 12 and `E_BUILD(7)`. `tools/deploy-plan.mjs` passes an empty copy at genesis. Sizes: `LedgerControl`
+    17,830 → 18,042 B (`_checkIndex` +807, `_liveFamilies` −722, the inlined `_revisions` −215, `_activate` +68),
+    `RealmIndex` 18,692 → 18,834 B, `IndexReads` 11,556 → 12,431 B (12,012 after the liveness gate alone), all under
+    the 19,660 B budget.
+36. **Differences from the decided shape.** (a) The oversize copy has its own refusal, `E_PIN(reads, 12)`, at the
+    reads contract's construction. (b) Option A's match is fold hook, fold codehash AND `purposeFilter` (§3.6; widened
+    from address and codehash on review). (c) The opt-out is accepted only when the generation walks: a generation
+    that carries every store cannot build a hook, so its claim is refused. (d) `_hookRuns` is no longer an extension
+    point: the opt-out is the reads contract's `_builtHooks`, which the generation reads at construction.
+37. **Tests changed, and why.** `Carried.t.sol::testAnAbandonedCarriedStoreIsRefusedByTheGenerationAndTheKernel`: the
+    early re-pin's copy is stale, so the kernel says 14 (was 12), and the liar double is given a true copy so it still
+    meets 12. `HeadAuthorsBuild.t.sol::test_an_attached_third_store_refuses_the_build`: the replaced C's `build` is
+    refused 7 (stale copy; was a no-op build) and the kernel says 14 (was 13). `DroppedList.t.sol`: G's late build,
+    after G' went live, is refused 7 (stale copy; before, it folded the CREATE into X), so X keeps its entries.
+    `BuildWalkRefusals.t.sol::testFoldHooksRunInAnAllFreshBuildOnlyAndCannotReenterIt`: the heal build with a new hook
+    unit is refused 7 (Option A). `HeadAuthorsHooks.t.sol::test_a_re_pin_cannot_build_a_new_units_hook`: refused 7 / 8
+    (was activated). Every plan builder fills the copy (`test/harness/ManifestCopy.sol`); `HeadAuthorsReads` names its
+    new units through `_builtHooks`.
+38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule; the unchanged
+    index path's reason-2 read (§5.3, left as it is); a copy over 24,575 B (refused, not split).
+
+### The final integration (2026-11-26, branch `fable/2026-11-26-final`)
+
+The liveness gate and Option A (items 34–38), the reader list-coverage rule (tools/RELEASE.md item 38) and the
+Glamsterdam floor price with the ordinary-state composites (item 29, tools/RELEASE.md items 39–40) were each tested
+alone; merged on `main` at `726993e` (step 4), they were built, tested together on both schedules and regenerated once.
+
+39. **What had to change where the pieces met.** No `src/` file and no behavior: the three pieces did not conflict.
+    (a) Step 4's suites (`BuildGas.t.sol`, `FloorReconcile.t.sol`) already deployed their generations through the
+    harness the liveness branch had fixed (`HeadAuthorsBase`, `ManifestCopy.ofLive`), so they built and passed
+    unchanged. (b) `FloorReconcile.t.sol` measured the defect item 29 describes and asserted nothing about it; it now
+    asserts the fixed behavior (P / spend ≥ 1 in all three states, admission at exactly the plan in state A on both
+    schedules) and says how it relates to the floor branch's `FloorStates.t.sol`. (c) The floor-plan vectors, which
+    every amsterdam floor suite and `BuildGas`' heaviest-publication test read, were stale until the regeneration
+    (the floor branch had changed the prices, not the committed vectors). (d) `TopicSliceCapTest.setUp` failed on the
+    amsterdam profile with `E_GAS(0, 300000, 77774)` at `726993e` too: its 70 authors' tags drew state gas from the
+    test call's own gas (Foundry has no EIP-8037 reservoir) and ran out of the default 2^30. The amsterdam profile's
+    test gas limit is now 10^11 (`foundry.toml`, the `FOUNDRY_GAS_LIMIT` the measuring tools already passed; the gas
+    model suite's logs are identical under both limits). Two amsterdam-profile tests fail at `726993e` and here alike
+    and are not this release's: `CodeScan.t.sol::test_compiledTrailerIsTheSolcVersionMap` (solc's experimental
+    amsterdam target writes another trailer) and `Doubles.t.sol::test_writing_final_fails_only_under_STATICCALL`.
+    (e) Measured with the manifest copy: every marginal publication of a build is 22 gas dearer (EX and FR, both
+    schedules), and the fixed share of a cold EX call fell from 488,026–516,515 to 252,738–281,227 on prague and from
+    492,926–522,215 to 257,338–286,627 on amsterdam, because the carried check reads the copy from code instead of
+    calling the live index's `replayReadiness()` (§6.1; the 1,000,000-file build is 1.4% cheaper on prague and 1.2% in all gas on amsterdam, §6.2).
+    `BuildGas`' bands are on marginal figures, which moved by 22 gas, so none was changed. (f) The gas model states
+    amsterdam's execution-gas maximum error as its own field (tools/RELEASE.md item 40).
+40. **Two things the liveness gate settles, each in one sentence.** (a) A replaced generation that carries any store
+    can no longer build at all, because its manifest copy is stale, so only a generation whose every store is fresh can
+    still walk history late (§3.5, §5.3). (b) The claim "this generation builds that hook" (`IndexReads._builtHooks`,
+    `RealmIndex.BUILT_HOOKS`) counts only when the generation actually walks history, that is when it has a fresh
+    store; a generation that carries every store is refused for a new fold-hook unit whatever it claims (§3.6).
+41. **Accepted: the amsterdam batch sizes as they come out, and the over-reservation of later statements.** The work
+    model charges a later statement (a mask, release, restore or number change, `rwPerBindLater`) twelve "rewrites"
+    that are really a compute margin. At the Glamsterdam rewrite price of 12,100 (it was 5,000) that charge reserves
+    later statements 2.0 to 4.3 times their spend on Glamsterdam and shrinks their batches (tag masks, releases and
+    masks of masks 64 → 44, restores and number changes 64 → 41, folder re-binds 61 → 40; tools/RELEASE.md item 39).
+    The integration owner accepted these sizes for this release. The remedy is a compute term for later statements in
+    the reservation formula, to be decided together with QUESTIONS Q52 (a per-purpose term) as ONE change to the
+    formula. The formula lives in `LedgerIngress`, which has 396 B left under the 19,660 B budget (19,264 B in this
+    build), so that change needs a size plan before code.
+42. **An option not taken: a "per extra distinct kind" term in the gas model.** In both states the index callbacks
+    and the final phase spend about 20k to 40k more per extra distinct kind of action in a publication than the sum
+    of the per-action figures (each kind's first touch of its index state is cold; a k2 − k1 marginal sees it once,
+    inside `fixed`). A measured per-kind execution term, sized from the composites at about 24k to 28k on amsterdam,
+    would bring amsterdam's maximum execution-gas error from about 10.6% to about 3.7%; on prague, at about 20k to
+    24k, it helps the create file but makes the edits worse (about +7.5% to +8%). It is inferred from the composites'
+    residuals, not measured as a row of its own, and what it gives depends on what counts as a kind: recomputed from
+    this release's validation rows, 24k to 28k gives 4.2% to 7.4% on amsterdam depending on whether CREATE and the
+    tag-level terms count, and prague's edits +7.5% to +8.0% at 20k to 24k. A real term would need a row measured
+    independently of the composites it is judged against. Not pursued in this release; the model stays as it is,
+    with no re-fit and no new term (tools/RELEASE.md item 40).

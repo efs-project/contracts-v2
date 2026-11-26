@@ -487,16 +487,20 @@ contract IndexFloorTest is FloorBase {
     }
 
     /// 64 lone negatives on a one-word topic, the action limit, in one publication. On Glamsterdam (amsterdam profile)
-    /// the floor certifies them: V ≤ 2^24 − 21,000 − calldata, and they execute within it. On prague their execution
-    /// gas alone is over the cap at 64 (the planning rule splits them there), so the test asserts only that.
+    /// they execute within 2^24 − 21,000 − calldata, but since the floor prices a rewrite at its Glamsterdam 12,100
+    /// (docs/GAS-SCHEDULES.md; it was 5,000) the floor's requirement V for 64 is over that room (18.34M against
+    /// 16.60M), so the planning rule splits them (50 a publication, test/vectors/floor-plan.json). On prague their
+    /// execution gas alone is over the cap at 64 (the planning rule splits them there too).
     function test_sixty_four_lone_negatives_fit_the_cap() public {
         (Action[] memory a, bytes[] memory b) = _loneNegatives(64, 5);
         Need memory w = _need(a, b, address(0));
         _log("64 lone negatives (cap)", w);
         if (_amsterdam()) {
             assertLe(w.exec, w.room, "64 lone negatives execute within 2^24 execution gas");
-            assertLe(
-                w.visible, w.room, "the floor admits 64 lone negatives under 2^24 execution gas"
+            assertGt(
+                w.visible,
+                w.room,
+                "amsterdam: the floor's requirement for 64 lone negatives is over the cap (the rule splits them)"
             );
         } else {
             assertGt(

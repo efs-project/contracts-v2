@@ -1,0 +1,42 @@
+{
+  "schema": "efs/vectors/gas-schedules/1",
+  "note": "The per-schedule storage prices of tools/deploy-plan.mjs GAS_SCHEDULES (the single source; docs/GAS-SCHEDULES.md's table is read from the EIP text and measured by test/integration/FloorPrices.t.sol), mirrored here for the Solidity suites, which cannot read a JS module; tools/test/gas-schedules.test.mjs fails when this file, the docs table or the floor prices differ from GAS_SCHEDULES. Execution gas is what the GAS opcode sees and what EIP-7825's 2^24 cap counts; state gas is EIP-8037's second dimension (zero on prague). The Realm's floor prices are floorFreshGas = freshSlot.executionGas and floorRewriteGas = rewriteColdSlot.executionGas (LIMITS and GLAMSTERDAM_FLOOR in tools/deploy-plan.mjs; test/harness/KernelDeploy.sol s1Limits() is checked against this file by FloorPrices.t.sol).",
+  "schedules": {
+    "prague": {
+      "name": "Prague/Osaka (Fusaka)",
+      "freshSlot": {
+        "executionGas": 22100,
+        "stateGas": 0
+      },
+      "rewriteColdSlot": {
+        "executionGas": 5000
+      },
+      "codeDepositPerByte": {
+        "executionGas": 200,
+        "stateGas": 0
+      },
+      "newAccount": {
+        "executionGas": 25000,
+        "stateGas": 0
+      }
+    },
+    "amsterdam": {
+      "name": "Glamsterdam (EIP-8037 + EIP-8038, with EIP-7954 and EIP-7997)",
+      "freshSlot": {
+        "executionGas": 12100,
+        "stateGas": 97920
+      },
+      "rewriteColdSlot": {
+        "executionGas": 12100
+      },
+      "codeDepositPerByte": {
+        "executionGas": 0,
+        "stateGas": 1530
+      },
+      "newAccount": {
+        "executionGas": 0,
+        "stateGas": 183600
+      }
+    }
+  }
+}

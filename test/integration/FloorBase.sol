@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {Vm} from "forge-std/Vm.sol";
 import {FilesRecipesBase} from "./FilesRecipesBase.sol";
+import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {Action, ActionKind, Native} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
@@ -28,9 +29,9 @@ import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 abstract contract FloorBase is FilesRecipesBase {
     uint256 internal constant CAP = 1 << 24;
     uint256 internal constant TX_BASE = 21_000;
-    /// gas/model.json floor.dispatchOverhead and the Realm's kernel tail (KernelDeploy.s1Limits()).
+    /// gas/model.json floor.dispatchOverhead (tools/gas-model.mjs DISPATCH_OVERHEAD, a measured bound, not a schedule
+    /// price). The kernel tail is the Realm's own (`KernelDeploy.s1Limits().kernelTail`), never restated here.
     uint256 internal constant DISPATCH_OVERHEAD = 2_000;
-    uint256 internal constant KERNEL_TAIL = 20_000;
 
     struct Need {
         uint32 prefixFloor; // the kernel's prepare quote (`_kernelPrefixFloor`)
@@ -91,9 +92,9 @@ abstract contract FloorBase is FilesRecipesBase {
     }
 
     /// V of gas/model.json `floor.formula`.
-    function _visible(uint256 e, uint256 k, uint256 p_, uint256 f) internal pure returns (uint256) {
+    function _visible(uint256 e, uint256 k, uint256 p_, uint256 f) internal view returns (uint256) {
         uint256 prefix = k + _ceilDiv((_ceilDiv(p_ * 64, 63) + DISPATCH_OVERHEAD) * 64, 63);
-        return (prefix > e ? prefix : e) + _ceilDiv(f * 64, 63) + KERNEL_TAIL;
+        return (prefix > e ? prefix : e) + _ceilDiv(f * 64, 63) + KernelDeploy.s1Limits().kernelTail;
     }
 
     /// The prefix floor the kernel's own `prepare` quoted for this publication (with the author's real heads): the
