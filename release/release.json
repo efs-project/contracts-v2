@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "cb2282c6a6e3c6929b625bddfb61d13ffe2f2c5b",
-    "tree": "178c131614bcff510f38a7db5d9841b0a73dfd95",
-    "dirty": 6,
+    "commit": "f951dcd408be80749514f3743f77e5c7fca9f8b5",
+    "tree": "a445dc57b847e1bfcdba1be6122906131046c856",
+    "dirty": 9,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -74,7 +74,7 @@
     "src/types/DescriptorStore.sol": "0x92b8fc770ff2e862400e68e0594d7093b3e853dfde5301efb4359fb6f6aa2007",
     "src/index/IndexReplayDecoder.sol": "0xd8bdd97a966ee330a9805fa6857f11e457e8a1f9178a250586e34ac89703ec6b",
     "src/interfaces/internal/IIndexReplayDecoder.sol": "0x08790824d4d2146e734c9082f86e589bab52cf8b8fa22ba5355384e1dcb831cd",
-    "src/interfaces/Readers.sol": "0xd0e41cab8cf058d27880571209b6cc0747e2b8dbc94cd6e6a113ef88df0390ea",
+    "src/interfaces/Readers.sol": "0xe1e190e54dd67fbf8035cd4f5fba0ca83bb8fb27e10064cb62c99380bc4b2e3c",
     "src/periphery/ReaderDirectory.sol": "0xd7e3b95d454e2b8b055fdc4c78aca7f0fae274ad34a1b704249ae15ddd54db26",
     "src/interfaces/internal/IDescribedWrapper.sol": "0x861881859804802e1fca45354ac21e74dc4e457c1d3d25b4e38a48b7581ae8ee",
     "src/types/DescribedCodec.sol": "0xb4078c3eab2b76bcebf55d4ff4919f54bd56384c1791af932d5da0d84491396b",
@@ -120,10 +120,10 @@
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
     "src/readers/LensReader.sol": "0x7960c4a5738bc328794c46cf672fb1f055bd49093f67f8f73248c77655a2c5f4",
     "src/readers/FilesPageReader.sol": "0x3aa5bc336008139030d622493bb72e98561241c201168b71b830b2fe0e6b04a4",
-    "src/readers/TopicMineReader.sol": "0xba502edaacb1fd85ea76ad7ff6808076b1c031de745631e456ab19ef7d69452b",
+    "src/readers/TopicMineReader.sol": "0x28d80033b4a37dc1f6724cbf665ffcaca1ed6b2d070516fe3fc3e8a8e6fbb497",
     "src/readers/TopicReaderBase.sol": "0xd3fa2c61f440c9705836eb866805ff21bec5e22e5f94d6adb870ec412c844fe4",
-    "src/readers/TopicEveryoneReader.sol": "0x93f896dbbd9c7fd2a6d2001787ae1450064ee4083e351993dd6fef74a1142b55",
-    "src/readers/TopicLookupReader.sol": "0x1630d0fe8d6df6df6c74f1eb5d54eb3123d5d5e816e7701cc02829bc58812c72",
+    "src/readers/TopicEveryoneReader.sol": "0xbcf475b7e8b2531efb90104d622efd9daa33e7f0d1ab85b9e4f1d04bbafc6247",
+    "src/readers/TopicLookupReader.sol": "0xe4a071adb571b634ee3ffede6ee7c75b6809d2b082519cbf774b40077be14c23",
     "src/profiles/FilesSpanRule.sol": "0x5f255e216313efa9b4284aaf77d90cded8105d4b4e6c458d6bdfefbfdc2eeb2a",
     "src/interfaces/IKeysView.sol": "0x6d5d5cca58611904ccc27df0657757edf15f24ac7a9a19188f969d239f30b29f",
     "src/periphery/KeysView.sol": "0xdd6cdae729a297ac6859171a801c89b21af429bbf085a89970aac2a1825a48f7",
@@ -1572,180 +1572,180 @@
     },
     "TopicMineReader": {
       "source": "src/readers/TopicMineReader.sol",
-      "runtimeHash": "0xbc827b4d53302d2ac776cdc8f9f75045d6dc7d712df36788650ac1211588bc31",
-      "deployedBytecodeHash": "0x32761fc8879ba214ef1a5d9aa57d4b9569e9619c372526d8e8552b3ddfc10e09",
-      "initcodeHash": "0xb67675ba018ace88581be26e2aff2946bae99b1f35690feeaa7607b69d48841e",
-      "initcodeWithArgsHash": "0x037cd4165d8acd61811a5976acd310f7ef1a34780ab3d68c735f7ebace071ee8",
-      "address": "0xE3aD02747a62D9F266cc92bE29781eD1208AE170",
+      "runtimeHash": "0x44a5404ecbc8dec69940166fa2a6a06fecd4f5dde9524d6d442f98d407ef4501",
+      "deployedBytecodeHash": "0x2a7d824c8a0dc7a9499cf0d38e0f6104a950268c8ac0eb0876c1e2ef108b15cc",
+      "initcodeHash": "0x626c25ade8369cd629c37934435f9b4f70d0926842dd6ec769f61247c31d9f66",
+      "initcodeWithArgsHash": "0x1c8794ee66887bdcf8a3802c444c7416729daae0e24b870e3c1a7ba0223e651c",
+      "address": "0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21",
       "realmSpecific": true,
       "planStep": "R6",
       "immutables": [
         {
           "name": "LAYOUT",
           "offsets": [
-            1392,
-            10621
+            1413,
+            10668
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
-            1271,
-            2008,
-            2202,
-            6048,
-            9902,
-            13786
+            1292,
+            2036,
+            2230,
+            6078,
+            9949,
+            13833
           ]
         },
         {
           "name": "READS",
           "offsets": [
             143,
-            2270
+            2298
           ]
         },
         {
           "name": "VIEWS",
           "offsets": [
-            1203,
-            6103,
-            13749
+            1224,
+            6133,
+            13796
           ]
         }
       ],
       "sizes": {
-        "runtime": 15481,
-        "initcode": 15950,
-        "initcodeWithArgs": 16046
+        "runtime": 15528,
+        "initcode": 15997,
+        "initcodeWithArgs": 16093
       },
       "budget": null
     },
     "TopicEveryoneReader": {
       "source": "src/readers/TopicEveryoneReader.sol",
-      "runtimeHash": "0xa6a1e460b9ac39714b1abeeb8b04d03225f472805a3046082d64f88611c67493",
-      "deployedBytecodeHash": "0x2b0319c258486a22432715f806cb6eee6bbf5e951cbb20cfc960e62fd5422fe1",
-      "initcodeHash": "0x91b946853b3faeb226a588b1f8e4646ea0b0fa80818525105f07065a2b4ebf4a",
-      "initcodeWithArgsHash": "0x1c74cad026d22c585b00f8be67040472029566484612a5a9b94e818faef288b3",
-      "address": "0x9CD44A56127bA90264828969054B8fa118fB3A28",
+      "runtimeHash": "0x37aacb1e3bbabd48fa0dba5e14b0fa87bcf963f104d93063997e9ce97644fb1c",
+      "deployedBytecodeHash": "0x50347b7bdc521b6b3531efbf3ee7286a6274bfdc9f3811c31188ff71d23cbe5e",
+      "initcodeHash": "0x97302f51567898892e3bf427e301e2e3888de7b70840100945a1c46c35cc30c8",
+      "initcodeWithArgsHash": "0xfdee36c57434f6de75193ffc0180336e287cb2389be4f45baf81e59ec1fa1456",
+      "address": "0x1ee0AB9D6f342cE440BA1a16f53c6FF3C8f986D2",
       "realmSpecific": true,
       "planStep": "R7",
       "immutables": [
         {
           "name": "LAYOUT",
           "offsets": [
-            1880,
-            9018
+            1901,
+            9109
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
             453,
-            1759,
-            2847,
-            6478,
-            8270,
-            9860,
-            10458,
-            14994
+            1780,
+            2861,
+            6521,
+            8361,
+            9951,
+            10549,
+            15085
           ]
         },
         {
           "name": "READS",
           "offsets": [
-            1425,
-            2785
+            1446,
+            2799
           ]
         },
         {
           "name": "VIEWS",
           "offsets": [
-            1691,
-            6558,
-            10594,
-            12442,
-            14957
+            1712,
+            6601,
+            10685,
+            12533,
+            15048
           ]
         }
       ],
       "sizes": {
-        "runtime": 16605,
-        "initcode": 17103,
-        "initcodeWithArgs": 17199
+        "runtime": 16696,
+        "initcode": 17194,
+        "initcodeWithArgs": 17290
       },
       "budget": null
     },
     "TopicLookupReader": {
       "source": "src/readers/TopicLookupReader.sol",
-      "runtimeHash": "0x16f38dfcdc5ff1205ef56c35c45bf9150ecfd2ec2be9c9c3d3599f7d6a9d1abf",
-      "deployedBytecodeHash": "0x6691afb1b60e453f689ddf7929a17f19c31db0da1edde31db5f25fb171b66a4a",
-      "initcodeHash": "0x8742a577a69ab75949982a59c2fc810c94dea2a2821bc9124b1a52f60c7e96ab",
-      "initcodeWithArgsHash": "0xa19a8173565f391410f4a03d29318bfddea8ad0fdd01fa905c74548dfb48fe03",
-      "address": "0x037dA52bEBBD48851e2bc3C4eDedFcb5A840B484",
+      "runtimeHash": "0x97dbf7856af7439e5362425622c7e01d71d4c0e03b25b3fa28963ffb934a9ed2",
+      "deployedBytecodeHash": "0x8068237209320bb83f2b2b1580185d3a1064e8c818841e7fef6d6eaa44e25596",
+      "initcodeHash": "0x1e837f3a6d77f7b36c617b0ad7f5b37a01b97564d255ddf4b7028041b92530cd",
+      "initcodeWithArgsHash": "0x9844ff4b2e7a54aca17044d03bb746937711bf460efafac80528f7efbd337cf0",
+      "address": "0xC74BacA330C94774f332F918FbDca568AB5E119C",
       "realmSpecific": true,
       "planStep": "R8",
       "immutables": [
         {
           "name": "LAYOUT",
           "offsets": [
-            2880,
-            15961
+            2925,
+            16353
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
-            2610,
-            3610,
-            5923,
-            7849,
-            10282,
-            11474,
-            12733,
-            13786,
-            14476,
-            15229
+            2655,
+            3695,
+            6088,
+            8026,
+            10155,
+            11352,
+            12632,
+            13702,
+            14868,
+            15621
           ]
         },
         {
           "name": "READS",
           "offsets": [
-            723,
-            7917,
-            11976,
-            13173,
-            14417
+            724,
+            8094,
+            12019,
+            13082,
+            14809
           ]
         },
         {
           "name": "TOPIC_TYPE",
           "offsets": [
-            372,
-            11598,
-            12850,
-            14864
+            373,
+            11472,
+            12752,
+            15256
           ]
         },
         {
           "name": "VIEWS",
           "offsets": [
-            1985,
-            4310
+            2009,
+            4448
           ]
         },
         {
           "name": "WORD_TYPE",
           "offsets": [
-            314,
-            14758
+            315,
+            15150
           ]
         }
       ],
       "sizes": {
-        "runtime": 16558,
-        "initcode": 17140,
-        "initcodeWithArgs": 17300
+        "runtime": 16950,
+        "initcode": 17532,
+        "initcodeWithArgs": 17692
       },
       "budget": null
     },
@@ -2569,22 +2569,22 @@
         "runtimeCodehash": "0x149a571c99b2dbf8d972a1ba436f2cc3f9acc8fbaf539b3f689d54e49087f2c4"
       },
       "topicMine": {
-        "address": "0xE3aD02747a62D9F266cc92bE29781eD1208AE170",
+        "address": "0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21",
         "kind": "0x3439e3188028f62d9f43b2a2d841a095228b686ef5a40c481fa627709f5063ff",
         "kindLabel": "efs/reader/topic-mine/1",
-        "runtimeCodehash": "0x32761fc8879ba214ef1a5d9aa57d4b9569e9619c372526d8e8552b3ddfc10e09"
+        "runtimeCodehash": "0x2a7d824c8a0dc7a9499cf0d38e0f6104a950268c8ac0eb0876c1e2ef108b15cc"
       },
       "topicEveryone": {
-        "address": "0x9CD44A56127bA90264828969054B8fa118fB3A28",
+        "address": "0x1ee0AB9D6f342cE440BA1a16f53c6FF3C8f986D2",
         "kind": "0x68aaa9609069121630b7359eb69e483bfd5d3b3f0e5d64f89738946befda2e80",
         "kindLabel": "efs/reader/topic-everyone/1",
-        "runtimeCodehash": "0x2b0319c258486a22432715f806cb6eee6bbf5e951cbb20cfc960e62fd5422fe1"
+        "runtimeCodehash": "0x50347b7bdc521b6b3531efbf3ee7286a6274bfdc9f3811c31188ff71d23cbe5e"
       },
       "topicLookup": {
-        "address": "0x037dA52bEBBD48851e2bc3C4eDedFcb5A840B484",
+        "address": "0xC74BacA330C94774f332F918FbDca568AB5E119C",
         "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
         "kindLabel": "efs/reader/topic-lookup/1",
-        "runtimeCodehash": "0x6691afb1b60e453f689ddf7929a17f19c31db0da1edde31db5f25fb171b66a4a"
+        "runtimeCodehash": "0x8068237209320bb83f2b2b1580185d3a1064e8c818841e7fef6d6eaa44e25596"
       },
       "web3Gateway": {
         "address": "0xcA9eC410de151d86C3620EbBbc3Aa9DF0E822981",
@@ -2772,7 +2772,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x7022a22a156f1937f7be5940a1e2dd098a9aee66fecec5788397ff42fc9dd5bf",
+    "sha256": "0x4476e4b6c630eb8224cabc44bf806f3a518d55dc4bd82d720405919b3ba65377",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -3293,7 +3293,7 @@
             "everyoneBelow": 408
           },
           "maxRows": 150,
-          "limitEntries": 246
+          "limitEntries": 245
         },
         "amsterdam": {
           "pageTimesLens": {
