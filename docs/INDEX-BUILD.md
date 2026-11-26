@@ -1,11 +1,12 @@
 # Building a later index family from history: a proposal
 
-**Status: PROPOSAL, steps 1 and 2 of 4 implemented (step 1: 2026-11-26, branch `fable/2026-11-26-index-build-1`;
+**Status: PROPOSAL, steps 1 to 3 of 4 implemented (step 1: 2026-11-26, branch `fable/2026-11-26-index-build-1`;
 step 2: 2026-11-26, branch `fable/2026-11-26-index-build-2`; step 3a, the as-of rule of §4.3: 2026-11-26, branch
-`fable/2026-11-26-index-build-3a`).** It designs the step that design §10.1 and §10.6 defer
+`fable/2026-11-26-index-build-3a`; step 3b, a new list in a third store, as a test harness: 2026-11-26, branch
+`fable/2026-11-26-index-build-3b`).** It designs the step that design §10.1 and §10.6 defer
 ("a later generation builds its later families from history into its fresh stores before attachment") and that
 `tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the code", it means `main` at `899767e`, except in
-the paragraphs marked **Landed**, which describe the code after step 1, step 2 or step 3a (each says which). Where the
+the paragraphs marked **Landed**, which describe the code after step 1, step 2, step 3a or step 3b (each says which). Where the
 code and `docs/DESIGN.md` disagree, this document follows the code and says so (§1.4).
 
 The work is built in four steps. **Step 1 (landed):** a generation that carries stores becomes ready and can be
@@ -15,9 +16,9 @@ maxFacts)` is the budgeted walk of history into the generation's fresh stores (�
 of its fresh stores, so a generation-1-shaped generation can rebuild both stores (case (e)) or heal either one while
 carrying the other (§4.3); coverage reads apply the carried check (§3.5). **Step 3:** a generation with an extra fresh
 `PostingStore` and a new APPEND family (the `head-authors` example, §2.2), with the deployer plan it needs (§3.1) and
-the built-equals-live tests (§8). **Step 3a (landed):** the as-of rule of §4.3: a fold from history reads every
+the built-equals-live tests (§8); **landed as step 3b**, as a test harness (the list is an example, not product). **Step 3a (landed):** the as-of rule of §4.3: a fold from history reads every
 fact as of the admission it folds and takes no fact from a validator's law. **Step 4:** the measured gas of a build (§8 test 11). §10 lists where steps 1 and 2
-differ from this proposal, and step 3a's entry.
+differ from this proposal, and the entries of steps 3a and 3b.
 
 Figures are marked **measured** (with the file they come from) or **estimated** (with how). No figure here was
 measured for this document.
@@ -200,6 +201,17 @@ must name a created subject. It costs one read on a rare action, and it has the 
 change: before the first lasting deployment. It landed in this release as code 16: a first "not this" at HEAD must
 name a subject created strictly before it (`test/integration/HeadLaw.t.sol`).
 
+**Landed (step 3b), as an EXAMPLE, not product.** `head-authors`, kind 22 and the generation that keeps it are a test
+harness (`test/harness/HeadAuthors.sol`: `HeadAuthorsIndex`, `HeadAuthorsReads`, `ListIndexDeployer`); the product
+keeps no all-authors HEAD list (Q52, unchanged), and kind 22 is not reserved by anything in `src/`. The fold is the
+table above, in `HeadAuthorsIndex._foldMore`, on BIND, UNBIND and RELEASE effects at HEAD only, with the third store's
+carried bit (`CARRIED_THIRD = 4`) honored; it reads nothing but the effect, so it needs no as-of comparison, live or
+from history. The store is a fresh `PostingStore` with family set `[head-authors]` and `INITIAL_WRITER` = the
+generation, and the manifest declares the family there with `fromAdmission == 1`, universe 3 (SCOPE, as family 20),
+HEADS semantics. The trace is `test/index/HeadAuthorsBuild.t.sol::test_head_authors_trace`, live and built: end state
+count 2, live 2, last = Bob's first statement, entries [Alice's, Bob's], and the list reads the same through the
+generation's `postingHeadOf`/`postingSliceOf`, which route it to the third store.
+
 ### 2.3 (c) Add a BITMAP family
 
 Example: `roster` (kind 17), reserved in generation 1 as `NOT_MAINTAINED` with CURRENT_STATE semantics
@@ -268,6 +280,16 @@ nonce-predicted generation, then the reads contract, then the generation, and as
 genesis posting store and also create a fresh one". The proposal is an `IndexDeployer` whose plan carries a list
 of carried stores and a list of fresh stores (initcode, family set). A deployer is not lasting Realm state: it can
 be written when generation 2 is.
+
+**Landed (step 3b), in the test harness.** `ListIndexDeployer` (`test/harness/HeadAuthors.sol`) takes a LIST of
+stores, each carried (an address) or fresh (initcode and family set, created with `INITIAL_WRITER` = the
+nonce-predicted generation): slot 0 the posting store, slot 1 the bitmap store, every further slot an extra store,
+passed to the reads contract as `extra`. It creates the fresh stores in order, then the reads contract, then the
+generation, and asserts every prediction, as `IndexDeployer` does. The production `IndexDeployer` is unchanged: its
+one-slot-per-kind plan still expresses every generation-1-shaped generation, and the dropped-list test's generations
+(§5.3) use it. The generation is `RealmIndex` with its extension points overridden (§10 item 24); its reads contract is
+`IndexReads` with its extension points overridden (`_declare` for the extra family, `_postingOf` for per-family
+routing, `_carriedCheck` over every store).
 
 ### 3.2 The build entry point
 
@@ -447,6 +469,18 @@ kernel refuses the same candidate with reason 13, and `build` with `E_BUILD(2)`.
 (or prefix-COMPLETE inside a publication), and a generation that is still building is never asked: a tag reader cannot
 show a building generation's empty page as if it were an answer. The readers were not changed.
 
+**Landed (step 3b): per family across three stores.** `IndexReads._coverage` already judged each family by its own
+store (`_storeOf(family.store)`); with `_carriedCheck` overridden to cover every store (the same rule, store by store:
+on an empty Realm every store unwritten and `INITIAL_WRITER` 0 or the generation; with admissions, every family in a
+carried store declared by the live index in the same store from 1), the three-store generation answers per family:
+`head-authors` (fresh third store) PARTIAL (1, frontier) while behind and COMPLETE when caught up; generation 1's
+families (carried genesis stores) the same while the check passes, and PARTIAL (1, 0) when it fails
+(`test/index/HeadAuthorsBuild.t.sol::test_build_races_and_switches_on`,
+`::test_admissions_refuse_another_writers_third_store`). What the readers do with PARTIAL and UNKNOWN is pinned per
+view and per family by `test/readers/TopicPartialCoverage.t.sol` (§8): UNKNOWN is a refusal with no rows; PARTIAL is a
+PRESENT page with the faithful rows and its coverage stated (never COMPLETE, never `completeFromOrigin`), as
+`src/interfaces/Readers.sol` specifies; an empty list at PARTIAL is an empty PRESENT page that says PARTIAL.
+
 Why not trust the writers history instead? Because it cannot tell "complete" from "abandoned". Example: generation
 1 writes store S; generation 2 replays into fresh stores and goes live; S stops receiving writes; generation 3
 re-pins S. S's writers list is `[(gen1, 1, open)]`: contiguous, and missing everything since generation 2's
@@ -481,6 +515,48 @@ calls none. Step 3 owns "a new unit's fold hook is built" (it needs the unit to 
 generation to list its new units). `test/index/BuildWalkRefusals.t.sol::testFoldHooksRunInAnAllFreshBuildOnlyAndCannotReenterIt`.
 Design §10.6's tolerance rule says final hooks "re-validate a publication" during replay when the revision row names
 the same final codehash; the code never does (it follows this document, not the design).
+
+**Landed (step 3b): a new unit's fold hook is built.** `_foldPublication` now calls `_foldHooks` with the carried mask,
+and each unit's hook runs when `RealmIndex._hookRuns(unit, carried)` says so (default: mask 0, exactly as before).
+The example generation overrides it: a unit at or above `NEW_UNITS_FROM` (a number its reads contract records, so the
+manifest hash covers it) runs in every fold, live and from history; every unit below it only live or in an all-fresh
+fold. `test/index/HeadAuthorsHooks.t.sol`: generation 1 pins a recording fold hook A from genesis, the example
+generation keeps A and adds a recording hook B; the build calls A never and B once per effect of history, B's record
+then equals A's (same effects, same order, same refs), and after activation both advance together. No change to the
+`Unit` struct: "new" is the generation's own list, not a field. Cost: `RealmIndex` 13 B smaller (18,705 → 18,692);
+live, the loop now always runs and checks `_hookRuns` only for a unit that has a fold hook (none in generation 1).
+**A gap that remains:** a generation that carries every store walks nothing (`build` moves the frontier straight to
+`counts()`), so a unit it adds never sees the history (`::test_a_re_pin_cannot_build_a_new_units_hook`: the kernel
+activates it). A generation that adds a unit with a fold hook needing history must have a fresh store, so that it
+walks; neither the generation nor the kernel refuses the other shape. The hook's companion store is the hook's own
+business (the recording hooks keep their own storage); a store the generation names is fresh or carried as above.
+
+**The rule for a unit's fold hook and history (step 3b; a pre-freeze rule).** A fold hook runs in its own call, so it
+cannot use the generation's `_fromHistory()`, and `IIndexHook.fold(effect, refs, publication)` carries no flag. The
+code says who owns that interface: the kernel never calls a hook; it pins each unit's hook addresses by codehash, scans
+them as plain runtime and requires their `hotAbiId` to be supported (`LedgerControl._checkIndex`, `_pinUnit`), and it
+does NOT check `callbackProfile` (nor `physicalProfile`) at activation: the readiness tuple reports it and only the
+readers compare it (`TopicReaderBase`, `FilesPageReader` and `LensReader` answer UNSUPPORTED for any other value).
+`callbackProfile` (`efs/index-callback/4:ordered-prefix:static-final:effect-24:refs`) describes the ledger's calls to
+the index, not the index's calls to its hooks; the only caller of `IIndexHook.fold` is the generation's own code
+(`RealmIndex._foldHooks`). Today `IIndexHook.fold` is implemented by `FilesFinalValidator` (an acknowledgement, never
+called: its unit has no fold hook) and by test doubles only (`RealIndex.t.sol`, `Replay.t.sol`, `Carried.t.sol`,
+`BuildWalkRefusals.t.sol`, `BuildAsOf.t.sol`'s `PassiveTopicHook`, and this step's `RecordingFoldHook`). So:
+
+- **Rule (i), the rule now:** a fold hook must be exact on its own. It may use the effect, the refs, the publication
+  and ledger facts read as of the effect's admission, and it makes the first-admission comparison of §4.3 on every
+  call, live included, for any fact whose existence can begin after the admission (it pays that read live). A hook
+  that uses only the effect, as both recording hooks do, needs no comparison.
+- **Rule (ii) stays available without a kernel change:** a later generation may call its OWN new units through a
+  different hook interface (for example one with a "from history" argument), because the generation, not the kernel,
+  owns that call; such units are pinned by codehash like any other. It should not do that by changing
+  `CALLBACK_PROFILE`, which the readers compare and which names the ledger's callback shape, but by its own convention
+  for the units it lists as new. So nothing needs to go into `IIndexHook` before freeze.
+- **A hook can already tell live from history**, with no interface change: the generation calls fold hooks live inside
+  `onAdmission`, where `ILedgerHot.phase()` is APPLYING, and from history only inside `build` or `replayNextPublication`,
+  which both require IDLE. A hook that wants to skip the comparison live may read `phase()` (one call to the ledger) and
+  compare only when it is IDLE. This relies on the kernel's phase semantics and on the generation's gates; rule (i) is
+  the simple form and is what this document asks.
 
 ---
 
@@ -679,7 +755,12 @@ The other direction, as an example of what the rule forbids: a later family that
 this place now, as of admission k" cannot read family 20's yes-count, which holds the count at the frontier. It
 has to keep its own per-position count and rebuild it in the same walk.
 
-`head-authors` reads nothing but the effect, so it needs none of this.
+`head-authors` reads nothing but the effect, so it needs none of this (step 3b: `HeadAuthorsIndex._foldMore` reads no
+store and no ledger fact).
+
+**Fold hooks keep the as-of rule themselves (rule (i) of §3.6).** A hook is called from history with the same effects
+as live and cannot see the generation's `_fromHistory()`; it must therefore make the first-admission comparison on
+every call, live included, for any fact that can begin to exist after the effect's admission, or read only the effect.
 
 ### 4.4 The only other writer
 
@@ -701,6 +782,17 @@ immutables. If a live index ever did write a fresh store, the store would attach
 - its store is pinned by codehash, scanned plain, lists the family, and has contiguous writer ranges
   (`LedgerControl.sol:324-330`); a fresh store's list is `[(generation, 1, open)]`, or empty if history held no
   entry for it.
+
+**Landed (step 3b),** for a family in a third store: `head-authors` is declared with `fromAdmission == 1` in a store
+that lists it; it reads PARTIAL (1, frontier) while the build is behind and COMPLETE when caught up; activation of an
+unfinished build refuses with reason 8 while it reads PARTIAL; after activation it reads COMPLETE, and the first live
+HEAD statement appends to the third store and attaches it, keeping the one writer range `[(generation, 1, open)]` the
+build opened (`test/index/HeadAuthorsBuild.t.sol::test_build_races_and_switches_on`). The kernel's checks 9 to 13 run
+per family and per store, so the third store needed no kernel change: it is pinned, scanned, checked to list the
+family and for contiguous ranges, refused when another contract's (12: on an empty Realm because its `INITIAL_WRITER`
+is neither 0 nor the candidate, with admissions because the live index does not declare the family in it) or when
+attached under the candidate's name (13), and accepted when the live index is a three-store generation that declares
+the family in that very store (a re-pin of all three stores).
 
 ### 5.2 What `checkActivation` re-derives today
 
@@ -764,10 +856,17 @@ attach at their first live write and no admission has touched it yet. Who can wr
   generation can declare F in S again, because check 12 needs the live index to declare F in S from admission 1. A
   list the successor still keeps can never be written by G after the switch: any publication touching it was folded
   live first, which attached S. So dropping a list from a carried store is allowed and is not refused; forbidding it
-  would force a whole-history rebuild of the kept lists (§6.2) for an ordinary cost cut. This is argued from the
-  store and generation rules, not yet from a test; step 3 proves it with a generation that drops a list (the drop
-  activates; the replaced generation's late walk writes only the dropped list; declaring it again is refused 12;
-  the kept lists equal a twin Realm's), and a refusal is added only if that test finds a case. Shown today:
+  would force a whole-history rebuild of the kept lists (§6.2) for an ordinary cost cut. **Tested (step 3b),
+  `test/index/DroppedList.t.sol`, and every step behaved as claimed, so no kernel refusal is added:** G (example code:
+  generation 1's posting lists plus X, `subjects-created`, folded on CREATE only, in a fresh posting store T; the genesis
+  bitmap store carried) builds and is activated; before any admission reaches it, G' (generation 1's code) carrying T
+  and the bitmap store is built (check 12 passes: G declares each of G' s lists in T from 1) and activated; a
+  CREATE-only publication leaves T unattached and every generation-1 list in T unchanged (equal to a twin Realm that
+  ran generation 1 throughout); G's late `build` is allowed (G never folded live) and folds that CREATE, and the only
+  change in T is X's one new entry; a bind is folded live by G' and attaches T, after which G's `build` is refused 2
+  and the kernel refuses G 13; H (G's code declaring X in T again) is refused, `build` 7 and activation 12; after more
+  traffic every list G' keeps equals the twin's, key by key; X's entries are dead weight, UNKNOWN through G' and
+  readable only from the store. Shown before step 3b:
   `test/index/BuildWalkRefusals.t.sol::testAFreshStoreAttachedByALiveWriteRefusesTheBuild` (C builds, is activated,
   is replaced by D before any admission; C's `build` then folds nothing; D's first write attaches C's stores; C gets
   2 and the kernel 13).
@@ -987,6 +1086,45 @@ and `testAFreshStoreAttachedByALiveWriteRefusesTheBuild` (2, and the kernel's 13
 has (`testFoldHooksRunInAnAllFreshBuildOnlyAndCannotReenterIt`: fold hooks run in an all-fresh build exactly as in
 replay and in no build that heals one store); and a preview of test 11 (`test_heaviest_publications_build_in_one_call`,
 below). Tests 2, 9 and 10 need step 3 or a BITMAP family.
+
+**Landed (step 3b),** with the example generation of §2.2 (a test harness), on the default and the amsterdam
+profiles: test 1 for a new list (`test/index/HeadAuthorsBuild.t.sol::test_built_equals_live_every_family`: Realm B runs
+generation 1, then builds the example generation carrying both genesis stores and activates it; Realm L runs the
+example generation from genesis; every recorded key of every family in the three stores, heads and entries, scope
+heads, entries and live words, `head-authors` included, is equal, before and after more traffic; the HEAD history has
+a first bind, a re-bind, a second author's first bind, a third author's first mask (code 16 holds: the file exists), a
+mask and a release of BOUND heads, two restores (one over a first mask), a mask of a masked head and a release of a
+masked head, and the counters it moved are asserted); test 2 (`::test_head_authors_trace`, live and built); test 3 for
+three stores (`::testFuzz_interrupted_build_equals_one_build`, three configurations, and
+`::test_one_publication_per_call`); test 4 and test 8's frontier half for three stores
+(`::test_build_races_and_switches_on`); test 7/8's store half for the third store (`::test_empty_realm_refuses_another_writers_third_store`,
+`::test_admissions_refuse_another_writers_third_store`, `::test_a_third_store_the_live_index_never_named_is_refused`,
+`::test_an_attached_third_store_refuses_the_build`); test 12 (`test/index/HeadAuthorsHooks.t.sol`); the dropped-list
+test of §5.3 (`test/index/DroppedList.t.sol`); the example's work model against what its callbacks spend
+(`test/index/HeadAuthorsFloor.t.sol`, §10 item 27); and the readers under partial coverage
+(`test/readers/TopicPartialCoverage.t.sol`: every view of the three topic readers with each family it reads reported
+UNKNOWN and then PARTIAL by a wrapped index). **Not in step 3b:** test 9 (case (d), a digest spec), test 10 (BITMAP
+families) and test 11 (the measured gas of a build, step 4).
+
+**The readers under partial coverage (step 3b), per view.** A family is listed for a view when reporting it UNKNOWN
+or PARTIAL changes the view's answer; for every listed pair the answer is UNKNOWN, no rows and coverage UNKNOWN under
+UNKNOWN, and PRESENT with the faithful rows and coverage PARTIAL (never COMPLETE, never `completeFromOrigin`) under
+PARTIAL; no pair reverts:
+
+| view | families it needs |
+|---|---|
+| `mine` exact | live-scope (the scope list's bits; `position-authors` is read only as a shortcut that falls back to the heads) |
+| `mine` below | scope-below, live-scope |
+| `everyone` exact | place, position-authors |
+| `everyone` below | place, place-below, position-authors |
+| `byName` | position-authors |
+| `about` | role-places, position-authors |
+| `placeCount` exact / below | place / place-below |
+| `authorCount` | position-authors |
+| `entryCount` exact / below | live-scope / scope-below |
+| `wordPage`, `children` | place, place-below, reference-position |
+
+An empty list at PARTIAL is an empty PRESENT page that says PARTIAL (`::test_an_empty_list_at_partial_is_never_an_empty_complete_page`).
 
 **Test 11 preview (measured, one cold `build` call with nothing else pending; execution gas, which EIP-7825's cap
 bounds; amsterdam's state gas is drawn from a reservoir beyond it):**
@@ -1222,3 +1360,62 @@ until then: a full replay (case (e)).
     change with no effect on any other suite). (ii) `test/index/BuildAsOf.t.sol::test_the_live_fold_never_reads_the_first_admission`
     records the ledger's storage reads during a live first tag on Realm V and fails if the subject's cell word 1 is
     read; the same test shows a build of the same tag reads it exactly once. (iii) The gas model's live rows (item 22): only the three rows whose action reaches the walk moved by more than the ±12 of code placement, by +61.
+
+### Step 3b: a new list in a third store, as a test harness (2026-11-26, branch `fable/2026-11-26-index-build-3b`)
+
+24. **What changed in `src/`: extension points only.** `RealmIndex`: `_foldPublication` passes the carried mask to
+    `_foldHooks`, which runs a unit's fold hook when the new `_hookRuns(unit, carried)` (internal virtual, default
+    `carried == 0`, the old rule) says so; `RealmIndex` 18,705 B → 18,692 B (−13; budget 19,660 B). `IndexReads`: the
+    family table (`_families`, `_familyAt`) and `_declare` are internal, `_carriedCheck` is internal virtual, its helpers
+    `_unwritten`, `_storeOf` and `_declaresFromOne` are internal, and the two posting reads that took `POSTING` take
+    `_postingOf(pos)` (internal virtual, default `POSTING`); its runtime is byte-identical to `5dfb146` (11,556 B). No
+    other contract changed, the kernel included: checks 9 to 13 already run per family and per store. Live gas
+    (`gas/model.json` against `5dfb146`): every constant moved by −24 to +51 on both schedules (most per-action
+    constants +39 on prague), multi-leaf rows by up to +429; the only new live work is the carried mask passed to the
+    hook loop (generation 1 pins no fold hook, so `_hookRuns` is never reached live), the rest is code placement;
+    reads, tag terms, bounds and every floor-plan `k` are unchanged (tools/RELEASE.md item 34).
+25. **The harness** (`test/harness/HeadAuthors.sol`, all EXAMPLES): `HeadAuthorsReads` (`IndexReads` plus
+    `head-authors` in `extra[0]`, per-family routing, a three-store carried check, `NEW_UNITS_FROM`),
+    `HeadAuthorsIndex` (`RealmIndex` plus the §2.2 fold in `_foldMore`, a third carried bit `CARRIED_THIRD = 4` in
+    `_carried`/`_allCarried`, the third store in `_spoiled`, and `_hookRuns` for new units), `ListIndexDeployer` (a
+    plan that is a list of carried and fresh stores), `HeadAuthorsGenesis` (the example at a Realm's genesis, three
+    stores with `INITIAL_WRITER` 0), `CreatorsReads`/`CreatorsIndex` (§5.3's G and H: list X on CREATE in the posting
+    store, deployed by the production `IndexDeployer`) and `RecordingFoldHook`. `FilesFixture._gen1` and
+    `FloorBase._coolRealm` became `virtual` (test harness changes with no effect on any other suite).
+26. **Differences from the proposal.** (a) No new `E_BUILD` code and no change to `build`: the third store is one more
+    carried bit, fresh and carried are judged as for the two genesis stores. (b) The deployer is a harness, not product
+    (§3.1). (c) The new list's universe is 3 (SCOPE, as family 20), its semantics HEADS. (d) Fold hooks: built for new
+    units through `_hookRuns`, with the generation's own list of new units (`NEW_UNITS_FROM`) instead of a `Unit` field;
+    a generation that carries every store still builds no hook (§3.6, a gap). (e) The rule for a unit's fold hook and
+    history is now written (§3.6, rule (i)). (f) The kernel was not changed and needed no change for three stores.
+    (g) §8's reader test: the readers answer PARTIAL as a PRESENT page that states its coverage, as
+    `src/interfaces/Readers.sol` specifies, not as UNKNOWN; "UNKNOWN with no rows" holds for UNKNOWN only. No reader was
+    changed. (h) Not in this step: case (d), BITMAP families, the measured gas of a build (step 4).
+27. **The work model (§6.3).** The model has no per-purpose term, so the new list's price is charged on every
+    bind-kind action: `freshPerBindFresh` +10 (one fresh slot on a first statement: the list's head, or its word 0),
+    `rwPerBind` +10 (the head rewritten by a later author's first statement), `rwPerBindLater` +10 (the counter on a
+    restore, mask or release) and `computePerHookEffect` +27,000 (the CALL to the third store, cold on a publication's
+    first HEAD statement, and its writer rule), set from `test/index/HeadAuthorsFloor.t.sol`. How the floor uses it:
+    the ingress quotes `prefixFloor = compute + ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas` from the live
+    index's `workModel()` and the author's heads, and before each callback the kernel requires that much (less what the
+    callbacks have spent) to be available (design §10.4); a floor that is too low lets a callback run out of gas, so
+    honest means the quote covers the callbacks' prefix spend (E − K − the final phase). Measured, the list costs a
+    first HEAD statement 41.6k (a new list) to 46.5k (a second author's word 0) on prague, 37.8k warm in a batch, and
+    32.1k to 44.1k on amsterdam (execution gas; the fresh slot's state gas is outside the cap); a later statement 22.9k
+    to 23.1k (prague) and 30.5k to 30.6k (amsterdam); a re-bind 1.1k. Each increment of the model covers that on both
+    schedules (a first statement is quoted 54.1k / 44.1k more, a later one 37k more), and the example's prefix quote
+    covers its spend for every HEAD shape measured (create file, a second author's version, a third author's first
+    mask, a mask, a release and a restore of a head, an edit, 32 second-author first masks), with every V within a 2^24
+    transaction and, on prague, each publication admitted with exactly V. With generation 1's model the same example
+    under-quotes a create-file recipe on amsterdam (0.91×), so the list needs its own terms. The price of the
+    over-quote: every TAG and FOLDER statement is quoted 37k to 54k more than it spends for the list, which shrinks
+    the planning rule's largest batches of those shapes for such a generation (not measured here: `FloorPlan.t.sol`
+    plans generation 1). A real generation that adds a HEAD list would want a per-purpose term (a formula change in the
+    ingress, replaceable until freeze) or accept that. Observed in passing, not reconciled: in this suite's state
+    generation 1's own model quotes a create-file recipe at 0.97× its prefix spend on amsterdam and 1.10× on prague
+    (design §10.4 says about 1.1×).
+28. **Preview figures (warm, within one test transaction; step 4 measures cold).** The build of the example
+    generation over the history of test 1 (53 publications, 92 admissions; the walk folds only `head-authors`, the two
+    genesis stores are carried): prague 4,874,870 gas in 2 calls (budget 64), 91,978 per publication, 52,987 per leaf; amsterdam 5,415,290 gas in 2 calls, 102,175 per publication,
+    58,861 per leaf (Foundry's amsterdam profile draws state gas from the call, so these include it).
+
