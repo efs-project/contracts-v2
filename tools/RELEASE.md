@@ -1028,7 +1028,7 @@ One piece, the 2026-11-26 rulings on names applied to the two grammars. James: "
 are literally urlencode protected params. Nothing that breaks URLs. Nothing that breaks OS file paths." Later the same
 day he withdrew the operating-system test: "Don't refuse windows reserved names. I only care about URI safety and us
 having some delimiters we can use for URL syntax". Each refusal below says which test it answers to: URI meaning, a
-delimiter kept free, or link trimming. Items 49 to 52 (renumbered at the join if needed).
+delimiter kept free, or link trimming. Items 49 to 53 (renumbered at the join if needed).
 
 **49. The word rule changed and the word Type's id moved, although the label `topic-word/1` did not.** Read the
 unchanged label as an unchanged name only, never as an unchanged rule: the acceptance set is smaller, so the rule's
@@ -1056,12 +1056,11 @@ does now:
   after 4 and before 6; never return 5; keep everything else. `test/vectors/topics.json` (`grammar.wordAscii`,
   `grammar.wordCodes`, `grammar.wordCodeUnused`) carries every ASCII byte alone and inside a word, the trailing `.` and leading `-` cases (`-x`, `-`, `--x`, `-a.`, `a-`, `a-b`,
   `x-`) and `~` first, inside and last.
-- **The gateway is unchanged and stricter than the chain for one form.** A first path segment that starts `0x` and is
-  not `0x` and 40 hex digits (`/0xsplits`) is a word on chain (rule 6 refuses only the address shape) and a topic word
-  to the SDK, but `EfsWeb3Gateway` answers it 400 "malformed id" (it decides on the first two bytes). This release
-  pins that behavior in a test (`test_pinned_an_0x_word_first_segment_is_400_today`) and does not change it; serving
-  such a segment as a topic path (501, like every topic path today) costs 174 B of gateway runtime (15,391 → 15,565 B,
-  measured on a scratch build) and waits on the integration owner.
+- **The order of refusals, so `checkWord` returns the chain's FIRST refusal, not only its verdict:** 1 (length);
+  then, scanning the word from its first byte, the first of 2 (malformed UTF-8), 3 (an ASCII byte outside the 39) or
+  7 (a refused scalar); then 4 (ends with `.`), then 9 (starts with `-`), then 6 (`0x` and 40 hex). So `-a.` is 4,
+  `-A` is 3, `A.` is 3, and `0x` + 40 hex digits + `.` is 4. 4 and 6, and 9 and 6, can never both apply.
+  `topics.json` holds a vector for every pair of rules that can both apply (labels `pair …`), with the chain's code.
 
 **50. File names are `files-name/3`, which replaces `files-name/2`.** The label changed everywhere it names the live
 grammar (`FilesTypes`, `EfsFiles`, the readers, the validator, the tools, the gas model's row keys, the vectors); a
@@ -1092,7 +1091,17 @@ the new checks sit after the loop, so the ASCII path is still one bitmap test pe
 `FilesNameRule` runtime 1,683 → 1,627 B (the trailing `.` test replaced the `.`/`..` test, and `excluded` now reads
 the same bitmap for ASCII); `TopicWordRule` 1,897 → 1,934 B (the leading `-` test). Both are far inside the 19,660 B budget.
 
-**51. Vectors.** New `test/vectors/names.json` (`efs/vectors/names/1`, `tools/name-vectors.mjs`): 653 names, 398 admitted: every
+**51. The gateway follows the chain's rule 6.** A first path segment that starts `0x` and is not an address is a
+topic word, as on the chain and in the SDK's links. Only `0x` (or `0X`) followed by exactly 40 hex digits, of either
+case, is an address (a home), and that handling is unchanged byte for byte: `0X` + 40 hex is an address, never a word
+(the chain refuses it as a word anyway, code 3). Every other `0x` segment, `/0xsplits`, `0x` and 39, 41 or 64 hex
+digits, or 40 characters with one that is not hex, is a word, so the path is a topic path and answers what every topic
+path answers today, `501 topic paths are not served`, where it was `400 malformed id`. The gateway does not run the word
+rule: `/0Xabc` (not a valid word on chain) is 501 too, as is an unregistered word. `400 malformed id` remains for
+object and revision ids (`/~efs/o/…`, `/~efs/v/…`). `EfsWeb3Gateway` 15,391 → 15,565 B (4,095 B left); `EfsWeb3Content` unchanged
+(8,961 B; the path grammar is the gateway's alone).
+
+**52. Vectors.** New `test/vectors/names.json` (`efs/vectors/names/1`, `tools/name-vectors.mjs`): 653 names, 398 admitted: every
 ASCII byte 0x00 to 0x7f alone and at the start, middle and end of a name (512 rows), the examples of the rulings, the
 trailing `.` cases, Windows device names as admitted names, the `~efs` prefix, malformed UTF-8 and the non-ASCII
 refusals and boundaries of `files-name/2`'s tests, lengths 0, 1, 255 and 256, and the 50 naming-experiment vectors of
@@ -1104,8 +1113,8 @@ admitted, the record id for this release's `files-name/3` Type id. `test/vectors
 `release.json` `vectors` beside the others), `node tools/name-vectors.mjs --check 1` compares the name file alone, and
 `test/profiles/NameVectors.t.sol` and `TopicVectors.t.sol` assert every row against the rules.
 
-**52. Identities** (against `6d11858`; the join regenerates once more). **Moved:** the release digest
-(`0x36d2b489…fc57`, was `0xc4935467…71e4`), the plan hash (`0x53847b07…97d8`), the execution set (`0xa2ddbac0…2f2f`),
+**53. Identities** (against `6d11858`; the join regenerates once more). **Moved:** the release digest
+(`0xe5be2c42…c83c`, was `0xc4935467…71e4`), the plan hash (`0x6f7b4942…5083`), the execution set (`0xa2ddbac0…2f2f`),
 the index obligations (`0x75933384…b555`) and manifest hash (`0xc9458a9b…4999`: the manifest names the validator unit,
 whose address moved), the Type ids of `files-name/3` (`0x20665824…8c8d`, was `files-name/2` `0x2b4d22da…c27a`),
 `topic-word/1` (`0xe7429381…3859`, was `0xadf365a3…`) and `topic/1` (`0x275a99cc…bfde`, was `0x4ea9b8b2…`; its rule
@@ -1113,7 +1122,8 @@ names the word Type), so every name record id, word page id and topic id; the ru
 (`0xd73a9ee2…fd17` → `0x80c8f4aa…9308`) and `TopicWordRule` (`0x29442a0e…dfd5` → `0xee656292…edac`) and their
 instances; the addresses of `TopicRule` (same code, a new word Type id in its initcode) and `FilesFinalValidator`
 (constructor Type ids); the code and address of `RealmIndex`, `IndexReads`, `FilesPageReader`, `TopicLookupReader` and
-`EfsWeb3Gateway` (each embeds a moved Type id or address); `release/errors.json` (`E_TOPIC_REFUSED`'s list of codes);
+`EfsWeb3Gateway` (each embeds a moved Type id or address; the gateway's code also changed with item 51, now at
+`0x386F52cC…5f10`); `release/errors.json` (`E_TOPIC_REFUSED`'s list of codes);
 `gas/model.json` (the `files-name/3` row keys; fitted constants move by at most 122 gas, `publishNew` of
 `topic-word/1` on prague; the four maximum errors are unchanged: 11.16%, 9.69%, 12.05%, 10.65%); in `artifacts/` only
 `FilesNameRule.json` and `TopicWordRule.json`; `test/vectors/topics.json`, `test/vectors/floor-plan.json` and the new

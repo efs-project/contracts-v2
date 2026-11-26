@@ -1587,7 +1587,8 @@ words, paths and labels from events alone. The flag is inside the descriptor, so
   §10.4 and `gas/model.json`, and the measured costs in `docs/TAG-NUMBERS.md`. The index keeps the topic roll-ups only
   beside this validator (built for the same two topic Types), so it never has to check that a topic was registered.
 - **Reading (step 4).** The topic readers, the denial rule, repeats and call sizes are §11; their interfaces §5.13; the
-  gateway's link forms (a home `/0x<40 hex>/…`, any folder by id `/~efs/o/<folder id>/…`, a file by id
+  gateway's link forms (a home `/0x<40 hex>/…`, and only that `0x` shape: any other first segment starting `0x` is a
+  word, as on the chain's rule 6, any folder by id `/~efs/o/<folder id>/…`, a file by id
   `/~efs/o/<file subject id>` under its creator's lens, a revision link `/~efs/v/<revision record id>` with no lens,
   a plain word a topic path it does not serve; the id of any other existing object is `501` not served, never `404`,
   which is kept for an id that names nothing) are docs/LARGE-FILES.md "`web3://`". The gateway is two immutable

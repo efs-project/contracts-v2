@@ -160,12 +160,12 @@ path segment decides the kind of path.
 
 | First segment | Path | Meaning | Default lens |
 |---|---|---|---|
-| `0x` + 40 hex | `/0x<address>[/<name>…][/]` | that address's **home** (its place, `bytes32(uint256(uint160(address)))`, design §12.5) | the address's own author identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's contract principal of a contract (a Safe's home shows the Safe's own entries) |
+| `0x` (or `0X`) + exactly 40 hex digits, either case | `/0x<address>[/<name>…][/]` | that address's **home** (its place, `bytes32(uint256(uint160(address)))`, design §12.5) | the address's own author identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's contract principal of a contract (a Safe's home shows the Safe's own entries) |
 | `~efs` | `/~efs/o/<folder id>[/<name>…][/]` | an **object link** to a folder (`0x` + 64 hex, a `files-directory/1` record id), the Realm root included, then the names below it (a path link) | the folder's creator (the directory record's body word 0, `abi.encode(creator, salt)`) |
 | `~efs` | `/~efs/o/<file id>[/]` | an **object link** to a file (`0x` + 64 hex, its created subject id): the file's current HEAD under the lens, served exactly as a named file is; a name after it is `404 not found: file used as a folder` | the file's creator: the principal of the publication that created the subject (`LedgerReads.subjectInfo`) |
 | `~efs` | `/~efs/v/<revision id>[/]` | a **revision link**: exactly that `files-root/1` or `files-child/1` record's bytes, whether or not it is anyone's HEAD | none: `lens` is ignored |
 | any other `~…` | | the system's: `400 unknown system path` (also every other `~efs/…` form) | |
-| anything else | `/<word>/…` | a **topic** path: `501 topic paths are not served` (this gateway serves none yet); a folder is never served there, so a topic link can never mean a folder | |
+| anything else, any other segment starting `0x` included (`0xsplits`, `0x` and 39, 41 or 64 hex digits) | `/<word>/…` | a **topic** path: `501 topic paths are not served` (this gateway serves none yet); a folder is never served there, so a topic link can never mean a folder. Only `0x` and exactly 40 hex digits is an address, as on the chain (`topic-word/1` rule 6) and in the SDK's links; the gateway runs no word rule, so a segment the chain refuses as a word (`0Xabc`) is answered the same | |
 
 Query: `?lens=<principal>,<principal>…` replaces the default lens with exactly the listed principals (64 at most), so
 another author's entry is served only when the lens names that author (`?lens=<them>,<owner>` puts them first). A
@@ -182,8 +182,8 @@ An object link's id is routed by what it is: a `files-directory/1` record is a f
 and an id that is a record of any other Type (a file revision, a name, a descriptor) is `501 object not served`:
 object links are the default way to share, so an existing thing's id is never answered as absent. A revision link to
 an existing record that is not a revision, or to a created subject, is `501 object not served` too. Only an id that is
-neither a record nor a created subject is `404 not found`; neither link is ever an empty listing. A malformed address
-or id is `400 malformed id`; a revision link without its id or with a segment after it is `400 malformed revision
+neither a record nor a created subject is `404 not found`; neither link is ever an empty listing. A malformed object
+or revision id is `400 malformed id` (a first segment that is not an address is a word, never a malformed id); a revision link without its id or with a segment after it is `400 malformed revision
 link` (the SDK's `bad-id`). A home itself carries `x-efs-home: 0x<40 hex>` (lowercase) instead of `x-efs-record`: a
 home is an address, never a record; a folder (by id or below a home) carries `x-efs-record`. A bare `/~efs/o/<folder
 id>` answers the directory itself, as a home's own path does. A file served by an object link or a revision link has
