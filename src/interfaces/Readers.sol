@@ -224,7 +224,10 @@ interface IReaderDirectory {
 /// promised: `everyone` decides from the `position-authors` counters, and nothing defines what a partly covered list's
 /// counters hold. A partly covered list being useful (newest pages while old history is built) would be a new reader
 /// contract, designed with that feature, with a list-coverage field of its own that survives paging. On a Realm whose
-/// live index is complete (every live index is) the rule changes nothing.
+/// live index is complete (every live index is) the rule changes nothing. One order is fixed the other way: on a
+/// resumed page the continuation's cursor is checked against each list's count before that list's coverage, so a
+/// list that is not COMPLETE and reports a count below the cursor answers INVALID, not UNKNOWN; only a forged
+/// continuation reaches it (a list's count never falls, and a continuation is bound to the basis it was minted under).
 /// A page's work is bounded by the list entries it reads (`limit`, 0 = only the gas reserve);
 /// the paged views `mine` and `everyone` also take `maxRows` (0 = no cap), and stop at whichever bound comes first.
 /// Repeats, hidden and unaffirmed entries return nothing, so a page may hold fewer rows than `limit`, or none, while

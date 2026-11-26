@@ -36,6 +36,10 @@ import {IIndexReads} from "../../src/interfaces/IIndexReads.sol";
 contract TopicPartialCoverageTest is TopicReadersBase {
     uint8 internal constant VIEWS = 13;
     uint8 internal constant M_SET_WORD = 4;
+    uint8 internal constant M_UNDECLARED = 11;
+    uint8 internal constant V_ABOUT = 5;
+    uint8 internal constant V_EVERYONE_EXACT = 2;
+    uint8 internal constant FAM_POSITION_AUTHORS = 3;
     uint8 internal constant V_MINE_BELOW = 1;
     uint8 internal constant V_EVERYONE_BELOW = 3;
     uint8 internal constant V_BY_NAME = 4;
@@ -249,6 +253,15 @@ contract TopicPartialCoverageTest is TopicReadersBase {
         fi.setFault(IIndexReads.postingSliceOf.selector, f);
     }
 
+    /// The reply shape of a family the index does not declare (`FaultyReads.UNDECLARED`, mirroring `IndexReads`):
+    /// coverage UNKNOWN with zero counts and an empty slice, not a faithful head relabelled.
+    function _armUndeclared(bytes32 family) internal {
+        FaultyReads.Fault memory f = FaultyReads.Fault(M_UNDECLARED, 0, true, family, 0);
+        fi.setFault(IIndexReads.coverage.selector, f);
+        fi.setFault(IIndexReads.postingHeadOf.selector, f);
+        fi.setFault(IIndexReads.postingSliceOf.selector, f);
+    }
+
     function _disarm() internal {
         fi.clear(IIndexReads.coverage.selector);
         fi.clear(IIndexReads.postingHeadOf.selector);
@@ -321,6 +334,44 @@ contract TopicPartialCoverageTest is TopicReadersBase {
                 assertTrue(_same(u, q), string.concat(what, ": PARTIAL answers as UNKNOWN does"));
             }
             assertEq(needed, _needs(v), string.concat(_viewName(v), ": the families it needs"));
+        }
+    }
+
+    /// The whole needs matrix again, in the reply shape a real undeclared family has (`IndexReads`: head
+    /// `(UNKNOWN, 0, 0, 0, false)`, an empty slice, coverage `(UNKNOWN, 0, 0, phase)`): every view against every list
+    /// it needs refuses as data (status UNKNOWN, no rows, no counts, `frontier` 0, no continuation), never a revert,
+    /// and answers exactly as the relabelled UNKNOWN does; a list it does not need changes nothing.
+    function test_every_view_refuses_a_needed_list_the_index_does_not_declare() public {
+        for (uint8 v; v < VIEWS; ++v) {
+            Outcome memory base = _run(v);
+            assertFalse(base.reverted, string.concat(_viewName(v), ": faithful read"));
+            uint256 needed;
+            for (uint256 j; j < fams.length; ++j) {
+                string memory what = string.concat(_viewName(v), " / ", famNames[j], " undeclared");
+                _armUndeclared(fams[j]);
+                Outcome memory d = _run(v);
+                _arm(fams[j], Coverage.UNKNOWN);
+                Outcome memory u = _run(v);
+                _disarm();
+                emit log_named_string(what, _word(d));
+                if (_same(d, base)) continue;
+                needed |= 1 << j;
+                _refused(d, what);
+                assertTrue(_same(d, u), string.concat(what, ": answers as UNKNOWN does"));
+            }
+            assertEq(needed, _needs(v), string.concat(_viewName(v), ": the families it needs"));
+        }
+    }
+
+    /// By name: `position-authors` undeclared under `about` (the case that reverted while `about` checked the count
+    /// before the coverage) and under `everyone`, exact and below.
+    function test_position_authors_undeclared_under_about_and_everyone_refuses() public {
+        uint8[3] memory vs = [V_ABOUT, V_EVERYONE_EXACT, V_EVERYONE_BELOW];
+        for (uint256 i; i < vs.length; ++i) {
+            _armUndeclared(fams[FAM_POSITION_AUTHORS]);
+            Outcome memory d = _run(vs[i]);
+            _disarm();
+            _refused(d, string.concat(_viewName(vs[i]), " / position-authors undeclared"));
         }
     }
 

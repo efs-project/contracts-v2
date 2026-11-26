@@ -2,6 +2,8 @@
 pragma solidity 0.8.37;
 
 import {ILedgerHot} from "../../../src/interfaces/ILedgerHot.sol";
+import {IIndexReads} from "../../../src/interfaces/IIndexReads.sol";
+import {Coverage} from "../../../src/interfaces/Results.sol";
 
 /// @notice A read wrapper over a real contract (normally a ledger proxy) that forwards every read faithfully
 ///         until a fault is armed for a selector, then corrupts that selector's reply (design §2.2 S13, §16
@@ -28,10 +30,19 @@ import {ILedgerHot} from "../../../src/interfaces/ILedgerHot.sol";
 ///      | FUTURE_ADMISSION | word `word` := `counts().admissions` of `basis` + `value`       | 9, 11, 13         |
 ///      | EXHAUST          | consumes all forwarded gas (`INVALID`), empty returndata        | (new)             |
 ///      | EMPTY            | succeeds with zero bytes                                        | (new)             |
+///      | UNDECLARED       | `IndexReads`' own reply for a family it does not declare (below) | (new)             |
 ///
 ///      A fault can be filtered to calls whose first argument word equals `arg0` (the prototype's
 ///      `record(target)` pattern); other calls of that selector stay faithful. A real revert is bubbled
-///      unchanged in every mode but STALE, REVERT, EXHAUST and EMPTY, which never call the target.
+///      unchanged in every mode but STALE, REVERT, EXHAUST, EMPTY and UNDECLARED, which never call the target.
+///
+///      UNDECLARED mirrors `IndexReads` exactly for a family id it does not declare (`_familyAt[family] == 0`), for the
+///      three family reads whose first argument is the family id: `postingHeadOf` → `(UNKNOWN, 0, 0, 0, false)`,
+///      `postingSliceOf` → `(UNKNOWN, [], false)` and `coverage` → `IndexReads._coverage`'s `(UNKNOWN, 0, 0, phase)`
+///      with the ledger's (`basis`) current phase. Filter it by `arg0` = the family id. Unlike SET_WORD, which relabels
+///      a faithful head, this is the reply shape a real undeclared family has: zero counts and an empty slice. The
+///      bitmap store's scope reads do not go through the index, so an index that does not declare `live-scope` leaves
+///      them as the store answers them (the double is not put in front of the store for this).
 contract FaultyReads {
     uint8 public constant NONE = 0;
     uint8 public constant REVERT = 1;
@@ -44,6 +55,7 @@ contract FaultyReads {
     uint8 public constant FUTURE_ADMISSION = 8;
     uint8 public constant EXHAUST = 9;
     uint8 public constant EMPTY = 10;
+    uint8 public constant UNDECLARED = 11;
 
     struct Fault {
         uint8 mode;
@@ -55,6 +67,7 @@ contract FaultyReads {
 
     error FaultyNoCapture(bytes4 selector, bytes32 queryHash);
     error FaultyWord(bytes4 selector, uint256 word, uint256 replyLength);
+    error FaultyUndeclared(bytes4 selector);
 
     address public immutable real;
     /// The ledger whose `counts()` defines "future" for FUTURE_ADMISSION (initially `real`).
@@ -130,7 +143,9 @@ contract FaultyReads {
             }
         }
         bytes memory reply;
-        if (mode == STALE) {
+        if (mode == UNDECLARED) {
+            reply = _undeclared(); // `IndexReads`' own reply for an undeclared family; the target is not called
+        } else if (mode == STALE) {
             bytes32 q = keccak256(msg.data);
             if (!_captured[q]) revert FaultyNoCapture(msg.sig, q);
             reply = _stale[q];
@@ -163,6 +178,21 @@ contract FaultyReads {
         assembly ("memory-safe") {
             return(add(reply, 0x20), mload(reply))
         }
+    }
+
+    /// `IndexReads`' reply to `msg.sig` for a family it does not declare.
+    function _undeclared() private view returns (bytes memory) {
+        if (msg.sig == IIndexReads.postingHeadOf.selector) {
+            return abi.encode(Coverage.UNKNOWN, uint64(0), uint64(0), uint64(0), false);
+        }
+        if (msg.sig == IIndexReads.postingSliceOf.selector) {
+            return abi.encode(Coverage.UNKNOWN, new uint64[](0), false);
+        }
+        if (msg.sig == IIndexReads.coverage.selector) {
+            (uint8 phase,,,) = ILedgerHot(basis).phase();
+            return abi.encode(Coverage.UNKNOWN, uint64(0), uint64(0), phase);
+        }
+        revert FaultyUndeclared(msg.sig);
     }
 
     function _arg0() private pure returns (bytes32 a) {
