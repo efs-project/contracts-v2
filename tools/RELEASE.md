@@ -194,12 +194,22 @@ rule, never from `indexFloor`.
   (reviewed 2026-11-25), built in four steps. **Done (step 1, item 23):** a generation that carries every store it
   names (a re-pin, for example generation 1's code with a fixed hook) can be built and activated on a Realm with
   history, and the kernel's two readiness checks of carried and fresh stores (`E_INDEX_NOT_READY` 12 and 13) are in
-  `LedgerControl`. **Not done:** the walk of history into a generation's fresh stores (step 2; such a generation's
-  `build` refuses with `E_BUILD(4)`), a generation that carries some stores and builds a new family into a fresh one,
-  with its deployer plan and the built-equals-live tests that prove the three counters (step 3), and the measured
-  cost of a build (step 4). Until steps 2 and 3 land, "a later generation can add this list" (for example the
-  all-authors list on a file's versions, QUESTIONS Q52) is not yet true. A build walks the whole history, so a later
-  list has a price (its §6.2).
+  `LedgerControl`. **Done (step 2, item 26):** the budgeted walk of history into a generation's fresh stores, for
+  generation 1's families: a generation can rebuild both stores (the heal path, case (e)) or rebuild either store
+  while carrying the other, and the rebuilt stores, all three counters among them, equal the live ones
+  (`test/index/BuildWalk.t.sol`). **Not done:** a generation that carries the genesis stores and builds a NEW family
+  into an extra fresh store, with its deployer plan, its reads contract's per-family store routing and the
+  built-equals-live tests for that family (step 3), and the measured cost of a build (step 4; step 2's preview: every
+  admitted publication shape builds in one call under 2^24 on both schedules, so leaf-granular resume is not needed).
+  Until step 3 lands, "a later generation can add this list" (for example the all-authors list on a file's versions,
+  QUESTIONS Q52) is not yet true. A build walks the whole history, so a later list has a price (its §6.2).
+- **Activation must not depend on the live index answering** (docs/INDEX-BUILD.md §10, new with step 2). The kernel's
+  check 12 and the generation's carried check read the live index's `replayReadiness().families` whenever the
+  candidate carries a store. If that read reverts, the kernel's activation reverts with the live index's own error and
+  the generation's check fails, so a broken live index can be replaced only by a full replay into fresh stores. The
+  list is static (the live index's manifest, whose hash the revision row records), so the kernel could check a copy
+  the candidate carries against the recorded `indexManifestHash` instead of calling the live index; not built. Until
+  then, the recovery route is a full replay.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
   QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.

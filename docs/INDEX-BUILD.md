@@ -1,18 +1,21 @@
 # Building a later index family from history: a proposal
 
-**Status: PROPOSAL, step 1 of 4 implemented (2026-11-26, branch `fable/2026-11-26-index-build-1`).** It designs
-the step that design §10.1 and §10.6 defer ("a later generation builds its later families from history into its
-fresh stores before attachment") and that `tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the
-code", it means `main` at `899767e`, except in the paragraphs marked **Landed**, which describe the code after step 1.
-Where the code and `docs/DESIGN.md` disagree, this document follows the code and says so (§1.4).
+**Status: PROPOSAL, steps 1 and 2 of 4 implemented (step 1: 2026-11-26, branch `fable/2026-11-26-index-build-1`;
+step 2: 2026-11-26, branch `fable/2026-11-26-index-build-2`).** It designs the step that design §10.1 and §10.6 defer
+("a later generation builds its later families from history into its fresh stores before attachment") and that
+`tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the code", it means `main` at `899767e`, except in
+the paragraphs marked **Landed**, which describe the code after step 1 or step 2 (each says which). Where the code and
+`docs/DESIGN.md` disagree, this document follows the code and says so (§1.4).
 
 The work is built in four steps. **Step 1 (landed):** a generation that carries stores becomes ready and can be
 activated on a Realm with admissions, and one that carries an abandoned store cannot: the carried check (§3.5), the
-no-fresh-store half of `build` (§3.2, §3.4) and the two kernel checks of §5.3. **Step 2:** `build(0, maxFacts)`
-becomes the budgeted walk of history into the generation's fresh stores (§3.2, §3.3). **Step 3:** a generation with
-an extra fresh `PostingStore` and a new APPEND family (the `head-authors` example, §2.2), with the deployer plan it
-needs (§3.1) and the built-equals-live tests (§8). **Step 4:** the measured gas of a build (§8 test 11). §10 lists
-where step 1 differs from this proposal.
+no-fresh-store half of `build` (§3.2, §3.4) and the two kernel checks of §5.3. **Step 2 (landed):** `build(0,
+maxFacts)` is the budgeted walk of history into the generation's fresh stores (§3.2–3.4), folding only the families
+of its fresh stores, so a generation-1-shaped generation can rebuild both stores (case (e)) or heal either one while
+carrying the other (§4.3); coverage reads apply the carried check (§3.5). **Step 3:** a generation with an extra fresh
+`PostingStore` and a new APPEND family (the `head-authors` example, §2.2), with the deployer plan it needs (§3.1) and
+the built-equals-live tests (§8). **Step 4:** the measured gas of a build (§8 test 11). §10 lists where steps 1 and 2
+differ from this proposal.
 
 Figures are marked **measured** (with the file they come from) or **estimated** (with how). No figure here was
 measured for this document.
@@ -91,14 +94,16 @@ replay refuses because its stores are not all fresh (`RealmIndex.sol:537, 580-58
   and `Readiness.build` is 0 (`IndexReads.sol:186-188, 227-228`). **Landed (step 1):** `build(0, maxFacts)` now moves
   the frontier of a generation that carries both of its stores (§3.5) and refuses one with a fresh store,
   `E_BUILD(4)`, until step 2; `backfill` still reverts `E_BACKFILL(0)`; `buildDelegate()` and `Readiness.build` are
-  still 0.
+  still 0. **Landed (step 2):** `build(0, maxFacts)` also walks history into the fresh stores of a generation that has
+  any (§3.2–3.4); `E_BUILD(4)` is gone.
 - It holds exactly one posting store and one bitmap store (`RealmIndex.sol:44-45, 109-110`), so it cannot fold
   some families into a carried store and others into a fresh one.
 - A generation-1-shaped generation that re-pins any store cannot reach readiness on a Realm with admissions (§0).
   `test/index/IndexDeployer.t.sol:74-87` deploys such a generation (re-pinned posting store, fresh bitmap store) but
   never activates it, and could not. **Landed (step 1):** one that re-pins *both* stores can (`build`, §3.5;
   `test/index/Carried.t.sol`); one that re-pins one store and creates the other still cannot until step 2 builds the
-  fresh one.
+  fresh one. **Landed (step 2):** it can: `build` rebuilds the fresh store from history while the carried one stays
+  the live index's (`test/index/BuildWalk.t.sol`, `test/index/BuildWalkRefusals.t.sol`).
 - `GenerationStorage.buildFrontier` is declared (`src/index/storage/GenerationStorage.sol:16-25`) and never used.
 
 ### 1.3 What the tests prove and what they do not
@@ -280,6 +285,19 @@ Keep the selector `build(bytes32 familyId, uint16 maxFacts) returns (uint64 thro
 - **Refused unless every fresh store is fresh**: `INITIAL_WRITER == this` and not attached, as `_fresh` checks
   today, but over the fresh stores only.
 
+**Landed (step 2),** in `RealmIndex.build`, in this order: a nonzero `familyId` (`E_BUILD(8)`); live, or ever folded
+live (1); not idle, or a replay or build call of this generation in flight (3); a store that names this generation as
+`INITIAL_WRITER` but is attached (2: neither fresh nor carried; only a live write attaches, so some live index wrote
+a store this generation never vouched for, which kernel reason 13 also refuses); the carried check (7). Then the
+carried mask: bit `CARRIED_POSTING` or `CARRIED_BITMAP` for each store that is not fresh (`_carried`). With both
+bits set nothing is walked and the frontier moves to `counts()` (step 1). Otherwise: no decoder (5), and the walk of
+§3.3 folds only the families of the fresh stores. Fresh and carried are judged at every call, so a store that a live
+write attached between calls stops the next call with 2. Under the kernel's checks that can happen only before any
+build write: an index that names another generation's fresh store passes check 12 only on a Realm with no admissions,
+where the store must be unwritten (`test/index/BuildWalkRefusals.t.sol::testAFreshStoreAttachedByALiveWriteRefusesTheBuild`).
+`replayNextPublication` keeps its selector and behavior (both stores fresh, `maxFacts` a guard of one publication,
+`E_REPLAY` codes unchanged) and shares the decode-and-fold internals with `build` (`_replayOne`, `replayFold`).
+
 ### 3.3 Bounded steps
 
 The step is **one publication**, as in replay: a publication has at most 64 leaves (`LedgerControl.sol:152-157`),
@@ -293,6 +311,22 @@ the first does not fit (so `maxFacts >= 64` always makes progress). It returns t
 Each publication goes the way replay goes today: `STATICCALL` the pinned decoder for the payload, then `CALL` this
 contract (`buildFold`, `msg.sender == this` only), which folds the built families with the live fold code.
 Folding inside a self-call keeps the effects in calldata, as the live fold expects.
+
+**Landed (step 2).** As proposed, with one change of name: the self-call is `replayFold`, shared with replay, not a
+new `buildFold`. The carried mask rides as one word after the ABI payload (`_replayOne` appends it; the ABI decoder
+ignores trailing calldata; `replayFold` reads `msg.data`'s last word), so it is chosen by this code and never by a
+caller (`replayFold` refuses any caller but the generation itself, `E_WRITER`). The fold is the live fold: `onAdmission`
+and `replayFold` both run `_foldPublication`, which runs `_fold` with mask 0 live and in an all-fresh build or replay,
+and with the carried store's bit in a build that heals one store; `_fold` then skips `_foldRecord` and
+`_foldWithdraw` (posting only) and the half of `_foldBind` that writes the carried store. The bind fold was split
+into its two halves for this (`_foldScope` writes the bitmap store, the rest the posting store); the halves touch
+different stores and read nothing of each other's (§4.3), so the order between them changes neither store, and the
+live path runs the split code too. The next publication's leaf count is read from its evidence cell
+(`extsload(publicationsEvidenceSlot(n))`, `leafCount` in word 0) before it is decoded: one extra `extsload` call to the
+ledger per publication (a cold slot the decoder then reads warm, so it adds about a call's overhead, not a cold read).
+`maxFacts = 0` with a pending publication reverts 6; with nothing pending any budget returns the frontier. Measured
+(test 7, `test/index/BuildWalk.t.sol::test_heaviest_publications_build_in_one_call`): every admitted shape's
+largest publication builds in one call well under 2^24 on both schedules (§8 test 11 has the figures).
 
 Leaf granularity (resuming inside a publication) is not proposed. It would be needed only if one publication's
 build cost could exceed one transaction's gas. A build of the HEAD family costs far less per leaf than the
@@ -309,6 +343,11 @@ unused while all built families share one walk.
 
 When the generation goes live, the same word becomes the live progress, so `onAdmission`'s contiguity check
 (`expected = lastProcessed + 1`, `RealmIndex.sol:165`) is right from the first live call, exactly as after a replay.
+
+**Landed (step 2).** As proposed. `build` sets `replayStage` to 4 (IN_FLIGHT) for the walk and to 3 (CAUGHT_UP) or 2
+(BUILDING, the value replay calls REPLAYING) after it; `lastProcessed` and `lastPublication` move in `_foldPublication`
+after each folded publication, so an interrupted series of calls resumes exactly where the last call stopped, and a
+reverted call (budget too small, a decoder or store error) moves nothing. `buildFrontier` is still unused.
 
 ### 3.5 Carried families: the proof that replaces "we never folded them"
 
@@ -362,6 +401,37 @@ whose carried check fails would still report its stale frontier there. Readers r
 reads only readiness, so step 1 leaves coverage unchanged; step 3, which gives coverage a per-family frontier, should
 apply the check to carried families there.
 
+**Landed (step 2): coverage applies the check, per family.** `IndexReads._coverage` (behind `coverage`,
+`coverageOfType`, `coverageOfSpec`, `coverageOfDigest`, `postingHeadOf`, `postingSliceOf` and `occurrencesOf`)
+answers, for a maintained family of the calling generation:
+
+| state of the caller | family in a fresh store | family in a carried store |
+|---|---|---|
+| the live index (`ledger.index()`) | COMPLETE (1, admissions) while idle; inside a publication, as before (unchanged) | same (no check: it folds its own stores; one more ledger read, `index()`) |
+| not live, building or behind (frontier < admissions), check passes | PARTIAL (1, frontier) | PARTIAL (1, frontier) |
+| not live, caught up, check passes | COMPLETE (1, admissions) | COMPLETE (1, admissions) |
+| not live, check fails | PARTIAL (1, frontier) (or COMPLETE when caught up): it folded these itself | **PARTIAL (1, 0)**: it claims nothing, as readiness does |
+| any | gapped: PARTIAL (1, frontier) | same |
+
+A family that is not maintained, or not declared, is UNKNOWN (0, 0) as before. "Carried" here includes a store that
+names the caller as `INITIAL_WRITER` but is attached, and such a store also fails the check (below). Readiness is
+unchanged in shape: `ready` is false while the frontier is behind `counts()`, and `completedAdmission` is the frontier,
+or 0 when the check fails. In step 1 a not-live generation whose check failed reported its stale frontier, COMPLETE
+when no admission had landed since. Tests: `test/index/BuildWalk.t.sol::_heal`,
+`::test_activation_refuses_an_unfinished_build`,
+`test/index/BuildWalkRefusals.t.sol::testCoverageOfCarriedFamiliesFollowsTheCarriedCheck`.
+
+**Landed (step 2): a store attached under the generation's own name fails the check.** With admissions, a store that
+names the generation as `INITIAL_WRITER` and is attached makes the carried check false (unless the generation is the
+live index). Only a live write attaches, so some live index wrote a store this generation never vouched for; the
+kernel refuses the same candidate with reason 13, and `build` with `E_BUILD(2)`.
+
+**No reader can see a building generation.** The topic readers resolve the index per call from
+`ILedgerHot(ledger).index()` (`TopicReaderBase._open`, `src/readers/TopicReaderBase.sol:198`) and never cache it;
+`LensReader` and `FilesPageReader` do the same. So a reader asks only the live index, whose coverage is COMPLETE
+(or prefix-COMPLETE inside a publication), and a generation that is still building is never asked: a tag reader cannot
+show a building generation's empty page as if it were an answer. The readers were not changed.
+
 Why not trust the writers history instead? Because it cannot tell "complete" from "abandoned". Example: generation
 1 writes store S; generation 2 replays into fresh stores and goes live; S stops receiving writes; generation 3
 re-pins S. S's writers list is `[(gen1, 1, open)]`: contiguous, and missing everything since generation 2's
@@ -385,6 +455,17 @@ Fold hooks: during a build, the generation calls no fold hook of a carried unit 
 companion store is not fresh). A unit new in this generation with a fold hook would be built like a family, into
 its own fresh companion store. Generation 1 has no fold hook (design §10.7). Final hooks are never called during a
 build: the history was validated when it was admitted, and is never re-judged (design §10.6 tolerance rule; Q37).
+
+**Landed (step 2).** Replay today calls every unit's fold hook after each publication's fold, as the live path does
+(`_foldHooks`), and never calls a final hook (`afterPublication` is the ledger's call only). So: a build with both
+stores fresh calls the fold hooks exactly as replay does (once per matching effect; a hook that re-enters `build`
+or `replayNextPublication` is refused, `E_BUILD(3)` / `E_REPLAY(3)`); a build that heals one store calls **no** fold
+hook; no build or replay calls a final hook. The generation cannot tell a carried unit from a new one: a `Unit` names
+its hooks and codehashes but no store, and nothing records which generation first pinned it, so in a mixed build it
+calls none. Step 3 owns "a new unit's fold hook is built" (it needs the unit to name its companion store, or the
+generation to list its new units). `test/index/BuildWalkRefusals.t.sol::testFoldHooksRunInAnAllFreshBuildOnlyAndCannotReenterIt`.
+Design §10.6's tolerance rule says final hooks "re-validate a publication" during replay when the revision row names
+the same final codehash; the code never does (it follows this document, not the design).
 
 ---
 
@@ -445,16 +526,57 @@ These are the generation-1 folds that read more than the effect. In a full repla
 in the build; in a partial build only those of the built families do, and the rule after the table says which
 reads a built family may have.
 
+**Landed (step 2): the table, checked against the code read by read.** The proposal's table (kept below the rule
+for its argument) missed the withdrawal's by-record read, every read the stores make inside a write, the writer
+rule's reads and most of the decoder's. This is the full list. "Posting part" and "bitmap part" are the two halves of
+the fold: `_foldRecord`, `_foldWithdraw` and the posting half of `_foldBind` write only the posting store;
+`_foldScope` (the bitmap half of `_foldBind`) writes only the bitmap store. A build that heals one store runs only
+that store's half (the carried mask, §3.2). The verdicts: **R** reads only what it rebuilds (a fresh store's own
+state, rebuilt in the same walk, or write-once ledger facts); **E** reads carried *entries* (allowed: append-only);
+**F** reads a carried head, counter or bit (forbidden); **—** does not run in that configuration.
+
+| # | read | where (code) | posting carried, bitmap fresh | posting fresh, bitmap carried |
+|---|---|---|---|---|
+| 1 | by-record head `count` (is the first occurrence still virtual?) | `_foldRecord` | — (posting part skipped) | R: fresh posting store, same walk |
+| 2 | `recordHeader(recordId).firstAdmission` | `_foldRecord` | — | R: write-once ledger record cell |
+| 3 | a digest body word | `_foldRecord` | — | R: write-once record body |
+| 4 | the digest de-duplication (`_buffered`) | `_foldRecord` | — | R: this effect's own memory buffer |
+| 5 | by-record head `count` (materialize a withdrawn virtual first occurrence) | `_foldWithdraw` | — | R: fresh posting store |
+| 6 | family 20's head `count` (is the position fresh?) | `_firstStatementLists` | — | R: fresh posting store, same walk; every earlier effect of the publication is flushed before this one folds |
+| 7 | the ancestor walk: a record's Type word and body word 0 | `_walk` | — | R: write-once records (validator code 9: the topic was registered strictly before) |
+| 8 | the scope list's `count` and entries (`_entryIndex` bisection, on RESTORE, MASK, RELEASE) | `_foldScope` | R: fresh bitmap store, same walk | — (bitmap part skipped) |
+| 9 | the entry index `appendScopeEntry` returns (used by the first mask's `setBit`) | `_foldScope` | R: fresh bitmap store | — |
+| 10 | inside `append`/`appendBatch`: the head's `count` and `last` (order law, word position) | `PostingStore._append` | — (no posting write) | R: fresh posting store |
+| 11 | inside `release`/`retain`: the head's `live` and `count` (counter bounds) | `PostingStore` | — | R: fresh posting store |
+| 12 | inside `appendScopeEntry`: the scope head's `count` and last entry (order law) | `BitmapStore` | R: fresh bitmap store | — |
+| 13 | inside `setBit`: the scope head's `count`, the live bit and `live` | `BitmapStore` | R: fresh bitmap store | — |
+| 14 | the writer rule: `ledger.index()`, `phase()`, `counts().admissions` | `StoreBase._authorizeWriter` | R: the frontier bounds the stamp only (a build write may stamp any admission up to it, `_stampAdmission`) | same |
+| 15 | the decoder: evidence cell (principal, first admission, leaf count, revision) | `IndexReplayDecoder._decode` | R: write-once | R: write-once |
+| 16 | the decoder: the revision row's layout word | `_decode` | R: written once at activation | same |
+| 17 | the decoder: each admission row, the previous bind row (`oldTarget`, kind), the binding position and the position cells | `_effect` | R: write-once | same |
+| 18 | the decoder: a withdrawal's target row and its publication's principal | `_effect` | R: write-once | same |
+| 19 | the decoder: the Type's `refCount`, the record cells, the leading body words | `_effect`, `_decode` | R: registration is append-only and never changes a Type (design §8.7); records are write-once | same |
+| 20 | the build's own leaf count of the next publication (before decoding) | `RealmIndex.build` | R: the write-once evidence cell | same |
+
+No posting write depends on a bitmap read and no bitmap write depends on a posting read: the only value one half
+takes from a store is the scope entry index (rows 8, 9), and it feeds only the bitmap half's own `setBit`. **Neither
+mixed configuration needs a forbidden read, so both are built** (`build` heals either store); no configuration is
+refused, and no `E_BUILD` code is spent on one. Nothing in either half reads the *carried* store at all, not even its
+entries, so the "E" verdict has no row in generation 1. Tests: `test/index/BuildWalk.t.sol::test_heal_the_bitmap_store`,
+`::test_heal_the_posting_store` and `test/index/BuildWalkRefusals.t.sol::testHealEachStoreAgainstATwinRealm`.
+
+The proposal's table, for its argument:
+
 | read | where | why the build sees what the live fold saw |
 |---|---|---|
-| family 20's head (fresh-position test) | `RealmIndex.sol:439-441` | Family 20 is rebuilt **in the same walk, in the same store**, so before admission k its head holds exactly the operations of admissions below k. |
-| by-record head (materialize the virtual first entry) | `RealmIndex.sol:328-333` | Same: rebuilt in the same walk. |
-| scope-list bisection (`_entryIndex`) | `RealmIndex.sol:498-514` | Same, in the fresh bitmap store; or, for a bits-only store (§2.3 route 3), the carried scope list, whose entries never change once written. |
-| `recordHeader(recordId).firstAdmission` | `RealmIndex.sol:331` | Written once, when the record is first admitted. |
-| a digest body word | `RealmIndex.sol:319-320` | Record bodies are write-once. |
-| the ancestor walk: a record's Type word and body word 0 | `RealmIndex.sol:461-483` | Write-once records; the validator admitted the tag only if its topic was registered strictly before (code 9; `IndexProfiles.sol:26-34`), so every record on the chain existed at the original admission and has not changed. Records registered later are not on the chain: a parent link is written when its child is registered. |
-| the Type's `refCount` (decoder) | `IndexReplayDecoder.sol:124` | Registration is append-only and never changes an existing Type (design §8.7). |
-| position and binding cells (decoder) | `IndexReplayDecoder.sol:144-156` | Write-once. |
+| family 20's head (fresh-position test) | `RealmIndex._firstStatementLists` | Family 20 is rebuilt **in the same walk, in the same store**, so before admission k its head holds exactly the operations of admissions below k. |
+| by-record head (materialize the virtual first entry) | `RealmIndex._foldRecord`, `_foldWithdraw` | Same: rebuilt in the same walk. |
+| scope-list bisection (`_entryIndex`) | `RealmIndex._foldScope` | Same, in the fresh bitmap store; or, for a bits-only store (§2.3 route 3), the carried scope list, whose entries never change once written. |
+| `recordHeader(recordId).firstAdmission` | `RealmIndex._foldRecord` | Written once, when the record is first admitted. |
+| a digest body word | `RealmIndex._foldRecord` | Record bodies are write-once. |
+| the ancestor walk: a record's Type word and body word 0 | `RealmIndex._walk` | Write-once records; the validator admitted the tag only if its topic was registered strictly before (code 9; `IndexProfiles.sol:26-34`), so every record on the chain existed at the original admission and has not changed. Records registered later are not on the chain: a parent link is written when its child is registered. |
+| the Type's `refCount` (decoder) | `IndexReplayDecoder._effect` | Registration is append-only and never changes an existing Type (design §8.7). |
+| position and binding cells (decoder) | `IndexReplayDecoder._effect` | Write-once. |
 
 **The rule this gives a built family:** its fold may read write-once ledger facts, and heads of families rebuilt in
 the same walk. It must **never read a carried family's head or counter**, because those hold the state at the
@@ -559,6 +681,16 @@ A replaced generation can never be activated again at its old address: its progr
 generation that has been live (`E_BUILD(1)`), and its fresh stores are attached (reason 13). Going back means
 deploying the same code again as a new generation over the live stores (case (a)).
 
+**Landed (step 2), tested as described** (`test/index/BuildWalk.t.sol`): publications land between build calls and
+the builder catches up with more calls (`test_build_races_live_admissions_then_one_transaction`); a publication that
+slips in before activation is refused `E_INDEX_NOT_READY(8)` with nothing changed, and coverage then reads PARTIAL
+through the old frontier; build-until-caught-up and activation in one external call from the controller succeed (the
+same test); and the transition route (`test_transition_route`): after `beginTransition`, an ordinary write reverts
+`E_TRANSITION`, `build` still runs (it needs only `phase() == IDLE`, which a transition does not change; the stores'
+writer rule reads `index()`, `phase()` and `counts()` only), and the activation ends the transition, after which writes
+are admitted again. For a heal build both routes behave the same as for a re-pin: the carried store keeps the live
+index's writes up to the activation, and the new generation's first live write to it closes the old range.
+
 ---
 
 ## 6. Cost
@@ -653,7 +785,14 @@ set are refused, QUESTIONS Q11).
   exists. New `E_BUILD` codes (provisional): 1 already live or activated, 2 a fresh store is not fresh, 3 not idle
   or in flight, 5 no decoder, 6 `maxFacts` below the next publication, 7 a carried family is not the live index's,
   8 nonzero `familyId`. **Landed (step 1):** 1, 3, 7 and 8 as listed, and a new 4, "the generation has a fresh store:
-  the walk is not built yet", which step 2 removes; 2, 5 and 6 belong to the walk (step 2). `E_BUILD(0)` is gone. `IRealmIndex`'s ABI is not pinned by the kernel (the ledger calls only `onAdmission`,
+  the walk is not built yet", which step 2 removes; 2, 5 and 6 belong to the walk (step 2). `E_BUILD(0)` is gone.
+  **Landed (step 2):** the codes are 1 live or activated; 2 a store names the generation as `INITIAL_WRITER` but a live
+  write has attached it (the proposal's "a fresh store is not fresh", made exact: a store whose `INITIAL_WRITER` is
+  another generation is carried, not refused, and fails the carried check instead); 3 not idle or a replay or build
+  call of this generation in flight; 5 a fresh store and no decoder; 6 the next publication's leaf count exceeds
+  `maxFacts` (nothing was folded in this call); 7 the carried check fails; 8 a nonzero `familyId`. **4 is removed and
+  stays unused** (no code changes its meaning); no configuration is refused (§4.3), so no code was needed for one.
+  `buildFold` was not added: `replayFold` is the self-call of both paths (§3.3). `IRealmIndex`'s ABI is not pinned by the kernel (the ledger calls only `onAdmission`,
   `afterPublication`, `replayReadiness` and `readsContract`), so this changes no kernel id. Its size is estimated at
   generation 1's 13,686 B plus 3–5 KB, under 24,576 B.
 - **Its reads contract**: per-family store routing; coverage of built families PARTIAL until the frontier; the
@@ -691,6 +830,45 @@ fresh store (`E_BUILD(4)`, step 1 only); of test 8, a fresh store already attach
 unbuilt frontier (8). Also: a Realm with no admissions activates a carried generation over unwritten stores, with
 or without `build`, and refuses one over a store its own `INITIAL_WRITER` wrote in build mode (`E_BUILD(7)`,
 `E_INDEX_NOT_READY(12)`); genesis stores are unwritten.
+
+**Landed (step 2),** in `test/index/BuildWalk.t.sol` (the Files Realm, the mixed history of
+`test/integration/TopicListsHistory.sol`, which moves every counter of §4.2) and `test/index/BuildWalkRefusals.t.sol`
+(the `Carried.t.sol` history, which has a WITHDRAW, with a twin Realm), both run on the default and the amsterdam
+profiles: test 1 for generation 1's families with both stores fresh (`test_build_equals_replay_equals_live`: live,
+replayed and built stores equal list by list, entry by entry, scope heads, entries and live words), and for each
+store healed alone, compared with the live store before activation and with a twin that never switched after more
+traffic, with the writer ranges (`test_heal_the_bitmap_store`, `test_heal_the_posting_store`,
+`testHealEachStoreAgainstATwinRealm`); test 3 (`testFuzz_interrupted_build_equals_one_build`: per-call budgets of 64,
+exactly the next publication, one below it, and random, over all three configurations; `test_budget_edges`); test 4
+in full (`test_build_races_live_admissions_then_one_transaction`, `test_transition_route`); test 7 except the
+stranger's generation naming a fresh store, which the generation itself refuses before any write (its carried check
+fails, 7), so the store's own `E_WRITER` is shown by a write from that generation's address
+(`testStoresRefuseEveryBuildWriteButTheirInitialWriters`, which also shows a candidate cannot write the store it
+carries), plus `testBuildRefusals` (8, 3 from inside a publication, 6, 5, `E_REPLAY(1)` for a mixed generation, 1)
+and `testAFreshStoreAttachedByALiveWriteRefusesTheBuild` (2, and the kernel's 13); test 8's frontier half
+(`test_activation_refuses_an_unfinished_build`, coverage PARTIAL at that moment); test 12 for the configurations step 2
+has (`testFoldHooksRunInAnAllFreshBuildOnlyAndCannotReenterIt`: fold hooks run in an all-fresh build exactly as in
+replay and in no build that heals one store); and a preview of test 11 (`test_heaviest_publications_build_in_one_call`,
+below). Tests 2, 9 and 10 need step 3 or a BITMAP family.
+
+**Test 11 preview (measured, one cold `build` call with nothing else pending; execution gas, which EIP-7825's cap
+bounds; amsterdam's state gas is drawn from a reservoir beyond it):**
+
+| publication | prague leaves / execution gas | amsterdam leaves / execution gas (+ state gas) |
+|---|---:|---:|
+| lone negatives, the largest the planning rule admits (`floor-plan.json` k) | 38 / 7,183,073 | 54 / 7,835,425 (+ 23,696,640) |
+| first tags on a depth-8 topic, largest admitted | 18 / 7,465,964 | 19 / 6,056,622 (+ 17,136,000) |
+| first tags on a depth-64 topic, largest admitted | 3 / 9,763,264 | 3 / 7,071,564 (+ 26,536,320) |
+| 64 lone negatives | 64 / 13,073,204 | 64 / 9,898,784 (+ 27,613,440) |
+| 64 first tags, depth 8 (not admissible: the live publication needs far more than 2^24) | 64 / 26,209,649 | 64 / 21,213,285 (+ 51,799,680) |
+| 64 first tags, depth 64 (not admissible) | 64 / 225,117,045 | 64 / 207,318,745 (+ 194,371,200) |
+
+The cap a 2^24 transaction leaves the call is 16,755,216 (21,000 base, 1,000 of calldata). Every admitted shape
+fits with room, and on prague the capped call was run and succeeded. The two 64-first-tag rows do not fit, but no
+such publication can be admitted: its live execution is several times the cap (the largest admitted is the k row).
+A build costs less than the publication's own live execution (lone negatives 38: 7.18M built against 13.81M live on
+prague, `floor-plan.json` E; depth-64 first tags 3: 9.76M against 11.75M), so **leaf-granular resume is not needed
+for any publication the kernel admits** (§9 q1), on this evidence; step 4 measures it properly.
 
 1. **Built equals live, every family and counter.** Two Realms take the same mixed history: Realm L runs
    generation 2 from genesis (live); Realm B runs generation 1, then builds generation 2 and activates it. Compare
@@ -758,7 +936,7 @@ or without `build`, and refuses one over a store its own `INITIAL_WRITER` wrote 
 
 ---
 
-## 10. Where step 1 differs from this proposal, and what the proposal had wrong
+## 10. Where steps 1 and 2 differ from this proposal, and what the proposal had wrong
 
 1. **Readiness of a failed carried check.** §3.5 says readiness reports `completedAdmission = lastProcessed` and is
    ready only if the check passes. The code reports 0 for both `completedAdmission` and `completedPublication` when
@@ -787,3 +965,58 @@ or without `build`, and refuses one over a store its own `INITIAL_WRITER` wrote 
    generation's check and in the kernel's reason 12. That is the base case of the invariant of §5.3; checks 12 and
    13 are its step. The simple form ("every store", not only "every carried store") held: no honest path writes a
    store on an empty Realm.
+
+### Where step 2 differs from the proposal, and what the proposal had wrong
+
+9. **No `buildFold`.** §3.3 and §7.1 name a new self-call `buildFold`. The code reuses `replayFold`: both paths
+   decode with the pinned decoder and call it through `_replayOne`, with the carried mask as one trailing calldata word
+   (the ABI decoder ignores it; only the generation can call `replayFold`). One fold entry point, no new selector.
+10. **The bind fold is split into its two stores' halves** (`_foldScope` for the bitmap store, the rest of
+    `_foldBind` for the posting store), and the live path runs the split code too. Before, the two stores' calls
+    were interleaved within one effect. The reorder is exact (different stores; neither half reads the other's
+    store, §4.3), and every existing suite passes unchanged (the index suites on both profiles); the measured
+    publication gas rows moved (tools/RELEASE.md item 27).
+11. **`E_BUILD(2)` means "attached under this generation's name", not "a fresh store is not fresh".** A store naming
+    another `INITIAL_WRITER` is simply carried and answers to the carried check (7). Only a store naming this
+    generation and attached is neither; the generation refuses it as the kernel does (13), in `build` (2), in the
+    carried check (so readiness claims nothing) and in coverage.
+12. **§4.3's table was incomplete** (the withdrawal's by-record read, every store-internal read, the writer rule,
+    most decoder reads); the full table is there, and it shows both mixed configurations are exact.
+13. **"A fresh store attached by any live write ends the build" (§8 test 7) can happen only before the build
+    starts.** An index that names another generation's fresh store passes kernel check 12 only on a Realm with no
+    admissions, where the store must be unwritten; with admissions, a carried store must be the live index's, and
+    a fresh store is no live index's. So no live write can attach a fresh store after its first build write, short of
+    a kernel bug. The test therefore attaches it on the empty Realm and shows the generation (2) and the kernel (13)
+    refusing it after history has landed.
+14. **The stranger's builder** (§8 test 7: "a builder that is not the fresh store's `INITIAL_WRITER` … is refused
+    `E_WRITER`"): a stranger generation that names a fresh store of another generation treats it as carried, and its
+    carried check fails (7) before it writes anything, so the store's `E_WRITER` is never reached through `build`. The
+    store's refusal is shown by a write from that generation's address.
+15. **Coverage applies the carried check** (§3.5 said step 3 should): a carried family of a generation that is not
+    live reports PARTIAL (1, 0) when the check fails, so a not-live generation never reports COMPLETE for a family it
+    cannot vouch for, whatever its frontier. The live index's reads pay one more ledger read (`index()`).
+16. **Fold hooks.** As §3.6 proposes, with the gap it leaves made explicit: a generation-1-shaped generation cannot
+    tell a carried unit from a new one, so a build that heals one store calls no fold hook at all; an all-fresh build
+    calls them as replay does.
+17. **Sizes.** `RealmIndex` 17,144 B → 18,135 B (budget 19,660; the proposal's estimate of 3–5 KB more was for a
+    generation with per-family store routing, which is step 3); `IndexReads` 11,127 B → 11,645 B; `LedgerControl`
+    unchanged (17,687 B).
+
+**Pre-freeze gate: activation must not depend on the live index answering.** Check 12 and the generation's carried
+check read the live index's `replayReadiness().families` at run time, whenever the candidate carries a store (a re-pin
+or a build that heals one store; an all-fresh candidate does not read it). If that read reverts (and a bug in the live
+index is the likeliest reason to replace it), the kernel's activation reverts with the live index's own error (it is
+not caught, so the refusal is not even reason 12) and the generation's carried check is false, so every candidate
+that carries a store is refused and only a full replay into all-fresh stores can replace the index, at the price §6.2
+estimates. The list being read is static: it is the live index's manifest family list (`IndexReads._families`,
+written once in its constructor), whose hash the kernel recorded in the revision row (`indexManifestHash`) when it
+activated that index. Proposed fix, not built: the candidate carries a copy of the live index's family list with the
+rest of the manifest's preimage; the kernel recomputes the hash, compares it with the recorded `indexManifestHash` of
+the current revision, and checks the candidate's carried families against that list, without calling the live index.
+The hash already has a form anyone can recompute: it is `keccak256(abi.encode(header, families, units, specs, work,
+physicalProfile, callbackProfile, reads, readsCodehash))` (`RealmIndex` constructor; `IndexReads.manifest`), so what is
+missing is the code that recomputes it in the kernel (today the index computes it and the kernel only compares), and
+the generation's own check can already read the recorded hash through `ILedgerHot.revision()` and `extsload` of the
+revision row (as the decoder reads that row's layout word), though no getter names it. The alternative is for the
+kernel to store the live index's (family, store) pairs at activation, which changes the storage layout. Recovery route
+until then: a full replay (case (e)).
