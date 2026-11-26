@@ -4,19 +4,32 @@ pragma solidity 0.8.37;
 import {IAcceptor, AcceptContext, RefHeader} from "../interfaces/IAcceptor.sol";
 import {FilesProfile, E_FILES_REFUSED} from "./FilesProfile.sol";
 
-/// @title FilesName — the `files-name/2` grammar (design §12.1; naming reconciliation §4.1)
-/// @notice Ported from the measured experiment arm `NameV2F` (`planning/Reviews/2026-09-26-efs-v2-naming-reconciliation/
-///         experiment/src/NameFast.sol` `FastName.valid(d, false)` with `NameRules.sol` `Utf8.excluded`/`whitespace`):
-///         same acceptance set, same ASCII fast path and single-word scalar decoder. A name is raw UTF-8, 1–255 bytes,
-///         byte-exact and case-sensitive (nothing is normalized; NFC is an SDK obligation, never a contract claim):
-///         strict UTF-8 scalars (no overlong forms, surrogates or values above U+10FFFF); not `.` or `..`; no C0/C1
-///         controls, DEL, `/` or `\`; no U+2028/2029; no bidi controls (U+061C, U+200E/F, U+202A–E, U+2066–9); no pure
-///         invisibles (U+00AD, U+180E, U+200B, U+2060–2064, U+206A–206F, U+FEFF); no U+FFF9–FFFD; no noncharacters
-///         (U+FDD0–FDEF, U+xFFFE/xFFFF); no leading or trailing Unicode whitespace; no `~efs` prefix (reserved for host
-///         and control synthetic entries). ZWJ/ZWNJ, variation selectors and tag characters are allowed.
+/// @title FilesName — the `files-name/3` grammar (design §12.1, §12.1.1; naming reconciliation §4.1)
+/// @notice `files-name/3` is `files-name/2` less the ASCII characters that change what a link means or that EFS keeps
+///         free as delimiters for its own URL syntax, and less a trailing `.`. James ruled on 2026-11-26: "? # etc
+///         shouldn't be allowed as they are literally urlencode protected params. Nothing that breaks URLs.", and,
+///         later the same day, withdrew the operating-system test: "I only care about URI safety and us having some
+///         delimiters we can use for URL syntax". `files-name/2` was ported from the measured experiment arm
+///         `NameV2F` (`planning/Reviews/2026-09-26-efs-v2-naming-reconciliation/experiment/src/NameFast.sol`
+///         `FastName.valid(d, false)` with `NameRules.sol` `Utf8.excluded`/`whitespace`); `/3` keeps its ASCII fast
+///         path and single-word scalar decoder unchanged. A name is raw UTF-8, 1–255 bytes, byte-exact and
+///         case-sensitive (nothing is normalized; NFC is an SDK obligation, never a contract claim): strict UTF-8
+///         scalars (no overlong forms, surrogates or values above U+10FFFF); no C0/C1 controls or DEL; no `/`, `\`,
+///         and since `/3` no `#`, `?`, `%` (each changes what a link means); since `/3` no `<`, `>`, `"`, `|`, `:`,
+///         `*`, `;` (delimiters kept free for EFS URL syntax); no U+2028/2029; no bidi controls (U+061C, U+200E/F,
+///         U+202A–E, U+2066–9); no pure invisibles (U+00AD, U+180E, U+200B, U+2060–2064, U+206A–206F, U+FEFF); no
+///         U+FFF9–FFFD; no noncharacters (U+FDD0–FDEF, U+xFFFE/xFFFF); no leading or trailing Unicode whitespace; no
+///         `~efs` prefix (reserved for host and control synthetic entries); and since `/3` never a trailing `.`
+///         (chat apps and auto-linkers trim a full stop after a pasted link; this is the integration owner's
+///         application, not James's ruling, and is its own check). The trailing `.` rule also refuses `.` and `..`,
+///         as `/2` did. ZWJ/ZWNJ, variation selectors and tag characters are allowed, and so are inner spaces,
+///         `&()',+=!$[]{}^~`, the at sign, the backtick, `-`, `_`, leading dots and a leading `-`. So `Q&A 3.pdf`
+///         and `logo` + at sign + `2x.png` are names, and `Q&A #3.pdf`, `a;b` and `inc.` are not.
 library FilesName {
-    /// 0x20..0x7e minus '/' (0x2f) and '\' (0x5c). Whitespace at the ends is checked after the loop.
-    uint256 internal constant ASCII_OK = 0x7fffffffefffffffffff7fff00000000;
+    /// 0x20..0x7e minus `/` (0x2f), `\` (0x5c), `#` (0x23), `?` (0x3f), `%` (0x25), `<` (0x3c), `>` (0x3e), `"`
+    /// (0x22), `|` (0x7c), `:` (0x3a), `*` (0x2a) and `;` (0x3b): 83 bytes. Whitespace at the ends and a trailing
+    /// `.` are checked after the loop.
+    uint256 internal constant ASCII_OK = 0x6fffffffefffffff23ff7bd300000000;
 
     function valid(bytes calldata d) internal pure returns (bool) {
         uint256 n = d.length;
@@ -25,8 +38,6 @@ library FilesName {
         assembly ("memory-safe") {
             head := calldataload(d.offset)
         }
-        uint256 b0 = head >> 248;
-        if (b0 == 0x2e && (n == 1 || (n == 2 && ((head >> 240) & 0xff) == 0x2e))) return false;
         if (n >= 4 && (head >> 224) == 0x7e656673) return false; // "~efs"
         uint32 first;
         uint32 last;
@@ -52,6 +63,8 @@ library FilesName {
                 i += w;
             }
         }
+        // link trimming: never a trailing `.` (so also never `.` or `..`)
+        if (last == 0x2e) return false;
         return !whitespace(first) && !whitespace(last);
     }
 
@@ -88,12 +101,12 @@ library FilesName {
         return (uint32(u), 4);
     }
 
-    /// Per-scalar exclusions: controls, separators, line/paragraph separators, bidi controls, pure invisibles,
-    /// BOM, object/replacement characters, noncharacters.
+    /// Per-scalar exclusions: controls, the refused ASCII characters, line/paragraph separators, bidi controls,
+    /// pure invisibles, BOM, object/replacement characters, noncharacters. `valid` tests ASCII with `ASCII_OK`
+    /// directly and calls this only for a multi-byte scalar.
     function excluded(uint32 s) internal pure returns (bool) {
-        if (s <= 0x1f) return true;
-        if (s < 0x7f) return s == 0x2f || s == 0x5c;
-        if (s <= 0x9f) return true; // DEL and C1
+        if (s < 0x80) return (ASCII_OK >> s) & 1 == 0; // the ASCII path's bitmap: controls, DEL and the 12 above
+        if (s <= 0x9f) return true; // C1
         if (s == 0xad) return true; // soft hyphen
         if (s == 0x061c) return true; // Arabic letter mark (bidi control)
         if (s < 0x180e) return false;
@@ -119,13 +132,14 @@ library FilesName {
     }
 }
 
-/// @title FilesNameRule — the mandatory rule of `files-name/2` (design §12.1)
-/// @notice §12.1 row: "`files-name/2` | NATIVE | raw UTF-8, 1–255 B, well-formed, byte-exact, case-sensitive, `~efs`
-///         reserved | none | the measured 1,477-byte validator (naming reconciliation ... experiment `NameV2F`, 4–14k
-///         gas for ordinary names; the prototype's ASCII `FilesNameRule` at `L/test/FilesNamesProfile.sol:73` is the
-///         structural analog); pending N1/N2 (Q7)". The body is the name itself; a FOLDER bind's role is
-///         `keccak256(name)` and `FilesFinalValidator` requires the record `recordFromHash(nameType, role)`.
-/// @dev Pure over calldata. Refusal codes (`E_FILES_REFUSED`): 1 refs present, 2 not a `files-name/2` name.
+/// @title FilesNameRule — the mandatory rule of `files-name/3` (design §12.1)
+/// @notice §12.1 row: "`files-name/3` | NATIVE | raw UTF-8, 1–255 B, well-formed, byte-exact, case-sensitive, `~efs`
+///         reserved, no `#?%<>"|:*;`, no trailing `.` | none". `files-name/3` replaces
+///         `files-name/2` (the measured 1,477-byte validator of the naming reconciliation, experiment `NameV2F`) by
+///         James's ruling of 2026-11-26 (`FilesName`); N1/N2 and the case and normalization collisions of Q7 stay
+///         open. The body is the name itself; a FOLDER bind's role is `keccak256(name)` and `FilesFinalValidator`
+///         requires the record `recordFromHash(nameType, role)`.
+/// @dev Pure over calldata. Refusal codes (`E_FILES_REFUSED`): 1 refs present, 2 not a `files-name/3` name.
 contract FilesNameRule is IAcceptor {
     function accept(
         AcceptContext calldata ctx,

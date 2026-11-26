@@ -203,7 +203,7 @@ contract BoundEventTest is FilesRecipesBase {
         assertEq(r.registry.typeInfo(typeIds[T_BYTES]).flags, 0);
     }
 
-    /// `files-name/2` sets the flag: a fresh name is logged with its record id, Type id and bytes; publishing it
+    /// `files-name/3` sets the flag: a fresh name is logged with its record id, Type id and bytes; publishing it
     /// again logs nothing.
     function test_body_on_a_fresh_name_not_on_a_repeat() public {
         assertEq(r.registry.typeInfo(typeIds[T_NAME]).flags, 1);

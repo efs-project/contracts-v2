@@ -59,17 +59,14 @@ contract EfsWeb3GatewayHomeTest is Web3GatewayHarness {
         );
     }
 
-    function test_missing_names_are_404_and_malformed_addresses_400() public view {
+    /// Not an address (rule 6 needs `0x` and exactly 40 hex digits): a word, so a topic path (501).
+    function test_missing_names_are_404_and_non_addresses_are_topic_paths() public view {
         _status(string.concat(H, "/nope.txt"), 404);
         _status(string.concat(H, "/docs/nope.txt"), 404);
-        assertEq(_status("/0x1234/readme.txt", 400).body, "malformed id");
-        assertEq(
-            _status("/0xg000000000000000000000000000000000000000/readme.txt", 400).body,
-            "malformed id"
-        );
-        assertEq(
-            _status(string.concat("/", vm.toString(home), "/readme.txt"), 400).body, "malformed id"
-        ); // 64
+        bytes memory topic = "topic paths are not served";
+        assertEq(_status("/0x1234/readme.txt", 501).body, topic);
+        assertEq(_status("/0xg000000000000000000000000000000000000000/readme.txt", 501).body, topic);
+        assertEq(_status(string.concat("/", vm.toString(home), "/readme.txt"), 501).body, topic); // 64
         // `~home` is gone: an unknown system path
         assertEq(
             _status(string.concat("/~home", H, "/readme.txt"), 400).body, "unknown system path"

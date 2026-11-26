@@ -82,7 +82,7 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
         assertEq(_status(_byId(bigRoot, ""), 501).body, "object not served");
         assertEq(_status(_byId(extDescriptor, ""), 501).body, "object not served");
         assertEq(_status(_byId(helloRoot, "/x"), 501).body, "object not served");
-        // a record of another Type: hello.txt's files-name/2 record
+        // a record of another Type: hello.txt's files-name/3 record
         bytes32 name = Keys.recordFromHash(t.name, keccak256("hello.txt"));
         (bytes32 typeId,,,,) = r.hot.recordHeader(name);
         assertEq(typeId, t.name, "the name record exists");
@@ -135,14 +135,54 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
         _status(string.concat("/", P, "/hello.txt"), 501);
     }
 
-    function test_malformed_address_shaped_segments_are_400() public view {
-        assertEq(_status("/0x1234/hello.txt", 400).body, "malformed id");
+    /// The chain's rule 6, in the gateway: only `0x` (or `0X`) and exactly 40 hex digits (either case) is an address;
+    /// any other first segment starting `0x` is a word, so the path is a topic path and answers as every topic path
+    /// does (501 "topic paths are not served": this gateway serves no topic yet, registered or not).
+    function test_a_0x_word_first_segment_is_a_topic_path() public view {
+        bytes memory topic = "topic paths are not served";
+        assertEq(_status("/0xsplits", 501).body, topic, "a word");
+        assertEq(_status("/0xsplits/hello.txt", 501).body, topic, "a deeper path");
+        assertEq(_status("/0xsplits/a/b", 501).body, topic);
+        assertEq(_status("/0xnope", 501).body, topic, "an unregistered word: as /tesla");
+        assertEq(_status("/0xnope", 501).body, _status("/tesla", 501).body);
         assertEq(
-            _status("/0x00000000000000000000000000000000000000zz/hello.txt", 400).body,
-            "malformed id"
+            _status("/0Xabc", 501).body, topic, "a refused word: the gateway runs no word rule"
         );
-        assertEq(_status(string.concat("/0x", P, "/hello.txt"), 400).body, "malformed id");
+        assertEq(_status("/0x1234/hello.txt", 501).body, topic, "short hex");
+        assertEq(_status(string.concat("/0x", _cut39(alice)), 501).body, topic, "39 hex digits");
+        assertEq(
+            _status(string.concat("/0x", _hexAddr(alice), "0"), 501).body, topic, "41 hex digits"
+        );
+        assertEq(
+            _status("/0x00000000000000000000000000000000000000zz/hello.txt", 501).body,
+            topic,
+            "40 characters, not all hex"
+        );
+        assertEq(_status("/0xsplitssplitssplitssplitssplitssplitsspli", 501).body, topic);
+        assertEq(_status(string.concat("/0x", P, "/hello.txt"), 501).body, topic, "64 hex digits");
+        // the address forms are unchanged: 0x or 0X, hex digits in either case. `0X` + 40 hex is an ADDRESS (today's
+        // handling, kept byte for byte), never a word: the chain refuses it as a word anyway (code 3)
         assertEq(_status(string.concat("/0X", _hexAddr(alice), "/x"), 404).body, "not found");
+        _status(string.concat("/0X", _hexAddr(alice)), 200); // 0X + 40 hex: a home
+        _status(string.concat("/0x", _lower(_hexAddr(alice))), 200); // lowercase hex: a home
+        assertEq(_status(string.concat("/0x", _hexAddr(alice), "/x"), 404).body, "not found");
+    }
+
+    function _lower(string memory s) internal pure returns (string memory) {
+        bytes memory b = bytes(s);
+        for (uint256 i; i < b.length; ++i) {
+            if (b[i] >= "A" && b[i] <= "Z") b[i] = bytes1(uint8(b[i]) + 32);
+        }
+        return string(b);
+    }
+
+    function _cut39(address a) internal pure returns (string memory) {
+        bytes memory h = bytes(_hexAddr(a));
+        bytes memory out = new bytes(39);
+        for (uint256 i; i < 39; ++i) {
+            out[i] = h[i];
+        }
+        return string(out);
     }
 
     // ---- helpers ------------------------------------------------------------------------------------------------

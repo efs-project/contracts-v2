@@ -118,7 +118,7 @@ contract ProvedRefCountTest is TopicListsHistory {
         vm.mockCall(_registry(), abi.encodeCall(ITypeRegistry.descriptorBytes, (id)), abi.encode(d));
     }
 
-    /// Each wrong answer for `files-name/2`'s descriptor is refused `E_REPLAY(10)`: a byte of the name altered, a byte
+    /// Each wrong answer for `files-name/3`'s descriptor is refused `E_REPLAY(10)`: a byte of the name altered, a byte
     /// of the rule id altered, the last byte cut, cut below the 134-byte header, another Type's descriptor (one with
     /// two references, `topic/1`), and empty bytes.
     function test_other_bytes_are_refused_10() public {

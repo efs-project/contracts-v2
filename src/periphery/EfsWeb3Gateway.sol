@@ -41,7 +41,13 @@ import {E_WEB3_CONFIG, E_WEB3_STATUS} from "./EfsWeb3Content.sol";
 ///           identity, `Keys.principalFor(address, realmOrigin)`: the key principal of a key account, the Realm's
 ///           contract principal of a contract (a Safe's home shows the Safe's own entries). The home itself is named
 ///           `x-efs-home: 0x<40 hex>` (lowercase) in place of `x-efs-record`: a home is an address, never a record.
-///           Any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id".
+///           The prefix is `0x` or `0X` and the 40 hex digits are of either case (unchanged): `0X` + 40 hex is an
+///           address, never a word (the chain refuses it as a word anyway, code 3: uppercase is not in a word's 39
+///           characters). Only that shape is an address: as on the chain (`topic-word/1` rule 6) and in the SDK's
+///           links, any other first segment starting `0x` or `0X` (`/0xsplits`, `0x` and 39 or 41 hex digits, 40
+///           characters with one non-hex) is an ordinary word and the path is a topic path, below. The gateway does
+///           not run the word rule: a segment the chain refuses as a word (`0Xabc`) is answered as every topic path
+///           is.
 ///         - `/~efs/o/<object id>[/<name>…][/][?lens=…][&offset=<n>]` (an object link; `0x` + 64 hex, any case):
 ///           a `files-directory/1` record id is that FOLDER, the Realm root included, with the names below it; the
 ///           lens defaults to the folder's creator, the record's body word 0 (`abi.encode(creator, salt)`). A
@@ -398,7 +404,8 @@ contract EfsWeb3Gateway is IWeb3Gateway {
         uint256 last = resource.length;
         if (last > 1 && bytes(resource[last - 1]).length == 0) --last; // a trailing slash
         if (last == 0 || bytes(resource[0]).length == 0) _fail(400, "empty segment");
-        // the first segment decides the kind: `~` the system, `0x` an address's home, anything else a topic
+        // the first segment decides the kind: `~` the system, `0x` + 40 hex digits an address's home, anything
+        // else (any other `0x` word included) a topic
         bytes calldata s0 = bytes(resource[0]);
         bytes32 first;
         if (s0[0] == "~") {
@@ -414,8 +421,8 @@ contract EfsWeb3Gateway is IWeb3Gateway {
             }
             q.folder = bytes32(_id(bytes(resource[2]), 66));
             q.start = 3;
-        } else if (_prefixed(s0)) {
-            q.home = bytes32(_id(s0, 42));
+        } else if (s0.length == 42 && _prefixed(s0) && _isHex(s0[2:])) {
+            q.home = bytes32(_hexValue(s0[2:]));
             first = Keys.principalFor(
                 address(uint160(uint256(q.home))), ILedgerHot(LEDGER).realmOrigin()
             );
@@ -483,6 +490,17 @@ contract EfsWeb3Gateway is IWeb3Gateway {
     /// `0x` or `0X` and at least one more byte.
     function _prefixed(bytes calldata s) private pure returns (bool) {
         return s.length > 2 && s[0] == "0" && (s[1] == "x" || s[1] == "X");
+    }
+
+    /// Every byte is a hex digit, either case (the address test; `_hexValue` would 400 instead).
+    function _isHex(bytes calldata s) private pure returns (bool) {
+        for (uint256 i; i < s.length; ++i) {
+            uint8 c = uint8(s[i]);
+            if (!((c >= 48 && c <= 57) || (c >= 97 && c <= 102) || (c >= 65 && c <= 70))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function _hexValue(bytes calldata s) private pure returns (uint256 v) {

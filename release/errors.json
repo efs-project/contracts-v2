@@ -1362,7 +1362,7 @@
       ],
       "source": "src/profiles/TopicProfile.sol",
       "retryClass": "none",
-      "meaning": "A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-7), `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24)."
+      "meaning": "A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-4, 6, 7 and 9; 5 is unused), `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24)."
     },
     "0xf26611de": {
       "name": "E_TOPIC_REPLY",

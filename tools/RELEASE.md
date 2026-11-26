@@ -449,6 +449,13 @@ piece):
   15.1; one committed generator from one pinned Unicode version must produce all three. The fold rule is ruled
   (QUESTIONS Q53, 2026-11-26); the word rule and the generator change in the next release. Until then the
   `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
+- **The non-ASCII side of the word rule** (item 49). The ASCII side of `topic-word/1` is ruled and built (the 39
+  characters, no trailing `.`); the non-ASCII side (a proposal to refuse punctuation, symbols and separators outside
+  ASCII, under the SDK's evaluation, with the generator above) changes the word rule's code, and so the `topic-word/1`
+  Type id and every topic id, once more in a later release.
+- **Names that differ only by capitals or normalization** (QUESTIONS Q7, item 50). Two names that differ only by
+  capitals or by Unicode normalization (`Report.txt` and `report.txt`) are still two distinct names on chain, which
+  stores and compares names byte for byte. Q7 stays open until before any lasting deployment.
 - **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
   16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
 
@@ -1115,6 +1122,118 @@ but `floor-plan.json`, every read row, bound and recommended read limit on both 
 bytes; budget 19,660 B; tightest first): `LedgerIngress` 19,264 → 18,955 B (705 left), `RealmIndex` 18,834 → 18,408 B
 (1,252 left), `LedgerControl` 18,042 → 18,363 B (1,297 left), `LensReader` 17,399 → 17,399 B (2,261 left; six bytes of
 code differ), `IndexReads` 12,431 → 12,960 B (6,700 left), `IndexReplayDecoder` 5,404 → 5,578 B (14,082 left).
+
+### Names and words: URI safety and free delimiters (against `6d11858`)
+
+One piece, the 2026-11-26 rulings on names applied to the two grammars. James: "? # etc shouldn't be allowed as they
+are literally urlencode protected params. Nothing that breaks URLs. Nothing that breaks OS file paths." Later the same
+day he withdrew the operating-system test: "Don't refuse windows reserved names. I only care about URI safety and us
+having some delimiters we can use for URL syntax". Each refusal below says which test it answers to: URI meaning, a
+delimiter kept free, or link trimming. Items 49 to 53 (renumbered at the join if needed).
+
+**49. The word rule changed and the word Type's id moved, although the label `topic-word/1` did not.** Read the
+unchanged label as an unchanged name only, never as an unchanged rule: the acceptance set is smaller, so the rule's
+codehash, the `topic-word/1` Type id and every word page and topic id moved (item 52). What `TopicProfile.wordRefusal`
+does now:
+- **Code 3 is any ASCII byte outside 39 characters.** After the fold a word's ASCII is exactly `a`–`z`, `0`–`9`, `-`,
+  `_` and `.` (`WORD_ASCII_OK = 0x7fffffe8000000003ff600000000000`). Every other ASCII byte is refused: capitals,
+  space, controls, `/`, `\`, `~` and every other punctuation character. So a word never needs escaping in a link and
+  leaves every delimiter free: `c++`, `c#`, `r&b`, `don't`, `q&a` and `~tesla` are no longer words; `cpp`, `.net`,
+  `sci-fi`, `model_3`, `0xsplits` and `con` are.
+- **Code 4 now means "the word ends with `.`".** It covers `.` and `..` (which it refused before) and also `...`, `a.`
+  and `inc.`; `.a`, `a.b` and `a..b` are admitted. The reason is link trimming (an auto-linker drops a full stop after
+  a pasted link, so `/inc.` would open `/inc`): the tag design session's proposal, not a consequence of the ruling.
+- **Code 9 is new: the word starts with `-`.** `-x`, `-` and `--x` are refused; a `-` elsewhere stays admitted
+  (`a-b`, `a-`, `a--b`). It keeps `-word` free to mean "not" in EFS link syntax (the founder's test that words leave
+  delimiters free); it is the tag design session's default applied by the integration owner, not the founder's words.
+  It is 9, not 8: `E_TOPIC_REFUSED(8)` is already `TopicWordRule`'s "refs present".
+- **Code 5 can no longer happen.** It meant "starts with `~`"; a `~` is now code 3 wherever it stands, so the branch is
+  gone. The number is left unused, not reused: no code changes meaning.
+- Unchanged: 1 (length), 2 (malformed UTF-8), 7 (a scalar of `REFUSED`; the table and its classes are untouched), 6
+  (`0x` and exactly 40 of `0-9a-f`) and 8 (refs). The order: 1, then 2, 3 and 7 by position, then 4, then 9, then 6
+  (so `-a.` is 4). Windows device names are words.
+- **What the SDK's `checkWord` must change:** admit exactly the 39 ASCII characters (code 3 for every other ASCII
+  byte, `~` included); return 4 for a trailing `.` instead of 4 for `.`/`..` only; add 9 for a leading `-`, checked
+  after 4 and before 6; never return 5; keep everything else. `test/vectors/topics.json` (`grammar.wordAscii`,
+  `grammar.wordCodes`, `grammar.wordCodeUnused`) carries every ASCII byte alone and inside a word, the trailing `.` and leading `-` cases (`-x`, `-`, `--x`, `-a.`, `a-`, `a-b`,
+  `x-`) and `~` first, inside and last.
+- **The order of refusals, so `checkWord` returns the chain's FIRST refusal, not only its verdict:** 1 (length);
+  then, scanning the word from its first byte, the first of 2 (malformed UTF-8), 3 (an ASCII byte outside the 39) or
+  7 (a refused scalar); then 4 (ends with `.`), then 9 (starts with `-`), then 6 (`0x` and 40 hex). So `-a.` is 4,
+  `-A` is 3, `A.` is 3, and `0x` + 40 hex digits + `.` is 4. 4 and 6, and 9 and 6, can never both apply.
+  `topics.json` holds a vector for every pair of rules that can both apply (labels `pair …`), with the chain's code.
+
+**50. File names are `files-name/3`, which replaces `files-name/2`.** The label changed everywhere it names the live
+grammar (`FilesTypes`, `EfsFiles`, the readers, the validator, the tools, the gas model's row keys, the vectors); a
+planner that keys on the string `files-name/2` must key on `files-name/3`. On top of everything `files-name/2` refused
+(1 to 255 bytes, strict UTF-8, controls, `/` and `\`, the bidi, invisible and noncharacter sets, whitespace first or
+last, the `~efs` prefix), a name now refuses:
+- **URI meaning:** `#`, `?`, `%` (each changes what a pasted link means).
+- **A delimiter kept free for EFS URL syntax:** `<`, `>`, `"`, `|`, `:`, `*`, `;`. The syntax is not designed; only
+  the reservations are made. `;` is reserved so a parser can split parameters at `;` first, which is why `=` and `!`
+  stay.
+- **Link trimming:** a name ending in `.` (also `.` and `..`, refused before). The integration owner's application,
+  not James's ruling, and a check of its own so it can be dropped alone.
+
+Admitted as before: inner spaces, `& ( ) ' , + = ! @ $ [ ] { } ^ ~`, backtick, `-`, `_`, leading dots, a leading `-`,
+everything outside ASCII that `/2` admitted, and Windows device names (`con`, `nul.txt`, `COM1`, `NUL .txt`). So
+`Q&A #3.pdf`, `50%.txt`, `what?.md`, `a;b`, `a:b`, `a*b`, `a<b`, `a>b`, `a|b`, `a"b` and `inc.` are no longer file
+names; `Q&A 3.pdf`, `logo@2x.png`, `~$Budget.xlsx`, `Sale!.png` and `-notes.txt` are (a tag word refuses a leading `-`;
+a file name does not). The descriptor descriptions of `files-name/3` and `topic-word/1` (part of their Type ids) now state these rules.
+The ASCII bitmap is
+`ASCII_OK = 0x6fffffffefffffff23ff7bd300000000` (83 bytes of 0x20..0x7e). The refusal code is unchanged
+(`E_FILES_REFUSED(2)`; 1 refs). Of the naming experiment's 50 vectors, six change verdict (5, 6, 12, 45, 46, 47).
+**What the SDK must change:** refuse the ten new ASCII characters and a trailing `.` before planning, and use the label
+`files-name/3`. Names stay byte-exact and case-sensitive.
+
+Measured (`FilesNameRule.accept`, the rule's own warm frame including the context decode, `6d11858` → this release;
+the new checks sit after the loop, so the ASCII path is still one bitmap test per byte): 10-byte ASCII `readme.txt`
+3,400 → 3,373; 255 ASCII bytes 43,580 → 43,553; 10 bytes of CJK 5,060 → 4,983; 255 bytes of CJK 113,077 → 110,925.
+`FilesNameRule` runtime 1,683 → 1,627 B (the trailing `.` test replaced the `.`/`..` test, and `excluded` now reads
+the same bitmap for ASCII); `TopicWordRule` 1,897 → 1,934 B (the leading `-` test). Both are far inside the 19,660 B budget.
+
+**51. The gateway follows the chain's rule 6.** A first path segment that starts `0x` and is not an address is a
+topic word, as on the chain and in the SDK's links. Only `0x` (or `0X`) followed by exactly 40 hex digits, of either
+case, is an address (a home), and that handling is unchanged byte for byte: `0X` + 40 hex is an address, never a word
+(the chain refuses it as a word anyway, code 3). Every other `0x` segment, `/0xsplits`, `0x` and 39, 41 or 64 hex
+digits, or 40 characters with one that is not hex, is a word, so the path is a topic path and answers what every topic
+path answers today, `501 topic paths are not served`, where it was `400 malformed id`. The gateway does not run the word
+rule: `/0Xabc` (not a valid word on chain) is 501 too, as is an unregistered word. `400 malformed id` remains for
+object and revision ids (`/~efs/o/…`, `/~efs/v/…`). `EfsWeb3Gateway` 15,391 → 15,565 B (4,095 B left); `EfsWeb3Content` unchanged
+(8,961 B; the path grammar is the gateway's alone).
+
+**52. Vectors.** New `test/vectors/names.json` (`efs/vectors/names/1`, `tools/name-vectors.mjs`): 653 names, 398 admitted: every
+ASCII byte 0x00 to 0x7f alone and at the start, middle and end of a name (512 rows), the examples of the rulings, the
+trailing `.` cases, Windows device names as admitted names, the `~efs` prefix, malformed UTF-8 and the non-ASCII
+refusals and boundaries of `files-name/2`'s tests, lengths 0, 1, 255 and 256, and the 50 naming-experiment vectors of
+`test/profiles/FilesNameVectors.sol` (the tool reads that file and refuses to generate if its grammar disagrees with a
+verdict there). Every row
+has the verdict, the rule code (0 or 2), an informative first-failed check, the role (`keccak256(name)`) and, when
+admitted, the record id for this release's `files-name/3` Type id. `test/vectors/topics.json` grows to 470 words (every ASCII byte alone and inside a word, `~` first, inside and last, the trailing `.` and leading `-` cases) and adds `grammar.wordAscii`, `wordAsciiRulings`, `wordAsciiNote`, `wordTrailingDot`, `wordLeadingDash` and `wordCodeUnused`; `wordCodes` lists 9 and no longer lists 5.
+`pnpm release` writes both, `pnpm release:check` compares both byte for byte (`names.json` is listed in
+`release.json` `vectors` beside the others), `node tools/name-vectors.mjs --check 1` compares the name file alone, and
+`test/profiles/NameVectors.t.sol` and `TopicVectors.t.sol` assert every row against the rules.
+
+**53. Identities** (against `6d11858`; the join regenerates once more). **Moved:** the release digest
+(`0xe5be2c42…c83c`, was `0xc4935467…71e4`), the plan hash (`0x6f7b4942…5083`), the execution set (`0xa2ddbac0…2f2f`),
+the index obligations (`0x75933384…b555`) and manifest hash (`0xc9458a9b…4999`: the manifest names the validator unit,
+whose address moved), the Type ids of `files-name/3` (`0x20665824…8c8d`, was `files-name/2` `0x2b4d22da…c27a`),
+`topic-word/1` (`0xe7429381…3859`, was `0xadf365a3…`) and `topic/1` (`0x275a99cc…bfde`, was `0x4ea9b8b2…`; its rule
+names the word Type), so every name record id, word page id and topic id; the rule codehashes of `FilesNameRule`
+(`0xd73a9ee2…fd17` → `0x80c8f4aa…9308`) and `TopicWordRule` (`0x29442a0e…dfd5` → `0xee656292…edac`) and their
+instances; the addresses of `TopicRule` (same code, a new word Type id in its initcode) and `FilesFinalValidator`
+(constructor Type ids); the code and address of `RealmIndex`, `IndexReads`, `FilesPageReader`, `TopicLookupReader` and
+`EfsWeb3Gateway` (each embeds a moved Type id or address; the gateway's code also changed with item 51, now at
+`0x386F52cC…5f10`); `release/errors.json` (`E_TOPIC_REFUSED`'s list of codes);
+`gas/model.json` (the `files-name/3` row keys; fitted constants move by at most 122 gas, `publishNew` of
+`topic-word/1` on prague; the four maximum errors are unchanged: 11.16%, 9.69%, 12.05%, 10.65%); in `artifacts/` only
+`FilesNameRule.json` and `TopicWordRule.json`; `test/vectors/topics.json`, `test/vectors/floor-plan.json` and the new
+`names.json`. **Not moved:** the layout id, the hot ABI ids, both store ABI ids, every ABI snapshot, the kernel
+(`LedgerCore`, `LedgerIngress`, `LedgerApply`, `LedgerControl`) and the ledger proxy (`0xe942147e…3429`), the realm id
+and domain separator, the registry, `ledgerReads`, `ledgerViews`, `IndexReplayDecoder`, both stores, `LensReader`,
+`TopicMineReader`, `TopicEveryoneReader`, `EfsWeb3Content`, `KeysView`, `ReaderDirectory`, every other rule (`TextRule`
+included) and Type id, the limits, the work model, and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`; its
+names `docs`, `readme.txt`, `big.bin` and `remote.txt` are all `files-name/3` names, and it registers no word).
 
 ### The identity table (this release against `3ca53ba`)
 

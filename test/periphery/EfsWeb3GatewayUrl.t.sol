@@ -189,7 +189,7 @@ contract EfsWeb3GatewayUrlTest is Web3GatewayHarness {
             ["m.wasm", "application/wasm"],
             ["noext", "application/octet-stream"],
             [".txt", "application/octet-stream"], // a leading dot is not an extension
-            ["dot.", "application/octet-stream"],
+            ["dot.x", "application/octet-stream"], // an unknown extension (`dot.` is no longer a name)
             ["a.tar.gz", "application/octet-stream"],
             ["readme.md", "application/octet-stream"],
             ["page.html5", "application/octet-stream"]

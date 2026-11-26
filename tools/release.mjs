@@ -4,14 +4,14 @@
 // and the chain-free plan facts of tools/deploy-plan.mjs. It also writes release/errors.json (the error catalog),
 // artifacts/<Unit>.json (ABI union, bytecode, immutables, method identifiers), test/vectors/media.json (the
 // media-type vectors of tools/media-vectors.mjs for the release Type ids), test/vectors/numbers.json (the binding
-// number vectors of tools/number-vectors.mjs) and test/vectors/topics.json (the Topics vectors of
-// tools/topic-vectors.mjs) and cross-checks the JS Files and Topics twin against the Solidity FilesTypes and
+// number vectors of tools/number-vectors.mjs), test/vectors/topics.json (the Topics vectors of
+// tools/topic-vectors.mjs) and test/vectors/names.json (the file name vectors of tools/name-vectors.mjs) and cross-checks the JS Files and Topics twin against the Solidity FilesTypes and
 // TopicTypes through `forge script script/Genesis.s.sol --sig "profile(address)"`.
 //
 //   node tools/release.mjs [--skip-script 1] [--check 1]
 //
 // `--check 1` writes nothing: it regenerates every document in memory and fails when a committed file differs
-// (release/errors.json, artifacts/*.json, test/vectors/media.json, test/vectors/numbers.json, test/vectors/topics.json and deploy/plan.json byte for byte; release/release.json without the facts
+// (release/errors.json, artifacts/*.json, test/vectors/media.json, test/vectors/numbers.json, test/vectors/topics.json, test/vectors/names.json and deploy/plan.json byte for byte; release/release.json without the facts
 // of the machine and the moment: source commit, forge and node versions, build platform, the double-build count and
 // the script cross-check record). CI runs it after the suites, so a push whose snapshot is stale against its own
 // sources cannot merge. Without an AST build (CI) the immutable names are the manifest's and their offsets are checked
@@ -28,6 +28,7 @@ import { keccak256, toFunctionSelector } from "viem";
 import { mediaVectors } from "./media-vectors.mjs";
 import { numberVectors } from "./number-vectors.mjs";
 import { topicVectors } from "./topic-vectors.mjs";
+import { nameVectors } from "./name-vectors.mjs";
 import { planVectors } from "./gas-plan.mjs";
 import { ABI_IDS, idFromSnapshot } from "./abi-id.mjs";
 import { ARTIFACTS_MODE, AST_OUT, GLAMSTERDAM_FLOOR, OUT, SOURCE_ROOT, UNITS, artifact, buildPlan, hasAst, immutableLayout, jsonable, parseArgs, planDocument, root, toJSON } from "./deploy-plan.mjs";
@@ -162,6 +163,8 @@ emit("test/vectors/media.json", toJSON(mediaVectors(plan)));
 emit("test/vectors/numbers.json", toJSON(numberVectors()));
 // ---- test/vectors/topics.json: the Topics grammars, refused code points, path ids, property keys and builders -----
 emit("test/vectors/topics.json", toJSON(topicVectors(plan)));
+// ---- test/vectors/names.json: the files-name/3 grammar's verdicts, roles and record ids -----------------------------
+emit("test/vectors/names.json", toJSON(nameVectors(plan)));
 
 // ---- cross-check: the JS Files twin against the Solidity FilesTypes ------------------------------------------------
 let scriptCheck = { ran: false };
@@ -270,8 +273,8 @@ const publishCost = (c, type, bytes) => c.publishNew[type] + c.perWord * Math.ce
 const shapeCost = (c) => ({
   editSmall: publishCost(c, "files-child/1 form 0", 196) + c.bindHeadRebind,
   edit1k: publishCost(c, "files-child/1 form 0", 1120) + c.bindHeadRebind,
-  createSmall: c.create + publishCost(c, "files-root/1 form 0", 164) + publishCost(c, "files-name/2", 12) + c.bindHeadFresh + c.bindFolderFreshFile,
-  create1k: c.create + publishCost(c, "files-root/1 form 0", 1088) + publishCost(c, "files-name/2", 12) + c.bindHeadFresh + c.bindFolderFreshFile,
+  createSmall: c.create + publishCost(c, "files-root/1 form 0", 164) + publishCost(c, "files-name/3", 12) + c.bindHeadFresh + c.bindFolderFreshFile,
+  create1k: c.create + publishCost(c, "files-root/1 form 0", 1088) + publishCost(c, "files-name/3", 12) + c.bindHeadFresh + c.bindFolderFreshFile,
   chunk: publishCost(c, "files-bytes/1", 8192),
   spanNode: publishCost(c, "files-span/1", 96),
 });
@@ -351,7 +354,7 @@ const manifest = {
   privilegedRoles: { controllerOwner: plan.owner, proxyAdminsOwner: "the Realm's RealmController", steward: null, note: "the fixture key owns the controller; administrator power is total before freeze (SECURITY.md)" },
   errors: { path: "release/errors.json", sha256: sha256(Buffer.from(generated.get("release/errors.json"))), count: Object.keys(errors).length },
   abi: { interfaces: "test/snapshots/abi/", units: "artifacts/" },
-  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json", "test/vectors/numbers.json", "test/vectors/topics.json", "test/vectors/floor-plan.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
+  vectors: Object.fromEntries(["vectors/layout.json", "test/vectors/ids.json", "test/vectors/media.json", "test/vectors/numbers.json", "test/vectors/topics.json", "test/vectors/names.json", "test/vectors/floor-plan.json"].map((p) => [p, sha256(generated.has(p) ? Buffer.from(generated.get(p)) : readFileSync(join(root, p)))])),
   dependencyRoot: null,
   deployPlan: { path: "deploy/plan.json", genesis: plan.addresses.genesis, factory: plan.factory },
 };
@@ -378,7 +381,7 @@ if (CHECK) {
     console.error(`release: the committed snapshot does not match this build (${drift.length}):\n  ${drift.join("\n  ")}\nRegenerate it in the same push: forge build, the AST build, \`pnpm run release\`, \`pnpm run plan\` (tools/RELEASE.md).`);
     process.exit(1);
   }
-  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json, test/vectors/media.json, test/vectors/numbers.json, test/vectors/topics.json${scriptCheck.ran ? "; FilesTypes/TopicTypes twin == forge script" : ""})`);
+  console.log(`release: the committed snapshot matches this build (${generated.size} documents: release/, artifacts/, deploy/plan.json, test/vectors/media.json, test/vectors/numbers.json, test/vectors/topics.json, test/vectors/names.json${scriptCheck.ran ? "; FilesTypes/TopicTypes twin == forge script" : ""})`);
   process.exit(0);
 }
 const digest = sha256(readFileSync(join(root, "release/release.json")));

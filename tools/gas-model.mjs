@@ -91,7 +91,7 @@ const SHAPES = {
   "files-content/1 carrier 2": [["pub content c2", 320]],
   "files-external/1": [["pub external 40", 264], ["pub external 400", 624]],
   "files-directory/1": [["pub directory", 64]],
-  "files-name/2": [["pub name 12", 12], ["pub name 200", 200]],
+  "files-name/3": [["pub name 12", 12], ["pub name 200", 200]],
   "files-root/1 form 0": [["pub root f0", 164]],
   "files-root/1 form 1": [["pub root f1", 96]],
   "files-child/1 form 0": [["pub child f0", 196]],
@@ -183,15 +183,15 @@ const oneK = (cost, k, entries) => Array.from({ length: k }, (_, i) => later(cos
 const BEYOND_CLAIM = "beyondClaim";
 const VALIDATION = [
   { state: "listsNew", key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
-    actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
+    actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/3", 10), "bindHeadFresh", "bindFolderFreshFile"] },
   { state: "listsNew", key: "validate edit", what: "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
     actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
   { state: "listsNew", key: "validate rename move", what: "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
-    actions: [pub("files-name/2", 9), later("releaseFolder", true, 1), "bindFolderFreshFile"] },
+    actions: [pub("files-name/3", 9), later("releaseFolder", true, 1), "bindFolderFreshFile"] },
   { state: "listsNew", key: "validate two chunks", what: "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
     actions: [pub("files-bytes/1", 8192), pub("files-bytes/1", 8192)] },
   { state: "listsNew", key: "validate 40kb last publication", what: "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-    actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/2", 7), "bindHeadFresh", "bindFolderFreshFile"] },
+    actions: [pub("files-bytes/1", 7392), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-span/1", 96), pub("files-content/1 carrier 2", 320), "create", pub("files-root/1 form 1", 96), pub("files-name/3", 7), "bindHeadFresh", "bindFolderFreshFile"] },
   { state: "listsNew", key: "validate tag 6 words all new", what: "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
     actions: ["bindTagFresh", levels("mineNew", 5), levels("sharedNew", 5)] },
   { state: "listsNew", key: "validate label new text", what: "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
@@ -199,11 +199,11 @@ const VALIDATION = [
   // the ordinary state: the author's lists exist (a folder that already holds one of the author's files, a file
   // already edited, a folder that already holds the author's entries, roll-ups that already hold entries)
   { state: "listsExist", key: "validate create file lists exist", what: "M1 create file in a folder that already holds one of the author's files: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER",
-    actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/2", 10), "bindHeadFresh", "bindFolderFreshFile"] },
+    actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/3", 10), "bindHeadFresh", "bindFolderFreshFile"] },
   { state: "listsExist", key: "validate edit lists exist", what: "a second edit of a file: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
     actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"] },
   { state: "listsExist", key: "validate rename move lists exist", what: "rename + move into a folder that already holds the author's entries: PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh",
-    actions: [pub("files-name/2", 9), later("releaseFolder", true, 2), "bindFolderFreshFile"] },
+    actions: [pub("files-name/3", 9), later("releaseFolder", true, 2), "bindFolderFreshFile"] },
   { state: "listsExist", key: "validate tag 6 words all existing", what: "a first tag on an existing 6-word path, every per-author and shared roll-up holding two entries: the fresh-position term plus five existing levels",
     actions: ["bindTagFresh", levels("mineExisting", 5), levels("sharedExisting", 5)] },
   // later statements across places and in long lists (GasModel.t.sol sections 8 and 9b)

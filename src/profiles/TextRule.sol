@@ -10,7 +10,7 @@ import {TopicProfile, E_TOPIC_REFUSED} from "./TopicProfile.sol";
 ///         record). The body is the text's bytes, no refs: 1 to 255 bytes of well-formed UTF-8 with no control
 ///         character and no bidirectional, invisible or noncharacter code point (`TopicProfile.textRefusal`). `/`,
 ///         spaces (U+0020 and the no-break and typographic spaces; never U+2028 or U+2029: a label is one line) and
-///         uppercase are admitted (`files-name/2` refuses `/`, so a name cannot hold "AC/DC").
+///         uppercase are admitted (`files-name/3` refuses `/`, so a name cannot hold "AC/DC").
 /// @dev Pure over calldata. Refusal codes (`E_TOPIC_REFUSED`): 24 refs present (checked first), else
 ///      `TopicProfile.textRefusal`'s code 20-23.
 contract TextRule is IAcceptor {
