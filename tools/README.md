@@ -35,6 +35,18 @@ derivation, the purposes, and the ABI encodings (`actionsHash`, `bodiesHash`) of
 `pnpm release:check` compares it byte for byte, and `test/profiles/TopicVectors.t.sol` asserts every vector against the
 rules, `TopicProfile`, `EfsTopics` and `Keys`; `node tools/topic-vectors.mjs` writes it alone from the current build.
 
+## name-vectors.mjs
+
+File name vectors (`test/vectors/names.json`, `efs/vectors/names/1`): the `files-name/3` grammar's verdict on about
+600 names (every ASCII byte alone and at the start, middle and end of a name, the trailing `.` cases, the examples of
+the 2026-11-26 rulings, Windows device names as ordinary names, the `~efs` prefix, the length boundaries, and the 50
+naming-experiment vectors of `test/profiles/FilesNameVectors.sol`, which it reads and refuses to contradict), with each
+name's role and each admitted name's record id for the release Type id. Computed in JS (viem's keccak256, and the
+grammar written from the NatSpec of `src/profiles/FilesNameRule.sol`). `pnpm release` writes it, `pnpm release:check`
+compares it byte for byte, and `test/profiles/NameVectors.t.sol` asserts every vector against `FilesName.valid`,
+`FilesNameRule` and `Keys`; `node tools/name-vectors.mjs` writes it alone from the current build and `--check 1`
+compares it.
+
 ## media-vectors.mjs
 
 Media-type vectors for the two content descriptors (`test/vectors/media.json`, `efs/vectors/media/1`): encoded
