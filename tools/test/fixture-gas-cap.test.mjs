@@ -19,7 +19,7 @@ import { after, test } from "node:test";
 import { createPublicClient, createWalletClient, encodeFunctionData, http, keccak256, sha256, concat, toHex, pad } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { ACTION, FIXTURE_KEY, T, buildPlan, keys } from "../deploy-plan.mjs";
-import { HARDFORKS, down, up } from "../efs-fixture.mjs";
+import { HARDFORKS, down, receiptOrReport, up } from "../efs-fixture.mjs";
 
 const home = mkdtempSync(join(tmpdir(), "efs-fixture-gas-cap-"));
 const CAP = HARDFORKS.osaka.txGasCap;
@@ -30,37 +30,6 @@ after(async () => {
   for (const name of started) { try { await down({ name, home }); } catch { /* already gone */ } }
   rmSync(home, { recursive: true, force: true });
 });
-
-/**
- * The receipt of `hash`, or a failure that says what the chain knew. A receipt wait that times out says nothing by
- * itself (viem's wait swallows RPC errors while it polls, so a dead node and an unmined transaction look the same), so
- * on a timeout this reads, straight from the node: the transaction by hash, its receipt, the head, the sender's latest
- * and pending nonces, the pool's content, whether the instance's anvil process is alive, and the tail of its log. The
- * wait is 30 s, far above the 50 to 100 ms a local send takes, so a stuck send fails fast.
- */
-async function receiptOf(pub, hash, { step, instance, sender }) {
-  try {
-    return await pub.waitForTransactionReceipt({ hash, timeout: 30_000 });
-  } catch (e) {
-    const ask = async (method, params = []) => { try { return await pub.request({ method, params }); } catch (x) { return `ERROR ${x.shortMessage ?? x.message}`.slice(0, 200); } };
-    const tx = await ask("eth_getTransactionByHash", [hash]);
-    let alive = null;
-    try { process.kill(instance.pid, 0); alive = true; } catch { alive = false; }
-    let logTail = null;
-    try { logTail = readFileSync(instance.log, "utf8").trim().split("\n").slice(-25); } catch (x) { logTail = `unreadable: ${x.message}`; }
-    const found = {
-      step, hash, error: e.name, rpcUrl: instance.rpcUrl, anvilPid: instance.pid, anvilAlive: alive,
-      transaction: tx && typeof tx === "object" ? { blockNumber: tx.blockNumber, nonce: tx.nonce, gas: tx.gas, from: tx.from } : tx,
-      receipt: await ask("eth_getTransactionReceipt", [hash]).then((r) => (r && typeof r === "object" ? { blockNumber: r.blockNumber, status: r.status, gasUsed: r.gasUsed } : r)),
-      head: await ask("eth_blockNumber"),
-      nonceLatest: await ask("eth_getTransactionCount", [sender, "latest"]),
-      noncePending: await ask("eth_getTransactionCount", [sender, "pending"]),
-      txpool: await ask("txpool_content"),
-      logTail,
-    };
-    throw new Error(`no receipt for ${hash} within 30 s at step "${step}"; what the chain knew:\n${JSON.stringify(found, null, 2)}`, { cause: e });
-  }
-}
 
 /** `count` distinct files-bytes/1 records of 224 payload bytes (a 256-byte body: sha256(payload) ‖ payload). */
 function records(typeId, count, seed) {
@@ -118,7 +87,7 @@ test("a publication over the per-transaction gas cap is refused; split, it is ad
 
   // 2. at the cap: it is mined, runs out of gas, and admits nothing
   const hash = await wallet.sendTransaction({ to: ledger, data: await call(big), gas: BigInt(CAP) });
-  const receipt = await receiptOf(pub, hash, { step: "2: the whole publication at the cap", instance: r, sender: account.address });
+  const receipt = await receiptOrReport(pub, hash, { step: "2: the whole publication at the cap", sender: account.address, pid: r.pid, logPath: r.log });
   assert.equal(receipt.status, "reverted", "the publication needs more gas than one transaction may carry");
   assert.equal(await nonceOf(), before, "an out-of-gas publication admits nothing");
 
@@ -126,7 +95,7 @@ test("a publication over the per-transaction gas cap is refused; split, it is ad
   for (let i = 0; i < 4; i++) {
     const part = { actions: big.actions.slice(i * 16, i * 16 + 16), bodies: big.bodies.slice(i * 16, i * 16 + 16) };
     const h = await wallet.sendTransaction({ to: ledger, data: await call(part) });
-    const rc = await receiptOf(pub, h, { step: `3: part ${i} of 4`, instance: r, sender: account.address });
+    const rc = await receiptOrReport(pub, h, { step: `3: part ${i} of 4`, sender: account.address, pid: r.pid, logPath: r.log });
     assert.equal(rc.status, "success");
     assert.ok(rc.gasUsed < BigInt(CAP), `part ${i} used ${rc.gasUsed}`);
   }
@@ -145,7 +114,7 @@ test("a publication over the per-transaction gas cap is refused; split, it is ad
   const pub2 = createPublicClient({ chain, transport: http(p.rpcUrl), pollingInterval: 50 });
   assert.equal(p.ledger, ledger, "the same plan gives the same ledger address");
   const h2 = await wallet2.sendTransaction({ to: ledger, data: await call(big, pub2), gas: 29_000_000n });
-  const whole = await receiptOf(pub2, h2, { step: "prague: the whole publication", instance: p, sender: account.address });
+  const whole = await receiptOrReport(pub2, h2, { step: "prague: the whole publication", sender: account.address, pid: p.pid, logPath: p.log });
   assert.equal(whole.status, "success");
   assert.ok(whole.gasUsed > BigInt(CAP), `the whole publication used ${whole.gasUsed}, more than the cap`);
   await down({ name: "uncapped", home });

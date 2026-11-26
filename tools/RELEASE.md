@@ -483,6 +483,21 @@ Newly done in the list release (items 49 to 59):
   next release's commit** (a change to that file triggers a run of its own, so it rides the next release). When the n²
   term is modelled: measure which suites account for the growth and propose a split (fast on every push, slow per
   release) or a cut. No test is dropped without the integration owner's review.
+- **An unexplained receipt timeout in CI (recorded so a second occurrence is matched to this one).** `check` on
+  `2fecec0`, run 45902367913, attempt 1: `tools/test/fixture-gas-cap.test.mjs` failed with viem's 180 s
+  `WaitForTransactionReceiptTimeoutError` for transaction `0x72a7b49d…53fe`, about 8 s into a test that takes 15 to 16 s;
+  the commit changed only docs and the workflow's time limit. Cause unknown. Not a flake until it is explained. Checked:
+  a receipt-wait race was not reproduced in 7,000 local sends (4,000 of them under CPU load); a port collision with
+  another test's instance is handled at start-up (the child's bind is authoritative); the instance's `ttl` was not
+  reached; the runner was not slow. Established by experiment: with viem a DEAD node and an unmined transaction give
+  the same error, because the wait swallows RPC errors while it polls, so the error text cannot say which happened.
+  Diagnostics since then: `receiptOrReport` in `tools/efs-fixture.mjs` (used by the tool's two waits and by the test)
+  waits 30 s and on a timeout names the step and prints the transaction by hash, its receipt, the head, the sender's
+  nonces, the pool, whether the instance's anvil is alive, and the tail of its log.
+- **A read bound for the `head-authors` pair.** The SDK reads everyone's versions with `postingSliceOf` plus
+  `LedgerViews.authorHeads`, up to 150 entries a call, a number borrowed from the topic readers because nothing
+  measures this pair. Measure a recommended bound for the pair on both schedules under the read table's `eth_call`
+  budget and margin, and state it in `gas/model.json` `reads` (with the n² work).
 
 - **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
   since the list release (item 50) it covers every later statement across places up to 3,586 entries on prague (a yes
