@@ -46,7 +46,7 @@
           "files-span/1": 290326,
           "files-content/1 carrier 0": 173786,
           "files-content/1 carrier 2": 193393,
-          "files-external/1": 220688,
+          "files-external/1": 220700,
           "files-directory/1": 165070,
           "files-name/2": 152124,
           "files-root/1 form 0": 148603,
@@ -55,13 +55,13 @@
           "files-child/1 form 1": 254468,
           "topic-word/1": 181737,
           "topic/1": 211642,
-          "text/1": 182211
+          "text/1": 182199
         },
         "publishExisting": 176506,
         "reuse": 179957,
         "create": 98342,
-        "bindHeadFresh": 331210,
-        "bindHeadRebind": 204289,
+        "bindHeadFresh": 331198,
+        "bindHeadRebind": 204277,
         "bindFolderFreshFile": 409088,
         "bindFolderFreshDirectory": 408858,
         "bindFolderRebind": 206474,
@@ -79,14 +79,14 @@
         "unbindProperty": 145829,
         "releaseProperty": 144641,
         "bindSameFreshWord": 357506,
-        "bindSameFreshPath": 357414,
+        "bindSameFreshPath": 357402,
         "unbindSame": 146042,
         "releaseSame": 144842,
         "restoreSame": 174621,
-        "bindBroaderFresh": 357481,
+        "bindBroaderFresh": 357493,
         "unbindBroader": 146053,
         "releaseBroader": 144865,
-        "restoreBroader": 174644,
+        "restoreBroader": 174656,
         "withdraw": 151662,
         "firstWriteSurcharge": 11786,
         "tagLevel": {
@@ -141,8 +141,8 @@
         ],
         "publishNewBaseBySize": {
           "files-external/1": {
-            "264": 219176,
-            "624": 222200
+            "264": 219188,
+            "624": 222212
           },
           "files-name/2": {
             "12": 136039,
@@ -163,8 +163,8 @@
           "pub span": 286751,
           "pub content c0": 330498,
           "pub content c2": 330510,
-          "pub external 40": 363485,
-          "pub external 400": 363438,
+          "pub external 40": 363461,
+          "pub external 400": 363414,
           "pub directory": 324547,
           "pub name 12": 392964,
           "pub name 200": 392928,
@@ -175,12 +175,12 @@
           "pub topic word 12": 337502,
           "pub topic word 40": 337473,
           "pub topic": 399764,
-          "pub text 24": 337502,
+          "pub text 24": 337514,
           "pub existing": 310947,
           "reuse": 310968,
           "create": 268822,
-          "bind head fresh": 281115,
-          "bind head rebind": 293427,
+          "bind head fresh": 281127,
+          "bind head rebind": 293439,
           "bind folder fresh file": 275599,
           "bind folder fresh dir": 275623,
           "bind folder rebind": 300235,
@@ -198,14 +198,14 @@
           "unbind property": 286393,
           "release property": 286419,
           "bind same fresh word": 291353,
-          "bind same fresh path": 291401,
+          "bind same fresh path": 291425,
           "unbind same": 286369,
           "release same": 286419,
           "restore same": 286363,
-          "bind broader fresh": 291425,
+          "bind broader fresh": 291401,
           "unbind broader": 286381,
           "release broader": 286419,
-          "restore broader": 286363,
+          "restore broader": 286339,
           "withdraw": 288956
         },
         "bytesResiduals": {
@@ -312,7 +312,7 @@
             "files-span/1": 164175,
             "files-content/1 carrier 0": 88764,
             "files-content/1 carrier 2": 108371,
-            "files-external/1": 141131,
+            "files-external/1": 141143,
             "files-directory/1": 133565,
             "files-name/2": 154819,
             "files-root/1 form 0": 117098,
@@ -321,13 +321,13 @@
             "files-child/1 form 1": 153739,
             "topic-word/1": 139628,
             "topic/1": 151856,
-            "text/1": 140102
+            "text/1": 140090
           },
           "publishExisting": 95843,
           "reuse": 99271,
           "create": 89227,
-          "bindHeadFresh": 193348,
-          "bindHeadRebind": 92315,
+          "bindHeadFresh": 193336,
+          "bindHeadRebind": 92303,
           "bindFolderFreshFile": 220087,
           "bindFolderFreshDirectory": 217867,
           "bindFolderRebind": 96907,
@@ -345,14 +345,14 @@
           "unbindProperty": 62285,
           "releaseProperty": 61074,
           "bindSameFreshWord": 217903,
-          "bindSameFreshPath": 217879,
+          "bindSameFreshPath": 217867,
           "unbindSame": 62297,
           "releaseSame": 61074,
           "restoreSame": 91431,
-          "bindBroaderFresh": 217855,
+          "bindBroaderFresh": 217867,
           "unbindBroader": 62285,
           "releaseBroader": 61074,
-          "restoreBroader": 91431,
+          "restoreBroader": 91443,
           "withdraw": 81754,
           "firstWriteSurcharge": 17088,
           "tagLevel": {
@@ -367,9 +367,9 @@
         {
           "key": "bind broader fresh k1",
           "test": "test_model_bind_broader_fresh()",
-          "kernelFrameGas": 467271,
-          "gas": 652704,
-          "frameGas": 648906
+          "kernelFrameGas": 467259,
+          "gas": 652692,
+          "frameGas": 648894
         },
         {
           "key": "bind broader fresh k2",
@@ -430,9 +430,9 @@
         {
           "key": "bind head fresh k2",
           "test": "test_model_bind_head_fresh()",
-          "kernelFrameGas": 638100,
-          "gas": 947868,
-          "frameGas": 943535
+          "kernelFrameGas": 638088,
+          "gas": 947856,
+          "frameGas": 943523
         },
         {
           "key": "bind head rebind k1",
@@ -444,9 +444,9 @@
         {
           "key": "bind head rebind k2",
           "test": "test_model_bind_head_rebind()",
-          "kernelFrameGas": 436046,
-          "gas": 706338,
-          "frameGas": 702005
+          "kernelFrameGas": 436034,
+          "gas": 706326,
+          "frameGas": 701993
         },
         {
           "key": "bind property fresh k1",
@@ -479,9 +479,9 @@
         {
           "key": "bind same fresh path k1",
           "test": "test_model_bind_same_fresh_path()",
-          "kernelFrameGas": 467271,
-          "gas": 652619,
-          "frameGas": 648815
+          "kernelFrameGas": 467283,
+          "gas": 652631,
+          "frameGas": 648827
         },
         {
           "key": "bind same fresh path k2",
@@ -745,9 +745,9 @@
         {
           "key": "pub external 40 k1",
           "test": "test_model_publish_external_40()",
-          "kernelFrameGas": 622523,
-          "gas": 794143,
-          "frameGas": 790333
+          "kernelFrameGas": 622511,
+          "gas": 794131,
+          "frameGas": 790321
         },
         {
           "key": "pub external 40 k2",
@@ -759,9 +759,9 @@
         {
           "key": "pub external 400 k1",
           "test": "test_model_publish_external_400()",
-          "kernelFrameGas": 879760,
-          "gas": 1051417,
-          "frameGas": 1047570
+          "kernelFrameGas": 879748,
+          "gas": 1051405,
+          "frameGas": 1047558
         },
         {
           "key": "pub external 400 k2",
@@ -850,9 +850,9 @@
         {
           "key": "pub text 24 k2",
           "test": "test_model_publish_text()",
-          "kernelFrameGas": 593545,
-          "gas": 752287,
-          "frameGas": 747948
+          "kernelFrameGas": 593533,
+          "gas": 752275,
+          "frameGas": 747936
         },
         {
           "key": "pub topic k1",
@@ -969,9 +969,9 @@
         {
           "key": "restore broader k1",
           "test": "test_model_restore_broader()",
-          "kernelFrameGas": 340847,
-          "gas": 464818,
-          "frameGas": 461007
+          "kernelFrameGas": 340835,
+          "gas": 464806,
+          "frameGas": 460995
         },
         {
           "key": "restore broader k2",
@@ -1165,16 +1165,16 @@
         {
           "key": "validate 40kb last publication",
           "test": "test_model_validate_40kb_last_publication()",
-          "kernelFrameGas": 7904287,
-          "gas": 9051503,
-          "frameGas": 9041530
+          "kernelFrameGas": 7904299,
+          "gas": 9051515,
+          "frameGas": 9041542
         },
         {
           "key": "validate create file",
           "test": "test_model_validate_recipes()",
-          "kernelFrameGas": 1127794,
-          "gas": 1648406,
-          "frameGas": 1642412
+          "kernelFrameGas": 1127782,
+          "gas": 1648394,
+          "frameGas": 1642400
         },
         {
           "key": "validate edit",
@@ -1186,9 +1186,9 @@
         {
           "key": "validate label new text",
           "test": "test_model_validate_label_new_text()",
-          "kernelFrameGas": 646848,
-          "gas": 894422,
-          "frameGas": 890067
+          "kernelFrameGas": 646860,
+          "gas": 894434,
+          "frameGas": 890079
         },
         {
           "key": "validate rename move",
@@ -1230,20 +1230,20 @@
         {
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
-          "measured": 1642412,
-          "predicted": 1547156,
+          "measured": 1642400,
+          "predicted": 1547144,
           "errorPercent": -5.8,
-          "measuredKernelGas": 1127794,
-          "predictedKernelGas": 1132992
+          "measuredKernelGas": 1127782,
+          "predictedKernelGas": 1132980
         },
         {
           "key": "validate edit",
           "what": "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
           "measured": 819785,
-          "predicted": 840598,
+          "predicted": 840586,
           "errorPercent": 2.54,
           "measuredKernelGas": 584072,
-          "predictedKernelGas": 578520
+          "predictedKernelGas": 578508
         },
         {
           "key": "validate rename move",
@@ -1266,11 +1266,11 @@
         {
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-          "measured": 9041530,
-          "predicted": 8938793,
+          "measured": 9041542,
+          "predicted": 8938781,
           "errorPercent": -1.14,
-          "measuredKernelGas": 7904287,
-          "predictedKernelGas": 7903498
+          "measuredKernelGas": 7904299,
+          "predictedKernelGas": 7903486
         },
         {
           "key": "validate tag 6 words all new",
@@ -1284,11 +1284,11 @@
         {
           "key": "validate label new text",
           "what": "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
-          "measured": 890067,
-          "predicted": 849678,
+          "measured": 890079,
+          "predicted": 849666,
           "errorPercent": -4.54,
-          "measuredKernelGas": 646848,
-          "predictedKernelGas": 645395
+          "measuredKernelGas": 646860,
+          "predictedKernelGas": 645383
         }
       ],
       "maxAbsErrorPercent": 5.8
@@ -1309,19 +1309,19 @@
           "files-name/2": 342598,
           "files-root/1 form 0": 412663,
           "files-root/1 form 1": 526788,
-          "files-child/1 form 0": 756393,
-          "files-child/1 form 1": 870572,
+          "files-child/1 form 0": 756405,
+          "files-child/1 form 1": 870584,
           "topic-word/1": 547983,
-          "topic/1": 592188,
+          "topic/1": 592200,
           "text/1": 548457
         },
         "publishExisting": 535652,
         "reuse": 539103,
         "create": 362302,
-        "bindHeadFresh": 1299160,
-        "bindHeadRebind": 592357,
+        "bindHeadFresh": 1299172,
+        "bindHeadRebind": 592369,
         "bindFolderFreshFile": 1633834,
-        "bindFolderFreshDirectory": 1633616,
+        "bindFolderFreshDirectory": 1633592,
         "bindFolderRebind": 587354,
         "unbindFolder": 364493,
         "releaseFolder": 361472,
@@ -1341,7 +1341,7 @@
         "unbindSame": 350858,
         "releaseSame": 349682,
         "restoreSame": 474657,
-        "bindBroaderFresh": 1413399,
+        "bindBroaderFresh": 1413387,
         "unbindBroader": 350893,
         "releaseBroader": 349693,
         "restoreBroader": 474680,
@@ -1369,19 +1369,19 @@
             "files-name/2": 146758,
             "files-root/1 form 0": 118903,
             "files-root/1 form 1": 135108,
-            "files-child/1 form 0": 168873,
-            "files-child/1 form 1": 185132,
+            "files-child/1 form 0": 168885,
+            "files-child/1 form 1": 185144,
             "topic-word/1": 156303,
-            "topic/1": 200508,
+            "topic/1": 200520,
             "text/1": 156777
           },
           "publishExisting": 143972,
           "reuse": 147423,
           "create": 68542,
-          "bindHeadFresh": 222040,
-          "bindHeadRebind": 200677,
+          "bindHeadFresh": 222052,
+          "bindHeadRebind": 200689,
           "bindFolderFreshFile": 262954,
-          "bindFolderFreshDirectory": 262736,
+          "bindFolderFreshDirectory": 262712,
           "bindFolderRebind": 195674,
           "unbindFolder": 168653,
           "releaseFolder": 165632,
@@ -1401,7 +1401,7 @@
           "unbindSame": 155018,
           "releaseSame": 153842,
           "restoreSame": 180897,
-          "bindBroaderFresh": 238359,
+          "bindBroaderFresh": 238347,
           "unbindBroader": 155053,
           "releaseBroader": 153853,
           "restoreBroader": 180920,
@@ -1549,19 +1549,19 @@
           "pub name 200": 1306660,
           "pub root f0": 915007,
           "pub root f1": 917073,
-          "pub child f0": 699090,
-          "pub child f1": 701154,
+          "pub child f0": 699066,
+          "pub child f1": 701130,
           "pub topic word 12": 1061062,
           "pub topic word 40": 1061033,
-          "pub topic": 1365896,
+          "pub topic": 1365872,
           "pub text 24": 1061062,
           "pub existing": 887067,
           "reuse": 887088,
           "create": 815342,
-          "bind head fresh": 754863,
-          "bind head rebind": 840725,
+          "bind head fresh": 754851,
+          "bind head rebind": 840713,
           "bind folder fresh file": 682879,
-          "bind folder fresh dir": 682879,
+          "bind folder fresh dir": 682915,
           "bind folder rebind": 854721,
           "unbind folder": 847797,
           "release folder": 851656,
@@ -1581,7 +1581,7 @@
           "unbind same": 833691,
           "release same": 833705,
           "restore same": 833673,
-          "bind broader fresh": 838745,
+          "bind broader fresh": 838757,
           "unbind broader": 833679,
           "release broader": 833717,
           "restore broader": 833673,
@@ -1696,19 +1696,19 @@
             "files-name/2": 115119,
             "files-root/1 form 0": 87298,
             "files-root/1 form 1": 103503,
-            "files-child/1 form 0": 97744,
-            "files-child/1 form 1": 114003,
+            "files-child/1 form 0": 97756,
+            "files-child/1 form 1": 114015,
             "topic-word/1": 99928,
-            "topic/1": 112156,
+            "topic/1": 112168,
             "text/1": 100402
           },
           "publishExisting": 83143,
           "reuse": 86571,
           "create": 59427,
-          "bindHeadFresh": 123712,
-          "bindHeadRebind": 86803,
+          "bindHeadFresh": 123724,
+          "bindHeadRebind": 86815,
           "bindFolderFreshFile": 140487,
-          "bindFolderFreshDirectory": 138279,
+          "bindFolderFreshDirectory": 138255,
           "bindFolderRebind": 91407,
           "unbindFolder": 59485,
           "releaseFolder": 58274,
@@ -1728,7 +1728,7 @@
           "unbindSame": 59473,
           "releaseSame": 58274,
           "restoreSame": 78707,
-          "bindBroaderFresh": 138267,
+          "bindBroaderFresh": 138255,
           "unbindBroader": 59485,
           "releaseBroader": 58262,
           "restoreBroader": 78707,
@@ -1754,25 +1754,25 @@
         {
           "key": "bind broader fresh k2",
           "test": "test_model_bind_broader_fresh()",
-          "kernelFrameGas": 477350,
-          "gas": 3669900,
-          "frameGas": 727943,
+          "kernelFrameGas": 477338,
+          "gas": 3669888,
+          "frameGas": 727931,
           "frameStateGas": 2937600
         },
         {
           "key": "bind folder fresh dir k1",
           "test": "test_model_bind_folder_fresh_dir()",
-          "kernelFrameGas": 339071,
-          "gas": 2320271,
-          "frameGas": 553935,
+          "kernelFrameGas": 339083,
+          "gas": 2320283,
+          "frameGas": 553947,
           "frameStateGas": 1762560
         },
         {
           "key": "bind folder fresh dir k2",
           "test": "test_model_bind_folder_fresh_dir()",
-          "kernelFrameGas": 477350,
-          "gas": 3954444,
-          "frameGas": 816671,
+          "kernelFrameGas": 477338,
+          "gas": 3954432,
+          "frameGas": 816659,
           "frameStateGas": 3133440
         },
         {
@@ -1818,9 +1818,9 @@
         {
           "key": "bind head fresh k2",
           "test": "test_model_bind_head_fresh()",
-          "kernelFrameGas": 450276,
-          "gas": 3357516,
-          "frameGas": 709343,
+          "kernelFrameGas": 450288,
+          "gas": 3357528,
+          "frameGas": 709355,
           "frameStateGas": 2643840
         },
         {
@@ -1834,9 +1834,9 @@
         {
           "key": "bind head rebind k2",
           "test": "test_model_bind_head_rebind()",
-          "kernelFrameGas": 376434,
-          "gas": 2029772,
-          "frameGas": 654559,
+          "kernelFrameGas": 376446,
+          "gas": 2029784,
+          "frameGas": 654571,
           "frameStateGas": 1370880
         },
         {
@@ -2082,9 +2082,9 @@
         {
           "key": "pub child f0 k1",
           "test": "test_model_publish_child_form0()",
-          "kernelFrameGas": 412154,
-          "gas": 2236140,
-          "frameGas": 567695,
+          "kernelFrameGas": 412142,
+          "gas": 2236128,
+          "frameGas": 567683,
           "frameStateGas": 1664640
         },
         {
@@ -2098,9 +2098,9 @@
         {
           "key": "pub child f1 k1",
           "test": "test_model_publish_child_form1()",
-          "kernelFrameGas": 391489,
-          "gas": 2019619,
-          "frameGas": 547030,
+          "kernelFrameGas": 391477,
+          "gas": 2019607,
+          "frameGas": 547018,
           "frameStateGas": 1468800
         },
         {
@@ -2306,9 +2306,9 @@
         {
           "key": "pub topic k1",
           "test": "test_model_publish_topic()",
-          "kernelFrameGas": 369489,
-          "gas": 2183935,
-          "frameGas": 515496,
+          "kernelFrameGas": 369477,
+          "gas": 2183923,
+          "frameGas": 515484,
           "frameStateGas": 1664640
         },
         {
@@ -2666,9 +2666,9 @@
         {
           "key": "validate create file",
           "test": "test_model_validate_recipes()",
-          "kernelFrameGas": 791494,
-          "gas": 5788258,
-          "frameGas": 1277944,
+          "kernelFrameGas": 791482,
+          "gas": 5788246,
+          "frameGas": 1277932,
           "frameStateGas": 4504320
         },
         {
@@ -2732,13 +2732,13 @@
         {
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
-          "measured": 5782264,
-          "predicted": 5393346,
+          "measured": 5782252,
+          "predicted": 5393358,
           "errorPercent": -6.73,
-          "measuredKernelGas": 791494,
-          "predictedKernelGas": 796256,
-          "measuredExecutionGas": 1277944,
-          "predictedExecutionGas": 1164436,
+          "measuredKernelGas": 791482,
+          "predictedKernelGas": 796268,
+          "measuredExecutionGas": 1277932,
+          "predictedExecutionGas": 1164448,
           "measuredStateGas": 4504320,
           "predictedStateGas": 4210560
         },
@@ -2746,12 +2746,12 @@
           "key": "validate edit",
           "what": "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
           "measured": 2502487,
-          "predicted": 2691798,
-          "errorPercent": 7.56,
+          "predicted": 2691822,
+          "errorPercent": 7.57,
           "measuredKernelGas": 460548,
-          "predictedKernelGas": 455020,
+          "predictedKernelGas": 455044,
           "measuredExecutionGas": 739927,
-          "predictedExecutionGas": 715048,
+          "predictedExecutionGas": 715072,
           "measuredStateGas": 1762560,
           "predictedStateGas": 1958400
         },
@@ -2785,12 +2785,12 @@
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
           "measured": 38923718,
-          "predicted": 38637489,
+          "predicted": 38637501,
           "errorPercent": -0.74,
           "measuredKernelGas": 4810887,
-          "predictedKernelGas": 4808558,
+          "predictedKernelGas": 4808570,
           "measuredExecutionGas": 5826758,
-          "predictedExecutionGas": 5620099,
+          "predictedExecutionGas": 5620111,
           "measuredStateGas": 33096960,
           "predictedStateGas": 32999040
         },
@@ -2821,14 +2821,14 @@
           "predictedStateGas": 2154240
         }
       ],
-      "maxAbsErrorPercent": 7.56
+      "maxAbsErrorPercent": 7.57
     }
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "026844753222572d9e72fac28a299049545bf002",
-    "dirtyFiles": 3,
-    "date": "2026-11-26T01:16:36.096Z",
+    "commit": "7e1e299509bbd3c09ecd10e1789b592adaa72db4",
+    "dirtyFiles": 0,
+    "date": "2026-11-26T01:44:55.414Z",
     "foundry": "forge Version: 1.8.3"
   },
   "reads": {
@@ -2846,33 +2846,33 @@
     "schedules": {
       "prague": {
         "rows": {
-          "about page=10": 473282,
-          "about page=10 sample=4": 1165935,
-          "about page=20": 801615,
+          "about page=10": 473312,
+          "about page=10 sample=4": 1166265,
+          "about page=20": 801645,
           "authorCount 300 authors": 84978,
-          "byName 300 authors page=10": 363522,
-          "byName 300 authors page=50": 1273522,
-          "children 16": 895574,
-          "children page=1": 185809,
+          "byName 300 authors page=10": 363552,
+          "byName 300 authors page=50": 1273552,
+          "children 16": 895604,
+          "children page=1": 185839,
           "entryCount exact 2000 entries": 82975,
-          "everyone below lens=8 page=10": 1315680,
-          "everyone below lens=8 page=50": 6179628,
-          "everyone exact lens=8 page=10": 1088874,
-          "everyone exact lens=8 page=50": 5207139,
-          "everyone worst below lens=8 page=10": 1808822,
-          "everyone worst below lens=8 page=50": 8694493,
+          "everyone below lens=8 page=10": 1315800,
+          "everyone below lens=8 page=50": 6179928,
+          "everyone exact lens=8 page=10": 1088934,
+          "everyone exact lens=8 page=50": 5207289,
+          "everyone worst below lens=8 page=10": 1808942,
+          "everyone worst below lens=8 page=50": 8694793,
           "mine lens=1 depth=1 page=10": 576311,
           "mine lens=1 depth=1 page=50": 2362056,
-          "mine lens=1 depth=64 page=10": 563257,
-          "mine lens=1 depth=64 page=50": 2427260,
-          "mine lens=1 depth=8 page=10": 563257,
-          "mine lens=1 depth=8 page=50": 2427260,
+          "mine lens=1 depth=64 page=10": 563287,
+          "mine lens=1 depth=64 page=50": 2427380,
+          "mine lens=1 depth=8 page=10": 563287,
+          "mine lens=1 depth=8 page=50": 2427380,
           "mine lens=32 depth=1 page=10": 2501815,
           "mine lens=32 depth=1 page=50": 7528585,
-          "mine lens=32 depth=64 page=10": 2308326,
-          "mine lens=32 depth=64 page=50": 7577092,
-          "mine lens=32 depth=8 page=10": 2308326,
-          "mine lens=32 depth=8 page=50": 7577092,
+          "mine lens=32 depth=64 page=10": 2308626,
+          "mine lens=32 depth=64 page=50": 7577632,
+          "mine lens=32 depth=8 page=10": 2308626,
+          "mine lens=32 depth=8 page=50": 7577632,
           "mine lens=64 depth=1 page=10": 5278602,
           "mine lens=64 depth=1 page=50": 12239714,
           "mine lens=64 depth=64 page=10": 4798516,
@@ -2881,38 +2881,38 @@
           "mine lens=64 depth=8 page=50": 11877565,
           "mine lens=8 depth=1 page=10": 1043425,
           "mine lens=8 depth=1 page=50": 3574491,
-          "mine lens=8 depth=64 page=10": 1100123,
-          "mine lens=8 depth=64 page=50": 3671093,
-          "mine lens=8 depth=8 page=10": 1100123,
-          "mine lens=8 depth=8 page=50": 3671093,
-          "mine worst lens=1 depth=8 page=10": 686762,
-          "mine worst lens=1 depth=8 page=50": 2929400,
-          "mine worst lens=32 depth=8 page=10": 3826319,
-          "mine worst lens=32 depth=8 page=50": 13801748,
+          "mine lens=8 depth=64 page=10": 1100363,
+          "mine lens=8 depth=64 page=50": 3671333,
+          "mine lens=8 depth=8 page=10": 1100363,
+          "mine lens=8 depth=8 page=50": 3671333,
+          "mine worst lens=1 depth=8 page=10": 686792,
+          "mine worst lens=1 depth=8 page=50": 2929520,
+          "mine worst lens=32 depth=8 page=10": 3826619,
+          "mine worst lens=32 depth=8 page=50": 13802288,
           "mine worst lens=64 depth=8 page=10": 8822965,
           "mine worst lens=64 depth=8 page=50": 23182606,
-          "mine worst lens=8 depth=8 page=10": 1569632,
-          "mine worst lens=8 depth=8 page=50": 5866679,
+          "mine worst lens=8 depth=8 page=10": 1569872,
+          "mine worst lens=8 depth=8 page=50": 5866919,
           "placeCount 2000 positions": 84955,
-          "raw below page=10": 619487,
-          "raw below page=50": 2672840,
-          "raw exact page=10": 538590,
-          "raw exact page=50": 2449048,
-          "skip below lens=1 page=60": 2371733,
-          "skip below lens=1 per entry": 36157,
-          "skip below lens=64 page=60": 2373234,
-          "skip below lens=64 per entry": 36168,
-          "skip below lens=8 page=60": 2371899,
-          "skip below lens=8 per entry": 36158,
-          "skip exact lens=1 page=60": 2338606,
-          "skip exact lens=1 per entry": 35991,
-          "skip exact lens=64 page=60": 2340099,
-          "skip exact lens=64 per entry": 36002,
-          "skip exact lens=8 page=60": 2338771,
-          "skip exact lens=8 per entry": 35992,
+          "raw below page=10": 619607,
+          "raw below page=50": 2673140,
+          "raw exact page=10": 538650,
+          "raw exact page=50": 2449198,
+          "skip below lens=1 page=60": 2371853,
+          "skip below lens=1 per entry": 36158,
+          "skip below lens=64 page=60": 2373354,
+          "skip below lens=64 per entry": 36169,
+          "skip below lens=8 page=60": 2372019,
+          "skip below lens=8 per entry": 36159,
+          "skip exact lens=1 page=60": 2338726,
+          "skip exact lens=1 per entry": 35992,
+          "skip exact lens=64 page=60": 2340219,
+          "skip exact lens=64 per entry": 36003,
+          "skip exact lens=8 page=60": 2338891,
+          "skip exact lens=8 per entry": 35993,
           "wordPage places=1": 151612,
-          "wordPage places=20": 1067352,
-          "wordPage places=5": 355417
+          "wordPage places=20": 1067382,
+          "wordPage places=5": 355447
         },
         "terms": {
           "mineExact": {
@@ -2923,66 +2923,66 @@
             "maxAbsErrorPercent": 11.5
           },
           "mineBelow": {
-            "opening": 339411,
-            "openingPerLensAuthor": 20667,
-            "perRow": 38831,
+            "opening": 339563,
+            "openingPerLensAuthor": 20666,
+            "perRow": 38833,
             "perLensIndex": 15375,
             "maxAbsErrorPercent": 31.4
           },
           "mineBelowQuiet": {
-            "opening": 237896,
-            "openingPerLensAuthor": 19234,
-            "perRow": 37355,
+            "opening": 238048,
+            "openingPerLensAuthor": 19233,
+            "perRow": 37358,
             "perLensIndex": 6737,
-            "maxAbsErrorPercent": 23.9
+            "maxAbsErrorPercent": 24
           },
           "everyoneExact": {
-            "opening": 60980,
-            "perRow": 47761,
-            "perLensAuthor": 6900,
+            "opening": 61010,
+            "perRow": 47764,
+            "perLensAuthor": 6899,
             "perSkippedEntryByLens": {
-              "1": 35991,
-              "8": 35992,
-              "64": 36002
+              "1": 35992,
+              "8": 35993,
+              "64": 36003
             }
           },
           "everyoneBelow": {
-            "opening": 106147,
-            "perRow": 51334,
+            "opening": 106227,
+            "perRow": 51338,
             "perLensAuthor": 15101,
             "perSkippedEntryByLens": {
-              "1": 36157,
-              "8": 36158,
-              "64": 36168
+              "1": 36158,
+              "8": 36159,
+              "64": 36169
             }
           },
           "everyoneBelowQuiet": {
-            "opening": 106147,
-            "perRow": 51334,
+            "opening": 106227,
+            "perRow": 51338,
             "perLensAuthor": 8783
           },
           "rawExact": {
-            "opening": 60980,
-            "perRow": 47761
+            "opening": 61010,
+            "perRow": 47764
           },
           "rawBelow": {
-            "opening": 106147,
-            "perRow": 51334
+            "opening": 106227,
+            "perRow": 51338
           },
           "byName": {
-            "opening": 136022,
+            "opening": 136052,
             "perRow": 22750
           },
           "about": {
-            "opening": 144952,
+            "opening": 144982,
             "perRow": 32833
           },
           "wordPage": {
-            "opening": 118107,
+            "opening": 118137,
             "perRow": 47462
           },
           "children": {
-            "opening": 138491,
+            "opening": 138521,
             "perRow": 47318
           }
         },
@@ -3081,33 +3081,33 @@
       },
       "amsterdam": {
         "rows": {
-          "about page=10": 477082,
-          "about page=10 sample=4": 1171735,
-          "about page=20": 805415,
+          "about page=10": 477112,
+          "about page=10 sample=4": 1172065,
+          "about page=20": 805445,
           "authorCount 300 authors": 88178,
-          "byName 300 authors page=10": 367322,
-          "byName 300 authors page=50": 1277322,
-          "children 16": 900474,
-          "children page=1": 189209,
+          "byName 300 authors page=10": 367352,
+          "byName 300 authors page=50": 1277352,
+          "children 16": 900504,
+          "children page=1": 189239,
           "entryCount exact 2000 entries": 86175,
-          "everyone below lens=8 page=10": 1319680,
-          "everyone below lens=8 page=50": 6184828,
-          "everyone exact lens=8 page=10": 1092874,
-          "everyone exact lens=8 page=50": 5212339,
-          "everyone worst below lens=8 page=10": 1812822,
-          "everyone worst below lens=8 page=50": 8699693,
+          "everyone below lens=8 page=10": 1319800,
+          "everyone below lens=8 page=50": 6185128,
+          "everyone exact lens=8 page=10": 1092934,
+          "everyone exact lens=8 page=50": 5212489,
+          "everyone worst below lens=8 page=10": 1812942,
+          "everyone worst below lens=8 page=50": 8699993,
           "mine lens=1 depth=1 page=10": 580511,
           "mine lens=1 depth=1 page=50": 2366856,
-          "mine lens=1 depth=64 page=10": 567457,
-          "mine lens=1 depth=64 page=50": 2432060,
-          "mine lens=1 depth=8 page=10": 567457,
-          "mine lens=1 depth=8 page=50": 2432060,
+          "mine lens=1 depth=64 page=10": 567487,
+          "mine lens=1 depth=64 page=50": 2432180,
+          "mine lens=1 depth=8 page=10": 567487,
+          "mine lens=1 depth=8 page=50": 2432180,
           "mine lens=32 depth=1 page=10": 2506015,
           "mine lens=32 depth=1 page=50": 7533385,
-          "mine lens=32 depth=64 page=10": 2312526,
-          "mine lens=32 depth=64 page=50": 7581892,
-          "mine lens=32 depth=8 page=10": 2312526,
-          "mine lens=32 depth=8 page=50": 7581892,
+          "mine lens=32 depth=64 page=10": 2312826,
+          "mine lens=32 depth=64 page=50": 7582432,
+          "mine lens=32 depth=8 page=10": 2312826,
+          "mine lens=32 depth=8 page=50": 7582432,
           "mine lens=64 depth=1 page=10": 5282802,
           "mine lens=64 depth=1 page=50": 12244514,
           "mine lens=64 depth=64 page=10": 4802716,
@@ -3116,38 +3116,38 @@
           "mine lens=64 depth=8 page=50": 11882365,
           "mine lens=8 depth=1 page=10": 1047625,
           "mine lens=8 depth=1 page=50": 3579291,
-          "mine lens=8 depth=64 page=10": 1104323,
-          "mine lens=8 depth=64 page=50": 3675893,
-          "mine lens=8 depth=8 page=10": 1104323,
-          "mine lens=8 depth=8 page=50": 3675893,
-          "mine worst lens=1 depth=8 page=10": 690962,
-          "mine worst lens=1 depth=8 page=50": 2934200,
-          "mine worst lens=32 depth=8 page=10": 3830519,
-          "mine worst lens=32 depth=8 page=50": 13806548,
+          "mine lens=8 depth=64 page=10": 1104563,
+          "mine lens=8 depth=64 page=50": 3676133,
+          "mine lens=8 depth=8 page=10": 1104563,
+          "mine lens=8 depth=8 page=50": 3676133,
+          "mine worst lens=1 depth=8 page=10": 690992,
+          "mine worst lens=1 depth=8 page=50": 2934320,
+          "mine worst lens=32 depth=8 page=10": 3830819,
+          "mine worst lens=32 depth=8 page=50": 13807088,
           "mine worst lens=64 depth=8 page=10": 8827165,
           "mine worst lens=64 depth=8 page=50": 23187406,
-          "mine worst lens=8 depth=8 page=10": 1573832,
-          "mine worst lens=8 depth=8 page=50": 5871479,
+          "mine worst lens=8 depth=8 page=10": 1574072,
+          "mine worst lens=8 depth=8 page=50": 5871719,
           "placeCount 2000 positions": 88155,
-          "raw below page=10": 623287,
-          "raw below page=50": 2677240,
-          "raw exact page=10": 542390,
-          "raw exact page=50": 2453448,
-          "skip below lens=1 page=60": 2376133,
-          "skip below lens=1 per entry": 36167,
-          "skip below lens=64 page=60": 2377634,
-          "skip below lens=64 per entry": 36178,
-          "skip below lens=8 page=60": 2376299,
-          "skip below lens=8 per entry": 36168,
-          "skip exact lens=1 page=60": 2343006,
-          "skip exact lens=1 per entry": 36001,
-          "skip exact lens=64 page=60": 2344499,
-          "skip exact lens=64 per entry": 36012,
-          "skip exact lens=8 page=60": 2343171,
-          "skip exact lens=8 per entry": 36002,
+          "raw below page=10": 623407,
+          "raw below page=50": 2677540,
+          "raw exact page=10": 542450,
+          "raw exact page=50": 2453598,
+          "skip below lens=1 page=60": 2376253,
+          "skip below lens=1 per entry": 36168,
+          "skip below lens=64 page=60": 2377754,
+          "skip below lens=64 per entry": 36179,
+          "skip below lens=8 page=60": 2376419,
+          "skip below lens=8 per entry": 36169,
+          "skip exact lens=1 page=60": 2343126,
+          "skip exact lens=1 per entry": 36002,
+          "skip exact lens=64 page=60": 2344619,
+          "skip exact lens=64 per entry": 36013,
+          "skip exact lens=8 page=60": 2343291,
+          "skip exact lens=8 per entry": 36003,
           "wordPage places=1": 154912,
-          "wordPage places=20": 1072552,
-          "wordPage places=5": 359117
+          "wordPage places=20": 1072582,
+          "wordPage places=5": 359147
         },
         "terms": {
           "mineExact": {
@@ -3158,66 +3158,66 @@
             "maxAbsErrorPercent": 11.4
           },
           "mineBelow": {
-            "opening": 343461,
-            "openingPerLensAuthor": 20667,
-            "perRow": 38846,
+            "opening": 343613,
+            "openingPerLensAuthor": 20666,
+            "perRow": 38848,
             "perLensIndex": 15375,
             "maxAbsErrorPercent": 31.2
           },
           "mineBelowQuiet": {
-            "opening": 241946,
-            "openingPerLensAuthor": 19234,
-            "perRow": 37370,
+            "opening": 242098,
+            "openingPerLensAuthor": 19233,
+            "perRow": 37373,
             "perLensIndex": 6737,
             "maxAbsErrorPercent": 23.8
           },
           "everyoneExact": {
-            "opening": 64630,
-            "perRow": 47776,
+            "opening": 64660,
+            "perRow": 47779,
             "perLensAuthor": 6901,
             "perSkippedEntryByLens": {
-              "1": 36001,
-              "8": 36002,
-              "64": 36012
+              "1": 36002,
+              "8": 36003,
+              "64": 36013
             }
           },
           "everyoneBelow": {
-            "opening": 109797,
-            "perRow": 51349,
+            "opening": 109877,
+            "perRow": 51353,
             "perLensAuthor": 15103,
             "perSkippedEntryByLens": {
-              "1": 36167,
-              "8": 36168,
-              "64": 36178
+              "1": 36168,
+              "8": 36169,
+              "64": 36179
             }
           },
           "everyoneBelowQuiet": {
-            "opening": 109797,
-            "perRow": 51349,
+            "opening": 109877,
+            "perRow": 51353,
             "perLensAuthor": 8785
           },
           "rawExact": {
-            "opening": 64630,
-            "perRow": 47776
+            "opening": 64660,
+            "perRow": 47779
           },
           "rawBelow": {
-            "opening": 109797,
-            "perRow": 51349
+            "opening": 109877,
+            "perRow": 51353
           },
           "byName": {
-            "opening": 139822,
+            "opening": 139852,
             "perRow": 22750
           },
           "about": {
-            "opening": 148752,
+            "opening": 148782,
             "perRow": 32833
           },
           "wordPage": {
-            "opening": 121307,
+            "opening": 121337,
             "perRow": 47562
           },
           "children": {
-            "opening": 141791,
+            "opening": 141821,
             "perRow": 47418
           }
         },
