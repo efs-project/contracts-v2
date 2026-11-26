@@ -486,6 +486,30 @@ view and per family by `test/readers/TopicPartialCoverage.t.sol` (§8): UNKNOWN 
 PRESENT page with the faithful rows and its coverage stated (never COMPLETE, never `completeFromOrigin`), as
 `src/interfaces/Readers.sol` specifies; an empty list at PARTIAL is an empty PRESENT page that says PARTIAL.
 
+**Landed (the liveness gate, 2026-11-26, branch `fable/2026-11-26-liveness`): the check no longer calls the live
+index.** The live index's families are static: they are its manifest, whose hash the kernel recorded in the revision
+row (`indexManifestHash`) when it activated that index. So a generation is deployed with a **copy** of the live index's
+manifest preimage, the bytes `abi.encode(header, families, units, specs, work, physicalProfile, callbackProfile, reads,
+readsCodehash)` that hash to that record (`IIndexReads.liveManifestCopy()`; `IndexDeployer.Plan.liveManifest`; empty at
+genesis). `IndexReads._liveManifest()` reads the recorded hash of the current revision (`ILedgerHot.revision()` and one
+`extsload` of word 8 of the row, `Layout.revisionsRowsSlot`), compares it with the copy's keccak and decodes the
+families and units from the copy; `_carriedCheck` (and the three-store harness override) use it and never call the live
+index. The copy is the canonical encoding (it hashes to what the index computed with `abi.encode`), so decoding its
+leading values is exact; a copy with any byte changed, truncated, extended, empty on a Realm with admissions, or of
+another generation fails (`test/index/Liveness.t.sol::test_a_wrong_copy_is_refused`). **A stale copy is the intended
+failure:** a generation deployed against L1 whose L1 has since been replaced holds a copy that no longer hashes to the
+record, so its check fails (`build` 7, readiness claims nothing, kernel 14) and it must be redeployed with the new live
+index's copy (`::test_a_stale_copy_is_refused_and_a_fresh_one_activates`). One consequence, tested: a REPLACED
+generation that carries any store can no longer build at all (its copy went stale when it was replaced), which closes
+the late-walk route of §5.3 for every such generation (`DroppedList.t.sol`, `HeadAuthorsBuild.t.sol`); an all-fresh
+generation never asks for the copy. The copy is held as code (§10 item 34 has the measurement): `IndexReads`' constructor
+creates a data contract whose runtime is one STOP byte and the copy, as descriptor blobs are held, and records it by
+address and codehash (`LIVE_COPY`, `LIVE_COPY_CODEHASH`; both covered by the reads codehash, so by the manifest hash).
+The copy can be at most 24,575 B (EIP-170's 24,576 B runtime less the STOP byte); a larger one is refused at
+construction, `E_PIN(reads, 12)`. Its size is `896 + 320·families + 320·units + 32·(family ids over all units) +
+96·specs` bytes (measured: 7,168 B for the release's generation 1, 18 families, 1 unit, 2 specs; 16,000 B for 40
+families and 6 units), so at most 72 families with one unit and two specs, or 67 with six one-id units.
+
 Why not trust the writers history instead? Because it cannot tell "complete" from "abandoned". Example: generation
 1 writes store S; generation 2 replays into fresh stores and goes live; S stops receiving writes; generation 3
 re-pins S. S's writers list is `[(gen1, 1, open)]`: contiguous, and missing everything since generation 2's
@@ -530,11 +554,52 @@ generation keeps A and adds a recording hook B; the build calls A never and B on
 then equals A's (same effects, same order, same refs), and after activation both advance together. No change to the
 `Unit` struct: "new" is the generation's own list, not a field. Cost: `RealmIndex` 13 B smaller (18,705 → 18,692);
 live, the loop now always runs and checks `_hookRuns` only for a unit that has a fold hook (none in generation 1).
-**A gap that remains:** a generation that carries every store walks nothing (`build` moves the frontier straight to
-`counts()`), so a unit it adds never sees the history (`::test_a_re_pin_cannot_build_a_new_units_hook`: the kernel
-activates it). A generation that adds a unit with a fold hook needing history must have a fresh store, so that it
-walks; neither the generation nor the kernel refuses the other shape. The hook's companion store is the hook's own
+**A gap that remained at step 3b** (closed by Option A below): a generation that carries every store walks nothing
+(`build` moves the frontier straight to `counts()`), so a unit it adds never saw the history
+(`::test_a_re_pin_cannot_build_a_new_units_hook`: the kernel activated it). The hook's companion store is the hook's own
 business (the recording hooks keep their own storage); a store the generation names is fresh or carried as above.
+
+**Landed (Option A, 2026-11-26, branch `fable/2026-11-26-liveness`): a new fold-hook unit is refused by default.**
+Whenever a generation carries a store (a re-pin, or a build that heals a store), its carried check also asks that every
+unit with a fold hook be **carried**: the live index's manifest, read from the same verified copy as the families (§3.5),
+declares a unit with the **same fold hook address, the same fold codehash and the same `purposeFilter`**
+(`IndexReads._unitsCarried`). Those three are exactly what decides which effects a hook is given: `RealmIndex._foldHooks`
+calls `u.foldHook` (skipped when it is zero) on every effect whose purpose matches `u.purposeFilter` (0 = every effect);
+`_hookRuns` decides only whether the unit runs in this fold at all; nothing else in a `Unit` gates a call. So with the
+three equal, the live index has called that very code with exactly these effects for every admission. A wider filter
+leaves effects the hook never saw; a narrower one leaves folds in the hook's state that the new unit would never give
+it; either way the hook does not hold what it would hold had it run from genesis under the new unit, so both count as
+NEW. Not compared, because they decide no fold call: `familyIds`, the final hook and its codehash, `hotAbiId` and
+`identity`. A NEW unit fails the check (`build` `E_BUILD(7)`, readiness claims nothing, so activation refuses
+`E_INDEX_NOT_READY(8)`; coverage of carried families follows the check as before), with two exceptions: an empty Realm
+(no history to miss; the check has its own rule there) and a unit the generation builds itself. A unit with only a final
+hook is never judged (final hooks never run from history). No kernel change and no hook-interface change.
+
+**The opt-out is an explicit claim by the generation's pinned code.** `IndexReads._builtHooks()` (internal virtual,
+default 0; `builtHooks()` answers it) names, by bit, the units whose fold hooks this generation builds from history. The
+generation reads it once at construction into `RealmIndex.BUILT_HOOKS`, and `_hookRuns` (now private, not virtual)
+runs a hook in a fold that carries a store only when its bit is set; the carried check accepts a NEW unit only when its
+bit is set. So the hooks a build calls and the hooks the check accepts as built are one value and cannot get out of
+step (`HeadAuthorsHooks.t.sol::test_a_new_units_fold_hook_is_built_and_a_carried_units_is_not` asserts both read the
+same mask). The claim is accepted only when the generation **walks** (it has a fresh store, so `build` folds every
+publication from 1 and calls the named hooks on each): a generation that carries every store walks nothing, so no claim
+to build a hook can be true for it and none is accepted (`::test_a_re_pin_cannot_build_a_new_units_hook`, now refused
+7 / 8 even though its reads contract names the hook). Beyond that, claiming the bit for a hook the code does not really
+build from history is the author's lie in pinned code (the manifest hash covers the reads contract's code), not a gap
+in the kernel. Tests (`test/index/HeadAuthorsHooks.t.sol`): refused by default (`build` 7, nothing complete, activation
+8); the same hook address with another codehash is new; a wider and a narrower `purposeFilter` are new; identical units
+(another `identity` only) are carried and build and activate; final-hook-only units, new or changed, are unaffected;
+the step-3b generation that builds its new hook passes through the opt-out; the empty Realm accepts a new fold-hook unit
+(`Liveness.t.sol::test_the_empty_realm_accepts_a_new_fold_hook_unit`). `BuildWalkRefusals.t.sol`'s heal build with a
+new hook unit is now refused 7 (it built with the hook called for nothing).
+
+**Why the kernel does not check a hook frontier instead (rejected; do not propose it again).** The alternative was a
+kernel check that each unit's fold hook reports a frontier equal to the ledger's admission count. (1) The kernel would
+have to pin a hook interface it does not pin today: it calls no hook and pins hooks only by codehash and `hotAbiId`
+(above). (2) The hook would have to keep that frontier: a storage write of about 5,000 gas on every live publication,
+forever, on every Realm. (3) The answer would still be a claim by pinned code, so a generation that forgot to build the
+hook, paired with a hook that reports the ledger's count, would pass. Option A costs nothing live and puts the claim
+where the code that makes it is.
 
 **The rule for a unit's fold hook and history (step 3b; a pre-freeze rule).** A fold hook runs in its own call, so it
 cannot use the generation's `_fromHistory()`, and `IIndexHook.fold(effect, refs, publication)` carries no flag. The
@@ -884,6 +949,28 @@ No case lets unpinned code write a store of the live index. Tests: `testAnEmptyR
 write the genesis stores the live index uses) and `testAnEmptyRealmStillActivatesARePinAndAFreshGeneration`. The exact catch-up check (8) now runs **after** the
 family loop, so a candidate that can never be ready is named 12 or 13 instead of "behind". Reasons 1 to 13 are listed
 in `src/interfaces/Errors.sol`.
+
+**Landed (the liveness gate): check 12 reads the candidate's verified copy, and reason 14.** With admissions, for the
+first carried family the kernel asks the CANDIDATE for its copy of the live index's manifest
+(`IIndexReads.liveManifestCopy()`, answered through the candidate's fallback by its reads contract), requires
+`keccak256(copy)` to equal `indexManifestHash` of the current revision row (`_revisions().rows[$.revision]`, the row
+that activated or kept the live index), and decodes only the copy's leading `(bytes32, FamilyEntry[])`
+(`LedgerControl._liveFamilies`). A copy that does not hash to the record is **`E_INDEX_NOT_READY(14)`**; it never calls
+the live index. Because the copy is canonical once it hashes to the record, decoding only its prefix is sound; a copy
+with a trailing byte changed is refused 14 (`test/index/Liveness.t.sol::test_a_wrong_copy_is_refused`). The kernel's
+defense does not rest on the candidate's honesty: a lying candidate that reports itself caught up and declares a store
+the live index does not declare is refused 12 with a true copy and 14 with a forged one
+(`::test_a_lying_candidate_is_refused_12_with_a_true_copy_and_14_with_a_forged_one`). The empty-Realm rule is unchanged
+and asks for no copy (genesis passes an empty one). No kernel ABI change, no change to the activation set, no CREATE in
+the Core context. `LedgerControl` 17,830 → 18,042 B. Order: the copy is checked at the first carried family, so a
+replaced candidate that carries any store now reports 14 before a later family's 13 (`HeadAuthorsBuild.t.sol`).
+
+**The unchanged-index path (found, not changed).** An activation that KEEPS the live index (`index == $.index`) still
+calls `IRealmIndex(index).replayReadiness().phase` for reason 2, uncaught: while the live index does not answer, every
+activation that keeps it reverts with the live index's own error (for example a limits or controller change).
+Replacing the index in that same activation is the recovery, and it now works with a correct copy
+(`test/index/Liveness.t.sol::test_keeping_an_index_that_stops_answering_reverts_with_its_error`). The path was left as it
+is: an index that cannot report its phase should not be kept, and the read is the design's §8.3 5h.
 
 `LedgerControl` is part of the ledger implementation, replaceable by activation until freeze. After freeze the
 kernel never changes, and a steward activation under posture B (design §8.10) would run the frozen checks; so if
@@ -1369,24 +1456,18 @@ needed (§3.3, §9 q1). The step-2 preview (`BuildWalk.t.sol::test_heaviest_publ
     (for example by moving fold code it no longer needs out, or by raising the budget on purpose): plan that
     before promising the lists.
 
-**Pre-freeze gate: activation must not depend on the live index answering.** Check 12 and the generation's carried
-check read the live index's `replayReadiness().families` at run time, whenever the candidate carries a store (a re-pin
-or a build that heals one store; an all-fresh candidate does not read it). If that read reverts (and a bug in the live
-index is the likeliest reason to replace it), the kernel's activation reverts with the live index's own error (it is
-not caught, so the refusal is not even reason 12) and the generation's carried check is false, so every candidate
-that carries a store is refused and only a full replay into all-fresh stores can replace the index, at the price §6.2
-estimates. The list being read is static: it is the live index's manifest family list (`IndexReads._families`,
-written once in its constructor), whose hash the kernel recorded in the revision row (`indexManifestHash`) when it
-activated that index. Proposed fix, not built: the candidate carries a copy of the live index's family list with the
-rest of the manifest's preimage; the kernel recomputes the hash, compares it with the recorded `indexManifestHash` of
-the current revision, and checks the candidate's carried families against that list, without calling the live index.
-The hash already has a form anyone can recompute: it is `keccak256(abi.encode(header, families, units, specs, work,
-physicalProfile, callbackProfile, reads, readsCodehash))` (`RealmIndex` constructor; `IndexReads.manifest`), so what is
-missing is the code that recomputes it in the kernel (today the index computes it and the kernel only compares), and
-the generation's own check can already read the recorded hash through `ILedgerHot.revision()` and `extsload` of the
-revision row (as the decoder reads that row's layout word), though no getter names it. The alternative is for the
-kernel to store the live index's (family, store) pairs at activation, which changes the storage layout. Recovery route
-until then: a full replay (case (e)).
+**Pre-freeze gate: activation must not depend on the live index answering. DONE (2026-11-26, branch
+`fable/2026-11-26-liveness`, items 34–38 below).** Check 12 and the generation's carried check read the live index's
+`replayReadiness().families` at run time; if that read reverted, the kernel's activation reverted with the live index's
+own error and the generation's check failed, so only a full replay could replace a broken index. Shown on the tree
+before the change (`git archive 4003069`, the scenario of `test/index/Liveness.t.sol` test 1 with no copy): `build`
+reverted `E_BUILD(7)` and the activation reverted `BreakableReads.E_BROKEN()`, the live index's error. Now the candidate
+carries a copy of the live index's manifest preimage, the kernel and the generation check it against the
+`indexManifestHash` the kernel recorded and read the families (and, for Option A, the units) from it, and neither calls
+the live index (§3.5, §5.3). The same scenario builds, is ready, activates and folds the next publications live, every
+list equal to a twin Realm's, both when the live index's readiness reverts and when every call to its address reverts.
+A stale copy (the live index replaced after the candidate was deployed) is refused, and the candidate is redeployed with
+a fresh copy. The storage form chosen is code (item 34).
 
 ### Step 3a: the as-of rule (2026-11-26, branch `fable/2026-11-26-index-build-3a`)
 
@@ -1590,3 +1671,61 @@ until then: a full replay (case (e)).
 33. **What remains of the pre-freeze gate** (tools/RELEASE.md §15): the liveness gate (activation must not depend on the
     live index answering, above); case (d), a digest spec rebuilt in a fresh store (§8 test 9); the gap that a
     generation carrying every store never builds a new unit's fold hook (§3.6); and item 29's amsterdam rewrite price.
+
+### The liveness gate and Option A (2026-11-26, branch `fable/2026-11-26-liveness`)
+
+34. **Where the copy lives: measured, code chosen.** Both forms were measured with holders that do only what each adds
+    (`test/index/LivenessCost.t.sol`; `vm.lastFrameGas`, execution gas and, on amsterdam, state gas separately; the
+    holder with the copy minus the holder with an empty copy; cold reads with the holder and the data contract
+    cooled):
+
+    | copy | form | prague deploy | amsterdam deploy (execution + state) | cold read |
+    |---|---|---|---|---|
+    | 7,168 B (the release's generation 1: 18 families, 1 unit, 2 specs) | (a) storage | 4,934,297 | 2,706,893 + 21,444,480 | 492,700 |
+    | | (b) code | 1,534,724 | 458,752 + 11,152,170 | 7,278 (amsterdam 7,878) |
+    | 16,000 B (40 families, 6 units) | (a) storage | 10,893,586 | 6,054,682 + 47,001,600 | 1,097,614 |
+    | | (b) code | 3,442,663 | 1,024,000 + 24,665,130 | 12,996 (13,596) |
+    | 19,968 B (58 families, 1 unit) | (a) storage | 14,023,691 | 7,796,287 + 60,612,480 | 1,369,775 |
+    | | (b) code | 4,320,568 | 1,277,952 + 30,736,170 | 15,953 (16,553) |
+
+    The real `IndexReads` with the generation-1 copy against an empty one: +1,537,383 deployment gas on prague,
+    +271,177 execution + 11,152,170 state on amsterdam; `liveManifestCopy()` cold 7,374 (7,974). Code is 3.2× cheaper to
+    deploy on prague, 2.1× on amsterdam, and about 68× cheaper to read; every carried check of a generation that has
+    not folded live (readiness, `build`, a carried family's coverage) and the kernel's activation read the copy, so
+    storage would add about 0.5 M gas to each of them for generation 1's shape. Bytecode: the code holder's runtime is
+    179 B larger than the storage holder's (537 vs 358 B), which is the code form's extra in `IndexReads`; the kernel's
+    and `RealmIndex`'s code is the same for both forms. The code form's cost the storage form does not have is the size
+    limit: 24,575 B, so at most 72 families with one unit and two specs, or 67 with six units (§3.5's formula); a
+    plausible later generation of 40 lists and 6 units (16,000 B) fits with 8.5 KB to spare, so the limit does not
+    decide against it; a larger copy is refused at construction with its own code, `E_PIN(reads, 12)`, and would need
+    the copy split over several data contracts (not built). The data contract is not one of the contracts activation
+    scans (it scans the index, its reads contract, the build contract, the units' hooks and the stores), so its data
+    bytes never meet `CodeScan`; it starts with STOP, so it cannot execute, and it would fail a scan (its last two bytes
+    are not a solc trailer), which matters only if a later revision scans it. It is bound twice: the reads contract
+    records its address and codehash as immutables (covered by the reads codehash and so by the manifest hash), and the
+    kernel and the generation hash its content against the record. Nothing in the Core context creates it.
+35. **What changed in `src/`.** `IIndexReads.liveManifestCopy()` (new; the ABI snapshot changed); `IndexReads`: one
+    more constructor argument (the copy), `LIVE_COPY`, `LIVE_COPY_CODEHASH`, `_liveCopy`, `_liveManifest`,
+    `_unitsCarried`, `_builtHooks`, `builtHooks()`; `RealmIndex`: `BUILT_HOOKS`, `_hookRuns` private and reading it;
+    `LedgerControl._liveFamilies` reads the candidate's copy, reason 14; `IndexDeployer.Plan.liveManifest` (and the
+    reads arguments encoded as one struct: the ten arguments were too deep for via-IR in `run`); `Errors.sol`: reason 14,
+    `E_PIN` 12, reworded 12 and `E_BUILD(7)`. `tools/deploy-plan.mjs` passes an empty copy at genesis. Sizes: `LedgerControl`
+    17,830 → 18,042 B (`_checkIndex` +807, `_liveFamilies` −722, the inlined `_revisions` −215, `_activate` +68),
+    `RealmIndex` 18,692 → 18,834 B, `IndexReads` 11,556 → 12,431 B (12,012 after the liveness gate alone), all under
+    the 19,660 B budget.
+36. **Differences from the decided shape.** (a) The oversize copy has its own refusal, `E_PIN(reads, 12)`, at the
+    reads contract's construction. (b) Option A's match is fold hook, fold codehash AND `purposeFilter` (§3.6; widened
+    from address and codehash on review). (c) The opt-out is accepted only when the generation walks: a generation
+    that carries every store cannot build a hook, so its claim is refused. (d) `_hookRuns` is no longer an extension
+    point: the opt-out is the reads contract's `_builtHooks`, which the generation reads at construction.
+37. **Tests changed, and why.** `Carried.t.sol::testAnAbandonedCarriedStoreIsRefusedByTheGenerationAndTheKernel`: the
+    early re-pin's copy is stale, so the kernel says 14 (was 12), and the liar double is given a true copy so it still
+    meets 12. `HeadAuthorsBuild.t.sol::test_an_attached_third_store_refuses_the_build`: the replaced C's `build` is
+    refused 7 (stale copy; was a no-op build) and the kernel says 14 (was 13). `DroppedList.t.sol`: G's late build,
+    after G' went live, is refused 7 (stale copy; before, it folded the CREATE into X), so X keeps its entries.
+    `BuildWalkRefusals.t.sol::testFoldHooksRunInAnAllFreshBuildOnlyAndCannotReenterIt`: the heal build with a new hook
+    unit is refused 7 (Option A). `HeadAuthorsHooks.t.sol::test_a_re_pin_cannot_build_a_new_units_hook`: refused 7 / 8
+    (was activated). Every plan builder fills the copy (`test/harness/ManifestCopy.sol`); `HeadAuthorsReads` names its
+    new units through `_builtHooks`.
+38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule; the unchanged
+    index path's reason-2 read (§5.3, left as it is); a copy over 24,575 B (refused, not split).

@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {Test} from "forge-std/Test.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {IndexDeploy} from "../harness/IndexDeploy.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
 import {IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
@@ -133,7 +134,8 @@ contract TopicListsConfigTest is Test {
             new DigestSpec[](0),
             IndexDoubleDefaults.workModel(),
             topic,
-            word
+            word,
+            ""
         );
     }
 
@@ -223,6 +225,7 @@ contract TopicListsConfigTest is Test {
         plan.work = IndexDoubleDefaults.workModel();
         plan.topicTypeId = TOPIC;
         plan.topicWordTypeId = WORD;
+        plan.liveManifest = ManifestCopy.ofLive(k.proxy);
         IndexDeployer d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
         // the reads contract's creation reverts, which the deployer reports as a failed creation
         vm.expectRevert(abi.encodeWithSelector(E_DEPLOYER.selector, uint8(2)));

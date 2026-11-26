@@ -26,7 +26,7 @@ contract IndexDeployer {
         bytes32[] bitmapFamilies;
         address bitmap;
         /// The `IndexReads` creation code; its arguments (ledger, hotAbiId, posting, bitmap, units, specs, work,
-        /// topicTypeId, topicWordTypeId) are appended here.
+        /// topicTypeId, topicWordTypeId, liveManifest) are appended here.
         bytes readsInitcode;
         /// The generation's creation code without constructor arguments (ledger, decoder, reads); they are appended
         /// here.
@@ -37,6 +37,11 @@ contract IndexDeployer {
         /// The `IndexReads` topic Type ids (both zero for a generation without topic lists).
         bytes32 topicTypeId;
         bytes32 topicWordTypeId;
+        /// The copy of the live index's manifest preimage (`IIndexReads.liveManifestCopy`): the bytes whose keccak is
+        /// the `indexManifestHash` of the Realm's current revision row. Taken from the live index's reads contract
+        /// (its `manifest()` with its address and codehash), never from a call the live index must answer; a copy
+        /// that is stale by activation time refuses the generation (kernel reason 14).
+        bytes liveManifest;
     }
 
     address public immutable LEDGER;
@@ -90,22 +95,7 @@ contract IndexDeployer {
             );
             if (bitmap != _creation(nonce++)) revert E_DEPLOYER(2);
         }
-        address reads = _create(
-            bytes.concat(
-                plan.readsInitcode,
-                abi.encode(
-                    LEDGER,
-                    plan.hotAbiId,
-                    posting,
-                    bitmap,
-                    plan.units,
-                    plan.specs,
-                    plan.work,
-                    plan.topicTypeId,
-                    plan.topicWordTypeId
-                )
-            )
-        );
+        address reads = _createReads(plan, posting, bitmap);
         if (reads != _creation(nonce)) revert E_DEPLOYER(2);
         gen =
             _create(bytes.concat(plan.generationInitcode, abi.encode(LEDGER, plan.decoder, reads)));
@@ -116,6 +106,49 @@ contract IndexDeployer {
         bitmapStore = bitmap;
         readsContract = reads;
         emit IndexDeployed(gen, posting, bitmap, reads);
+    }
+
+    /// The `IndexReads` constructor arguments as one tuple: `abi.encode` of it minus its leading offset word is the
+    /// constructor's argument encoding (the ten separate arguments, with the nested unit arrays, are too deep for the
+    /// encoder under via-IR).
+    struct ReadsArgs {
+        address ledger;
+        bytes32 hotAbiId;
+        address posting;
+        address bitmap;
+        Unit[] units;
+        DigestSpec[] specs;
+        WorkModel work;
+        bytes32 topicTypeId;
+        bytes32 topicWordTypeId;
+        bytes liveManifest;
+    }
+
+    /// The reads contract over the plan's stores.
+    function _createReads(Plan calldata plan, address posting, address bitmap)
+        private
+        returns (address)
+    {
+        ReadsArgs memory x = ReadsArgs({
+            ledger: LEDGER,
+            hotAbiId: plan.hotAbiId,
+            posting: posting,
+            bitmap: bitmap,
+            units: plan.units,
+            specs: plan.specs,
+            work: plan.work,
+            topicTypeId: plan.topicTypeId,
+            topicWordTypeId: plan.topicWordTypeId,
+            liveManifest: plan.liveManifest
+        });
+        bytes memory encoded = abi.encode(x);
+        bytes memory init = plan.readsInitcode;
+        bytes memory code = new bytes(init.length + encoded.length - 32);
+        assembly ("memory-safe") {
+            mcopy(add(code, 32), add(init, 32), mload(init))
+            mcopy(add(add(code, 32), mload(init)), add(encoded, 64), sub(mload(encoded), 32))
+        }
+        return _create(code);
     }
 
     function _create(bytes memory initcode) private returns (address created) {

@@ -11,6 +11,7 @@
     "0x0ce15e45": "coverageOfType(bytes32,bytes32)",
     "0x56d017e5": "digestSpecCount(bytes32)",
     "0x56397c35": "ledger()",
+    "0x1c317828": "liveManifestCopy()",
     "0xf5baf0d7": "manifest()",
     "0x337f3f32": "manifestHash()",
     "0x1b37b478": "occurrencesOf(bytes32)",
@@ -436,6 +437,19 @@
           "name": "",
           "type": "address",
           "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "liveManifestCopy",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
         }
       ],
       "stateMutability": "view"

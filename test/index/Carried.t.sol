@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {Test} from "forge-std/Test.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
@@ -295,6 +296,7 @@ contract CarriedTest is Test {
         plan.units = new Unit[](0);
         plan.specs = _specs();
         plan.work = IndexDoubleDefaults.workModel();
+        plan.liveManifest = ManifestCopy.ofLive(R.k.proxy);
         d = new IndexDeployer(R.k.proxy, keccak256(abi.encode(plan)));
         ix = IGeneration1(d.run(plan));
     }
@@ -576,7 +578,9 @@ contract CarriedTest is Test {
         assertEq(processed, 11, "its progress word is unchanged; readiness withholds it");
         vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
         early.build(bytes32(0), 64);
-        _expectActivateRevert(a, address(early), 12);
+        // its copy of the live index's manifest is generation 1's, stale since generation 2 went live: the kernel
+        // refuses it 14 before it compares a family (docs INDEX-BUILD §10)
+        _expectActivateRevert(a, address(early), 14);
 
         // generation 3 re-pins generation 1's old stores after the switch: refused the same way
         IGeneration1 gen3 = _repin(a);
@@ -589,7 +593,7 @@ contract CarriedTest is Test {
         _expectActivateRevert(a, address(gen3), 12);
 
         // the kernel's own check: a generation that lies (it reports itself caught up while declaring generation
-        // 1's families in generation 1's old stores) is refused with 12, from the live index's readiness
+        // 1's families in generation 1's old stores) is refused with 12, from the live index's manifest
         PrefixAgreement liar = new PrefixAgreement(a.k.proxy);
         liar.setManifestHash(keccak256("efs/test/carried/liar"));
         (uint64 admissions,,, uint64 publications) = _hot(a).counts();
@@ -601,6 +605,7 @@ contract CarriedTest is Test {
         lie.ready = true;
         lie.units = new Unit[](0);
         liar.setReadiness(lie);
+        liar.setLiveManifestCopy(ManifestCopy.ofLive(a.k.proxy)); // a true copy: generation 2's manifest
         _expectActivateRevert(a, address(liar), 12);
         // the same lie over generation 2's live stores passes the carried check and activates: 12 is about stores
         Readiness memory honest = gen2.replayReadiness();

@@ -26,6 +26,15 @@ interface IIndexReads {
             bytes32 callbackProfile
         );
 
+    /// The copy of the LIVE index's manifest preimage this generation was deployed with: the bytes
+    /// `abi.encode(header, families, units, specs, work, physicalProfile, callbackProfile, reads, readsCodehash)`
+    /// whose keccak is the manifest hash the kernel recorded in the revision row when it activated that index; empty
+    /// for a generation deployed with no live index (genesis). The kernel's carried check (`E_INDEX_NOT_READY` 12,
+    /// 14) and the generation's own read the live index's families and units from it, never from the live index, so
+    /// replacing an index never depends on the live index answering. A copy of an index that has since been replaced
+    /// no longer hashes to the record: the generation is then refused and must be redeployed with a fresh copy.
+    function liveManifestCopy() external view returns (bytes memory);
+
     function workModel() external view returns (WorkModel memory);
 
     /// The `topic/1` and `topic-word/1` Type ids whose ancestors the topic lists (`scope-below`, `place-below`) walk;

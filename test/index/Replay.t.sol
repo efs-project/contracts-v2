@@ -4,6 +4,7 @@ pragma solidity 0.8.37;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
@@ -209,6 +210,7 @@ contract ReplayTest is Test {
         plan.units = units;
         plan.specs = _specs();
         plan.work = IndexDoubleDefaults.workModel();
+        plan.liveManifest = ManifestCopy.ofLive(k.proxy);
         d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
         ix = IGeneration1(d.run(plan));
     }

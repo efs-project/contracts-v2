@@ -10,14 +10,7 @@ import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 import {IPostingStore} from "../../src/interfaces/IPostingStore.sol";
 import {IIndexHook} from "../../src/interfaces/IIndexHook.sol";
-import {
-    DigestSpec,
-    Effect,
-    FamilyEntry,
-    Readiness,
-    Unit,
-    WorkModel
-} from "../../src/interfaces/Index.sol";
+import {DigestSpec, Effect, FamilyEntry, Unit, WorkModel} from "../../src/interfaces/Index.sol";
 import {IGeneration1} from "./IndexDeploy.sol";
 import {IndexDoubleDefaults} from "./doubles/IndexDoubles.sol";
 import {PostingStore} from "../../src/index/PostingStore.sol";
@@ -47,6 +40,8 @@ contract HeadAuthorsReads is IndexReads {
     /// Units at this index and above are new in this generation: their fold hooks are built from history (docs
     /// INDEX-BUILD §3.6, §8 test 12); every unit below it is carried (folded live by an earlier generation).
     uint256 public immutable NEW_UNITS_FROM;
+    /// The units at `NEW_UNITS_FROM` and above, as Option A's opt-out mask.
+    uint256 private immutable BUILT;
 
     constructor(
         address ledger_,
@@ -58,18 +53,39 @@ contract HeadAuthorsReads is IndexReads {
         WorkModel memory work,
         bytes32 topicTypeId,
         bytes32 topicWordTypeId,
+        bytes memory liveManifest,
         address[] memory extra,
         uint256 newUnitsFrom
     )
         IndexReads(
-            ledger_, hotAbiId, posting, bitmap, units, specs, work, topicTypeId, topicWordTypeId
+            ledger_,
+            hotAbiId,
+            posting,
+            bitmap,
+            units,
+            specs,
+            work,
+            topicTypeId,
+            topicWordTypeId,
+            liveManifest
         )
     {
         THIRD = extra[0];
         NEW_UNITS_FROM = newUnitsFrom;
+        uint256 mask;
+        for (uint256 i = newUnitsFrom; i < units.length && i < 256; ++i) {
+            mask |= 1 << i;
+        }
+        BUILT = mask;
         _declare(
             "head-authors", KIND_HEAD_AUTHORS, UNIVERSE_SCOPE, SHAPE_APPEND_, HEADS, extra[0], 1
         );
+    }
+
+    /// The new units' fold hooks are built from history with the walk (docs INDEX-BUILD §3.6, Option A's opt-out):
+    /// `HeadAuthorsIndex` calls them in every fold through `RealmIndex._hookRuns`, which reads this mask.
+    function _builtHooks() internal view override returns (uint256) {
+        return BUILT;
     }
 
     function _postingOf(uint256 pos) internal view override returns (address) {
@@ -94,13 +110,8 @@ contract HeadAuthorsReads is IndexReads {
             any = any || c;
         }
         if (!any) return true;
-        if (live.code.length == 0) return false;
-        FamilyEntry[] memory theirs;
-        try IRealmIndex(live).replayReadiness() returns (Readiness memory lr) {
-            theirs = lr.families;
-        } catch {
-            return false;
-        }
+        (bool ok, FamilyEntry[] memory theirs, Unit[] memory theirUnits) = _liveManifest();
+        if (!ok) return false;
         for (uint256 i; i < _families.length; ++i) {
             FamilyEntry storage f = _families[i];
             if (f.fromAdmission == IndexProfiles.NOT_MAINTAINED) continue;
@@ -108,13 +119,14 @@ contract HeadAuthorsReads is IndexReads {
             if (!carried[at]) continue;
             if (!_declaresFromOne(theirs, f.familyId, f.store)) return false;
         }
-        return true;
+        return _unitsCarried(theirUnits, !(carried[0] && carried[1] && carried[2]));
     }
 }
 
 /// @notice EXAMPLE, NOT PRODUCT (docs INDEX-BUILD §2.2, step 3b): generation 1's code plus the `head-authors` list in a
 ///         third store, through `RealmIndex`'s extension points only (`_foldMore`, `_carried`, `_allCarried`,
-///         `_spoiled`, `_hookRuns`). The list: key `(0, 22, 0, position)` with `position = Keys.position(HEAD, file, 0)`;
+///         `_spoiled`); its new units' fold hooks are built through its reads contract's `_builtHooks`. The list:
+///         key `(0, 22, 0, position)` with `position = Keys.position(HEAD, file, 0)`;
 ///         entry = the admission of each author's first HEAD statement on the file; `count` = authors who ever made a
 ///         HEAD statement there; `live` = authors whose HEAD there is BOUND now. Fold (§2.2): FIRST_BIND appends counted,
 ///         FIRST_MASK appends UNCOUNTED, RESTORE retains 1, MASK or RELEASE of a BOUND head (`oldTarget != 0`) releases
@@ -174,12 +186,6 @@ contract HeadAuthorsIndex is RealmIndex {
     function _spoiled() internal view override returns (bool) {
         return super._spoiled() || _isSpoiled(THIRD);
     }
-
-    /// A new unit's fold hook is built from history with the walk (it gets the same effects as live, in order); a
-    /// carried unit's is called only live (mask 0), as generation 1 does.
-    function _hookRuns(uint256 unit, uint256 carried) internal view override returns (bool) {
-        return carried == 0 || unit >= NEW_UNITS_FROM;
-    }
 }
 
 /// @notice EXAMPLE, NOT PRODUCT (docs INDEX-BUILD §5.3, step 3b, the dropped-list test): generation 1's code plus one
@@ -196,10 +202,20 @@ contract CreatorsReads is IndexReads {
         DigestSpec[] memory specs,
         WorkModel memory work,
         bytes32 topicTypeId,
-        bytes32 topicWordTypeId
+        bytes32 topicWordTypeId,
+        bytes memory liveManifest
     )
         IndexReads(
-            ledger_, hotAbiId, posting, bitmap, units, specs, work, topicTypeId, topicWordTypeId
+            ledger_,
+            hotAbiId,
+            posting,
+            bitmap,
+            units,
+            specs,
+            work,
+            topicTypeId,
+            topicWordTypeId,
+            liveManifest
         )
     {
         _declare("subjects-created", 23, 2, 1, 1, posting, 1);
@@ -280,6 +296,7 @@ contract ListIndexDeployer {
         bytes32 topicTypeId;
         bytes32 topicWordTypeId;
         uint256 newUnitsFrom;
+        bytes liveManifest; // see `IndexDeployer.Plan.liveManifest`
     }
 
     /// The reads constructor's arguments as one tuple (see `IndexDeploy.ReadsArgs`).
@@ -293,6 +310,7 @@ contract ListIndexDeployer {
         WorkModel work;
         bytes32 topicTypeId;
         bytes32 topicWordTypeId;
+        bytes liveManifest;
         address[] extra;
         uint256 newUnitsFrom;
     }
@@ -352,6 +370,7 @@ contract ListIndexDeployer {
             x.extra[i - 2] = _stores[i];
         }
         x.newUnitsFrom = plan.newUnitsFrom;
+        x.liveManifest = plan.liveManifest;
         address r = _create(_withArgs(plan.readsInitcode, abi.encode(x)));
         if (r != _creation(nonce)) revert E_LIST_DEPLOYER(2);
         gen = _create(bytes.concat(plan.generationInitcode, abi.encode(LEDGER, plan.decoder, r)));

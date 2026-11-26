@@ -100,6 +100,7 @@ abstract contract IndexDoubleCore is IIndexReads {
     address public buildDelegate;
     WorkModel internal _work;
     bytes internal _readiness; // abi.encode(Readiness); empty = derived from this double's own state
+    bytes internal _liveCopy; // `liveManifestCopy()`: empty unless a test sets one
     CoverageAnswer internal _defaultCoverage;
     mapping(bytes32 => CoverageAnswer) internal _coverage; // keyed by keccak256 of the full query calldata
     mapping(bytes32 => bool) internal _coverageSet;
@@ -133,6 +134,14 @@ abstract contract IndexDoubleCore is IIndexReads {
 
     function setLedger(address ledger_) external onlyOwner {
         ledger = ledger_;
+    }
+
+    function setLiveManifestCopy(bytes memory copy) external onlyOwner {
+        _liveCopy = copy;
+    }
+
+    function liveManifestCopy() external view returns (bytes memory) {
+        return _liveCopy;
     }
 
     function setManifestHash(bytes32 h) external onlyOwner {
