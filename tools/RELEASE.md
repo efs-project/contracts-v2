@@ -211,7 +211,7 @@ rule, never from `indexFloor`.
   only the dropped list (since item 37 it is refused outright once its copy is stale), declaring it in that store
   again is refused 12, the kept lists equal a twin Realm's: no
   kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
-  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE; since item 36 PARTIAL is treated exactly as
+  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE; since item 38 PARTIAL is treated exactly as
   UNKNOWN); a new unit's fold hook built with the walk;
   and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
   add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **Done (step 4, item 36): the
