@@ -28,7 +28,10 @@ import {IndexDoubleDefaults, LIST_LENGTH_CLAIM} from "../harness/doubles/IndexDo
 ///           formula 3 did not change, ≥ 1.005). Measured at formula 3: per action 1.035 (prague, a first yes) and
 ///           1.053 (amsterdam, a restore); at one action 1.034 (amsterdam, a WITHDRAW);
 ///         - the slot counts are true: the fresh slots and rewrites a statement makes per action are at most its row's;
-///         - a later statement writes a fresh index slot (formula 2 quoted none), a re-bind two.
+///         - a later statement writes a fresh index slot (formula 2 quoted none), a re-bind two;
+///         - the exceptions are pinned inside bands, so a change either way shows: lists beyond 4,096 entries, two
+///           statements at one position, and a yes after a lone no (3 fresh index slots, the later row's 2.0; prague
+///           covers it in lists of up to 256 entries, amsterdam at the claim).
 contract FloorSplitTest is FloorBase {
     uint256 internal constant N = 33;
     uint8 internal constant FIRST = 1;
@@ -148,29 +151,8 @@ contract FloorSplitTest is FloorBase {
         internal
         returns (uint256 perFresh, uint256 oneRatio, uint256 perRatio)
     {
-        Action[] memory a1 = new Action[](1);
-        bytes[] memory b1 = new bytes[](1);
-        (a1[0], b1[0]) = (a[0], b[0]);
-        Shot memory one = _shot(a1, b1);
-        Shot memory all = _shot(a, b);
-        uint256 n = a.length - 1;
-        uint256 perSpend = (all.spend - one.spend) / n;
-        uint256 perQuote = (all.prefixFloor - one.prefixFloor) / n;
-        perFresh = (all.fresh - one.fresh) * 100 / n;
-        uint256 perRw = (all.rewritten - one.rewritten) * 100 / n;
-        emit log_named_string("split row", label);
-        emit log_named_uint("split one: spend", one.spend);
-        emit log_named_uint("split one: quote", one.prefixFloor);
-        emit log_named_uint("split one: fresh slots", one.fresh);
-        emit log_named_uint("split one: rewritten slots", one.rewritten);
-        emit log_named_uint("split per action: spend", perSpend);
-        emit log_named_uint("split per action: quote", perQuote);
-        emit log_named_uint("split per action: fresh slots x100", perFresh);
-        emit log_named_uint("split per action: rewritten slots x100", perRw);
-        oneRatio = one.prefixFloor * 1000 / one.spend;
-        perRatio = perQuote * 1000 / perSpend;
-        emit log_named_uint("split one: quote / spend x1000", oneRatio);
-        emit log_named_uint("split per action: quote / spend x1000", perRatio);
+        uint256 perRw;
+        (perFresh, perRw, oneRatio, perRatio) = _split(label, a, b);
         if (cls == OTHER) return (perFresh, oneRatio, perRatio);
         WorkModel memory wm = r.g.index.workModel();
         uint256 rowFresh = cls == FIRST
@@ -186,6 +168,37 @@ contract FloorSplitTest is FloorBase {
         if (cls != FIRST) {
             assertGe(perFresh, 100, string.concat(label, ": a later statement writes a fresh slot"));
         }
+    }
+
+    /// Measures `a` at 1 and at all of its actions and logs the split. Returns the per-action fresh and rewritten
+    /// slots ×100 and both ratios ×1000.
+    function _split(string memory label, Action[] memory a, bytes[] memory b)
+        internal
+        returns (uint256 perFresh, uint256 perRw, uint256 oneRatio, uint256 perRatio)
+    {
+        Action[] memory a1 = new Action[](1);
+        bytes[] memory b1 = new bytes[](1);
+        (a1[0], b1[0]) = (a[0], b[0]);
+        Shot memory one = _shot(a1, b1);
+        Shot memory all = _shot(a, b);
+        uint256 n = a.length - 1;
+        uint256 perSpend = (all.spend - one.spend) / n;
+        uint256 perQuote = (all.prefixFloor - one.prefixFloor) / n;
+        perFresh = (all.fresh - one.fresh) * 100 / n;
+        perRw = (all.rewritten - one.rewritten) * 100 / n;
+        emit log_named_string("split row", label);
+        emit log_named_uint("split one: spend", one.spend);
+        emit log_named_uint("split one: quote", one.prefixFloor);
+        emit log_named_uint("split one: fresh slots", one.fresh);
+        emit log_named_uint("split one: rewritten slots", one.rewritten);
+        emit log_named_uint("split per action: spend", perSpend);
+        emit log_named_uint("split per action: quote", perQuote);
+        emit log_named_uint("split per action: fresh slots x100", perFresh);
+        emit log_named_uint("split per action: rewritten slots x100", perRw);
+        oneRatio = one.prefixFloor * 1000 / one.spend;
+        perRatio = perQuote * 1000 / perSpend;
+        emit log_named_uint("split one: quote / spend x1000", oneRatio);
+        emit log_named_uint("split per action: quote / spend x1000", perRatio);
     }
 
     // ---- helpers ---------------------------------------------------------------------------------------------------
@@ -780,6 +793,201 @@ contract FloorSplitTest is FloorBase {
             _farAcross(9, LIST_LENGTH_CLAIM, false),
             new bytes[](9)
         );
+    }
+
+    // ---- a yes after a lone no: the documented exception ----------------------------------------------------------
+    // A yes after a lone no is a restore that is the binding's SECOND statement. `PostingStore._append` at count 1
+    // materializes the binding's history word 0, a fresh slot; every restore the rows above measure is a binding's third
+    // statement (yes, mask, yes), whose append rewrites that word. In a list of lone noes no live bit is ever set, so the
+    // entry's live-bits word is empty and the yes writes it fresh; with the thing's backlink list holding one entry, the
+    // yes writes that list's word 0 fresh too. The yes then writes 3 fresh index slots and rewrites 4, against the later
+    // row's 2.0 and 5.0. Measured per action across nine topics (prague / amsterdam; quote 162,200 / 177,700): lists of
+    // 48 lone noes 1.258 / 1.289 (2 fresh: the live bit is in the head word); 256 entries 1.004 / 1.106; 257 entries
+    // 0.992 / 1.093; 1,025 entries 0.955 / 1.052 (spend 169,693 / 168,771). Prague covers this shape in lists of up to
+    // 256 entries; amsterdam (a fresh slot and a rewrite both cost 12,100 of execution there) covers it at the claim.
+    // At one topic of 1,025, nine spread entries: 1.106 / 1.238. The same yes with the lone no last in a list of 1,024
+    // first yeses spends what the all-noes list spends (the entry is alone in its bits word either way); with the
+    // thing unlinked it writes 3 fresh and 3 rewritten (0.986 / 1.136 at 1,025).
+
+    /// `len` lone noes by this principal at `topic_` (things `seed`/0..len-1), in publications of 64.
+    function _noList(bytes32 topic_, string memory seed, uint256 len)
+        internal
+        returns (bytes32[] memory x)
+    {
+        x = new bytes32[](len);
+        Action[] memory m = new Action[](len);
+        for (uint256 j; j < len; ++j) {
+            x[j] = bytes32(uint256(uint160(uint256(keccak256(abi.encode(seed, j))))));
+            m[j] = EfsTopics.deny(topic_, x[j], 0, 0);
+        }
+        _sendIn(m, new bytes[](len), 64);
+    }
+
+    /// One first yes of each of `things` at one new topic: each thing's backlink list then holds one entry.
+    function _linkOnce(bytes32[] memory things, string memory seed) internal {
+        bytes32 o = _topics(string.concat(seed, "o"), 1)[0];
+        Action[] memory l = new Action[](things.length);
+        for (uint256 i; i < things.length; ++i) {
+            l[i] = EfsTopics.tag(o, things[i], 0, 0);
+        }
+        _sendIn(l, new bytes[](things.length), 64);
+    }
+
+    /// Across `n` topics whose author's list holds `len` lone noes: the yes after the last of them (entry len − 1).
+    /// `linked`: each thing has one backlink entry. Gas metering is paused while the lists are built.
+    function _loneNoAcross(uint256 n, uint256 len, bool linked) internal returns (Action[] memory) {
+        vm.pauseGasMetering();
+        string memory seed = string.concat(linked ? "nal-" : "nau-", vm.toString(len), "-");
+        bytes32[] memory t = _topics(seed, n);
+        bytes32[] memory last = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            last[i] = _noList(t[i], string.concat(seed, vm.toString(i)), len)[len - 1];
+        }
+        if (linked) _linkOnce(last, seed);
+        vm.resumeGasMetering();
+        return _across(t, last, 1, 0, true);
+    }
+
+    /// At ONE topic whose author's list holds `len` lone noes: yeses after `k` of them, spread (entries
+    /// len − 1 − (k − 1 − j)·⌊(len − 1) / k⌋), each thing linked once.
+    function _loneNoOnePlace(uint256 k, uint256 len) internal returns (Action[] memory a) {
+        vm.pauseGasMetering();
+        string memory seed = string.concat("nop-", vm.toString(len), "-");
+        bytes32 t = _topics(seed, 1)[0];
+        bytes32[] memory x = _noList(t, seed, len);
+        bytes32[] memory m = new bytes32[](k);
+        uint256 step = (len - 1) / k;
+        a = new Action[](k);
+        for (uint256 j; j < k; ++j) {
+            m[j] = x[len - 1 - (k - 1 - j) * step];
+            a[j] = EfsTopics.tag(t, m[j], 1, 0);
+        }
+        _linkOnce(m, seed);
+        vm.resumeGasMetering();
+    }
+
+    /// Across `n` topics whose author's list holds `len` first yeses and then a lone no (entry `len`): the yes after it,
+    /// each thing linked once.
+    function _loneNoAfterYeses(uint256 n, uint256 len) internal returns (Action[] memory a) {
+        vm.pauseGasMetering();
+        string memory seed = string.concat("nyl-", vm.toString(len), "-");
+        bytes32[] memory t = _topics(seed, n);
+        bytes32[] memory last = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            _list(t[i], string.concat(seed, vm.toString(i)), len);
+            last[i] = bytes32(uint256(uint160(uint256(keccak256(abi.encode(seed, "no", i))))));
+        }
+        _linkOnce(last, seed);
+        _execAs(address(this), _across(t, last, 0, 0, false), new bytes[](n));
+        vm.resumeGasMetering();
+        a = _across(t, last, 1, 0, true);
+    }
+
+    /// The exception pinned: per action, the ratio inside [band[0], band[1]] thousandths on prague and [band[2],
+    /// band[3]] on amsterdam, and exactly `fresh` and `rewritten` index slots (×100), so a change either way shows.
+    function _loneNo(
+        string memory label,
+        Action[] memory a,
+        uint256[4] memory band,
+        uint256 fresh,
+        uint256 rewritten
+    ) internal returns (uint256 perRatio) {
+        uint256 perFresh;
+        uint256 perRw;
+        (perFresh, perRw,, perRatio) = _split(label, a, new bytes[](a.length));
+        (uint256 lo, uint256 hi) = _amsterdam() ? (band[2], band[3]) : (band[0], band[1]);
+        assertGe(perRatio, lo, string.concat(label, ": the exception's ratio moved down"));
+        assertLe(perRatio, hi, string.concat(label, ": the exception's ratio moved up"));
+        assertEq(perFresh, fresh, string.concat(label, ": fresh index slots per yes"));
+        assertEq(perRw, rewritten, string.concat(label, ": rewritten index slots per yes"));
+    }
+
+    /// The length up to which prague covers a yes after a lone no across places (measured 1.004 at 256 entries, 0.992
+    /// at 257; the search makes one more store call there, and 512 and 513 entries measure alike, 0.967).
+    uint256 internal constant LONE_NO_COVERED_UP_TO = 256;
+
+    /// A short list (48 lone noes, the short tier's top): covered on both schedules (measured 1.258 / 1.289).
+    function test_split_lone_no_yes_short_list() public {
+        uint256 r = _loneNo(
+            "lone no: yeses across places, lists of 48",
+            _loneNoAcross(9, 48, true),
+            [uint256(1230), 1290, 1260, 1320],
+            200,
+            400
+        );
+        assertGe(r, 1000, "covered in a short list");
+    }
+
+    function test_split_lone_no_yes_covered_at_256() public {
+        uint256 r = _loneNo(
+            "lone no: yeses across places, lists of 256",
+            _loneNoAcross(9, LONE_NO_COVERED_UP_TO, true),
+            [uint256(1000), 1030, 1080, 1130],
+            300,
+            400
+        );
+        assertGe(r, 1000, "covered at 256 entries");
+    }
+
+    function test_split_lone_no_yes_not_covered_at_257() public {
+        uint256 r = _loneNo(
+            "lone no: yeses across places, lists of 257",
+            _loneNoAcross(9, LONE_NO_COVERED_UP_TO + 1, true),
+            [uint256(970), 999, 1070, 1120],
+            300,
+            400
+        );
+        if (_amsterdam()) assertGe(r, 1000, "amsterdam: covered at 257 entries");
+        else assertLt(r, 1000, "prague: the documented exception, not covered from 257 entries");
+    }
+
+    /// At the claim (lists of 1,025): measured 0.955 on prague (not covered), 1.052 on amsterdam (covered).
+    function test_split_lone_no_yes_at_the_claim() public {
+        uint256 r = _loneNo(
+            "lone no: yeses across places, lists of 1,025",
+            _loneNoAcross(9, LIST_LENGTH_CLAIM + 1, true),
+            [uint256(935), 975, 1030, 1075],
+            300,
+            400
+        );
+        if (_amsterdam()) assertGe(r, 1000, "amsterdam: covered at the claim");
+        else assertLt(r, 1000, "prague: the documented exception, not covered at the claim");
+    }
+
+    /// The thing unlinked (its backlink list empty: the yes writes the list's head, no word): 3 fresh, 3 rewritten;
+    /// measured 0.986 / 1.136, so the linked case is the dearer.
+    function test_split_lone_no_yes_at_the_claim_unlinked() public {
+        _loneNo(
+            "lone no: yeses across places, lists of 1,025, things unlinked",
+            _loneNoAcross(9, LIST_LENGTH_CLAIM + 1, false),
+            [uint256(965), 999, 1110, 1160],
+            300,
+            300
+        );
+    }
+
+    /// A lone no last in a list of 1,024 first yeses: the same spend as in a list of lone noes (0.955 / 1.052).
+    function test_split_lone_no_yes_after_yeses_at_the_claim() public {
+        _loneNo(
+            "lone no: yeses across places, a lone no after 1,024 first yeses",
+            _loneNoAfterYeses(9, LIST_LENGTH_CLAIM),
+            [uint256(935), 975, 1030, 1075],
+            300,
+            400
+        );
+    }
+
+    /// At ONE topic of 1,025 lone noes, nine spread entries: covered on both (measured 1.106 / 1.238; the scope head
+    /// is warm after the first, and the nine share five live-bits words).
+    function test_split_lone_no_yes_one_place_at_the_claim() public {
+        uint256 r = _loneNo(
+            "lone no: yeses at one topic of 1,025",
+            _loneNoOnePlace(9, LIST_LENGTH_CLAIM + 1),
+            [uint256(1080), 1130, 1210, 1260],
+            250,
+            300
+        );
+        assertGe(r, 1000, "covered at one place");
     }
 
     /// The length where the quote stops covering, pinned: the bisection makes one more store call each time a list
