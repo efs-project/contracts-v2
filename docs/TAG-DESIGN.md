@@ -489,8 +489,8 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 4. **Everyone's versions of one file are not listed on chain today: keep that list from the start, or leave it
    out?** Keeping it costs a storage slot for every file ever created: about 30k gas per file today in the store a
    HEAD statement already writes (about 2% of creating a file; 51k as measured in a separate third store; 118k to
-   150k on Glamsterdam). Adding it later is possible and measured at about 485k per file today (582k on
-   Glamsterdam), 9.5 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 485 billion for a
+   150k on Glamsterdam). Adding it later is possible and measured at about 478k per file today (576k on
+   Glamsterdam), 9.3 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 478 billion for a
    million, so "later" suits only a small or young Realm. Keeping it can be undone (a later generation may drop a
    list); leaving it out cannot, for a large Realm. Your 2026-07-15 ruling (everything written through EFS is
    indexed automatically) bears on it. *The tag design session and the contracts dev both now recommend keeping it

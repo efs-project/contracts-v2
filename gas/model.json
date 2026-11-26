@@ -3011,9 +3011,9 @@
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "21db3f77ae395967d6ff10d0c8052a5b9ee20fe3",
+    "commit": "aa2003d96953b075aa5a1438e2136b3fa650c2a9",
     "dirtyFiles": 0,
-    "date": "2026-11-26T10:33:33.148Z",
+    "date": "2026-11-26T11:41:58.218Z",
     "foundry": "forge Version: 1.8.3"
   },
   "reads": {
@@ -3031,9 +3031,9 @@
     "schedules": {
       "prague": {
         "rows": {
-          "about page=10": 479353,
-          "about page=10 sample=4": 1172962,
-          "about page=20": 805152,
+          "about page=10": 479080,
+          "about page=10 sample=4": 1172149,
+          "about page=20": 804679,
           "authorCount 300 authors": 85230,
           "byName 300 authors page=10": 367992,
           "byName 300 authors page=50": 1278067,
@@ -3078,7 +3078,7 @@
           "mine worst lens=64 depth=8 page=50": 23185476,
           "mine worst lens=8 depth=8 page=10": 1570802,
           "mine worst lens=8 depth=8 page=50": 5870499,
-          "placeCount 2000 positions": 85207,
+          "placeCount 2000 positions": 85210,
           "raw below page=10": 620219,
           "raw below page=50": 2675294,
           "raw exact page=10": 539140,
@@ -3159,8 +3159,8 @@
             "perRow": 22752
           },
           "about": {
-            "opening": 153553,
-            "perRow": 32580
+            "opening": 153480,
+            "perRow": 32560
           },
           "wordPage": {
             "opening": 118466,
@@ -3266,9 +3266,9 @@
       },
       "amsterdam": {
         "rows": {
-          "about page=10": 483153,
-          "about page=10 sample=4": 1178762,
-          "about page=20": 808952,
+          "about page=10": 482880,
+          "about page=10 sample=4": 1177949,
+          "about page=20": 808479,
           "authorCount 300 authors": 88430,
           "byName 300 authors page=10": 371792,
           "byName 300 authors page=50": 1281867,
@@ -3313,7 +3313,7 @@
           "mine worst lens=64 depth=8 page=50": 23190276,
           "mine worst lens=8 depth=8 page=10": 1575002,
           "mine worst lens=8 depth=8 page=50": 5875299,
-          "placeCount 2000 positions": 88407,
+          "placeCount 2000 positions": 88410,
           "raw below page=10": 624019,
           "raw below page=50": 2679694,
           "raw exact page=10": 542940,
@@ -3394,8 +3394,8 @@
             "perRow": 22752
           },
           "about": {
-            "opening": 157353,
-            "perRow": 32580
+            "opening": 157280,
+            "perRow": 32560
           },
           "wordPage": {
             "opening": 121666,

@@ -183,6 +183,26 @@ contract TopicLookupTest is TopicReadersBase {
         assertEq(uint8(q.status), uint8(Status.INVALID), "no FOLDER roll-up");
     }
 
+    /// The two count refusals for a below view at a purpose other than TAG (there are no roll-ups but TAG's): INVALID
+    /// in the refusal shape of the page laws, coverage UNKNOWN and both counts 0, though the list read was COMPLETE.
+    function test_count_refusals_below_at_another_purpose_carry_coverage_unknown() public {
+        bytes32[] memory t = _regPath("cr", 2);
+        _tag(alice, t[1], things[0]);
+        (Qualified memory q, Coverage c, uint64 a, uint64 b) =
+            lookup.placeCount(Purpose.FOLDER, t[0], true, _unbound());
+        assertEq(uint8(q.status), uint8(Status.INVALID), "placeCount below FOLDER: INVALID");
+        assertEq(uint8(c), uint8(Coverage.UNKNOWN), "placeCount below FOLDER: coverage UNKNOWN");
+        assertEq(a + b, 0, "placeCount below FOLDER: no counts");
+        (q, c, a, b) = lookup.entryCount(_pid(alice), Purpose.FOLDER, t[0], true, _unbound());
+        assertEq(uint8(q.status), uint8(Status.INVALID), "entryCount below FOLDER: INVALID");
+        assertEq(uint8(c), uint8(Coverage.UNKNOWN), "entryCount below FOLDER: coverage UNKNOWN");
+        assertEq(a + b, 0, "entryCount below FOLDER: no counts");
+        // the same calls at TAG are served
+        (q, c, a,) = lookup.placeCount(Purpose.TAG, t[0], true, _unbound());
+        assertEq(uint8(q.status), uint8(Status.PRESENT));
+        assertEq(uint8(c), uint8(Coverage.COMPLETE));
+    }
+
     // ---- word pages and children ------------------------------------------------------------------------------
 
     function test_word_page_groups_and_children() public {

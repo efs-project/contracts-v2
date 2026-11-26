@@ -82,7 +82,7 @@
     "filesPageReader": "0xa03716f5200f87D05192b6c3E45D863181FA7404",
     "topicMineReader": "0x0de61140Ff961cC101137e6aC9D0A9A90C32cc6e",
     "topicEveryoneReader": "0x0E082ab787e39860b07282CEDb54F54794fDa76B",
-    "topicLookupReader": "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2",
+    "topicLookupReader": "0xE32505C0CE36D95478607b684F2faB83abABd5De",
     "keysView": "0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F",
     "web3Gateway": "0x99780AaA0D2cbc87fB85062a67d31DB2144E583a",
     "web3Content": "0x7D73d40047140d8Db7C7bC9ac8e57e9E075C3D15"
@@ -113,10 +113,10 @@
       "runtimeCodehash": "0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f"
     },
     "topicLookup": {
-      "address": "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2",
+      "address": "0xE32505C0CE36D95478607b684F2faB83abABd5De",
       "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
       "kindLabel": "efs/reader/topic-lookup/1",
-      "runtimeCodehash": "0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68"
+      "runtimeCodehash": "0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63"
     }
   },
   "gateway": {
@@ -2023,10 +2023,10 @@
       "kind": "CREATE2",
       "contract": "TopicLookupReader",
       "source": "src/readers/TopicLookupReader.sol",
-      "address": "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2",
+      "address": "0xE32505C0CE36D95478607b684F2faB83abABd5De",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0x8bcf1a88bb2543cc1e08910e7efe9f56722d9a91e1e5bac8f622d5768818c508",
-      "initcodeBytes": 17851,
+      "initcodeHash": "0x3f573fac419a9f8890a53e80178c575eaa6ac2ca385ba19eef42bb6c600baf62",
+      "initcodeBytes": 17823,
       "args": [
         "0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef",
         "0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648",
@@ -2034,10 +2034,10 @@
         "0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf",
         "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b"
       ],
-      "runtimeCodehash": "0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68",
-      "runtimeBytes": 17109,
+      "runtimeCodehash": "0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63",
+      "runtimeBytes": 17081,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0x680882c2dbb5153510f6d0ed2cffae412647167607bc8e31cd50f3b274c59075"
+      "calldataHash": "0xfa483b715f3774caf8825da612dec667c3b50903a5940c01782fb20625af3d35"
     },
     {
       "id": "R9",
@@ -2079,10 +2079,10 @@
       "args": [
         "0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef",
         "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
-        "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2"
+        "0xE32505C0CE36D95478607b684F2faB83abABd5De"
       ],
       "postCheck": "readers(ledger, kind) lists the reader with its codehash, layoutId and physical profile",
-      "calldataHash": "0x351fddba3df1113097244e18c2ba9bbf806caddd7616d3a4486d84fe86594702"
+      "calldataHash": "0x7f7c7f30e1789d8bea8916bd6ad9f745c1960e60b5b0d3616290d004da10874d"
     },
     {
       "id": "G22.root",
@@ -2505,5 +2505,5 @@
       "postCheck": "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"
     }
   ],
-  "planHash": "0x426a14cad6e38510dd16ee319bc12ef8ea26389b6f02b4577d488d57f4c92b6b"
+  "planHash": "0x3b88f634d4dfa285205eedaffe53c49d28f579df537fce1a659b53eeb8590a3e"
 }

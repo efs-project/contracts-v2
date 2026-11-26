@@ -638,6 +638,19 @@ the exact lists of a `mine` below on an index without topic roll-ups). Reading a
 old history is built) would be a new reader contract, designed with that feature, with a list-coverage field of its
 own that survives paging.
 
+**The `about` order, fixed at the final integration.** `about` read each row's `position-authors` head and refused a
+zero count (`E_TOPIC_INCONSISTENT(3)`) before it looked at that list's coverage, so on an index that does not declare
+the family (whose head reply is `(UNKNOWN, 0, 0, 0, false)`), or one that stopped keeping it over a carried store,
+`about` reverted for every position first stated after the drop; it now checks coverage first and refuses UNKNOWN as
+data, and a zero count is a fault only on a COMPLETE list. The two below-count refusals at a purpose other than TAG
+(`placeCount` and `entryCount` with `below`) now carry coverage UNKNOWN, as every refusal does (they carried the
+COMPLETE coverage of the list read). Every other check that can run on a list before its coverage is required
+(`_listHead`'s range checks, the scope heads' and the coverage replies' own ranges) holds for any honest reply,
+COMPLETE or not, so none of them can turn a not-COMPLETE list into a revert; the tests now also run every view
+against every list it needs in the reply shape of an undeclared family (`FaultyReads.UNDECLARED`). One order is left
+as it is and written in the page laws: on a resumed page the continuation's cursor is checked against a list's count
+before its coverage, so only a forged continuation gets INVALID there instead of UNKNOWN.
+
 For consumers, in one line: a served topic page can be trusted to come from complete lists, and UNKNOWN on a topic view
 now also covers "the index is still building this list".
 
@@ -698,8 +711,8 @@ final phase, which spend 20–40k more per extra distinct action kind in a publi
 marginals (each kind's first touch of its index state is cold; a k2 − k1 marginal sees it once, inside `fixed`).
 
 **41. Identities of this release** (items 32 to 40 together, against `cbf5b78`, the commit the SDK is pinned to;
-every value is in the table below). **Moved:** the release digest (`0x354ef0c5…c280`, was `0x56bd2f95…2565`), the
-plan hash (`0x426a14ca…2b6b`), the execution set (`0x768d8353…dde7`), the index obligations (`0xbc6d4b7d…3a3a`) and
+every value is in the table below). **Moved:** the release digest (`0x9f360a55…f321`, was `0x56bd2f95…2565`), the
+plan hash (`0x3b88f634…0a3e`), the execution set (`0x768d8353…dde7`), the index obligations (`0xbc6d4b7d…3a3a`) and
 manifest hash (`0x073676c0…2e3c`); the code of `LedgerControl` (reason 14), `RealmIndex` (`BUILT_HOOKS`), `IndexReads`
 (the copy, Option A) and the three topic readers (the list-coverage rule): in `artifacts/` exactly these six files
 changed; `release/errors.json` (reason 14, `E_PIN` 12, the reworded 12 and `E_BUILD(7)`); `gas/model.json` (the
@@ -718,8 +731,10 @@ apply delegates, the registry implementation (`TypeRegistry`), the decoder, `led
 but `IIndexReads.json`, `vectors/layout.json`, every test vector but the two floor files, the recommended read limits,
 and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the `src/` contracts that changed against
 `726993e` (budget 19,660 B): `LedgerControl` 18,042 B (1,618 left), `RealmIndex` 18,834 B (826 left), `IndexReads`
-12,431 B, `TopicMineReader` 15,461 B, `TopicEveryoneReader` 16,688 B, `TopicLookupReader` 17,109 B, and
-`IndexDeployer` 6,624 B (not a release unit); `LedgerIngress` is unchanged at 19,264 B (396 left).
+12,431 B, `TopicMineReader` 15,461 B, `TopicEveryoneReader` 16,688 B, `TopicLookupReader` 17,081 B, and
+`IndexDeployer` 6,624 B (not a release unit); `LedgerIngress` is unchanged at 19,264 B (396 left). With the `about`
+order fix (item 38) `TopicLookupReader` is 17,081 B (2,579 left) and its address `0xE32505C0…d5De`; the read rows of
+`about` fell by 273 to 813 gas and `placeCount`'s rose by 3, and no read bound or recommended limit moved.
 
 ### The identity table (this release against `cbf5b78`)
 
@@ -736,8 +751,8 @@ on both schedules (was 248).
 
 | pin | this release | moved against `cbf5b78` |
 |---|---|---|
-| release digest (`sha256(release/release.json)`) | `0x354ef0c5d5bfdec54fad602ae6ba9b7d2a0a209e5021c7cdf4490e0d9442c280` | yes (was `0x56bd2f95…2565`) |
-| plan hash | `0x426a14cad6e38510dd16ee319bc12ef8ea26389b6f02b4577d488d57f4c92b6b` | yes (was `0xe40993da…2a2c`) |
+| release digest (`sha256(release/release.json)`) | `0x9f360a55c3756d9dac843920b9df9241404507bf972d415ee283339017b1f321` | yes (was `0x56bd2f95…2565`) |
+| plan hash | `0x3b88f634d4dfa285205eedaffe53c49d28f579df537fce1a659b53eeb8590a3e` | yes (was `0xe40993da…2a2c`) |
 | execution set | `0x768d8353040e477be465dca8086d75431cf09d7e4573096b55176d90f0b9dde7` | yes (was `0x0788d659…b99d`) |
 | index obligations | `0xbc6d4b7ddfe9e2dbbd704199b27789e9afd626d0212777a4c6afefb7ac313a3a` | yes (was `0x5555dbfb…4f79`) |
 | index manifest hash | `0x073676c0b3d067da839015fbb8e8e86b6c7ec23469c3abeb78e220a623ed2e3c` | yes (was `0x3b50d7a2…009f`) |
@@ -750,7 +765,7 @@ on both schedules (was 248).
 | limits profile id | `0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055` | no |
 | realm id | `0x791e5fa5ca744f9269dcaabed8244503b2864f7dbbc16b22f63626a07b064193` | yes (was `0xc1e80401…700a`) |
 | domain separator | `0xee65704ebe4f133186edae6f66c635bc50d9fbd00655332c36f6c1dde8e3c9a7` | yes (was `0x50636c43…3c91`) |
-| `gas/model.json` sha256 | `0xf477f75ad6c777f00302228cc88c9c48805d75d24c7057f77c45f4588afff626` | yes (was `0xa4b9f64b…3e34`) |
+| `gas/model.json` sha256 | `0x6b754403ffd6a3deaacc63128401fc8168dad3333889a5f97c5d38064fb58dad` | yes (was `0xa4b9f64b…3e34`) |
 | `release/errors.json` sha256 | `0xa3278b62ff632d139382799769dd4a9d0991731d73bb82faff9f75d0e8afff7e` | yes (was `0xa97d387c…1f17`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
@@ -790,8 +805,8 @@ on both schedules (was 248).
 | `readers.topicMineReader` runtime codehash | `0x7f435e19e60ace99f1749f965e958edb6a5c5f4207a615ee54d3114260f71bc6` | yes (was `0x2a7d824c…15cc`) |
 | `readers.topicEveryoneReader` | `0x0E082ab787e39860b07282CEDb54F54794fDa76B` | yes (was `0x1ee0AB9D…86D2`) |
 | `readers.topicEveryoneReader` runtime codehash | `0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f` | yes (was `0x50347b7b…be5e`) |
-| `readers.topicLookupReader` | `0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2` | yes (was `0xC74BacA3…119C`) |
-| `readers.topicLookupReader` runtime codehash | `0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68` | yes (was `0x80682372…5596`) |
+| `readers.topicLookupReader` | `0xE32505C0CE36D95478607b684F2faB83abABd5De` | yes (was `0xC74BacA3…119C`) |
+| `readers.topicLookupReader` runtime codehash | `0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63` | yes (was `0x80682372…5596`) |
 | `readers.web3Gateway` | `0x99780AaA0D2cbc87fB85062a67d31DB2144E583a` | yes (was `0xcA9eC410…2981`) |
 | `readers.web3Gateway` runtime codehash | `0xec9ea7c949c978a5a7c107e08f270a5b16c53b245161089b7bb2db0e5482c029` | yes (was `0xcd627a0e…2727`) |
 | `readers.web3Gateway.content` | `0x7D73d40047140d8Db7C7bC9ac8e57e9E075C3D15` | yes (was `0x502a7CCe…41FA`) |
@@ -838,7 +853,7 @@ on both schedules (was 248).
 | `EfsWeb3Gateway` (address, runtime codehash) | `0x99780AaA0D2cbc87fB85062a67d31DB2144E583a / 0xec9ea7c949c978a5a7c107e08f270a5b16c53b245161089b7bb2db0e5482c029` | yes (was `0xcA9eC410…2981 / 0xcd627a0e…2727`) |
 | `TopicMineReader` (address, runtime codehash) | `0x0de61140Ff961cC101137e6aC9D0A9A90C32cc6e / 0x7f435e19e60ace99f1749f965e958edb6a5c5f4207a615ee54d3114260f71bc6` | yes (was `0xFB2f372b…9f21 / 0x2a7d824c…15cc`) |
 | `TopicEveryoneReader` (address, runtime codehash) | `0x0E082ab787e39860b07282CEDb54F54794fDa76B / 0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f` | yes (was `0x1ee0AB9D…86D2 / 0x50347b7b…be5e`) |
-| `TopicLookupReader` (address, runtime codehash) | `0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2 / 0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68` | yes (was `0xC74BacA3…119C / 0x80682372…5596`) |
+| `TopicLookupReader` (address, runtime codehash) | `0xE32505C0CE36D95478607b684F2faB83abABd5De / 0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63` | yes (was `0xC74BacA3…119C / 0x80682372…5596`) |
 | read bounds (prague): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | seed version | `efs-fixture-seed/4` | no |

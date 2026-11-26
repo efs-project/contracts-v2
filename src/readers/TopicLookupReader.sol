@@ -167,6 +167,9 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
                 if (c.purpose != Purpose.TAG || c.role != thing) revert E_TOPIC_INCONSISTENT(3);
                 List memory a = List(F_POSITION_AUTHORS, 0, 0, positions[k], 0, 0, 0, 0);
                 cov = _join(cov, _listHead(r, a));
+                // coverage first: a list that is not COMPLETE refuses the page (an undeclared family answers a zero
+                // head), and only a COMPLETE list's empty head is a fault
+                if (cov != Coverage.COMPLETE) break;
                 if (a.count == 0) revert E_TOPIC_INCONSISTENT(3); // a listed position has a statement
                 PlaceRow memory row = rows[i];
                 row.position = positions[k];
@@ -176,9 +179,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
                 row.decider = uint8(SELECTED_NONE); // no lens
                 row.statements = a.count;
                 row.yes = a.live;
-                if (sample != 0 && cov == Coverage.COMPLETE) {
-                    _sample(r, sample, a, positions[k], row);
-                }
+                if (sample != 0) _sample(r, sample, a, positions[k], row);
             }
             l.hi -= n;
         }
@@ -208,7 +209,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         Run memory r;
         (q, c) = _count(r, expected, l);
         if (below && purpose != Purpose.TAG && q.status == Status.PRESENT) {
-            q.status = Status.INVALID;
+            (q.status, c) = (Status.INVALID, Coverage.UNKNOWN); // a refusal carries coverage UNKNOWN
         }
         if (q.status == Status.PRESENT) (positionsEver, filings) = (l.live, l.count);
     }
@@ -238,7 +239,9 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
             List memory l =
                 List(F_SCOPE_BELOW, 0, 0, Keys.scopeBelow(principalId, purpose, place), 0, 0, 0, 0);
             (q, c) = _count(r, expected, l);
-            if (purpose != Purpose.TAG && q.status == Status.PRESENT) q.status = Status.INVALID;
+            if (purpose != Purpose.TAG && q.status == Status.PRESENT) {
+                (q.status, c) = (Status.INVALID, Coverage.UNKNOWN); // a refusal carries coverage UNKNOWN
+            }
             if (q.status == Status.PRESENT) count = l.count;
             return (q, c, count, 0);
         }

@@ -1,7 +1,7 @@
 {
   "schema": "efs-deployment/1",
-  "releaseDigest": "0x354ef0c5d5bfdec54fad602ae6ba9b7d2a0a209e5021c7cdf4490e0d9442c280",
-  "planHash": "0x426a14cad6e38510dd16ee319bc12ef8ea26389b6f02b4577d488d57f4c92b6b",
+  "releaseDigest": "0x9f360a55c3756d9dac843920b9df9241404507bf972d415ee283339017b1f321",
+  "planHash": "0x3b88f634d4dfa285205eedaffe53c49d28f579df537fce1a659b53eeb8590a3e",
   "chainId": 31337,
   "realmId": "0x791e5fa5ca744f9269dcaabed8244503b2864f7dbbc16b22f63626a07b064193",
   "realmOrigin": "0x226e65cc8475147f42afc797015ac2f01e67fe6c3d2d2d7522b9a841c7115930",
@@ -23,7 +23,7 @@
     },
     "txHash": "0xa313cdbc1e50ddee560c08f48fe097cf547bb21a45bfcdeafcf2338399237c74",
     "blockNumber": 44,
-    "blockHash": "0x570c6acce77d929dc9bb404afdce308037cfc35af2c9e1143ce32c2a5f8c43f4"
+    "blockHash": "0x2fbd2a095e528f10fcd48ac7dcadca3cd316aabdf9b9bb5d9784d707d04332d5"
   },
   "activation": {
     "revision": 1,
@@ -491,11 +491,11 @@
       "blockNumber": 69
     },
     "TopicLookupReader": {
-      "address": "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2",
-      "runtimeCodehash": "0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68",
-      "initcodeHash": "0x8bcf1a88bb2543cc1e08910e7efe9f56722d9a91e1e5bac8f622d5768818c508",
+      "address": "0xE32505C0CE36D95478607b684F2faB83abABd5De",
+      "runtimeCodehash": "0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63",
+      "initcodeHash": "0x3f573fac419a9f8890a53e80178c575eaa6ac2ca385ba19eef42bb6c600baf62",
       "step": "R8",
-      "txHash": "0xe3029899472871fbc0f46caa550bf022887b0dfa78e58a8fd562b0d9053ab699",
+      "txHash": "0xf035cf5c77bde308b5f8e08b102627de1e800e42ea2cb6952bd83f133d662a66",
       "blockNumber": 70
     }
   },
@@ -1033,8 +1033,8 @@
       "txHash": "0x20d5eacd59d659d80bff245fcae1178e6f75d07e50a7a115afb08b01fecd6a08"
     },
     "topicLookupReader": {
-      "address": "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2",
-      "runtimeCodehash": "0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68",
+      "address": "0xE32505C0CE36D95478607b684F2faB83abABd5De",
+      "runtimeCodehash": "0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63",
       "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
       "kindLabel": "efs/reader/topic-lookup/1",
       "ledger": "0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef",
@@ -1043,7 +1043,7 @@
       "layoutId": "0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212",
       "topicType": "0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf",
       "wordType": "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b",
-      "txHash": "0xe3029899472871fbc0f46caa550bf022887b0dfa78e58a8fd562b0d9053ab699"
+      "txHash": "0xf035cf5c77bde308b5f8e08b102627de1e800e42ea2cb6952bd83f133d662a66"
     },
     "listed": [
       {
@@ -1086,8 +1086,8 @@
         "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
         "kindLabel": "efs/reader/topic-lookup/1",
         "ordinal": 0,
-        "reader": "0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2",
-        "codehash": "0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68",
+        "reader": "0xE32505C0CE36D95478607b684F2faB83abABd5De",
+        "codehash": "0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63",
         "layoutId": "0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212",
         "physicalProfile": "0xf1a66910b8581e422a4a869642fe887d6c155cc77ef864866a30f805a9ab9844"
       }
@@ -1171,7 +1171,7 @@
       {
         "id": "G22.root",
         "label": "seed root (PUBLISH files-directory/1)",
-        "txHash": "0xc4ae855c931dd8084189a2728dca78cf354ab9907419f45c15f9c4c301344a8d",
+        "txHash": "0x6e12a9ea3b9ac1fd1096f95cbc3f083e685fb6d4ea187652d78f6893bf92b405",
         "publication": 1,
         "actions": [
           {
@@ -1193,7 +1193,7 @@
       {
         "id": "G22.folder",
         "label": "seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)",
-        "txHash": "0x19f6101fb987eeff877443e6ab628dd533498401cc484057f11f5924cee06df7",
+        "txHash": "0x3fcdc7d1f6b74aa14ede6f7f099b325f853bc32b9ade76f54e4b752406b90e13",
         "publication": 2,
         "actions": [
           {
@@ -1239,7 +1239,7 @@
       {
         "id": "G22.file",
         "label": "seed file docs/readme.txt (CREATE, PUBLISH root form 0, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0xd0a6e595e6ddea945ceb9027522be132f9ae137c73e66315fa1f3a77f2b35cc0",
+        "txHash": "0x9c2bd5e89c268226c96e0d5f80bebf906129e02dec60f453882bec52a39aec28",
         "publication": 3,
         "actions": [
           {
@@ -1309,7 +1309,7 @@
       {
         "id": "G22.big.0",
         "label": "seed docs/big.bin publication 1/2 (2 actions, 16384 body bytes)",
-        "txHash": "0x97df7adf8c8759eab4beb00d4cb76d9c04bf0dd60ba520afa8c5d3be93ccc2fa",
+        "txHash": "0x1cb3b9abfde592d769cf5d27e6e619e5d2478d36459edec3f1190d9f040ce191",
         "publication": 4,
         "actions": [
           {
@@ -1343,7 +1343,7 @@
       {
         "id": "G22.big.1",
         "label": "seed docs/big.bin publication 2/2 (9 actions, 4351 body bytes)",
-        "txHash": "0x2ffce880e6f7f8f2f95b75cc017ffae7e044ca81c145f433f082c94659b7645d",
+        "txHash": "0x545fbfa1a2546a9aba3b3e88189fce1ad4c607f4ac03a3f989e1bf6fe5601185",
         "publication": 5,
         "actions": [
           {
@@ -1461,7 +1461,7 @@
       {
         "id": "G22.remote",
         "label": "seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0x1ad2c2ad9b76af958e1d9f711126bccaa4e56408eacf2463148e687c3f7f0196",
+        "txHash": "0x2d3b1e0fc30c0fb201fc88dea9a242517c299df2303abe01538ce207aa2c7a1a",
         "publication": 6,
         "actions": [
           {
@@ -1621,7 +1621,7 @@
     "snapshot": "taken when the instance was deployed; read live values from the chain"
   },
   "rpc": {
-    "url": "http://127.0.0.1:8600",
+    "url": "http://127.0.0.1:8605",
     "chainId": 31337,
     "hardfork": "osaka"
   },
