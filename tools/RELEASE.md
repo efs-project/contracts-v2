@@ -368,10 +368,22 @@ decoder, `ledgerReads`, `ledgerViews`, `readerDirectory`, `keysView`, every File
 seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). No ABI changed (`test/snapshots/abi/` is unchanged; the index's
 new `generationProgress()` is in no consumer interface).
 
-### The topic page frontier (this release against `24fa269`)
+### The topic page frontier (this release against `24fa269`; the SDK re-vendors from `0fb4804`)
 
-**A consumer DOES re-vendor for this one**: the three topic readers' ABIs and addresses change. Re-vendor the same
-directories as above (`test/snapshots/abi/` included).
+**A consumer re-vendors for this release.** It is the next re-vendor point after `0fb4804`, the commit the SDK is
+pinned to: re-vendor the same directories as above (`test/snapshots/abi/` included) and re-pin every value of the
+identity table below, which compares against `0fb4804`. Between `0fb4804` and this release:
+
+- **Build from history, steps 1 and 2** (items 23 to 28) change nothing a client can call: no ABI, action, write or
+  read; they move the release digest, the plan hash, the execution set, the index's identities and, through the
+  control delegate embedded in genesis, every genesis address on the fixture Realm (items 25 and 28).
+- **The topic page frontier** (items 29 to 31) is the one change a consumer calls: the three topic readers' ABIs
+  (`TopicPageInfo` gains `frontier`) and addresses. It is the only ABI change against `0fb4804` (`test/snapshots/abi/`
+  differs in `ITopicMineReader`, `ITopicEveryoneReader` and `ITopicLookupReader` only).
+- **Read bounds that differ from `0fb4804`:** prague `limitEntries` 246 → 245, and prague `everyoneBelow`
+  `maxSkippedEntries` 246 → 245 at every lens (1, 8, 16, 32, 64). Nothing else in `reads.schedules.*.bounds` or
+  `recommended` differs on either schedule: `pageTimesLens` 768 / 416 / 688 / 408, `maxRows` 150 and every per-lens
+  `maxRows` are as at `0fb4804`, and amsterdam's `limitEntries` is 245 as it was.
 
 **29. `TopicPageInfo.frontier`** (`uint64`, after `scanned`; every later field of the struct moves one word, so
 decoding needs the new ABI). It is the entry the continuation's next page reads first: the newest entry of the listing
@@ -394,13 +406,18 @@ and are unchanged.
 first unconsumed entry): +92 to +303 gas per call on the measured rows, and +16 per skipped entry of `everyone`
 (36,145 below at a lens of 1, was 36,129). The lookups read one entry more in the page's slice when one is left:
 `byName` page 10 +4,222, `about` page 10 +4,399, `children` page 1 +4,192 (the entry in a word of its own; +273 to
-+1,276 where it shares a word), the same on both schedules. **Bounds that moved:** prague `limitEntries` 246 → 245
++1,276 where it shares a word), the same on both schedules. The look-ahead rides in the page's own slice, so a full
+page of 64 rows with entries left asks `postingSliceOf` for 65 entries: within its documented maximum, the Realm's
+`limits.maxReadCount` (256 in the release profile; limits never shrink at freeze). What each reader path asks the index
+and the bitmap store for at most, per read: the `mine` and `everyone` windows 16 entries (an exact scope list's window
+also one live word), a row's sample 64, a lookup page its rows plus one (`test/readers/TopicFrontier.t.sol`,
+`TopicSliceCapTest`, through a double that reverts any read above its cap). **Bounds that moved:** prague `limitEntries` 246 → 245
 and prague `everyoneBelow` `maxSkippedEntries` 246 → 245 at every lens (now equal to amsterdam's). `pageTimesLens`
 (768 / 416 / 688 / 408), `maxRows` (150) and every `maxRows` bound are unchanged on both schedules. Sizes:
 `TopicMineReader` 15,528 B (+47), `TopicEveryoneReader` 16,696 B (+91), `TopicLookupReader` 16,950 B (+392).
 
 **31. Identities.** Moved, against `24fa269`: the release digest
-(`0x2673734d3411950e94a798e29d970c125fd2abed9cbfa84c8077cca7a675f85c`, was `0x76c15412…ee03`), the plan hash
+(`0x56bd2f9524e3de85cada737526b1e237c6f69c1b8822f2d36b2a9805100c2565`, was `0x76c15412…ee03`), the plan hash
 (`0xe40993daed758041730c5e7b728b86c1171da768c570522bcba2e07b9a432a2c`, was `0x32438ed8…e751`), the three topic readers
 (`topicMineReader` `0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21`, was `0xE3aD0274…E170`; `topicEveryoneReader`
 `0x1ee0AB9D6f342cE440BA1a16f53c6FF3C8f986D2`, was `0x9CD44A56…3A28`; `topicLookupReader`
@@ -410,49 +427,115 @@ and prague `everyoneBelow` `maxSkippedEntries` 246 → 245 at every lens (now eq
 id, the ledger proxy (`0x83ce0B9E…20fB`) and every other address, every other unit's code and ABI, the publication
 rows of the gas model, `release/errors.json` and the seed (`efs-fixture-seed/4`).
 
-### The identity table (this release against `cc59d0c`)
+### The identity table (this release against `0fb4804`)
 
-Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
+Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture
+configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`) of this release, against the same files at
+`0fb4804` (`git show 0fb4804:<file>`), the commit the SDK is pinned to. Addresses are the fixture Realm's; on any other
+`(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. Every value an SDK vendors is here: the documents'
+digests, the identities of the execution set and the index, the ABI ids, every Type id, every deployed unit's address
+and runtime codehash, the read bounds and the seed. Beyond the table, `artifacts/` differs from `0fb4804` in
+`IndexReads`, `LedgerControl`, `RealmIndex` and the three topic readers, and `test/snapshots/abi/` in the three topic
+readers' interfaces.
 
-| pin | this release | moved |
+| pin | this release | moved against `0fb4804` |
 |---|---|---|
-| release digest (`sha256(release.json)`) | `0x580ede64a8178920a10ea6be524954a1b39289779e587204bee27e9713fbd04e` (`0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495` at `899767e`) | yes (was `0x3080c7d497d248404e07169de87a5ebe0c657b2c6dce97ce3b97a4535be94045`) |
-| plan hash | `0xff2f4490eeb7ab6bc9ed796be42199ac6f3868a73f15a481b4aeec04888f6d83` (`0xf5cbe783…9904` at `899767e`) | yes (was `0x12fc89b5ba9692557865a0078c648bb9b21daa89c651a021686fe691deb4caf0`) |
-| execution set | `0x3a9a6aea417492210568a60a5383e17bea5cffae424aafaaded4cb835fd793e4` (`0xf5514949…f00d` at `899767e`) | yes (was `0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9`) |
-| index obligations | `0x9150afe9de8bc7ab2a529ad497d3cf423a3eee085b4669d427777950613f6524` (`0xfa019dab…315f` at `899767e`) | yes (was `0x7a7c39be2aa7dc061f901c8eded0a2a5cbcb282c15895c35c89bf88608e822b2`) |
-| index manifest hash | `0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c` (`0x781779c5…cbc0` at `899767e`) | yes (was `0x5156a9991e6bde7401ee2ace2cfab0e42c448636fcd80b3ffe53ba4efbaae710`) |
-| layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | yes (was `0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb`) |
-| hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | yes (was `0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99`) |
-| hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | yes (was `0x953f29e98a1f402cd1ab51c0b2d59b1b60f6067df47ca0969e4b8a855a36a76b`) |
-| posting store ABI id `efs/posting-store/2` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | yes (was `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229`) |
-| bitmap store ABI id `efs/bitmap-store/2` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (`efs/bitmap-store/1` `0xb3240a15…5d6f` at `899767e`) | yes (was `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425`) |
+| release digest (`sha256(release/release.json)`) | `0x56bd2f9524e3de85cada737526b1e237c6f69c1b8822f2d36b2a9805100c2565` | yes (was `0x580ede64…d04e`) |
+| plan hash | `0xe40993daed758041730c5e7b728b86c1171da768c570522bcba2e07b9a432a2c` | yes (was `0xff2f4490…6d83`) |
+| execution set | `0x0788d65963e48f73fe655a469cc2110365bc9e498cc37c56030d60ac3a9cb99d` | yes (was `0x3a9a6aea…93e4`) |
+| index obligations | `0x5555dbfb2f06017916926a884b60e8cd72ac362a37661dc09d3e6b3674674f79` | yes (was `0x9150afe9…6524`) |
+| index manifest hash | `0x3b50d7a2f8ee5104dc0038713dac38a902b16e2045d4904e73635606ef33009f` | yes (was `0x608cabe7…006c`) |
+| layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | no |
+| hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | no |
+| hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | no |
+| posting store ABI id | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | no |
+| bitmap store ABI id | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` | no |
+| status vocabulary id | `0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87` | no |
+| limits profile id | `0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055` | no |
+| realm id | `0xc1e804018fed84a16135c2c3241382251686115d655e79f6e86e347bcba4700a` | yes (was `0x95909a76…e0e5`) |
+| domain separator | `0x50636c43bdf2a174ee18b4b73db46465f0898170b8997fe04af75ff8d03f3c91` | yes (was `0xe7865609…2413`) |
+| `gas/model.json` sha256 | `0xa4b9f64bf6fe40e27b6c0db6bbaee3fc39bb43a7bc8e5fc2a4fe74cf90b53e34` | yes (was `0xe4df874a…f09d`) |
+| `release/errors.json` sha256 | `0xa97d387cae3fcdcc57ff79787d418603664791d08188388859478d7458e21f17` | yes (was `0xaa8fa61b…640c`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
 | Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
-| Type id `files-name/2` | `0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a` | yes (was `0x13a1949ef993df66ef17cdc87042b773ee0185f5dd16ea95eab0b500974521f8`) |
+| Type id `files-name/2` | `0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a` | no |
 | Type id `files-bytes/1` | `0x9e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0` | no |
 | Type id `files-content/1` | `0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe` | no |
 | Type id `files-external/1` | `0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386` | no |
 | Type id `directory-alias/1` | `0x0c48b987487897968c6b3688da60e3c6db8e645aac2b481b3a1cc36789aecb61` | no |
 | Type id `realm-notice/1` | `0xc9efe343865f6f02915f75a1793e2a303b257cbe4bbd4a128ab936cc18cf5c24` | no |
 | Type id `files-span/1` | `0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd` | no |
-| Type id `topic-word/1` (provisional) | `0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b` | new |
-| Type id `topic/1` (provisional) | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | new |
-| Type id `text/1` (provisional) | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | new |
-| ledger proxy | `0x83DbD3411050C131bD2F4e1493Ff5750D80530C6` | yes (was `0x870aa1d6873256e38F82E348c23F707B7E890c1c`) |
-| index (generation 1) | `0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc` (`0x00f2a5C0…03C6` at `899767e`) | yes (was `0xa09CB554d43a121318DFB7deE4F7e46Aa56219dd`) |
-| `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | yes (was `0x02c6Cb67a439788469FD03A410E51EC90554837a`) |
-| `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | yes (was `0xFeD47e0060dBA4Acf18198c6DDc0CFBbd8A0dd55`) |
+| Type id `topic-word/1` | `0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b` | no |
+| Type id `topic/1` | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | no |
+| Type id `text/1` | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | no |
+| ledger proxy | `0x83ce0B9E2DDd9c5CEBBfe6b2b9Bc275fda9A20fB` | yes (was `0x83DbD341…30C6`) |
+| ledger implementation (`LedgerCore`) | `0x3C56f31A136aB3F04F1cD1e6eaa6f6AE56c0042C` | yes (was `0x074Dc885…8fF5`) |
+| ledger ProxyAdmin | `0x5e292A49455b94545a6818F59c224e1c0B3350AB` | yes (was `0x428D1ac2…24B1`) |
+| registry proxy | `0xa1657E67598eeC461e2bf0Ac5CB3903CA7C40BD2` | yes (was `0xdFCd716a…AD7C`) |
+| registry implementation | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9` | no |
+| registry ProxyAdmin | `0x2dEb3CeB5454811F0D1aE8d2619bBa1F3FFc1439` | yes (was `0xb6DD5442…0D81`) |
+| controller | `0xA6aFe20eD91162AC8AfE9aE082522fB69cb66E30` | yes (was `0x126c1775…9296`) |
+| genesis contract | `0xff73065986D14D2E1D1050d59f7cCd7ACe043533` | yes (was `0x6fCEec8E…36bf`) |
+| index (generation 1) | `0x6ebfdf09F489bBdBeeF929bcb0C8B7eae02217f7` | yes (was `0xCa5A752A…d4Dc`) |
+| index runtime codehash | `0x3ce5e1501d5edb8090832d0fc9b960f5d99efce7716b18598c64160c1013b452` | yes (was `0xd07b8751…8c7a`) |
+| index reads contract | `0x7345300136217575d8eC1cFd1beA91d25c9A329d` | yes (was `0x2Ce5BD78…92e6`) |
+| posting store | `0xA5CE13aB7011FcE7357b79e0267251499055DCB9` | yes (was `0xdAB85C02…94DE`) |
+| bitmap store | `0x508EB68a5e2a3aF1954e161d590B28B3C6d02D1B` | yes (was `0x164F6F6a…457F`) |
+| `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | no |
+| `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | no |
 | `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
 | `readers.keysView` | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` | no |
-| `readers.lensReader` | `0x5CaDE2E35B9Bd66c848DE94749b2446874f9f143` | yes (was `0xafe53Fc89439Ad34E9cc3Cb87644d87304a6375c`) |
-| `readers.filesPageReader` | `0x6c9b137BbA0850375CAf186b782c0a98E184c882` | yes (was `0x72Fd6c2b8186f66ea2c8eD60c3dd237F87cF8F6e`) |
-| `readers.topicMineReader` | `0xE53496e13ba1a08490Df3daBfcFeeE081C1Fd247` | new |
-| `readers.topicEveryoneReader` | `0x5bfC28aC82202F2c5409FEf47748f61C6096eC0D` | new |
-| `readers.topicLookupReader` | `0x99B1C12963f9c0E8A705606C078A3558D5007204` | new |
-| `readers.web3Gateway` | `0x18c605A87562c0f736529F17BCb4b5B8705c6077` | yes (was `0x7e256aCb7a469989da187aC50cF4e44c5f227975`) |
-| `readers.web3Gateway.content` (`EfsWeb3Content`) | `0x2c80161a8fEE688c3Cdb37fE9C59E4B1dC504929` | new |
+| `readers.lensReader` | `0x268B3c8BfA3501D22aBAd8D90CD0EB93909C70aB` | yes (was `0x5CaDE2E3…f143`) |
+| `readers.lensReader` runtime codehash | `0x1e292b4ddd241b346e6789b20810a3dacbf36709958874a11be3c3ae84177c07` | yes (was `0x860798ab…8ce1`) |
+| `readers.filesPageReader` | `0xc00D538AC16c07B678a017E24c7d2d6Ce9648F2A` | yes (was `0x6c9b137B…c882`) |
+| `readers.filesPageReader` runtime codehash | `0x149a571c99b2dbf8d972a1ba436f2cc3f9acc8fbaf539b3f689d54e49087f2c4` | yes (was `0xb92d98d3…8dcd`) |
+| `readers.topicMineReader` | `0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21` | yes (was `0xE53496e1…d247`) |
+| `readers.topicMineReader` runtime codehash | `0x2a7d824c8a0dc7a9499cf0d38e0f6104a950268c8ac0eb0876c1e2ef108b15cc` | yes (was `0xb63c773d…4b25`) |
+| `readers.topicEveryoneReader` | `0x1ee0AB9D6f342cE440BA1a16f53c6FF3C8f986D2` | yes (was `0x5bfC28aC…eC0D`) |
+| `readers.topicEveryoneReader` runtime codehash | `0x50347b7bdc521b6b3531efbf3ee7286a6274bfdc9f3811c31188ff71d23cbe5e` | yes (was `0x4004a077…1fe6`) |
+| `readers.topicLookupReader` | `0xC74BacA330C94774f332F918FbDca568AB5E119C` | yes (was `0x99B1C129…7204`) |
+| `readers.topicLookupReader` runtime codehash | `0x8068237209320bb83f2b2b1580185d3a1064e8c818841e7fef6d6eaa44e25596` | yes (was `0xb97894ec…8649`) |
+| `readers.web3Gateway` | `0xcA9eC410de151d86C3620EbBbc3Aa9DF0E822981` | yes (was `0x18c605A8…6077`) |
+| `readers.web3Gateway` runtime codehash | `0xcd627a0eeb1ee4943a407382c30b4d1a75cc6074131761a85cb5fe6cc4242727` | yes (was `0xc1051430…85a8`) |
+| `readers.web3Gateway.content` (`EfsWeb3Content`) | `0x502a7CCe35D221884FBfFE4f32687C4e288841FA` | yes (was `0x2c80161a…4929`) |
+| `readers.web3Gateway.content` runtime codehash | `0x4e20242c4ab3065cfc558a4423978d15edbb8f7ba2318d90a22d892f74d519aa` | yes (was `0xcc3533b8…a060`) |
+| `LedgerIngress` (address, runtime codehash) | `0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7` / `0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a` | no |
+| `LedgerApply` (address, runtime codehash) | `0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343` / `0x7d788fac98935e8c48d36d9e4886246093bef0a0eb20d445a7d28db275637669` | no |
+| `LedgerControl` (address, runtime codehash) | `0x7f9eA1e98fb218467F6B7632bd64e07b36A6789e` / `0xb56cb5079ee7082629918824d81dde7ca9c265fb13353d58164e57b5d07e00ec` | yes (was `0x5c82f235…5564` / `0x6cf43cd4…34c1`) |
+| `LedgerReads` (address, runtime codehash) | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` / `0x7aafb133b4b1b130b239da67027f7de118918861850b94584b68c101e0b71657` | no |
+| `LedgerViews` (address, runtime codehash) | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` / `0xf15400a4921e6b3282e9e1b486a14a4268c0f01b1b18e88234659394abc9eb03` | no |
+| `DescriptorStore` (address, runtime codehash) | `0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c` / `0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc` | no |
+| `IndexReplayDecoder` (address, runtime codehash) | `0x49e9bC76aaE1a2585885D876311Daa4c974aED1b` / `0x0f2574f466a8c3d6bb667d72dd1fdbfc9222636e26c33b4224ccc766fb8f2605` | no |
+| `ReaderDirectory` (address, runtime codehash) | `0x77865D8B084589021D9695865475cBED4fc16c31` / `0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f` | no |
+| `FilesBytesRule` (address, runtime codehash) | `0xdD9AE013bf2CCaf784626D70bcab5Be307b07e40` / `0x26b7e1529674fd83c36fbe5ccc9dab915a2f1821d853c707a2cd187e68066d2c` | no |
+| `FilesSpanRule` (address, runtime codehash) | `0x248C3f75c03d525c1813e6dCeDFAd10E2193a8b7` / `0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6` | no |
+| `FilesContentRule` (address, runtime codehash) | `0x24a5E41C539FB0e1FF5924239fE23D3bF86De11E` / `0x9989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a9` | no |
+| `FilesExternalContentRule` (address, runtime codehash) | `0x9A0B471E27F1CDC8478E214c301aA6Aa4F189FaF` / `0x637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f55` | no |
+| `FilesRootRule` (address, runtime codehash) | `0xd65df37B79581dEdC752ECDf3325bD91e54c561E` / `0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39` | no |
+| `FilesChildRule` (address, runtime codehash) | `0x4d670A2Ef8915ccb1347b6BcC01C1efd073fB6A8` / `0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4` | no |
+| `FilesDirectoryRule` (address, runtime codehash) | `0x5A266C0a5428e3caDe9F4c5a8B830DCBDf478615` / `0xaea9d912818cd9f49a7b8426807494ca91551040ec499ec6dfaec6e40ad6bfd2` | no |
+| `FilesNameRule` (address, runtime codehash) | `0x245098a6b090227e8F542c460f1C3be3F948884f` / `0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17` | no |
+| `RealmNoticeRule` (address, runtime codehash) | `0xB0be8d1E04D0B5D5268C05a6330c3254d6e5df34` / `0x52b5a16a788796687ec4607ff1ef59c4d99140c5eea9f583e8239b9d79b0ddcc` | no |
+| `DirectoryAliasRule` (address, runtime codehash) | `0x60B6B7611961E258dC8FF63b37830281Ce0F4bDa` / `0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667` | no |
+| `TopicWordRule` (address, runtime codehash) | `0x44186F79ddA5e09dce338b0649b4c5E6ee4432a5` / `0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5` | no |
+| `TopicRule` (address, runtime codehash) | `0xD07aaA9b8b6719B7E8Af64e34B4366700c9a4CdC` / `0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a` | no |
+| `TextRule` (address, runtime codehash) | `0xD10088139D60Be3faB03FD3012F3706C3Ac69485` / `0xb839d97202882243312d2792eebda9be94bb272490e3d652c73f2a1a9a0661a5` | no |
+| `RefuseAllPolicy` (address, runtime codehash) | `0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1` / `0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44` | no |
+| `FilesFinalValidator` (address, runtime codehash) | `0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0` / `0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | no |
+| `LedgerCore` (address, runtime codehash) | `0x3C56f31A136aB3F04F1cD1e6eaa6f6AE56c0042C` / `0xd6b26d5cdd827850a9e906422ae56ac962c0ecddbfa8dbb8b19dae198b8dee3b` | yes (was `0x074Dc885…8fF5` / `0xef6a0c5d…b8ff`) |
+| `TypeRegistry` (address, runtime codehash) | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9` / `0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3` | no |
+| `RealmGenesis` (address, runtime codehash) | `0xff73065986D14D2E1D1050d59f7cCd7ACe043533` / `0x6138027c761937f074a871c95e4505d66e5e11cabbf2f9afe0ca558324bd7660` | yes (was `0x6fCEec8E…36bf` / `0x8b2b401f…6083`) |
+| `PostingStore` (address, runtime codehash) | `0xA5CE13aB7011FcE7357b79e0267251499055DCB9` / `0x180ab3612928cce982ad6efcd75db4935bcc2d5696eb0227adb61ce6cd3b858f` | yes (was `0xdAB85C02…94DE` / `0x9a89824d…8040`) |
+| `BitmapStore` (address, runtime codehash) | `0x508EB68a5e2a3aF1954e161d590B28B3C6d02D1B` / `0xcc0c33afa91b6070db27d016b14bab50b2916f27fc6aa6c94d01bf6826941b1b` | yes (was `0x164F6F6a…457F` / `0x192588d9…8858`) |
+| `RealmController` (address, runtime codehash) | `0xA6aFe20eD91162AC8AfE9aE082522fB69cb66E30` / `0x871f2a71707d659b8ed4f5cc9bc238e76e5939a2602489b5026540e63cb3c5b7` | yes (was `0x126c1775…9296` / `0xf438ffe1…eaec`) |
+| `IndexReads` (address, runtime codehash) | `0x7345300136217575d8eC1cFd1beA91d25c9A329d` / `0xf7de800d4339c4f2210bc1fb91b5d12e133d264adb74b33f0e637b7b9ae87108` | yes (was `0x2Ce5BD78…92e6` / `0x084545d7…9d86`) |
+| `RealmIndex` (address, runtime codehash) | `0x6ebfdf09F489bBdBeeF929bcb0C8B7eae02217f7` / `0x3ce5e1501d5edb8090832d0fc9b960f5d99efce7716b18598c64160c1013b452` | yes (was `0xCa5A752A…d4Dc` / `0xd07b8751…8c7a`) |
+| `KeysView` (address, runtime codehash) | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` / `0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3` | no |
+| read bounds (prague): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | yes (was `246, 150, 768 / 416 / 688 / 408`) |
+| read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | seed version | `efs-fixture-seed/4` | no |
+| seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
 
 ## The fixture: many instances at once
 
