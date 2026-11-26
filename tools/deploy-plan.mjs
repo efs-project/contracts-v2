@@ -591,10 +591,11 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     fromAdmission: from, store: s === "posting" ? posting.address : bitmap.address, storeCodehash: s === "posting" ? posting.runtimeCodehash : bitmap.runtimeCodehash,
   }));
   const F = Object.fromEntries(FAMILY_TABLE.map(([n]) => [`F_${n.toUpperCase().replace(/-/g, "_")}`, familyId(n)]));
-  // G19a: the generation's IndexReads (its manifest and read side), built over the stores before the generation
+  // G19a: the generation's IndexReads (its manifest and read side), built over the stores before the generation; genesis
+  // has no live index, so its copy of the live index's manifest is empty and it holds no data contract (both zero)
   // the topic lists walk the release's Topics Types; the validator unit is built for the same two ids (IndexProfiles.requireTopicUnit)
   const topicTypes = { TOPIC_TYPE: ids[T.TOPIC], TOPIC_WORD_TYPE: ids[T.TOPIC_WORD] };
-  const indexReads = add("G19a", "IndexReads", [ledgerProxy, HOT_ABI_ID, posting.address, bitmap.address, unitsList, specs, WORK_MODEL, topicTypes.TOPIC_TYPE, topicTypes.TOPIC_WORD_TYPE], { LEDGER: ledgerProxy, HOT_ABI_ID, POSTING: posting.address, BITMAP: bitmap.address, F_BY_RECORD: F.F_BY_RECORD, F_DIGEST: F.F_DIGEST, ...topicTypes });
+  const indexReads = add("G19a", "IndexReads", [ledgerProxy, HOT_ABI_ID, posting.address, bitmap.address, unitsList, specs, WORK_MODEL, topicTypes.TOPIC_TYPE, topicTypes.TOPIC_WORD_TYPE, "0x"], { LEDGER: ledgerProxy, HOT_ABI_ID, POSTING: posting.address, BITMAP: bitmap.address, F_BY_RECORD: F.F_BY_RECORD, F_DIGEST: F.F_DIGEST, LIVE_COPY: zeroAddress, LIVE_COPY_CODEHASH: ZERO, ...topicTypes });
   const mHash = manifestHash(families, unitsList, specs, WORK_MODEL, indexReads.address, indexReads.runtimeCodehash);
   const indexImm = { LEDGER: ledgerProxy, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, READS: indexReads.address, READS_CODEHASH: indexReads.runtimeCodehash, MANIFEST_HASH: mHash, TOPIC_T: topicTypes.TOPIC_TYPE, WORD_T: topicTypes.TOPIC_WORD_TYPE, ...F };
   const referenced = new Set(immutableLayout("RealmIndex").map((l) => l.name));

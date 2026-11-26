@@ -395,7 +395,9 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
     }
 
     /// C builds and is activated; D carries all three of C's stores and replaces C before any admission reaches it;
-    /// D's first live HEAD statement attaches C's third store; C's build is then refused (2) and so is C (13).
+    /// D's first live HEAD statement attaches C's third store; C's build is then refused (2). Between
+    /// the two, C's build is already refused (7): its copy of the live manifest went stale when D went live, and the
+    /// kernel names that first (14).
     function test_an_attached_third_store_refuses_the_build() public {
         _history();
         (ListIndexDeployer dc, IHeadAuthorsGeneration c) =
@@ -409,7 +411,12 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
         _buildAll(dgen); // nothing to walk: every store carried
         this.activateNow(address(dgen));
         assertEq(r.hot.index(), address(dgen));
-        assertEq(c.build(bytes32(0), 64), c.build(bytes32(0), 64), "C may still build: nothing new");
+        // C carries the genesis stores, and its copy of the live index's manifest is generation 1's, stale since D
+        // went live: its build is refused (7) and writes nothing (docs INDEX-BUILD §10; before the copy C could still
+        // build here, with nothing new to fold)
+        assertFalse(c.carriedCheck(), "C's copy is stale");
+        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
+        c.build(bytes32(0), 64);
         assertFalse(third.attached());
         _head1(carol, EfsFiles.loneNegative(Purpose.HEAD, f2, 0, 0));
         assertTrue(third.attached(), "D's live write attached C's third store");
@@ -419,7 +426,9 @@ contract HeadAuthorsBuildTest is HeadAuthorsBase {
         vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(2)));
         c.build(bytes32(0), 64);
         assertFalse(c.carriedCheck());
-        vm.expectRevert(abi.encodeWithSelector(E_INDEX_NOT_READY.selector, uint8(13)));
+        // the kernel meets C's carried genesis families first, and C's copy is stale: 14 (before the copy, 13 from the
+        // third store; 13 for a candidate that carries nothing is `Carried.t.sol::testAFreshStoreAlreadyAttachedIsRefused13`)
+        vm.expectRevert(abi.encodeWithSelector(E_INDEX_NOT_READY.selector, uint8(14)));
         this.activateNow(address(c));
     }
 

@@ -340,10 +340,12 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
                 // a fresh store is the candidate's own: no live write has attached it
                 if (IPostingStore(f.store).attached()) revert E_INDEX_NOT_READY(13);
             } else {
-                // a carried family is the live index's: the same id in the same store from admission 1, read
-                // from the live index itself, never from the candidate (docs INDEX-BUILD §3.5, §5.3)
+                // a carried family is the live index's: the same id in the same store from admission 1, read from
+                // the live index's manifest as recorded here when it was activated (the candidate carries the
+                // preimage; it is trusted only for bytes that hash to the record), never from the live index
+                // itself, so replacing it never depends on its answering (docs INDEX-BUILD §3.5, §5.3, §10)
                 if (!liveRead) {
-                    liveFamilies = _liveFamilies($.index);
+                    liveFamilies = _liveFamilies(index, $);
                     liveRead = true;
                 }
                 if (!_declaresFromOne(liveFamilies, f)) revert E_INDEX_NOT_READY(12);
@@ -355,9 +357,20 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         }
     }
 
-    function _liveFamilies(address live) private view returns (FamilyEntry[] memory) {
-        if (live.code.length == 0) revert E_INDEX_NOT_READY(12);
-        return IRealmIndex(live).replayReadiness().families;
+    /// The live index's families from the candidate's copy of its manifest preimage (`IIndexReads.liveManifestCopy`):
+    /// the copy must hash to the `indexManifestHash` of the current revision row, the one that activated (or kept) the
+    /// live index (reason 14 otherwise: empty, altered, another index's, or stale). Hash-checked, it is the canonical
+    /// `abi.encode` the live index hashed, so its two leading values decode exactly; the rest is covered by the hash.
+    function _liveFamilies(address candidate, RealmStorage storage $)
+        private
+        view
+        returns (FamilyEntry[] memory families)
+    {
+        bytes memory copy = IIndexReads(candidate).liveManifestCopy();
+        if (keccak256(copy) != _revisions().rows[$.revision].indexManifestHash) {
+            revert E_INDEX_NOT_READY(14);
+        }
+        (, families) = abi.decode(copy, (bytes32, FamilyEntry[]));
     }
 
     function _declaresFromOne(FamilyEntry[] memory list, FamilyEntry memory f)

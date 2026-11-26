@@ -106,6 +106,7 @@ library IndexDeploy {
         WorkModel work;
         bytes32 topicTypeId;
         bytes32 topicWordTypeId;
+        bytes liveManifest; // empty: a generation-1 index has no live index to copy
     }
 
     function _reads(

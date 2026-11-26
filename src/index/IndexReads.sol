@@ -10,8 +10,8 @@ import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {IPostingStore} from "../interfaces/IPostingStore.sol";
-import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
 import {DigestSpec, FamilyEntry, Readiness, Unit, WorkModel} from "../interfaces/Index.sol";
+import {E_PIN} from "../interfaces/Errors.sol";
 
 /// The calling generation's progress word with its live flag: what `_coverage` asks the generation (one call, as
 /// `IIndexReads.progress()` was before), so a generation that has folded live answers with no ledger read for the
@@ -48,9 +48,19 @@ contract IndexReads {
     bytes32 public immutable TOPIC_TYPE;
     bytes32 public immutable TOPIC_WORD_TYPE;
 
+    /// The copy of the live index's manifest preimage this generation was deployed with (`liveManifestCopy`), held
+    /// as the code of a data contract this constructor created (one STOP byte, then the copy, as a descriptor blob
+    /// is held), bound by address and codehash; both zero when the copy is empty (genesis, an empty Realm).
+    address public immutable LIVE_COPY;
+    bytes32 public immutable LIVE_COPY_CODEHASH;
+
     uint8 private constant SHAPE_APPEND = 1;
     uint8 private constant SHAPE_BITMAP = 2;
     uint8 private constant KIND_BY_RECORD = 12;
+    /// `indexManifestHash` is word 8 of a revision row (`LedgerStorage.RevisionRow`; `LedgerReads` reads it there).
+    uint256 private constant REVISION_MANIFEST_WORD = 8;
+    /// The largest copy a data contract can hold: EIP-170's 24,576 B runtime less the leading STOP byte.
+    uint256 private constant MAX_COPY = 24_575;
 
     FamilyEntry[] internal _families;
     /// familyId → its index in `_families` + 1 (0 = undeclared), so a read finds its family in one SLOAD.
@@ -68,9 +78,11 @@ contract IndexReads {
         DigestSpec[] memory specs,
         WorkModel memory work,
         bytes32 topicTypeId,
-        bytes32 topicWordTypeId
+        bytes32 topicWordTypeId,
+        bytes memory liveManifest
     ) {
         IndexProfiles.requireTopicUnit(units, topicTypeId, topicWordTypeId);
+        (LIVE_COPY, LIVE_COPY_CODEHASH) = _holdCopy(liveManifest);
         TOPIC_TYPE = topicTypeId;
         TOPIC_WORD_TYPE = topicWordTypeId;
         LEDGER = ledger_;
@@ -109,6 +121,22 @@ contract IndexReads {
             _specs.push(specs[i]);
         }
         _work = work;
+    }
+
+    /// Creates the data contract that holds `copy` as code after one STOP byte (so it can never run): initcode
+    /// `PUSH2 len DUP1 PUSH1 12 PUSH1 0 CODECOPY PUSH1 0 RETURN` then the runtime. Nothing for an empty copy. The
+    /// runtime is bounded by EIP-170 (24,576 B): a copy of up to 24,575 B, refused above it (`E_PIN(this, 12)`).
+    function _holdCopy(bytes memory copy) private returns (address data, bytes32 codehash) {
+        if (copy.length == 0) return (address(0), 0);
+        if (copy.length > MAX_COPY) revert E_PIN(address(this), 12);
+        bytes memory init = abi.encodePacked(
+            hex"61", uint16(copy.length + 1), hex"80600c6000396000f3", hex"00", copy
+        );
+        assembly ("memory-safe") {
+            data := create(0, add(init, 32), mload(init))
+        }
+        if (data == address(0)) revert E_PIN(address(this), 12);
+        codehash = data.codehash;
     }
 
     function _declare(
@@ -171,6 +199,41 @@ contract IndexReads {
         return _work;
     }
 
+    function liveManifestCopy() external view returns (bytes memory) {
+        return _liveCopy();
+    }
+
+    /// The copy, read back from its data contract; empty when there is none, or when the contract at `LIVE_COPY`
+    /// is not the one this constructor created (its code can never change: it starts with STOP).
+    function _liveCopy() internal view returns (bytes memory copy) {
+        address data = LIVE_COPY;
+        if (data == address(0) || data.codehash != LIVE_COPY_CODEHASH) return copy;
+        uint256 n = data.code.length - 1;
+        copy = new bytes(n);
+        assembly ("memory-safe") {
+            extcodecopy(data, add(copy, 32), 1, n)
+        }
+    }
+
+    /// The live index's families and units, from this generation's copy of its manifest: `ok` only when the copy
+    /// hashes to the manifest hash the kernel recorded in the current revision row, the row that activated the live
+    /// index (or kept it). No call reaches the live index. A copy taken before the live index was replaced is stale
+    /// and fails here, as an empty one does on a Realm with history. The copy is the canonical encoding (it hashes
+    /// to what the index computed with `abi.encode`), so decoding its leading three values is exact.
+    function _liveManifest()
+        internal
+        view
+        returns (bool ok, FamilyEntry[] memory families, Unit[] memory units)
+    {
+        bytes memory copy = _liveCopy();
+        uint32 rev = ILedgerHot(LEDGER).revision();
+        bytes32 recorded = ILedgerHot(LEDGER)
+            .extsload(bytes32(Layout.revisionsRowsSlot(rev) + REVISION_MANIFEST_WORD));
+        if (keccak256(copy) != recorded) return (false, families, units);
+        (, families, units) = abi.decode(copy, (bytes32, FamilyEntry[], Unit[]));
+        ok = true;
+    }
+
     function digestSpecCount(bytes32 typeId) external view returns (uint256 n) {
         for (uint256 i; i < _specs.length; ++i) {
             if (_specs[i].typeId == typeId) ++n;
@@ -219,17 +282,22 @@ contract IndexReads {
     /// it names the generation as `INITIAL_WRITER` and is not attached, and carried otherwise. The generation did not
     /// fold a carried store's history; the live index did. So every family it maintains in a carried store must be
     /// declared by the live index (`ledger.index()`), with the same family id, in the same store, from admission 1,
-    /// as the live index's own `replayReadiness().families` say. The live index folds every admission
-    /// synchronously, so while this holds and the ledger is idle those families are complete through `counts()`.
+    /// as the live index's manifest says. That manifest is read from this generation's copy of it (`_liveManifest`),
+    /// checked against the hash the kernel recorded when it activated the live index, never from the live index, so
+    /// the check does not depend on the live index answering (docs INDEX-BUILD §3.5, §10). The live index folds every
+    /// admission synchronously, so while this holds and the ledger is idle those families are complete through
+    /// `counts()`.
     /// With no admissions there is no history to miss, so the check is the base case of the invariant "every store
     /// of the live index holds only what pinned generation code wrote": both of the generation's stores (each holds
     /// maintained families) must have an empty writers list, and an INITIAL_WRITER that is 0 or the generation itself.
     /// Every build-mode write records a range on its first call (`StoreBase._authorizeWriter`) and an empty Realm
     /// gives an honest build or replay nothing to fold, so a written store there was written by code nobody pinned;
     /// and a store's INITIAL_WRITER may write it in build mode until a live write attaches it, so on an empty Realm
-    /// it must be nobody or this generation's own pinned code. Genesis passes: its stores are new, INITIAL_WRITER 0. With admissions: true when the caller is the live index (it folds them itself) and when
-    /// the caller carries nothing; false when the live index has no code or its readiness read reverts, and false
-    /// when a store names the caller as INITIAL_WRITER but is attached (only a live write attaches, so some live
+    /// it must be nobody or this generation's own pinned code. Genesis passes: its stores are new, INITIAL_WRITER 0.
+    /// With admissions: true when the caller is the live index (it folds them itself) and when the caller carries
+    /// nothing; false when the copy is not the manifest the kernel recorded (empty, altered, of another index, or
+    /// stale: taken before the live index was replaced; kernel reason 14 refuses the same), and false when a store
+    /// names the caller as INITIAL_WRITER but is attached (only a live write attaches, so some live
     /// index wrote a store the caller never vouched for; kernel reason 13 refuses the same). Asked by the
     /// generation's `build`, by `replayReadiness` and by the coverage of a carried family of a generation that is
     /// not the live index.
@@ -247,13 +315,8 @@ contract IndexReads {
         (bool bitmapCarried, bool bitmapSpoiled) = _storeOf(BITMAP, gen);
         if (postingSpoiled || bitmapSpoiled) return false;
         if (!postingCarried && !bitmapCarried) return true;
-        if (live.code.length == 0) return false;
-        FamilyEntry[] memory theirs;
-        try IRealmIndex(live).replayReadiness() returns (Readiness memory lr) {
-            theirs = lr.families;
-        } catch {
-            return false;
-        }
+        (bool ok, FamilyEntry[] memory theirs,) = _liveManifest();
+        if (!ok) return false;
         for (uint256 i; i < _families.length; ++i) {
             FamilyEntry storage f = _families[i];
             if (f.fromAdmission == IndexProfiles.NOT_MAINTAINED) continue;

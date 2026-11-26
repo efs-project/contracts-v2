@@ -6,6 +6,7 @@ import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
+import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {BaseIndexDouble, IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
@@ -196,6 +197,7 @@ contract ReentrancyTest is Test, IRelay {
         plan.units = new Unit[](0);
         plan.specs = new DigestSpec[](0);
         plan.work = IndexDoubleDefaults.workModel();
+        plan.liveManifest = ManifestCopy.ofLive(k.proxy);
         IndexDeployer d = new IndexDeployer(k.proxy, keccak256(abi.encode(plan)));
         candidate = IGeneration1(d.run(plan));
         candidatePosting = PostingStore(d.postingStore());

@@ -10,14 +10,7 @@ import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 import {IPostingStore} from "../../src/interfaces/IPostingStore.sol";
 import {IIndexHook} from "../../src/interfaces/IIndexHook.sol";
-import {
-    DigestSpec,
-    Effect,
-    FamilyEntry,
-    Readiness,
-    Unit,
-    WorkModel
-} from "../../src/interfaces/Index.sol";
+import {DigestSpec, Effect, FamilyEntry, Unit, WorkModel} from "../../src/interfaces/Index.sol";
 import {IGeneration1} from "./IndexDeploy.sol";
 import {IndexDoubleDefaults} from "./doubles/IndexDoubles.sol";
 import {PostingStore} from "../../src/index/PostingStore.sol";
@@ -58,11 +51,21 @@ contract HeadAuthorsReads is IndexReads {
         WorkModel memory work,
         bytes32 topicTypeId,
         bytes32 topicWordTypeId,
+        bytes memory liveManifest,
         address[] memory extra,
         uint256 newUnitsFrom
     )
         IndexReads(
-            ledger_, hotAbiId, posting, bitmap, units, specs, work, topicTypeId, topicWordTypeId
+            ledger_,
+            hotAbiId,
+            posting,
+            bitmap,
+            units,
+            specs,
+            work,
+            topicTypeId,
+            topicWordTypeId,
+            liveManifest
         )
     {
         THIRD = extra[0];
@@ -94,13 +97,8 @@ contract HeadAuthorsReads is IndexReads {
             any = any || c;
         }
         if (!any) return true;
-        if (live.code.length == 0) return false;
-        FamilyEntry[] memory theirs;
-        try IRealmIndex(live).replayReadiness() returns (Readiness memory lr) {
-            theirs = lr.families;
-        } catch {
-            return false;
-        }
+        (bool ok, FamilyEntry[] memory theirs,) = _liveManifest();
+        if (!ok) return false;
         for (uint256 i; i < _families.length; ++i) {
             FamilyEntry storage f = _families[i];
             if (f.fromAdmission == IndexProfiles.NOT_MAINTAINED) continue;
@@ -196,10 +194,20 @@ contract CreatorsReads is IndexReads {
         DigestSpec[] memory specs,
         WorkModel memory work,
         bytes32 topicTypeId,
-        bytes32 topicWordTypeId
+        bytes32 topicWordTypeId,
+        bytes memory liveManifest
     )
         IndexReads(
-            ledger_, hotAbiId, posting, bitmap, units, specs, work, topicTypeId, topicWordTypeId
+            ledger_,
+            hotAbiId,
+            posting,
+            bitmap,
+            units,
+            specs,
+            work,
+            topicTypeId,
+            topicWordTypeId,
+            liveManifest
         )
     {
         _declare("subjects-created", 23, 2, 1, 1, posting, 1);
@@ -280,6 +288,7 @@ contract ListIndexDeployer {
         bytes32 topicTypeId;
         bytes32 topicWordTypeId;
         uint256 newUnitsFrom;
+        bytes liveManifest; // see `IndexDeployer.Plan.liveManifest`
     }
 
     /// The reads constructor's arguments as one tuple (see `IndexDeploy.ReadsArgs`).
@@ -293,6 +302,7 @@ contract ListIndexDeployer {
         WorkModel work;
         bytes32 topicTypeId;
         bytes32 topicWordTypeId;
+        bytes liveManifest;
         address[] extra;
         uint256 newUnitsFrom;
     }
@@ -352,6 +362,7 @@ contract ListIndexDeployer {
             x.extra[i - 2] = _stores[i];
         }
         x.newUnitsFrom = plan.newUnitsFrom;
+        x.liveManifest = plan.liveManifest;
         address r = _create(_withArgs(plan.readsInitcode, abi.encode(x)));
         if (r != _creation(nonce)) revert E_LIST_DEPLOYER(2);
         gen = _create(bytes.concat(plan.generationInitcode, abi.encode(LEDGER, plan.decoder, r)));
