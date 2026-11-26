@@ -471,6 +471,13 @@ export function manifestHash(families, units, specs, work, reads, readsCodehash)
     [MANIFEST_HEADER, families, units, specs, work, MANIFEST_PROFILES.physical, MANIFEST_PROFILES.callback, reads, readsCodehash],
   ));
 }
+/** The data contract `RealmIndex` creates to serve `workModel()` (its first CREATE, nonce 1): one STOP byte, then
+ *  `abi.encode(work)`; its address and codehash are the index's `WORK` and `WORK_CODEHASH` immutables. */
+export function workModelHolder(index, work) {
+  const out = artifact("IndexReads").abi.find((i) => i.name === "manifest").outputs;
+  const code = concat(["0x00", encodeAbiParameters([component(out, "work")], [work])]);
+  return { address: createAt(index, 1), codehash: keccak256(code), bytes: size(code) };
+}
 export const MANIFEST_HEADER = h("efs/index-manifest/2");
 export const MANIFEST_PROFILES = {
   physical: h("efs/index-layout/1:stores:inline-singleton:five-u48:live-bits-in-head"),
@@ -639,7 +646,13 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const mHash = manifestHash(families, unitsList, specs, WORK_MODEL, indexReads.address, indexReads.runtimeCodehash);
   const indexImm = { LEDGER: ledgerProxy, DECODER: decoder.address, POSTING: posting.address, BITMAP: bitmap.address, READS: indexReads.address, READS_CODEHASH: indexReads.runtimeCodehash, MANIFEST_HASH: mHash, BUILT_HOOKS: ZERO, TOPIC_T: topicTypes.TOPIC_TYPE, WORD_T: topicTypes.TOPIC_WORD_TYPE, ...F };
   const referenced = new Set(immutableLayout("RealmIndex").map((l) => l.name));
-  const index = add("G19", "RealmIndex", [ledgerProxy, decoder.address, indexReads.address], Object.fromEntries(Object.entries(indexImm).filter(([k]) => referenced.has(k))), { manifestHash: mHash });
+  // the index creates the data contract that serves its work model (its WORK and WORK_CODEHASH immutables)
+  const indexImmOf = (self) => {
+    const holder = workModelHolder(self, WORK_MODEL);
+    const all = { ...indexImm, WORK: holder.address, WORK_CODEHASH: holder.codehash };
+    return Object.fromEntries(Object.entries(all).filter(([k]) => referenced.has(k)));
+  };
+  const index = add("G19", "RealmIndex", [ledgerProxy, decoder.address, indexReads.address], indexImmOf, { manifestHash: mHash });
 
   // G20: the genesis activation through the controller
   const components = {
