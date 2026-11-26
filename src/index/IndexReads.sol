@@ -10,6 +10,7 @@ import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
 import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
 import {IIndexReads} from "../interfaces/IIndexReads.sol";
 import {IPostingStore} from "../interfaces/IPostingStore.sol";
+import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
 import {DigestSpec, FamilyEntry, Readiness, Unit, WorkModel} from "../interfaces/Index.sol";
 
 /// @title IndexReads — the read side of a generation-1 index: its manifest and every coverage and family read
@@ -204,9 +205,66 @@ contract IndexReads {
         return IIndexReads(msg.sender).progress();
     }
 
-    /// The `IRealmIndex.replayReadiness()` tuple of the calling generation.
+    /// The carried check of the calling generation (docs INDEX-BUILD §3.5). A store is fresh for the generation when
+    /// it names the generation as `INITIAL_WRITER` and is not attached, and carried otherwise. The generation did not
+    /// fold a carried store's history; the live index did. So every family it maintains in a carried store must be
+    /// declared by the live index (`ledger.index()`), with the same family id, in the same store, from admission 1,
+    /// as the live index's own `replayReadiness().families` say. The live index folds every admission
+    /// synchronously, so while this holds and the ledger is idle those families are complete through `counts()`.
+    /// True with no admissions (no history to miss, so genesis needs no special case), when the caller is the live
+    /// index (it folds them itself), and when the caller carries nothing. False when the live index has no code
+    /// or its readiness read reverts. Asked by the generation's `build` and by `replayReadiness`.
+    function carriedCheck() external view returns (bool) {
+        return _carriedCheck(msg.sender);
+    }
+
+    function _carriedCheck(address gen) private view returns (bool) {
+        (uint64 admissions,,,) = ILedgerHot(LEDGER).counts();
+        if (admissions == 0) return true;
+        address live = ILedgerHot(LEDGER).index();
+        if (live == gen) return true;
+        bool postingCarried = !_isFresh(POSTING, gen);
+        bool bitmapCarried = !_isFresh(BITMAP, gen);
+        if (!postingCarried && !bitmapCarried) return true;
+        if (live.code.length == 0) return false;
+        FamilyEntry[] memory theirs;
+        try IRealmIndex(live).replayReadiness() returns (Readiness memory lr) {
+            theirs = lr.families;
+        } catch {
+            return false;
+        }
+        for (uint256 i; i < _families.length; ++i) {
+            FamilyEntry storage f = _families[i];
+            if (f.fromAdmission == IndexProfiles.NOT_MAINTAINED) continue;
+            if (!(f.store == POSTING ? postingCarried : bitmapCarried)) continue;
+            if (!_declaresFromOne(theirs, f.familyId, f.store)) return false;
+        }
+        return true;
+    }
+
+    function _isFresh(address store, address gen) private view returns (bool) {
+        return IPostingStore(store).initialWriter() == gen && !IPostingStore(store).attached();
+    }
+
+    function _declaresFromOne(FamilyEntry[] memory list, bytes32 id, address store)
+        private
+        pure
+        returns (bool)
+    {
+        for (uint256 i; i < list.length; ++i) {
+            if (list[i].familyId == id && list[i].store == store && list[i].fromAdmission == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// The `IRealmIndex.replayReadiness()` tuple of the calling generation. When the carried check fails, the
+    /// generation claims nothing: `completedAdmission` and `completedPublication` are 0 (complete from 1 through
+    /// 0) and `ready` is false, whatever its progress word says; otherwise they are its progress frontier.
     function replayReadiness() external view returns (Readiness memory r) {
         (uint64 lastProcessed, uint64 lastPublication, bool gapped) = _progress();
+        if (!_carriedCheck(msg.sender)) (lastProcessed, lastPublication) = (0, 0);
         (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
         (uint64 admissions,,, uint64 publications) = ILedgerHot(LEDGER).counts();
         r.version = 1;

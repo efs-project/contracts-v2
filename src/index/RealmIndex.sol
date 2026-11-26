@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {GenerationStorage} from "./storage/GenerationStorage.sol";
 import {IndexProfiles} from "./IndexProfiles.sol";
+import {IndexReads} from "./IndexReads.sol";
 import {Layout} from "../core/layout/Layout.sol";
 import {Keys} from "../lib/Keys.sol";
 import {ActionKind, FamilyId, PostingKey, Purpose, ScopeKey} from "../interfaces/Actions.sol";
@@ -36,8 +37,10 @@ import {
 ///         is forwarded to that contract by `STATICCALL` from the fallback (design §10.1), so the manifest,
 ///         readiness and coverage reads keep their selectors at this address and no forwarded call can change
 ///         state. Of the entry points of §10.6, replay into fresh stores runs in this contract's own code; `build`
-///         and `backfill` revert, because generation 1 has no later family to build (the `IndexBuild` delegate is
-///         withdrawn: an index may not DELEGATECALL; design §10.6).
+///         moves the frontier of a generation that carries both stores (docs INDEX-BUILD §3.5) and refuses a
+///         generation with a fresh store until the walk of history lands; `backfill` reverts, because generation 1
+///         has no later family to build (the `IndexBuild` delegate is withdrawn: an index may not DELEGATECALL;
+///         design §10.6).
 contract RealmIndex is IRealmIndex, GenerationStorage {
     address public immutable LEDGER;
     address public immutable DECODER;
@@ -577,11 +580,18 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         return uint64(effects.length);
     }
 
+    /// Both stores are fresh: replay rebuilds every family.
     function _fresh() private view returns (bool) {
-        return IPostingStore(POSTING).initialWriter() == address(this)
-            && !IPostingStore(POSTING).attached()
-            && IBitmapStore(BITMAP).initialWriter() == address(this)
-            && !IBitmapStore(BITMAP).attached();
+        return _isFresh(POSTING) && _isFresh(BITMAP);
+    }
+
+    /// A store is fresh for this generation when it names this generation as `INITIAL_WRITER` and no live write has
+    /// attached it; every other store this generation names is carried (re-pinned: the live index folded its
+    /// history). The posting and bitmap stores answer the same two getters.
+    function _isFresh(address store) private view returns (bool) {
+        return
+            IPostingStore(store).initialWriter() == address(this)
+                && !IPostingStore(store).attached();
     }
 
     function _bubble(bytes memory ret) private pure {
@@ -595,8 +605,28 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// @inheritdoc IRealmIndex
-    function build(bytes32, uint16) external pure returns (uint64) {
-        revert E_BUILD(0);
+    /// @dev Docs INDEX-BUILD §3.2, §3.5. Permissionless and idle-gated; `familyId` must be 0 (one walk builds every
+    ///      built family). A generation with no fresh store (it carries both stores: a re-pin) folds nothing: once
+    ///      the carried check passes, the live index keeps every family this generation carries in the very store
+    ///      it names, and it folds every admission synchronously, so those families are complete through
+    ///      `counts()`; the frontier moves straight there and moves again on the next call after more publications.
+    ///      `maxFacts` bounds nothing here (nothing is folded). A generation with a fresh store is refused for now
+    ///      (`E_BUILD(4)`): the budgeted walk of history into its fresh stores is the next step, and
+    ///      `replayNextPublication` keeps serving the all-fresh case.
+    function build(bytes32 familyId, uint16) external returns (uint64 through) {
+        if (familyId != 0) revert E_BUILD(8);
+        Progress storage p = _gen().progress;
+        ILedgerHot hot = ILedgerHot(LEDGER);
+        if (p.liveStarted != 0 || hot.index() == address(this)) revert E_BUILD(1);
+        (uint8 phase,,,) = hot.phase();
+        if (phase != Phase.IDLE || p.replayStage == 4) revert E_BUILD(3);
+        if (_isFresh(POSTING) || _isFresh(BITMAP)) revert E_BUILD(4);
+        if (!IndexReads(READS).carriedCheck()) revert E_BUILD(7);
+        (uint64 admissions,,, uint64 publications) = hot.counts();
+        p.lastProcessed = uint48(admissions);
+        p.lastPublication = uint48(publications);
+        p.replayStage = 3; // CAUGHT_UP
+        return admissions;
     }
 
     /// @inheritdoc IRealmIndex
