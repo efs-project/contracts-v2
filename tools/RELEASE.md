@@ -905,18 +905,18 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 669,300 | 2,434,166 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 573,824 | 1,853,671 (1,370,880) |
-| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,321,839 | 4,795,163 (3,818,880) |
-| M1 create file (5 leaves, fresh folder) | 1,683,951 | 6,044,428 (4,798,080) |
-| Edit | 864,874 | 2,775,614 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,119,384 | 3,608,491 (2,643,840) |
-| Remove (RELEASE from BOUND) | 451,410 | 1,210,736 (783,360) |
-| Restore (released → same target) | 485,955 | 1,259,816 (783,360) |
-| RELEASE from mask | 400,516 | 1,064,756 (685,440) |
-| Hide (UNBIND from BOUND) | 435,504 | 1,114,146 (685,440) |
-| Restore a released placement (Move-back analog) | 500,862 | 1,355,397 (881,280) |
-| WITHDRAW | 444,440 | 1,284,087 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 669,204 | 2,434,070 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 573,728 | 1,853,575 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,321,648 | 4,794,960 (3,818,880) |
+| M1 create file (5 leaves, fresh folder) | 1,683,620 | 6,044,097 (4,798,080) |
+| Edit | 864,746 | 2,775,486 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,119,266 | 3,608,373 (2,643,840) |
+| Remove (RELEASE from BOUND) | 451,399 | 1,210,725 (783,360) |
+| Restore (released → same target) | 485,944 | 1,259,805 (783,360) |
+| RELEASE from mask | 400,505 | 1,064,745 (685,440) |
+| Hide (UNBIND from BOUND) | 435,493 | 1,114,135 (685,440) |
+| Restore a released placement (Move-back analog) | 500,851 | 1,355,398 (881,280) |
+| WITHDRAW | 444,344 | 1,283,991 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
@@ -940,18 +940,18 @@ The prototype needed 199 calls.
 The report also carries 26 supplementary recipe steps and the fixture's 79 transaction receipts, which are prague
 only and include intrinsic cost:
 
-- Genesis code deposit: 45.39M over 30 transactions (the thirteen rules included).
+- Genesis code deposit: 45.44M over 30 transactions (the thirteen rules included).
 - Readers and views (R0–R11, 13 transactions): 24.02M (`KeysView`, `LensReader`, `FilesPageReader`, the content
   server and the gateway, the three topic readers and the five listings).
 - The thirteen descriptor blobs: 2.10M.
-- **Genesis activation: 4.09M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). Most of it is
+- **Genesis activation: 4.10M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). Most of it is
   `CodeScan` walking every unit of the set; when the fast walk meets a byte that reads as a forbidden opcode before
   the trailer (such as a byte of the 32-byte constants via-IR places after the final `INVALID`), it walks the unit
   again from pc 0, so a unit's constants decide whether it pays a second walk (3.02M before the tag release, which
   added units and code to the set).
 - `registerDescribed`: 0.24–0.28M each (design ≈ 0.30M).
 - Seed: root 0.66M, folder 1.32M, `readme.txt` 1.68M; `big.bin` 12.57M (two 8 KB chunks, 16,384 body bytes) +
-  5.82M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.37M.
+  5.81M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.37M.
 
 ## KERNEL-BUG
 
