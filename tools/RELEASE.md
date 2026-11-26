@@ -368,6 +368,48 @@ decoder, `ledgerReads`, `ledgerViews`, `readerDirectory`, `keysView`, every File
 seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). No ABI changed (`test/snapshots/abi/` is unchanged; the index's
 new `generationProgress()` is in no consumer interface).
 
+### The topic page frontier (this release against `24fa269`)
+
+**A consumer DOES re-vendor for this one**: the three topic readers' ABIs and addresses change. Re-vendor the same
+directories as above (`test/snapshots/abi/` included).
+
+**29. `TopicPageInfo.frontier`** (`uint64`, after `scanned`; every later field of the struct moves one word, so
+decoding needs the new ABI). It is the entry the continuation's next page reads first: the newest entry of the listing
+not yet processed, an entry fetched into a window but not processed when the page stopped included, in the number space
+of the view's row entry: binding ordinals (`bindingOrdinal`) in `mine`, `everyone` and `about`, admission ordinals in
+`byName` (`firstAdmission`), `wordPage` and `children` (`admission`). Over merged lists (`mine`: every lens author's
+exact list and roll-up; `everyone` below: the place list and the roll-up) it is the largest of each list's next unread
+entry. On a PRESENT page it is 0 exactly when `scanStatus` is 1 EXHAUSTED (both ordinals start at 1, so no entry is
+0); every refusal carries 0. Guarantee: every row of the page has an entry strictly greater than `frontier`, every row
+of any later page of the listing an entry at most `frontier`, and `frontier` falls strictly from page to page, a page
+with no rows included (each page reads at least one entry). Exceptions: `wordPage`'s first-page root row is no list
+entry (its admission is the word page's own, older than every entry); in `mine` a lens that names one principal twice
+reads that author's lists twice, so a row's entry can equal `frontier` and `frontier` can repeat (pass each principal
+once). Frontiers of different views, or of listings started at different origins, are not promised to be comparable.
+Stated in the page laws (`src/interfaces/Readers.sol`) and docs/TAG-DESIGN.md §6; `test/readers/TopicFrontier.t.sol`
+checks every view's chains against the index's own lists. `placeCount`, `authorCount` and `entryCount` return no page
+and are unchanged.
+
+**30. Gas and bounds.** `mine` and `everyone` take `frontier` from what the page holds (the merge front, the window's
+first unconsumed entry): +92 to +303 gas per call on the measured rows, and +16 per skipped entry of `everyone`
+(36,145 below at a lens of 1, was 36,129). The lookups read one entry more in the page's slice when one is left:
+`byName` page 10 +4,222, `about` page 10 +4,399, `children` page 1 +4,192 (the entry in a word of its own; +273 to
++1,276 where it shares a word), the same on both schedules. **Bounds that moved:** prague `limitEntries` 246 → 245
+and prague `everyoneBelow` `maxSkippedEntries` 246 → 245 at every lens (now equal to amsterdam's). `pageTimesLens`
+(768 / 416 / 688 / 408), `maxRows` (150) and every `maxRows` bound are unchanged on both schedules. Sizes:
+`TopicMineReader` 15,528 B (+47), `TopicEveryoneReader` 16,696 B (+91), `TopicLookupReader` 16,950 B (+392).
+
+**31. Identities.** Moved, against `24fa269`: the release digest
+(`0x2673734d3411950e94a798e29d970c125fd2abed9cbfa84c8077cca7a675f85c`, was `0x76c15412…ee03`), the plan hash
+(`0xe40993daed758041730c5e7b728b86c1171da768c570522bcba2e07b9a432a2c`, was `0x32438ed8…e751`), the three topic readers
+(`topicMineReader` `0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21`, was `0xE3aD0274…E170`; `topicEveryoneReader`
+`0x1ee0AB9D6f342cE440BA1a16f53c6FF3C8f986D2`, was `0x9CD44A56…3A28`; `topicLookupReader`
+`0xC74BacA330C94774f332F918FbDca568AB5E119C`, was `0x037dA52b…B484`; runtime, initcode and codehash), their three
+`artifacts/` files and their three ABI snapshots, and `gas/model.json` (its `reads`). Not moved: the execution set
+(`0x0788d659…b99d`), the index obligations and manifest hash, the layout id, the hot and store ABI ids, every Type
+id, the ledger proxy (`0x83ce0B9E…20fB`) and every other address, every other unit's code and ABI, the publication
+rows of the gas model, `release/errors.json` and the seed (`efs-fixture-seed/4`).
+
 ### The identity table (this release against `cc59d0c`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
@@ -721,7 +763,7 @@ its immutables name the ledger proxy.
 **Reader features are size-bound.** Every reader and facet is held to the 19,660 B runtime budget (`forge build
 --sizes`; budgets are never edited to fit), so a reader feature costs bytes another feature cannot have: the step-4
 amendment split the old `TopicPageReader` (465 B of headroom) into the lens and the public view. Headroom at this
-release: `TopicMineReader` 4,179 B (15,481 B), `TopicEveryoneReader` 3,055 B (16,605 B), `TopicLookupReader` 3,102 B (16,558 B),
+release: `TopicMineReader` 4,132 B (15,528 B), `TopicEveryoneReader` 2,964 B (16,696 B), `TopicLookupReader` 2,710 B (16,950 B),
 `LedgerViews` 1,085 B (18,575 B; `headStates`, the viewed-place check's one-word read, took 252 B), `EfsWeb3Gateway` 4,269 B (15,391 B)
 and `EfsWeb3Content` 10,699 B (8,961 B) (the gateway was one 19,628 B contract with 32 B of headroom; it was split so the `web3://`
 entry point keeps parsing, names, lens and listings and a pinned content server serves revisions, docs/LARGE-FILES.md "Two

@@ -459,8 +459,9 @@ worst case (`mineBelow`): an opening of about 339k + 20.7k per lens author, then
 where nothing is stated at the place (`mineBelowQuiet`) about 37k + 6.7k·(j + 1). `everyone`, exact: about 61k to
 open, 48k per shown row without a lens and 6.9k more per lens author; below: about 106k to open, 51k per shown row
 and, in the worst case, 15.1k more per lens author (8.8k when the viewed positions are empty); every skipped entry
-about 36k at any lens. `byName` about 23k per row after about 136k; `about` about 33k per row; `wordPage` and
-`children` about 47k per place after about 120k–140k.
+about 36k at any lens. `byName` about 23k per row after about 140k; `about` about 32k per row after about 153k; `wordPage` and
+`children` about 47k per place after about 118k–143k. A lookup page that leaves entries unread reads one entry more
+for its `frontier` (about 4.2k at `byName` page 10, the entry in a word of its own; `about` and `children` alike).
 
 **The published bounds** *(computed; `reads.schedules.<schedule>.bounds` and `recommended`)*: at a 10M cap less a 10%
 margin, the most worst-case rows one call holds, by lens size (prague):
@@ -473,8 +474,9 @@ margin, the most worst-case rows one call holds, by lens size (prague):
 | 32 | 31 | 15 | 33 | 16 |
 | 64 | 15 | 7 | 18 | 8 |
 
-Amsterdam differs only in: lens 1 mineExact {"maxRows": 207}; lens 1 everyoneBelow {"maxRows": 133, "maxSkippedEntries": 245}; lens 8 everyoneBelow {"maxRows": 51, "maxSkippedEntries": 245}; lens 16 everyoneBelow {"maxRows": 30, "maxSkippedEntries": 245}; lens 32 everyoneBelow {"maxRows": 16, "maxSkippedEntries": 245}; lens 64 everyoneBelow {"maxRows": 8, "maxSkippedEntries": 245}. **Keep page × lens at or below 768 for `mine` exact, 416 for `mine`
+Amsterdam differs only in: lens 1 mineExact {"maxRows": 207}. **Keep page × lens at or below 768 for `mine` exact, 416 for `mine`
 below, 688 for `everyone` exact and 408 for `everyone` below** (`pageTimesLens`, the smallest over lenses 8 to 64),
-`maxRows` at most 150, and `limit` (entries) at most 246 on prague and 245 on amsterdam (`limitEntries`). A page that
+`maxRows` at most 150, and `limit` (entries) at most 245 on both schedules (`limitEntries`; it was 246 on prague
+before `TopicPageInfo.frontier`, which added 16 gas per skipped entry). A page that
 mixes rows and skipped entries stays under the cap while opening + rows·row(L) + skipped·36k ≤ 9M; a page cut by a
 bound is a `LIMIT`, `ROWS` or `GAS` page with a continuation, never an empty or `UNKNOWN` one.
