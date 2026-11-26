@@ -638,7 +638,12 @@ function check(committed) {
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
     for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
   }
-  for (const k of ["planning", "tagLists", "laterLists", "laterRows"]) diff(committed[k], fresh[k], k, differences);
+  for (const k of ["planning", "tagLists", "laterLists"]) diff(committed[k], fresh[k], k, differences);
+  // laterRows: its rows' notes quote every measured schedule, so with a schedule skipped only the positions, the rule
+  // and the note are compared (the notes' prague figures are in the compared constants either way)
+  const positions = (lr) => lr && { ...lr, rows: Object.fromEntries(Object.entries(lr.rows ?? {}).map(([k, { note, ...v }]) => [k, v])) };
+  if (o["skip-amsterdam"]) diff(positions(committed.laterRows), positions(fresh.laterRows), "laterRows", differences);
+  else diff(committed.laterRows, fresh.laterRows, "laterRows", differences);
   for (const m of bound) console.error(`gas-model --check: ${m}`);
   if (differences.length) {
     const shown = Math.min(8, differences.length);
