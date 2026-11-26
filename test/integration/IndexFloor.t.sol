@@ -275,7 +275,7 @@ contract IndexFloorTest is FloorBase {
         _measure("64 lone negatives", a, b);
     }
 
-    // ---- later statements and existing-record publishes (formula 2: rwPerBindLater, rwPerPublishExisting) --------
+    // ---- later statements and existing-record publishes (formula 3: the later row, freshPerPublishExisting) ------
 
     /// Logs one publication's execution gas E, the kernel's share K, the final phase, the callbacks' prefix spend
     /// (E − K − final phase) and the kernel's quote (P, F), then leaves the state as it found it.
@@ -488,8 +488,9 @@ contract IndexFloorTest is FloorBase {
 
     /// 64 lone negatives on a one-word topic, the action limit, in one publication. On Glamsterdam (amsterdam profile)
     /// they execute within 2^24 − 21,000 − calldata, but since the floor prices a rewrite at its Glamsterdam 12,100
-    /// (docs/GAS-SCHEDULES.md; it was 5,000) the floor's requirement V for 64 is over that room (18.34M against
-    /// 16.60M), so the planning rule splits them (50 a publication, test/vectors/floor-plan.json). On prague their
+    /// (docs/GAS-SCHEDULES.md; it was 5,000) the floor's requirement V for 64 is over that room (formula 3: 17.39M
+    /// against 16.60M; formula 2: 18.34M), so the planning rule splits them (53 a publication under formula 3,
+    /// test/vectors/floor-plan.json). On prague their
     /// execution gas alone is over the cap at 64 (the planning rule splits them there too).
     function test_sixty_four_lone_negatives_fit_the_cap() public {
         (Action[] memory a, bytes[] memory b) = _loneNegatives(64, 5);

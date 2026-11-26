@@ -204,7 +204,7 @@ contract RealIndexTest is Test {
         assertEq(through, 0);
         assertEq(phase, Phase.IDLE);
         assertFalse(g.posting.attached(), "nothing has been written yet");
-        assertEq(g.index.workModel().formulaVersion, 2);
+        assertEq(g.index.workModel().formulaVersion, 3);
         assertEq(g.index.postingStore(), address(g.posting));
         assertEq(g.index.bitmapStore(), address(g.bitmap));
         assertEq(g.index.buildDelegate(), address(0));

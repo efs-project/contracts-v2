@@ -23,8 +23,7 @@ import {ILedgerCommitments} from "../interfaces/ILedgerCommitments.sol";
 import {ITypeRegistry, TypeInfo} from "../interfaces/ITypeRegistry.sol";
 import {IAcceptor, AcceptContext, RefHeader, EXHAUSTED} from "../interfaces/IAcceptor.sol";
 import {IRealmIndex} from "../interfaces/IRealmIndex.sol";
-import {IIndexReads} from "../interfaces/IIndexReads.sol";
-import {WorkModel} from "../interfaces/Index.sol";
+import {WORK_MODEL_WORDS, FORMULA_VERSION} from "../interfaces/Index.sol";
 import {ILedgerIngress, LeafVerdict, Prepared} from "../interfaces/internal/ILedgerIngress.sol";
 import {
     E_ACCEPTOR_CODE,
@@ -42,6 +41,7 @@ import {
     E_INDEX_CALL,
     E_INDEX_GAS,
     E_INDEX_RETURNDATA,
+    E_WORK_MODEL,
     E_INTENT,
     E_POLICY_REJECTED,
     E_READSET_SHAPE,
@@ -322,10 +322,11 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         uint256 publishes;
         uint32 floorFresh;
         uint32 floorRewrite;
+        uint256 withdraws;
     }
 
-    /// One pass over the actions: the acceptance profile (when wanted) and the index floor quote (`WorkModel` formula 2,
-    /// design §10.4).
+    /// One pass over the actions: the acceptance profile (when wanted) and the index floor quote (`WorkModel` formula 3,
+    /// design §10.4, docs/WORK-MODEL-V3.md).
     function _foldAndQuote(
         address ledger,
         Action[] calldata actions,
@@ -343,14 +344,14 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         )
     {
         ITypeRegistry registry = ITypeRegistry(_registryOf(ledger));
-        WorkModel memory wm = IIndexReads(_indexOf(ledger)).workModel();
+        uint256 wm = _workModel(ledger);
         Quote memory q;
         (q.floorFresh, q.floorRewrite,) = _floorConstants(ledger);
         if (wantProfile) q.h = keccak256(abi.encode(Keys.DOM_PROFILE, _realmWord(ledger, 7)));
         // slot counts are stored x10 in the work model
-        q.fresh10 = wm.freshPerPublication;
-        q.rw10 = wm.rwPerPublication;
-        q.compute = wm.computeBase + uint256(wm.computePerAction) * actions.length;
+        q.fresh10 = _w(wm, W_FRESH_PER_PUBLICATION);
+        q.rw10 = _w(wm, W_RW_PER_PUBLICATION);
+        q.compute = _w(wm, W_COMPUTE_BASE) + _w(wm, W_COMPUTE_PER_ACTION) * actions.length;
         for (uint256 i; i < actions.length; ++i) {
             _foldOne(ledger, registry, wm, q, actions[i], uint8(i), principalId, wantProfile);
         }
@@ -361,15 +362,114 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
             q.compute + uint256(freshSlots) * q.floorFresh + uint256(rewrites) * q.floorRewrite
         );
         finalReserve = uint32(
-            wm.finalComputeBase + uint256(wm.finalComputePerBind) * q.binds
-                + uint256(wm.finalComputePerPublish) * q.publishes
+            _w(wm, W_FINAL_COMPUTE_BASE) + _w(wm, W_FINAL_COMPUTE_PER_BIND) * q.binds
+                + _w(wm, W_FINAL_COMPUTE_PER_PUBLISH) * q.publishes
         );
+    }
+
+    // the work model's ABI words (`WorkModel`, formula 3) the quote reads by index
+    uint256 private constant W_FRESH_PER_PUBLICATION = 1;
+    uint256 private constant W_RW_PER_PUBLICATION = 2;
+    uint256 private constant W_FRESH_PER_PUBLISH_FRESH = 3;
+    uint256 private constant W_FRESH_PER_PUBLISH_EXISTING = 4;
+    uint256 private constant W_RW_PER_PUBLISH = 5;
+    uint256 private constant W_FRESH_PER_REF = 6;
+    uint256 private constant W_FRESH_PER_DIGEST_SPEC = 7;
+    uint256 private constant W_COMPUTE_BASE = 8;
+    uint256 private constant W_COMPUTE_PER_ACTION = 9;
+    uint256 private constant W_FINAL_COMPUTE_BASE = 10;
+    uint256 private constant W_FINAL_COMPUTE_PER_BIND = 11;
+    uint256 private constant W_FINAL_COMPUTE_PER_PUBLISH = 12;
+    /// The row classes and the byte offsets of their rows: first statement (words 13-15), re-bind (16-18), other later
+    /// statement (19-21), and the surcharge's rows ten words after each (23-25, 26-28, 29-31; word 22 is the surcharged
+    /// purpose).
+    uint256 private constant ROW_FIRST_CLASS = 0;
+    uint256 private constant ROW_REBIND_CLASS = 1;
+    uint256 private constant ROW_LATER_CLASS = 2;
+    uint256 private constant ROW_FIRST = 13 * 32;
+    uint256 private constant ROW_STEP = 3 * 32;
+    uint256 private constant ROW_SURCHARGE_STEP = 10 * 32;
+    uint256 private constant W_SURCHARGE_PURPOSE = 22;
+
+    /// The live index's work model, read as raw ABI words. What it assumes: `IIndexReads.workModel()` returns the
+    /// static struct `WorkModel`, whose ABI encoding is its 26 fields as 26 words in declaration order, each field
+    /// right-aligned in its word (an index's own `abi.encode` of a struct it holds). A reply of any other length is
+    /// refused (`E_WORK_MODEL` 2), and so is a word 0 that is not `FORMULA_VERSION` (`E_WORK_MODEL` 3): a wrong shape is
+    /// a refusal, never a mis-read. Words are used whole (no masking); the index is pinned by codehash and its work
+    /// model by the manifest hash, so the words are the ones the Realm committed to. Returns the memory offset of
+    /// word 0 of a fresh copy.
+    function _workModel(address ledger) private view returns (uint256 wm) {
+        address index = _indexOf(ledger);
+        uint256 size = WORK_MODEL_WORDS * 32;
+        bool ok;
+        uint256 got;
+        assembly ("memory-safe") {
+            wm := mload(0x40)
+            mstore(0x40, add(wm, size))
+            mstore(0, 0x82b564f200000000000000000000000000000000000000000000000000000000) // workModel()
+            // two statements: in one expression Yul would evaluate returndatasize() before the call
+            ok := staticcall(gas(), index, 0, 4, wm, size)
+            got := returndatasize()
+        }
+        if (!ok) revert E_WORK_MODEL(1, got);
+        if (got != size) revert E_WORK_MODEL(2, got);
+        uint256 version = _w(wm, 0);
+        if (version != FORMULA_VERSION) revert E_WORK_MODEL(3, version);
+    }
+
+    function _w(uint256 wm, uint256 i) private pure returns (uint256 v) {
+        assembly ("memory-safe") {
+            v := mload(add(wm, shl(5, i)))
+        }
+    }
+
+    /// Adds one row of the work model to the quote: the row of class `cls` (first statement, re-bind or other later
+    /// statement: fresh ×10, rewrites ×10, compute) and, when `surcharged`, the surcharge's row of the same class; when
+    /// `bound` (no principal), the largest of the three rows in each field, so the quote is at or above any
+    /// statement's whatever the work model's values and the Realm's prices (design §10.4). `Quote` words 1-3 are
+    /// fresh10, rw10 and compute. Activation range-checks the words (`E_INDEX_NOT_READY` 16: at most 2^32), and a
+    /// publication has at most 2^8 actions, so the sums cannot overflow.
+    function _addRow(Quote memory q, uint256 wm, uint256 cls, bool surcharged, bool bound)
+        private
+        pure
+    {
+        assembly ("memory-safe") {
+            function rowOf(base, s) -> f, w, c {
+                f := mload(base)
+                w := mload(add(base, 32))
+                c := mload(add(base, 64))
+                if s {
+                    let t := add(base, ROW_SURCHARGE_STEP)
+                    f := add(f, mload(t))
+                    w := add(w, mload(add(t, 32)))
+                    c := add(c, mload(add(t, 64)))
+                }
+            }
+            let first := add(wm, ROW_FIRST)
+            let f, w, c := rowOf(add(first, mul(cls, ROW_STEP)), surcharged)
+            if bound {
+                for { let i := 0 } lt(i, 3) { i := add(i, 1) } {
+                    let f2, w2, c2 := rowOf(add(first, mul(i, ROW_STEP)), surcharged)
+                    if gt(f2, f) { f := f2 }
+                    if gt(w2, w) { w := w2 }
+                    if gt(c2, c) { c := c2 }
+                }
+            }
+            mstore(add(q, 32), add(mload(add(q, 32)), f))
+            mstore(add(q, 64), add(mload(add(q, 64)), w))
+            mstore(add(q, 96), add(mload(add(q, 96)), c))
+        }
+    }
+
+    /// @inheritdoc ILedgerIngress
+    function formulaVersion() external pure returns (uint8) {
+        return FORMULA_VERSION;
     }
 
     function _foldOne(
         address ledger,
         ITypeRegistry registry,
-        WorkModel memory wm,
+        uint256 wm,
         Quote memory q,
         Action calldata a,
         uint8 leaf,
@@ -398,15 +498,15 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
                 : a.bodyHashOrRecordId;
             if (!_recordExists(ledger, rid)) {
                 unchecked {
-                    q.fresh10 += wm.freshPerPublishFresh + wm.freshPerDigestSpec
+                    q.fresh10 += _w(wm, W_FRESH_PER_PUBLISH_FRESH) + _w(wm, W_FRESH_PER_DIGEST_SPEC)
                     * _digestSpecs(ledger, a.typeId);
                 }
             } else {
-                q.fresh10 += wm.freshPerPublishExisting;
+                q.fresh10 += _w(wm, W_FRESH_PER_PUBLISH_EXISTING);
             }
-            q.rw10 += wm.rwPerPublish;
+            q.rw10 += _w(wm, W_RW_PER_PUBLISH);
             ++q.publishes;
-            q.fresh10 += uint256(wm.freshPerRef) * info.refCount;
+            q.fresh10 += _w(wm, W_FRESH_PER_REF) * info.refCount;
         } else if (
             kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
         ) {
@@ -426,10 +526,18 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
                     ledger, Keys.binding(principalId, Keys.position(a.purpose, a.subject, a.role))
                 );
             }
-            if (state == 0) q.fresh10 += wm.freshPerBindFresh;
-            else q.rw10 += wm.rwPerBindLater;
-            q.rw10 += wm.rwPerBind;
-            q.compute += wm.computePerHookEffect;
+            // the row class: first (UNSET), re-bind (a BIND on a BOUND head: it never searches the scope list), or another
+            // later statement (a mask, release or restore; a RELEASE is never read and counts as BOUND). With no
+            // principal (`indexFloor`, `acceptanceProfileOf`) every head reads UNSET, so the quote takes the largest of
+            // the three rows, field by field: an upper bound on any statement at any prices
+            uint256 cls = state == 0
+                ? ROW_FIRST_CLASS
+                : kind == ActionKind.BIND && state == 1 ? ROW_REBIND_CLASS : ROW_LATER_CLASS;
+            _addRow(q, wm, cls, a.purpose == bytes32(_w(wm, W_SURCHARGE_PURPOSE)), principalId == 0);
+        } else if (kind == ActionKind.WITHDRAW) {
+            // a withdraw files like a later statement (a fresh posting slot, list counters, compute); the first of a
+            // publication is covered by the per-publication terms (measured 1.41 / 1.03 alone)
+            if (q.withdraws++ != 0) _addRow(q, wm, ROW_LATER_CLASS, false, false);
         }
     }
 

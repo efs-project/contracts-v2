@@ -12,6 +12,9 @@ import {Keys} from "../../src/lib/Keys.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {Action, Native, PostingKey, Purpose} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
+import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
+import {IIndexReads} from "../../src/interfaces/IIndexReads.sol";
+import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 
 /// @notice The work model of the example generation (`head-authors`, docs INDEX-BUILD §2.2, §6.3; a test harness, not
 ///         product) against what its callbacks really spend, by `FloorBase`'s method: for each HEAD shape, from one
@@ -184,6 +187,44 @@ abstract contract HeadAuthorsFloorBase is FloorBase {
             c[i] = EfsFiles.loneNegative(Purpose.HEAD, fi, 0, 0);
         }
         _shape("32 second-author first masks", c, new bytes[](32));
+    }
+
+    /// The list's reservation is the HEAD surcharge of formula 3, so it no longer reaches other purposes: with the example
+    /// generation's own model, a TAG and a FOLDER publication are quoted exactly as generation 1's model quotes them
+    /// (the work model mocked to generation 1's), and a HEAD statement exactly one surcharge more (formula 2 charged
+    /// the list's +10 fresh, +10 rewrites and +27,000 to every bind-kind action of every purpose).
+    function test_other_purposes_are_not_reserved_for_the_list() public {
+        if (_setting() != OWN_MODEL) return;
+        Action[] memory tags = new Action[](8);
+        Action[] memory folders = new Action[](8);
+        for (uint256 i; i < 8; ++i) {
+            bytes32 thing = bytes32(uint256(uint160(uint256(keccak256(abi.encode("hf", i))))));
+            tags[i] = EfsTopics.deny(keccak256("some topic"), thing, 0, 0);
+            folders[i] =
+                EfsFiles.bind(Purpose.FOLDER, rootDir, keccak256(abi.encode("n", i)), thing, 0);
+        }
+        Action[] memory heads =
+            _one(EfsFiles.bind(Purpose.HEAD, keccak256("a file"), 0, keccak256("a root"), 0));
+        ILedgerCommitments c = ILedgerCommitments(r.hot.ingress());
+        (uint32 tagOwn,,,) = c.indexFloor(address(r.ledger), tags);
+        (uint32 folderOwn,,,) = c.indexFloor(address(r.ledger), folders);
+        (uint32 headOwn,,,) = c.indexFloor(address(r.ledger), heads);
+        vm.mockCall(
+            address(r.g.index),
+            abi.encodeWithSelector(IIndexReads.workModel.selector),
+            abi.encode(IndexDoubleDefaults.workModel())
+        );
+        (uint32 tagGen1,,,) = c.indexFloor(address(r.ledger), tags);
+        (uint32 folderGen1,,,) = c.indexFloor(address(r.ledger), folders);
+        (uint32 headGen1,,,) = c.indexFloor(address(r.ledger), heads);
+        vm.clearMockedCalls();
+        assertEq(tagOwn, tagGen1, "TAG statements: no reservation for the HEAD list");
+        assertEq(folderOwn, folderGen1, "FOLDER statements: no reservation for the HEAD list");
+        uint256 surcharge = uint256(KernelDeploy.s1Limits().floorFreshGas)
+            + KernelDeploy.s1Limits().floorRewriteGas + 27_000;
+        assertEq(
+            headOwn, headGen1 + surcharge, "a first HEAD statement: exactly one surcharge more"
+        );
     }
 }
 

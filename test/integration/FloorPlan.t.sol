@@ -232,7 +232,9 @@ contract FloorPlanTest is FloorBase {
             all[i] = EfsTopics.deny(topic, _thing("lone", i), 0, 0);
         }
         Action[] memory more = _more(all, k, 1);
-        _prove("loneNegatives", _prefix(all, k), _bodies(k), more, _bodies(more.length));
+        _covers(
+            _prove("loneNegatives", _prefix(all, k), _bodies(k), more, _bodies(more.length)), true
+        );
     }
 
     /// Case i: k first tags on the deepest topic of a new path, every position and every roll-up new.
@@ -302,8 +304,12 @@ contract FloorPlanTest is FloorBase {
     }
 
     /// The quote covers the callbacks' prefix spend (and, when `final_`, the final phase) of the planned publication.
-    function _covers(Spend memory sp, bool final_) internal pure {
-        assertGe(sp.prefixRatio, 1000, "the prefix floor covers the callbacks' spend");
+    function _covers(Spend memory sp, bool final_) internal view {
+        assertGe(
+            sp.prefixRatio,
+            _minRatio(),
+            "the prefix floor covers the callbacks' spend, with the margin"
+        );
         if (final_) assertGe(sp.finalRatio, 1000, "the final reserve covers the final phase");
     }
 
@@ -371,7 +377,7 @@ contract FloorPlanTest is FloorBase {
         uint256 m = (k + 1) > 64 ? 65 : k + 1;
         (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k);
         (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
-        _prove("registrationChunk", a, b, a1, b1);
+        _covers(_prove("registrationChunk", a, b, a1, b1), true);
     }
 
     function _slice(Action[] memory a, bytes[] memory b, uint256 n)
@@ -429,10 +435,12 @@ contract FloorPlanTest is FloorBase {
         uint256 m = (k + 1) * 5 > 64 ? 65 : (k + 1) * 5;
         (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k * 5);
         (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
-        _prove("createFiles", a, b, a1, b1);
+        // the final phase of a create-file recipe is under-reserved by design (design §10.4: the Files validator's
+        // final hook), so only the prefix quote is asserted
+        _covers(_prove("createFiles", a, b, a1, b1), false);
     }
 
-    // ---- re-binds and publishes (work-model formula 2) -----------------------------------------------------------
+    // ---- re-binds and publishes (work-model formula 3) -----------------------------------------------------------
 
     /// A ten-byte name `<pre><3 letters>.txt` (pre is three bytes), distinct per i (< 26^3).
     function _nm(string memory pre, uint256 i) internal pure returns (bytes memory) {

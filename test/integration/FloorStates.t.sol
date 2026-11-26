@@ -121,7 +121,7 @@ contract FloorStatesTest is FloorBase {
         _execAs(address(this), _one(EfsFiles.unbind(Purpose.HEAD, k, 0, rev)), new bytes[](1));
     }
 
-    /// P / spend × 1000 of `a` from the current state (logged under `label`), asserted ≥ 1000.
+    /// P / spend × 1000 of `a` from the current state (logged under `label`), asserted ≥ `_minRatio()`.
     function _ratio(string memory label, Action[] memory a, bytes[] memory b)
         internal
         returns (uint256 ratio)
@@ -139,7 +139,9 @@ contract FloorStatesTest is FloorBase {
         emit log_named_uint(string.concat("states ", label, " visible needed"), w.visible);
         emit log_named_uint(string.concat("states ", label, " P / spend x1000"), ratio);
         assertGe(
-            ratio, 1000, string.concat(label, ": the prefix floor covers the callbacks' spend")
+            ratio,
+            _minRatio(),
+            string.concat(label, ": the prefix floor covers the callbacks' spend, with the margin")
         );
     }
 

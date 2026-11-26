@@ -99,6 +99,7 @@
     "0xe4c84ba6": "E_VERIFIER_PROFILE(uint16)",
     "0x570053c9": "E_WALLET_GAS(uint32)",
     "0xcb944f40": "E_WITHDRAW(uint8,uint8)",
+    "0xc8be0e1a": "E_WORK_MODEL(uint8,uint256)",
     "0x047e0083": "E_WRAPPER(uint8)",
     "0x2d01279b": "E_WRITER(address)"
   },
@@ -1330,6 +1331,22 @@
         }
       ],
       "name": "E_WITHDRAW",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "code",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "E_WORK_MODEL",
       "type": "error"
     },
     {
