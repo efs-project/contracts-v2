@@ -42,35 +42,53 @@ import {MockCaller, MockRegistry, MockUnsupported} from "./MockRegistry.sol";
 bytes32 constant CALLBACK_PROFILE_4 =
     keccak256("efs/index-callback/4:ordered-prefix:static-final:effect-24:refs");
 
-/// The generation-1 work model of design §10.4 (formula 2), slot counts ×10 as the design stores them, measured with the
-/// step-3b first-statement lists in place on both schedules (`test/integration/IndexFloor.t.sol` and the gas model's
-/// kernel share; design §10.4 has the figures): slot counts are the index's fresh slots and rewrites per action, the
-/// compute terms its remaining execution gas, each set with a margin of about 5-10% over the measured need of the shape
-/// it is set from: first statements on fresh positions, word pages and create-file recipes for the first-statement
-/// terms; the dearest later statement (a restore of a masked tag on amsterdam, ≈ 116k) for `rwPerBindLater`; a repeat
-/// PUBLISH or REUSE (≈ 87k / 63k) for `freshPerPublishExisting`; name records (≈ 2.6k in the final phase) for
-/// `finalComputePerPublish`. The final per-bind reserve is set from first tags on distinct topics, so the Files
-/// validator's first masks about records and subjects and its folder and HEAD re-binds (11-15k) are under-reserved;
-/// that is safe (design §10.4: the final call receives all remaining gas and the planning rule's V includes E).
+// The length of an author's scope list at one place up to which the floor claims to cover a later statement
+// (docs/WORK-MODEL-V3.md §3.5): the later-statement row's compute below is fitted to the dearest later statement at
+// this length, a restore of a far entry across distinct places. The one place the claim's number lives: a different
+// claim is a different `computePerBindLater` (and the vectors), and `test/integration/FloorSplit.t.sol` pins both the
+// claim and the measured length where the quote stops covering.
+uint256 constant LIST_LENGTH_CLAIM = 1024;
+
+/// The generation-1 work model of design §10.4 (formula 3, docs/WORK-MODEL-V3.md §3.4), slot counts ×10 as the
+/// design stores them, measured per action on both schedules (`test/integration/FloorSplit.t.sol`): every slot count is
+/// the largest the index writes in its class, so no compute hides in a slot count. The first-statement row: 5.43 fresh
+/// (a first yes), 2.00 rewrites (a second author's first yes), and compute so that prague's first quote is formula 2's
+/// to the gas. The re-bind row (a BIND on a BOUND head, which never searches the scope list): 2.00 fresh, 4.00 rewrites
+/// (at a place of its own), and the least compute that quotes every re-bind at 1.05× (a folder re-bind across folders
+/// on amsterdam, 115.8k). The row of every other later statement: 2.00 fresh (a re-bind, or a restore whose live-bits word is empty), 5.00
+/// rewrites (a restore at a place of its own: the scope head moves once per place), and the least compute that quotes
+/// every later statement the floor claims at 1.05× its spend on both schedules; the binding case is a restore of a far
+/// entry across distinct places in lists of `LIST_LENGTH_CLAIM` entries (amsterdam, 168.9k), whose bisection of the
+/// author's scope list is the part that grows with length. The publish terms are formula 2's: a repeat PUBLISH or
+/// REUSE (≈ 87k / 63k) for `freshPerPublishExisting`, name records (≈ 2.6k in the final phase) for
+/// `finalComputePerPublish`. Generation 1 keeps no list for one purpose, so the surcharge is zero. The final per-bind
+/// reserve is set from first tags on distinct topics, so the Files validator's first masks about records and subjects
+/// and its folder and HEAD re-binds (11-15k) are under-reserved; that is safe (design §10.4: the final call receives all
+/// remaining gas and the planning rule's V includes E).
 library IndexDoubleDefaults {
     function workModel() internal pure returns (WorkModel memory w) {
-        w.formulaVersion = 2;
+        w.formulaVersion = 3;
         w.freshPerPublication = 30;
         w.rwPerPublication = 10;
         w.freshPerPublishFresh = 6;
-        w.freshPerPublishExisting = 29; // an existing record filed again
+        w.freshPerPublishExisting = 29;
         w.rwPerPublish = 46;
-        w.freshPerBindFresh = 55;
-        w.rwPerBind = 40;
-        w.rwPerBindLater = 120; // on top of rwPerBind for every later statement
         w.freshPerRef = 30;
         w.freshPerDigestSpec = 10;
         w.computeBase = 54_000;
         w.computePerAction = 8000;
-        w.computePerHookEffect = 34_000; // charged per bind-kind action
         w.finalComputeBase = 20_000;
         w.finalComputePerBind = 7400;
-        w.finalComputePerPublish = 2800; // per PUBLISH/REUSE
+        w.finalComputePerPublish = 2800;
+        w.freshPerBindFirst = 55;
+        w.rwPerBindFirst = 20;
+        w.computePerBindFirst = 44_000;
+        w.freshPerRebind = 20;
+        w.rwPerRebind = 40;
+        w.computePerRebind = 42_000;
+        w.freshPerBindLater = 20;
+        w.rwPerBindLater = 50;
+        w.computePerBindLater = 85_000;
     }
 }
 

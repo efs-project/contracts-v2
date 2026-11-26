@@ -18,10 +18,14 @@
 //   { kind: "publish", shape, bytes, fresh }  shape = a publishNew key ("files-root/1 form 0"); fresh = the record is new
 //   { kind: "reuse", type }                   REUSE of an existing record of `type`
 //   { kind: "create" } | { kind: "withdraw" }
-//   { kind: "bind", cost, first, levels }     any BIND, UNBIND or RELEASE: cost = a constants key ("bindTagFresh",
+//   { kind: "bind", cost, first, levels, purpose }
+//                                             any BIND, UNBIND or RELEASE: cost = a constants key ("bindTagFresh",
 //                                             "unbindTagLone", "releaseTag", "bindPropertyFresh", "bindSameFreshWord",
-//                                             "restoreBroader", ...: the purpose is in the key, so the rule itself
-//                                             is purpose-agnostic), first = the author's head at the
+//                                             "restoreBroader", ...), purpose = the action's purpose word (bytes32
+//                                             hex; the work model's surcharge applies when it equals surchargePurpose;
+//                                             omitted, it is read from the cost key: purposeOf), rebind = a BIND on
+//                                             the author's BOUND head (omitted, read from the cost key: isRebind),
+//                                             first = the author's head at the
 //                                             position is UNSET (a first statement of either sign; false for every
 //                                             later statement, a RELEASE always), levels = the
 //                                             tagLevel counts of a first TAG statement ({ mineNew, mineExisting,
@@ -31,6 +35,28 @@ import assert from "node:assert/strict";
 const ceilDiv = (a, b) => Math.floor((a + b - 1) / b);
 const words = (n) => Math.ceil(n / 32);
 const typeOf = (shape) => shape.split(" ")[0];
+/** The purpose words, keccak("efs/purpose/<name>/1") (tools/deploy-plan.mjs PURPOSE; tools/test/gas-plan.test.mjs checks
+ *  the two agree), written out so the planner imports nothing. */
+export const PURPOSE = {
+  HEAD: "0x2aff50c30ebccff5d8992943840917312d756200f3a504ececd8a3265ed547ee",
+  FOLDER: "0x8316732a0c2362b6d10c2442783a1b6b974d8647b23379f9dee65b576fa4afcf",
+  TAG: "0x0c188a98152f479eeaea5b4d414383b83c66920c872f6eac8d681113dd6f65db",
+  PROPERTY: "0x2f6e2c067a273babd6f052511fa0fbbefd946138147520281191a783c01d2243",
+  SAME: "0x8e965fe46a3481cd6db64a45fda63e6e7b7a8dbf42024371aab1f405f1fa861e",
+  BROADER: "0xf064225e057dbfc2c1a00dc847d06a7486d76609e9e32838546890d91eeb3b97",
+};
+/** Whether a planner bind action is a re-bind (a BIND on a BOUND head: a new target or a new number on the same
+ *  target): its `rebind`, else read from its constants key. */
+export const isRebind = (a) => a.rebind ?? /Rebind|NumberChange/.test(a.cost);
+/** A planner bind action's purpose word: its `purpose`, else the purpose its constants key names. */
+export function purposeOf(a) {
+  if (a.purpose) return a.purpose;
+  const k = a.cost;
+  const name = /Head/.test(k) ? "HEAD" : /Folder/.test(k) ? "FOLDER" : /Tag/.test(k) ? "TAG" : /Property/.test(k) ? "PROPERTY"
+    : /Same/.test(k) ? "SAME" : /Broader/.test(k) ? "BROADER" : null;
+  assert.ok(name, `no purpose for constants key ${k}`);
+  return PURPOSE[name];
+}
 
 /** `tagLists.priceAsNew`: whether a roll-up list holding `entries` entries is priced as a new list. */
 export function priceAsNew(model, entries) {
@@ -64,35 +90,49 @@ export function planner(model, schedule) {
   };
   const estimate = (c, actions, firstWrite) => c.fixed + (firstWrite ? c.firstWriteSurcharge : 0) + actions.reduce((s, a) => s + cost(c, a), 0);
 
-  /** The kernel's own quote (LedgerIngress._foldAndQuote, design §10.4), exactly. */
+  assert.equal(wm.formulaVersion, 3, "gas/model.json: the planner implements work-model formula 3");
+  /** Adds one row of the work model (formula 3): First, Rebind or Later, and the surcharge's row of the same class. */
+  const row = (acc, cls, surcharged) => {
+    const k = cls === "Rebind" ? "Rebind" : `Bind${cls}`; // freshPerRebind, freshPerBindFirst, freshPerBindLater
+    acc.fresh10 += wm[`freshPer${k}`];
+    acc.rw10 += wm[`rwPer${k}`];
+    acc.compute += wm[`computePer${k}`];
+    if (surcharged) {
+      acc.fresh10 += wm[`surchargeFresh${cls}`];
+      acc.rw10 += wm[`surchargeRw${cls}`];
+      acc.compute += wm[`surchargeCompute${cls}`];
+    }
+  };
+  const zeroPurpose = /^0x0{64}$/;
+  /** The kernel's own quote (LedgerIngress._foldAndQuote, design §10.4, work-model formula 3), exactly. */
   function quote(actions) {
-    let fresh10 = wm.freshPerPublication;
-    let rw10 = wm.rwPerPublication;
-    let compute = wm.computeBase + wm.computePerAction * actions.length;
+    const acc = { fresh10: wm.freshPerPublication, rw10: wm.rwPerPublication, compute: wm.computeBase + wm.computePerAction * actions.length };
     let binds = 0;
     let publishes = 0;
+    let withdraws = 0;
     for (const a of actions) {
       if (a.kind === "publish" || a.kind === "reuse") {
         const t = floor.types[a.kind === "publish" ? typeOf(a.shape) : a.type];
         assert.ok(t, `floor.types has no ${a.shape ?? a.type}`);
         // a REUSE always names an existing record
-        if (a.kind === "publish" && a.fresh) fresh10 += wm.freshPerPublishFresh + wm.freshPerDigestSpec * t.specs;
-        else fresh10 += wm.freshPerPublishExisting;
-        rw10 += wm.rwPerPublish;
-        fresh10 += wm.freshPerRef * t.refs;
+        if (a.kind === "publish" && a.fresh) acc.fresh10 += wm.freshPerPublishFresh + wm.freshPerDigestSpec * t.specs;
+        else acc.fresh10 += wm.freshPerPublishExisting;
+        acc.rw10 += wm.rwPerPublish;
+        acc.fresh10 += wm.freshPerRef * t.refs;
         ++publishes;
       } else if (a.kind === "bind") {
         ++binds;
         // first: the author's head at the position is UNSET (never for a RELEASE); every other one is a later statement
-        if (a.first) fresh10 += wm.freshPerBindFresh;
-        else rw10 += wm.rwPerBindLater;
-        rw10 += wm.rwPerBind;
-        compute += wm.computePerHookEffect;
+        const surcharged = !zeroPurpose.test(wm.surchargePurpose) && purposeOf(a).toLowerCase() === wm.surchargePurpose.toLowerCase();
+        row(acc, a.first ? "First" : isRebind(a) ? "Rebind" : "Later", surcharged);
+      } else if (a.kind === "withdraw") {
+        // the first WITHDRAW of a publication is covered by the per-publication terms; every later one is a later row
+        if (withdraws++ !== 0) row(acc, "Later", false);
       }
     }
-    const freshSlots = ceilDiv(fresh10, 10);
-    const rewrites = ceilDiv(rw10, 10);
-    const prefixFloor = compute + freshSlots * limits.floorFreshGas + rewrites * limits.floorRewriteGas;
+    const freshSlots = ceilDiv(acc.fresh10, 10);
+    const rewrites = ceilDiv(acc.rw10, 10);
+    const prefixFloor = acc.compute + freshSlots * limits.floorFreshGas + rewrites * limits.floorRewriteGas;
     const finalReserve = wm.finalComputeBase + wm.finalComputePerBind * binds + wm.finalComputePerPublish * publishes;
     return { prefixFloor, finalReserve, freshSlots, rewrites, binds, publishes };
   }

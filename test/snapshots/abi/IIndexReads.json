@@ -171,21 +171,6 @@
       },
       {
         "internalType": "uint16",
-        "name": "freshPerBindFresh",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "rwPerBind",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "rwPerBindLater",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
         "name": "freshPerRef",
         "type": "uint16"
       },
@@ -206,11 +191,6 @@
       },
       {
         "internalType": "uint32",
-        "name": "computePerHookEffect",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
         "name": "finalComputeBase",
         "type": "uint32"
       },
@@ -222,6 +202,101 @@
       {
         "internalType": "uint32",
         "name": "finalComputePerPublish",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "freshPerBindFirst",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "rwPerBindFirst",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "computePerBindFirst",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "freshPerRebind",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "rwPerRebind",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "computePerRebind",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "freshPerBindLater",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "rwPerBindLater",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "computePerBindLater",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "surchargePurpose",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "surchargeFreshFirst",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "surchargeRwFirst",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "surchargeComputeFirst",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "surchargeFreshRebind",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "surchargeRwRebind",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "surchargeComputeRebind",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "surchargeFreshLater",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "surchargeRwLater",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "surchargeComputeLater",
         "type": "uint32"
       }
     ]
@@ -626,21 +701,6 @@
               "internalType": "uint16"
             },
             {
-              "name": "freshPerBindFresh",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
-              "name": "rwPerBind",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
-              "name": "rwPerBindLater",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
               "name": "freshPerRef",
               "type": "uint16",
               "internalType": "uint16"
@@ -661,11 +721,6 @@
               "internalType": "uint32"
             },
             {
-              "name": "computePerHookEffect",
-              "type": "uint32",
-              "internalType": "uint32"
-            },
-            {
               "name": "finalComputeBase",
               "type": "uint32",
               "internalType": "uint32"
@@ -677,6 +732,101 @@
             },
             {
               "name": "finalComputePerPublish",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "freshPerBindFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerBindFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "computePerBindFirst",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "freshPerRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "computePerRebind",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "freshPerBindLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerBindLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "computePerBindLater",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "surchargePurpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "surchargeFreshFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeRwFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeComputeFirst",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "surchargeFreshRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeRwRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeComputeRebind",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "surchargeFreshLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeRwLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeComputeLater",
               "type": "uint32",
               "internalType": "uint32"
             }
@@ -976,21 +1126,6 @@
               "internalType": "uint16"
             },
             {
-              "name": "freshPerBindFresh",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
-              "name": "rwPerBind",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
-              "name": "rwPerBindLater",
-              "type": "uint16",
-              "internalType": "uint16"
-            },
-            {
               "name": "freshPerRef",
               "type": "uint16",
               "internalType": "uint16"
@@ -1011,11 +1146,6 @@
               "internalType": "uint32"
             },
             {
-              "name": "computePerHookEffect",
-              "type": "uint32",
-              "internalType": "uint32"
-            },
-            {
               "name": "finalComputeBase",
               "type": "uint32",
               "internalType": "uint32"
@@ -1027,6 +1157,101 @@
             },
             {
               "name": "finalComputePerPublish",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "freshPerBindFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerBindFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "computePerBindFirst",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "freshPerRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "computePerRebind",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "freshPerBindLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "rwPerBindLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "computePerBindLater",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "surchargePurpose",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "surchargeFreshFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeRwFirst",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeComputeFirst",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "surchargeFreshRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeRwRebind",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeComputeRebind",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "surchargeFreshLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeRwLater",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "surchargeComputeLater",
               "type": "uint32",
               "internalType": "uint32"
             }

@@ -418,18 +418,21 @@ library HeadAuthorsGenesis {
     }
 
     /// The example generation's work model (docs INDEX-BUILD §6.3): generation 1's, plus what `head-authors` costs
-    /// live. The model has no per-purpose term, so the list's price is charged on every bind-kind action (an upper
-    /// bound for the other purposes); `test/index/HeadAuthorsFloor.t.sol` measures it.
+    /// live, as formula 3's purpose surcharge on HEAD, so TAG and FOLDER statements are quoted exactly as generation 1
+    /// quotes them (`test/index/HeadAuthorsFloor.t.sol` measures both). The list costs a first HEAD statement one fresh
+    /// slot (the list's head, or its word 0), a later author's first statement the head's rewrite, and a mask, release
+    /// or restore of a BOUND head the counter's rewrite; each pays the CALL to the third store (cold on a
+    /// publication's first HEAD statement) and its writer rule.
     function workModel() internal pure returns (WorkModel memory w) {
         w = IndexDoubleDefaults.workModel();
-        w.freshPerBindFresh += 10; // a first HEAD statement: one fresh slot (the list's head, or its word 0)
-        w.rwPerBind += 10; // the list's head rewritten (a later author's first statement)
-        w.rwPerBindLater += 10; // a restore, a mask or a release of a BOUND head: the counter
-        // the CALL to the third store (cold on a publication's first HEAD statement) and its writer rule. With the
-        // slot terms above, a first statement is quoted 54.1k more on prague and 44.1k on amsterdam, a later one 37k;
-        // measured (`test/index/HeadAuthorsFloor.t.sol`), the list costs a first statement 41.6k to 46.5k on prague
-        // and 32.1k to 44.1k on amsterdam, a later one 22.9k to 23.1k and 30.5k to 30.6k
-        w.computePerHookEffect += 27_000;
+        // measured, the list costs a first statement 41.6k to 46.5k on prague and 32.1k to 44.1k on amsterdam, a later
+        // one 22.9k to 23.1k and 30.5k to 30.6k (execution gas); quoted 54.1k / 51.2k and 32.0k / 39.1k
+        w.surchargePurpose = Purpose.HEAD;
+        w.surchargeFreshFirst = 10;
+        w.surchargeRwFirst = 10;
+        w.surchargeComputeFirst = 27_000;
+        w.surchargeRwLater = 10;
+        w.surchargeComputeLater = 27_000;
     }
 
     function headFamilies() internal pure returns (bytes32[] memory f) {

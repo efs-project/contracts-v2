@@ -82,4 +82,9 @@ interface ILedgerIngress {
         view;
     /// The SIGNATURE_STORE immutable; 0 until the S2b build.
     function signatureStore() external view returns (address);
+
+    /// The work-model formula this ingress implements (`FORMULA_VERSION`, word 0 of `WorkModel`): it refuses the work
+    /// model of any other (`E_WORK_MODEL` 3), and activation refuses an index whose work model is not this version
+    /// (`E_INDEX_NOT_READY` 15). Callable directly (pure).
+    function formulaVersion() external pure returns (uint8);
 }

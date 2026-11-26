@@ -174,8 +174,8 @@
         },
         "workModel": {
           "type": "object",
-          "description": "the generation's IIndexReads.workModel(): every field of src/interfaces/Index.sol WorkModel (formula 2); verify compares it with the chain and with the gas model's floor",
-          "required": ["formulaVersion", "freshPerPublication", "rwPerPublication", "freshPerPublishFresh", "freshPerPublishExisting", "rwPerPublish", "freshPerBindFresh", "rwPerBind", "rwPerBindLater", "freshPerRef", "freshPerDigestSpec", "computeBase", "computePerAction", "computePerHookEffect", "finalComputeBase", "finalComputePerBind", "finalComputePerPublish"],
+          "description": "the generation's IIndexReads.workModel(): every field of src/interfaces/Index.sol WorkModel (formula 3); verify compares it with the chain and with the gas model's floor",
+          "required": ["formulaVersion", "freshPerPublication", "rwPerPublication", "freshPerPublishFresh", "freshPerPublishExisting", "rwPerPublish", "freshPerRef", "freshPerDigestSpec", "computeBase", "computePerAction", "finalComputeBase", "finalComputePerBind", "finalComputePerPublish", "freshPerBindFirst", "rwPerBindFirst", "computePerBindFirst", "freshPerRebind", "rwPerRebind", "computePerRebind", "freshPerBindLater", "rwPerBindLater", "computePerBindLater", "surchargePurpose", "surchargeFreshFirst", "surchargeRwFirst", "surchargeComputeFirst", "surchargeFreshRebind", "surchargeRwRebind", "surchargeComputeRebind", "surchargeFreshLater", "surchargeRwLater", "surchargeComputeLater"], "properties": { "surchargePurpose": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" } },
           "additionalProperties": { "type": "integer" }
         }
       }

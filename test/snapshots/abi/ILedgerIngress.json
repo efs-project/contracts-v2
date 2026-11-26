@@ -5,6 +5,7 @@
   "methodIdentifiers": {
     "0xe92c5da6": "dispatchFinal(uint64,bytes,bytes32[])",
     "0xa0e3e110": "dispatchIndex(uint64,bytes,uint32)",
+    "0x70a3985b": "formulaVersion()",
     "0x3623a5b9": "prepareNative((uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[],bytes[],(uint64,uint64,bytes32,bytes32),bytes)",
     "0xe922deaf": "prepareSigned((bytes32,bytes32,bytes32,bytes32,address,uint64,uint64,bytes32,bytes32,bytes32,uint16,bytes32,uint64),(uint8,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint64,bytes32)[],bytes[],bytes,bytes)",
     "0xec970948": "signatureStore()",
@@ -331,6 +332,19 @@
         }
       ],
       "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "formulaVersion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "pure"
     },
     {
       "type": "function",
