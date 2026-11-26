@@ -6,6 +6,171 @@ of later statements and give it a per-purpose term, as one change, decided toget
 it) or **estimated** (with how). The measurements were made in scratch copies of `018e290` (section 8 lists them); none
 of that code is committed.
 
+## Landed: the list release (2026-11-26, branch `fable/2026-11-26-list`)
+
+Two rulings, built and measured; only the work model's values changed (formula 3, `formulaVersion` 3, the same 32
+words). Where this section and the sections below differ, this section is what the code does.
+
+1. **The HEAD list is kept from genesis** (QUESTIONS Q52, ruled by James: option (a)). It is its own family,
+   `head-authors` (kind 22, key `(0, 22, 0, position)` with `position = Keys.position(HEAD, file, 0)`), in the genesis
+   posting store, declared by generation 1 from admission 1, universe SCOPE and HEADS semantics like `position-authors`;
+   never HEAD positions in family 20. Entry: the admission of each author's first HEAD statement on the file, either
+   sign. `count`: the authors who ever made a HEAD statement there; `live`: the authors whose HEAD there is BOUND now.
+   A first yes appends counted, a first no (a lone negative) appends uncounted, a mask or release of a BOUND head
+   releases 1, a restore (a yes after a lone no included) retains 1, a re-bind (every edit) and a mask or release of a
+   head that is not BOUND write nothing. It is read with the index's generic posting reads and
+   `LedgerViews.authorHeads` (design §10.2 family 22; `test/index/EveryonesVersions.t.sol`), and the work model is still
+   served from a data contract.
+2. **Its size** (runtime bytes, budget 19,660 B): `RealmIndex` 18,408 → **18,733 B** (+325; 927 left), less than the
+   trial's +620 because the family and key kind of a position's authors list come from one helper (`_authorsList`)
+   used by the three existing branches, the size hint of §7.1 Q4; `IndexReads` 12,960 B unchanged (the declaration is
+   constructor code); `PostingStore` 6,651 → 6,699 B (its capacity rose from 16 to 17 family ids, so one stays spare
+   with generation 1's sixteen posting families).
+3. **The surcharge's values are the trial's, confirmed by measurement on the real code** (`test/integration/FloorSplit.t.sol`
+   per action, lists exist, generation 1 with the list against the same shapes before it):
+
+   | HEAD statement | extra index slots | extra spend p / a | of which other (compute) p / a | the surcharge row | it reserves p / a |
+   |---|---|---:|---:|---|---:|
+   | a lone negative on another's file (first) | +1 fresh, +1 rewritten | +30,688 / +27,886 | 3,588 / 3,686 | first `10, 10, 4,500` | 31,600 / 28,700 |
+   | a second author's first yes | +1 fresh, +1 rewritten | +31,040 / +28,239 | 3,940 / 4,039 | first | 31,600 / 28,700 |
+   | a mask or release of a BOUND head | +1 rewritten | +14,500 / +21,701 | 9,500 / 9,601 | later `0, 10, 10,000` | 15,000 / 22,100 |
+   | a restore | +1 rewritten | +14,422 / +21,623 | 9,422 / 9,523 | later | 15,000 / 22,100 |
+   | a re-bind (an edit) | none | +75 / +75 (code placement) | 0 | re-bind `0, 0, 0` | 0 |
+
+   Measured cold on a whole publication (`test/index/HeadAuthorsFloor.t.sol`, E of generation 1 with the list against
+   E of the same code before it, same shape, same state), **the list costs a new file 26,054 gas on prague and 16,154 of
+   execution plus 97,920 of state gas on amsterdam** (114,074 in all); a second author's version 31,188 / 28,388 + 97,920;
+   a lone negative on a file whose list exists 13,683 / 28,083; a mask, release or restore 14,502 to 14,568 /
+   21,690 to 21,768; an edit 223 / 223 (code placement; the list is not written). The trial measured 25,675 / 15,775.
+4. **The later row is 3.0 fresh, 5.0 rewrites, 78,000 compute** (was 2.0, 5.0, 85,000; ruled: 3.0 fresh, compute by
+   measurement). Its quote per statement is 177,300 on prague and 182,800 on amsterdam (was 162,200 / 177,700). Why
+   78,000 and not the 72,500 or 79,000 of the evidence the ruling was made on:
+   - **The dearest list within the claim is not the longest** (found while fitting). `RealmIndex._entryIndex` bisects
+     the scope list and each probe reads the word that holds its entry (entry e ≥ 1 is in word (e − 1) / 5), so a later
+     statement's spend goes with its probes and the distinct words they read: measured, 2,119 gas per probe and 2,000
+     per word across places on prague (2,114 and 2,000 on amsterdam), exact to within 11 gas at every length measured
+     from 1,022 to 8,193 entries. For the last entry of a list that is 10 probes and 9 words at 1,023 entries against 10
+     and 8 at 1,024 and 1,025, so a 1,023-entry list is the dearest a list of up to 1,024 can be (the count, checked
+     for every length from 2 to 1,025), 2,000 gas dearer than the 1,025-entry list the formula-3 release fitted to.
+   - **The binding case is a yes after a lone no across places in that list on prague**: spend 171,832, so the floor's
+     per-action margin of 1.03 needs compute of at least 77,687; 78,000 quotes it at **1.031** (1.8 thousandths, 313 gas,
+     above the margin). On amsterdam the dearest are the same yes (170,915) and a restore of a far entry there (171,042),
+     quoted 1.069 / 1.068 against the 1.05 margin.
+   - The released row was below its own claim at that list too: 0.944 on prague for the yes and 1.039 on amsterdam for
+     the restore (162,200 / 171,832 and 177,700 / 171,042), not only for the yes beyond 256 entries.
+   - Prague's quote is 15,100 higher and amsterdam's 5,100 higher than the released row's.
+5. **What the floor covers now** (measured across places, per statement; pinned in `FloorSplit.t.sol`): every later
+   statement within the claim at the per-action margin, the yes after a lone no included (it stops being the documented
+   exception); beyond it, prague covers every later statement in lists of up to **3,586** entries and stops at 3,587,
+   where the yes reads one more word (1.007, then 0.996: `test_split_lone_no_yes_covered_up_to_the_limit`,
+   `..._not_covered_past_the_limit`); amsterdam covers up to **8,191** and stops at 8,192 for both the yes (1.008, then
+   0.997) and a restore of a far entry (1.007, then 0.996: `test_split_break_even_covered_at_8191`,
+   `test_split_break_even_not_covered_at_8192`). On prague that restore is covered at 8,192 (1.060, measured) and up to
+   57,346 entries by the same count (computed, not measured). The pair before this release was 4,096 / 4,097 on both
+   schedules, set by the restore.
+6. **Every `FloorSplit.t.sol` row, per action, quote over spend** (before: the formula-3 release, `c5cb09e`; after:
+   this release):
+
+   | row | prague before → after | amsterdam before → after |
+   |---|---|---|
+   | beyond: masks at 4,097 entries | 1.107 → replaced | 1.029 → replaced |
+   | beyond: masks at 8,193 entries | new: 1.176 | new: 1.033 |
+   | beyond: restores at 4,097 entries | 0.995 → replaced | 0.991 → replaced |
+   | beyond: restores at 8,192 entries | new: 1.060 | new: 0.996 |
+   | break-even: restores at 4,096 entries | 1.008 → replaced | 1.003 → replaced |
+   | break-even: restores at 8,191 entries | new: 1.073 | new: 1.007 |
+   | claim: masks of a far entry across places | 1.190 → 1.299 | 1.094 → 1.124 |
+   | claim: restores of a far entry across places | 1.062 → 1.160 | 1.052 → 1.081 |
+   | claim: restores of the last of 1,023 entries across places | new: 1.145 | new: 1.068 |
+   | create | 1.167 → 1.167 | 1.167 → 1.167 |
+   | folder later mask | 1.652 → 1.803 | 1.616 → 1.660 |
+   | folder later rebind | 1.119 → 1.118 | 1.180 → 1.179 |
+   | folder later release | 1.652 → 1.802 | 1.615 → 1.659 |
+   | folder later restore | 1.664 → 1.816 | 1.526 → 1.567 |
+   | folder masks across folders | 1.691 → 1.845 | 1.546 → 1.588 |
+   | folder re-binds across folders | 1.068 → 1.068 | 1.058 → 1.057 |
+   | folder releases across folders | 1.691 → 1.845 | 1.546 → 1.588 |
+   | folder restores across folders | 1.704 → 1.860 | 1.464 → 1.504 |
+   | head first lone negative | 1.927 → 1.708 | 1.943 → 1.692 |
+   | head first second author | 1.587 → 1.467 | 1.570 → 1.438 |
+   | head later mask | 1.987 → 2.000 | 1.902 → 1.780 |
+   | head later rebind | 1.124 → 1.123 | 1.185 → 1.184 |
+   | head later release | 1.986 → 2.000 | 1.901 → 1.779 |
+   | head later restore | 2.003 → 2.016 | 1.777 → 1.685 |
+   | lone no: yeses across places, a lone no after 1,024 first yeses | 0.955 → 1.043 | 1.052 → 1.082 |
+   | lone no: yeses across places, lists of 1,023 | new: 1.031 | new: 1.069 |
+   | lone no: yeses across places, lists of 1,025 | 0.955 → 1.043 | 1.052 → 1.082 |
+   | lone no: yeses across places, lists of 1,025, things unlinked | 0.986 → 1.077 | 1.136 → 1.167 |
+   | lone no: yeses across places, lists of 256 | 1.004 → replaced | 1.106 → replaced |
+   | lone no: yeses across places, lists of 257 | 0.992 → replaced | 1.093 → replaced |
+   | lone no: yeses across places, lists of 48 | 1.258 → 1.374 | 1.289 → 1.324 |
+   | lone no: yeses across places, the first list not covered | new: 0.996 | new: 0.997 |
+   | lone no: yeses across places, the last list covered | new: 1.007 | new: 1.008 |
+   | lone no: yeses at one topic of 1,025 | 1.106 → 1.208 | 1.238 → 1.273 |
+   | masks at the end of a list of 4096 | 1.434 → 1.566 | 1.423 → 1.462 |
+   | masks at the end of a list of 64 | 1.616 → 1.764 | 1.581 → 1.624 |
+   | masks of entry 48 across topics | 1.378 → 1.505 | 1.235 → 1.269 |
+   | number changes of a far entry across places | 1.833 → 1.832 | 1.833 → 1.832 |
+   | pair (first yes, then a mask) | 1.420 → 1.419 | 1.467 → 1.465 |
+   | publish existing name | 1.090 → 1.089 | 1.556 → 1.554 |
+   | publish new name | 1.026 → 1.025 | 1.921 → 1.918 |
+   | restores at the end of a list of 4096 | 1.443 → 1.576 | 1.352 → 1.390 |
+   | restores at the end of a list of 512 | 1.529 → 1.669 | 1.421 → 1.460 |
+   | restores at the end of a list of 64 | 1.619 → 1.767 | 1.495 → 1.536 |
+   | restores of entry 48 across topics | 1.210 → 1.321 | 1.182 → 1.215 |
+   | reuse name | 1.090 → 1.089 | 1.555 → 1.553 |
+   | tag first lone negative | 1.134 → 1.133 | 1.208 → 1.207 |
+   | tag first yes | 1.035 → 1.034 | 1.155 → 1.154 |
+   | tag later mask | 1.652 → 1.803 | 1.616 → 1.660 |
+   | tag later mask of mask | 2.362 → 2.576 | 2.690 → 2.760 |
+   | tag later number change | 1.987 → 1.985 | 2.234 → 2.233 |
+   | tag later release | 1.652 → 1.803 | 1.615 → 1.660 |
+   | tag later restore | 1.664 → 1.817 | 1.526 → 1.568 |
+   | tag masks across topics | 1.691 → 1.846 | 1.546 → 1.589 |
+   | tag masks of masks across topics | 2.443 → 2.664 | 2.503 → 2.569 |
+   | tag number changes across topics | 1.833 → 1.832 | 1.833 → 1.832 |
+   | tag releases across topics | 1.691 → 1.845 | 1.546 → 1.588 |
+   | tag restores across topics | 1.704 → 1.860 | 1.464 → 1.504 |
+   | tag second author first no | 1.382 → 1.381 | 1.320 → 1.318 |
+   | tag second author first yes | 1.133 → 1.132 | 1.079 → 1.078 |
+   | withdraw | 2.395 → 2.615 | 3.073 → 3.157 |
+
+   Rows with no "before" are new (the dearest list within the claim, and the limits); rows with no "after" were
+   replaced (the 4,096 / 4,097 pair and the lone-no cells at 256 / 257, which were the old limits). The rows that moved
+   are the later statements (the new row) and HEAD's (the surcharge: a HEAD first statement or mask now pays for the list
+   it writes, so its ratio falls although its quote rose); first statements, re-binds, publishes and CREATE are within a
+   few gas of before (code placement). The lowest per-action ratio of a bind-kind statement the floor claims is now
+   1.031 on prague (the yes after a lone no in the dearest list) and 1.057 on amsterdam (folder re-binds across folders,
+   unchanged); PUBLISH, REUSE and CREATE keep formula 2's terms (lowest 1.025, prague, a new name record, unchanged); at
+   one action 1.034 (amsterdam, a WITHDRAW, unchanged).
+7. **Batch sizes** (the planning rule over the regenerated `gas/model.json`; `test/vectors/floor-plan.json`, proved by
+   `FloorPlan.t.sol`; edits from `tools/gas-plan-later.mjs`'s shape):
+
+   | shape | prague before → after | amsterdam before → after |
+   |---|---|---|
+   | tag masks, releases, masks of masks | 58 → **54** | 55 → **54** |
+   | tag restores | 51 → **48** | 51 → **50** |
+   | tag number changes (re-binds) | 62 → 62 | 64 → 64 |
+   | folder re-binds | 62 → 62 | 61 → 61 |
+   | lone negatives | 38 → 38 | 53 → 53 |
+   | create-file recipes (5 actions each) | 10 → **9** | 12 → 12 |
+   | edits (PUBLISH child + HEAD re-bind; planner only) | 24 → 24 | 28 → 28 |
+   | first tags at every depth and state, repeat publishes, name records, a name record and a first tag, the registration chunk | unchanged | unchanged |
+
+   The later batches are bounded by the floor's requirement V, so the new later row's higher quote (prague +15,100 a
+   statement, amsterdam +5,100) is what shrinks masks, releases and restores; number changes and folder re-binds are
+   re-binds, whose row did not change. Create files on prague lose the tenth recipe to the HEAD surcharge's first row
+   (+31,600 reserved per new file) and the list's own gas; on amsterdam 12 recipes are 60 actions and a 13th would pass
+   the 64-action limit. Edits and lone negatives do not move: the surcharge's re-bind share is zero and TAG statements
+   pay nothing for the HEAD list. Measured by `FloorPlan.t.sol` on both profiles at the new `k` (admitted; on prague run
+   with exactly the room).
+
+8. **The planner compares the purpose word exactly as the kernel does** (`tools/gas-plan.mjs` `quote()`): the surcharge
+   applies when the action's purpose word equals `surchargePurpose`, with no special case for zero. A statement's
+   purpose is never zero (the kernel refuses it `E_SHAPE(leaf, 1)`, `test/unit/kernel/Shape.t.sol`
+   `test_missing_required_field_is_E_SHAPE_1_for_every_kind`), so a zero `surchargePurpose` surcharges nothing that can
+   be admitted.
+
 ## Landed (2026-11-26, branch `fable/2026-11-26-formula-v3`)
 
 Formula 3 is built. The rulings and two reviews changed it from the proposal below in these ways. The rest of the
@@ -318,7 +483,8 @@ compute = computeBase + n·computePerAction + Σ_bind row.compute
   where, for each BIND / UNBIND / RELEASE,
     row = first statement ? (freshPerBindFirst, rwPerBindFirst, computePerBindFirst)
                           : (freshPerBindLater, rwPerBindLater, computePerBindLater)
-    and, when the action's purpose word equals surchargePurpose (never when surchargePurpose is 0),
+    and, when the action's purpose word equals surchargePurpose (plain equality; a statement's purpose is never
+    zero, E_SHAPE, so a zero surchargePurpose surcharges nothing that can be admitted),
     row += first statement ? (surchargeFreshFirst, surchargeRwFirst, surchargeComputeFirst)
                            : (surchargeFreshLater, surchargeRwLater, surchargeComputeLater)
 P = compute + ⌈fresh10/10⌉·limits.floorFreshGas + ⌈rw10/10⌉·limits.floorRewriteGas        (unchanged)
@@ -435,6 +601,12 @@ recipe on prague. The values stay ("the surcharge is the list's measured cost" i
 create-file's margin at 1.10); they are manifest data that the later HEAD-list step can revisit. With the re-bind row the
 surcharge's re-bind share is zero, since the list does nothing on an edit, which removes the edit's over-reservation.
 
+**Landed (the list release):** generation 1 now carries exactly the surcharge values of the right-hand column: the
+list was built as its own family (not in `position-authors`) and the values re-measured on the real implementation (the
+extra "other" of a first HEAD statement 3.6k to 4.0k on both schedules, of a later one 9.4k to 9.6k; a re-bind none);
+its cost per new file is 26,054 / 16,154 + 97,920 measured cold ("Landed: the list release", item 3). The rows of the
+middle columns are the proposal's; the landed rows are at the top of this document.
+
 **Without the surcharge** the formula-3 rows still cover these on prague (lowest: create file in state A, 1.055). On
 amsterdam a HEAD restore with the list rewrites 5 slots against the row's 4 and is covered only 1.01×. So the
 surcharge is what keeps the HEAD quote honest, not just safe.
@@ -464,7 +636,9 @@ componentwise rule (compute ≥ the largest "other" of the class, ignoring that 
 most shapes) would also be honest. It costs batches: prague lone negatives 38 → 36, restores and number changes
 63 → 58, amsterdam lone negatives 53 → 49 (planner, **measured** on the scratch model, Q1).
 
-**Landed: what the floor claims, and what it does not.**
+**Landed: what the floor claims, and what it does not.** (As at the formula-3 release. Since the list release the yes
+after a lone no is covered within the claim and the limits beyond it are 3,586 entries on prague and 8,191 on amsterdam:
+"Landed: the list release", items 4 and 5, at the top of this document.)
 
 - **Covered:** every first statement on a topic of one word (deep first tags remain the exception of §3.6); every
   re-bind, in a list of any length and at any number of places (it never searches); every mask and release, and every
@@ -486,7 +660,8 @@ most shapes) would also be honest. It costs batches: prague lone negatives 38 �
   first row no longer at or above the later row, the second is under-quoted by the difference between the rows when its
   spend is near the later row's. In short lists the first row still covers it (measured per pair 1.420 / 1.467; pinned by
   `test_split_two_statements_at_one_position`).
-- **Not covered on prague: a yes after a lone no in a list of more than 256 entries** (found after the release by the
+- **Not covered on prague at the formula-3 release, covered since the list release: a yes after a lone no in a list of
+  more than 256 entries** (found after the release by the
   tag design review; measured and pinned). A yes after a lone no is a restore that is the binding's SECOND statement.
   `PostingStore._append` at count 1 materializes the binding's history word 0, a fresh slot; every restore the later
   row was fitted to is a binding's third statement (yes, mask, yes), whose append rewrites that word. In a list of lone

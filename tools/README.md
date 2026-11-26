@@ -56,7 +56,8 @@ reference implementation for the SDK's planner that reads only the model it is g
 ## gas-plan-later.mjs
 
 The planning rule of `gas-plan.mjs`, unchanged, on a copy of `gas/model.json` whose `floor.workModel` is that of a
-generation that adds one list later (the `head-authors` example of docs/INDEX-BUILD.md §2.2, a test harness), for the
+generation that adds one list later (the `file-versions` example of docs/INDEX-BUILD.md §2.2, a test harness: a second
+copy of generation 1's `head-authors`, whose reservation it adds to generation 1's HEAD surcharge), for the
 reservation part of that list's price (docs/INDEX-BUILD.md §6.2): the largest planned publication of five shapes under
 generation 1's model and under the example's. `node tools/gas-plan-later.mjs [--json]`; it writes nothing and no gate
 runs it.

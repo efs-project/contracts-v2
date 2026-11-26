@@ -193,9 +193,15 @@ itself.
   bucket, so a targeted attack is not bounded.
 - **Every statement is reachable from its target, whatever its sign.** A lone "not nsfw" carries no target, so "what
   points at this" never shows it; the last list in the table fixes that for every kind of target.
-- **Not kept:** all-authors lists on HEAD (a storage slot per file, and nothing reads it), per-word lists of items,
-  and "where a name is used" for FOLDER.
-- **Can the HEAD list be added later? Yes, at a price, and with one condition.** Every list is derived from the
+- **Kept since the list release (2026-11-26):** everyone's versions of a file, the all-authors list on HEAD
+  (`head-authors`, family 22, its own family in the genesis posting store; James ruled to keep it from the start,
+  Q52). One entry per author's first HEAD statement on the file, either sign; `count` = the authors who ever stated a
+  version, `live` = the versions standing now. A client reads it with the index's generic list reads and
+  `LedgerViews.authorHeads` (no reader of its own). Measured: 26,054 gas a new file on prague, 16,154 of execution plus
+  97,920 of state gas on amsterdam; an edit pays nothing.
+- **Not kept:** per-word lists of items, and "where a name is used" for FOLDER.
+- **Could the HEAD list have been added later? Yes, at a price, and with one condition** (the measurement the
+  Q52 ruling was made on; the list is now kept from genesis, above). Every list is derived from the
   kernel's permanent record of statements, so a later index generation can add a list and build it from history
   into a fresh store before it is switched on. That build step is written and tested: a test harness generation
   carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
@@ -488,8 +494,9 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 3. **No word may start with `~`, look like an address or contain white space,** anywhere in a path. *Recommend
    keeping it.* (Q51)
 4. **Settled (2026-11-26): keep everyone's versions of one file listed from the start.** James ruled yes ("we
-   definitely need a good 'show all' view from the start"; Q52); the list is built in the next release. The figures
-   it was decided on: keeping it costs a storage slot for every file ever created: 25,675 gas per file today in the
+   definitely need a good 'show all' view from the start"; Q52); the list is built in the list release (`head-authors`,
+   family 22: 26,054 gas a new file today, 16,154 of execution plus 97,920 of state gas on Glamsterdam, measured). The
+   figures it was decided on: keeping it costs a storage slot for every file ever created: 25,675 gas per file today in the
    store a HEAD statement already writes (measured; about 1.6% of creating a file; 51k as measured in a separate third
    store; 114k to 150k on Glamsterdam). Adding it later is possible and measured at about 479k per file today (578k on
    Glamsterdam), 9.3 to about 19 times as much, paid at once: 4.8 billion gas for 10,000 files, 479 billion for a

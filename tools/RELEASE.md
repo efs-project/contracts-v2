@@ -50,6 +50,18 @@ tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --j
 
 ## What changes for a consumer in this release
 
+**The list release (in progress: items 49 to 53, this branch's first piece).** On top of the bundle below: generation 1
+keeps everyone's versions of a file (`head-authors`, family kind 22, item 49), read with the index's generic posting
+reads and `LedgerViews.authorHeads`; the work model's values change (the later row `30, 50, 78,000`, the HEAD
+surcharge first `10, 10, 4,500` and later `0, 10, 10,000`, item 50), so a planner that reads `gas/model.json` needs no
+code change and the largest batches move (item 51: prague masks, releases and masks of masks 58 → 54, restores 51 →
+48, create files 10 → 9; amsterdam masks, releases and masks of masks 55 → 54, restores 51 → 50); the planner's
+surcharge comparison is plain equality (item 52). The posting store, the index and its reads contract moved (code and
+address), and with them the manifest hash, the index obligations, the execution set, the plan hash and the release
+digest; the kernel, the ledger's addresses, the layout id, every ABI and ABI id and every Type id did not. The
+release is regenerated once more when its second piece and the names piece join, and the identity table is written
+then; until then re-vendor nothing from this branch.
+
 **This release IS a re-vendor point.** The SDK is pinned to `3ca53ba` ("Merge the final step: liveness gate, fold-hook
 refusal, reader rule, Glamsterdam floor price"); this release (items 42 to 48) moves it to this bundle's head: work-model
 formula 3, the Type registry rule, the kept-index fix and the gas model's list tiers, built and regenerated together.
@@ -92,8 +104,9 @@ against `3ca53ba`. What a consumer must change, as one list:
     revision 1 this is the yes directly after a lone no: two slots in all.
   A planner that adds both slots for every never-bound head over-prices the later variants by one slot (the safe
   side). With the rule, the SDK's planner plans the largest batch of this shape at 46 on prague and 48 on amsterdam
-  (51 without it; bounded by V once K carries the head's slot). The rule ends when the vendored `gas/model.json`
-  carries the proper rows.
+  (51 without it; bounded by V once K carries the head's slot), at the formula-3 release; with the list release's
+  later row `tools/gas-plan.mjs` plans it at 45 and 48 with the rule (48 and 50 without it; item 51). The rule ends
+  when the vendored `gas/model.json` carries the proper rows (the list release's second piece).
 - **New error and reason codes** (`release/errors.json`): `E_WORK_MODEL(uint8 code, uint256 value)` (new error: 1 the
   read failed, 2 the reply is not 32 words, 3 `formulaVersion` is not 3); `E_INDEX_NOT_READY` 15 (the index's work model
   is not 32 words of the ingress's formula) and 16 (a word does not fit its field), checked for a kept index and a new
@@ -1225,6 +1238,134 @@ moved.
 | read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | seed version | `efs-fixture-seed/4` | no |
 | seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
+
+### The list release, first piece (this branch against `c5cb09e`; the identities are written at the join)
+
+The kernel, index and work-model piece of the list release (items 49 to 53). The gas model's rows for a yes after a
+lone no, the measured-position field, the HEAD later rows and the `targetKind` reader test follow in the second piece,
+and the names piece is joined after; the release is regenerated once more at the join, which writes the identity
+table. Every figure here was measured on this branch's code on both schedules unless it says computed.
+
+**49. Everyone's versions of a file: the `head-authors` list** (QUESTIONS Q52, ruled by James 2026-11-26; design §10.2
+family 22, §12.2; docs/WORK-MODEL-V3.md "Landed: the list release"). Consumer change: a new family to read, nothing to
+call.
+
+- **The family.** Name `head-authors`, family id `keccak("efs/family/head-authors/1")` =
+  `0xd09cf038b483bc20ecd786809b77a653a8554e6c938108cba163338955d06bf8` (`test/vectors/ids.json` `families.head-authors`), kind 22, universe 3 (SCOPE), shape APPEND,
+  liveSemantics 3 (HEADS), mandatory, `fromAdmission` 1, in the genesis posting store (the store generation 1's other
+  posting families use). Its own family, never HEAD positions in family 20, so that a later generation can stop
+  keeping it (declare and fold it no more) and every reader then answers UNKNOWN for it rather than stale counts.
+- **Key and entry.** Key `(0, 22, 0, position)` = `Keys.headAuthorsList(position)` with `position =
+  Keys.position(HEAD, file, 0)`. Entry: the admission ordinal of each author's first HEAD statement on the file, of
+  either sign (creating it, saving one's own version of another's file, or a first "not this"). `count` = the authors
+  who ever made a HEAD statement on the file; `live` = the authors whose HEAD there is BOUND now. Each transition: a
+  first yes appends counted; a lone negative appends UNCOUNTED (`live` unchanged); a mask or release of a BOUND head
+  lowers `live` by 1; a restore (a yes after a lone no included) raises it by 1; a re-bind (every edit) and a mask or
+  release of a head that is not BOUND write nothing; no later statement appends an entry. In order of first statement.
+- **How to read it, with no new reader or ABI** (`test/index/EveryonesVersions.t.sol`
+  `test_show_everyones_versions_of_a_file`, three authors' versions of one file, one masked): `postingHeadOf(head-authors,
+  0, 0, position)` at the index (coverage, `count`, `live`), `postingSliceOf(head-authors, 0, 0, position, from, n)` for
+  the entries, then `LedgerViews.authorHeads(ledger, position, entries)` for each entry's author, status (PRESENT,
+  MASKED, RELEASED) and head (its `target` is the version that author names; 0 when masked or released). Answer only
+  when coverage is COMPLETE, as for every list.
+- **What it costs per file** (measured cold, `test/index/HeadAuthorsFloor.t.sol`, generation 1 with the list against
+  the same code before it, the same shapes from the same state): a new file 26,054 gas on prague, 16,154 of execution
+  plus 97,920 of state gas on amsterdam (114,074 in all); a second author's version 31,188 / 28,388 + 97,920; a lone
+  negative on a file whose list exists 13,683 / 28,083; a mask, release or restore 14,502 to 14,568 / 21,690 to 21,768;
+  an edit nothing (223 gas of code placement on both). Reserved for by the HEAD surcharge (item 50).
+- **Sizes** (runtime bytes, budget 19,660 B): `RealmIndex` 18,408 → 18,733 (+325; 927 left); `IndexReads` 12,960
+  (unchanged: the declaration is constructor code); `PostingStore` 6,651 → 6,699 (its family capacity is 17 ids, was
+  16, so one stays spare beside generation 1's sixteen posting families; `FAMILY_CAPACITY()` answers 17, its ABI and
+  `STORE_ABI_ID` are unchanged). The posting store's family set and the index's family table each gain `head-authors`
+  as their last entry (`tools/deploy-plan.mjs` `POSTING_FAMILIES`, `FAMILY_TABLE`), so the manifest, the posting store's
+  constructor data and its codehash move.
+- **Coverage and the carried check** need nothing new: the family is declared from admission 1 in a store generation
+  1 names, so the carried check, the coverage frontier and the readers' COMPLETE rule hold for it as for family 20
+  (`EveryonesVersions.t.sol` `test_the_family_is_declared_in_the_genesis_posting_store`; every suite that counts
+  generation 1's families counts nineteen).
+
+**50. The work model's values** (formula 3 unchanged: the same 32 words, `formulaVersion` 3). Consumer change: the
+values a planner reads from `gas/model.json` `floor.workModel` (the SDK's `kernelQuote` needs no code change; it
+already applies the surcharge by purpose).
+
+| word | field | was | now |
+|---:|---|---:|---:|
+| 19 | `freshPerBindLater` | 20 | **30** |
+| 20 | `rwPerBindLater` | 50 | 50 |
+| 21 | `computePerBindLater` | 85,000 | **78,000** |
+| 22 | `surchargePurpose` | 0 | **`Purpose.HEAD`** (`keccak("efs/purpose/head/1")`) |
+| 23-25 | `surchargeFreshFirst`, `surchargeRwFirst`, `surchargeComputeFirst` | 0, 0, 0 | **10, 10, 4,500** |
+| 26-28 | `surchargeFreshRebind`, `surchargeRwRebind`, `surchargeComputeRebind` | 0, 0, 0 | 0, 0, 0 |
+| 29-31 | `surchargeFreshLater`, `surchargeRwLater`, `surchargeComputeLater` | 0, 0, 0 | **0, 10, 10,000** |
+
+- **The later row** quotes 177,300 a statement on prague and 182,800 on amsterdam (was 162,200 / 177,700). Its fresh
+  count 3.0 is the most fresh index slots a later statement writes (a yes after a lone no: the binding's history word
+  0, its live-bits word and its thing's backlink word 0). Its compute is the least that quotes the dearest later
+  statement within the claim at the floor's per-action margin (1.03 prague, 1.05 amsterdam): that is a yes after a lone
+  no across places in a list of 1,023 entries, spend 171,832 on prague, which needs 77,687; 78,000 gives 1.031. The
+  dearest list within the claim is 1,023 entries, not the longest: each probe of the entry search reads the word that
+  holds its entry, so the spend goes with the probes (2,119 / 2,114 gas each across places) and the distinct words they
+  read (2,000 each), and 1,023 entries (10 probes, 9 words) costs 2,000 more than 1,025 (10 and 8); the released row was
+  below its own claim there (0.944 prague for that yes, 1.039 amsterdam for a restore). The evidence the ruling was made
+  on, (30, 50, 72,500) and (30, 50, 79,000), was computed at 1,025 entries.
+- **The surcharge** is the list's measured cost (the trial's values, confirmed): a first HEAD statement writes one
+  fresh slot and rewrites one (the list's head or word 0, and its head for a later author), +3.6k to +4.0k of other
+  work; a mask, release or restore of a BOUND head rewrites the counter, +9.4k to +9.6k; a re-bind nothing. It reserves
+  31,600 / 28,700 a first HEAD statement (spend +30,688 to +31,040 / +27,886 to +28,239) and 15,000 / 22,100 a later one
+  (+14,422 to +14,500 / +21,623 to +21,701).
+- **What the floor claims and covers now** (`test/integration/FloorSplit.t.sol`): every later statement in lists of up
+  to 1,024 entries per author per place, at any number of places, at the per-action margin, the yes after a lone no
+  included (`test_split_lone_no_yes_*` are ordinary claim tests now; at 1,025 entries 1.043 / 1.082, at 1,023 1.031 /
+  1.069). Beyond the claim it covers every later statement across places up to 3,586 entries on prague (the yes after a
+  lone no stops from 3,587: 1.007, then 0.996) and up to 8,191 on amsterdam (that yes and a restore of a far entry stop
+  from 8,192: 1.008 and 1.007, then 0.997 and 0.996); on prague the restore is covered at 8,192 (1.060) and to 57,346
+  entries computed. The 4,096 / 4,097 pair of the formula-3 release is replaced by these.
+- **Every `FloorSplit.t.sol` row before → after** is in docs/WORK-MODEL-V3.md "Landed: the list release", item 6.
+
+**51. Batch sizes** (the planning rule, `tools/gas-plan.mjs`, on the regenerated `gas/model.json`;
+`test/vectors/floor-plan.json`, proved by `FloorPlan.t.sol` on both schedules; edits from `tools/gas-plan-later.mjs`):
+
+| shape | prague before → after | amsterdam before → after |
+|---|---|---|
+| tag masks, releases, masks of masks | 58 → **54** | 55 → **54** |
+| tag restores | 51 → **48** | 51 → **50** |
+| tag number changes (re-binds) | 62 → 62 | 64 → 64 |
+| folder re-binds | 62 → 62 | 61 → 61 |
+| lone negatives | 38 → 38 | 53 → 53 |
+| create-file recipes (5 actions each) | 10 → **9** | 12 → 12 |
+| edits (PUBLISH child + HEAD re-bind; planner only) | 24 → 24 | 28 → 28 |
+| first tags at every depth and state, repeat publishes, name records, a name record and a first tag, the registration chunk | unchanged | unchanged |
+
+These later batches are bounded by the floor's requirement V, so the later row's higher quote (+15,100 a statement on
+prague, +5,100 on amsterdam) is what moves masks, releases and restores; number changes and folder re-binds are
+re-binds, whose row did not change. Create files on prague lose the tenth recipe to the HEAD surcharge's first row and
+the list's own gas (V at 9: 13,027,480); amsterdam stays at 12, where a 13th recipe would pass the 64-action limit. Edits
+and lone negatives do not move (the surcharge's re-bind share is zero; TAG statements pay nothing for the HEAD list).
+`FloorPlan.t.sol` builds every shape at its new `k` and proves it admitted on both profiles. For the interim rule of
+item 42 (a yes after a lone no), `tools/gas-plan.mjs` with the rule applied plans the restore shape at 45 on prague and
+48 on amsterdam (48 and 50 without it); the SDK's own planner, which carries the kernel's slot in K, should re-measure
+its figures (46 and 48 at the formula-3 release).
+
+**52. The planner's surcharge comparison** (`tools/gas-plan.mjs` `quote()`): the surcharge applies when the action's
+purpose word equals `surchargePurpose`, exactly as `LedgerIngress._foldOne` compares them (`a.purpose ==
+bytes32(_w(wm, W_SURCHARGE_PURPOSE))`); the planner no longer skips a zero `surchargePurpose`. A statement's purpose is
+never zero: the kernel refuses a BIND, an UNBIND or a RELEASE with a zero purpose word `E_SHAPE(leaf, 1)`
+(`test/unit/kernel/Shape.t.sol` `test_missing_required_field_is_E_SHAPE_1_for_every_kind`, which existed already), so a
+zero `surchargePurpose` surcharges nothing that can be admitted. New planner test: `tools/test/gas-plan.test.mjs`, "the
+surcharge applies on plain equality with surchargePurpose, zero included". A consumer whose planner keeps a zero guard
+quotes the same for every admissible publication; it should still compare as the kernel does.
+
+**53. Tests and the harness** (no consumer change). The step-3b harness (`test/harness/HeadAuthors.sol`) can no
+longer add `head-authors` later, since generation 1 keeps it; its example list is now `file-versions` (provisional
+kind 24, the same key shape, entry and fold, in the third store), a second copy of `head-authors` under another id,
+and the build-from-history suites also check that it equals generation 1's own list file by file (docs/INDEX-BUILD.md
+§2.2). `test/index/EveryonesVersions.t.sol` is new. The build's measured unit costs (`test/index/BuildGas.t.sol`)
+moved by +20 gas a HEAD publication and +9,526 on the fixed share of a cold build call, on both schedules (the copy of
+the live manifest the carried check reads holds one more family). The §6.2 figures for a million files, the record the
+Q52 ruling was made on, stay as they are; computed with this release's units the same build would cost about 0.3B gas
+more on each schedule (+0.06%: 479.6B on prague, 470.4B of execution on amsterdam). A cold segment of 20 files
+(`test_mixed_segment`) measured 9,684,204 on prague and 9,483,004 of execution on amsterdam (was 9,674,178 and
+9,472,978).
 
 ## The fixture: many instances at once
 
