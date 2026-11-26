@@ -70,7 +70,7 @@ contract Creator {
 /// @notice Logs the gas of both forms on the running schedule (run once on the default profile and once on
 ///         amsterdam): deployment (execution and state gas, as `vm.lastFrameGas` reports them) of the copy alone (the
 ///         holder with the copy minus the holder with an empty one) and the cold read of the copy, for a copy of the
-///         shape of the release's generation 1 (18 families, one final-hook unit with no family ids, two digest specs)
+///         shape of the release's generation 1 (19 families, one final-hook unit with no family ids, two digest specs)
 ///         for a plausible later generation (40 families, 6 units) and for 58 families. Also the real `IndexReads` with and without the copy.
 contract LivenessCostTest is Test {
     Creator internal creator;

@@ -149,17 +149,18 @@ export const LIMITS = {
  *  order is part of the formula). The first-statement, re-bind and later-statement rows are measured per action on both
  *  schedules (test/integration/FloorSplit.t.sol): each slot count is the largest of its class, and compute covers the
  *  dearest whole shape of the class the floor claims (later statements: lists of up to LIST_LENGTH_CLAIM = 1,024
- *  entries per author per place, test/harness/doubles/IndexDoubles.sol). Generation 1 keeps no list for one purpose, so
- *  the surcharge is zero. No release work model exists in src/. */
+ *  entries per author per place, test/harness/doubles/IndexDoubles.sol). The surcharge is HEAD's (`PURPOSE.HEAD`,
+ *  written out here because PURPOSE is declared below): generation 1 keeps `head-authors` for HEAD alone, and the surcharge
+ *  rows are that list's measured cost. No release work model exists in src/. */
 export const WORK_MODEL = {
   formulaVersion: 3, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, freshPerPublishExisting: 29,
   rwPerPublish: 46, freshPerRef: 30, freshPerDigestSpec: 10, computeBase: 54000, computePerAction: 8000,
   finalComputeBase: 20000, finalComputePerBind: 7400, finalComputePerPublish: 2800,
   freshPerBindFirst: 55, rwPerBindFirst: 20, computePerBindFirst: 44000,
   freshPerRebind: 20, rwPerRebind: 40, computePerRebind: 42000,
-  freshPerBindLater: 20, rwPerBindLater: 50, computePerBindLater: 85000,
-  surchargePurpose: ZERO, surchargeFreshFirst: 0, surchargeRwFirst: 0, surchargeComputeFirst: 0,
-  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 0, surchargeComputeLater: 0,
+  freshPerBindLater: 30, rwPerBindLater: 50, computePerBindLater: 78000,
+  surchargePurpose: h("efs/purpose/head/1"), surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 4500,
+  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 10, surchargeComputeLater: 10000,
 };
 /** src/interfaces/Index.sol WORK_MODEL_WORDS and FORMULA_VERSION: the work model's ABI words (one per field) and the
  *  formula the ingress implements. */
@@ -206,7 +207,7 @@ export const PURPOSE = {
 };
 export const ACTION = { PUBLISH: 1, REUSE: 2, BIND: 3, UNBIND: 4, CREATE: 5, WITHDRAW: 6, RELEASE: 7 };
 export const familyId = (name) => h(`efs/family/${name}/1`);
-export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "place", "place-below", "scope-below", "position-authors", "role-places"];
+export const POSTING_FAMILIES = ["by-type", "by-author", "backlink", "history", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "place", "place-below", "scope-below", "position-authors", "role-places", "head-authors"];
 export const BITMAP_FAMILIES = ["scope", "roster", "live-scope"];
 export const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 export const ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
@@ -361,7 +362,7 @@ export function runtimeOf(name, values = {}) {
 // ---- the Files and Topics profiles: a JS twin of src/profiles/FilesTypes.sol and TopicTypes.sol ----------------------
 
 export const T = { ROOT: 0, CHILD: 1, DIRECTORY: 2, NAME: 3, BYTES: 4, CONTENT: 5, EXTERNAL: 6, ALIAS: 7, NOTICE: 8, SPAN: 9, TOPIC_WORD: 10, TOPIC: 11, TEXT: 12 };
-export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/2", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1", "topic-word/1", "topic/1", "text/1"];
+export const TYPE_NAMES = ["files-root/1", "files-child/1", "files-directory/1", "files-name/3", "files-bytes/1", "files-content/1", "files-external/1", "directory-alias/1", "realm-notice/1", "files-span/1", "topic-word/1", "topic/1", "text/1"];
 export const RULES = ["FilesRootRule", "FilesChildRule", "FilesDirectoryRule", "FilesNameRule", "FilesBytesRule", "FilesContentRule", "FilesExternalContentRule", "DirectoryAliasRule", "RealmNoticeRule", "FilesSpanRule", "TopicWordRule", "TopicRule", "TextRule"];
 const NAMESPACE = h("efs/files/1");
 const TOPICS_NAMESPACE = h("efs/topics/1");
@@ -387,14 +388,14 @@ const SPECS = [
   { description: "abi.encode(fileSubject, form) || rest; the first revision of a created file subject; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(parentRecord, fileSubject, form) || rest; parent is files-root/1 or files-child/1 of the same file; form 0 rest is the file bytes, form 1 rest is one word naming a files-content/1 or files-external/1 record", dependencyClass: 2, refHeaderWords: 2, fields: [[FIELD_PARENT, SEMANTIC_REVISION, () => REF_ANY]] },
   { description: "abi.encode(bytes32 creatorPrincipal, bytes32 salt); a folder is this record, admitted only when the publishing principal is the creator word and the salt is nonzero", dependencyClass: 1, refHeaderWords: 1, fields: [] },
-  { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [], flags: 1 },
+  { description: "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, none of # ? % < > \" | : * ;, not ending in ., ~efs reserved", dependencyClass: 1, refHeaderWords: 1, fields: [], flags: 1 },
   { description: "sha256(payload) || payload; one chunk, bounded only by the Realm maxBody; the empty payload is the remote sentinel", dependencyClass: 1, refHeaderWords: 1, fields: [] },
   { description: "[bytesRef, version, carrier, hashAlg, length, sha256, cipher, nonce12, plaintextLength, plaintextSHA256OrZero] || media, the media type being the rest of the body after 320 bytes; carrier 0 one files-bytes/1 record, 1 the remote sentinel, 2 a files-span/1 root; lengths below 2^64; media empty (unknown) or a lowercase RFC 6838 type/subtype with optional ;parameters, at most 255 bytes", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, () => REF_ANY]] },
   { description: "[bytesRef (the empty sentinel), version 2, carrier 2, hashAlg 1, length, sha256, locatorLength] || locator || media; a URI of 1-2048 printable ASCII bytes with an RFC 3986 scheme, no scheme allowlist; media as files-content/1, the rest of the body", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_BYTES, SEMANTIC_CARRIER, (ids) => ids[T.BYTES]]] },
   { description: "abi.encode(targetObjectId, kind); kind 1 a files-directory/1 record, 2 a created file subject", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(bytes32 kind, uint256 revision, bytes note); kind frozen | successor | migration", dependencyClass: 2, refHeaderWords: 1, fields: [] },
   { description: "abi.encode(left, right, length); each child a files-bytes/1 record with a nonempty payload or a files-span/1 record; length is the sum of the children payload lengths, below 2^64", dependencyClass: 1, refHeaderWords: 3, fields: [[FIELD_LEFT, SEMANTIC_SPAN_CHILD, () => REF_ANY], [FIELD_RIGHT, SEMANTIC_SPAN_CHILD, () => REF_ANY]] },
-  { description: "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, no /, no ASCII control, space or A-Z, no C1, bidi, invisible, joiner or variation selector code point, not . or .., not starting with ~, not 0x and 40 lowercase hex", dependencyClass: 1, refHeaderWords: 1, fields: [], namespace: TOPICS_NAMESPACE,
+  { description: "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, of ASCII only a-z 0-9 - _ ., not ending in ., no C1, bidi, invisible, joiner or variation selector code point, not 0x and 40 lowercase hex", dependencyClass: 1, refHeaderWords: 1, fields: [], namespace: TOPICS_NAMESPACE,
     flags: 1 }, // TYPE_FLAG_EMITS_BODY
   { description: "abi.encode(parent, wordPage); a path of two or more words; parent is a topic/1 or topic-word/1 record, wordPage a topic-word/1 record", dependencyClass: 1, refHeaderWords: 1, fields: [[FIELD_TOPIC_PARENT, SEMANTIC_PARENT_TOPIC, () => REF_ANY], [FIELD_TOPIC_WORD, SEMANTIC_WORD_PAGE, (ids) => ids[T.TOPIC_WORD]]], namespace: TOPICS_NAMESPACE,
     flags: 1 }, // TYPE_FLAG_EMITS_BODY
@@ -493,6 +494,8 @@ const FAMILY_TABLE = [
   // the first-statement lists (design §10.2); the two topic roll-ups are maintained because the Topics Types are in the release
   ["place", 6, 3, 1, 4, "posting", 1n], ["place-below", 7, 3, 1, 4, "posting", 1n], ["scope-below", 19, 3, 1, 1, "posting", 1n],
   ["position-authors", 20, 3, 1, 3, "posting", 1n], ["role-places", 21, 4, 1, 1, "posting", 1n],
+  // everyone's versions of a file (QUESTIONS Q52, ruled 2026-11-26), its own family so a later generation can drop it
+  ["head-authors", 22, 3, 1, 3, "posting", 1n],
 ];
 
 // ---- the plan ------------------------------------------------------------------------------------------------------
@@ -609,7 +612,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   // G16–G17: the stores name the predicted ledger proxy, INITIAL_WRITER = 0
   // each store also holds its family set as immutables F0.. (zero padding beyond the set; PostingStore 16, BitmapStore 4)
   const familySlots = (names, capacity) => Object.fromEntries(Array.from({ length: capacity }, (_, i) => [`F${i}`, i < names.length ? familyId(names[i]) : ZERO]));
-  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, ...familySlots(POSTING_FAMILIES, 16) });
+  const posting = add("G16", "PostingStore", [ledgerProxy, zeroAddress, POSTING_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, ...familySlots(POSTING_FAMILIES, 17) });
   const bitmap = add("G17", "BitmapStore", [ledgerProxy, zeroAddress, BITMAP_FAMILIES.map(familyId)], { LEDGER: ledgerProxy, INITIAL_WRITER: zeroAddress, FAMILY_LIVE_SCOPE: familyId("live-scope"), ...familySlots(BITMAP_FAMILIES, 4) });
 
   // G18: RealmGenesis.run — the controller, the registry proxy, the ledger proxy (each initialized in its creation)

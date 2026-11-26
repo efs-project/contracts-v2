@@ -162,8 +162,17 @@ it has to prove that the stores it carries are complete through the frontier at 
 
 ### 2.2 (b) Add an APPEND family (worked example: everyone's versions of a file)
 
-Generation 1 deliberately keeps no all-authors list on HEAD (design §10.2, "HEAD is deliberately in none of
-them"; `docs/TAG-DESIGN.md` §4; QUESTIONS Q52). Generation 2 adds one. Provisional definition:
+**Since the list release (2026-11-26) generation 1 keeps this list from genesis** (James ruled on QUESTIONS Q52:
+"we definitely need a good 'show all' view from the start"): `head-authors`, family kind 22, in the genesis posting
+store, with exactly the fold of the table below (design §10.2 family 22; `RealmIndex._firstStatementLists` and
+`_foldBind`). This section is the design of adding it later, as it was written and measured before the ruling, and the
+measurement the ruling was made on (§6). The test harness that adds a list later now adds a second copy of it under
+another id (`file-versions`, kind 24, in a third store; "Landed (the list release)" at the end of this section), so
+every build-from-history test keeps its meaning and can also compare the built list with generation 1's own.
+
+Before the list release generation 1 deliberately kept no all-authors list on HEAD (design §10.2, "HEAD is
+deliberately in none of them"; `docs/TAG-DESIGN.md` §4; QUESTIONS Q52), and generation 2 would add one. Provisional
+definition:
 
 | | |
 |---|---|
@@ -214,6 +223,22 @@ generation, and the manifest declares the family there with `fromAdmission == 1`
 HEADS semantics. The trace is `test/index/HeadAuthorsBuild.t.sol::test_head_authors_trace`, live and built: end state
 count 2, live 2, last = Bob's first statement, entries [Alice's, Bob's], and the list reads the same through the
 generation's `postingHeadOf`/`postingSliceOf`, which route it to the third store.
+
+**Landed (the list release, 2026-11-26, branch `fable/2026-11-26-list`).** Generation 1 keeps `head-authors` itself
+(kind 22, key `(0, 22, 0, position)`, `Keys.headAuthorsList`), so the harness cannot add it later. The harness's list is
+now `file-versions` (provisional kind 24, family id `keccak("efs/family/file-versions/1")`): the same key shape, entry
+and fold as the table above, in the same third store, under another id; the harness contracts and suites keep their
+names (`HeadAuthorsIndex`, `HeadAuthorsReads`, `HeadAuthorsBase`, `HeadAuthorsBuild.t.sol` and the rest), and
+`F_HEAD_AUTHORS` in the suites names the example list. That is the smallest change that keeps every test honest: the
+build walks the same history into a fresh store, and built equals kept-from-genesis key by key exactly as before (Realm
+L keeps the example list from genesis); the dropped-list test, the fold-hook refusal, partial coverage and the
+measured build gas are unchanged in meaning. What it adds: since the example list and generation 1's `head-authors` are
+the same list, the suites also check, file by file, that the example list (built from history or kept by Realm L)
+equals generation 1's `head-authors` in the live posting store, entries and both counters
+(`HeadAuthorsBase._assertSameAsGenesisList`), and the capture compares generation 1's `head-authors` lists with the
+rest of the posting store. Generation 1's own list and its read are tested by `test/index/EveryonesVersions.t.sol`.
+Generation 1 now declares sixteen posting families, so the posting store's capacity rose from 16 to 17 ids (one spare,
+as before): `DroppedList.t.sol`'s store holds generation 1's sixteen and its list X.
 
 ### 2.3 (c) Add a BITMAP family
 
@@ -1133,6 +1158,11 @@ the list's first entry 30,225 (prague) and 20,325 + 97,920 of state gas (amsterd
 
 ### 6.2 `head-authors` for a Realm of 1 million files (**measured** unit costs, the same assumed history)
 
+This is the measurement that informed James's ruling on QUESTIONS Q52 (keep the list from the start); since the list
+release generation 1 keeps `head-authors` from genesis, and the figures below stay as the record of what adding it
+later would have cost. The harness's example list is now a second copy of it (`file-versions`, §2.2); its build was
+re-measured with the list release's code (§10, "The list release").
+
 Assumed history, unchanged from the estimate: 1,000,000 files, each created by a 5-leaf create-file publication (design
 §14); 3 edits per file, each 2 leaves; 10% of files get a second author's own version (2 leaves); 6% of files see a
 HEAD mask, release or restore of an asserted head (1 leaf; priced at the mean of the three). That is 4.16M publications
@@ -1991,7 +2021,8 @@ tested together on both schedules and regenerated once (tools/RELEASE.md items 4
     both names). Two source comments said 26 words (no bytecode change). (c) The planner's `quote()` (formula 3) and
     `cost()` (the tiers) live in one file and needed nothing beyond the merged action comment; `tools/gas-model.mjs` and
     the schema carry both pieces' changes, checked hunk by hunk against each branch. (d) The two claims agree: the floor
-    claims lists of up to 1,024 entries and covers up to 4,096 (`FloorSplit.t.sol`), and the gas model's
+    claims lists of up to 1,024 entries and covers up to 4,096 (`FloorSplit.t.sol`; as stated then: since the list
+    release the limits beyond the claim are 3,586 entries on prague and 8,191 on amsterdam), and the gas model's
     `laterLists.claimEntries` is 1,024 with its `beyondClaim` composites at 4,097 entries, excluded from the stated
     maxima. (e) `BuildGas.t.sol`'s bands hold on both profiles unchanged: formula 3 touches only the live fold's
     reservation, and the decoder's proved read moved the marginal figures by −137 to +709.
@@ -2006,3 +2037,23 @@ tested together on both schedules and regenerated once (tools/RELEASE.md items 4
     on amsterdam): the index serves the work model the ingress reads on every quote from a data contract, one EXTCODECOPY
     instead of storage reads.
 
+
+### The list release: generation 1 keeps `head-authors` (2026-11-26, branch `fable/2026-11-26-list`)
+
+46. **The list is generation 1's now, kept from genesis** (QUESTIONS Q52, ruled by James). `head-authors`, kind 22, is
+    declared by `IndexReads` in the genesis posting store from admission 1 (universe 3, HEADS) and folded by
+    `RealmIndex` with the fold of §2.2: a first HEAD statement appends it in the effect's one `appendBatch`, a restore
+    retains and a mask or release of a BOUND head releases through the helper (`_authorsList`) that names a position's
+    authors list for TAG and FOLDER (family 20) and for HEAD (family 22). A later generation can still drop it (it is its
+    own family: §5.3's dropped-list claim applies). The posting store's family capacity is 17 (generation 1 declares
+    sixteen posting families). `RealmIndex` 18,408 → 18,733 B.
+47. **The harness's example list is `file-versions`** (provisional kind 24): generation 1's `head-authors` kept a second
+    time under another id, in the third store (§2.2, "Landed (the list release)"). Every step-3b and step-4 test keeps
+    its meaning; the suites also compare the example list with generation 1's own, file by file.
+48. **What the build measured that moved** (`test/index/BuildGas.t.sol`, both schedules): +20 gas a HEAD publication's
+    marginal fold (the third store's write is unchanged; generation 1's own list is in the carried posting store, which
+    a build does not write) and +9,526 on the fixed share of a cold build call (the carried check decodes a copy of the
+    live manifest with one more family): create file 270,480 → 280,006 on prague, 276,680 → 286,206 on amsterdam. A cold
+    20-file segment: 9,674,178 → 9,684,204 on prague, 9,472,978 → 9,483,004 of execution on amsterdam. §6.2's
+    million-file totals are kept as the record the ruling was made on; with these units they would rise by about 0.3B
+    gas on each schedule (+0.06%, computed).

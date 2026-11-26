@@ -74,17 +74,29 @@ What this gives, with no new kernel code:
   path records gives a topic's children; slot 1 gives the topics whose own word is a given word, which is what a
   word's page shows (`TopicLookupReader.children`, `wordPage`).
 
-**Word rules, checked once per word, on the word page:** 1 to 255 bytes of well-formed UTF-8; no `/` or `\`, no
-ASCII control byte, no ASCII `A`–`Z`, no Unicode white space at all (every fold rule turns white space into `_`, so
-`tesla` followed by a no-break space could only be a look-alike); none of the refused code points (C1 controls,
-format and bidirectional controls, invisible separators, joiners and variation selectors, noncharacters); not `.`
-or `..`; not starting with `~`; not `0x` followed by 40 hex digits. The last two apply to every word, not only the
-first in a path, because every word has a root-level page. An address belongs in a tag as its target: tag the USDC
-contract's address under `/tokens/usdc`, never `/tokens/0xa0b8…`. The check costs about 121 gas per byte of ASCII
-and 478 per byte of multi-byte text. Everything else about folding (Unicode case, look-alike letters,
-normalisation) stays in the SDK; the chain cannot check it. The refused table is one constant
+**Word rules, checked once per word, on the word page:** 1 to 255 bytes of well-formed UTF-8; of ASCII only the 39
+characters `a`–`z`, `0`–`9`, `-`, `_` and `.`, so no capitals, no space, no control byte, no `/`, `\` or `~` and no
+other punctuation; never ending with `.` (so not `.` or `..`); no Unicode white space at all (every fold rule turns
+white space into `_`, so `tesla` followed by a no-break space could only be a look-alike); none of the refused code
+points (C1 controls, format and bidirectional controls, invisible separators, joiners and variation selectors,
+noncharacters); not `0x` followed by 40 hex digits. The ends-with-`.` and address rules apply to every word, not
+only the first in a path, because every word has a root-level page. An address belongs in a tag as its target: tag
+the USDC contract's address under `/tokens/usdc`, never `/tokens/0xa0b8…`; `0xsplits` is a word. The check costs
+about 121 gas per byte of ASCII and 478 per byte of multi-byte text. Everything else about folding (Unicode case,
+look-alike letters, normalisation) stays in the SDK; the chain cannot check it. The refused table is one constant
 (`TopicProfile.REFUSED`, from Unicode 15.1) shared with the SDK's vectors; it is hand-written until one generator
 produces it from a pinned Unicode version (Q53), so the three Topics Type ids are provisional until then.
+
+**The ASCII of a word: ruled on 2026-11-26.** James: "? # etc shouldn't be allowed as they are literally urlencode
+protected params. Nothing that breaks URLs. Nothing that breaks OS file paths." Later the same day he withdrew the
+operating-system test: "Don't refuse windows reserved names. I only care about URI safety and us having some
+delimiters we can use for URL syntax". So a word never needs escaping in a link, always means what it shows and leaves
+every delimiter free: `c++`, `c#`, `r&b` and `don't` are not words (the word is `cpp`, and its label says "C++"), and
+`~` appears nowhere in a word, while `.net`, `sci-fi`, `model_3` and `con` are words. A word also never ends with `.`
+(`inc.` is not a word): an auto-linker trims a full stop after a pasted link, so `/inc.` would open `/inc`. That
+rule is this design session's proposal, not a consequence of the ruling. Refusal code 4 now means "ends with `.`";
+code 5 (once "starts with `~`") is unused, because a `~` is refused as code 3 wherever it stands. A word also never starts with `-` (code 9; `-x`, `-` and `--x` are refused, `a-b`, `a-` and `a--b` are words): it keeps `-word` free to mean "not" in EFS link syntax, the founder's test that words leave delimiters free; this is the tag design session's default applied by the integration owner, not his words. File names keep a leading `-` (`-notes.txt`). Still open:
+the non-ASCII side (the generator of Q53 replaces the table, and the word Type's id moves once more).
 
 **Cost.** A word page is 0.54M alone and 0.21M as an extra action in a batch (1.65M / 0.70M on Glamsterdam). A path
 record is 0.65M alone and 0.28M in a batch (2.11M / 0.95M).
@@ -193,9 +205,22 @@ itself.
   bucket, so a targeted attack is not bounded.
 - **Every statement is reachable from its target, whatever its sign.** A lone "not nsfw" carries no target, so "what
   points at this" never shows it; the last list in the table fixes that for every kind of target.
-- **Not kept:** all-authors lists on HEAD (a storage slot per file, and nothing reads it), per-word lists of items,
-  and "where a name is used" for FOLDER.
-- **Can the HEAD list be added later? Yes, at a price, and with one condition.** Every list is derived from the
+- **Kept since the list release (2026-11-26):** everyone's versions of a file, the all-authors list on HEAD
+  (`head-authors`, family 22, its own family in the genesis posting store; James ruled to keep it from the start,
+  Q52). One entry per author's first HEAD statement on the file, either sign; `count` = the authors who ever stated a
+  version, `live` = the versions standing now. A client reads it with the index's generic list reads and
+  `LedgerViews.authorHeads` (no reader of its own). Measured: 26,054 gas a new file on prague, 16,154 of execution plus
+  97,920 of state gas on amsterdam; an edit pays nothing. No reader enforces the list's rules, so a client does: (1) it
+  answers UNKNOWN unless the list's coverage (the first field `postingHeadOf` returns) is COMPLETE, never "no other
+  versions"; (2) "N versions" is `live`, never `count`, which includes authors who only said no and versions masked or
+  released; (3) the order is each author's first HEAD statement, not their latest edit, so "newest author first" reads
+  from the end and a page is sorted by the heads it fetched; (4) the list is public-tier: anyone adds an entry with one
+  HEAD statement from a fresh account (a yes needs a revision record naming the file, a lone no only that the subject is
+  a file), 550,965 gas for a lone no and 965,468 for a yes with its revision on prague (1.80M and 3.31M in all on
+  amsterdam), so lens authors' versions come first and the rest are labelled public.
+- **Not kept:** per-word lists of items, and "where a name is used" for FOLDER.
+- **Could the HEAD list have been added later? Yes, at a price, and with one condition** (the measurement the
+  Q52 ruling was made on; the list is now kept from genesis, above). Every list is derived from the
   kernel's permanent record of statements, so a later index generation can add a list and build it from history
   into a fresh store before it is switched on. That build step is written and tested: a test harness generation
   carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
@@ -473,7 +498,7 @@ Still not built: `web3://` topic paths and `directory-alias/1` pointing at a hom
 later index generation; the generator for the refused code point table.
 
 Everything moved in the release: the layout id, the hot ABI id, the execution set, the index manifest, the plan
-hash, the Type id of `files-name/2` and the three new Types, and nearly every address (tools/RELEASE.md, the identity
+hash, the Type id of `files-name/2` (since replaced by `files-name/3`) and the three new Types, and nearly every address (tools/RELEASE.md, the identity
 table).
 
 ## 13. For James
@@ -485,11 +510,13 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
    with a nonzero number. *Recommend keeping it.* (Q49)
 2. **A tag can only be filed under a registered topic or an address.** A chess app that wants tag-like links on its
    own ids uses its own kind of link, at the same cost. *Recommend keeping it.* (Q50)
-3. **No word may start with `~`, look like an address or contain white space,** anywhere in a path. *Recommend
-   keeping it.* (Q51)
+3. **No word may contain `~` or any ASCII punctuation but `-`, `_` and `.`, end with `.`, look like an address or
+   contain white space,** anywhere in a path. The 39 ASCII characters apply your 2026-11-26 ruling; the trailing `.`
+   is this session's proposal (an auto-linker trims it); the non-ASCII side is open. *Recommend keeping it.* (Q51)
 4. **Settled (2026-11-26): keep everyone's versions of one file listed from the start.** James ruled yes ("we
-   definitely need a good 'show all' view from the start"; Q52); the list is built in the next release. The figures
-   it was decided on: keeping it costs a storage slot for every file ever created: 25,675 gas per file today in the
+   definitely need a good 'show all' view from the start"; Q52); the list is built in the list release (`head-authors`,
+   family 22: 26,054 gas a new file today, 16,154 of execution plus 97,920 of state gas on Glamsterdam, measured). The
+   figures it was decided on: keeping it costs a storage slot for every file ever created: 25,675 gas per file today in the
    store a HEAD statement already writes (measured; about 1.6% of creating a file; 51k as measured in a separate third
    store; 114k to 150k on Glamsterdam). Adding it later is possible and measured at about 479k per file today (578k on
    Glamsterdam), 9.3 to about 19 times as much, paid at once: 4.8 billion gas for 10,000 files, 479 billion for a

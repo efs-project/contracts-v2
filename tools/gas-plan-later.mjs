@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 // The planning rule (tools/gas-plan.mjs, unchanged) applied to the work model of a generation that adds one list LATER
-// (docs/INDEX-BUILD.md §6, step 4, part D): the example generation of step 3b, `head-authors` in a third store
-// (test/harness/HeadAuthors.sol `HeadAuthorsGenesis.workModel`). Under work-model formula 3 the list's reservation is
-// the HEAD purpose surcharge, so only HEAD statements pay it (under formula 2, which had no per-purpose term, it was
-// charged on every bind-kind action). For each shape it prints the largest publication the rule plans under
+// (docs/INDEX-BUILD.md §6, step 4, part D): the example generation of step 3b, `file-versions` in a third store
+// (test/harness/HeadAuthors.sol `HeadAuthorsGenesis.workModel`; generation 1's own `head-authors` list kept a second
+// time under another id). Under work-model formula 3 the list's reservation is added to the HEAD purpose surcharge
+// (generation 1's, for `head-authors`), so only HEAD statements pay it (under formula 2, which had no per-purpose term,
+// it was charged on every bind-kind action). For each shape it prints the largest publication the rule plans under
 // generation 1's model (gas/model.json as committed) and under the example generation's, on both schedules.
 //
 // Two readings of the example generation:
@@ -21,18 +22,19 @@ import { PURPOSE, planner, shapes } from "./gas-plan.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** HeadAuthorsGenesis.workModel(): generation 1's model with this surcharge on HEAD (formula 3). */
+/** HeadAuthorsGenesis.workModel(): generation 1's model with this ADDED to its HEAD surcharge (formula 3). */
 export const EXAMPLE_SURCHARGE = {
-  surchargePurpose: PURPOSE.HEAD, surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 27_000,
+  surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 27_000,
   surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 10, surchargeComputeLater: 27_000,
 };
 
-/** The list's live execution gas per HEAD statement (measured cold, test/index/HeadAuthorsFloor.t.sol, E of the example
- *  generation − E of generation 1, the same shape from the same state): a first statement on a new list (create file),
+/** The example list's live execution gas per HEAD statement (measured cold, test/index/HeadAuthorsFloor.t.sol, E of
+ *  the example generation − E of generation 1, which keeps head-authors itself, the same shape from the same state;
+ *  re-measured at the list release): a first statement on a new list (create file),
  *  a later statement's counter (mask / release / restore of a BOUND head), a re-bind (an edit). */
 export const LIST_LIVE = {
-  prague: { first: 41_683, later: 23_100, rebind: 1_149 },
-  amsterdam: { first: 32_195, later: 30_712, rebind: 1_149 },
+  prague: { first: 41_715, later: 23_092, rebind: 1_137 },
+  amsterdam: { first: 32_215, later: 30_692, rebind: 1_149 },
 };
 
 /** The model with the example generation's work model on both schedules (and, with `list`, the list's E per HEAD
@@ -40,7 +42,9 @@ export const LIST_LIVE = {
 export function exampleModel(model, { list = false } = {}) {
   const m = structuredClone(model);
   for (const [schedule, p] of Object.entries(m.profiles)) {
-    Object.assign(p.floor.workModel, EXAMPLE_SURCHARGE);
+    const wm = p.floor.workModel;
+    if (wm.surchargePurpose !== PURPOSE.HEAD) throw new Error(`${schedule}: generation 1's surcharge is not HEAD's`);
+    for (const [k, v] of Object.entries(EXAMPLE_SURCHARGE)) wm[k] += v;
     if (!list) continue;
     const l = LIST_LIVE[schedule];
     const exec = schedule === "prague" ? p.constants : p.split.executionGas;

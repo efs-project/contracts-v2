@@ -28,3 +28,39 @@ export function fixedFrom(impliedFixedByPair) {
   for (const k of FIXED_ANCHORS) assert.ok(Number.isFinite(impliedFixedByPair[k]), `no anchor pair "${k}" (FIXED_ANCHORS in tools/gas-fit.mjs)`);
   return median(FIXED_ANCHORS.map((k) => impliedFixedByPair[k]));
 }
+
+// ---- the stated bound (tools/gas-model.mjs refuses a model that breaks it; the integration owner's ruling of 2026-11-26)
+// UNDER-predictions are bounded at limitPercent everywhere (all gas on every schedule, execution gas on amsterdam).
+// OVER-predictions are bounded at limitPercent on the gas the 2^24 cap counts: all gas on prague, execution gas on
+// amsterdam. Amsterdam's ALL-gas over-prediction is bounded per composite at limitPercent plus, over its measured gas,
+// its count of later statements × one fresh slot's state gas (the schedule's freshSlot.stateGas): a later row is
+// measured at the dearest state of lists a planner cannot see (a backlink or history word that opens), and on amsterdam
+// one such word is a fresh slot of state gas and no execution gas, so a composite whose statements open none is
+// over-stated by up to one slot a statement. A composite over-predicted for any other reason is refused as before.
+
+/** The all-gas over-prediction bound of one amsterdam composite, in percent of its measured gas. */
+export function allGasOverBoundPercent(v, limitPercent, freshSlotStateGas) {
+  return limitPercent + ((v.laterStatements ?? 0) * freshSlotStateGas * 100) / v.measured;
+}
+
+/** Every bound a profile's composites break (empty when none), for the composites the maxima count. */
+export function overBound(profiles, { limitPercent, freshSlotStateGas }) {
+  const out = [];
+  for (const [name, p] of Object.entries(profiles)) {
+    const amsterdam = name === "amsterdam";
+    for (const k of ["maxUnderErrorPercent", "maxUnderExecutionErrorPercent", ...(amsterdam ? ["maxOverExecutionErrorPercent"] : ["maxOverErrorPercent"])]) {
+      if (p[k] !== undefined && p[k] > limitPercent) out.push(`${name} ${k} ${p[k]}% exceeds ${limitPercent}%`);
+    }
+    for (const v of p.validation) {
+      if ((p.maximaExcludeStates ?? []).includes(v.state)) continue;
+      if (-v.errorPercent > limitPercent) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: under-predicted ${-v.errorPercent}%, over ${limitPercent}%`);
+      if (v.executionErrorPercent !== undefined && Math.abs(v.executionErrorPercent) > limitPercent) out.push(`${name} "${v.key}" execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: ${v.executionErrorPercent}% exceeds ±${limitPercent}%`);
+      if (!amsterdam && v.errorPercent > limitPercent) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: over-predicted ${v.errorPercent}%, over ${limitPercent}%`);
+      if (amsterdam) {
+        const bound = allGasOverBoundPercent(v, limitPercent, freshSlotStateGas);
+        if (v.errorPercent > bound) out.push(`${name} "${v.key}" all gas over-predicted ${v.errorPercent}%, over its bound ${bound.toFixed(2)}% (${limitPercent}% + ${v.laterStatements ?? 0} later statements × ${freshSlotStateGas} state gas)`);
+      }
+    }
+  }
+  return out;
+}

@@ -35,6 +35,18 @@ derivation, the purposes, and the ABI encodings (`actionsHash`, `bodiesHash`) of
 `pnpm release:check` compares it byte for byte, and `test/profiles/TopicVectors.t.sol` asserts every vector against the
 rules, `TopicProfile`, `EfsTopics` and `Keys`; `node tools/topic-vectors.mjs` writes it alone from the current build.
 
+## name-vectors.mjs
+
+File name vectors (`test/vectors/names.json`, `efs/vectors/names/1`): the `files-name/3` grammar's verdict on about
+600 names (every ASCII byte alone and at the start, middle and end of a name, the trailing `.` cases, the examples of
+the 2026-11-26 rulings, Windows device names as ordinary names, the `~efs` prefix, the length boundaries, and the 50
+naming-experiment vectors of `test/profiles/FilesNameVectors.sol`, which it reads and refuses to contradict), with each
+name's role and each admitted name's record id for the release Type id. Computed in JS (viem's keccak256, and the
+grammar written from the NatSpec of `src/profiles/FilesNameRule.sol`). `pnpm release` writes it, `pnpm release:check`
+compares it byte for byte, and `test/profiles/NameVectors.t.sol` asserts every vector against `FilesName.valid`,
+`FilesNameRule` and `Keys`; `node tools/name-vectors.mjs` writes it alone from the current build and `--check 1`
+compares it.
+
 ## media-vectors.mjs
 
 Media-type vectors for the two content descriptors (`test/vectors/media.json`, `efs/vectors/media/1`): encoded
@@ -49,14 +61,16 @@ changes whenever a Files rule's code does.
 
 The planning rule of `gas/model.json` (design §10.4; [RELEASE.md](RELEASE.md) "The floor and the planning rule"): a
 reference implementation for the SDK's planner that reads only the model it is given (`planner(model, schedule)`:
-`quote`, `check`, `largest`), and the eleven shapes `test/integration/FloorPlan.t.sol` proves. `pnpm release` writes
+`quote`, `check`, `largest`), the history-word correction of a later statement that carries `revisionBefore`
+(`historyWordAdds`, symmetric, from `laterRows`), and the twenty-two shapes `test/integration/FloorPlan.t.sol` proves. `pnpm release` writes
 `test/vectors/floor-plan.json` from it (`planVectors`), `pnpm release:check` compares it byte for byte, and
 `tools/test/gas-plan.test.mjs` tests the rule.
 
 ## gas-plan-later.mjs
 
 The planning rule of `gas-plan.mjs`, unchanged, on a copy of `gas/model.json` whose `floor.workModel` is that of a
-generation that adds one list later (the `head-authors` example of docs/INDEX-BUILD.md §2.2, a test harness), for the
+generation that adds one list later (the `file-versions` example of docs/INDEX-BUILD.md §2.2, a test harness: a second
+copy of generation 1's `head-authors`, whose reservation it adds to generation 1's HEAD surcharge), for the
 reservation part of that list's price (docs/INDEX-BUILD.md §6.2): the largest planned publication of five shapes under
 generation 1's model and under the example's. `node tools/gas-plan-later.mjs [--json]`; it writes nothing and no gate
 runs it.
@@ -75,8 +89,11 @@ state override, with `eth_simulateV1` (validation on) and with plain `eth_call` 
 The anchor rule of `gas/model.json`'s `fixed` term: `FIXED_ANCHORS` (the k1/k2 pairs the model had at `899767e`) and
 `fixedFrom(impliedFixedByPair)`, the median of `2·k1 − k2` over the anchors only. A row added to the model is fitted
 as its own constant and keeps its implied fixed cost in `fit.impliedFixedByPair`, but it is not an anchor, so it never
-changes `fixed` or the price of any existing action. `tools/gas-model.mjs` imports it; `tools/test/gas-fit.test.mjs`
-fails if a non-anchor pair moves `fixed`.
+changes `fixed` or the price of any existing action. It also holds the stated bound (`overBound`,
+`allGasOverBoundPercent`): under-predictions above 15% are refused everywhere, over-predictions above 15% of the gas the
+2^24 cap counts, and amsterdam's all-gas over-prediction per composite above 15% plus its later statements × one fresh
+slot's state gas over its measured gas. `tools/gas-model.mjs` imports it; `tools/test/gas-fit.test.mjs` fails if a
+non-anchor pair moves `fixed` and tests the bound at its edge.
 
 ## attrib.mjs
 

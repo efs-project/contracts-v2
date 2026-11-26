@@ -50,8 +50,77 @@ tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --j
 
 ## What changes for a consumer in this release
 
-**This release IS a re-vendor point.** The SDK is pinned to `3ca53ba` ("Merge the final step: liveness gate, fold-hook
-refusal, reader rule, Glamsterdam floor price"); this release (items 42 to 48) moves it to this bundle's head: work-model
+**This release IS a re-vendor point: the list release** (items 49 to 59, against `6d11858`, the SDK's current pin).
+Re-vendor `release/`, `artifacts/`, `deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/` (no
+snapshot changed), `vectors/layout.json` (unchanged) and `test/vectors/` together, and re-pin every value of "The
+identity table" below, which compares against `6d11858`. What a consumer must change, as one list:
+
+- **Remove the interim rules when you vendor this model; keeping them double-counts.** Three end here:
+  - the **"yes after a lone no" rule** (two fresh slots added by hand: the kernel's to E and K, the index's history
+    word to E when the revision before is 1 or a multiple of 5). Replaced by the `bind<Purpose>AfterNo` rows and their
+    tier constants (item 57), selected from the head the planner reads: a BIND on a MASKED or RELEASED head with
+    `targetKind == 0` (it never bound) is `bind<Purpose>AfterNo`; both slots are in the row (its kernel slot in
+    `floor.kernel`), measured at revision 1, and another position is corrected by `historyWordOpen`;
+  - the SDK's **"+1 kernel rewrite in K for a FOLDER BIND on a MASKED or RELEASED head"** (`targetKind != 0`).
+    Replaced by the re-measured `restoreFolder` and its tiers (and the new `restoreProperty`, `restoreHead`), measured
+    restoring to a NEW target already placed elsewhere, so the kernel's rewrite is in the row and in `floor.kernel`;
+  - the SDK's **"never subtract"** rule for the history word. Replaced by the symmetric correction (`laterRows.rule`,
+    `tools/gas-plan.mjs` `historyWordAdds`): add `historyWordOpen` when the position opens a word and the row's
+    `opensHistoryWord` is false, subtract it when the row's is true and the position opens none; without
+    `revisionBefore` use the row as it is. Safe because the kernel refuses a stale `expectedRevision` for BIND, UNBIND
+    and RELEASE alike (`E_CAS`, item 57).
+- **New gas-model fields and constants** (item 57; `efs-gas-model/1`, all required): top-level `laterRows` (`rule`,
+  `note`, `historyWordConstant`, `rows`: every later row's `revisionBefore`, `opensHistoryWord`, `target`, and a `note`
+  on the new-target restore rows); per profile `maxOverErrorPercent`, `maxOverErrorComposite`, on amsterdam also
+  `maxOverExecutionErrorPercent`, `maxOverExecutionErrorComposite`; per composite `laterStatements` and, on amsterdam,
+  `allGasOverBoundPercent`; validation state `withinClaim`; 26 new constants (the 18 `bind<Purpose>AfterNo` rows and
+  tiers, `restoreProperty` and its two tiers, `unbindHead`, `releaseHead`, `restoreHead`, `restoreTagAtHistoryWord`,
+  `historyWordOpen`), each its own pair, none an anchor. **`restoreFolder` and its three tier constants changed meaning
+  and value** (a restore to a new target; prague +3,081 to +3,093, amsterdam +10,293 to +10,305 of all gas, all of it
+  execution and kernel share).
+- **The stated maxima and their bounds** (item 57): prague `maxUnderErrorPercent` 9.68% and `maxOverErrorPercent`
+  11.15%, both bounded at 15%; amsterdam `maxUnderErrorPercent` 6.63%, `maxUnderExecutionErrorPercent` **10.52%**,
+  `maxOverExecutionErrorPercent` 13.89%, all bounded at 15%, and `maxOverErrorPercent` (all gas) **18.42%**, stated with
+  a per-composite bound (15% + later statements × 97,920 state gas over measured). `maxAbsErrorPercent` is the larger of
+  the two all-gas figures (18.42 on amsterdam). **The SDK tripwire on amsterdam's execution under-prediction fires at
+  10.74%: 0.22 points to spare.** A headroom check reads the under-prediction fields as before.
+- **K is low for large publications by a term in n² of the action count** (item 57; modelled at the next
+  regeneration): model K against the measured kernel gas, prague / amsterdam: 16 creates with no name PUBLISH
+  (64 actions) −257,968 (−2.70%) / −258,724 (−3.76%) at removed names, −255,992 (−2.22%) / −256,784 (−3.34%) at fresh
+  names; 25 moves with no name PUBLISH −184,567 (−4.20%) / −184,467 (−4.46%) into removed names, −182,831 (−2.44%) /
+  −182,431 (−3.40%) to fresh names; 12 creates with the name PUBLISH (60 actions) −278,042 (−3.28%) / −278,874 (−4.43%)
+  at removed names. V is low by the same term. The exposure: a batch planned at the edge of the cap may be refused at
+  send-time as over the cap and re-split; it is never sent short. E carries the same term inside its stated
+  under-prediction figures. `FloorPlan.t.sol` executes every planned shape's largest batch for real on both schedules,
+  which is the guard (item 51).
+- **Worst-case rows** (item 57): every restore and yes-after-no row prices its target's backlink word opening, which a
+  planner cannot see; elsewhere it over-prices by one slot (prague 17,073; amsterdam 97,920 of state gas). The worst
+  over-statement of a total for these shapes is about 1.18× of amsterdam all gas.
+- **Everyone's versions of a file** (item 49): read `head-authors` (family kind 22) with the generic posting reads and
+  `LedgerViews.authorHeads`; a client answers UNKNOWN unless coverage is COMPLETE, counts versions with `live`, reads
+  the order as first statements, and labels non-lens authors public.
+- **Work-model values** (item 50): the later row `30, 50, 78,000`; the HEAD surcharge (`surchargePurpose` HEAD) first
+  `10, 10, 4,500` and later `0, 10, 10,000`. A planner that reads `floor.workModel` needs no code change; one that
+  compares the surcharge purpose must use plain equality (item 52).
+- **Words and names** (items 53, 54): `topic-word/1` keeps its label and changes its rule and Type id (39 ASCII
+  characters; codes 3, 4, 9; 5 unused); file names are `files-name/3` (the label changed): the SDK's `checkWord` and
+  name check change as items 53 and 54 say, with `test/vectors/topics.json` and the new `names.json`.
+- **The gateway** (item 55): a first segment starting `0x` that is not `0x`/`0X` + 40 hex is a topic path, answered
+  `501 topic paths are not served` (the gateway serves no topic pages in this release).
+- **Batch sizes** (item 51): prague masks, releases and masks of masks 58 → 54, restores 51 → 48, create files 10 → 9;
+  amsterdam masks, releases and masks of masks 55 → 54, restores 51 → 50; five new planned shapes; every other shape
+  unchanged.
+- **New and changed codes** (`release/errors.json`): `E_TOPIC_REFUSED`'s codes 3, 4 and 9 (5 unused). No ABI changed.
+
+What did not change: the layout id, the hot and store ABI ids, every ABI, the kernel, the ledger's and every genesis
+address, the realm id, the limits, every read bound, the seed (item 59).
+
+**The previous re-vendor point, `6d11858`** (items 42 to 48; the SDK's current pin): what changed for a consumer at
+that release, against `3ca53ba`, kept as it was stated then. Its interim rule for a yes after a lone no ENDS with the
+list release above.
+
+At `6d11858`: the SDK was pinned to `3ca53ba` ("Merge the final step: liveness gate, fold-hook
+refusal, reader rule, Glamsterdam floor price"); that release (items 42 to 48) moved it to that bundle's head: work-model
 formula 3, the Type registry rule, the kept-index fix and the gas model's list tiers, built and regenerated together.
 Re-vendor `release/`, `artifacts/`, `deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/`,
 `vectors/layout.json` and `test/vectors/` together, and re-pin every value of "The identity table" below, which compares
@@ -74,7 +143,7 @@ against `3ca53ba`. What a consumer must change, as one list:
   `<row>`). A planner passes `firstAtPlace` (no earlier later statement of the same publication at the same (purpose,
   subject); default true) and `entries` (the author's entry count at the place; **default: unknown, the long tier**). **A
   stale count is treated as unknown** (a count lower than the truth under-prices by up to 21.2%).
-- **Interim rule for a yes after a lone no** (item 42; ruled, to be replaced by the list release's rows). A planner
+- **Interim rule for a yes after a lone no** (item 42; **ENDED by the list release: remove it**, item 57). A planner
   tells the shape from the head it already reads: **`state != UNSET && targetKind == 0`** is a head that never bound
   (`Head.targetKind` is served as stored, `src/interfaces/Views.sol`; `target` is canonical and is 0 for every masked
   or released head, so it cannot tell a lone no from a masked yes). A BIND on such a head adds fresh slots at the
@@ -92,8 +161,9 @@ against `3ca53ba`. What a consumer must change, as one list:
     revision 1 this is the yes directly after a lone no: two slots in all.
   A planner that adds both slots for every never-bound head over-prices the later variants by one slot (the safe
   side). With the rule, the SDK's planner plans the largest batch of this shape at 46 on prague and 48 on amsterdam
-  (51 without it; bounded by V once K carries the head's slot). The rule ends when the vendored `gas/model.json`
-  carries the proper rows.
+  (51 without it; bounded by V once K carries the head's slot), at the formula-3 release; with the list release's
+  later row `tools/gas-plan.mjs` plans it at 45 and 48 with the rule (48 and 50 without it; item 51). The rule ends
+  when the vendored `gas/model.json` carries the proper rows (the list release's second piece).
 - **New error and reason codes** (`release/errors.json`): `E_WORK_MODEL(uint8 code, uint256 value)` (new error: 1 the
   read failed, 2 the reply is not 32 words, 3 `formulaVersion` is not 3); `E_INDEX_NOT_READY` 15 (the index's work model
   is not 32 words of the ingress's formula) and 16 (a word does not fit its field), checked for a kept index and a new
@@ -125,7 +195,7 @@ every read bound and recommended read limit on both schedules. Every genesis add
 (the ingress, the control delegate and the decoder changed; the control delegate embeds the ingress's address, the ledger implementation both, and genesis the implementation's); recompute them for any
 other `(chainId, realmSalt)` with `tools/deploy-plan.mjs`.
 
-### The final step (the SDK's current pin, `3ca53ba`, against `cbf5b78`)
+### The final step (an earlier SDK pin, `3ca53ba`, against `cbf5b78`)
 
 What `3ca53ba` changed against `cbf5b78` (items 32 to 41), kept for a consumer still on `cbf5b78`; every value it names
 is superseded by this release's identity table.
@@ -288,7 +358,7 @@ rule: inside `planning.limits` and `max(E, V) ≤ ⌊2^24 × (100 − headroomPe
 terms `tagLevel.{mineNew,mineExisting,sharedNew,sharedExisting}`, `bindTagFresh`, `bindTagSecondAuthor`, and the
 price-as-new rule `priceAsNew`) and `reads` (the topic readers' fitted terms, bounds per lens size and `recommended`
 limits). `tools/gas-plan.mjs` is the reference planner (it reads only the model; `test/vectors/floor-plan.json` its
-verdicts for seventeen shapes); the SDK's planner must reproduce it.
+verdicts for twenty-two shapes since the list release); the SDK's planner must reproduce it.
 
 **13. The work model in plain terms** (formula 2, `formulaVersion = 2`). The kernel reserves gas for the index's final
 phase per bind-kind action (`finalComputePerBind`): it was **120,000 in the release the SDK vendors now and is
@@ -369,57 +439,50 @@ Newly done in this release (items 42 to 47):
   9.69% on prague, 10.65% of execution gas on amsterdam), and the headroom check reads the under-prediction fields. A
   yes after a lone no has no composite and is outside those figures (item 42).
 
+Newly done in the list release (items 49 to 59):
+
+- **The per-purpose surcharge's use: the all-authors HEAD list** (item 49; QUESTIONS Q52, ruled by James on
+  2026-11-26). Generation 1 keeps `head-authors` (family kind 22, everyone's versions of a file) from genesis, as its
+  own family in the genesis posting store, with the work model still served from a data contract; the HEAD
+  surcharge reserves for it with rows measured on the real code (item 50).
+- **The later row made true** (item 50; ruled by the integration owner): 3.0 fresh slots, 5.0 rewrites and 78,000 of
+  compute fitted by measurement, so a yes after a lone no is covered within the claim on both schedules at the floor's
+  per-action margin and is no longer an exception; `src/interfaces/Index.sol`'s comment on the rows says what is now
+  measured (the slot counts are the largest a statement of the class writes).
+- **The planner's surcharge comparison** (item 52): `tools/gas-plan.mjs` applies the surcharge on plain equality with
+  `surchargePurpose`, as the ingress does.
+- **The gas model's rows for a yes after a lone no** (item 57): `bind<Purpose>AfterNo` for every purpose, with their
+  tiers; the no → release → yes and no → no → yes variants, the folders (measured, not assumed) and the lone-no batches
+  as composites inside the stated maxima; the interim consumer rules end.
+- **The planner reads the shape by `targetKind`** (item 57): `state != UNSET && targetKind == 0` is a head that never
+  bound, pinned by `test/readers/HeadTargetKind.t.sol` over five sequences; every later row states the position it was
+  measured at (`laterRows`), and the symmetric history-word correction makes another position exact.
+- **HEAD later rows** (item 57): `unbindHead`, `releaseHead`, `restoreHead` (to a new revision) and `bindHeadAfterNo`.
+- **The `Index.sol` comment on the later row** (item 50) and **the gateway's header comment on a first segment starting
+  `0x`** (item 55): both now say what the code does.
+
 **Open:**
 
-- **The per-purpose surcharge's use: the all-authors HEAD list** is ruled (QUESTIONS Q52, answered yes by James on
-  2026-11-26) and is built in the next release, as its own family, with the work model served from a data contract as
-  it is now. The surcharge itself is built (formula 3, item 42; zero for generation 1).
-- **The list release: make the later row true, and give the gas model rows for a yes after a lone no** (item 42;
-  ruled for the next regeneration). (1) The later row's fresh count goes to 3.0 with its compute fitted BY
-  MEASUREMENT, and it must clear the 1.05 assertion of `test_split_claim_restores_across_lists_at_the_claim` on both
-  schedules. The starting evidence, two candidate rows (fresh ×10, rewrites ×10, compute); quotes computed from the
-  formula and `GAS_SCHEDULES`, ratios computed from the measured per-statement spends of `FloorSplit.t.sol`, batch
-  sizes from `tools/gas-plan.mjs` over the committed `gas/model.json` with `floor.workModel` overridden in a scratch
-  run (nothing committed was regenerated):
+- **Model the kernel's n² term, together with the long-tier rows, at the next regeneration** (item 57). The model's
+  rows are 1 → 2-action marginals, so K, V and E are low for large publications by about 60 to 85 × n² gas (n the
+  publication's actions; memory expansion, confirmed from one trace; `test/integration/KernelGrowth.t.sol` measures the
+  slope on both schedules, so the term can be fitted from data already in the suite). Re-check every stated maximum
+  with it, including the 0.22-point margin between amsterdam's execution under-prediction (10.52%) and the SDK
+  tripwire's firing point (10.74%). Until then `FloorPlan.t.sol` executing every planned shape's largest batch on both
+  schedules is the guard (item 51).
 
-  | row | quote p / a | yes after a lone no, 1,025 | claim restore, 1,025 | claim mask, 1,025 | restore at 4,096 | restore at 4,097 |
-  |---|---:|---:|---:|---:|---:|---:|
-  | released (20, 50, 85,000) | 162,200 / 177,700 | 0.955 / 1.052 | 1.062 / 1.052 | 1.190 / 1.094 | 1.008 / 1.003 | 0.995 / 0.991 |
-  | (30, 50, 72,500) | 171,800 / 177,300 | 1.012 / 1.050 | 1.126 / **1.0497** | 1.261 / 1.092 | 1.068 / 1.001 | 1.055 / 0.990 |
-  | (30, 50, 79,000) | 178,300 / 183,800 | 1.051 / 1.089 | 1.168 / 1.088 | 1.309 / 1.132 | 1.108 / 1.038 | 1.095 / 1.026 |
-
-  The first candidate fails the claim test on amsterdam (1,049 thousandths against 1,050). Largest planned batches,
-  released → (30, 50, 72,500) → (30, 50, 79,000): prague tag masks and masks of masks 58 → 55 → 54, releases 58 → 56
-  → 54, restores 51 → 49 → 48; amsterdam masks, releases and masks of masks 55 → 55 → 54, restores 51 → 51 → 49;
-  every other planned shape unchanged. (2) The gas model's rows for a yes after a lone no, for every purpose that has
-  restore rows, with their tiers; the no-then-release variant; folders (a hide of an entry never bound, then a bind:
-  to be measured, not assumed); and composites for them inside the stated maxima, so the maxima are honest again.
-  Today the restore rows are two fresh slots short for this shape (item 42: −21.57% prague all gas at the worst
-  measured composite, −29.74% amsterdam all gas, −11.47% amsterdam execution gas), and the interim consumer rule of
-  this release ends with these rows. (3) The `src/interfaces/Index.sol` comment on the later row ("the largest
-  measured for the class") is corrected with them: it is hashed into the release, so it waits for that regeneration.
-  (4) A planner must be able to see which shape it has, and it can, with no new read: `Head.targetKind` is 0 exactly
-  for a non-UNSET head that never bound, and the head's revision gives the statement's position. The list release
-  pins that with a reader test over five sequences (a lone no; no, release; no, no; yes, mask; yes, release), and
-  every later row in `gas/model.json` states the statement position it was measured at as a field, so a planner
-  never adds a slot by hand.
-- **The gateway's header comment on a first segment starting `0x`.** `src/periphery/EfsWeb3Gateway.sol`'s NatSpec says
-  any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id"; when it serves topics the gateway
-  follows the chain's word rule 6 (only `0x` followed by 40 hex digits is refused). The comment is hashed and is
-  corrected in the next release (handled on another branch).
 - **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
-  it covers up to 4,096 and stops covering from 4,097 (measured: 1.008 at 4,096, 0.995 at 4,097 on prague; 1.003 and
-  0.991 on amsterdam). The entry search (`RealmIndex._entryIndex` bisects the author's scope list, one store call per
-  probe: about 2.2k per doubling within one place, 4.2k to 5.1k across places) is what makes a later statement grow with
-  the list; reading a whole word of five entries per probe near the end of the search, or storing a binding's entry
+  since the list release (item 50) it covers every later statement across places up to 3,586 entries on prague (a yes
+  after a lone no stops from 3,587: 1.007, then 0.996) and up to 8,191 on amsterdam (that yes and a restore of a far
+  entry stop from 8,192: 1.008 and 1.007, then 0.997 and 0.996); before it, up to 4,096 on both (0.995 / 0.991 at
+  4,097). The entry search (`RealmIndex._entryIndex` bisects the author's scope list, one store call per probe, each
+  probe reading the word that holds its entry: about 2.1k per probe and 2.0k per distinct word across places, so a list's
+  cost goes with its probes and words, not only its length) is what makes a later statement grow with the list; reading a whole word of five entries per probe near the end of the search, or storing a binding's entry
   index, would shorten or remove it. An index change for a later generation (docs/WORK-MODEL-V3.md, "Landed").
 - **A planned full batch that meets lists longer than the planner knows.** A planner cannot see list lengths it has not
   read; a batch planned at its largest size whose statements hit lists beyond what the planner knows can need more
   execution gas than the plan assumed. If that passes the 2^24 cap, `eth_estimateGas` fails and the publication is
   refused at send-time as over the cap, nothing sent; the sender then plans it again in smaller parts.
-- **HEAD has no mask, release or restore row in the gas model.** A HEAD scope list holds at most one entry per author,
-  so a HEAD later statement is always the short tier at its own place, but the model has no row that measures one (only
-  `bindHeadRebind`); a planner prices a HEAD mask, release or restore from the nearest row it has.
 - **The digest-spec case (d)**: a digest spec rebuilt in a fresh store (docs/INDEX-BUILD.md §8 test 9).
 - **A manifest copy over 24,575 B** is refused, not split (docs/INDEX-BUILD.md §10 item 34).
 - **A real chain's deployment document must describe that chain, read from the chain.** Today only the fixture tool
@@ -439,8 +502,18 @@ Newly done in this release (items 42 to 47):
   Realm exists today, so nothing has to move.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three. The fold rule is ruled
-  (QUESTIONS Q53, 2026-11-26); the word rule and the generator change in the next release. Until then the
-  `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
+  (QUESTIONS Q53, 2026-11-26). The generator's inputs are committed in the SDK repository (its
+  `docs/design/word-characters/generator/`); it waits on the founder's answer on unassigned code points and is not
+  built in this release. Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
+- **The gateway serves no topic pages** (item 55). Every topic path answers `501 topic paths are not served`. A known
+  gap, not ordered.
+- **The non-ASCII side of the word rule** (item 53). The ASCII side of `topic-word/1` is ruled and built (the 39
+  characters, no trailing `.`); the non-ASCII side (a proposal to refuse punctuation, symbols and separators outside
+  ASCII, under the SDK's evaluation, with the generator above) changes the word rule's code, and so the `topic-word/1`
+  Type id and every topic id, once more in a later release.
+- **Names that differ only by capitals or normalization** (QUESTIONS Q7, item 54). Two names that differ only by
+  capitals or by Unicode normalization (`Report.txt` and `report.txt`) are still two distinct names on chain, which
+  stores and compares names byte for byte. Q7 stays open until before any lasting deployment.
 - **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
   16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
 
@@ -902,7 +975,7 @@ and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the `src
 order fix (item 38) `TopicLookupReader` is 17,081 B (2,579 left) and its address `0xE32505C0…d5De`; the read rows of
 `about` fell by 273 to 813 gas and `placeCount`'s rose by 3, and no read bound or recommended limit moved.
 
-### This release: formula 3, the registry rule, the kept-index fix and the list tiers (against `3ca53ba`)
+### The previous release, `6d11858`: formula 3, the registry rule, the kept-index fix and the list tiers (against `3ca53ba`)
 
 Three pieces (formula 3; the registry rule with the kept-index fix; the list tiers), each reviewed alone, built and
 tested together on both schedules and regenerated once
@@ -919,16 +992,20 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
   a later statement. A reader that finds the manifest's profiles from the raw reply finds them at words 36 and 37.
 - **Each BIND, UNBIND or RELEASE adds one row by class:** first statement (the author's head UNSET), re-bind (a BIND on a
   BOUND head: a new target, or the same target with a new number), or another later statement (a mask, a release, a
-  restore; a RELEASE always). When the action's purpose word equals `surchargePurpose` (never when it is zero), the
-  surcharge's row of the same class is added too. With no principal (`indexFloor`), every bind adds the largest of the
+  restore; a RELEASE always). When the action's purpose word equals `surchargePurpose` (plain equality, as the kernel
+  compares them: a statement's purpose is never zero, it is refused `E_SHAPE(leaf, 1)`, so a zero `surchargePurpose`
+  surcharges nothing that can be admitted; `test/unit/kernel/Shape.t.sol`
+  `test_missing_required_field_is_E_SHAPE_1_for_every_kind` refuses a BIND, an UNBIND and a RELEASE with a zero
+  purpose), the surcharge's row of the same class is added too. With no principal (`indexFloor`), every bind adds the largest of the
   three rows field by field, surcharge included.
 - **WITHDRAW:** every WITHDRAW after the first of a publication adds the later row (formula 2 charged a withdraw
   `computePerAction` only, 0.12× its callbacks' spend).
 - Generation 1's values: first `55, 20, 44,000` (formula 2's quote to the gas on prague), re-bind `20, 40, 42,000`,
   later `20, 50, 85,000`, no surcharge; the publish, per-publication and final terms are unchanged.
 - **What the floor claims for masks, releases and restores:** an author's list of up to 1,024 entries at one place (one
-  author's entries at one exact topic, address or folder), any number of places in one publication. It covers up to
-  4,096 entries and stops covering from 4,097. Beyond that, nothing a person does fails: before each callback the kernel
+  author's entries at one exact topic, address or folder), any number of places in one publication. It covered up to
+  4,096 entries and stopped covering from 4,097 (as stated at `6d11858`; since the list release 3,586 on prague and 8,191
+  on amsterdam, item 50). Beyond that, nothing a person does fails: before each callback the kernel
   requires the gas left to cover what remains of the quote, so a publication sent with a gas limit from
   `eth_estimateGas` (the least limit at which the whole publication succeeds, callbacks included) and a margin is
   admitted even when a statement's real spend is above the quote; what can fail is a publication sent at or near the
@@ -1078,8 +1155,8 @@ no (item 42), which has no composite. `maximaExcludeStates` is `["beyondClaim"]`
   315,854 → 311,787 on prague and 899,174 → 895,683 on amsterdam (the index serves the work model the kernel reads from a
   data contract, item 44), every other existing row −111 to +373 gas; the `tagLevel` terms did not move; 37 constants are new.
 
-**48. Identities of this release** (items 42 to 47 together, against `3ca53ba`, the commit the SDK is pinned to; every
-value is in the table below). **Moved:** the release digest (`0xc4935467…71e4`, was `0x9f360a55…f321`), the plan hash
+**48. Identities of that release** (items 42 to 47 together, against `3ca53ba`, the commit the SDK was pinned to then; its
+identity table is in this file's history at `6d11858`, and the table below now compares against `6d11858`). **Moved:** the release digest (`0xc4935467…71e4`, was `0x9f360a55…f321`), the plan hash
 (`0x4fc3364f…c575`), the execution set (`0x9c22c034…c9e5`), the index obligations (`0x38ac8541…d78f`) and manifest
 hash (`0x755a082e…3537`: the work model is in the manifest); the code of `LedgerIngress` (formula 3), `LedgerControl`
 (the work-model checks, the kept-index path), `IndexReplayDecoder` (the proved count), `RealmIndex` (the work model
@@ -1105,88 +1182,580 @@ bytes; budget 19,660 B; tightest first): `LedgerIngress` 19,264 → 18,955 B (70
 (1,252 left), `LedgerControl` 18,042 → 18,363 B (1,297 left), `LensReader` 17,399 → 17,399 B (2,261 left; six bytes of
 code differ), `IndexReads` 12,431 → 12,960 B (6,700 left), `IndexReplayDecoder` 5,404 → 5,578 B (14,082 left).
 
-### The identity table (this release against `3ca53ba`)
+### The list release (against `6d11858`)
+
+Three pieces, each reviewed alone, built and tested together on both schedules and regenerated once (`f102d1b`): the
+list piece (the `head-authors` list, the later row and the HEAD surcharge), the names piece (`files-name/3`, the
+word rule's ASCII side, the gateway's `0x` words) and the gas model's rows for later statements (the yes after a lone
+no, the measured positions, restores to a new target, HEAD's later rows). Nothing broke where they met: both suites
+passed on the joined tree before regeneration (1,495 tests on prague, 1,543 on amsterdam); only three tool tests failed,
+each on a generated file the regeneration rewrote. Items 49 to 59. Every figure was measured on this release's code on
+both schedules unless it says computed.
+
+**49. Everyone's versions of a file: the `head-authors` list** (QUESTIONS Q52, ruled by James 2026-11-26; design §10.2
+family 22, §12.2; docs/WORK-MODEL-V3.md "Landed: the list release"). Consumer change: a new family to read, nothing to
+call.
+
+- **The family.** Name `head-authors`, family id `keccak("efs/family/head-authors/1")` =
+  `0xd09cf038b483bc20ecd786809b77a653a8554e6c938108cba163338955d06bf8` (`test/vectors/ids.json` `families.head-authors`), kind 22, universe 3 (SCOPE), shape APPEND,
+  liveSemantics 3 (HEADS), mandatory, `fromAdmission` 1, in the genesis posting store (the store generation 1's other
+  posting families use). Its own family, never HEAD positions in family 20, so that a later generation can stop
+  keeping it (declare and fold it no more) and every reader then answers UNKNOWN for it rather than stale counts.
+- **Key and entry.** Key `(0, 22, 0, position)` = `Keys.headAuthorsList(position)` with `position =
+  Keys.position(HEAD, file, 0)`. Entry: the admission ordinal of each author's first HEAD statement on the file, of
+  either sign (creating it, saving one's own version of another's file, or a first "not this"). `count` = the authors
+  who ever made a HEAD statement on the file; `live` = the authors whose HEAD there is BOUND now. Each transition: a
+  first yes appends counted; a lone negative appends UNCOUNTED (`live` unchanged); a mask or release of a BOUND head
+  lowers `live` by 1; a restore (a yes after a lone no included) raises it by 1; a re-bind (every edit) and a mask or
+  release of a head that is not BOUND write nothing; no later statement appends an entry. In order of first statement.
+- **How to read it, with no new reader or ABI** (`test/index/EveryonesVersions.t.sol`
+  `test_show_everyones_versions_of_a_file`, three authors' versions of one file, one masked): `postingHeadOf(head-authors,
+  0, 0, position)` at the index (coverage, `count`, `live`), `postingSliceOf(head-authors, 0, 0, position, from, n)` for
+  the entries, then `LedgerViews.authorHeads(ledger, position, entries)` for each entry's author, status (PRESENT,
+  MASKED, RELEASED) and head (its `target` is the version that author names; 0 when masked or released). No reader
+  contract enforces the list's rules here as the topic readers do for theirs, so a client applies four (each checked
+  against the code and `EveryonesVersions.t.sol`):
+  1. **Coverage is the caller's job.** `postingHeadOf` returns the list's coverage first; an "everyone's versions" read
+     answers UNKNOWN unless it is COMPLETE, and never "no other versions". Under a later generation that stops keeping
+     the list, a client that skips the check would show an empty list as fact. (The end-to-end test asserts COMPLETE.)
+  2. **"N versions" is `live`, not `count`.** `count` includes authors who only ever said no and authors whose version
+     is masked or released (`test_every_transition`).
+  3. **The order is each author's FIRST HEAD statement, not their latest edit.** An edit writes nothing to the list, so
+     "most recently edited first" cannot be read from it; a client reads from the end for "newest author first" and
+     sorts a page by the heads it fetched.
+  4. **It is a public-tier list.** Anyone can add an entry to any file's list with one HEAD statement from a fresh
+     account: for a yes, a revision record naming that file (`FilesFinalValidator` code 8: a `files-root/1` or
+     `files-child/1` record whose file word is the subject); for a lone no, only that the subject is a file (code 16: a
+     subject created strictly before the statement). Measured for a fresh account (its first publication;
+     `GasModel.t.sol` `test_public_head_entry_cost`, log-only): a lone no 550,965 gas on prague, 1,802,923 in all on
+     amsterdam (432,043 of execution); a yes with its revision record (a child of the file's root) 965,468 / 3,309,466
+     (763,546 of execution). As for the tag bump (QUESTIONS Q54), a client shows its lens authors' versions first and
+     labels the rest public.
+- **What it costs per file** (measured cold, `test/index/HeadAuthorsFloor.t.sol`, generation 1 with the list against
+  the same code before it, the same shapes from the same state): a new file 26,054 gas on prague, 16,154 of execution
+  plus 97,920 of state gas on amsterdam (114,074 in all); a second author's version 31,188 / 28,388 + 97,920; a lone
+  negative on a file whose list exists 13,683 / 28,083; a mask, release or restore 14,502 to 14,568 / 21,690 to 21,768;
+  an edit nothing (223 gas of code placement on both). Reserved for by the HEAD surcharge (item 50).
+- **Sizes** (runtime bytes, budget 19,660 B): `RealmIndex` 18,408 → 18,733 (+325; 927 left); `IndexReads` 12,960
+  (unchanged: the declaration is constructor code); `PostingStore` 6,651 → 6,699 (its family capacity is 17 ids, was
+  16, so one stays spare beside generation 1's sixteen posting families; `FAMILY_CAPACITY()` answers 17, its ABI and
+  `STORE_ABI_ID` are unchanged). So generation 1's genesis posting store now holds 16 families with one spare slot:
+  another list kept from genesis is a design decision, not a free slot. The posting store's family set and the index's family table each gain `head-authors`
+  as their last entry (`tools/deploy-plan.mjs` `POSTING_FAMILIES`, `FAMILY_TABLE`), so the manifest, the posting store's
+  constructor data and its codehash move.
+- **Coverage and the carried check** need nothing new: the family is declared from admission 1 in a store generation
+  1 names, so the carried check, the coverage frontier and the readers' COMPLETE rule hold for it as for family 20
+  (`EveryonesVersions.t.sol` `test_the_family_is_declared_in_the_genesis_posting_store`; every suite that counts
+  generation 1's families counts nineteen).
+
+**50. The work model's values** (formula 3 unchanged: the same 32 words, `formulaVersion` 3). Consumer change: the
+values a planner reads from `gas/model.json` `floor.workModel` (the SDK's `kernelQuote` needs no code change; it
+already applies the surcharge by purpose).
+
+| word | field | was | now |
+|---:|---|---:|---:|
+| 19 | `freshPerBindLater` | 20 | **30** |
+| 20 | `rwPerBindLater` | 50 | 50 |
+| 21 | `computePerBindLater` | 85,000 | **78,000** |
+| 22 | `surchargePurpose` | 0 | **`Purpose.HEAD`** (`keccak("efs/purpose/head/1")`) |
+| 23-25 | `surchargeFreshFirst`, `surchargeRwFirst`, `surchargeComputeFirst` | 0, 0, 0 | **10, 10, 4,500** |
+| 26-28 | `surchargeFreshRebind`, `surchargeRwRebind`, `surchargeComputeRebind` | 0, 0, 0 | 0, 0, 0 |
+| 29-31 | `surchargeFreshLater`, `surchargeRwLater`, `surchargeComputeLater` | 0, 0, 0 | **0, 10, 10,000** |
+
+- **The later row** quotes 177,300 a statement on prague and 182,800 on amsterdam (was 162,200 / 177,700). Its fresh
+  count 3.0 is the most fresh index slots a later statement writes (a yes after a lone no: the binding's history word
+  0, its live-bits word and its thing's backlink word 0). Its compute is the least that quotes the dearest later
+  statement within the claim at the floor's per-action margin as the tests assert it (1.03 prague, 1.05 amsterdam): that is a yes after a lone
+  no across places in a list of 1,023 entries, spend 171,832 on prague, which needs 77,687; 78,000 gives 1.031. The
+  dearest list within the claim is 1,023 entries, not the longest: each probe of the entry search reads the word that
+  holds its entry, so the spend goes with the probes (2,119 / 2,114 gas each across places) and the distinct words they
+  read (2,000 each), and 1,023 entries (10 probes, 9 words) costs 2,000 more than 1,025 (10 and 8); the released row was
+  below its own claim there (0.944 prague for that yes, 1.039 amsterdam for a restore). The evidence the ruling was made
+  on, (30, 50, 72,500) and (30, 50, 79,000), was computed at 1,025 entries.
+- **The surcharge** is the list's measured cost (the trial's values, confirmed): a first HEAD statement writes one
+  fresh slot and rewrites one (the list's head or word 0, and its head for a later author), +3.6k to +4.0k of other
+  work; a mask, release or restore of a BOUND head rewrites the counter, +9.4k to +9.6k; a re-bind nothing. It reserves
+  31,600 / 28,700 a first HEAD statement (spend +30,688 to +31,040 / +27,886 to +28,239) and 15,000 / 22,100 a later one
+  (+14,422 to +14,500 / +21,623 to +21,701).
+- **What the floor claims and covers now** (`test/integration/FloorSplit.t.sol`): every later statement in lists of up
+  to 1,024 entries per author per place, at any number of places, at the per-action margin, the yes after a lone no
+  included (`test_split_lone_no_yes_*` are ordinary claim tests now; at 1,025 entries 1.043 / 1.082, at 1,023 1.031 /
+  1.069). Beyond the claim it covers every later statement across places up to 3,586 entries on prague (the yes after a
+  lone no stops from 3,587: 1.007, then 0.996) and up to 8,191 on amsterdam (that yes and a restore of a far entry stop
+  from 8,192: 1.008 and 1.007, then 0.997 and 0.996); on prague the restore is covered at 8,192 (1.060) and to 57,346
+  entries computed. The 4,096 / 4,097 pair of the formula-3 release is replaced by these.
+- **The floor's margin, as the tests assert it and nowhere more** (`FloorSplit.t.sol` `_row`, per action): at least
+  **1.03 on prague** for every bind-kind statement and every WITHDRAW after the first inside the claim (PUBLISH, REUSE
+  and CREATE, whose terms formula 3 did not change, at least 1.005; lowest measured 1.025, a new name record), and at
+  least **1.05 on amsterdam**, where every shape inside the claim holds it. The binding cell is a yes after a lone no
+  across places in lists of 1,023 entries on prague, **1.031**; the lowest on amsterdam is a folder re-bind across
+  folders, **1.057**. Why 1,023 is dearer than 1,025: each probe of the entry search also reads the word its entry sits
+  in, so the cost follows probes plus distinct words read, not length (10 probes and 9 words at 1,023 entries, 10 and 8
+  at 1,025). The claim tests assert the bound on the dearest list lengths: restores, masks and yeses after a lone no at
+  1,023 entries as well as at 1,025 (`test_split_claim_masks_at_the_dearest_list_within_the_claim` is new). Why about 3%
+  is enough: a callback that runs short refuses the whole publication and admits nothing, and a sender's gas limit
+  comes from `eth_estimateGas` with a margin, so the floor's margin guards only a publication sent at or near the bare
+  floor. Measured per shape, per action (quote / spend):
+
+  | shape (per action) | prague | amsterdam |
+  |---|---:|---:|
+  | a yes after a lone no across places, lists of 1,023 (the binding cell) | **1.031** | 1.069 |
+  | the same, lists of 1,025 | 1.043 | 1.082 |
+  | the same, a lone no after 1,024 first yeses | 1.043 | 1.082 |
+  | the same, things unlinked | 1.077 | 1.167 |
+  | the same, lists of 48 | 1.374 | 1.324 |
+  | the same, at one topic of 1,025 | 1.208 | 1.273 |
+  | restores of the last of 1,023 entries across places | 1.145 | 1.068 |
+  | restores of a far entry across places, lists of 1,025 | 1.160 | 1.081 |
+  | masks of the last of 1,023 entries across places | 1.281 | 1.110 |
+  | masks of a far entry across places, lists of 1,025 | 1.299 | 1.124 |
+  | folder re-binds across folders | 1.068 | **1.057** |
+  | tag first yes | 1.034 | 1.154 |
+  | tag first lone negative | 1.133 | 1.207 |
+  | tag second author first yes | 1.132 | 1.078 |
+  | HEAD first, a second author | 1.467 | 1.438 |
+  | HEAD later: a re-bind, a mask, a restore | 1.123, 2.000, 2.016 | 1.184, 1.780, 1.685 |
+  | tag later: a number change, a mask, a restore | 1.985, 1.803, 1.817 | 2.233, 1.660, 1.568 |
+  | restores of entry 48 across topics | 1.321 | 1.215 |
+  | WITHDRAW after the first | 2.615 | 3.157 |
+  | a new name record (PUBLISH, formula 2's terms, bound 1.005) | 1.025 | 1.918 |
+  | CREATE (bound 1.005) | 1.167 | 1.167 |
+
+  Every `FloorSplit.t.sol` row before → after is in docs/WORK-MODEL-V3.md "Landed: the list release", item 6.
+
+**51. Batch sizes** (the planning rule, `tools/gas-plan.mjs`, on the regenerated `gas/model.json`, against the same files
+at `6d11858`; `test/vectors/floor-plan.json`, every shape executed by `FloorPlan.t.sol` on both schedules at its
+planned size; edits from `tools/gas-plan-later.mjs`):
+
+| shape | prague `6d11858` → now | amsterdam `6d11858` → now |
+|---|---|---|
+| tag masks, releases, masks of masks | 58 → **54** | 55 → **54** |
+| tag restores | 51 → **48** | 51 → **50** |
+| tag number changes (re-binds) | 62 → 62 | 64 → 64 |
+| folder re-binds | 62 → 62 | 61 → 61 |
+| lone negatives | 38 → 38 | 53 → 53 |
+| create-file recipes (5 actions each) | 10 → **9** | 12 → 12 |
+| first tags, depth 8 / 64, everything new | 18 / 3 → 18 / 3 | 19 / 3 → 19 / 3 |
+| first tags, depth 8 / 64, everything existing | 22 / 4 → 22 / 4 | 20 / 3 → 20 / 3 |
+| a second author's first tags, depth 8 | 22 → 22 | 20 → 20 |
+| repeat publishes, name records, the registration chunk | 64, 61, 64 → unchanged | 64, 64, 64 → unchanged |
+| a name record and a first tag (2 actions each) | 21 → 21 | 27 → 27 |
+| edits (PUBLISH child + HEAD re-bind; planner only) | 24 → 24 | 28 → 28 |
+| **new:** yeses after lone noes on one topic (`bindTagAfterNo`) | **45** | **48** |
+| **new:** create-file recipes at removed names, the name PUBLISH a repeat (5 actions) | **11** | **12** |
+| **new:** the same with no name PUBLISH (4 actions) | **13** | **16** |
+| **new:** moves into removed names, the name PUBLISH a repeat (3 actions) | **18** | **19** |
+| **new:** the same with no name PUBLISH (2 actions) | **25** | **25** |
+
+The later batches are bounded by the floor's requirement V, so the later row's higher quote (+15,100 a statement on
+prague, +5,100 on amsterdam, item 50) is what moves masks, releases and restores; number changes and folder re-binds are
+re-binds, whose row did not change. Create files on prague lose the tenth recipe to the HEAD surcharge's first row and
+the list's own gas (V at 9: 13,027,249); amsterdam stays at 12, where a 13th recipe would pass the 64-action limit. Edits
+and lone negatives do not move (the surcharge's re-bind share is zero; TAG statements pay nothing for the HEAD list).
+The shapes the SDK's two interim rules priced, as `tools/gas-plan.mjs` plans them: a yes after a lone no at one topic
+**45 on prague and 48 on amsterdam** (with the interim rule on the `6d11858` model: 47 and 48); folder restores at one
+folder, now priced by the re-measured `restoreFolder` with its kernel rewrite, **48 and 48** (with the SDK's +1 kernel
+rewrite on the `6d11858` model: 50 and 48).
+
+**`FloorPlan.t.sol` is the guard that makes stating the kernel's n² term (item 57) safe rather than modelling it.**
+For every shape in `test/vectors/floor-plan.json` (22 shapes, the five new ones included) it builds the largest planned
+publication from the state the planner assumed and executes it for real on both schedules: the kernel's quote equals
+the planner's, the measured execution gas E and the floor's sufficient bound V fit the visible gas of a 2^24
+transaction, and on prague the publication also runs with exactly that gas; one unit more is refused by the rule. On
+amsterdam Foundry has no 2^24 cap, so there admission under the cap is the arithmetic on the measured E and the
+kernel's quote. What it does not cover: shapes that are only gas-model composites and not planned shapes (the
+yes-after-no variants, revision-5 restores, HEAD later statements across files, folder after-no shapes, long lists).
+
+**52. The planner's surcharge comparison** (`tools/gas-plan.mjs` `quote()`): the surcharge applies when the action's
+purpose word equals `surchargePurpose`, exactly as `LedgerIngress._foldOne` compares them (`a.purpose ==
+bytes32(_w(wm, W_SURCHARGE_PURPOSE))`); the planner no longer skips a zero `surchargePurpose`. A statement's purpose is
+never zero: the kernel refuses a BIND, an UNBIND or a RELEASE with a zero purpose word `E_SHAPE(leaf, 1)`
+(`test/unit/kernel/Shape.t.sol` `test_missing_required_field_is_E_SHAPE_1_for_every_kind`, which existed already), so a
+zero `surchargePurpose` surcharges nothing that can be admitted. New planner test: `tools/test/gas-plan.test.mjs`, "the
+surcharge applies on plain equality with surchargePurpose, zero included". A consumer whose planner keeps a zero guard
+quotes the same for every admissible publication; it should still compare as the kernel does.
+
+**53. The word rule changed and the word Type's id moved, although the label `topic-word/1` did not.** Read the
+unchanged label as an unchanged name only, never as an unchanged rule: the acceptance set is smaller, so the rule's
+codehash, the `topic-word/1` Type id and every word page and topic id moved (item 59). What `TopicProfile.wordRefusal`
+does now:
+- **Code 3 is any ASCII byte outside 39 characters.** After the fold a word's ASCII is exactly `a`–`z`, `0`–`9`, `-`,
+  `_` and `.` (`WORD_ASCII_OK = 0x7fffffe8000000003ff600000000000`). Every other ASCII byte is refused: capitals,
+  space, controls, `/`, `\`, `~` and every other punctuation character. So a word never needs escaping in a link and
+  leaves every delimiter free: `c++`, `c#`, `r&b`, `don't`, `q&a` and `~tesla` are no longer words; `cpp`, `.net`,
+  `sci-fi`, `model_3`, `0xsplits` and `con` are.
+- **Code 4 now means "the word ends with `.`".** It covers `.` and `..` (which it refused before) and also `...`, `a.`
+  and `inc.`; `.a`, `a.b` and `a..b` are admitted. The reason is link trimming (an auto-linker drops a full stop after
+  a pasted link, so `/inc.` would open `/inc`): the tag design session's proposal, not a consequence of the ruling.
+- **Code 9 is new: the word starts with `-`.** `-x`, `-` and `--x` are refused; a `-` elsewhere stays admitted
+  (`a-b`, `a-`, `a--b`). It keeps `-word` free to mean "not" in EFS link syntax (the founder's test that words leave
+  delimiters free); it is the tag design session's default applied by the integration owner, not the founder's words.
+  It is 9, not 8: `E_TOPIC_REFUSED(8)` is already `TopicWordRule`'s "refs present".
+- **Code 5 can no longer happen.** It meant "starts with `~`"; a `~` is now code 3 wherever it stands, so the branch is
+  gone. The number is left unused, not reused: no code changes meaning.
+- Unchanged: 1 (length), 2 (malformed UTF-8), 7 (a scalar of `REFUSED`; the table and its classes are untouched), 6
+  (`0x` and exactly 40 of `0-9a-f`) and 8 (refs). The order: 1, then 2, 3 and 7 by position, then 4, then 9, then 6
+  (so `-a.` is 4). Windows device names are words.
+- **What the SDK's `checkWord` must change:** admit exactly the 39 ASCII characters (code 3 for every other ASCII
+  byte, `~` included); return 4 for a trailing `.` instead of 4 for `.`/`..` only; add 9 for a leading `-`, checked
+  after 4 and before 6; never return 5; keep everything else. `test/vectors/topics.json` (`grammar.wordAscii`,
+  `grammar.wordCodes`, `grammar.wordCodeUnused`) carries every ASCII byte alone and inside a word, the trailing `.` and leading `-` cases (`-x`, `-`, `--x`, `-a.`, `a-`, `a-b`,
+  `x-`) and `~` first, inside and last.
+- **The order of refusals, so `checkWord` returns the chain's FIRST refusal, not only its verdict:** 1 (length);
+  then, scanning the word from its first byte, the first of 2 (malformed UTF-8), 3 (an ASCII byte outside the 39) or
+  7 (a refused scalar); then 4 (ends with `.`), then 9 (starts with `-`), then 6 (`0x` and 40 hex). So `-a.` is 4,
+  `-A` is 3, `A.` is 3, and `0x` + 40 hex digits + `.` is 4. 4 and 6, and 9 and 6, can never both apply.
+  `topics.json` holds a vector for every pair of rules that can both apply (labels `pair …`), with the chain's code.
+
+**54. File names are `files-name/3`, which replaces `files-name/2`.** The label changed everywhere it names the live
+grammar (`FilesTypes`, `EfsFiles`, the readers, the validator, the tools, the gas model's row keys, the vectors); a
+planner that keys on the string `files-name/2` must key on `files-name/3`. On top of everything `files-name/2` refused
+(1 to 255 bytes, strict UTF-8, controls, `/` and `\`, the bidi, invisible and noncharacter sets, whitespace first or
+last, the `~efs` prefix), a name now refuses:
+- **URI meaning:** `#`, `?`, `%` (each changes what a pasted link means).
+- **A delimiter kept free for EFS URL syntax:** `<`, `>`, `"`, `|`, `:`, `*`, `;`. The syntax is not designed; only
+  the reservations are made. `;` is reserved so a parser can split parameters at `;` first, which is why `=` and `!`
+  stay.
+- **Link trimming:** a name ending in `.` (also `.` and `..`, refused before). The integration owner's application,
+  not James's ruling, and a check of its own so it can be dropped alone.
+
+Admitted as before: inner spaces, `& ( ) ' , + = ! @ $ [ ] { } ^ ~`, backtick, `-`, `_`, leading dots, a leading `-`,
+everything outside ASCII that `/2` admitted, and Windows device names (`con`, `nul.txt`, `COM1`, `NUL .txt`). So
+`Q&A #3.pdf`, `50%.txt`, `what?.md`, `a;b`, `a:b`, `a*b`, `a<b`, `a>b`, `a|b`, `a"b` and `inc.` are no longer file
+names; `Q&A 3.pdf`, `logo@2x.png`, `~$Budget.xlsx`, `Sale!.png` and `-notes.txt` are (a tag word refuses a leading `-`;
+a file name does not). The descriptor descriptions of `files-name/3` and `topic-word/1` (part of their Type ids) now state these rules.
+The ASCII bitmap is
+`ASCII_OK = 0x6fffffffefffffff23ff7bd300000000` (83 bytes of 0x20..0x7e). The refusal code is unchanged
+(`E_FILES_REFUSED(2)`; 1 refs). Of the naming experiment's 50 vectors, six change verdict (5, 6, 12, 45, 46, 47).
+**What the SDK must change:** refuse the ten new ASCII characters and a trailing `.` before planning, and use the label
+`files-name/3`. Names stay byte-exact and case-sensitive.
+
+Measured (`FilesNameRule.accept`, the rule's own warm frame including the context decode, `6d11858` → this release;
+the new checks sit after the loop, so the ASCII path is still one bitmap test per byte): 10-byte ASCII `readme.txt`
+3,400 → 3,373; 255 ASCII bytes 43,580 → 43,553; 10 bytes of CJK 5,060 → 4,983; 255 bytes of CJK 113,077 → 110,925.
+`FilesNameRule` runtime 1,683 → 1,627 B (the trailing `.` test replaced the `.`/`..` test, and `excluded` now reads
+the same bitmap for ASCII); `TopicWordRule` 1,897 → 1,934 B (the leading `-` test). Both are far inside the 19,660 B budget.
+
+**55. The gateway follows the chain's rule 6.** A first path segment that starts `0x` and is not an address is a
+topic word, as on the chain and in the SDK's links. Only `0x` (or `0X`) followed by exactly 40 hex digits, of either
+case, is an address (a home), and that handling is unchanged byte for byte: `0X` + 40 hex is an address, never a word
+(the chain refuses it as a word anyway, code 3). Every other `0x` segment, `/0xsplits`, `0x` and 39, 41 or 64 hex
+digits, or 40 characters with one that is not hex, is a word, so the path is a topic path and answers what every topic
+path answers today, `501 topic paths are not served`, where it was `400 malformed id`. The gateway does not run the word
+rule: `/0Xabc` (not a valid word on chain) is 501 too, as is an unregistered word. `400 malformed id` remains for
+object and revision ids (`/~efs/o/…`, `/~efs/v/…`). `EfsWeb3Gateway` 15,391 → 15,565 B (4,095 B left); `EfsWeb3Content` unchanged
+(8,961 B; the path grammar is the gateway's alone).
+
+**56. Vectors.** New `test/vectors/names.json` (`efs/vectors/names/1`, `tools/name-vectors.mjs`): 653 names, 398 admitted: every
+ASCII byte 0x00 to 0x7f alone and at the start, middle and end of a name (512 rows), the examples of the rulings, the
+trailing `.` cases, Windows device names as admitted names, the `~efs` prefix, malformed UTF-8 and the non-ASCII
+refusals and boundaries of `files-name/2`'s tests, lengths 0, 1, 255 and 256, and the 50 naming-experiment vectors of
+`test/profiles/FilesNameVectors.sol` (the tool reads that file and refuses to generate if its grammar disagrees with a
+verdict there). Every row
+has the verdict, the rule code (0 or 2), an informative first-failed check, the role (`keccak256(name)`) and, when
+admitted, the record id for this release's `files-name/3` Type id. `test/vectors/topics.json` grows to 470 words (every ASCII byte alone and inside a word, `~` first, inside and last, the trailing `.` and leading `-` cases) and adds `grammar.wordAscii`, `wordAsciiRulings`, `wordAsciiNote`, `wordTrailingDot`, `wordLeadingDash` and `wordCodeUnused`; `wordCodes` lists 9 and no longer lists 5.
+`pnpm release` writes both, `pnpm release:check` compares both byte for byte (`names.json` is listed in
+`release.json` `vectors` beside the others), `node tools/name-vectors.mjs --check 1` compares the name file alone, and
+`test/profiles/NameVectors.t.sol` and `TopicVectors.t.sol` assert every row against the rules.
+`test/vectors/floor-plan.json` gains five shapes (item 51). Against `6d11858` the vectors that moved are `names.json`
+(new), `topics.json`, `floor-plan.json` and `ids.json` (the `head-authors` family, item 49); every other vector and
+`vectors/layout.json` are unchanged.
+
+**57. The gas model's new rows** (`gas/model.json`, `efs-gas-model/1`; `test/integration/GasModel.t.sol` sections 4, 9
+and 10). Consumer change: new constants and fields, a selection rule, a symmetric correction, a restated bound, and
+the end of the interim rules ("What changes for a consumer" above).
+
+- **A BIND on a head that never bound: `bind<Purpose>AfterNo`.** A planner tells the shape from the head it reads:
+  `state != UNSET && targetKind == 0` (`Head.targetKind` is served as stored and is 0 exactly for a head that never
+  bound; `Head.target` is canonical, 0 for every head that is not BOUND; pinned by `test/readers/HeadTargetKind.t.sol`
+  over five sequences through `LedgerViews.headsAt` and `historyAt`: a lone no; no, release; no, no give 0; yes, mask;
+  yes, release give the bound kind; `target` is 0 in all five). Each row is measured as the yes directly after a lone
+  no (revision 1 before it: the binding's history word 0 opens, and the kernel writes the head's stored target
+  fresh), with the target already linked once elsewhere (its backlink word 0 opens: the dearest state). Rows (all gas
+  and kernel share K on prague; all gas, execution gas and K on amsterdam):
+
+  | row | prague | K | amsterdam | execution | K |
+  |---|---:|---:|---:|---:|---:|
+  | `bindTagAfterNo` | 230,603 | 113,847 | 699,403 | 209,803 | 91,247 |
+  | `bindTagAfterNoNewPlace` | 228,961 | 113,823 | 704,961 | 215,361 | 91,223 |
+  | `bindTagAfterNoLongNewPlace` | 286,421 | 113,823 | 850,407 | 262,887 | 91,223 |
+  | `bindTagAfterNoLongSamePlace` | 264,473 | 113,823 | 740,473 | 250,873 | 91,223 |
+  | `bindFolderAfterNo` | 245,320 | 113,847 | 714,120 | 224,520 | 91,247 |
+  | `bindFolderAfterNoNewPlace` | 237,572 | 111,835 | 713,584 | 223,984 | 89,247 |
+  | `bindFolderAfterNoLongNewPlace` | 295,008 | 111,811 | 859,042 | 271,522 | 89,259 |
+  | `bindFolderAfterNoLongSamePlace` | 275,084 | 113,835 | 751,084 | 261,484 | 91,235 |
+  | `bindPropertyAfterNo` | 210,215 | 109,639 | 679,027 | 189,427 | 87,051 |
+  | `bindPropertyAfterNoLongNewPlace` | 269,764 | 111,729 | 826,550 | 239,030 | 89,129 |
+  | `bindPropertyAfterNoLongSamePlace` | 249,815 | 113,729 | 718,615 | 229,015 | 91,129 |
+  | `bindSameAfterNo` | 212,448 | 111,627 | 681,272 | 191,672 | 89,051 |
+  | `bindSameAfterNoLongNewPlace` | 269,907 | 111,627 | 826,681 | 239,161 | 89,015 |
+  | `bindSameAfterNoLongSamePlace` | 247,958 | 111,627 | 716,770 | 227,170 | 89,039 |
+  | `bindBroaderAfterNo` | 212,483 | 111,639 | 681,247 | 191,647 | 89,003 |
+  | `bindBroaderAfterNoLongNewPlace` | 269,942 | 111,639 | 826,728 | 239,208 | 89,039 |
+  | `bindBroaderAfterNoLongSamePlace` | 248,017 | 111,663 | 716,793 | 227,193 | 89,039 |
+  | `bindHeadAfterNo` | 232,677 | 109,317 | 708,665 | 219,065 | 86,705 |
+
+  The tiers follow the restore rows' pattern and rule (`laterLists`); HEAD has none (below). FOLDER was measured, not
+  assumed equal to TAG: its after-no row is 14,717 gas dearer on prague (the Files validator's folder laws on a BIND)
+  with the same kernel share. A lone no on HEAD is admissible (the validator's code 16 asks only that the subject is
+  a file created before it), so HEAD has its row, measured as a second author's "not this" and then its yes naming the
+  root the first author's HEAD names. Against the restore rows the yes after a lone no costs the kernel's fresh target
+  slot and the history word (prague `bindTagAfterNo` 230,603 against `restoreTag` 187,453).
+- **Restores to a new target. `restoreFolder*` IS RE-MEASURED.** A FOLDER, PROPERTY or HEAD restore can name a target
+  other than the stored one, which the kernel rewrites (`LedgerApply`: `if (head.target != target) head.target =
+  target;`); a planner cannot tell (the head view does not show the stored target), so these restore rows are measured
+  restoring to a NEW target already placed elsewhere (the kernel's rewrite plus the target's backlink word opening: the
+  dearest restore). Old (`6d11858`) → new:
+
+  | row | prague | K | amsterdam | execution | K |
+  |---|---|---|---|---|---|
+  | `restoreFolder` | 208,066 → **211,159** | 93,818 → **96,759** | 508,092 → **518,385** | 214,332 → **224,625** | 81,118 → **91,259** |
+  | `restoreFolderNewPlace` | 200,330 → **203,411** | 91,818 → **94,747** | 507,544 → **517,849** | 213,784 → **224,089** | 79,106 → **89,259** |
+  | `restoreFolderLongNewPlace` | 257,778 → **260,859** | 91,806 → **94,735** | 653,058 → **663,351** | 261,378 → **271,671** | 79,106 → **89,247** |
+  | `restoreFolderLongSamePlace` | 237,830 → **240,923** | 93,806 → **96,747** | 545,056 → **555,349** | 251,296 → **261,589** | 81,106 → **91,247** |
+
+  New, the same way: `restoreProperty` (a label masked, then set to a different text that is used as a label
+  elsewhere) 176,042 / K 92,539 on prague, 483,290 / 189,530 / 87,027 on amsterdam, with `restorePropertyLongNewPlace`
+  235,603 / 94,641 and 630,871 / 239,191 / 89,129 and `restorePropertyLongSamePlace` 215,642 / 96,629 and 522,868 /
+  229,108 / 91,129 (PROPERTY has tiers; its rows are already at distinct subjects, so no `NewPlace`); HEAD's later rows,
+  which HEAD did not have beyond `bindHeadRebind`: `unbindHead` 160,801 / 62,028 and 372,841 / 177,001 / 59,228,
+  `releaseHead` 159,615 / 60,819 and 371,655 / 175,815 / 58,019, `restoreHead` (to a new revision a second author's
+  HEAD names) 198,533 / 92,199 and 512,993 / 219,233 / 86,699. HEAD has no tiers: a file's HEAD scope list holds one
+  entry per author, the HEAD itself, so every HEAD statement is at a list of one entry and at a place of its own, and
+  the HEAD rows are measured at distinct files. The measured over-price of a restore to the STORED target, in each
+  row's `laterRows` note: `restoreFolder` 2,941 gas on prague and 10,141 on amsterdam (all of it execution and kernel),
+  `restoreProperty` 2,929 / 10,117, `restoreHead` 2,952 / 10,164. No same-target row is added (a planner could not
+  select it). TAG, SAME and BROADER restores cannot name a new target (the target is the role).
+- **The measured position of every later row: `laterRows`** (new, top-level, required; `schemas/efs-gas-model-1.schema.json`).
+  `laterRows.rows` maps each of 79 later-row constants to `{ revisionBefore, opensHistoryWord, target }` (`target`:
+  `"same"`, `"new"`, `"neverBound"`, or null for an UNBIND or RELEASE), with a `note` on the new-target restore rows.
+  Examples: `bindTagAfterNo` `{ revisionBefore: 1, opensHistoryWord: true, target: "neverBound" }`;
+  `restoreFolderLongNewPlace` `{ revisionBefore: 2, opensHistoryWord: false, target: "new", note: … }`. Masks, releases
+  and re-binds are measured at revision 1 (the word opens), restores at revision 2 (none opens). `laterRows.rule` is
+  the selection rule (UNBIND/RELEASE → `unbind<P>`/`release<P>`; BIND on BOUND → the re-bind row; BIND on MASKED or
+  RELEASED → `bind<P>AfterNo` when `targetKind == 0`, else `restore<P>`; then the list tiers) and the correction:
+- **The history-word correction is symmetric** (ruled). The binding's history list takes one entry per statement of
+  every kind (`RealmIndex._foldBind`, first statements included), so its length before a statement is the head's
+  revision, and `PostingStore._append` opens a word when that count is 1 or a positive multiple of 5. When an action
+  carries `revisionBefore` (`tools/gas-plan.mjs` `historyWordAdds`): add the profile's new constant `historyWordOpen`
+  if the row's `opensHistoryWord` is false and the position opens a word; subtract it if the row's is true and the
+  position opens none; without `revisionBefore` the row is used as it is. `historyWordOpen` =
+  `restoreTagAtHistoryWord` − `restoreTag` (the same restore as the binding's sixth statement against its third, the
+  backlink list at one entry before both): **17,100 on prague; 97,920 of state gas and 0 of execution on amsterdam**;
+  its kernel share is 0. A stale revision cannot turn the subtraction into an under-priced success: the kernel
+  refuses a BIND, an UNBIND and a RELEASE alike whose `expectedRevision` is not the head's (`E_CAS`, nothing written;
+  `LedgerApply._applyBind` and `_applyMaskOrRelease`; new test `test/unit/kernel/Strength.t.sol`
+  `test_stale_expected_revision_refused_for_bind_unbind_and_release`, a revision too low and too high, from BOUND and
+  from MASKED, for all three kinds).
+- **The property of the worst-case rows** (measured, both schedules). Every restore and yes-after-no row is measured
+  with its target's backlink list at a word-opening count (one entry before it). A planner cannot see that list, so the
+  rows are the dearest state, and a statement whose target's backlink list is at another count is over-priced by one
+  fresh slot less a rewrite: measured, a third-statement restore whose thing's backlink list holds two entries costs
+  **17,073 less on prague and 97,920 less state gas (115 more execution) on amsterdam** than `restoreTag` (one entry).
+  On prague that is 9.7% of the cheapest such row (`restoreSame`, 175,382) and 5.8% of the dearest
+  (`bindFolderAfterNoLongNewPlace`, 295,008), 11.7% of the cheapest later row of any kind (`releaseProperty`); on
+  amsterdam 20.6%, 11.4% and 28.0% of all gas. This is where amsterdam's 18.42% comes from (a restore deep in a toggled
+  binding, below). A consumer that sets a gas limit as a multiple of the model's total should know the worst
+  over-statement of the total for these shapes: about **1.18×** on amsterdam all gas (execution gas is within ±1% for
+  them).
+- **The composites** (39 new, 89 in all per profile; error = predicted − measured over measured; prague all gas;
+  amsterdam all / execution): yeses after lone noes across 32 topics of 48 entries −7.11% / −2.29%, −7.32%; across 32
+  of 256 +2.27% / +0.88%, +2.69%; across 16 of 1,025 +0.22% / +0.32%, +0.63%; 32 of 1,025 at one topic +7.05% /
+  +2.01%, +11.52%; no → release → yes and no → no → yes across 32 topics −0.75% / −0.10%, −0.54%; restores at revision
+  5 across 32 topics +7.58% / **+18.42%**, −0.58%; the folder equivalents (yeses after hides across 32 folders −0.17%
+  / +1.13%, −0.61%; hide → release → yes and hide → hide → yes −0.19% / +1.29%, −0.67%; at entry 1,024 across 16
+  folders −0.02% / +0.24%, +0.38%; 8 of 1,025 in one folder +7.24% / +3.37%, +9.64%; restores to new targets across
+  32 folders −0.93% / −0.16%, −0.62%); HEAD masks, releases, restores to new revisions and yeses after lone noes across
+  32 files −0.75% to −0.91% / −0.10% to −0.14%, −0.54% to −0.57%; creates at removed names and moves into removed
+  names, each with the name PUBLISH a repeat (`publishExisting`) and with no name PUBLISH (an SDK omits it when the name
+  record exists), at 2 and at the planner's largest batch on each schedule (create 11 and 12, 13 and 16; move 18 and
+  19, 25), with the same batches at fresh names beside them: E between −3.59% and +3.16% on prague, −6.63% and +7.65%
+  of all gas and −4.07% and +6.30% of execution on amsterdam. The 51-statement yes-after-lone-no batches stay log-only
+  in `test/integration/LoneNoGas.t.sol` (each 51 × 1,025 state is 52,275 lone noes, about a minute a profile).
+- **The stated maxima and what the 15% refusal bounds** (ruled; `tools/gas-fit.mjs` `overBound`, `method.maxima`,
+  `planning.headroomCovers`). Under-predictions above 15% are refused everywhere (prague all gas, amsterdam all gas,
+  amsterdam execution); over-predictions above 15% are refused on the gas the 2^24 cap counts (prague all gas,
+  amsterdam execution); amsterdam's all-gas over-prediction is refused per composite above `allGasOverBoundPercent` =
+  15 + laterStatements × 97,920 × 100 / measured (the schedule's `freshSlot.stateGas` from `GAS_SCHEDULES`, not a
+  typed number; both new per-composite fields are in the model). Tool tests: a synthetic composite over its bound for
+  another reason is refused, one at the edge passes (`tools/test/gas-fit.test.mjs`). New fields on both profiles
+  `maxOverErrorPercent` and `maxOverErrorComposite`, on amsterdam also `maxOverExecutionErrorPercent` and its
+  composite (added on prague as well for a regular schema: there the over-prediction of all gas is a bound).
+  `maxAbsErrorPercent` keeps its field and is the larger of the under- and over-prediction on all gas, so a consumer
+  that reads it sees 18.42 on amsterdam with the composite named; on amsterdam it is stated, not bounded at 15%.
+  `maximaExcludeStates` stays `["beyondClaim"]`; no composite is excluded to pass a bound. The figures (against
+  `6d11858`):
+
+  | figure | prague | amsterdam |
+  |---|---|---|
+  | `maxUnderErrorPercent` (all gas) | 9.69 → **9.68** (tag releases at entry 47 across topics) | 6.73 → **6.63** (move 2 files to fresh names, name published) |
+  | `maxOverErrorPercent` (all gas) | **11.15** (property masks, 8 of 1,025 at one topic) | **18.42** (tag restores at revision 5 across 32 topics; its bound 33.55) |
+  | `maxAbsErrorPercent` (all gas) | 11.16 → **11.15** | 12.05 → **18.42** |
+  | `maxUnderExecutionErrorPercent` | | 10.65 → **10.52** (create file, lists exist) |
+  | `maxOverExecutionErrorPercent` | | **13.89** (tag releases of 32 of 1,025 at one topic) |
+  | `maxAbsExecutionErrorPercent` | | 13.9 → **13.89** |
+
+  The five composites past 15% of amsterdam all gas under the add-only rule, against the bound as implemented
+  (symmetric rule): no → release → yes and no → no → yes across 32 topics −0.10% (bound 30.40%); hide → release → yes
+  and hide → hide → yes across 32 folders +1.29% (30.41%); restores at revision 5 across 32 topics +18.42% (33.55%).
+  **Amsterdam's execution under-prediction is 10.52%, against the SDK tripwire's firing point of 10.74%: 0.22 points to
+  spare.** The SDK dev should know that margin before re-vendoring.
+- **The kernel's share K is low for large publications, by a term in n²** (stated in this release, modelled at the next
+  regeneration). The rows are 1 → 2-action marginals; the kernel's cost of one more action grows with the actions
+  already in the publication (`test/integration/KernelGrowth.t.sol`, both schedules: one more CREATE costs the kernel
+  89,259 gas in a publication of 1 and 96,353 at 32 → 60; a fresh name PUBLISH 161,207 → 170,990; a repeat name PUBLISH
+  97,205 → 106,987; a TAG mask 62,212 → 69,723). The cause is memory expansion, **confirmed from one trace**
+  (`test_growth_memory_trace`, run with Foundry's debug tracer: the ledger frames' peak memory grows by 200 words an
+  action, 16,160 B at 2 CREATEs and 54,560 B at 8; 3·W + W²/512 then rises by about 2 × 200² / 512 ≈ 156 gas per action
+  already present, the measured slope). Model K against the measured kernel gas:
+
+  | publication | prague: removed names | prague: fresh names | amsterdam: removed names | amsterdam: fresh names |
+  |---|---|---|---|---|
+  | 16 creates, no name PUBLISH (64 actions) | −257,968 (−2.70%) | −255,992 (−2.22%) | −258,724 (−3.76%) | −256,784 (−3.34%) |
+  | 25 moves, no name PUBLISH (50 actions) | −184,567 (−4.20%) | −182,831 (−2.44%) | −184,467 (−4.46%) | −182,431 (−3.40%) |
+  | 12 creates, name PUBLISH (60 actions) | −278,042 (−3.28%) | −62,042 (−0.58%) | −278,874 (−4.43%) | −63,162 (−0.88%) |
+  | 19 moves, name PUBLISH (57 actions) | −303,810 (−5.64%) | +31,286 (+0.35%) | −303,558 (−6.15%) | +31,286 (+0.49%) |
+  | 2 creates, no name PUBLISH (8 actions) | +3,123 (+0.22%) | +5,123 (+0.31%) | +3,027 (+0.30%) | +5,039 (+0.45%) |
+
+  In gas the shapes the interim rules priced are short by the same amount as an ordinary batch of the same size
+  without a name PUBLISH; with one, the fresh-name batch looks better only because the fresh name PUBLISH row
+  over-prices its own kernel share by about 18k in a large batch, which hides the same term. **V is low by the same
+  term** (V carries K). The exposure, exactly: a batch planned at the edge of the cap may be refused at send-time as
+  over the cap (`eth_estimateGas` fails) and re-split; it is never sent short. E carries the same term, inside its
+  stated under-prediction figures above. A repeat name PUBLISH is priced by `publishExisting` (measured on a bytes
+  record): measured alone it costs the kernel 1.8k more than the bytes repeat, and the rest of what looked like its
+  gap is this term, so no constant of its own is added.
+- **Unchanged:** every other row's name and meaning, `fixed` (311,787 on prague; 895,683 → 895,695 on amsterdam, +12,
+  code placement) and the anchors' method; against `6d11858` every other constant moved by at most 321 gas except
+  `bindHeadFresh` (+25,794 prague, +113,826 amsterdam: the `head-authors` list, item 49). Against the list piece alone
+  (before these rows) no existing row moved by more than 0.04%.
+
+**58. Tests and the harness** (no consumer change). The step-3b harness (`test/harness/HeadAuthors.sol`) can no
+longer add `head-authors` later, since generation 1 keeps it; its example list is now `file-versions` (provisional
+kind 24, the same key shape, entry and fold, in the third store), a second copy of `head-authors` under another id,
+and the build-from-history suites also check that it equals generation 1's own list file by file (docs/INDEX-BUILD.md
+§2.2). `test/index/EveryonesVersions.t.sol` is new. The build's measured unit costs (`test/index/BuildGas.t.sol`)
+moved by +20 gas a HEAD publication and +9,526 on the fixed share of a cold build call, on both schedules (the copy of
+the live manifest the carried check reads holds one more family). The §6.2 figures for a million files, the record the
+Q52 ruling was made on, stay as they are; computed with this release's units the same build would cost about 0.3B gas
+more on each schedule (+0.06%: 479.6B on prague, 470.4B of execution on amsterdam). A cold segment of 20 files
+(`test_mixed_segment`) measured 9,684,204 on prague and 9,483,004 of execution on amsterdam (was 9,674,178 and
+9,472,978).
+The second piece adds (no consumer change): `test/readers/HeadTargetKind.t.sol` (item 57); `test/unit/kernel/Strength.t.sol`
+`test_stale_expected_revision_refused_for_bind_unbind_and_release` (item 57); `test/integration/KernelGrowth.t.sol`
+(the kernel's marginal cost per action at n = 1, 2, 8, 16, 32 and 60 for CREATE, a fresh and a repeat name PUBLISH and a
+TAG mask, logged on both schedules with a band on the slope, and the one memory trace, which runs only under Foundry's
+debug tracer and a raised gas limit: `forge test --match-test test_growth_memory_trace -vvv --gas-limit 100000000000`,
+skipped otherwise; the suite runs in under a second); five `FloorPlan.t.sol` shapes (item 51);
+`FloorSplit.t.sol` `test_split_claim_masks_at_the_dearest_list_within_the_claim` (masks of the last of 1,023 entries:
+1.281 / 1.110); GasModel.t.sol section 10 and the rows of item 57; `tools/test/gas-fit.test.mjs` (the bound) and
+`tools/test/gas-plan.test.mjs` (the symmetric correction, the measured positions, the over-prediction fields).
+`LoneNoGas.t.sol` keeps only what the model does not measure (the 51-statement batches and 32 at one topic of 48 and of
+256), logged.
+
+**59. Identities of this release** (items 49 to 58 together, against `6d11858`, the commit the SDK is pinned to; every
+value is in the table below). **Moved:** the release digest (`0xe6972acb…8612`, was `0xc4935467…71e4`), the plan hash
+(`0x2206022b…e509`), the execution set (`0x478c92b5…7d24`), the index obligations (`0xd1ec8dd9…eb20b`) and manifest
+hash (`0x14f48551…e148`: the manifest has `head-authors` and names the validator unit, whose address moved); the Type
+ids of `files-name/3` (`0x20665824…8c8d`, was `files-name/2` `0x2b4d22da…c27a`), `topic-word/1` (`0xe7429381…3859`,
+was `0xadf365a3…886b`) and `topic/1` (`0x275a99cc…bfde`, was `0x4ea9b8b2…d4cf`; its rule names the word Type), so every
+name record id, word page id and topic id; the rule codehashes of `FilesNameRule` (`0xd73a9ee2…fd17` →
+`0x80c8f4aa…9308`) and `TopicWordRule` (`0x29442a0e…dfd5` → `0xee656292…edac`) and their instances; the addresses
+of `TopicRule` (same code, the new word Type id in its initcode) and `FilesFinalValidator` (constructor Type ids); the
+code and address of `PostingStore` (its family set and capacity), `RealmIndex`, `IndexReads`, `FilesPageReader`,
+`TopicLookupReader` and `EfsWeb3Gateway` (each embeds a moved Type id or address; `RealmIndex` and the gateway's code also
+changed, items 49 and 55); `release/errors.json` (`E_TOPIC_REFUSED`'s list of codes); `gas/model.json` (item 57);
+`schemas/efs-gas-model-1.schema.json`; in `artifacts/` exactly `EfsWeb3Gateway.json`, `FilesNameRule.json`,
+`IndexReads.json`, `PostingStore.json`, `RealmIndex.json` and `TopicWordRule.json`; `test/vectors/floor-plan.json`,
+`ids.json`, `topics.json` and the new `names.json`. **Not moved:** the layout id, the hot ABI ids (release
+`0xf37d24d0…9856`, test `0x79a1dd51…cce0`), both store ABI ids, the status vocabulary id, the limits profile id, every
+ABI snapshot (`pnpm abi:snapshot` wrote none), `vectors/layout.json`, the kernel (`LedgerCore`, `LedgerIngress`,
+`LedgerApply`, `LedgerControl`), the ledger proxy (`0xe942147e…3429`) and every genesis address, the realm id and
+domain separator, the registry, `ledgerReads`, `ledgerViews`, `IndexReplayDecoder`, the bitmap store, `LensReader`,
+`TopicMineReader`, `TopicEveryoneReader`, `EfsWeb3Content`, `KeysView`, `ReaderDirectory`, every other rule and Type
+id, the limits, the work model's shape (its values moved, item 50, and are in the manifest), every read bound, and the
+seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`; its names `docs`, `readme.txt`, `big.bin` and `remote.txt` are
+all `files-name/3` names). Sizes of the `src/` contracts whose code changed against `6d11858` (runtime bytes; budget
+19,660 B; tightest first): `RealmIndex` 18,408 → 18,733 B (927 left), `TopicLookupReader` 17,081 → 17,081 B (2,579 left;
+an embedded id), `EfsWeb3Gateway` 15,391 → 15,565 B (4,095 left), `FilesPageReader` 12,676 → 12,676 B (6,984 left; an
+embedded id), `IndexReads` 12,960 → 12,960 B (6,700 left; an embedded address), `PostingStore` 6,651 → 6,699 B (12,961
+left), `TopicWordRule` 1,897 → 1,934 B (17,726 left), `FilesNameRule` 1,683 → 1,627 B (18,033 left).
+
+### The identity table (this release against `6d11858`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture
 configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`) of this release, against the same files at
-`3ca53ba` (`git show 3ca53ba:<file>`), the commit the SDK is pinned to; the ABI ids are computed from
-`test/snapshots/abi/` with `tools/abi-id.mjs` at both commits. Addresses are the fixture Realm's; on any other
-`(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. Every value an SDK vendors is here: the documents'
-digests, the identities of the execution set and the index, the ABI ids, every Type id, every deployed unit's address
-and runtime codehash, the read bounds and the seed. Beyond the table, `artifacts/` differs from `3ca53ba` in
-`IndexReads`, `IndexReplayDecoder`, `LedgerControl`, `LedgerIngress`, `LensReader` and `RealmIndex` (and `LedgerCore` in
-its ABI only), and `test/snapshots/abi/` in `IIndexReads.json`, `ILedgerIngress.json` and `Errors.json`. No read bound
-moved.
+`6d11858` (`git show 6d11858:<file>`), the commit the SDK is pinned to; the ABI ids are computed from
+`test/snapshots/abi/` with `tools/abi-id.mjs` (no snapshot changed, so none moved; the test id `efs/ledger-hot/2:test`
+is `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0`, unchanged). Addresses are the fixture
+Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. Beyond the table, `artifacts/`
+differs from `6d11858` in `EfsWeb3Gateway`, `FilesNameRule`, `IndexReads`, `PostingStore`, `RealmIndex` and
+`TopicWordRule`. No read bound moved: prague and amsterdam limitEntries, maxRows and pageTimesLens are `245, 150, 768 /
+416 / 688 / 408`.
 
-| pin | this release | moved against `3ca53ba` |
+| pin | this release | moved against `6d11858` |
 |---|---|---|
-| release digest (`sha256(release/release.json)`) | `0xc4935467e40c164417878cad8717725f4f71b623386a2f1d95e8e9bd4b9471e4` | yes (was `0x9f360a55…f321`) |
-| plan hash | `0x4fc3364f1d30e8f13b06f0535d8a65f54f66fc21c79ff150ac021af67b55c575` | yes (was `0x3b88f634…0a3e`) |
-| execution set | `0x9c22c034e660c606de155654f43f35a7a24f29513d6e1d5dd5c94a1e1c60c9e5` | yes (was `0x768d8353…dde7`) |
-| index obligations | `0x38ac8541875e7088b16c0d089ffb69e684598d49c1945377378a40135e29d78f` | yes (was `0xbc6d4b7d…3a3a`) |
-| index manifest hash | `0x755a082e5564c4c599b61131e11b0ff1a86642fcc53ac1be9cd23b67512d3537` | yes (was `0x073676c0…2e3c`) |
+| release digest (`sha256(release/release.json)`) | `0xe6972acbabe14140768b912ec1677cbe0d590689690ddef8625d67f20eec8612` | yes (was `0xc4935467…71e4`) |
+| plan hash | `0x2206022bd93b199fd96e13f23b912d325560337dc7a7caa778c1caf377e6e509` | yes (was `0x4fc3364f…c575`) |
+| execution set | `0x478c92b579a4bbf733a6eaa3bfcfbe6760a1c9009d5811315fe95cc53d827d24` | yes (was `0x9c22c034…c9e5`) |
+| index obligations | `0xd1ec8dd90fa4b1fbdfa5d62d10023214b421b3e56793439d37be91c4a84eb20b` | yes (was `0x38ac8541…d78f`) |
+| index manifest hash | `0x14f48551d0771b6935522ed5e930b9705c173c545a24b7fe036881a1f32ee148` | yes (was `0x755a082e…3537`) |
 | layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | no |
 | ABI id `efs/ledger-hot/2` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | no |
-| ABI id `efs/ledger-hot/2:test` | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | no |
 | ABI id `efs/posting-store/2` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | no |
 | ABI id `efs/bitmap-store/2` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` | no |
 | status vocabulary id | `0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87` | no |
 | limits profile id | `0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055` | no |
-| realm id | `0xdfef48c90e48dafc642f4380c8f39c14c1af7d84d5047e5acb7d508d5316460e` | yes (was `0x791e5fa5…4193`) |
-| domain separator | `0xef73e6345147076e5cab816f3a50e5695626648b1771dcc6f52a0327322b77d7` | yes (was `0xee65704e…c9a7`) |
-| `gas/model.json` sha256 | `0x77848e722c7f122463b009b0ccdc864c5ea40ab750007f490f0721d76c39c438` | yes (was `0x6b754403…8dad`) |
-| `release/errors.json` sha256 | `0xc1030128f82e0dec4a6901045bb9f12fc5407dd2a4ff17de973815e282e1606c` | yes (was `0xa3278b62…ff7e`) |
+| realm id | `0xdfef48c90e48dafc642f4380c8f39c14c1af7d84d5047e5acb7d508d5316460e` | no |
+| domain separator | `0xef73e6345147076e5cab816f3a50e5695626648b1771dcc6f52a0327322b77d7` | no |
+| `gas/model.json` sha256 | `0x2862faf955dc7510afa3adca4d732515c308dcbb652c23291c32e2e63401699f` | yes (was `0x77848e72…c438`) |
+| `release/errors.json` sha256 | `0xa5fd5d86356d8b759651fb5e4b4ef4daca438a4d190b0e620f421c5199e68b63` | yes (was `0xc1030128…606c`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
 | Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
-| Type id `files-name/2` | `0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a` | no |
+| Type id `files-name/3` | `0x20665824055a0b9a5221ba5bdb118fdb3b827a6399d1cc4afed4ac2398298c8d` | yes (was `0x2b4d22da…c27a`) |
 | Type id `files-bytes/1` | `0x9e6efb2374eb521d6f32e828be5cfc1b801c3d139bd0d65fe20c03123bb938f0` | no |
 | Type id `files-content/1` | `0xca1cd7e79576ec700b74d301e12f0ada3c15fe92727cfd1ca6853dda1bbb5dfe` | no |
 | Type id `files-external/1` | `0xb7c77ee54932f287dbd1d65f78662e9e63a8d80d9364c12616f4b76783350386` | no |
 | Type id `directory-alias/1` | `0x0c48b987487897968c6b3688da60e3c6db8e645aac2b481b3a1cc36789aecb61` | no |
 | Type id `realm-notice/1` | `0xc9efe343865f6f02915f75a1793e2a303b257cbe4bbd4a128ab936cc18cf5c24` | no |
 | Type id `files-span/1` | `0xda1abbbbdcaac315756b708a21cb7bcab21bdca7ddcf994eca8597d20fa2debd` | no |
-| Type id `topic-word/1` | `0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b` | no |
-| Type id `topic/1` | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | no |
+| Type id `topic-word/1` | `0xe742938125784d985d5eab20872be5045976e9fc0807804f173ece59a3fb3859` | yes (was `0xadf365a3…886b`) |
+| Type id `topic/1` | `0x275a99cc5a7334c2ffd88257784015ec18f18ec8ffcd6b3e12233e5e3f67bfde` | yes (was `0x4ea9b8b2…d4cf`) |
 | Type id `text/1` | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | no |
-| ledger proxy | `0xe942147e5E9112c64ced569e8f5FA18B20073429` | yes (was `0xFEd9404A…43Ef`) |
-| ledger implementation (`LedgerCore`) | `0x13b04891ce92Bec464CA5fDF8e412E4FFB64342E` | yes (was `0xF0C32073…9E40`) |
-| ledger ProxyAdmin | `0x6894E327133006F2Fe5383006d14b290a1692035` | yes (was `0x154E96bf…7307`) |
-| registry proxy | `0x6cD3F5A2a7c8fDC22259BFFc9a81c699AFBBB415` | yes (was `0xF22eF34A…ab85`) |
-| registry implementation | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9` | no |
-| registry ProxyAdmin | `0x890795926ff55dc3bAC27103c51BF42d5ED7ba44` | yes (was `0x885F77f0…A642`) |
-| controller | `0xb89a7b732325bc25194AD9B1b51b72fad00EF770` | yes (was `0xdb1415d6…9be0`) |
-| genesis contract | `0xc2EeEe8765C8c99809B99aef72cb748daF3f9F62` | yes (was `0x0628338E…539C`) |
-| index (generation 1) | `0x9ca434fCb6EdfBa18e6F985EE9697e903f019f26` | yes (was `0xC2eD8A21…9bfd`) |
-| index runtime codehash | `0x086f70d323160eb4ee66d82883c656547e08fda0a841ee38f0b45197b01e67a8` | yes (was `0xc0dee80c…a546`) |
-| index reads contract | `0x98de17254E0fb67ee3F5F5800f2BaCF4bAb907DF` | yes (was `0x519cE2e7…9FC9`) |
-| posting store | `0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33` | yes (was `0x55c2D07C…f4C3`) |
-| bitmap store | `0xCEe929eC6398c54265EFCE369F76dAdD47477088` | yes (was `0xb3d6f841…A1f4`) |
+| ledger proxy | `0xe942147e5E9112c64ced569e8f5FA18B20073429` | no |
+| ledger implementation (`LedgerCore`) | `0x13b04891ce92Bec464CA5fDF8e412E4FFB64342E` | no |
+| ledger ProxyAdmin | `0x6894E327133006F2Fe5383006d14b290a1692035` | no |
+| registry proxy | `0x6cD3F5A2a7c8fDC22259BFFc9a81c699AFBBB415` | no |
+| controller | `0xb89a7b732325bc25194AD9B1b51b72fad00EF770` | no |
+| genesis contract | `0xc2EeEe8765C8c99809B99aef72cb748daF3f9F62` | no |
+| index (generation 1) | `0x412812D2Bd8aEE07963074D0A813F059B97D5f5D` | yes (was `0x9ca434fC…9f26`) |
+| index runtime codehash | `0xc901315f0c27ab1d2771d8eb177ec82bc88c809cd16c2b23b27b755ecea26849` | yes (was `0x086f70d3…67a8`) |
+| index reads contract | `0x1421c4C9884F0Be77029c83ae884CD84C927123F` | yes (was `0x98de1725…07DF`) |
 | `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | no |
 | `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | no |
 | `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
 | `readers.keysView` | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` | no |
-| `readers.lensReader` | `0xbb20026c277926D7eDD3d9bCa070FEcA85b4E374` | yes (was `0x072C087f…5Bc4`) |
-| `readers.lensReader` runtime codehash | `0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1` | yes (was `0x61e15445…7fe0`) |
-| `readers.filesPageReader` | `0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2` | yes (was `0xa03716f5…7404`) |
-| `readers.filesPageReader` runtime codehash | `0x52f038b5ce032260ac4147389646c72b0c5cc763403e37659834a9f062c42f6c` | yes (was `0x302810eb…dcd6`) |
-| `readers.topicMineReader` | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33` | yes (was `0x0de61140…cc6e`) |
-| `readers.topicMineReader` runtime codehash | `0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | yes (was `0x7f435e19…1bc6`) |
-| `readers.topicEveryoneReader` | `0x6082241a955e214432b069beC81A5a57c2EC39A0` | yes (was `0x0E082ab7…a76B`) |
-| `readers.topicEveryoneReader` runtime codehash | `0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | yes (was `0xc420fe4b…b70f`) |
-| `readers.topicLookupReader` | `0xF9176797604bEE9E49E8C7BC1Ac4a9A1a3B6d1a9` | yes (was `0xE32505C0…d5De`) |
-| `readers.topicLookupReader` runtime codehash | `0x48c379a6eee2a1f0caacbe966d885fed1b16037c9bcc22494e22307bd3b74487` | yes (was `0x77800e5d…fe63`) |
-| `readers.web3Gateway` | `0x78267F061679839Cb5e483d9aba806d5D032479e` | yes (was `0x99780AaA…583a`) |
-| `readers.web3Gateway` runtime codehash | `0xa73f9fffe1fc2ff4b788d502d9222d061057fc16294db24d75f1000fc7505c41` | yes (was `0xec9ea7c9…c029`) |
-| `readers.web3Gateway.content` | `0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47` | yes (was `0x7D73d400…3D15`) |
-| `readers.web3Gateway.content` runtime codehash | `0x91096216c4ec9ccfa94a7f40fcd4ed54562091a76d794413da539375bffb5a66` | yes (was `0x3113647b…3a08`) |
-| `LedgerIngress` (address, runtime codehash) | `0x064cB3432FCEa1965b2531eDe7B6f03461788319 / 0xd3e3e0cfcaba81a37807209c9c138387db51ad1a9ca38aeee6b3b1aee8b4728e` | yes (was `0x23eC6bBD…b1a7 / 0x1491217b…079a`) |
+| `readers.lensReader` | `0xbb20026c277926D7eDD3d9bCa070FEcA85b4E374` | no |
+| `readers.lensReader` runtime codehash | `0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1` | no |
+| `readers.filesPageReader` | `0xbd90fE59D14D6488e506Baac9340391dF5d934d9` | yes (was `0x3dba5FD3…f8a2`) |
+| `readers.filesPageReader` runtime codehash | `0x10d41bb049106fbbd746eeeecd1e6e7ca3fbaf2e442947c0db234e456c5da2ce` | yes (was `0x52f038b5…2f6c`) |
+| `readers.topicMineReader` | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33` | no |
+| `readers.topicMineReader` runtime codehash | `0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | no |
+| `readers.topicEveryoneReader` | `0x6082241a955e214432b069beC81A5a57c2EC39A0` | no |
+| `readers.topicEveryoneReader` runtime codehash | `0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | no |
+| `readers.topicLookupReader` | `0x3c57C6dfaEdF8B57077A721b9297921CcbDBA0Aa` | yes (was `0xF9176797…d1a9`) |
+| `readers.topicLookupReader` runtime codehash | `0xcd36e8e69853a45574df8dda96c641ab4c6f629fb485587453643be80ffca091` | yes (was `0x48c379a6…4487`) |
+| `readers.web3Gateway` | `0x386F52cCB19217AFf97337869Cf02a8bFd385f10` | yes (was `0x78267F06…479e`) |
+| `readers.web3Gateway` runtime codehash | `0x5d9ab2e932c429bceda3de17ed1cf60899c280a9fc6537575169eb8d3dec587d` | yes (was `0xa73f9fff…5c41`) |
+| `readers.web3Gateway.content` | `0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47` | no |
+| `LedgerIngress` (address, runtime codehash) | `0x064cB3432FCEa1965b2531eDe7B6f03461788319 / 0xd3e3e0cfcaba81a37807209c9c138387db51ad1a9ca38aeee6b3b1aee8b4728e` | no |
 | `LedgerApply` (address, runtime codehash) | `0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343 / 0x7d788fac98935e8c48d36d9e4886246093bef0a0eb20d445a7d28db275637669` | no |
-| `LedgerControl` (address, runtime codehash) | `0x992482530deb668f7B98D23edb19432796007722 / 0xa0386f81586303a1a8f7d11b79dca2cbd0439ea7938764bdabd182e21d58a6da` | yes (was `0x973f33FE…0160 / 0x078461f1…7daa`) |
+| `LedgerControl` (address, runtime codehash) | `0x992482530deb668f7B98D23edb19432796007722 / 0xa0386f81586303a1a8f7d11b79dca2cbd0439ea7938764bdabd182e21d58a6da` | no |
 | `LedgerReads` (address, runtime codehash) | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366 / 0x7aafb133b4b1b130b239da67027f7de118918861850b94584b68c101e0b71657` | no |
 | `LedgerViews` (address, runtime codehash) | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648 / 0xf15400a4921e6b3282e9e1b486a14a4268c0f01b1b18e88234659394abc9eb03` | no |
 | `DescriptorStore` (address, runtime codehash) | `0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c / 0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc` | no |
-| `IndexReplayDecoder` (address, runtime codehash) | `0x5fdA1ac334D046E3666FceBe45dBd3F5DaFdd3f4 / 0xf183f5c83d76686f23bc41f8f4e6f6f06447adc54da83f5f2751128ebf00dd03` | yes (was `0x49e9bC76…ED1b / 0x0f2574f4…2605`) |
+| `IndexReplayDecoder` (address, runtime codehash) | `0x5fdA1ac334D046E3666FceBe45dBd3F5DaFdd3f4 / 0xf183f5c83d76686f23bc41f8f4e6f6f06447adc54da83f5f2751128ebf00dd03` | no |
 | `ReaderDirectory` (address, runtime codehash) | `0x77865D8B084589021D9695865475cBED4fc16c31 / 0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f` | no |
 | `FilesBytesRule` (address, runtime codehash) | `0xdD9AE013bf2CCaf784626D70bcab5Be307b07e40 / 0x26b7e1529674fd83c36fbe5ccc9dab915a2f1821d853c707a2cd187e68066d2c` | no |
 | `FilesSpanRule` (address, runtime codehash) | `0x248C3f75c03d525c1813e6dCeDFAd10E2193a8b7 / 0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6` | no |
@@ -1195,36 +1764,34 @@ moved.
 | `FilesRootRule` (address, runtime codehash) | `0xd65df37B79581dEdC752ECDf3325bD91e54c561E / 0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39` | no |
 | `FilesChildRule` (address, runtime codehash) | `0x4d670A2Ef8915ccb1347b6BcC01C1efd073fB6A8 / 0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4` | no |
 | `FilesDirectoryRule` (address, runtime codehash) | `0x5A266C0a5428e3caDe9F4c5a8B830DCBDf478615 / 0xaea9d912818cd9f49a7b8426807494ca91551040ec499ec6dfaec6e40ad6bfd2` | no |
-| `FilesNameRule` (address, runtime codehash) | `0x245098a6b090227e8F542c460f1C3be3F948884f / 0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17` | no |
+| `FilesNameRule` (address, runtime codehash) | `0x0558440B6fb7A98665c3Ff1b2eDC4830C135aE7F / 0x80c8f4aa1066d240d09f1c110c60a94cdbf16e157d5f5721116e00077d169308` | yes (was `0x245098a6…884f / 0xd73a9ee2…fd17`) |
 | `RealmNoticeRule` (address, runtime codehash) | `0xB0be8d1E04D0B5D5268C05a6330c3254d6e5df34 / 0x52b5a16a788796687ec4607ff1ef59c4d99140c5eea9f583e8239b9d79b0ddcc` | no |
 | `DirectoryAliasRule` (address, runtime codehash) | `0x60B6B7611961E258dC8FF63b37830281Ce0F4bDa / 0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667` | no |
-| `TopicWordRule` (address, runtime codehash) | `0x44186F79ddA5e09dce338b0649b4c5E6ee4432a5 / 0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5` | no |
-| `TopicRule` (address, runtime codehash) | `0xD07aaA9b8b6719B7E8Af64e34B4366700c9a4CdC / 0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a` | no |
+| `TopicWordRule` (address, runtime codehash) | `0x131C5d9fEf6aa4477bFBDD3EdDf4B4D3F9F21450 / 0xee656292391d6fd99176abf04a8875989c323535087836c801e6a24d15c7edac` | yes (was `0x44186F79…32a5 / 0x29442a0e…dfd5`) |
+| `TopicRule` (address, runtime codehash) | `0x7fb25Cdd0840Fcd5dB5b6eFE32cC80A99336aeda / 0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a` | yes (was `0xD07aaA9b…4CdC / 0x6c3de3ab…d69a`) |
 | `TextRule` (address, runtime codehash) | `0xD10088139D60Be3faB03FD3012F3706C3Ac69485 / 0xb839d97202882243312d2792eebda9be94bb272490e3d652c73f2a1a9a0661a5` | no |
 | `RefuseAllPolicy` (address, runtime codehash) | `0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1 / 0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44` | no |
-| `FilesFinalValidator` (address, runtime codehash) | `0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0 / 0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | no |
-| `LedgerCore` (address, runtime codehash) | `0x13b04891ce92Bec464CA5fDF8e412E4FFB64342E / 0x2fdc95dda795c657c7500ee5ee2644fe0ceb6ee5a5bf4cd7e25f21366d56f23f` | yes (was `0xF0C32073…9E40 / 0x69dd1897…bef1`) |
+| `FilesFinalValidator` (address, runtime codehash) | `0x5232Bb9c585F8d992d80dA5f477371bFEe49182B / 0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | yes (was `0xc672EfB3…35C0 / 0xeb744b64…1619`) |
+| `LedgerCore` (address, runtime codehash) | `0x13b04891ce92Bec464CA5fDF8e412E4FFB64342E / 0x2fdc95dda795c657c7500ee5ee2644fe0ceb6ee5a5bf4cd7e25f21366d56f23f` | no |
 | `TypeRegistry` (address, runtime codehash) | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9 / 0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3` | no |
-| `RealmGenesis` (address, runtime codehash) | `0xc2EeEe8765C8c99809B99aef72cb748daF3f9F62 / 0x631085c94713962726cd0e64ab985602dcf9c6e6542aa88b2fd079b27bf0272c` | yes (was `0x0628338E…539C / 0x5b057dff…3d9a`) |
-| `PostingStore` (address, runtime codehash) | `0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33 / 0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465` | yes (was `0x55c2D07C…f4C3 / 0xa4b86e30…4a8d`) |
-| `BitmapStore` (address, runtime codehash) | `0xCEe929eC6398c54265EFCE369F76dAdD47477088 / 0xd8b36e1b30ec57c36304f9d0a86785bc7e8e00ec8028abb0097c060399442fdd` | yes (was `0xb3d6f841…A1f4 / 0x3569a27c…95d9`) |
-| `RealmController` (address, runtime codehash) | `0xb89a7b732325bc25194AD9B1b51b72fad00EF770 / 0x93341dc000015afd1a3c22e833d1ebb06e4239d253430a6ab6973f1a1de53930` | yes (was `0xdb1415d6…9be0 / 0x646adad3…2e2f`) |
-| `TypeRegistryProxy` (address, runtime codehash) | `0x6cD3F5A2a7c8fDC22259BFFc9a81c699AFBBB415 / 0xd044c103027b2c4ac7472651a7bc92cb82606b2a878b423a1146850a70015264` | yes (was `0xF22eF34A…ab85 / 0x2e2060da…e263`) |
-| `LedgerProxy` (address, runtime codehash) | `0xe942147e5E9112c64ced569e8f5FA18B20073429 / 0x9e0eb139edf90b2bac14563b114e92c6ba2f5a330686a4e9ec1003e57179ded1` | yes (was `0xFEd9404A…43Ef / 0xd9f1cf09…4134`) |
-| `RegistryProxyAdmin` (address, runtime codehash) | `0x890795926ff55dc3bAC27103c51BF42d5ED7ba44 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x885F77f0…A642 / 0xf32a01cd…52b2`) |
-| `LedgerProxyAdmin` (address, runtime codehash) | `0x6894E327133006F2Fe5383006d14b290a1692035 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x154E96bf…7307 / 0xf32a01cd…52b2`) |
-| `IndexReads` (address, runtime codehash) | `0x98de17254E0fb67ee3F5F5800f2BaCF4bAb907DF / 0x9abcfb6220404631fcd97e6ac59f6f5cdcd92680cd6afde0e2967fbe79072f43` | yes (was `0x519cE2e7…9FC9 / 0x09258a9a…2007`) |
-| `RealmIndex` (address, runtime codehash) | `0x9ca434fCb6EdfBa18e6F985EE9697e903f019f26 / 0x086f70d323160eb4ee66d82883c656547e08fda0a841ee38f0b45197b01e67a8` | yes (was `0xC2eD8A21…9bfd / 0xc0dee80c…a546`) |
+| `RealmGenesis` (address, runtime codehash) | `0xc2EeEe8765C8c99809B99aef72cb748daF3f9F62 / 0x631085c94713962726cd0e64ab985602dcf9c6e6542aa88b2fd079b27bf0272c` | no |
+| `PostingStore` (address, runtime codehash) | `0xf948095e56785166c51eE0Bb90C92d24b9D4718C / 0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807` | yes (was `0x1546aCdE…6D33 / 0xc2b395ce…4465`) |
+| `BitmapStore` (address, runtime codehash) | `0xCEe929eC6398c54265EFCE369F76dAdD47477088 / 0xd8b36e1b30ec57c36304f9d0a86785bc7e8e00ec8028abb0097c060399442fdd` | no |
+| `RealmController` (address, runtime codehash) | `0xb89a7b732325bc25194AD9B1b51b72fad00EF770 / 0x93341dc000015afd1a3c22e833d1ebb06e4239d253430a6ab6973f1a1de53930` | no |
+| `TypeRegistryProxy` (address, runtime codehash) | `0x6cD3F5A2a7c8fDC22259BFFc9a81c699AFBBB415 / 0xd044c103027b2c4ac7472651a7bc92cb82606b2a878b423a1146850a70015264` | no |
+| `LedgerProxy` (address, runtime codehash) | `0xe942147e5E9112c64ced569e8f5FA18B20073429 / 0x9e0eb139edf90b2bac14563b114e92c6ba2f5a330686a4e9ec1003e57179ded1` | no |
+| `RegistryProxyAdmin` (address, runtime codehash) | `0x890795926ff55dc3bAC27103c51BF42d5ED7ba44 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | no |
+| `LedgerProxyAdmin` (address, runtime codehash) | `0x6894E327133006F2Fe5383006d14b290a1692035 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | no |
+| `IndexReads` (address, runtime codehash) | `0x1421c4C9884F0Be77029c83ae884CD84C927123F / 0xaaa2423303e6d9351ebfd60ff1a5aeed26fd1a081d7e85332357079dcd9c4378` | yes (was `0x98de1725…07DF / 0x9abcfb62…2f43`) |
+| `RealmIndex` (address, runtime codehash) | `0x412812D2Bd8aEE07963074D0A813F059B97D5f5D / 0xc901315f0c27ab1d2771d8eb177ec82bc88c809cd16c2b23b27b755ecea26849` | yes (was `0x9ca434fC…9f26 / 0x086f70d3…67a8`) |
 | `KeysView` (address, runtime codehash) | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F / 0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3` | no |
-| `LensReader` (address, runtime codehash) | `0xbb20026c277926D7eDD3d9bCa070FEcA85b4E374 / 0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1` | yes (was `0x072C087f…5Bc4 / 0x61e15445…7fe0`) |
-| `FilesPageReader` (address, runtime codehash) | `0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2 / 0x52f038b5ce032260ac4147389646c72b0c5cc763403e37659834a9f062c42f6c` | yes (was `0xa03716f5…7404 / 0x302810eb…dcd6`) |
-| `EfsWeb3Content` (address, runtime codehash) | `0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47 / 0x91096216c4ec9ccfa94a7f40fcd4ed54562091a76d794413da539375bffb5a66` | yes (was `0x7D73d400…3D15 / 0x3113647b…3a08`) |
-| `EfsWeb3Gateway` (address, runtime codehash) | `0x78267F061679839Cb5e483d9aba806d5D032479e / 0xa73f9fffe1fc2ff4b788d502d9222d061057fc16294db24d75f1000fc7505c41` | yes (was `0x99780AaA…583a / 0xec9ea7c9…c029`) |
-| `TopicMineReader` (address, runtime codehash) | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33 / 0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | yes (was `0x0de61140…cc6e / 0x7f435e19…1bc6`) |
-| `TopicEveryoneReader` (address, runtime codehash) | `0x6082241a955e214432b069beC81A5a57c2EC39A0 / 0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | yes (was `0x0E082ab7…a76B / 0xc420fe4b…b70f`) |
-| `TopicLookupReader` (address, runtime codehash) | `0xF9176797604bEE9E49E8C7BC1Ac4a9A1a3B6d1a9 / 0x48c379a6eee2a1f0caacbe966d885fed1b16037c9bcc22494e22307bd3b74487` | yes (was `0xE32505C0…d5De / 0x77800e5d…fe63`) |
-| read bounds (prague): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
-| read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
+| `LensReader` (address, runtime codehash) | `0xbb20026c277926D7eDD3d9bCa070FEcA85b4E374 / 0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1` | no |
+| `FilesPageReader` (address, runtime codehash) | `0xbd90fE59D14D6488e506Baac9340391dF5d934d9 / 0x10d41bb049106fbbd746eeeecd1e6e7ca3fbaf2e442947c0db234e456c5da2ce` | yes (was `0x3dba5FD3…f8a2 / 0x52f038b5…2f6c`) |
+| `EfsWeb3Content` (address, runtime codehash) | `0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47 / 0x91096216c4ec9ccfa94a7f40fcd4ed54562091a76d794413da539375bffb5a66` | no |
+| `EfsWeb3Gateway` (address, runtime codehash) | `0x386F52cCB19217AFf97337869Cf02a8bFd385f10 / 0x5d9ab2e932c429bceda3de17ed1cf60899c280a9fc6537575169eb8d3dec587d` | yes (was `0x78267F06…479e / 0xa73f9fff…5c41`) |
+| `TopicMineReader` (address, runtime codehash) | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33 / 0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | no |
+| `TopicEveryoneReader` (address, runtime codehash) | `0x6082241a955e214432b069beC81A5a57c2EC39A0 / 0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | no |
+| `TopicLookupReader` (address, runtime codehash) | `0x3c57C6dfaEdF8B57077A721b9297921CcbDBA0Aa / 0xcd36e8e69853a45574df8dda96c641ab4c6f629fb485587453643be80ffca091` | yes (was `0xF9176797…d1a9 / 0x48c379a6…4487`) |
 | seed version | `efs-fixture-seed/4` | no |
 | seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
 
@@ -1721,7 +2288,10 @@ a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and e
 **The later rows and the list tiers.** The single-place later rows (`unbindTag`, `releaseTag`, `restoreTag`,
 `bindTagNumberChange`, `unbindFolder`, `releaseFolder`, `bindFolderRebind`, and the PROPERTY, SAME and BROADER later
 rows) are measured at one topic or folder with short lists; later statements at distinct places and in long lists are
-priced by the list tiers below (item 47), which bring every composite within the claim inside the headroom.
+priced by the list tiers below (item 47), which bring every composite within the claim inside the headroom. Since the
+list release every later row states the position it was measured at (`laterRows`), a BIND on a head that never bound
+has rows of its own (`bind<Purpose>AfterNo`), FOLDER, PROPERTY and HEAD restores are measured to a new target, and a
+statement at another position of its binding is corrected by `historyWordOpen`, symmetrically (item 57).
 
 **First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
 the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author
@@ -1864,8 +2434,9 @@ gas: every `GasModel.t.sol` publication is also run from the same state with the
   compute`, where each BIND, UNBIND or RELEASE adds one row by class, first statement (head UNSET: `freshPerBindFirst`,
   `rwPerBindFirst`, `computePerBindFirst`), re-bind (a BIND on a BOUND head: `freshPerRebind`, `rwPerRebind`,
   `computePerRebind`) or other later statement (`freshPerBindLater`, `rwPerBindLater`, `computePerBindLater`; a RELEASE
-  always), plus the surcharge's row of the same class when its purpose word equals `surchargePurpose` (never when that
-  is zero), and every WITHDRAW after the first adds the later row (a REUSE always names an existing record); with no
+  always), plus the surcharge's row of the same class when its purpose word equals `surchargePurpose` (plain
+  equality: a statement's purpose is never zero, `E_SHAPE`, so a zero `surchargePurpose` surcharges nothing that can
+  be admitted), and every WITHDRAW after the first adds the later row (a REUSE always names an existing record); with no
   principal every bind-kind action adds the largest of the three rows field by field; `P = compute +
   ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase + binds·finalComputePerBind +
   publishes·finalComputePerPublish`;
@@ -1878,12 +2449,16 @@ and the model's error); anything larger is split before it is signed. **A consum
 condition reads the UNDER-prediction field**: `profiles.prague.maxUnderErrorPercent` on prague (the cap counts all gas)
 and `profiles.amsterdam.maxUnderExecutionErrorPercent` on amsterdam (it counts execution gas only), each with its
 composite (`maxUnderErrorComposite`, `maxUnderExecutionErrorComposite`). Headroom exists to stop a plan coming out too
-small; an over-prediction only costs batch size. The maximum-error fields (`maxAbsErrorPercent`,
-`maxAbsExecutionErrorPercent`) keep their meaning, and the tool refuses a model in which any of the four exceeds 15%. A roll-up list's next append is priced as new
+small; an over-prediction only costs batch size. Since the list release (item 57) the tool refuses a model with an
+UNDER-prediction above 15% anywhere (prague all gas, amsterdam all gas, amsterdam execution gas) or an OVER-prediction
+above 15% of the gas the cap counts (prague all gas, amsterdam execution gas); amsterdam's all-gas over-prediction is
+refused per composite above 15% plus its later statements × 97,920 state gas over its measured gas (the rows' worst
+case, which a planner cannot see), so `profiles.amsterdam.maxOverErrorPercent` and `maxAbsErrorPercent` (the larger
+of the under- and over-prediction of all gas) are stated, not bounded at 15%. A roll-up list's next append is priced as new
 when it holds a number of entries in `tagLists.priceAsNew.entries` (`[1]`) or a multiple of
 `tagLists.priceAsNew.entriesMultipleOf` (5, zero included); the prose rule above is that field. `tools/gas-plan.mjs` is
 the reference implementation (it imports nothing and reads only the model it is given; `tools/test/gas-plan.test.mjs`);
-`pnpm run release` writes its verdict for seventeen shapes to `test/vectors/floor-plan.json` (the largest planned count per
+`pnpm run release` writes its verdict for twenty-two shapes to `test/vectors/floor-plan.json` (the largest planned count per
 schedule with E, K, V, P and F, and the refusal of one unit more), and `test/integration/FloorPlan.t.sol` builds each
 shape at that count, checks the kernel's own `prepare` quote equals the rule's P and F (read from the `E_INDEX_GAS` the
 first callback reverts with on just enough gas, or `indexFloor` for a publication with no BIND or UNBIND, whose quote
@@ -1893,7 +2468,9 @@ profile has no reservoir and no cap, so there this is arithmetic on the measurem
 one-word topic; first tags at depth 8 and 64, everything new and everything existing; a second author's first tags at
 depth 8; masks, releases and restores of tags; number changes of asserted tags; masks of masks; re-binds of
 root-folder entries to another file; repeat PUBLISHes of existing name records; fresh name records; a mix of fresh
-name records and first tags (one of each per unit); a registration chunk of word pages; create-file recipes. For each
+name records and first tags (one of each per unit); a registration chunk of word pages; create-file recipes; and since
+the list release yeses after lone noes on a one-word topic, create-file recipes at removed names and moves into removed
+names, each with the name PUBLISH a repeat and with none. For each
 the suite also logs the callbacks' prefix spend (E − K − the final phase) and the final phase against P and F, and
 for every shape but the first tags (whose depth the floor does not know) and the folder re-binds' final phase it
 asserts the quote covers them.

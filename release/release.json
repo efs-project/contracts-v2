@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "007a04b528d078c81343106e8675dd550826e4b9",
-    "tree": "556ed3975e7bcc0b78b5bddb6e146e88716eac67",
-    "dirty": 10,
+    "commit": "36e1b272a5f7f6ff87968a07f33cefa58dfa1ed7",
+    "tree": "4707f5baf605440477e54f1d8c7d7114e45ea74e",
+    "dirty": 2,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -47,12 +47,12 @@
     "src/interfaces/ILedgerHot.sol": "0x1b70d70b5656436f46ff9f388895376515aef3bb533d1bf8f3b79e29881b53b5",
     "src/interfaces/IRealmIndex.sol": "0x78bade9e082cb5a86790a5e304d85a320a194f8c2edd87d2bd17ef45e84c97d1",
     "src/interfaces/ITypeRegistry.sol": "0x0f7323f9c6f9982c1e2d37fefb2792ee04dd5bb5e7853f7928986709d594eb1c",
-    "src/interfaces/Index.sol": "0xc34a01b041189ad96574ebc3a460459e800d17a80381327cc2fe98aab81c50a6",
+    "src/interfaces/Index.sol": "0x75aa277c31b5f2c1f4807a43fb85ea17d6b659d820d1df404491272171e75b6c",
     "src/interfaces/Limits.sol": "0xb66538ac9546f5baf085c8e86a5a7033400240ece9ad4208e4ae054332af9d52",
     "src/interfaces/Results.sol": "0x7c2d00946fb9f082ef07e5c23cd9284060f51ae151fdddb742c9f840c364bf5e",
     "src/interfaces/internal/ILedgerIngress.sol": "0x7aad49de79a6fe1094cc6ec8c803c48ffbeed794d750179eae6555e6d715a709",
     "src/lib/CodePins.sol": "0x242d70fb6037dec503ba3d29628bdde56bf61c158e4ff73b2edfe0473378ae4e",
-    "src/lib/Keys.sol": "0x349d96afc5cd3d0599e2c889f39d3a04a809af7ab95af44954af6a6c6044e8eb",
+    "src/lib/Keys.sol": "0x5b8bc6d8240d68378ee84ff21a0b44217585c52c5244f629ae739e068071e2ab",
     "src/core/LedgerApply.sol": "0xa5700945c7f0872ffd21660b47cd0c7d090e194eccf18f47c25df1f6b6c41662",
     "src/interfaces/internal/ILedgerApply.sol": "0xadaf77f23f5342abd00c0b20085548cb9527c4ed2dacb85aa63cc71fd5d1278d",
     "src/core/LedgerControl.sol": "0xf2d6d06e18d2af01dbaf956e6061810565f4b7bd105234c846649114be745c78",
@@ -96,22 +96,22 @@
     "src/control/RealmGenesis.sol": "0x829b5adb7eafafcfd19e7077739b629ab485570dbc3b3f22f27672215a1ff45a",
     "src/interfaces/IRealmController.sol": "0x66f309053ea3b5bbe85da1b9643c5ccb6f7f5130a9d75ac4458a2bec0e0be8b0",
     "src/control/RealmController.sol": "0x8eb0d0c50f994e3f9c96fd8036abab83fa21627d1884e76289cd113cfb5caea7",
-    "src/index/PostingStore.sol": "0x7583271dab4a57f3559c7eda6cbde2ed74c57b35eb1c7372b05c8311309fed3e",
+    "src/index/PostingStore.sol": "0x980befa7bb425b97f285ac438a245625d0944ec91c8f74f34741c38f6596a965",
     "src/index/StoreBase.sol": "0x47fb24b43430781ca9cba23943630f6fedba550e2d0aedf2e7b5beca6e909a2c",
     "src/index/storage/StoreStorage.sol": "0x877abeede5118e91b28363d3861d0c3120a62d3487c784778a72eb5820c606dc",
     "src/index/BitmapStore.sol": "0x6dc9c264cba5cceaae2a42d29f2f2227bf1bbde67fddbf8dfd01f02f06101b13",
     "src/interfaces/IBitmapStore.sol": "0xd80f64c9080cd88bc154f17b63e615b0e71cb1fef72b1a813c569dc234e1f107",
     "src/index/IndexProfiles.sol": "0x8638e5e6a302bb0e203d6c85b158d3c2fce5fd4fceb910ea13c33f7ef31fdab5",
-    "src/index/IndexReads.sol": "0xb03da85db884297635a9d81e957ce86d01d02c5b866b4e691d99f2347130bf8a",
-    "src/index/RealmIndex.sol": "0xdfae78371abc5e26770dc824a0f11e4e781fe34a717213b755c42231a782c90e",
+    "src/index/IndexReads.sol": "0xeb2e258510e55f502e1872e771353325945ef554180553455ffd68f6a1b90d1d",
+    "src/index/RealmIndex.sol": "0x6ebe68448fa00c24185231ec8f8a88af568ba8e2f1200e9f1ca5738d01dda2cd",
     "src/index/storage/GenerationStorage.sol": "0x41f833ac25103535f0a09c1206fc1c8bc2dc2516016b7175f13c3ec5724578ff",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
-    "src/profiles/FilesFinalValidator.sol": "0xab8406b87d255fd0eb13b23bd469a44bf3651e462021a17ed6cf99ebf3a1b81d",
+    "src/profiles/FilesFinalValidator.sol": "0x58d03bd940b3ce9d7f746d3349221943f6fee17a9136ccb957d9fe5b18407bba",
     "src/profiles/FilesProfile.sol": "0x87cdf0ae062c51c27d638d9da9b84f686b0c69229227897a6ee351b2aa4623d0",
     "src/profiles/FilesRootRule.sol": "0x305c3768262771e80efc8191909a377aeede3c48f7ae69592da31d9017817e13",
     "src/profiles/FilesChildRule.sol": "0x3265de9a460f4fc1275c07ddd30937543c564d7fdec4a198c7c3b2f2ad06d3da",
     "src/profiles/FilesDirectoryRule.sol": "0x6920ed6acc35c1e3f73d6e08da4d19417bc0fb642059e376110a77b7743bab57",
-    "src/profiles/FilesNameRule.sol": "0x9cd9ea1ed3906f4383ccfbe1469cfa3877610e889ea37472fd1f8b482e98d9a5",
+    "src/profiles/FilesNameRule.sol": "0x883620eee8c91afe184bf2e96a92d34ea4f9f0e92dd22883ccad7eeb3ff7d929",
     "src/profiles/FilesBytesRule.sol": "0x260eae8f368ba64a97ce9fd6296cd705b6a60da2197ea6c76a41cb6ebbb83758",
     "src/profiles/FilesContentRule.sol": "0x08610c7ce1d388d8ad8788936b7057588fd2a3a93b699c3b2b1b9a6ee5e2070a",
     "src/profiles/FilesExternalContentRule.sol": "0x37697a6f32be1b95e6d6c9ac198fa248aebc115958769e8f4384a84488d6d1b7",
@@ -119,7 +119,7 @@
     "src/profiles/RealmNoticeRule.sol": "0x0deaf5e2bacc58d532d2808c3c9d7efa768d23e7404504891a9be9596f99e97c",
     "src/profiles/RefuseAllPolicy.sol": "0xe8f9d2843d2c6f71273a4865e4e1a2b04ab09aa3d413609a21b900187c261d3a",
     "src/readers/LensReader.sol": "0x7960c4a5738bc328794c46cf672fb1f055bd49093f67f8f73248c77655a2c5f4",
-    "src/readers/FilesPageReader.sol": "0x3aa5bc336008139030d622493bb72e98561241c201168b71b830b2fe0e6b04a4",
+    "src/readers/FilesPageReader.sol": "0xb7d2033a3f7ebe95ff81a317628024218b8d7785f48876a5cbfff00012a7b5a8",
     "src/readers/TopicMineReader.sol": "0xbc3e3ab94d6f1aefb7714da78adfc42b73edb7e14db03a79e1251d760d185f91",
     "src/readers/TopicReaderBase.sol": "0x3ea2087c6c5724c9a99c469a5d25889ecc093b0c64ad635f2bf66b9dc58adc97",
     "src/readers/TopicEveryoneReader.sol": "0x8ea8d871970bcf5a85a88affa8de6b3d61a6437af8605dc963f552f2990b78a9",
@@ -130,11 +130,11 @@
     "src/interfaces/IWeb3Content.sol": "0x7a1e7b125719b39245c37fdfe8afe920e12f851ff19c8b1d43a6e7a6a32000af",
     "src/interfaces/IWeb3Gateway.sol": "0x7fdbf781f32df3fa09aaa04f6790c3623e01eba96a26ab35388857dcff0f22ce",
     "src/periphery/EfsWeb3Content.sol": "0x8868e5e8849e9d3ca93ea7b02ff268c63284a229bde1133a373edaf6114a6c25",
-    "src/periphery/EfsWeb3Gateway.sol": "0xdf5c5f9460fe055f0068749b46c64572e7a2c49f97dc420ada5a10b074043105",
-    "src/profiles/TopicProfile.sol": "0xee515a8a7d7ea4ff9fcceab44b9e45f72654671326dfb87317e8ada855b59e42",
-    "src/profiles/TopicWordRule.sol": "0xbac191bfd610fe172765e39c86694dd6dd4b28154e5663314a46d73f2d4116e1",
+    "src/periphery/EfsWeb3Gateway.sol": "0x93208889b92bde1affe7de236ff5434e091d051a9119e01f3045d168bd039248",
+    "src/profiles/TopicProfile.sol": "0x6b466a78cbe7f54c1674de6ed8eb29898fdee47b4c9b1eeaab9507bf4a4794f9",
+    "src/profiles/TopicWordRule.sol": "0x14a9d00614d2382094c00ddd68552d02c327db71b42626b8c77024b637eb8cd4",
     "src/profiles/TopicRule.sol": "0xc9c538e054c8e4d6a2fc8cf9165e70590fa454d4ea148732ff2d411915759eb0",
-    "src/profiles/TextRule.sol": "0xb75826b599119bfc85d9505582f1abc57932183a7d96f9d57997928ecb2c2d8d"
+    "src/profiles/TextRule.sol": "0x18b9b71e6ac1c05a435c228db191fe302610e17b9930781d1a82a35fd004bd87"
   },
   "contracts": {
     "LedgerIngress": {
@@ -699,11 +699,11 @@
     },
     "PostingStore": {
       "source": "src/index/PostingStore.sol",
-      "runtimeHash": "0xefefa7d9cde874c79a9b5e4bba86f9ae873d584f5713e36c80525a4c075c4d1c",
-      "deployedBytecodeHash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465",
-      "initcodeHash": "0x97613bf58e06a3c3a62146188416e488ccdce488e62e8ea3daa531d1c835f9bb",
-      "initcodeWithArgsHash": "0xa4bfc02c4fed0de80d2df1a1b4504a1033ead66a35ff619c505fbb747b4c6e1b",
-      "address": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
+      "runtimeHash": "0x6fd126a680927100d0e73c5c6976a425b96c54fbfb98dd22fa93b19122e0b88d",
+      "deployedBytecodeHash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807",
+      "initcodeHash": "0x52f49e4fcab5b8918a7907174e7aafd91bb68faea67b06c65dc9e2ced3ef044b",
+      "initcodeWithArgsHash": "0x72faa4bae2e4529d13040942dac059c8e9140a00eb3432c4001288bfb1433e29",
+      "address": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
       "realmSpecific": true,
       "planStep": "G16",
       "immutables": [
@@ -716,112 +716,118 @@
         {
           "name": "F1",
           "offsets": [
-            4635
+            4683
           ]
         },
         {
           "name": "F10",
           "offsets": [
-            4266
+            4314
           ]
         },
         {
           "name": "F11",
           "offsets": [
-            4225
+            4273
           ]
         },
         {
           "name": "F12",
           "offsets": [
-            4184
+            4232
           ]
         },
         {
           "name": "F13",
           "offsets": [
-            4143
+            4191
           ]
         },
         {
           "name": "F14",
           "offsets": [
-            4102
+            4150
           ]
         },
         {
           "name": "F15",
           "offsets": [
-            4061
+            4109
+          ]
+        },
+        {
+          "name": "F16",
+          "offsets": [
+            4068
           ]
         },
         {
           "name": "F2",
           "offsets": [
-            4594
+            4642
           ]
         },
         {
           "name": "F3",
           "offsets": [
-            4553
+            4601
           ]
         },
         {
           "name": "F4",
           "offsets": [
-            4512
+            4560
           ]
         },
         {
           "name": "F5",
           "offsets": [
-            4471
+            4519
           ]
         },
         {
           "name": "F6",
           "offsets": [
-            4430
+            4478
           ]
         },
         {
           "name": "F7",
           "offsets": [
-            4389
+            4437
           ]
         },
         {
           "name": "F8",
           "offsets": [
-            4348
+            4396
           ]
         },
         {
           "name": "F9",
           "offsets": [
-            4307
+            4355
           ]
         },
         {
           "name": "INITIAL_WRITER",
           "offsets": [
             2900,
-            5081
+            5129
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
             2968,
-            4910
+            4958
           ]
         }
       ],
       "sizes": {
-        "runtime": 6651,
-        "initcode": 7974,
-        "initcodeWithArgs": 8582
+        "runtime": 6699,
+        "initcode": 8069,
+        "initcodeWithArgs": 8709
       },
       "budget": {
         "runtime": 19660,
@@ -902,10 +908,10 @@
     "IndexReads": {
       "source": "src/index/IndexReads.sol",
       "runtimeHash": "0x9ec6f46266859b010362c84c4b83a34a96de74d695cbd89357728e7b7598fc66",
-      "deployedBytecodeHash": "0x9abcfb6220404631fcd97e6ac59f6f5cdcd92680cd6afde0e2967fbe79072f43",
-      "initcodeHash": "0x49292b727be867015899f242fce534dc78ab2b58c5b0d97a1821a75f085afb71",
-      "initcodeWithArgsHash": "0x27ccc20b45865d276be990260415467b22567756b95a0b24986421327056b78e",
-      "address": "0x98de17254E0fb67ee3F5F5800f2BaCF4bAb907DF",
+      "deployedBytecodeHash": "0xaaa2423303e6d9351ebfd60ff1a5aeed26fd1a081d7e85332357079dcd9c4378",
+      "initcodeHash": "0xbdff761ad9f3c43dd28914c81f311c82c92ba1633ebdfe7bbd0f9f64a58fc963",
+      "initcodeWithArgsHash": "0x57b9bb45d294b5a34262de0fc9e78195d5bed57944d088db6ac0b02b1116e365",
+      "address": "0x1421c4C9884F0Be77029c83ae884CD84C927123F",
       "realmSpecific": true,
       "planStep": "G19a",
       "immutables": [
@@ -995,8 +1001,8 @@
       ],
       "sizes": {
         "runtime": 12960,
-        "initcode": 25299,
-        "initcodeWithArgs": 27219
+        "initcode": 25737,
+        "initcodeWithArgs": 27657
       },
       "budget": {
         "runtime": 19660,
@@ -1005,11 +1011,11 @@
     },
     "RealmIndex": {
       "source": "src/index/RealmIndex.sol",
-      "runtimeHash": "0x56a00c570a9abe70d8bfd402ac0c1e846132d3dcb6b4c4c0d89e752dda3a0d02",
-      "deployedBytecodeHash": "0x086f70d323160eb4ee66d82883c656547e08fda0a841ee38f0b45197b01e67a8",
-      "initcodeHash": "0x3aa2dfa799ded79665f6cb3a294eac45e959c5085543d4d79f643114faabc968",
-      "initcodeWithArgsHash": "0x0eb5937e58ab3ea0412971666458f3fd70fa422150e0bedf80e35095f0cecc57",
-      "address": "0x9ca434fCb6EdfBa18e6F985EE9697e903f019f26",
+      "runtimeHash": "0x529c06fb6ed08c95a97931bbb7f9e187656bba7bb683b8479c34a754b518db17",
+      "deployedBytecodeHash": "0xc901315f0c27ab1d2771d8eb177ec82bc88c809cd16c2b23b27b755ecea26849",
+      "initcodeHash": "0xee3663e0827d097a5a02c2928db890d58a341903d1a3992f4ba7967368d29eda",
+      "initcodeWithArgsHash": "0xa8505ff522e632180ac8895a7761352caa052e35d3d2af4634bf20f059f1f387",
+      "address": "0x412812D2Bd8aEE07963074D0A813F059B97D5f5D",
       "realmSpecific": true,
       "planStep": "G19",
       "immutables": [
@@ -1019,14 +1025,14 @@
             541,
             7578,
             7668,
-            12566
+            12533
           ]
         },
         {
           "name": "BUILT_HOOKS",
           "offsets": [
             485,
-            12525
+            12492
           ]
         },
         {
@@ -1042,15 +1048,15 @@
         {
           "name": "F_BACKLINK",
           "offsets": [
-            10703,
-            11199
+            10704,
+            11166
           ]
         },
         {
           "name": "F_BY_AUTHOR",
           "offsets": [
             9726,
-            11598
+            11565
           ]
         },
         {
@@ -1058,90 +1064,96 @@
           "offsets": [
             9898,
             10053,
-            12232,
-            12375
+            12199,
+            12342
           ]
         },
         {
           "name": "F_BY_TYPE",
           "offsets": [
             9611,
-            11542
+            11509
           ]
         },
         {
           "name": "F_DIGEST",
           "offsets": [
-            11762
+            11729
+          ]
+        },
+        {
+          "name": "F_HEAD_AUTHORS",
+          "offsets": [
+            14080,
+            15004
           ]
         },
         {
           "name": "F_HISTORY",
           "offsets": [
-            10430
+            10431
           ]
         },
         {
           "name": "F_LIVE_SCOPE",
           "offsets": [
-            12838,
-            13156
+            12805,
+            13123
           ]
         },
         {
           "name": "F_PLACE",
           "offsets": [
-            14695
+            14831
           ]
         },
         {
           "name": "F_PLACE_BELOW",
           "offsets": [
-            17623
+            17948
           ]
         },
         {
           "name": "F_POSITION_AUTHORS",
           "offsets": [
-            10832,
-            11017,
-            14374
+            14122,
+            14510
           ]
         },
         {
           "name": "F_REFERENCE_POSITION",
           "offsets": [
-            11710
+            11677
           ]
         },
         {
           "name": "F_ROLE_PLACES",
           "offsets": [
-            14610
+            14746
           ]
         },
         {
           "name": "F_ROLE_SCOPE",
           "offsets": [
-            10594
+            10595
           ]
         },
         {
           "name": "F_SCOPE",
           "offsets": [
-            12703
+            12670
           ]
         },
         {
           "name": "F_SCOPE_BELOW",
           "offsets": [
-            17550
+            17875
           ]
         },
         {
           "name": "F_UNIQUE_BY_TYPE",
           "offsets": [
-            11671
+            11638
           ]
         },
         {
@@ -1155,9 +1167,9 @@
             7166,
             8075,
             8312,
-            11796,
-            12304,
-            17219
+            11763,
+            12271,
+            17544
           ]
         },
         {
@@ -1174,9 +1186,9 @@
             7621,
             9538,
             10332,
-            12157,
-            14269,
-            14965
+            12124,
+            14443,
+            15161
           ]
         },
         {
@@ -1198,15 +1210,15 @@
         {
           "name": "TOPIC_T",
           "offsets": [
-            14537,
-            17306,
-            18054
+            14673,
+            17631,
+            18379
           ]
         },
         {
           "name": "WORD_T",
           "offsets": [
-            17691
+            18016
           ]
         },
         {
@@ -1223,9 +1235,9 @@
         }
       ],
       "sizes": {
-        "runtime": 18408,
-        "initcode": 25430,
-        "initcodeWithArgs": 25526
+        "runtime": 18733,
+        "initcode": 25814,
+        "initcodeWithArgs": 25910
       },
       "budget": {
         "runtime": 19660,
@@ -1237,8 +1249,8 @@
       "runtimeHash": "0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619",
       "deployedBytecodeHash": "0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619",
       "initcodeHash": "0x6156e1b4d7fcf67b70f420c74bc9365a73793d06513cdd651a08ec744d1a99da",
-      "initcodeWithArgsHash": "0xe85da7eaf7f79f2114ae061102d212073e0b21f13316c99988c7e7644cac2328",
-      "address": "0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0",
+      "initcodeWithArgsHash": "0x48b5a1a695cb3811eb34f29d2c8a6490509be55a1d080b5a734e4b476a58c12e",
+      "address": "0x5232Bb9c585F8d992d80dA5f477371bFEe49182B",
       "realmSpecific": false,
       "planStep": "G12",
       "immutables": [],
@@ -1305,18 +1317,18 @@
     },
     "FilesNameRule": {
       "source": "src/profiles/FilesNameRule.sol",
-      "runtimeHash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
-      "deployedBytecodeHash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
-      "initcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
-      "initcodeWithArgsHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
-      "address": "0x245098a6b090227e8F542c460f1C3be3F948884f",
+      "runtimeHash": "0x80c8f4aa1066d240d09f1c110c60a94cdbf16e157d5f5721116e00077d169308",
+      "deployedBytecodeHash": "0x80c8f4aa1066d240d09f1c110c60a94cdbf16e157d5f5721116e00077d169308",
+      "initcodeHash": "0x10a975d4335beb85673fcbcdaf8e4077ea9967d6415be3026e459db171b84ac2",
+      "initcodeWithArgsHash": "0x10a975d4335beb85673fcbcdaf8e4077ea9967d6415be3026e459db171b84ac2",
+      "address": "0x0558440B6fb7A98665c3Ff1b2eDC4830C135aE7F",
       "realmSpecific": false,
       "planStep": "G10.3",
       "immutables": [],
       "sizes": {
-        "runtime": 1683,
-        "initcode": 1709,
-        "initcodeWithArgs": 1709
+        "runtime": 1627,
+        "initcode": 1653,
+        "initcodeWithArgs": 1653
       },
       "budget": null
     },
@@ -1532,10 +1544,10 @@
     "FilesPageReader": {
       "source": "src/readers/FilesPageReader.sol",
       "runtimeHash": "0x6bd68e20de3bdc14aee42e505361ee41e3ffe35c64dc58cb522ab01aac47741e",
-      "deployedBytecodeHash": "0x52f038b5ce032260ac4147389646c72b0c5cc763403e37659834a9f062c42f6c",
+      "deployedBytecodeHash": "0x10d41bb049106fbbd746eeeecd1e6e7ca3fbaf2e442947c0db234e456c5da2ce",
       "initcodeHash": "0x5304361e4b79e3bc91a62343a42316f9fe511396d46322ad127f942a25f61d6c",
-      "initcodeWithArgsHash": "0x8bfbd6bbdcc5f3dddd6d493a62252b98e079ec5f9e8426c3544f2e6881644df0",
-      "address": "0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2",
+      "initcodeWithArgsHash": "0x9aa7e452e7825a1abe9c7a9bd46a18bc6055e9491685baedff37de979ca83546",
+      "address": "0xbd90fE59D14D6488e506Baac9340391dF5d934d9",
       "realmSpecific": true,
       "planStep": "R2",
       "immutables": [
@@ -1715,10 +1727,10 @@
     "TopicLookupReader": {
       "source": "src/readers/TopicLookupReader.sol",
       "runtimeHash": "0x61cff0352016be93db1b5020cb21ec6f3aa560e5d10d68c098ac5d3d2bb85b88",
-      "deployedBytecodeHash": "0x48c379a6eee2a1f0caacbe966d885fed1b16037c9bcc22494e22307bd3b74487",
+      "deployedBytecodeHash": "0xcd36e8e69853a45574df8dda96c641ab4c6f629fb485587453643be80ffca091",
       "initcodeHash": "0x8b2af0824ca3d21f104ce9f8e60c586bae648c6a06bf80480c3329cebbda078c",
-      "initcodeWithArgsHash": "0x7161e0ef03339e1cfdd8a48348cb43a6320f38dd1f6a2488167cdc40fdde42d2",
-      "address": "0xF9176797604bEE9E49E8C7BC1Ac4a9A1a3B6d1a9",
+      "initcodeWithArgsHash": "0xae432c05309317b74ad13661a67480cbc9ab4b0c9bd01ad2fc3b69fd51f6a109",
+      "address": "0x3c57C6dfaEdF8B57077A721b9297921CcbDBA0Aa",
       "realmSpecific": true,
       "planStep": "R8",
       "immutables": [
@@ -1915,11 +1927,11 @@
     },
     "EfsWeb3Gateway": {
       "source": "src/periphery/EfsWeb3Gateway.sol",
-      "runtimeHash": "0xc3983b57a2185a89ae102b23dd3f679d0e786f7f56fc2c780cf1552a4946cba8",
-      "deployedBytecodeHash": "0xa73f9fffe1fc2ff4b788d502d9222d061057fc16294db24d75f1000fc7505c41",
-      "initcodeHash": "0xee473356bd083389e0fa08f7ddf12ef6a381621bd5e4b5b835461a4867d80d3d",
-      "initcodeWithArgsHash": "0xc68d988c11f0db90ec280a2b2c19f55ec0ccc1d846574563a2d6b27d9ce9e00b",
-      "address": "0x78267F061679839Cb5e483d9aba806d5D032479e",
+      "runtimeHash": "0x0d1ec26d8c0b8e89872b81393b1ddad134dcefaa45c92b0a421545510dfb837c",
+      "deployedBytecodeHash": "0x5d9ab2e932c429bceda3de17ed1cf60899c280a9fc6537575169eb8d3dec587d",
+      "initcodeHash": "0x9934ee300f8ef90e409ab0e9bd554cc4560cfdbeb36b55e5f8b3df245db1796d",
+      "initcodeWithArgsHash": "0x7f1b46e0b1eae3953c1d307efb6c925a9dc94b5c54cdf99a4cb1ab46e653cc95",
+      "address": "0x386F52cCB19217AFf97337869Cf02a8bFd385f10",
       "realmSpecific": true,
       "planStep": "R5",
       "immutables": [
@@ -1927,16 +1939,16 @@
           "name": "CONTENT",
           "offsets": [
             562,
-            7489,
-            8852
+            7509,
+            8872
           ]
         },
         {
           "name": "CONTENT_CODEHASH",
           "offsets": [
             1062,
-            7525,
-            8887
+            7545,
+            8907
           ]
         },
         {
@@ -1959,15 +1971,15 @@
           "offsets": [
             891,
             4051,
-            6843,
-            10247
+            6833,
+            10267
           ]
         },
         {
           "name": "PAGER",
           "offsets": [
             796,
-            10936
+            10956
           ]
         },
         {
@@ -1992,26 +2004,26 @@
         }
       ],
       "sizes": {
-        "runtime": 15391,
-        "initcode": 16327,
-        "initcodeWithArgs": 16551
+        "runtime": 15565,
+        "initcode": 16501,
+        "initcodeWithArgs": 16725
       },
       "budget": null
     },
     "TopicWordRule": {
       "source": "src/profiles/TopicWordRule.sol",
-      "runtimeHash": "0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5",
-      "deployedBytecodeHash": "0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5",
-      "initcodeHash": "0x974717e19c746d4c21e8293b70b94f81fbf7b14655fe04ac76d95552cad53f8f",
-      "initcodeWithArgsHash": "0x974717e19c746d4c21e8293b70b94f81fbf7b14655fe04ac76d95552cad53f8f",
-      "address": "0x44186F79ddA5e09dce338b0649b4c5E6ee4432a5",
+      "runtimeHash": "0xee656292391d6fd99176abf04a8875989c323535087836c801e6a24d15c7edac",
+      "deployedBytecodeHash": "0xee656292391d6fd99176abf04a8875989c323535087836c801e6a24d15c7edac",
+      "initcodeHash": "0xade6d65e06df582c8c0fec85b237765458e9956482dd63ad72999ceca7c25f5c",
+      "initcodeWithArgsHash": "0xade6d65e06df582c8c0fec85b237765458e9956482dd63ad72999ceca7c25f5c",
+      "address": "0x131C5d9fEf6aa4477bFBDD3EdDf4B4D3F9F21450",
       "realmSpecific": false,
       "planStep": "G10.10",
       "immutables": [],
       "sizes": {
-        "runtime": 1897,
-        "initcode": 1923,
-        "initcodeWithArgs": 1923
+        "runtime": 1934,
+        "initcode": 1960,
+        "initcodeWithArgs": 1960
       },
       "budget": null
     },
@@ -2020,8 +2032,8 @@
       "runtimeHash": "0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a",
       "deployedBytecodeHash": "0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a",
       "initcodeHash": "0x93879208277bdce3ff81a7ca21799950d6c4690c545e057a905e0ec1b56a83d7",
-      "initcodeWithArgsHash": "0x7f127f4a755221b228ed6717e62cf0fed1ed5ce96428c2592615f9788038e354",
-      "address": "0xD07aaA9b8b6719B7E8Af64e34B4366700c9a4CdC",
+      "initcodeWithArgsHash": "0x2b86a439ba8dfe28b9a2e830185eb0fa855dfae5dd78dc09767ed44fec7677f1",
+      "address": "0x7fb25Cdd0840Fcd5dB5b6eFE32cC80A99336aeda",
       "realmSpecific": false,
       "planStep": "G10.11",
       "immutables": [],
@@ -2107,19 +2119,19 @@
         "wrapperVersion": 0
       },
       {
-        "type": "files-name/2",
-        "typeId": "0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a",
+        "type": "files-name/3",
+        "typeId": "0x20665824055a0b9a5221ba5bdb118fdb3b827a6399d1cc4afed4ac2398298c8d",
         "rule": "FilesNameRule",
-        "instance": "0x245098a6b090227e8F542c460f1C3be3F948884f",
-        "ruleCodehash": "0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17",
-        "ruleInitcodeHash": "0xc2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af746",
+        "instance": "0x0558440B6fb7A98665c3Ff1b2eDC4830C135aE7F",
+        "ruleCodehash": "0x80c8f4aa1066d240d09f1c110c60a94cdbf16e157d5f5721116e00077d169308",
+        "ruleInitcodeHash": "0x10a975d4335beb85673fcbcdaf8e4077ea9967d6415be3026e459db171b84ac2",
         "refTypes": [],
-        "shape": "0x476747aa67ab6ec61ef841c07efe21f9d99b86c4c7affa6f59ba2c509b072838",
-        "descriptor": "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b409d73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17c2cf78de3236792cc6d09278a9a888215620970eb4b941ee2f2d6537163af7460060010166696c65732d6e616d652f32726177205554462d38206e616d652c20312d3235352062797465732c2077656c6c2d666f726d65642c20627974652d65786163742c20636173652d73656e7369746976652c206e6f74202e206f72202e2e2c207e656673207265736572766564",
-        "descriptorBytes": 242,
-        "blob": "0x9E03Ea9Fd875aeC2800DD51B2eb8f8ABCc6Eb083",
-        "blobCodehash": "0xc15823bbd07b3f51e63099338594deae9aab01f074655bdb923f223a5d2c4fb3",
-        "declarationSig": "0x34896f0361abe121744c865e222d230d9fe8527f57b0ea378083c1dd386a9a6243b3b5d0f554548115915fd28e5d1e327b2bd6f8ef40f3d21f20fee1cc2e51bd1b",
+        "shape": "0xdc12a76a2133214e1bb9dca1d031aaf4bfe5ade8425e0662c377fbc7a5362bbb",
+        "descriptor": "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb9226679c436767dced6b9fbbf4d472889274e6249508ed152d82ddfdc41226778b40980c8f4aa1066d240d09f1c110c60a94cdbf16e157d5f5721116e00077d16930810a975d4335beb85673fcbcdaf8e4077ea9967d6415be3026e459db171b84ac20081010166696c65732d6e616d652f33726177205554462d38206e616d652c20312d3235352062797465732c2077656c6c2d666f726d65642c20627974652d65786163742c20636173652d73656e7369746976652c206e6f6e65206f662023203f2025203c203e2022207c203a202a203b2c206e6f7420656e64696e6720696e202e2c207e656673207265736572766564",
+        "descriptorBytes": 275,
+        "blob": "0x5291EE9Fb4a12744e544cB911565b9A304c76fFD",
+        "blobCodehash": "0xc06a982cbe9a9e58af7687948525d34ce0f396a14ab4af62bfdc7a1dc6334f9b",
+        "declarationSig": "0x491a9b2c2e70827f028637f166bdee310845ca7ec95585fdc1e48689a2508a9f0c0b2bb83b916ecb613e4f869f807fdbff8bde5ef82482a67d9c7a446d3109f01c",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
@@ -2234,38 +2246,38 @@
       },
       {
         "type": "topic-word/1",
-        "typeId": "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b",
+        "typeId": "0xe742938125784d985d5eab20872be5045976e9fc0807804f173ece59a3fb3859",
         "rule": "TopicWordRule",
-        "instance": "0x44186F79ddA5e09dce338b0649b4c5E6ee4432a5",
-        "ruleCodehash": "0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5",
-        "ruleInitcodeHash": "0x974717e19c746d4c21e8293b70b94f81fbf7b14655fe04ac76d95552cad53f8f",
+        "instance": "0x131C5d9fEf6aa4477bFBDD3EdDf4B4D3F9F21450",
+        "ruleCodehash": "0xee656292391d6fd99176abf04a8875989c323535087836c801e6a24d15c7edac",
+        "ruleInitcodeHash": "0xade6d65e06df582c8c0fec85b237765458e9956482dd63ad72999ceca7c25f5c",
         "refTypes": [],
-        "shape": "0x7f514790ab8c66962fe610feb37cec88b46fda2ecedb84bd31e64c1ee1aa6c29",
-        "descriptor": "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266d494ecda415333ed4cce2d681a9e391a26cffb3e373ebfa059006b0c74bc6ec329442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5974717e19c746d4c21e8293b70b94f81fbf7b14655fe04ac76d95552cad53f8f00f60101746f7069632d776f72642f316120776f72642773207061676520616e642074686520726f6f742d6c6576656c20746f706963202f3c776f72643e3a20312d323535206279746573206f662077656c6c2d666f726d6564205554462d382c206e6f202f2c206e6f20415343494920636f6e74726f6c2c207370616365206f7220412d5a2c206e6f2043312c20626964692c20696e76697369626c652c206a6f696e6572206f7220766172696174696f6e2073656c6563746f7220636f646520706f696e742c206e6f74202e206f72202e2e2c206e6f74207374617274696e672077697468207e2c206e6f7420307820616e64203430206c6f7765726361736520686578",
-        "descriptorBytes": 392,
-        "blob": "0x2b938374ddfea01Cf93669F2081Da076b82a3484",
-        "blobCodehash": "0x6c8fded2537868291ec0a90747612ddb475ff23d2a41719a1e43757d526c90e6",
-        "declarationSig": "0x933099e09a41101e0e3a6ab493f77564afc99a9474caf0d7627f6498d9a6d4dc7703b9770b67d3b1bb217e8313c50791bea0eb330f026b4b3c738357fff3793c1b",
+        "shape": "0x9e4445ee0cd408b38102dead45b77f42d9fe3370e6a787567c5add8b90414883",
+        "descriptor": "0x010003000101010100000000000cf39fd6e51aad88f6f4ce6ab8827279cfffb92266d494ecda415333ed4cce2d681a9e391a26cffb3e373ebfa059006b0c74bc6ec3ee656292391d6fd99176abf04a8875989c323535087836c801e6a24d15c7edacade6d65e06df582c8c0fec85b237765458e9956482dd63ad72999ceca7c25f5c00dc0101746f7069632d776f72642f316120776f72642773207061676520616e642074686520726f6f742d6c6576656c20746f706963202f3c776f72643e3a20312d323535206279746573206f662077656c6c2d666f726d6564205554462d382c206f66204153434949206f6e6c7920612d7a20302d39202d205f202e2c206e6f7420656e64696e6720696e202e2c206e6f2043312c20626964692c20696e76697369626c652c206a6f696e6572206f7220766172696174696f6e2073656c6563746f7220636f646520706f696e742c206e6f7420307820616e64203430206c6f7765726361736520686578",
+        "descriptorBytes": 366,
+        "blob": "0x913691cDe70E2bb784C1CEC973f7d3c3036dEaf6",
+        "blobCodehash": "0xb3c100139b294b9e10523e88572679056425dcc489767591051579c1f8cdc9c5",
+        "declarationSig": "0x2f44a5a054204a4b54e582b497038bee2231b9f85f5aad467acd1c9cd130eaf91e56c6f4b4cec3aee059ad2f81f79de221736b9e0576d3d06706042719a722411c",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
       {
         "type": "topic/1",
-        "typeId": "0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf",
+        "typeId": "0x275a99cc5a7334c2ffd88257784015ec18f18ec8ffcd6b3e12233e5e3f67bfde",
         "rule": "TopicRule",
-        "instance": "0xD07aaA9b8b6719B7E8Af64e34B4366700c9a4CdC",
+        "instance": "0x7fb25Cdd0840Fcd5dB5b6eFE32cC80A99336aeda",
         "ruleCodehash": "0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a",
-        "ruleInitcodeHash": "0x7f127f4a755221b228ed6717e62cf0fed1ed5ce96428c2592615f9788038e354",
+        "ruleInitcodeHash": "0x2b86a439ba8dfe28b9a2e830185eb0fa855dfae5dd78dc09767ed44fec7677f1",
         "refTypes": [
           "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b"
+          "0xe742938125784d985d5eab20872be5045976e9fc0807804f173ece59a3fb3859"
         ],
-        "shape": "0x833728d4cd9a38fabc3e74657b47d8eb4191d1d118c8b9d25f54d3644fb7edcf",
-        "descriptor": "0x0100030201010101000000000007f39fd6e51aad88f6f4ce6ab8827279cfffb92266d494ecda415333ed4cce2d681a9e391a26cffb3e373ebfa059006b0c74bc6ec36c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a7f127f4a755221b228ed6717e62cf0fed1ed5ce96428c2592615f9788038e35400850101746f7069632f316162692e656e636f646528706172656e742c20776f726450616765293b20612070617468206f662074776f206f72206d6f726520776f7264733b20706172656e74206973206120746f7069632f31206f7220746f7069632d776f72642f31207265636f72642c20776f726450616765206120746f7069632d776f72642f31207265636f726436fde43edc7d4a3b05f1cda9e22a3b28fd38bfa3fcadeec00ba605241374610138b10c3db518d0486afd7c396a3280bb8d002d1d90b4107876c780766a9ab289010000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a285310bf1dc128aa55a2c06050d6445822e4e188bfadbfdfa4defdf46e669f71ef945bf4df7d3f200cc424d827884a587ca6002c1f952272b3e018eb3897310100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000adf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b",
+        "shape": "0xe397f559f846e2238e3874ec13eba55cb3d2486d0e5a16771f518d9a44802c29",
+        "descriptor": "0x0100030201010101000000000007f39fd6e51aad88f6f4ce6ab8827279cfffb92266d494ecda415333ed4cce2d681a9e391a26cffb3e373ebfa059006b0c74bc6ec36c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a2b86a439ba8dfe28b9a2e830185eb0fa855dfae5dd78dc09767ed44fec7677f100850101746f7069632f316162692e656e636f646528706172656e742c20776f726450616765293b20612070617468206f662074776f206f72206d6f726520776f7264733b20706172656e74206973206120746f7069632f31206f7220746f7069632d776f72642f31207265636f72642c20776f726450616765206120746f7069632d776f72642f31207265636f726436fde43edc7d4a3b05f1cda9e22a3b28fd38bfa3fcadeec00ba605241374610138b10c3db518d0486afd7c396a3280bb8d002d1d90b4107876c780766a9ab289010000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a285310bf1dc128aa55a2c06050d6445822e4e188bfadbfdfa4defdf46e669f71ef945bf4df7d3f200cc424d827884a587ca6002c1f952272b3e018eb3897310100002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e742938125784d985d5eab20872be5045976e9fc0807804f173ece59a3fb3859",
         "descriptorBytes": 602,
-        "blob": "0x2dDA7f7caF7f69653C7a44868D28AD39516eA918",
-        "blobCodehash": "0x373a70b59dc97fc8abf3fb9ac6cf771b33aa8e8c0fcab2840d2c4a8164fb8c32",
-        "declarationSig": "0x77e7288dc4bd6f7f7fc8515c607fd34449a376e900e35c69ea87afcfbb41d0f331dd487f06ec0eda0d6907cf2c7e24bd6620e26953a093b410cabc817048ee511c",
+        "blob": "0x22837b1C8763BF821Be02127BE7445EfB17580a3",
+        "blobCodehash": "0x492efceebffb160193baaa21764341f5772b377dbcb1da24247ec4d732321eae",
+        "declarationSig": "0x81509892c7fd543958d55dbafed90cfd6de52ac9d2ee3704ff2b93ac232518a54627e0d26feb92cf29a7bdcba2c701ab515ac97bc571f74e0f2ddf2f7c7e63f51c",
         "grade": "NATIVE",
         "wrapperVersion": 0
       },
@@ -2296,13 +2308,13 @@
     "wrappers": [],
     "index": {
       "generation": 1,
-      "address": "0x9ca434fCb6EdfBa18e6F985EE9697e903f019f26",
-      "runtimeCodehash": "0x086f70d323160eb4ee66d82883c656547e08fda0a841ee38f0b45197b01e67a8",
+      "address": "0x412812D2Bd8aEE07963074D0A813F059B97D5f5D",
+      "runtimeCodehash": "0xc901315f0c27ab1d2771d8eb177ec82bc88c809cd16c2b23b27b755ecea26849",
       "reads": {
-        "address": "0x98de17254E0fb67ee3F5F5800f2BaCF4bAb907DF",
-        "runtimeCodehash": "0x9abcfb6220404631fcd97e6ac59f6f5cdcd92680cd6afde0e2967fbe79072f43"
+        "address": "0x1421c4C9884F0Be77029c83ae884CD84C927123F",
+        "runtimeCodehash": "0xaaa2423303e6d9351ebfd60ff1a5aeed26fd1a081d7e85332357079dcd9c4378"
       },
-      "manifestHash": "0x755a082e5564c4c599b61131e11b0ff1a86642fcc53ac1be9cd23b67512d3537",
+      "manifestHash": "0x14f48551d0771b6935522ed5e930b9705c173c545a24b7fe036881a1f32ee148",
       "families": [
         {
           "familyId": "0x6e9951606fbc96e12b5da9d5c55cec8c09a145840b260cb897a2b8f4be21fca4",
@@ -2313,8 +2325,8 @@
           "liveSemantics": 2,
           "recipe": "0xff3a04d62b9cfe92e046e9050e5aee15c743934495b3715a3bd78e5c3ec8846d",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x560952b497304e11301908fe1bbe8ca18178a20d5bce17e0ec8da1c608a69237",
@@ -2325,8 +2337,8 @@
           "liveSemantics": 2,
           "recipe": "0xe239254463efc7c73f22255dab1c40d297c676c65524a071c9b1bb84d4c98838",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x5de43022a254f387c552254d6e5375271682998ee1cc4f17f444f299f902f31e",
@@ -2337,8 +2349,8 @@
           "liveSemantics": 3,
           "recipe": "0xf6a2ca712e033e9ee50967dd5dd306d26f1bdfaa5a76bd7c365b9ce10fa9fd42",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x7bd99cbefd8ad97668b4865fbe1068eea555b3bbd565088df08d3c4349675048",
@@ -2349,8 +2361,8 @@
           "liveSemantics": 1,
           "recipe": "0x5b4d1b59d59abf6fce3d1ce4b45ecd4d59f3cea81fa3443cf749506f6ea4a250",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x785d20da3fabd29416b11b5d7a7178f738ce04296b5b3dc16d60719df4411781",
@@ -2373,8 +2385,8 @@
           "liveSemantics": 1,
           "recipe": "0xe916f9a4af598bcd2438c173faa399f3497a6907ce4b79e702bead885b2263e1",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0xf0fdfb2a411a0a6c445888d6a34da36825ccf203fe7b21e34d447b38c970cde5",
@@ -2385,8 +2397,8 @@
           "liveSemantics": 2,
           "recipe": "0x9b11af34d3068c6d6dc9faefeed567accfc8a0afd8d5b2edf5199e45d0fa0f7d",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x88058113d0725ef3df2100c84d50c542bc76be3c3e9a3c844ea7c500771d2c1e",
@@ -2397,8 +2409,8 @@
           "liveSemantics": 1,
           "recipe": "0xadefae3329287b2bdde3aa2046f7c89ec7a6f613a274d0316dd4a516d807e0fb",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x94f3e0f72302096cb78037a199a0bc975964c6509ab700a2e7a1c12a487c4f7b",
@@ -2409,8 +2421,8 @@
           "liveSemantics": 1,
           "recipe": "0xe97d9312dc8487ffb1484668535d2974f4fbf78bcac0e25361953535779ffb92",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x34e61531e3e8c02ee4471e81c318661b5372716ad88f1d2aa1176c8b333ec547",
@@ -2421,8 +2433,8 @@
           "liveSemantics": 1,
           "recipe": "0xe690e9308fd6c4d830baa73cc00880e055dd4b45a69a6d96308c3b1e8f22c0bf",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x3f6c616797d01274636ac8a7e9ccd07da288ca143c35ef12db01dc76f8b6f0ea",
@@ -2433,8 +2445,8 @@
           "liveSemantics": 1,
           "recipe": "0xf35bbe1ea5561e7770d9d97388bf00606e9208608205aea4c9363a6e487e2e65",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x930992982a76179452d218203f2a3392e4da31222ac1a8f9ae247594a3b14000",
@@ -2469,8 +2481,8 @@
           "liveSemantics": 4,
           "recipe": "0xa3b65da14a9d82391a20a14abc14e9735931e40c4c88aec366ca2bc3914f8b46",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x6ba31a5e97a75866345ec3d0dee5f3fa527b99d45799b00038ec0932cba3f7b2",
@@ -2481,8 +2493,8 @@
           "liveSemantics": 4,
           "recipe": "0xc77204476e166e2a79feaeb667e5269be5307ed9cad39f336648391c6d69e500",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0x4201126ed628afea054dd796c1fec72d9add0ba292ed6bc1347bb41d728f16b9",
@@ -2493,8 +2505,8 @@
           "liveSemantics": 1,
           "recipe": "0xe58b89a243d964f5173230c9af45448a5b65b2d7457aeb451e58469654cb9227",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0xc169b15288a6aef65707d0c30e1afa9d3465b8fafeea46aa760f057967bbde09",
@@ -2505,8 +2517,8 @@
           "liveSemantics": 3,
           "recipe": "0xba47c2b0c5e9cc7144e2c82571305882a84766ec410302e14f5a39d683f7beed",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         },
         {
           "familyId": "0xca7c5d4aa35584ebeb752753db7d5aaefbb2b972642f2019cd3bc57bdb104247",
@@ -2517,20 +2529,32 @@
           "liveSemantics": 1,
           "recipe": "0x750bf6cd090aee63a56b1c863bae16bf3d5c9c2f106cf205fe6bebae18bb47cc",
           "fromAdmission": "1",
-          "store": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
-          "storeCodehash": "0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465"
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
+        },
+        {
+          "familyId": "0xd09cf038b483bc20ecd786809b77a653a8554e6c938108cba163338955d06bf8",
+          "kind": 22,
+          "universe": 3,
+          "shape": 1,
+          "mandatory": true,
+          "liveSemantics": 3,
+          "recipe": "0x03efb4111f9a7e54cf93bee69ba8e9ca5e4e0f6316aa65fda1c584d1acd318c6",
+          "fromAdmission": "1",
+          "store": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
+          "storeCodehash": "0x5d1f9c2fb7775b944960f64fa8d20667a40af7616495f52b7337938383735807"
         }
       ],
       "units": [
         {
           "foldHook": "0x0000000000000000000000000000000000000000",
           "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "finalHook": "0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0",
+          "finalHook": "0x5232Bb9c585F8d992d80dA5f477371bFEe49182B",
           "finalCodehash": "0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619",
           "familyIds": [],
           "purposeFilter": "0x8316732a0c2362b6d10c2442783a1b6b974d8647b23379f9dee65b576fa4afcf",
           "hotAbiId": "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856",
-          "identity": "0x068a6ec46ef4d98106cdfac4bc8a1c099ec976fd30b630a560892536da617829"
+          "identity": "0x787f7be531c0b6eaab132b2bcd3cf884ceb04ad0c340a799339114bc7b87ce01"
         }
       ],
       "digestSpecs": [
@@ -2565,22 +2589,22 @@
         "freshPerRebind": 20,
         "rwPerRebind": 40,
         "computePerRebind": 42000,
-        "freshPerBindLater": 20,
+        "freshPerBindLater": 30,
         "rwPerBindLater": 50,
-        "computePerBindLater": 85000,
-        "surchargePurpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "surchargeFreshFirst": 0,
-        "surchargeRwFirst": 0,
-        "surchargeComputeFirst": 0,
+        "computePerBindLater": 78000,
+        "surchargePurpose": "0x2aff50c30ebccff5d8992943840917312d756200f3a504ececd8a3265ed547ee",
+        "surchargeFreshFirst": 10,
+        "surchargeRwFirst": 10,
+        "surchargeComputeFirst": 4500,
         "surchargeFreshRebind": 0,
         "surchargeRwRebind": 0,
         "surchargeComputeRebind": 0,
         "surchargeFreshLater": 0,
-        "surchargeRwLater": 0,
-        "surchargeComputeLater": 0
+        "surchargeRwLater": 10,
+        "surchargeComputeLater": 10000
       },
       "stores": {
-        "posting": "0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33",
+        "posting": "0xf948095e56785166c51eE0Bb90C92d24b9D4718C",
         "bitmap": "0xCEe929eC6398c54265EFCE369F76dAdD47477088"
       }
     },
@@ -2614,10 +2638,10 @@
         "runtimeCodehash": "0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1"
       },
       "filesPage": {
-        "address": "0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2",
+        "address": "0xbd90fE59D14D6488e506Baac9340391dF5d934d9",
         "kind": "0x4106b30a41b472b2a423aba94a3280fa97bcb4c21854f05bd34a3ecdcb0018f1",
         "kindLabel": "efs/reader/files-page/1",
-        "runtimeCodehash": "0x52f038b5ce032260ac4147389646c72b0c5cc763403e37659834a9f062c42f6c"
+        "runtimeCodehash": "0x10d41bb049106fbbd746eeeecd1e6e7ca3fbaf2e442947c0db234e456c5da2ce"
       },
       "topicMine": {
         "address": "0x45772331A92Bf67Ce3A16c2A15E733777499CE33",
@@ -2632,22 +2656,22 @@
         "runtimeCodehash": "0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41"
       },
       "topicLookup": {
-        "address": "0xF9176797604bEE9E49E8C7BC1Ac4a9A1a3B6d1a9",
+        "address": "0x3c57C6dfaEdF8B57077A721b9297921CcbDBA0Aa",
         "kind": "0xf3cd735b4b2424d82c3a8b98d2f57d1c3b27b90a11e7b03917a2ba39ebf58682",
         "kindLabel": "efs/reader/topic-lookup/1",
-        "runtimeCodehash": "0x48c379a6eee2a1f0caacbe966d885fed1b16037c9bcc22494e22307bd3b74487"
+        "runtimeCodehash": "0xcd36e8e69853a45574df8dda96c641ab4c6f629fb485587453643be80ffca091"
       },
       "web3Gateway": {
-        "address": "0x78267F061679839Cb5e483d9aba806d5D032479e",
-        "runtimeCodehash": "0xa73f9fffe1fc2ff4b788d502d9222d061057fc16294db24d75f1000fc7505c41",
+        "address": "0x386F52cCB19217AFf97337869Cf02a8bFd385f10",
+        "runtimeCodehash": "0x5d9ab2e932c429bceda3de17ed1cf60899c280a9fc6537575169eb8d3dec587d",
         "resolveMode": "5219",
         "rootDirectory": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
-        "pager": "0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2",
+        "pager": "0xbd90fE59D14D6488e506Baac9340391dF5d934d9",
         "content": {
           "address": "0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47",
           "runtimeCodehash": "0x91096216c4ec9ccfa94a7f40fcd4ed54562091a76d794413da539375bffb5a66"
         },
-        "urlBase": "web3://0x78267F061679839Cb5e483d9aba806d5D032479e:31337/"
+        "urlBase": "web3://0x386F52cCB19217AFf97337869Cf02a8bFd385f10:31337/"
       },
       "directory": "0x77865D8B084589021D9695865475cBED4fc16c31",
       "facets": {
@@ -2823,7 +2847,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x77848e722c7f122463b009b0ccdc864c5ea40ab750007f490f0721d76c39c438",
+    "sha256": "0x2862faf955dc7510afa3adca4d732515c308dcbb652c23291c32e2e63401699f",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2837,99 +2861,125 @@
           "perWord": 22729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 165024,
-            "files-span/1": 290474,
-            "files-content/1 carrier 0": 173939,
-            "files-content/1 carrier 2": 193546,
-            "files-external/1": 220841,
-            "files-directory/1": 165218,
-            "files-name/2": 152284,
-            "files-root/1 form 0": 148751,
-            "files-root/1 form 1": 174844,
-            "files-child/1 form 0": 228409,
-            "files-child/1 form 1": 254616,
-            "topic-word/1": 181885,
-            "topic/1": 211790,
-            "text/1": 182359
+            "files-bytes/1": 165084,
+            "files-span/1": 290562,
+            "files-content/1 carrier 0": 174015,
+            "files-content/1 carrier 2": 193622,
+            "files-external/1": 220941,
+            "files-directory/1": 165290,
+            "files-name/3": 152305,
+            "files-root/1 form 0": 148811,
+            "files-root/1 form 1": 174904,
+            "files-child/1 form 0": 228489,
+            "files-child/1 form 1": 254696,
+            "topic-word/1": 182079,
+            "topic/1": 211902,
+            "text/1": 182407
           },
-          "publishExisting": 176604,
-          "reuse": 180055,
+          "publishExisting": 176684,
+          "reuse": 180135,
           "create": 98549,
-          "bindHeadFresh": 331799,
-          "bindHeadRebind": 205001,
-          "bindFolderFreshFile": 409665,
-          "bindFolderFreshDirectory": 409435,
-          "bindFolderRebind": 207174,
-          "unbindFolder": 160228,
-          "releaseFolder": 157209,
-          "restoreFolder": 208066,
-          "bindTagFresh": 414827,
-          "bindTagSecondAuthor": 313425,
-          "bindTagNumberChange": 154415,
-          "unbindTagLone": 355737,
-          "unbindTag": 156523,
-          "releaseTag": 155337,
-          "restoreTag": 187314,
-          "bindPropertyFresh": 329242,
-          "bindPropertyRebind": 196872,
-          "unbindProperty": 146405,
-          "releaseProperty": 145219,
-          "bindSameFreshWord": 358083,
-          "bindSameFreshPath": 357979,
-          "unbindSame": 146618,
-          "releaseSame": 145420,
-          "restoreSame": 175254,
-          "bindBroaderFresh": 358070,
-          "unbindBroader": 146629,
-          "releaseBroader": 145443,
-          "restoreBroader": 175277,
-          "withdraw": 152260,
-          "unbindTagNewPlace": 160929,
-          "releaseTagNewPlace": 159743,
-          "restoreTagNewPlace": 191708,
-          "bindTagNumberChangeNewPlace": 159179,
-          "unbindFolderNewPlace": 160849,
-          "releaseFolderNewPlace": 159663,
-          "restoreFolderNewPlace": 200330,
-          "bindFolderRebindNewPlace": 209998,
-          "unbindTagLongNewPlace": 201300,
-          "unbindTagLongSamePlace": 196451,
-          "releaseTagLongNewPlace": 200114,
-          "releaseTagLongSamePlace": 195265,
-          "restoreTagLongNewPlace": 249180,
-          "restoreTagLongSamePlace": 227232,
-          "unbindFolderLongNewPlace": 201208,
-          "unbindFolderLongSamePlace": 196359,
-          "releaseFolderLongNewPlace": 200022,
-          "releaseFolderLongSamePlace": 195173,
-          "restoreFolderLongNewPlace": 257778,
-          "restoreFolderLongSamePlace": 237830,
-          "unbindPropertyLongNewPlace": 181964,
-          "unbindPropertyLongSamePlace": 181916,
-          "releasePropertyLongNewPlace": 180778,
-          "releasePropertyLongSamePlace": 180730,
-          "unbindSameLongNewPlace": 182165,
-          "unbindSameLongSamePlace": 182117,
-          "releaseSameLongNewPlace": 180979,
-          "releaseSameLongSamePlace": 180931,
-          "restoreSameLongNewPlace": 223940,
-          "restoreSameLongSamePlace": 210764,
-          "unbindBroaderLongNewPlace": 182188,
-          "unbindBroaderLongSamePlace": 182128,
-          "releaseBroaderLongNewPlace": 181002,
-          "releaseBroaderLongSamePlace": 180942,
-          "restoreBroaderLongNewPlace": 223951,
-          "restoreBroaderLongSamePlace": 210763,
+          "bindHeadFresh": 357593,
+          "bindHeadRebind": 205132,
+          "bindFolderFreshFile": 409793,
+          "bindFolderFreshDirectory": 409563,
+          "bindFolderRebind": 207249,
+          "unbindFolder": 160393,
+          "releaseFolder": 157374,
+          "restoreFolder": 211159,
+          "bindTagFresh": 414975,
+          "bindTagSecondAuthor": 313553,
+          "bindTagNumberChange": 154450,
+          "unbindTagLone": 355865,
+          "unbindTag": 156675,
+          "releaseTag": 155489,
+          "restoreTag": 187453,
+          "bindPropertyFresh": 329563,
+          "bindPropertyRebind": 196935,
+          "unbindProperty": 146546,
+          "releaseProperty": 145336,
+          "bindSameFreshWord": 358368,
+          "bindSameFreshPath": 358300,
+          "unbindSame": 146723,
+          "releaseSame": 145537,
+          "restoreSame": 175382,
+          "bindBroaderFresh": 358391,
+          "unbindBroader": 146746,
+          "releaseBroader": 145560,
+          "restoreBroader": 175393,
+          "withdraw": 152340,
+          "unbindTagNewPlace": 161093,
+          "releaseTagNewPlace": 159907,
+          "restoreTagNewPlace": 191859,
+          "bindTagNumberChangeNewPlace": 159226,
+          "unbindFolderNewPlace": 161014,
+          "releaseFolderNewPlace": 159828,
+          "restoreFolderNewPlace": 203411,
+          "bindFolderRebindNewPlace": 210061,
+          "unbindTagLongNewPlace": 201452,
+          "unbindTagLongSamePlace": 196603,
+          "releaseTagLongNewPlace": 200266,
+          "releaseTagLongSamePlace": 195417,
+          "restoreTagLongNewPlace": 249319,
+          "restoreTagLongSamePlace": 227371,
+          "unbindFolderLongNewPlace": 201373,
+          "unbindFolderLongSamePlace": 196524,
+          "releaseFolderLongNewPlace": 200187,
+          "releaseFolderLongSamePlace": 195338,
+          "restoreFolderLongNewPlace": 260859,
+          "restoreFolderLongSamePlace": 240923,
+          "unbindPropertyLongNewPlace": 182093,
+          "unbindPropertyLongSamePlace": 182033,
+          "releasePropertyLongNewPlace": 180907,
+          "releasePropertyLongSamePlace": 180847,
+          "unbindSameLongNewPlace": 182270,
+          "unbindSameLongSamePlace": 182234,
+          "releaseSameLongNewPlace": 181084,
+          "releaseSameLongSamePlace": 181048,
+          "restoreSameLongNewPlace": 224032,
+          "restoreSameLongSamePlace": 210868,
+          "unbindBroaderLongNewPlace": 182293,
+          "unbindBroaderLongSamePlace": 182257,
+          "releaseBroaderLongNewPlace": 181107,
+          "releaseBroaderLongSamePlace": 181071,
+          "restoreBroaderLongNewPlace": 224043,
+          "restoreBroaderLongSamePlace": 210891,
+          "bindTagAfterNo": 230603,
+          "bindFolderAfterNo": 245320,
+          "bindPropertyAfterNo": 210215,
+          "bindSameAfterNo": 212448,
+          "bindBroaderAfterNo": 212483,
+          "bindHeadAfterNo": 232677,
+          "bindTagAfterNoNewPlace": 228961,
+          "bindFolderAfterNoNewPlace": 237572,
+          "restoreProperty": 176042,
+          "unbindHead": 160801,
+          "releaseHead": 159615,
+          "restoreHead": 198533,
+          "restoreTagAtHistoryWord": 204553,
+          "bindTagAfterNoLongNewPlace": 286421,
+          "bindTagAfterNoLongSamePlace": 264473,
+          "bindFolderAfterNoLongNewPlace": 295008,
+          "bindFolderAfterNoLongSamePlace": 275084,
+          "bindPropertyAfterNoLongNewPlace": 269764,
+          "bindPropertyAfterNoLongSamePlace": 249815,
+          "bindSameAfterNoLongNewPlace": 269907,
+          "bindSameAfterNoLongSamePlace": 247958,
+          "bindBroaderAfterNoLongNewPlace": 269942,
+          "bindBroaderAfterNoLongSamePlace": 248017,
+          "restorePropertyLongNewPlace": 235603,
+          "restorePropertyLongSamePlace": 215642,
+          "historyWordOpen": 17100,
           "firstWriteSurcharge": 11786,
           "tagLevel": {
-            "mineNew": 34627,
-            "mineExisting": 22871,
-            "sharedNew": 27139,
-            "sharedExisting": 15354
+            "mineNew": 34650,
+            "mineExisting": 22888,
+            "sharedNew": 27156,
+            "sharedExisting": 15377
           }
         },
         "floor": {
-          "formula": "The kernel's quote (LedgerIngress._foldAndQuote, work-model formula 3, docs/WORK-MODEL-V3.md) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new, or freshPerPublishExisting when it exists: a repeat PUBLISH or any REUSE) + Σ over rows (fresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + Σ over rows (rw); compute = computeBase + n·computePerAction + Σ over rows (compute). Each BIND/UNBIND/RELEASE adds one row by class: (freshPerBindFirst, rwPerBindFirst, computePerBindFirst) for a first statement (a BIND or UNBIND whose author's head at the position is UNSET), (freshPerRebind, rwPerRebind, computePerRebind) for a re-bind (a BIND on a BOUND head: a new target, or the same target with a new number), and (freshPerBindLater, rwPerBindLater, computePerBindLater) for every other later statement (a mask, a release, a restore; a RELEASE always); when its purpose word equals surchargePurpose (never when it is zero) the surcharge row of the same class is added too (surchargeFreshFirst, surchargeRwFirst, surchargeComputeFirst; surchargeFreshRebind, surchargeRwRebind, surchargeComputeRebind; surchargeFreshLater, surchargeRwLater, surchargeComputeLater). Every WITHDRAW after the first of a publication adds the later-statement row (without the surcharge). With no principal (indexFloor) every bind-kind action adds the largest of the three rows field by field, surcharge included. freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10). The kernel refuses a work model whose reply is not 32 words or whose formulaVersion is not 3 (E_WORK_MODEL). prefixFloor P = compute + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas; finalReserve F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish (binds = the BIND/UNBIND/RELEASE count, publishes = the PUBLISH/REUSE count). The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail. Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T. A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K. ILedgerCommitments.indexFloor quotes without a principal, so it prices every bind-kind action with the largest of the three rows field by field: it is an upper bound on P only, and a consumer plans from this rule, never from indexFloor.",
+          "formula": "The kernel's quote (LedgerIngress._foldAndQuote, work-model formula 3, docs/WORK-MODEL-V3.md) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new, or freshPerPublishExisting when it exists: a repeat PUBLISH or any REUSE) + Σ over rows (fresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + Σ over rows (rw); compute = computeBase + n·computePerAction + Σ over rows (compute). Each BIND/UNBIND/RELEASE adds one row by class: (freshPerBindFirst, rwPerBindFirst, computePerBindFirst) for a first statement (a BIND or UNBIND whose author's head at the position is UNSET), (freshPerRebind, rwPerRebind, computePerRebind) for a re-bind (a BIND on a BOUND head: a new target, or the same target with a new number), and (freshPerBindLater, rwPerBindLater, computePerBindLater) for every other later statement (a mask, a release, a restore; a RELEASE always); when its purpose word equals surchargePurpose (plain equality, as the kernel compares them; a statement's purpose is never zero, so a zero surchargePurpose surcharges nothing) the surcharge row of the same class is added too (surchargeFreshFirst, surchargeRwFirst, surchargeComputeFirst; surchargeFreshRebind, surchargeRwRebind, surchargeComputeRebind; surchargeFreshLater, surchargeRwLater, surchargeComputeLater). Every WITHDRAW after the first of a publication adds the later-statement row (without the surcharge). With no principal (indexFloor) every bind-kind action adds the largest of the three rows field by field, surcharge included. freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10). The kernel refuses a work model whose reply is not 32 words or whose formulaVersion is not 3 (E_WORK_MODEL). prefixFloor P = compute + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas; finalReserve F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish (binds = the BIND/UNBIND/RELEASE count, publishes = the PUBLISH/REUSE count). The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail. Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T. A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K. ILedgerCommitments.indexFloor quotes without a principal, so it prices every bind-kind action with the largest of the three rows field by field: it is an upper bound on P only, and a consumer plans from this rule, never from indexFloor.",
           "quantity": "execution gas visible to the GAS opcode (on amsterdam the EIP-8037 state-gas reservoir is not visible and the cap counts execution gas only)",
           "workModel": {
             "formulaVersion": 3,
@@ -2951,19 +3001,19 @@
             "freshPerRebind": 20,
             "rwPerRebind": 40,
             "computePerRebind": 42000,
-            "freshPerBindLater": 20,
+            "freshPerBindLater": 30,
             "rwPerBindLater": 50,
-            "computePerBindLater": 85000,
-            "surchargePurpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
-            "surchargeFreshFirst": 0,
-            "surchargeRwFirst": 0,
-            "surchargeComputeFirst": 0,
+            "computePerBindLater": 78000,
+            "surchargePurpose": "0x2aff50c30ebccff5d8992943840917312d756200f3a504ececd8a3265ed547ee",
+            "surchargeFreshFirst": 10,
+            "surchargeRwFirst": 10,
+            "surchargeComputeFirst": 4500,
             "surchargeFreshRebind": 0,
             "surchargeRwRebind": 0,
             "surchargeComputeRebind": 0,
             "surchargeFreshLater": 0,
-            "surchargeRwLater": 0,
-            "surchargeComputeLater": 0
+            "surchargeRwLater": 10,
+            "surchargeComputeLater": 10000
           },
           "limits": {
             "floorFreshGas": 22100,
@@ -3000,7 +3050,7 @@
               "refs": 1,
               "specs": 1
             },
-            "files-name/2": {
+            "files-name/3": {
               "refs": 0,
               "specs": 0
             },
@@ -3035,31 +3085,31 @@
             "perByte": 11.8,
             "publishNew": {
               "files-bytes/1": 133341,
-              "files-span/1": 164145,
-              "files-content/1 carrier 0": 88734,
-              "files-content/1 carrier 2": 108341,
+              "files-span/1": 164133,
+              "files-content/1 carrier 0": 88710,
+              "files-content/1 carrier 2": 108317,
               "files-external/1": 141101,
-              "files-directory/1": 133535,
-              "files-name/2": 154801,
+              "files-directory/1": 133547,
+              "files-name/3": 154762,
               "files-root/1 form 0": 117068,
               "files-root/1 form 1": 143161,
               "files-child/1 form 0": 127502,
               "files-child/1 form 1": 153709,
-              "topic-word/1": 139598,
-              "topic/1": 151826,
-              "text/1": 140072
+              "topic-word/1": 139732,
+              "topic/1": 151838,
+              "text/1": 140060
             },
             "publishExisting": 95763,
             "reuse": 99191,
             "create": 89259,
-            "bindHeadFresh": 193481,
-            "bindHeadRebind": 92505,
+            "bindHeadFresh": 193537,
+            "bindHeadRebind": 92561,
             "bindFolderFreshFile": 220208,
             "bindFolderFreshDirectory": 217988,
             "bindFolderRebind": 97085,
             "unbindFolder": 62356,
             "releaseFolder": 61147,
-            "restoreFolder": 93818,
+            "restoreFolder": 96759,
             "bindTagFresh": 220196,
             "bindTagSecondAuthor": 155903,
             "bindTagNumberChange": 94180,
@@ -3068,27 +3118,27 @@
             "releaseTag": 61147,
             "restoreTag": 93818,
             "bindPropertyFresh": 215988,
-            "bindPropertyRebind": 92889,
-            "unbindProperty": 62356,
+            "bindPropertyRebind": 92877,
+            "unbindProperty": 62380,
             "releaseProperty": 61147,
-            "bindSameFreshWord": 218024,
+            "bindSameFreshWord": 217988,
             "bindSameFreshPath": 217988,
-            "unbindSame": 62368,
+            "unbindSame": 62356,
             "releaseSame": 61147,
-            "restoreSame": 91610,
+            "restoreSame": 91634,
             "bindBroaderFresh": 217988,
             "unbindBroader": 62356,
             "releaseBroader": 61147,
-            "restoreBroader": 91610,
+            "restoreBroader": 91622,
             "withdraw": 82106,
-            "unbindTagNewPlace": 62332,
-            "releaseTagNewPlace": 61123,
-            "restoreTagNewPlace": 93782,
-            "bindTagNumberChangeNewPlace": 94144,
+            "unbindTagNewPlace": 62344,
+            "releaseTagNewPlace": 61135,
+            "restoreTagNewPlace": 93794,
+            "bindTagNumberChangeNewPlace": 94156,
             "unbindFolderNewPlace": 62356,
             "releaseFolderNewPlace": 61147,
-            "restoreFolderNewPlace": 91818,
-            "bindFolderRebindNewPlace": 95109,
+            "restoreFolderNewPlace": 94747,
+            "bindFolderRebindNewPlace": 95097,
             "unbindTagLongNewPlace": 62344,
             "unbindTagLongSamePlace": 62344,
             "releaseTagLongNewPlace": 61135,
@@ -3099,34 +3149,60 @@
             "unbindFolderLongSamePlace": 62356,
             "releaseFolderLongNewPlace": 61147,
             "releaseFolderLongSamePlace": 61147,
-            "restoreFolderLongNewPlace": 91806,
-            "restoreFolderLongSamePlace": 93806,
-            "unbindPropertyLongNewPlace": 62356,
+            "restoreFolderLongNewPlace": 94735,
+            "restoreFolderLongSamePlace": 96747,
+            "unbindPropertyLongNewPlace": 62368,
             "unbindPropertyLongSamePlace": 62356,
-            "releasePropertyLongNewPlace": 61147,
+            "releasePropertyLongNewPlace": 61159,
             "releasePropertyLongSamePlace": 61147,
-            "unbindSameLongNewPlace": 62356,
+            "unbindSameLongNewPlace": 62344,
             "unbindSameLongSamePlace": 62356,
-            "releaseSameLongNewPlace": 61147,
+            "releaseSameLongNewPlace": 61135,
             "releaseSameLongSamePlace": 61147,
-            "restoreSameLongNewPlace": 87610,
+            "restoreSameLongNewPlace": 87598,
             "restoreSameLongSamePlace": 91610,
-            "unbindBroaderLongNewPlace": 62356,
-            "unbindBroaderLongSamePlace": 62344,
-            "releaseBroaderLongNewPlace": 61147,
-            "releaseBroaderLongSamePlace": 61135,
-            "restoreBroaderLongNewPlace": 87598,
-            "restoreBroaderLongSamePlace": 91586,
+            "unbindBroaderLongNewPlace": 62344,
+            "unbindBroaderLongSamePlace": 62356,
+            "releaseBroaderLongNewPlace": 61135,
+            "releaseBroaderLongSamePlace": 61147,
+            "restoreBroaderLongNewPlace": 87586,
+            "restoreBroaderLongSamePlace": 91610,
+            "bindTagAfterNo": 113847,
+            "bindFolderAfterNo": 113847,
+            "bindPropertyAfterNo": 109639,
+            "bindSameAfterNo": 111627,
+            "bindBroaderAfterNo": 111639,
+            "bindHeadAfterNo": 109317,
+            "bindTagAfterNoNewPlace": 113823,
+            "bindFolderAfterNoNewPlace": 111835,
+            "restoreProperty": 92539,
+            "unbindHead": 62028,
+            "releaseHead": 60819,
+            "restoreHead": 92199,
+            "restoreTagAtHistoryWord": 93818,
+            "bindTagAfterNoLongNewPlace": 113823,
+            "bindTagAfterNoLongSamePlace": 113823,
+            "bindFolderAfterNoLongNewPlace": 111811,
+            "bindFolderAfterNoLongSamePlace": 113835,
+            "bindPropertyAfterNoLongNewPlace": 111729,
+            "bindPropertyAfterNoLongSamePlace": 113729,
+            "bindSameAfterNoLongNewPlace": 111627,
+            "bindSameAfterNoLongSamePlace": 111627,
+            "bindBroaderAfterNoLongNewPlace": 111639,
+            "bindBroaderAfterNoLongSamePlace": 111663,
+            "restorePropertyLongNewPlace": 94641,
+            "restorePropertyLongSamePlace": 96629,
+            "historyWordOpen": 0,
             "firstWriteSurcharge": 17088,
             "tagLevel": {
-              "mineNew": -3,
-              "mineExisting": 3,
-              "sharedNew": 3,
-              "sharedExisting": -3
+              "mineNew": 0,
+              "mineExisting": 0,
+              "sharedNew": 0,
+              "sharedExisting": 0
             }
           }
         },
-        "maxAbsErrorPercent": 11.16
+        "maxAbsErrorPercent": 11.15
       },
       "amsterdam": {
         "status": "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block",
@@ -3134,199 +3210,251 @@
           "amsterdam"
         ],
         "constants": {
-          "fixed": 895683,
+          "fixed": 895695,
           "perWord": 110649,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 517116,
-            "files-span/1": 994658,
-            "files-content/1 carrier 0": 438023,
-            "files-content/1 carrier 2": 545662,
-            "files-external/1": 682219,
-            "files-directory/1": 517310,
-            "files-name/2": 342758,
-            "files-root/1 form 0": 412811,
-            "files-root/1 form 1": 526936,
-            "files-child/1 form 0": 756541,
-            "files-child/1 form 1": 870720,
-            "topic-word/1": 548131,
-            "topic/1": 592336,
-            "text/1": 548605
+            "files-bytes/1": 517176,
+            "files-span/1": 994746,
+            "files-content/1 carrier 0": 438123,
+            "files-content/1 carrier 2": 545762,
+            "files-external/1": 682319,
+            "files-directory/1": 517346,
+            "files-name/3": 342767,
+            "files-root/1 form 0": 412847,
+            "files-root/1 form 1": 526972,
+            "files-child/1 form 0": 756621,
+            "files-child/1 form 1": 870800,
+            "topic-word/1": 548313,
+            "topic/1": 592436,
+            "text/1": 548665
           },
-          "publishExisting": 535762,
-          "reuse": 539213,
+          "publishExisting": 535842,
+          "reuse": 539293,
           "create": 362509,
-          "bindHeadFresh": 1299749,
-          "bindHeadRebind": 593069,
-          "bindFolderFreshFile": 1634411,
-          "bindFolderFreshDirectory": 1634169,
-          "bindFolderRebind": 588066,
-          "unbindFolder": 365034,
-          "releaseFolder": 362015,
-          "restoreFolder": 508092,
-          "bindTagFresh": 1646773,
-          "bindTagSecondAuthor": 1119695,
-          "bindTagNumberChange": 432865,
-          "unbindTagLone": 1323723,
-          "unbindTag": 361363,
-          "releaseTag": 360177,
-          "restoreTag": 487364,
-          "bindPropertyFresh": 1304240,
-          "bindPropertyRebind": 584964,
-          "unbindProperty": 351245,
-          "releaseProperty": 350059,
-          "bindSameFreshWord": 1413953,
-          "bindSameFreshPath": 1413885,
-          "unbindSame": 351434,
-          "releaseSame": 350260,
-          "restoreSame": 475290,
-          "bindBroaderFresh": 1413976,
-          "unbindBroader": 351469,
-          "releaseBroader": 350271,
-          "restoreBroader": 475313,
-          "withdraw": 430620,
-          "unbindTagNewPlace": 372947,
-          "releaseTagNewPlace": 371761,
-          "restoreTagNewPlace": 498946,
-          "bindTagNumberChangeNewPlace": 444817,
-          "unbindFolderNewPlace": 372855,
-          "releaseFolderNewPlace": 371669,
-          "restoreFolderNewPlace": 507544,
-          "bindFolderRebindNewPlace": 598066,
-          "unbindTagLongNewPlace": 420540,
-          "unbindTagLongSamePlace": 408457,
-          "releaseTagLongNewPlace": 419354,
-          "releaseTagLongSamePlace": 407271,
-          "restoreTagLongNewPlace": 644460,
-          "restoreTagLongSamePlace": 534458,
-          "unbindFolderLongNewPlace": 420448,
-          "unbindFolderLongSamePlace": 408365,
-          "releaseFolderLongNewPlace": 419262,
-          "releaseFolderLongSamePlace": 407179,
-          "restoreFolderLongNewPlace": 653058,
-          "restoreFolderLongSamePlace": 545056,
-          "unbindPropertyLongNewPlace": 386758,
-          "unbindPropertyLongSamePlace": 386722,
-          "releasePropertyLongNewPlace": 385572,
-          "releasePropertyLongSamePlace": 385536,
-          "unbindSameLongNewPlace": 386959,
-          "unbindSameLongSamePlace": 386923,
-          "releaseSameLongNewPlace": 385773,
-          "releaseSameLongSamePlace": 385737,
-          "restoreSameLongNewPlace": 604908,
-          "restoreSameLongSamePlace": 510790,
-          "unbindBroaderLongNewPlace": 386982,
-          "unbindBroaderLongSamePlace": 386934,
-          "releaseBroaderLongNewPlace": 385796,
-          "releaseBroaderLongSamePlace": 385748,
-          "restoreBroaderLongNewPlace": 604919,
-          "restoreBroaderLongSamePlace": 510789,
+          "bindHeadFresh": 1413575,
+          "bindHeadRebind": 593212,
+          "bindFolderFreshFile": 1634539,
+          "bindFolderFreshDirectory": 1634309,
+          "bindFolderRebind": 588129,
+          "unbindFolder": 365233,
+          "releaseFolder": 362214,
+          "restoreFolder": 518385,
+          "bindTagFresh": 1646921,
+          "bindTagSecondAuthor": 1119811,
+          "bindTagNumberChange": 432888,
+          "unbindTagLone": 1323851,
+          "unbindTag": 361515,
+          "releaseTag": 360329,
+          "restoreTag": 487525,
+          "bindPropertyFresh": 1304549,
+          "bindPropertyRebind": 585027,
+          "unbindProperty": 351362,
+          "releaseProperty": 350164,
+          "bindSameFreshWord": 1414250,
+          "bindSameFreshPath": 1414206,
+          "unbindSame": 351539,
+          "releaseSame": 350377,
+          "restoreSame": 475418,
+          "bindBroaderFresh": 1414297,
+          "unbindBroader": 351586,
+          "releaseBroader": 350400,
+          "restoreBroader": 475441,
+          "withdraw": 430700,
+          "unbindTagNewPlace": 373133,
+          "releaseTagNewPlace": 371947,
+          "restoreTagNewPlace": 499085,
+          "bindTagNumberChangeNewPlace": 444852,
+          "unbindFolderNewPlace": 373054,
+          "releaseFolderNewPlace": 371868,
+          "restoreFolderNewPlace": 517849,
+          "bindFolderRebindNewPlace": 598153,
+          "unbindTagLongNewPlace": 420680,
+          "unbindTagLongSamePlace": 408609,
+          "releaseTagLongNewPlace": 419494,
+          "releaseTagLongSamePlace": 407423,
+          "restoreTagLongNewPlace": 644587,
+          "restoreTagLongSamePlace": 534597,
+          "unbindFolderLongNewPlace": 420613,
+          "unbindFolderLongSamePlace": 408530,
+          "releaseFolderLongNewPlace": 419427,
+          "releaseFolderLongSamePlace": 407344,
+          "restoreFolderLongNewPlace": 663351,
+          "restoreFolderLongSamePlace": 555349,
+          "unbindPropertyLongNewPlace": 386887,
+          "unbindPropertyLongSamePlace": 386839,
+          "releasePropertyLongNewPlace": 385701,
+          "releasePropertyLongSamePlace": 385653,
+          "unbindSameLongNewPlace": 387088,
+          "unbindSameLongSamePlace": 387028,
+          "releaseSameLongNewPlace": 385902,
+          "releaseSameLongSamePlace": 385842,
+          "restoreSameLongNewPlace": 604990,
+          "restoreSameLongSamePlace": 510870,
+          "unbindBroaderLongNewPlace": 387099,
+          "unbindBroaderLongSamePlace": 387063,
+          "releaseBroaderLongNewPlace": 385913,
+          "releaseBroaderLongSamePlace": 385877,
+          "restoreBroaderLongNewPlace": 605001,
+          "restoreBroaderLongSamePlace": 510917,
+          "bindTagAfterNo": 699403,
+          "bindFolderAfterNo": 714120,
+          "bindPropertyAfterNo": 679027,
+          "bindSameAfterNo": 681272,
+          "bindBroaderAfterNo": 681247,
+          "bindHeadAfterNo": 708665,
+          "bindTagAfterNoNewPlace": 704961,
+          "bindFolderAfterNoNewPlace": 713584,
+          "restoreProperty": 483290,
+          "unbindHead": 372841,
+          "releaseHead": 371655,
+          "restoreHead": 512993,
+          "restoreTagAtHistoryWord": 585445,
+          "bindTagAfterNoLongNewPlace": 850407,
+          "bindTagAfterNoLongSamePlace": 740473,
+          "bindFolderAfterNoLongNewPlace": 859042,
+          "bindFolderAfterNoLongSamePlace": 751084,
+          "bindPropertyAfterNoLongNewPlace": 826550,
+          "bindPropertyAfterNoLongSamePlace": 718615,
+          "bindSameAfterNoLongNewPlace": 826681,
+          "bindSameAfterNoLongSamePlace": 716770,
+          "bindBroaderAfterNoLongNewPlace": 826728,
+          "bindBroaderAfterNoLongSamePlace": 716793,
+          "restorePropertyLongNewPlace": 630871,
+          "restorePropertyLongSamePlace": 522868,
+          "historyWordOpen": 97920,
           "firstWriteSurcharge": 85506,
           "tagLevel": {
-            "mineNew": 122659,
-            "mineExisting": 37268,
-            "sharedNew": 115156,
-            "sharedExisting": 29765
+            "mineNew": 122679,
+            "mineExisting": 37288,
+            "sharedNew": 115176,
+            "sharedExisting": 29785
           }
         },
         "executionGas": {
-          "fixed": 289856,
+          "fixed": 289868,
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 125436,
-            "files-span/1": 211298,
-            "files-content/1 carrier 0": 144263,
-            "files-content/1 carrier 2": 153982,
-            "files-external/1": 192619,
-            "files-directory/1": 125630,
-            "files-name/2": 146918,
-            "files-root/1 form 0": 119051,
-            "files-root/1 form 1": 135256,
-            "files-child/1 form 0": 169021,
-            "files-child/1 form 1": 185280,
-            "topic-word/1": 156451,
-            "topic/1": 200656,
-            "text/1": 156925
+            "files-bytes/1": 125496,
+            "files-span/1": 211386,
+            "files-content/1 carrier 0": 144363,
+            "files-content/1 carrier 2": 154082,
+            "files-external/1": 192719,
+            "files-directory/1": 125666,
+            "files-name/3": 146927,
+            "files-root/1 form 0": 119087,
+            "files-root/1 form 1": 135292,
+            "files-child/1 form 0": 169101,
+            "files-child/1 form 1": 185360,
+            "topic-word/1": 156633,
+            "topic/1": 200756,
+            "text/1": 156985
           },
-          "publishExisting": 144082,
-          "reuse": 147533,
+          "publishExisting": 144162,
+          "reuse": 147613,
           "create": 68749,
-          "bindHeadFresh": 222629,
-          "bindHeadRebind": 201389,
-          "bindFolderFreshFile": 263531,
-          "bindFolderFreshDirectory": 263289,
-          "bindFolderRebind": 196386,
-          "unbindFolder": 169194,
-          "releaseFolder": 166175,
-          "restoreFolder": 214332,
-          "bindTagFresh": 275893,
-          "bindTagSecondAuthor": 238415,
-          "bindTagNumberChange": 139105,
-          "unbindTagLone": 246603,
-          "unbindTag": 165523,
-          "releaseTag": 164337,
-          "restoreTag": 193604,
-          "bindPropertyFresh": 227120,
-          "bindPropertyRebind": 193284,
-          "unbindProperty": 155405,
-          "releaseProperty": 154219,
-          "bindSameFreshWord": 238913,
-          "bindSameFreshPath": 238845,
-          "unbindSame": 155594,
-          "releaseSame": 154420,
-          "restoreSame": 181530,
-          "bindBroaderFresh": 238936,
-          "unbindBroader": 155629,
-          "releaseBroader": 154431,
-          "restoreBroader": 181553,
-          "withdraw": 136860,
-          "unbindTagNewPlace": 177107,
-          "releaseTagNewPlace": 175921,
-          "restoreTagNewPlace": 205186,
-          "bindTagNumberChangeNewPlace": 151057,
-          "unbindFolderNewPlace": 177015,
-          "releaseFolderNewPlace": 175829,
-          "restoreFolderNewPlace": 213784,
-          "bindFolderRebindNewPlace": 206386,
-          "unbindTagLongNewPlace": 224700,
-          "unbindTagLongSamePlace": 212617,
-          "releaseTagLongNewPlace": 223514,
-          "releaseTagLongSamePlace": 211431,
-          "restoreTagLongNewPlace": 252780,
-          "restoreTagLongSamePlace": 240698,
-          "unbindFolderLongNewPlace": 224608,
-          "unbindFolderLongSamePlace": 212525,
-          "releaseFolderLongNewPlace": 223422,
-          "releaseFolderLongSamePlace": 211339,
-          "restoreFolderLongNewPlace": 261378,
-          "restoreFolderLongSamePlace": 251296,
-          "unbindPropertyLongNewPlace": 190918,
-          "unbindPropertyLongSamePlace": 190882,
-          "releasePropertyLongNewPlace": 189732,
-          "releasePropertyLongSamePlace": 189696,
-          "unbindSameLongNewPlace": 191119,
-          "unbindSameLongSamePlace": 191083,
-          "releaseSameLongNewPlace": 189933,
-          "releaseSameLongSamePlace": 189897,
-          "restoreSameLongNewPlace": 213228,
-          "restoreSameLongSamePlace": 217030,
-          "unbindBroaderLongNewPlace": 191142,
-          "unbindBroaderLongSamePlace": 191094,
-          "releaseBroaderLongNewPlace": 189956,
-          "releaseBroaderLongSamePlace": 189908,
-          "restoreBroaderLongNewPlace": 213239,
-          "restoreBroaderLongSamePlace": 217029,
+          "bindHeadFresh": 238535,
+          "bindHeadRebind": 201532,
+          "bindFolderFreshFile": 263659,
+          "bindFolderFreshDirectory": 263429,
+          "bindFolderRebind": 196449,
+          "unbindFolder": 169393,
+          "releaseFolder": 166374,
+          "restoreFolder": 224625,
+          "bindTagFresh": 276041,
+          "bindTagSecondAuthor": 238531,
+          "bindTagNumberChange": 139128,
+          "unbindTagLone": 246731,
+          "unbindTag": 165675,
+          "releaseTag": 164489,
+          "restoreTag": 193765,
+          "bindPropertyFresh": 227429,
+          "bindPropertyRebind": 193347,
+          "unbindProperty": 155522,
+          "releaseProperty": 154324,
+          "bindSameFreshWord": 239210,
+          "bindSameFreshPath": 239166,
+          "unbindSame": 155699,
+          "releaseSame": 154537,
+          "restoreSame": 181658,
+          "bindBroaderFresh": 239257,
+          "unbindBroader": 155746,
+          "releaseBroader": 154560,
+          "restoreBroader": 181681,
+          "withdraw": 136940,
+          "unbindTagNewPlace": 177293,
+          "releaseTagNewPlace": 176107,
+          "restoreTagNewPlace": 205325,
+          "bindTagNumberChangeNewPlace": 151092,
+          "unbindFolderNewPlace": 177214,
+          "releaseFolderNewPlace": 176028,
+          "restoreFolderNewPlace": 224089,
+          "bindFolderRebindNewPlace": 206473,
+          "unbindTagLongNewPlace": 224840,
+          "unbindTagLongSamePlace": 212769,
+          "releaseTagLongNewPlace": 223654,
+          "releaseTagLongSamePlace": 211583,
+          "restoreTagLongNewPlace": 252907,
+          "restoreTagLongSamePlace": 240837,
+          "unbindFolderLongNewPlace": 224773,
+          "unbindFolderLongSamePlace": 212690,
+          "releaseFolderLongNewPlace": 223587,
+          "releaseFolderLongSamePlace": 211504,
+          "restoreFolderLongNewPlace": 271671,
+          "restoreFolderLongSamePlace": 261589,
+          "unbindPropertyLongNewPlace": 191047,
+          "unbindPropertyLongSamePlace": 190999,
+          "releasePropertyLongNewPlace": 189861,
+          "releasePropertyLongSamePlace": 189813,
+          "unbindSameLongNewPlace": 191248,
+          "unbindSameLongSamePlace": 191188,
+          "releaseSameLongNewPlace": 190062,
+          "releaseSameLongSamePlace": 190002,
+          "restoreSameLongNewPlace": 213310,
+          "restoreSameLongSamePlace": 217110,
+          "unbindBroaderLongNewPlace": 191259,
+          "unbindBroaderLongSamePlace": 191223,
+          "releaseBroaderLongNewPlace": 190073,
+          "releaseBroaderLongSamePlace": 190037,
+          "restoreBroaderLongNewPlace": 213321,
+          "restoreBroaderLongSamePlace": 217157,
+          "bindTagAfterNo": 209803,
+          "bindFolderAfterNo": 224520,
+          "bindPropertyAfterNo": 189427,
+          "bindSameAfterNo": 191672,
+          "bindBroaderAfterNo": 191647,
+          "bindHeadAfterNo": 219065,
+          "bindTagAfterNoNewPlace": 215361,
+          "bindFolderAfterNoNewPlace": 223984,
+          "restoreProperty": 189530,
+          "unbindHead": 177001,
+          "releaseHead": 175815,
+          "restoreHead": 219233,
+          "restoreTagAtHistoryWord": 193765,
+          "bindTagAfterNoLongNewPlace": 262887,
+          "bindTagAfterNoLongSamePlace": 250873,
+          "bindFolderAfterNoLongNewPlace": 271522,
+          "bindFolderAfterNoLongSamePlace": 261484,
+          "bindPropertyAfterNoLongNewPlace": 239030,
+          "bindPropertyAfterNoLongSamePlace": 229015,
+          "bindSameAfterNoLongNewPlace": 239161,
+          "bindSameAfterNoLongSamePlace": 227170,
+          "bindBroaderAfterNoLongNewPlace": 239208,
+          "bindBroaderAfterNoLongSamePlace": 227193,
+          "restorePropertyLongNewPlace": 239191,
+          "restorePropertyLongSamePlace": 229108,
+          "historyWordOpen": 0,
           "firstWriteSurcharge": -12414,
           "tagLevel": {
-            "mineNew": 24739,
-            "mineExisting": 37268,
-            "sharedNew": 17236,
-            "sharedExisting": 29765
+            "mineNew": 24759,
+            "mineExisting": 37288,
+            "sharedNew": 17256,
+            "sharedExisting": 29785
           }
         },
         "floor": {
-          "formula": "The kernel's quote (LedgerIngress._foldAndQuote, work-model formula 3, docs/WORK-MODEL-V3.md) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new, or freshPerPublishExisting when it exists: a repeat PUBLISH or any REUSE) + Σ over rows (fresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + Σ over rows (rw); compute = computeBase + n·computePerAction + Σ over rows (compute). Each BIND/UNBIND/RELEASE adds one row by class: (freshPerBindFirst, rwPerBindFirst, computePerBindFirst) for a first statement (a BIND or UNBIND whose author's head at the position is UNSET), (freshPerRebind, rwPerRebind, computePerRebind) for a re-bind (a BIND on a BOUND head: a new target, or the same target with a new number), and (freshPerBindLater, rwPerBindLater, computePerBindLater) for every other later statement (a mask, a release, a restore; a RELEASE always); when its purpose word equals surchargePurpose (never when it is zero) the surcharge row of the same class is added too (surchargeFreshFirst, surchargeRwFirst, surchargeComputeFirst; surchargeFreshRebind, surchargeRwRebind, surchargeComputeRebind; surchargeFreshLater, surchargeRwLater, surchargeComputeLater). Every WITHDRAW after the first of a publication adds the later-statement row (without the surcharge). With no principal (indexFloor) every bind-kind action adds the largest of the three rows field by field, surcharge included. freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10). The kernel refuses a work model whose reply is not 32 words or whose formulaVersion is not 3 (E_WORK_MODEL). prefixFloor P = compute + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas; finalReserve F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish (binds = the BIND/UNBIND/RELEASE count, publishes = the PUBLISH/REUSE count). The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail. Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T. A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K. ILedgerCommitments.indexFloor quotes without a principal, so it prices every bind-kind action with the largest of the three rows field by field: it is an upper bound on P only, and a consumer plans from this rule, never from indexFloor.",
+          "formula": "The kernel's quote (LedgerIngress._foldAndQuote, work-model formula 3, docs/WORK-MODEL-V3.md) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new, or freshPerPublishExisting when it exists: a repeat PUBLISH or any REUSE) + Σ over rows (fresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + Σ over rows (rw); compute = computeBase + n·computePerAction + Σ over rows (compute). Each BIND/UNBIND/RELEASE adds one row by class: (freshPerBindFirst, rwPerBindFirst, computePerBindFirst) for a first statement (a BIND or UNBIND whose author's head at the position is UNSET), (freshPerRebind, rwPerRebind, computePerRebind) for a re-bind (a BIND on a BOUND head: a new target, or the same target with a new number), and (freshPerBindLater, rwPerBindLater, computePerBindLater) for every other later statement (a mask, a release, a restore; a RELEASE always); when its purpose word equals surchargePurpose (plain equality, as the kernel compares them; a statement's purpose is never zero, so a zero surchargePurpose surcharges nothing) the surcharge row of the same class is added too (surchargeFreshFirst, surchargeRwFirst, surchargeComputeFirst; surchargeFreshRebind, surchargeRwRebind, surchargeComputeRebind; surchargeFreshLater, surchargeRwLater, surchargeComputeLater). Every WITHDRAW after the first of a publication adds the later-statement row (without the surcharge). With no principal (indexFloor) every bind-kind action adds the largest of the three rows field by field, surcharge included. freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10). The kernel refuses a work model whose reply is not 32 words or whose formulaVersion is not 3 (E_WORK_MODEL). prefixFloor P = compute + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas; finalReserve F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish (binds = the BIND/UNBIND/RELEASE count, publishes = the PUBLISH/REUSE count). The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail. Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T. A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K. ILedgerCommitments.indexFloor quotes without a principal, so it prices every bind-kind action with the largest of the three rows field by field: it is an upper bound on P only, and a consumer plans from this rule, never from indexFloor.",
           "quantity": "execution gas visible to the GAS opcode (on amsterdam the EIP-8037 state-gas reservoir is not visible and the cap counts execution gas only)",
           "workModel": {
             "formulaVersion": 3,
@@ -3348,19 +3476,19 @@
             "freshPerRebind": 20,
             "rwPerRebind": 40,
             "computePerRebind": 42000,
-            "freshPerBindLater": 20,
+            "freshPerBindLater": 30,
             "rwPerBindLater": 50,
-            "computePerBindLater": 85000,
-            "surchargePurpose": "0x0000000000000000000000000000000000000000000000000000000000000000",
-            "surchargeFreshFirst": 0,
-            "surchargeRwFirst": 0,
-            "surchargeComputeFirst": 0,
+            "computePerBindLater": 78000,
+            "surchargePurpose": "0x2aff50c30ebccff5d8992943840917312d756200f3a504ececd8a3265ed547ee",
+            "surchargeFreshFirst": 10,
+            "surchargeRwFirst": 10,
+            "surchargeComputeFirst": 4500,
             "surchargeFreshRebind": 0,
             "surchargeRwRebind": 0,
             "surchargeComputeRebind": 0,
             "surchargeFreshLater": 0,
-            "surchargeRwLater": 0,
-            "surchargeComputeLater": 0
+            "surchargeRwLater": 10,
+            "surchargeComputeLater": 10000
           },
           "limits": {
             "floorFreshGas": 12100,
@@ -3397,7 +3525,7 @@
               "refs": 1,
               "specs": 1
             },
-            "files-name/2": {
+            "files-name/3": {
               "refs": 0,
               "specs": 0
             },
@@ -3427,56 +3555,56 @@
             }
           },
           "kernel": {
-            "fixed": 214743,
+            "fixed": 214755,
             "perWord": 12729,
             "perByte": 11.8,
             "publishNew": {
               "files-bytes/1": 93653,
-              "files-span/1": 124469,
+              "files-span/1": 124457,
               "files-content/1 carrier 0": 78758,
               "files-content/1 carrier 2": 88477,
               "files-external/1": 101413,
-              "files-directory/1": 93847,
-              "files-name/2": 115101,
-              "files-root/1 form 0": 87268,
-              "files-root/1 form 1": 103473,
+              "files-directory/1": 93823,
+              "files-name/3": 115050,
+              "files-root/1 form 0": 87244,
+              "files-root/1 form 1": 103449,
               "files-child/1 form 0": 97714,
               "files-child/1 form 1": 113973,
-              "topic-word/1": 99898,
+              "topic-word/1": 100020,
               "topic/1": 112126,
               "text/1": 100372
             },
             "publishExisting": 83075,
             "reuse": 86503,
             "create": 59459,
-            "bindHeadFresh": 123845,
-            "bindHeadRebind": 86993,
+            "bindHeadFresh": 123913,
+            "bindHeadRebind": 87061,
             "bindFolderFreshFile": 140608,
-            "bindFolderFreshDirectory": 138376,
-            "bindFolderRebind": 91597,
+            "bindFolderFreshDirectory": 138388,
+            "bindFolderRebind": 91585,
             "unbindFolder": 59556,
             "releaseFolder": 58347,
-            "restoreFolder": 81118,
+            "restoreFolder": 91259,
             "bindTagFresh": 140596,
-            "bindTagSecondAuthor": 106227,
-            "bindTagNumberChange": 81504,
+            "bindTagSecondAuthor": 106215,
+            "bindTagNumberChange": 81492,
             "unbindTagLone": 106594,
             "unbindTag": 59556,
             "releaseTag": 58347,
-            "restoreTag": 81142,
-            "bindPropertyFresh": 136400,
-            "bindPropertyRebind": 87401,
+            "restoreTag": 81130,
+            "bindPropertyFresh": 136388,
+            "bindPropertyRebind": 87389,
             "unbindProperty": 59556,
-            "releaseProperty": 58347,
-            "bindSameFreshWord": 138388,
+            "releaseProperty": 58335,
+            "bindSameFreshWord": 138364,
             "bindSameFreshPath": 138388,
-            "unbindSame": 59544,
+            "unbindSame": 59532,
             "releaseSame": 58347,
-            "restoreSame": 78886,
+            "restoreSame": 78910,
             "bindBroaderFresh": 138388,
             "unbindBroader": 59556,
-            "releaseBroader": 58335,
-            "restoreBroader": 78886,
+            "releaseBroader": 58347,
+            "restoreBroader": 78910,
             "withdraw": 76606,
             "unbindTagNewPlace": 59544,
             "releaseTagNewPlace": 58335,
@@ -3484,36 +3612,62 @@
             "bindTagNumberChangeNewPlace": 81456,
             "unbindFolderNewPlace": 59556,
             "releaseFolderNewPlace": 58347,
-            "restoreFolderNewPlace": 79106,
-            "bindFolderRebindNewPlace": 89597,
-            "unbindTagLongNewPlace": 59544,
+            "restoreFolderNewPlace": 89259,
+            "bindFolderRebindNewPlace": 89609,
+            "unbindTagLongNewPlace": 59532,
             "unbindTagLongSamePlace": 59544,
-            "releaseTagLongNewPlace": 58335,
+            "releaseTagLongNewPlace": 58323,
             "releaseTagLongSamePlace": 58335,
-            "restoreTagLongNewPlace": 81094,
+            "restoreTagLongNewPlace": 81082,
             "restoreTagLongSamePlace": 81094,
             "unbindFolderLongNewPlace": 59556,
             "unbindFolderLongSamePlace": 59556,
             "releaseFolderLongNewPlace": 58347,
             "releaseFolderLongSamePlace": 58347,
-            "restoreFolderLongNewPlace": 79106,
-            "restoreFolderLongSamePlace": 81106,
-            "unbindPropertyLongNewPlace": 59544,
+            "restoreFolderLongNewPlace": 89247,
+            "restoreFolderLongSamePlace": 91247,
+            "unbindPropertyLongNewPlace": 59556,
             "unbindPropertyLongSamePlace": 59556,
-            "releasePropertyLongNewPlace": 58335,
+            "releasePropertyLongNewPlace": 58347,
             "releasePropertyLongSamePlace": 58347,
-            "unbindSameLongNewPlace": 59544,
-            "unbindSameLongSamePlace": 59556,
-            "releaseSameLongNewPlace": 58335,
-            "releaseSameLongSamePlace": 58347,
-            "restoreSameLongNewPlace": 74898,
-            "restoreSameLongSamePlace": 78910,
+            "unbindSameLongNewPlace": 59556,
+            "unbindSameLongSamePlace": 59544,
+            "releaseSameLongNewPlace": 58347,
+            "releaseSameLongSamePlace": 58335,
+            "restoreSameLongNewPlace": 74910,
+            "restoreSameLongSamePlace": 78886,
             "unbindBroaderLongNewPlace": 59544,
-            "unbindBroaderLongSamePlace": 59544,
+            "unbindBroaderLongSamePlace": 59556,
             "releaseBroaderLongNewPlace": 58335,
-            "releaseBroaderLongSamePlace": 58335,
-            "restoreBroaderLongNewPlace": 74886,
-            "restoreBroaderLongSamePlace": 78886,
+            "releaseBroaderLongSamePlace": 58347,
+            "restoreBroaderLongNewPlace": 74898,
+            "restoreBroaderLongSamePlace": 78910,
+            "bindTagAfterNo": 91247,
+            "bindFolderAfterNo": 91247,
+            "bindPropertyAfterNo": 87051,
+            "bindSameAfterNo": 89051,
+            "bindBroaderAfterNo": 89003,
+            "bindHeadAfterNo": 86705,
+            "bindTagAfterNoNewPlace": 91223,
+            "bindFolderAfterNoNewPlace": 89247,
+            "restoreProperty": 87027,
+            "unbindHead": 59228,
+            "releaseHead": 58019,
+            "restoreHead": 86699,
+            "restoreTagAtHistoryWord": 81130,
+            "bindTagAfterNoLongNewPlace": 91223,
+            "bindTagAfterNoLongSamePlace": 91223,
+            "bindFolderAfterNoLongNewPlace": 89259,
+            "bindFolderAfterNoLongSamePlace": 91235,
+            "bindPropertyAfterNoLongNewPlace": 89129,
+            "bindPropertyAfterNoLongSamePlace": 91129,
+            "bindSameAfterNoLongNewPlace": 89015,
+            "bindSameAfterNoLongSamePlace": 89039,
+            "bindBroaderAfterNoLongNewPlace": 89039,
+            "bindBroaderAfterNoLongSamePlace": 89039,
+            "restorePropertyLongNewPlace": 89129,
+            "restorePropertyLongSamePlace": 91129,
+            "historyWordOpen": 0,
             "firstWriteSurcharge": -12,
             "tagLevel": {
               "mineNew": 0,
@@ -3523,8 +3677,8 @@
             }
           }
         },
-        "maxAbsErrorPercent": 12.05,
-        "maxAbsExecutionErrorPercent": 13.9
+        "maxAbsErrorPercent": 18.42,
+        "maxAbsExecutionErrorPercent": 13.89
       }
     },
     "planning": {
@@ -3532,7 +3686,7 @@
       "txGasCap": 16777216,
       "txGasCapRule": "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
       "headroomPercent": 15,
-      "headroomCovers": "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the under-prediction of the gas the cap counts (headroom exists to stop a plan coming out too small; an over-prediction only costs batch size): on prague all gas, profiles.prague.maxUnderErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxUnderExecutionErrorPercent. The maximum-error fields keep their meaning (maxAbsErrorPercent, and on amsterdam maxAbsExecutionErrorPercent); profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxUnderErrorComposite, maxAbsExecutionErrorComposite, maxUnderExecutionErrorComposite), each is taken over the composites whose state is not in maximaExcludeStates, and each is at most headroomPercent",
+      "headroomCovers": "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the under-prediction of the gas the cap counts (headroom exists to stop a plan coming out too small; an over-prediction only costs batch size): on prague all gas, profiles.prague.maxUnderErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxUnderExecutionErrorPercent. The maximum-error fields keep their meaning (maxAbsErrorPercent, and on amsterdam maxAbsExecutionErrorPercent); profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxUnderErrorComposite, maxAbsExecutionErrorComposite, maxUnderExecutionErrorComposite), each is taken over the composites whose state is not in maximaExcludeStates. The under-prediction fields and the over-prediction of the gas the cap counts (profiles.prague.maxOverErrorPercent, profiles.amsterdam.maxOverExecutionErrorPercent) are at most headroomPercent; profiles.amsterdam.maxOverErrorPercent (all gas) is stated with a per-composite bound (method.maxima)",
       "limits": {
         "maxActions": 64,
         "maxBindsPerPublication": 64,
@@ -3620,76 +3774,76 @@
         "editSmall": {
           "count": 23,
           "boundBy": "gas",
-          "gasEach": 594826,
-          "gasOfPublication": 13992780
+          "gasEach": 595037,
+          "gasOfPublication": 13997633
         },
         "edit1k": {
           "count": 11,
           "boundBy": "gas",
-          "gasEach": 1242141,
-          "gasOfPublication": 13975338
+          "gasEach": 1242352,
+          "gasOfPublication": 13977659
         },
         "createSmall": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 1302228,
-          "gasOfPublication": 13334065
+          "gasEach": 1328231,
+          "gasOfPublication": 13594095
         },
         "create1k": {
           "count": 7,
           "boundBy": "gas",
-          "gasEach": 1949543,
-          "gasOfPublication": 13958588
+          "gasEach": 1975546,
+          "gasOfPublication": 14140609
         },
         "chunk": {
           "count": 2,
           "boundBy": "gas",
-          "gasEach": 6080314,
-          "gasOfPublication": 12472414
+          "gasEach": 6080374,
+          "gasOfPublication": 12472534
         },
         "spanNode": {
           "count": 38,
           "boundBy": "gas",
-          "gasEach": 359794,
-          "gasOfPublication": 13983951
+          "gasEach": 359882,
+          "gasOfPublication": 13987295
         }
       },
       "amsterdam": {
         "editSmall": {
           "count": 30,
           "boundBy": "gas",
-          "gasEach": 2126466,
-          "gasOfPublication": 64689657
+          "gasEach": 2126689,
+          "gasOfPublication": 64696359
         },
         "edit1k": {
           "count": 14,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 5235541,
-          "gasOfPublication": 74193257
+          "gasEach": 5235764,
+          "gasOfPublication": 74196391
         },
         "createSmall": {
           "count": 12,
           "boundBy": "maxActions",
-          "gasEach": 4828858,
-          "gasOfPublication": 58841977
+          "gasEach": 4942857,
+          "gasOfPublication": 60209977
         },
         "create1k": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 7937933,
-          "gasOfPublication": 80275013
+          "gasEach": 8051932,
+          "gasOfPublication": 81415015
         },
         "chunk": {
           "count": 2,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 28939926,
-          "gasOfPublication": 58775534
+          "gasEach": 28939986,
+          "gasOfPublication": 58775666
         },
         "spanNode": {
           "count": 55,
           "boundBy": "gas",
-          "gasEach": 1327738,
-          "gasOfPublication": 73921262
+          "gasEach": 1327826,
+          "gasOfPublication": 73926114
         }
       }
     }
@@ -3719,7 +3873,7 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0xc1030128f82e0dec4a6901045bb9f12fc5407dd2a4ff17de973815e282e1606c",
+    "sha256": "0xa5fd5d86356d8b759651fb5e4b4ef4daca438a4d190b0e620f421c5199e68b63",
     "count": 112
   },
   "abi": {
@@ -3728,11 +3882,12 @@
   },
   "vectors": {
     "vectors/layout.json": "0xfaf24b138bff4c623dafae929f45239458d909812d64ad0a436e5670bb9607e8",
-    "test/vectors/ids.json": "0xac54d538551b4ab207bff63ce0be068a156c6eb723965a2d536ebae77595c501",
+    "test/vectors/ids.json": "0xd20b4f83d59eae8341bf52358ab351b64d123f5489cb4a90213d5a88a3949df1",
     "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206",
     "test/vectors/numbers.json": "0x32239292bbf0733f1ef315d2407c9a772ebd6485803835269da5a82d81d67ccf",
-    "test/vectors/topics.json": "0x846dd7ccb1d357d104004b378e1f02f070ce1b6e26bca8e1d40ddf06c55b1eb2",
-    "test/vectors/floor-plan.json": "0xff4b7a7d287e6420e91de98c826853193423589e8a806ad2b942481a3d1fb60a"
+    "test/vectors/topics.json": "0xbc9d4b6ba113385ed3c04d10400be860320a827869c211d91b3669b5e04a9692",
+    "test/vectors/names.json": "0x5f39d18c2cc1b05adba8ae0f92236c46d5ed1c1bcb879f989798ed021cf2cf70",
+    "test/vectors/floor-plan.json": "0x8cd73d4aee71d1e687f5a27bfe60a669ccf15197bb3e5c5e7e11180311d613c9"
   },
   "dependencyRoot": null,
   "deployPlan": {

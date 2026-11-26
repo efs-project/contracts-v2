@@ -611,7 +611,7 @@ contract FilesPageInvalidHeadsTest is FilesPageHarness {
 
     function test_invalid_heads_are_reported_invalid_never_dropped() public {
         bytes32 nameRec = Keys.recordFromHash(t.name, keccak256("bad.txt"));
-        bytes32 bad = _placeWithHead("bad.txt", nameRec, true); // a files-name/2 record as the HEAD target
+        bytes32 bad = _placeWithHead("bad.txt", nameRec, true); // a files-name/3 record as the HEAD target
         bytes32 wrong = _placeWithHead("wrong.txt", aRoot, true); // another file's root record
         bytes32 self = _placeWithHead("self.txt", 0, true); // a subject (itself) as the HEAD target
         bytes32 none = _placeWithHead("none.txt", 0, false); // no HEAD bound

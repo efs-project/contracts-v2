@@ -18,7 +18,8 @@
     "place-below": "0x6ba31a5e97a75866345ec3d0dee5f3fa527b99d45799b00038ec0932cba3f7b2",
     "scope-below": "0x4201126ed628afea054dd796c1fec72d9add0ba292ed6bc1347bb41d728f16b9",
     "position-authors": "0xc169b15288a6aef65707d0c30e1afa9d3465b8fafeea46aa760f057967bbde09",
-    "role-places": "0xca7c5d4aa35584ebeb752753db7d5aaefbb2b972642f2019cd3bc57bdb104247"
+    "role-places": "0xca7c5d4aa35584ebeb752753db7d5aaefbb2b972642f2019cd3bc57bdb104247",
+    "head-authors": "0xd09cf038b483bc20ecd786809b77a653a8554e6c938108cba163338955d06bf8"
   },
   "generator": "tools/vectors.mjs (viem keccak256 + encodeAbiParameters)",
   "domains": {

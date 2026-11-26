@@ -239,7 +239,7 @@ contract TopicListsConfigTest is Test {
         IndexReads reads = _reads(_units(address(built)), 0, 0);
         RealmIndex index = new RealmIndex(k.proxy, address(0), address(reads));
         (, FamilyEntry[] memory families,,,,,) = reads.manifest();
-        assertEq(families.length, 18);
+        assertEq(families.length, 19);
         for (uint256 i; i < families.length; ++i) {
             bytes32 id = families[i].familyId;
             bool topicList =

@@ -24,18 +24,21 @@ interface IHeadAuthorsGeneration is IGeneration1 {
 }
 
 /// @notice EXAMPLE, NOT PRODUCT (docs INDEX-BUILD §2.2, step 3b): the read side of a generation that adds one APPEND
-///         list, `head-authors` (provisional kind 22: everyone's versions of a file), in a THIRD store, beside generation
-///         1's families in the two stores it carries. It extends the real `IndexReads` through its extension points
+///         list, `file-versions` (provisional kind 24), in a THIRD store, beside generation 1's families in the two
+///         stores it carries. The list is generation 1's own `head-authors` (family 22, everyone's versions of a file,
+///         kept from genesis since the list release) kept a second time under another family id: a list whose live
+///         value is known, so a build of it from history can be checked against the genesis list as well as against
+///         a Realm that kept the example from genesis. It extends the real `IndexReads` through its extension points
 ///         only: the extra family is declared after the constructor's own table (`_declare`), every posting read goes
 ///         to the family's own store (`_postingOf`), and the carried check covers every store (`_carriedCheck`);
 ///         coverage then applies the check per family, as `IndexReads._coverage` already does.
 contract HeadAuthorsReads is IndexReads {
-    uint8 internal constant KIND_HEAD_AUTHORS = 22;
+    uint8 internal constant KIND_FILE_VERSIONS = 24;
     uint8 private constant UNIVERSE_SCOPE = 3;
     uint8 private constant SHAPE_APPEND_ = 1;
     uint8 private constant HEADS = 3;
 
-    /// The store of `head-authors`.
+    /// The store of `file-versions`.
     address public immutable THIRD;
     /// Units at this index and above are new in this generation: their fold hooks are built from history (docs
     /// INDEX-BUILD §3.6, §8 test 12); every unit below it is carried (folded live by an earlier generation).
@@ -78,7 +81,7 @@ contract HeadAuthorsReads is IndexReads {
         }
         BUILT = mask;
         _declare(
-            "head-authors", KIND_HEAD_AUTHORS, UNIVERSE_SCOPE, SHAPE_APPEND_, HEADS, extra[0], 1
+            "file-versions", KIND_FILE_VERSIONS, UNIVERSE_SCOPE, SHAPE_APPEND_, HEADS, extra[0], 1
         );
     }
 
@@ -123,10 +126,11 @@ contract HeadAuthorsReads is IndexReads {
     }
 }
 
-/// @notice EXAMPLE, NOT PRODUCT (docs INDEX-BUILD §2.2, step 3b): generation 1's code plus the `head-authors` list in a
-///         third store, through `RealmIndex`'s extension points only (`_foldMore`, `_carried`, `_allCarried`,
-///         `_spoiled`); its new units' fold hooks are built through its reads contract's `_builtHooks`. The list:
-///         key `(0, 22, 0, position)` with `position = Keys.position(HEAD, file, 0)`;
+/// @notice EXAMPLE, NOT PRODUCT (docs INDEX-BUILD §2.2, step 3b): generation 1's code plus the `file-versions` list in
+///         a third store, through `RealmIndex`'s extension points only (`_foldMore`, `_carried`, `_allCarried`,
+///         `_spoiled`); its new units' fold hooks are built through its reads contract's `_builtHooks`. The list is
+///         generation 1's `head-authors` under another id (`HeadAuthorsReads`):
+///         key `(0, 24, 0, position)` with `position = Keys.position(HEAD, file, 0)`;
 ///         entry = the admission of each author's first HEAD statement on the file; `count` = authors who ever made a
 ///         HEAD statement there; `live` = authors whose HEAD there is BOUND now. Fold (§2.2): FIRST_BIND appends counted,
 ///         FIRST_MASK appends UNCOUNTED, RESTORE retains 1, MASK or RELEASE of a BOUND head (`oldTarget != 0`) releases
@@ -142,14 +146,14 @@ contract HeadAuthorsIndex is RealmIndex {
 
     address public immutable THIRD;
     uint256 public immutable NEW_UNITS_FROM;
-    bytes32 private immutable F_HEAD_AUTHORS;
+    bytes32 private immutable F_FILE_VERSIONS;
 
     constructor(address ledger_, address decoder, address reads)
         RealmIndex(ledger_, decoder, reads)
     {
         THIRD = HeadAuthorsReads(reads).THIRD();
         NEW_UNITS_FROM = HeadAuthorsReads(reads).NEW_UNITS_FROM();
-        F_HEAD_AUTHORS = Keys.familyId("head-authors");
+        F_FILE_VERSIONS = Keys.familyId("file-versions");
     }
 
     function _foldMore(Effect calldata e, bytes32[] calldata, uint256 carried) internal override {
@@ -159,8 +163,8 @@ contract HeadAuthorsIndex is RealmIndex {
             return;
         }
         uint8 tk = e.transitionKind;
-        FamilyId f = FamilyId.wrap(F_HEAD_AUTHORS);
-        PostingKey key = PostingKey.wrap(Keys.posting(0, 22, 0, e.position));
+        FamilyId f = FamilyId.wrap(F_FILE_VERSIONS);
+        PostingKey key = PostingKey.wrap(Keys.posting(0, 24, 0, e.position));
         IPostingStore s = IPostingStore(THIRD);
         if (tk == FIRST_BIND) {
             s.append(f, key, e.admission, 0);
@@ -275,7 +279,7 @@ contract RecordingFoldHook is IIndexHook {
 /// @notice EXAMPLE, NOT PRODUCT: a deployer for a generation whose plan is a LIST of stores, each carried (an address)
 ///         or fresh (initcode and families, created with `INITIAL_WRITER` = the nonce-predicted generation). Slot 0 is
 ///         the posting store, slot 1 the bitmap store, every further slot an extra store of the reads contract
-///         (`HeadAuthorsReads`: `extra[0]` holds `head-authors`). The production `IndexDeployer` has one slot of each
+///         (`HeadAuthorsReads`: `extra[0]` holds `file-versions`). The production `IndexDeployer` has one slot of each
 ///         kind and stays as it is (docs INDEX-BUILD §3.1).
 contract ListIndexDeployer {
     struct Store {
@@ -417,27 +421,28 @@ library HeadAuthorsGenesis {
         address index;
     }
 
-    /// The example generation's work model (docs INDEX-BUILD §6.3): generation 1's, plus what `head-authors` costs
-    /// live, as formula 3's purpose surcharge on HEAD, so TAG and FOLDER statements are quoted exactly as generation 1
-    /// quotes them (`test/index/HeadAuthorsFloor.t.sol` measures both). The list costs a first HEAD statement one fresh
-    /// slot (the list's head, or its word 0), a later author's first statement the head's rewrite, and a mask, release
-    /// or restore of a BOUND head the counter's rewrite; each pays the CALL to the third store (cold on a
-    /// publication's first HEAD statement) and its writer rule.
+    /// The example generation's work model (docs INDEX-BUILD §6.3): generation 1's (whose HEAD surcharge reserves for
+    /// `head-authors`), plus what `file-versions` costs live, added to the same purpose surcharge on HEAD, so TAG and
+    /// FOLDER statements are quoted exactly as generation 1 quotes them (`test/index/HeadAuthorsFloor.t.sol` measures
+    /// both). The list costs a first HEAD statement one fresh slot (the list's head, or its word 0), a later author's
+    /// first statement the head's rewrite, and a mask, release or restore of a BOUND head the counter's rewrite; each
+    /// pays the CALL to the third store (cold on a publication's first HEAD statement) and its writer rule.
     function workModel() internal pure returns (WorkModel memory w) {
         w = IndexDoubleDefaults.workModel();
-        // measured, the list costs a first statement 41.6k to 46.5k on prague and 32.1k to 44.1k on amsterdam, a later
-        // one 22.9k to 23.1k and 30.5k to 30.6k (execution gas); quoted 54.1k / 51.2k and 32.0k / 39.1k
-        w.surchargePurpose = Purpose.HEAD;
-        w.surchargeFreshFirst = 10;
-        w.surchargeRwFirst = 10;
-        w.surchargeComputeFirst = 27_000;
-        w.surchargeRwLater = 10;
-        w.surchargeComputeLater = 27_000;
+        // measured in the third store (before generation 1 kept head-authors), the list costs a first statement 41.6k
+        // to 46.5k on prague and 32.1k to 44.1k on amsterdam, a later one 22.9k to 23.1k and 30.5k to 30.6k (execution
+        // gas); its share of the surcharge quotes 54.1k / 51.2k and 32.0k / 39.1k
+        require(w.surchargePurpose == Purpose.HEAD, "generation 1 surcharges HEAD");
+        w.surchargeFreshFirst += 10;
+        w.surchargeRwFirst += 10;
+        w.surchargeComputeFirst += 27_000;
+        w.surchargeRwLater += 10;
+        w.surchargeComputeLater += 27_000;
     }
 
     function headFamilies() internal pure returns (bytes32[] memory f) {
         f = new bytes32[](1);
-        f[0] = Keys.familyId("head-authors");
+        f[0] = Keys.familyId("file-versions");
     }
 
     function readsCode(ListIndexDeployer.ReadsArgs memory x)

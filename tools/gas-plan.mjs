@@ -35,7 +35,12 @@
 //                                             statement of this publication is at the same place (purpose, subject)
 //                                             (omitted: true, the dearer reading); entries = the author's entry
 //                                             count at that place, the length of its own scope list there, from a
-//                                             read the planner trusts (omitted: unknown, priced at the claim's tier)
+//                                             read the planner trusts (omitted: unknown, priced at the claim's tier);
+//                                             revisionBefore = the author's head's revision before the statement
+//                                             (omitted: the row's measured position is assumed, laterRows). The row
+//                                             itself is the planner's choice from the head it reads (laterRows.rule):
+//                                             a BIND on a MASKED or RELEASED head is bind<P>AfterNo when the head's
+//                                             targetKind is 0 (it never bound), else restore<P>
 import assert from "node:assert/strict";
 
 const ceilDiv = (a, b) => Math.floor((a + b - 1) / b);
@@ -82,6 +87,25 @@ export function laterKey(has, a, laterLists) {
   return firstAtPlace && has(`${k}NewPlace`) ? `${k}NewPlace` : k;
 }
 
+/** Whether a binding's history append opens a word at a statement whose head revision before it is `r`
+ *  (`PostingStore._append` opens one when the list's count before the append, the revision before, is 1 or a positive
+ *  multiple of 5). */
+export const opensHistoryWord = (r) => r === 1 || (r > 0 && r % 5 === 0);
+
+/** How many `historyWordOpen` to add to a later statement priced by `key` at head revision `revisionBefore` before it
+ *  (`laterRows.rule`, symmetric): +1 when that position opens a word and the row's measured position did not, −1 when
+ *  the row's did and that position does not, else 0. 0 when the action carries no `revisionBefore` (the row is used as
+ *  it is) or the model has no `laterRows`. The kernel refuses a BIND, UNBIND or RELEASE whose expected revision is not
+ *  the head's (E_CAS, nothing written), so a statement planned from a stale revision is refused, never admitted at a
+ *  price it did not plan. */
+export function historyWordAdds(laterRows, key, revisionBefore) {
+  if (!laterRows || !Number.isInteger(revisionBefore)) return 0;
+  const row = laterRows.rows[key];
+  assert.ok(row, `laterRows has no ${key}`);
+  const opens = opensHistoryWord(revisionBefore);
+  return opens === row.opensHistoryWord ? 0 : opens ? 1 : -1;
+}
+
 /** `tagLists.priceAsNew`: whether a roll-up list holding `entries` entries is priced as a new list. */
 export function priceAsNew(model, entries) {
   const r = model.tagLists.priceAsNew;
@@ -107,6 +131,7 @@ export function planner(model, schedule) {
         const key = laterKey((k) => k in c, a, model.laterLists);
         assert.ok(key in c, `no constant ${key}`);
         let g = c[key];
+        if (!a.first) g += historyWordAdds(model.laterRows, key, a.revisionBefore) * (c.historyWordOpen ?? 0);
         for (const [k, n] of Object.entries(a.levels ?? {})) g += c.tagLevel[k] * n;
         return g;
       }
@@ -128,8 +153,10 @@ export function planner(model, schedule) {
       acc.compute += wm[`surchargeCompute${cls}`];
     }
   };
-  const zeroPurpose = /^0x0{64}$/;
-  /** The kernel's own quote (LedgerIngress._foldAndQuote, design §10.4, work-model formula 3), exactly. */
+  /** The kernel's own quote (LedgerIngress._foldAndQuote, design §10.4, work-model formula 3), exactly. The surcharge
+   *  applies when the action's purpose word equals `surchargePurpose`, with no special case for zero, as
+   *  `LedgerIngress._foldOne` compares them; a statement's purpose is never zero (the kernel refuses it, `E_SHAPE`), so a
+   *  zero `surchargePurpose` surcharges nothing that can be admitted. */
   function quote(actions) {
     const acc = { fresh10: wm.freshPerPublication, rw10: wm.rwPerPublication, compute: wm.computeBase + wm.computePerAction * actions.length };
     let binds = 0;
@@ -148,7 +175,7 @@ export function planner(model, schedule) {
       } else if (a.kind === "bind") {
         ++binds;
         // first: the author's head at the position is UNSET (never for a RELEASE); every other one is a later statement
-        const surcharged = !zeroPurpose.test(wm.surchargePurpose) && purposeOf(a).toLowerCase() === wm.surchargePurpose.toLowerCase();
+        const surcharged = purposeOf(a).toLowerCase() === wm.surchargePurpose.toLowerCase();
         row(acc, a.first ? "First" : isRebind(a) ? "Rebind" : "Later", surcharged);
       } else if (a.kind === "withdraw") {
         // the first WITHDRAW of a publication is covered by the per-publication terms; every later one is a later row
@@ -230,14 +257,18 @@ const repeat = (a) => (k) => range(k).map(() => ({ ...a }));
 const atOnePlace = (cost) => (k) => range(k).map((j) => ({ kind: "bind", cost, first: false, firstAtPlace: j === 0, entries: Math.min(k + 1, 64) }));
 
 /** FloorPlan.t.sol's create-file recipe: CREATE, PUBLISH files-root/1 form 0 (64-byte header + 18-byte document),
- *  PUBLISH a 10-byte files-name/2, BIND HEAD (first), BIND FOLDER (first entry of that name in the root). */
+ *  PUBLISH a 10-byte files-name/3, BIND HEAD (first), BIND FOLDER (first entry of that name in the root). */
 export const CREATE_FILE_ROOT_BYTES = 82;
 export const CREATE_FILE_NAME_BYTES = 10;
 /** FloorPlan.t.sol's registration chunk: one PUBLISH of a fresh 12-byte topic-word/1 page per unit. */
 export const WORD_PAGE_BYTES = 12;
 
-/** FloorPlan.t.sol's name records: a 10-byte files-name/2 (`np-xyz.md0`-style, distinct per unit). */
+/** FloorPlan.t.sol's name records: a 10-byte files-name/3 (`np-xyz.md0`-style, distinct per unit). */
 export const NAME_BYTES = 10;
+
+/** FloorPlan.t.sol's removed-names shapes: how many entries the author's list holds at each place (the names it removed
+ *  and the files it moves: one more than the 64-action limit allows units, so the shape's k + 1 is built). */
+export const REMOVED_NAMES = { create: 13, createNoName: 17, move: 22, moveNoName: 33 };
 
 export function shapes(model) {
   return {
@@ -253,22 +284,57 @@ export function shapes(model) {
     tagNumberChanges: { what: "number changes on asserted tags on a one-word topic (a REBIND to the same target with a new number)", units: 1, of: atOnePlace("bindTagNumberChange") },
     masksOfMasks: { what: "masks of masks on a one-word topic (UNBIND from MASKED with a new number; priced as masks of asserted tags, an upper bound)", units: 1, of: atOnePlace("unbindTag") },
     folderRebinds: { what: "re-binds of root-folder entries to another file", units: 1, of: atOnePlace("bindFolderRebind") },
-    repeatPublishes: { what: "repeat PUBLISHes of existing 10-byte files-name/2 records", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: false }) },
-    nameRecords: { what: "fresh 10-byte files-name/2 records (publish-heavy)", units: 1, of: repeat({ kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true }) },
+    repeatPublishes: { what: "repeat PUBLISHes of existing 10-byte files-name/3 records", units: 1, of: repeat({ kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: false }) },
+    nameRecords: { what: "fresh 10-byte files-name/3 records (publish-heavy)", units: 1, of: repeat({ kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: true }) },
     publishesAndTags: {
       what: "a fresh 10-byte name record and a first tag on a one-word topic per unit (2 actions each)", units: 2,
       of: (k) => range(k).flatMap(() => [
-        { kind: "publish", shape: "files-name/2", bytes: NAME_BYTES, fresh: true },
+        { kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: true },
         { kind: "bind", cost: "bindTagFresh", first: true, levels: {} },
       ]),
     },
     registrationChunk: { what: "a registration chunk: fresh 12-byte topic-word/1 pages", units: 1, of: repeat({ kind: "publish", shape: "topic-word/1", bytes: WORD_PAGE_BYTES, fresh: true }) },
+    tagYesesAfterLoneNoes: { what: "yeses after lone noes on a one-word topic (a BIND on a head that never bound: bindTagAfterNo)", units: 1, of: atOnePlace("bindTagAfterNo") },
+    createFilesAtRemovedNames: {
+      what: "create-file recipes at names the author removed from the root folder (5 actions each: the name PUBLISH a repeat, the folder bind a restore to the new file)", units: 5,
+      of: (k) => range(k).flatMap((j) => [
+        { kind: "create" },
+        { kind: "publish", shape: "files-root/1 form 0", bytes: CREATE_FILE_ROOT_BYTES, fresh: true },
+        { kind: "publish", shape: "files-name/3", bytes: CREATE_FILE_NAME_BYTES, fresh: false },
+        { kind: "bind", cost: "bindHeadFresh", first: true },
+        { kind: "bind", cost: "restoreFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.create },
+      ]),
+    },
+    createFilesAtRemovedNamesNoName: {
+      what: "create-file recipes at names the author removed from the root folder, with no name PUBLISH (4 actions each)", units: 4,
+      of: (k) => range(k).flatMap((j) => [
+        { kind: "create" },
+        { kind: "publish", shape: "files-root/1 form 0", bytes: CREATE_FILE_ROOT_BYTES, fresh: true },
+        { kind: "bind", cost: "bindHeadFresh", first: true },
+        { kind: "bind", cost: "restoreFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.createNoName },
+      ]),
+    },
+    movesIntoRemovedNames: {
+      what: "moves of root-folder files into names the author removed from another folder (3 actions each: the name PUBLISH a repeat, RELEASE, restore)", units: 3,
+      of: (k) => range(k).flatMap((j) => [
+        { kind: "publish", shape: "files-name/3", bytes: NAME_BYTES, fresh: false },
+        { kind: "bind", cost: "releaseFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.move },
+        { kind: "bind", cost: "restoreFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.move },
+      ]),
+    },
+    movesIntoRemovedNamesNoName: {
+      what: "moves of root-folder files into names the author removed from another folder, with no name PUBLISH (2 actions each)", units: 2,
+      of: (k) => range(k).flatMap((j) => [
+        { kind: "bind", cost: "releaseFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.moveNoName },
+        { kind: "bind", cost: "restoreFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.moveNoName },
+      ]),
+    },
     createFiles: {
       what: "create-file recipes into the root folder (5 actions each)", units: 5,
       of: (k) => range(k).flatMap(() => [
         { kind: "create" },
         { kind: "publish", shape: "files-root/1 form 0", bytes: CREATE_FILE_ROOT_BYTES, fresh: true },
-        { kind: "publish", shape: "files-name/2", bytes: CREATE_FILE_NAME_BYTES, fresh: true },
+        { kind: "publish", shape: "files-name/3", bytes: CREATE_FILE_NAME_BYTES, fresh: true },
         { kind: "bind", cost: "bindHeadFresh", first: true },
         { kind: "bind", cost: "bindFolderFreshFile", first: true },
       ]),

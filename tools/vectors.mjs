@@ -35,7 +35,7 @@ export const DOM = {
   executionSet: h("efs/execution-set/1"),
 };
 // Index families of design §10.2: keccak("efs/family/<name>/1").
-export const FAMILIES = ["by-type", "by-author", "backlink", "history", "scope", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "roster", "live-scope", "place", "place-below", "scope-below", "position-authors", "role-places"];
+export const FAMILIES = ["by-type", "by-author", "backlink", "history", "scope", "reference-position", "by-record", "unique-by-type", "scalar", "digest", "role-scope", "roster", "live-scope", "place", "place-below", "scope-below", "position-authors", "role-places", "head-authors"];
 export const familyId = (name) => keccak256(stringToHex(`efs/family/${name}/1`));
 export const KIND = { byType: 1, byAuthor: 4, backlink: 5, history: 8, scope: 10, referencePosition: 11, byRecord: 12, uniqueByType: 13, scalar: 14, digest: 15, place: 6, placeBelow: 7, scopeBelow: 19, positionAuthors: 20, rolePlaces: 21 };
 

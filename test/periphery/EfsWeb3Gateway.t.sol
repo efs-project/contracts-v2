@@ -395,14 +395,15 @@ contract EfsWeb3GatewayTest is Web3GatewayHarness {
             '{"entries":[{"name":"hello.txt","kind":"file"},{"name":"notes.txt","kind":"file"},{"name":"big.bin","kind":"file"},{"name":"deep tree.bin","kind":"file"},{"name":"ext.bin","kind":"file"},{"name":"docs","kind":"directory"},{"name":"shared.txt","kind":"file"}],"complete":true}'
         );
         assertEq(_status(_u(P, ""), 200).body, res.body, "/<principal> is the root too");
-        // names are JSON-escaped
-        _file(address(this), sub, 'say "hi".txt', "hi", true);
+        // names are listed as they are: since files-name/3 no name holds `"`, `\` or a control byte, the characters
+        // JSON escapes (the gateway still escapes them, as defence in depth), so admitted punctuation passes through
+        _file(address(this), sub, "say 'hi' & {x}.txt", "hi", true);
         res = _status(_u(P, "/docs/sub"), 200);
         assertEq(
             res.body,
-            '{"entries":[{"name":"leaf.txt","kind":"file"},{"name":"say \\"hi\\".txt","kind":"file"}],"complete":true}'
+            '{"entries":[{"name":"leaf.txt","kind":"file"},{"name":"say \'hi\' & {x}.txt","kind":"file"}],"complete":true}'
         );
-        assertEq(_status(_u(P, "/docs/sub/say%20%22hi%22.txt"), 200).body, "hi");
+        assertEq(_status(_u(P, "/docs/sub/say%20%27hi%27%20%26%20%7Bx%7D.txt"), 200).body, "hi");
     }
 
     function test_directory_without_a_page_reader() public view {

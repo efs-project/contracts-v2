@@ -13,6 +13,7 @@ import {
     ActionKind,
     FamilyId,
     Native,
+    Purpose,
     ScopeKey,
     TypeId
 } from "../../src/interfaces/Actions.sol";
@@ -839,10 +840,21 @@ contract DoublesTest is Test {
         assertEq(w.freshPerRebind, 20);
         assertEq(w.rwPerRebind, 40);
         assertEq(w.computePerRebind, 42_000);
-        assertEq(w.freshPerBindLater, 20);
+        assertEq(w.freshPerBindLater, 30);
         assertEq(w.rwPerBindLater, 50);
-        assertEq(w.computePerBindLater, 85_000);
-        assertEq(w.surchargePurpose, bytes32(0), "generation 1 surcharges no purpose");
+        assertEq(w.computePerBindLater, 78_000);
+        assertEq(
+            w.surchargePurpose, Purpose.HEAD, "generation 1 surcharges HEAD (its head-authors list)"
+        );
+        assertEq(w.surchargeFreshFirst, 10);
+        assertEq(w.surchargeRwFirst, 10);
+        assertEq(w.surchargeComputeFirst, 4500);
+        assertEq(w.surchargeFreshRebind, 0);
+        assertEq(w.surchargeRwRebind, 0);
+        assertEq(w.surchargeComputeRebind, 0, "an edit leaves the list alone");
+        assertEq(w.surchargeFreshLater, 0);
+        assertEq(w.surchargeRwLater, 10);
+        assertEq(w.surchargeComputeLater, 10_000);
 
         FamilyId family = FamilyId.wrap(Keys.familyId("by-type"));
         ScopeKey scope = ScopeKey.wrap(keccak256("scope"));

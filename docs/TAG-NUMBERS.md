@@ -275,6 +275,11 @@ all remaining gas and V includes E, so neither is refused nor left unfinishable)
 | registration chunk (word pages) | 64 | 13,909,190 | 14,269,129 | 1.08 | 1.16 | limit | 64 | 10,337,078 | 12,776,137 | 1.93 | 1.16 | limit |
 | create-file recipes (5 actions each) | 10 | 12,918,827 | 14,100,931 | 1.28 | 0.85 | gas | 12 | 10,875,001 | 13,019,593 | 1.59 | 0.85 | limit |
 
+**Since the list release** (tools/RELEASE.md items 49 to 51: the later row `30, 50, 78,000` and the HEAD surcharge for
+`head-authors`) the `k` of five shapes moved: prague masks, releases and masks of masks of tags 58 → 54, restores 51 →
+48, create-file recipes 10 → 9; amsterdam masks, releases and masks of masks 55 → 54, restores 51 → 50. Every other `k`
+is as in the table, which is the formula-3 release's measurement.
+
 Measured with this release's code (work-model formula 3 and the list tiers, tools/RELEASE.md items 42 to 48) and the
 regenerated `test/vectors/floor-plan.json` (`FloorPlan.t.sol -vv` on both profiles). Against `3ca53ba`: prague masks,
 releases and masks of masks 64 → 58, restores 60 → 51, number changes 60 → 62, folder re-binds 60 → 62; amsterdam lone

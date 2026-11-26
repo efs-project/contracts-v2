@@ -59,14 +59,14 @@ contract IndexDeployerTest is Test {
         assertEq(bs.initialWriter(), gen);
         assertEq(ps.ledger(), address(ledger));
         assertFalse(ps.attached());
-        assertEq(ps.familyIds().length, 15);
+        assertEq(ps.familyIds().length, 16);
         assertEq(bs.familyIds().length, 3);
         IGeneration1 ix = IGeneration1(gen);
         assertEq(ix.postingStore(), address(ps));
         assertEq(ix.bitmapStore(), address(bs));
         assertEq(ix.ledger(), address(ledger));
         assertEq(ix.replayReadiness().hotAbiId, HOT);
-        assertEq(ix.replayReadiness().families.length, 18);
+        assertEq(ix.replayReadiness().families.length, 19);
         vm.expectRevert(abi.encodeWithSelector(E_DEPLOYER.selector, uint8(0)));
         d.run(plan);
     }

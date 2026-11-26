@@ -60,7 +60,7 @@ library TopicTypes {
     function wordSpec() internal pure returns (FilesTypes.Spec memory s) {
         s.name = "topic-word/1";
         s.description =
-            "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, no /, no ASCII control, space or A-Z, no C1, bidi, invisible, joiner or variation selector code point, not . or .., not starting with ~, not 0x and 40 lowercase hex";
+            "a word's page and the root-level topic /<word>: 1-255 bytes of well-formed UTF-8, of ASCII only a-z 0-9 - _ ., not ending in ., no C1, bidi, invisible, joiner or variation selector code point, not 0x and 40 lowercase hex";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
         s.flags = ClosureConstants.TYPE_FLAG_EMITS_BODY; // a fresh word page is logged in `Body`

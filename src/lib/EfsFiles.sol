@@ -22,7 +22,7 @@ import {Action, ActionKind, Purpose} from "../interfaces/Actions.sol";
 ///         Removing an entry RELEASEs it (my claim stops and a lower-ranked author's entry at the same place shows
 ///         through); hiding UNBINDs it (a MASK, which stops a lens search, so it hides every lower-ranked author's
 ///         entry at that place too, for readers who rank me first).
-///         `FilesFinalValidator` requires a `files-name/2` record for the role at or before the publication's
+///         `FilesFinalValidator` requires a `files-name/3` record for the role at or before the publication's
 ///         terminal admission, so the `withName` flags publish it in the same publication; pass false when the name
 ///         record already exists (a second PUBLISH of an existing record is a new occurrence, which costs gas but
 ///         is not refused). CAS values are the caller's: `expected` is the head's current revision (0 for a first
@@ -103,7 +103,7 @@ library EfsFiles {
         return keccak256(name);
     }
 
-    /// The `files-name/2` record id whose body hash is `role_` (`Keys.recordFromHash(nameType, role)`).
+    /// The `files-name/3` record id whose body hash is `role_` (`Keys.recordFromHash(nameType, role)`).
     function nameRecord(bytes32 nameType, bytes32 role_) internal pure returns (bytes32) {
         return keccak256(abi.encode(DOM_RECORD, nameType, role_));
     }
@@ -180,7 +180,7 @@ library EfsFiles {
         return abi.encode(creator, salt);
     }
 
-    /// `files-name/2`: the raw UTF-8 name (its rule judges well-formedness; this encoder is the identity).
+    /// `files-name/3`: the raw UTF-8 name (its rule judges well-formedness; this encoder is the identity).
     function nameBody(bytes memory name) internal pure returns (bytes memory) {
         return name;
     }
@@ -382,7 +382,7 @@ library EfsFiles {
         rootDirectory = recordId(t.directory, b[0]);
     }
 
-    /// Create folder: `PUBLISH(files-directory/1, (principal, salt))`, `PUBLISH(files-name/2, name)` when
+    /// Create folder: `PUBLISH(files-directory/1, (principal, salt))`, `PUBLISH(files-name/3, name)` when
     /// `withName`, `BIND(FOLDER, parent, keccak(name) → directoryRecord, exp 0)`; no CREATE. `principal` must be the
     /// publishing principal (`FilesDirectoryRule` refuses any other).
     function createFolder(
@@ -402,7 +402,7 @@ library EfsFiles {
         a[k] = bind(Purpose.FOLDER, parent, keccak256(name), directory, 0);
     }
 
-    /// Create file: `CREATE(salt)`, `PUBLISH(files-root/1, file ‖ 0 ‖ document)`, `PUBLISH(files-name/2, name)`
+    /// Create file: `CREATE(salt)`, `PUBLISH(files-root/1, file ‖ 0 ‖ document)`, `PUBLISH(files-name/3, name)`
     /// when `withName`, `BIND(HEAD, file, 0 → root, exp 0)`, `BIND(FOLDER, folder, keccak(name) → file, exp 0)`.
     function createFile(
         Types memory t,
@@ -504,7 +504,7 @@ library EfsFiles {
         a[1] = bind(Purpose.HEAD, file, 0, childRecord, expectedHead);
     }
 
-    /// Rename / move (atomic by the rollback law): `PUBLISH(files-name/2, newName)` when `withName`,
+    /// Rename / move (atomic by the rollback law): `PUBLISH(files-name/3, newName)` when `withName`,
     /// `RELEASE(FOLDER, from, keccak(oldName), exp)`, `BIND(FOLDER, to, keccak(newName) → target, exp)`, in one
     /// publication. The source is RELEASED, not masked, so a lower-ranked author's entry of the old name shows
     /// through. `target` is the file subject or directory record being moved; `expectedNew` is the new position's
