@@ -1181,6 +1181,23 @@ because those shapes are bounded by V. The edits shape is planner arithmetic onl
 other four are FloorPlan's shapes. A per-purpose term in the ingress's quote (a formula change, replaceable until
 freeze) would leave every non-HEAD shape at generation 1's batch.
 
+**Cured by work-model formula 3 (2026-11-26, docs/WORK-MODEL-V3.md).** The example generation's model now puts the
+list's reservation in the HEAD purpose surcharge (first +10 fresh, +10 rewrites, +27,000; re-bind nothing, since the list
+does nothing on an edit; other later +10 rewrites, +27,000), so TAG and FOLDER statements are quoted exactly as
+generation 1 quotes them (`test/index/HeadAuthorsFloor.t.sol`, `test_other_purposes_are_not_reserved_for_the_list`).
+The same table under formula 3 (generation 1 → the example generation; the same with the list's E):
+
+| shape | prague | amsterdam |
+|---|---|---|
+| lone negatives on a one-word topic | 38 → 38 | 53 → 53 |
+| first tags, depth 8, everything new | 18 → 18 | 19 → 19 |
+| first tags, depth 64, everything new | 3 → 3 | 3 → 3 |
+| create-file recipes (5 actions each) | 10 → **9** | 12 → 12 |
+| plain edits (PUBLISH files-child/1, HEAD re-bind; 2 actions each) | 24 → 24 | 28 → 28 |
+
+Only the HEAD statements' own shape (create file, on prague) pays the list's reservation; the lone negatives keep their
+batch.
+
 ### 6.3 Who pays
 
 Whoever calls `build`. Nothing on chain repays it, and no user's write pays anything extra during a build. In
@@ -1837,3 +1854,14 @@ alone; merged on `main` at `726993e` (step 4), they were built, tested together 
     tag-level terms count, and prague's edits +7.5% to +8.0% at 20k to 24k. A real term would need a row measured
     independently of the composites it is judged against. Not pursued in this release; the model stays as it is,
     with no re-fit and no new term (tools/RELEASE.md item 40).
+43. **FIXED BY WORK-MODEL FORMULA 3 (2026-11-26): the released floor is below the spend of later statements at distinct
+    places and in long lists, on today's schedule too.** In the current release a later statement's quote (formula 2:
+    122.0k on prague, 235.6k on amsterdam) is below its callbacks' spend when the statements are at distinct places or
+    in long lists: 0.91 on prague for a restore of entry 48 across places (134.0k), 0.75 at 4,096 entries (162.8k),
+    measured by `test/integration/FloorSplit.t.sol`. Every later measurement before it was in one place with short
+    lists, where one scope head is rewritten once per publication and the author's scope list is searched in six
+    probes. So today a later-statement publication sent near the floor can be refused (`E_INDEX_GAS`), but it can never
+    be admitted unindexed; and prague's later batches were planned on that under-quote. Formula 3 fits the later row to
+    the dearest later statement in lists of up to 1,024 entries per author per place (docs/WORK-MODEL-V3.md §3.5), which
+    makes prague's masks, releases and restores smaller (64 → 58, 60 → 51) and keeps every re-bind batch at or above
+    today's with a row of its own. Item 41's over-reservation on amsterdam is cured by the same change.

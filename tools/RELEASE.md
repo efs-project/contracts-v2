@@ -77,6 +77,9 @@ change:
 - **Read bounds.** `reads.schedules.*.bounds.*.everyoneExact.maxSkippedEntries` is 247 at every lens on both schedules
   (was 248). The recommended limits (`limitEntries` 245, `maxRows` 150, `pageTimesLens` 768 / 416 / 688 / 408) did not
   move on either schedule.
+- **Work-model formula 3** (items 42 to 45, joined into this release): the floor's formula, the 32-word work model, the
+  per-purpose surcharge, WITHDRAW, the errors and reasons, and batch sizes that fall on prague for masks, releases and
+  restores. A planner must take the formula of item 42.
 - **Addresses.** Every genesis address on the fixture Realm moved (the control delegate changed, and genesis embeds
   it), with the index, its reads contract and every reader that embeds the ledger's address; recompute them for any
   other `(chainId, realmSalt)` with `tools/deploy-plan.mjs`.
@@ -244,6 +247,13 @@ this release.
   of the live index's manifest, which the kernel (reason 14) and the generation check against the recorded hash.
 - **The fold-hook refusal** (Option A, item 37): a generation that carries a store is refused a fold-hook unit the live
   index does not declare, unless it walks history and names the unit as built.
+- **Later statements over-reserved on Glamsterdam, and under-reserved at distinct places and in long lists** (item 42,
+  work-model formula 3): later statements get honest slot counts and compute in rows of their own (re-binds a row that
+  never searches), fitted to lists of up to 1,024 entries per author per place; the per-purpose surcharge exists (zero
+  for generation 1). **A finding against the released floor, on today's schedule too:** in the current release a later
+  statement's quote is below its callbacks' spend when the statements are at distinct places or in long lists (0.91 for
+  a restore of entry 48 across places, 0.75 at 4,096 entries, prague); so today a later-statement publication sent near
+  the floor can be refused, but it can never be admitted unindexed; fixed by formula 3 (docs/INDEX-BUILD.md §10 item 43).
 - **The Glamsterdam rewrite price** (item 39): a Glamsterdam Realm's floor prices a rewrite at 12,100, so the quote
   covers the callbacks' spend in every measured state on both schedules (docs/INDEX-BUILD.md §10 item 29, fixed).
 - **Measured build gas** (step 4, item 36; re-measured with the manifest copy, docs/INDEX-BUILD.md §6): adding
@@ -260,14 +270,17 @@ this release.
 
 **Open:**
 
-- **Later statements on Glamsterdam are over-reserved.** The work model has no compute term for later statements and
-  no per-purpose term: it charges a later statement (`rwPerBindLater`) twelve "rewrites" that are really compute, so at
-  12,100 a rewrite later statements are reserved 2.0 to 4.3 times their spend on Glamsterdam and their batches shrink
-  (masks, releases and masks of masks 64 → 44, restores and number changes 64 → 41, folder re-binds 61 → 40; accepted
-  for this release). The remedy is a compute term for later statements in the reservation formula, decided together
-  with QUESTIONS Q52 (a per-purpose term, which a later HEAD list would need too: docs/INDEX-BUILD.md §6.2) as one
-  change to the formula. The formula is in `LedgerIngress`, which has 396 B left under the 19,660 B budget, so the
-  change needs a size plan before code.
+- **The per-purpose term's use: the all-authors HEAD list** waits on QUESTIONS Q52. The term itself is built (formula 3's
+  surcharge, item 42, zero for generation 1); if Q52 is answered yes the list is its own family with the work model
+  served from a data contract, as ruled.
+- **The gas model's later rows** (`unbindTag`, `releaseTag`, `restoreTag`, `bindTagNumberChange`, `unbindFolder`,
+  `releaseFolder`, `bindFolderRebind`) are measured in one place with short lists, so the planner's estimate E is short
+  for later statements at distinct places and in long lists (about +37k per statement for a restore of entry 48 across
+  places, +65k at 4,096 entries, prague). Being fixed in this release on its own branch.
+- **The entry search** (`RealmIndex._entryIndex` bisects the author's scope list, one store call per probe: about 2.2k
+  per doubling within one place, 4.2k to 5.1k across places) is what makes the later row grow with list length; reading
+  a whole word of five entries per probe near the end of the search, or storing a binding's entry index, would shorten or
+  remove it. An index change for a later generation (docs/WORK-MODEL-V3.md, "Landed").
 - **The digest-spec case (d)**: a digest spec rebuilt in a fresh store (docs/INDEX-BUILD.md §8 test 9).
 - **The Type registry**: until freeze any replacement Type registry must keep existing Type rows unchanged, because
   the decoder's reference-count read depends on it (docs/INDEX-BUILD.md §4.3).
@@ -748,6 +761,61 @@ and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the `src
 `IndexDeployer` 6,624 B (not a release unit); `LedgerIngress` is unchanged at 19,264 B (396 left). With the `about`
 order fix (item 38) `TopicLookupReader` is 17,081 B (2,579 left) and its address `0xE32505C0…d5De`; the read rows of
 `about` fell by 273 to 813 gas and `placeCount`'s rose by 3, and no read bound or recommended limit moved.
+
+### Work-model formula 3 (this piece, against `018e290`; joined and regenerated with the other pieces of the release)
+
+**42. The index floor's formula is formula 3** (docs/WORK-MODEL-V3.md, design §10.4, §5.11). What a consumer's planner
+must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SDK's `kernelQuote` must reproduce it):
+- **The work model is 32 words** (`WORK_MODEL_WORDS` 17 → 32), in this order: `formulaVersion` (3); the publish and
+  per-publication terms as before; three rows of (fresh ×10, rewrites ×10, compute) — first statement
+  (`freshPerBindFirst`, `rwPerBindFirst`, `computePerBindFirst`), re-bind (`freshPerRebind`, `rwPerRebind`,
+  `computePerRebind`), other later statement (`freshPerBindLater`, `rwPerBindLater`, `computePerBindLater`);
+  `surchargePurpose` (bytes32); the surcharge's three rows (`surcharge{Fresh,Rw,Compute}{First,Rebind,Later}`).
+  `freshPerBindFresh`, `rwPerBind` and `computePerHookEffect` are gone; `rwPerBindLater` is now the whole rewrite count of
+  a later statement. A reader that finds the manifest's profiles from the raw reply finds them at words 36 and 37.
+- **Each BIND, UNBIND or RELEASE adds one row by class:** first statement (the author's head UNSET), re-bind (a BIND on a
+  BOUND head: a new target, or the same target with a new number), or another later statement (a mask, a release, a
+  restore; a RELEASE always). When the action's purpose word equals `surchargePurpose` (never when it is zero), the
+  surcharge's row of the same class is added too. With no principal (`indexFloor`), every bind adds the largest of the
+  three rows field by field, surcharge included.
+- **WITHDRAW:** every WITHDRAW after the first of a publication adds the later row (formula 2 charged a withdraw
+  `computePerAction` only, 0.12× its callbacks' spend).
+- Generation 1's values: first `55, 20, 44,000` (formula 2's quote to the gas on prague), re-bind `20, 40, 42,000`,
+  later `20, 50, 85,000`, no surcharge; the publish, per-publication and final terms are unchanged.
+- **What the floor claims for masks, releases and restores:** an author's list of up to 1,024 entries at one place (one
+  author's entries at one exact topic, address or folder), any number of places in one publication. It covers up to
+  4,096 entries and stops covering from 4,097. Beyond that, nothing a person does fails: before each callback the kernel
+  requires the gas left to cover what remains of the quote, so a publication sent with a gas limit from
+  `eth_estimateGas` (the least limit at which the whole publication succeeds, callbacks included) and a margin is
+  admitted even when a statement's real spend is above the quote; what can fail is a publication sent at or near the
+  bare floor, which is refused with `E_INDEX_GAS` and admits nothing. A planner cannot see list lengths, so a batch
+  planned at its largest size whose statements meet long lists can need more execution gas than the plan assumed; if
+  that passes the 2^24 cap, `eth_estimateGas` fails and the publication is refused at send-time as over the cap,
+  nothing sent; the sender splits it and tries again.
+
+**43. Batch sizes** (the planning rule on the same gas model with formula 3's work model; today = the released
+`test/vectors/floor-plan.json`). **Prague's later batches get SMALLER than today's:** tag masks, releases and masks of
+masks 64 → 58, tag restores 60 → 51. Why: today's are planned on a quote that is below the real spend for those
+statements at distinct places and in long lists (0.91 for a restore of entry 48 across places, 0.75 at 4,096 entries;
+§15). Re-binds have a row of their own and keep or gain: tag number changes 60 → 63, folder re-binds 60 → 62, edits 24 →
+24. Amsterdam: tag masks, releases and masks of masks 44 → 55, restores 41 → 51, number changes 41 → 64, folder
+re-binds 40 → 61, edits 23 → 28, lone negatives 50 → 53. Unchanged on both: first tags at every depth and state,
+repeat publishes, name records, a name record and a first tag, the registration chunk, create-file recipes (10 / 12) and
+prague's lone negatives (38). A planner that reads the model needs only the formula change of item 42.
+
+**44. Errors and activation.** New `E_WORK_MODEL(uint8 code, uint256 value)`: the ingress reads the work model as raw
+words and refuses 1 a failed read, 2 a reply that is not 32 words (a formula-2 index answers 17), 3 a `formulaVersion`
+other than 3. New `E_INDEX_NOT_READY` reasons, for a kept index and a new one: 15 the index's work model is not 32
+words of the activation's ingress's formula (`ILedgerIngress.formulaVersion()`, new), 16 a word does not fit its field.
+New `E_PIN` code 13 (the index's work model could not be held as a data contract). `RealmIndex.workModel()` answers from
+a data contract (one STOP byte, then the 32 words), bound by address and codehash; the manifest hash still folds the same
+`work` struct, so it commits to the exact words.
+
+**45. Identities of this piece: PLACEHOLDER.** This piece is joined with the others of the release and regenerated
+once; the release digest, plan hash, execution set, manifest hash and index obligations, every address that depends on
+the ingress, the control delegate, `RealmIndex`, `IndexReads` or `LensReader` (whose code carries `WORK_MODEL_WORDS`),
+`gas/model.json`, `release/errors.json`, `test/vectors/floor-plan.json` and the ABI snapshots move then and are recorded
+in that release's identity item. The layout id, the hot ABI ids and both store ABI ids do not move.
 
 ### The identity table (this release against `cbf5b78`)
 
@@ -1361,6 +1429,12 @@ action (`tools/test/gas-fit.test.mjs`). It is for planning: the SDK splits a lar
 guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
 script predicts seven composites it never fits (create file, edit, rename + move, two chunks, the last publication of
 a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and exits 1 if a prague prediction is off by more than 15%.
+
+**The later rows are measured in one place with short lists** (an accuracy item, being fixed in this release on its own
+branch): `unbindTag`, `releaseTag`, `restoreTag`, `bindTagNumberChange`, `unbindFolder`, `releaseFolder` and
+`bindFolderRebind` come from one topic or one folder (`GasModel.t.sol`), so E is short for later statements at
+distinct places and in long lists, by about +37k per statement for a restore of entry 48 across places and +65k at
+4,096 entries on prague (`test/integration/FloorSplit.t.sol`).
 
 **First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
 the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author

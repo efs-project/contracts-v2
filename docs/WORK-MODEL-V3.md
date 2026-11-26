@@ -6,6 +6,88 @@ of later statements and give it a per-purpose term, as one change, decided toget
 it) or **estimated** (with how). The measurements were made in scratch copies of `018e290` (section 8 lists them); none
 of that code is committed.
 
+## Landed (2026-11-26, branch `fable/2026-11-26-formula-v3`)
+
+Formula 3 is built. The rulings and two reviews changed it from the proposal below in these ways. The rest of the
+document is the proposal as reviewed, kept for its evidence; where it differs from this section, this section is what
+the code does.
+
+1. **Three rows, not two.** A re-bind (a BIND on a BOUND head, transition `T_REBIND`) has a row of its own. It never
+   searches the author's scope list and moves no live bit or yes-count (`RealmIndex._foldScope` only stamps the scope
+   head, `_foldBind` moves no count), and the measurements agree: a number change costs 62.3k on prague in one-entry
+   lists and in lists of 1,025 entries across nine topics alike. The ingress tells it apart with the head read it already
+   makes (`kind == BIND && state == BOUND`). The surcharge has the same three rows. `WORK_MODEL_WORDS` is **32**: rows
+   at words 13-15 (first), 16-18 (re-bind), 19-21 (other later), the surcharged purpose at 22, its rows at 23-31.
+2. **The later row was measured in one place only, and was wrong** (the tag design review). Across distinct places a
+   mask, release or restore rewrites its place's scope head once more; from entry 48 it writes a live-bits word of its
+   own (fresh when the word was empty); and it bisects the author's scope list, one store call per probe (about 2.2k per
+   doubling within a place, 4.2k to 5.1k across places). The measurements, both schedules, cold, are committed in
+   `test/integration/FloorSplit.t.sol` (table below). The later row is now **2.0 fresh, 5.0 rewrites, 85,000 compute**
+   (the proposal's 2.0, 4.0, 42,000); the re-bind row **2.0, 4.0, 42,000**; the first row is unchanged.
+3. **The floor claims later statements in lists of up to 1,024 entries per author per place** (the claim's number lives
+   in one place: `LIST_LENGTH_CLAIM` in `test/harness/doubles/IndexDoubles.sol`, next to the values fitted to it). It
+   covers up to 4,096 entries and stops covering from 4,097 (measured and pinned, §3.5).
+4. **`indexFloor` takes the largest of the three rows** in each field, surcharge included, when it has no principal, so
+   it is an upper bound whatever the values (with the new later row the first row is no longer above it on amsterdam:
+   142.75k against 177.7k).
+5. **Activation range-checks the work model** (`E_INDEX_NOT_READY` 16) besides its version and length (15); the ingress
+   refuses a wrong length or version on every quote (`E_WORK_MODEL` 1 to 3). The ingress keeps no formula 2: a formula-2
+   index under it is refused loudly (`E_WORK_MODEL` 2, 17 words), and activation refuses to keep one (15).
+6. **WITHDRAW:** only the withdraws after a publication's first pay the later row (one alone is covered by the
+   per-publication terms, measured 1.41 / 1.03).
+7. **If the HEAD list is kept (Q52), it will be its own family** with the data-contract saver, not folded into
+   `position-authors` (ruled; reasons under Q4). It is not built here.
+8. **The gas model's later rows** (`unbindTag`, `releaseTag`, `restoreTag`, `bindTagNumberChange`, `unbindFolder`,
+   `releaseFolder`, `bindFolderRebind`) are measured in one place with short lists, so the planner's E is short for later
+   statements at distinct places and in long lists (by about +37k per statement for a restore of entry 48 across places
+   and +65k at 4,096 entries, prague). That is being fixed in this release on its own branch; this branch changes only
+   the floor section of `tools/gas-model.mjs` and the planner's quote.
+
+**The measurements behind the later row** (`FloorSplit.t.sol`, per action, spend p / a, the formula-3 quote's ratio):
+
+| later statement | fresh | rewritten | spend p / a | ratio p / a |
+|---|---:|---:|---:|---:|
+| a restore, one topic, short list | 1 | 4 | 97.4k / 116.4k | 1.664 / 1.526 |
+| restores across 33 topics, one-entry lists | 1 | 5 | 95.2k / 121.3k | 1.704 / 1.464 |
+| masks of entry 48 across topics (49-entry lists) | 1 | 5 | 117.6k / 143.8k | 1.378 / 1.235 |
+| restores of entry 48 across topics (its bits word empty) | 2 | 5 | 134.0k / 150.3k | 1.210 / 1.182 |
+| restores at the end of one list of 4,096 | 1 | 4 | 112.4k / 131.3k | 1.443 / 1.352 |
+| **the claim:** restores of a far entry across nine topics, lists of 1,025 | 2 | 5 | 152.6k / 168.9k | 1.062 / 1.052 |
+| covered up to: the same at 4,096 entries | 2 | 5 | 160.9k / 177.1k | 1.008 / 1.003 |
+| **beyond the claim:** the same at 4,097 entries (thirteen probes) | 2 | 5 | 162.8k / 179.1k | 0.995 / 0.991 |
+| masks of a far entry across nine topics, lists of 4,097 | 1 | 5 | 146.5k / 172.7k | 1.107 / 1.029 |
+| re-binds: folder re-binds across 33 folders | 2 | 4 | 106.8k / 115.8k | 1.068 / 1.058 |
+| re-binds: number changes of a far entry across nine topics, lists of 1,025 | 1 | 2 | 62.3k / 66.9k | 1.833 / 1.833 |
+
+Formula 2's later quote (122.0k on prague) was below several of these on today's schedule too: 0.91 for a restore of
+entry 48 across places and 0.75 at 4,096 entries. Its prague batches were planned on that under-quote, so formula 3's
+are smaller where it was short (the batch table below).
+
+**The entry search is the part that grows** (an index item for later, not built here). `RealmIndex._entryIndex` finds a
+binding's entry in the author's scope list by bisection, one `scopeEntry` call per probe. That costs about 2.2k per
+doubling of the list within one place and 4.2k to 5.1k across places (cold words), and it is why the later row depends
+on the length the floor claims. Reading a whole word of five entries per probe near the end of the search, or storing a
+binding's entry index when it is appended, would shorten or remove it; either is a change to the index, so to a later
+generation, and would let the later row shrink.
+
+**Batch sizes as landed** (the planning rule, `tools/gas-plan.mjs` with the deploy plan's work model on the committed
+gas model; today = the released `test/vectors/floor-plan.json`; edits from `tools/gas-plan-later.mjs`'s shape):
+
+| shape | prague today → formula 3 | amsterdam today → formula 3 |
+|---|---|---|
+| tag masks, releases, masks of masks | 64 → **58** | 44 → **55** |
+| tag restores | 60 → **51** | 41 → **51** |
+| tag number changes (re-binds) | 60 → **63** | 41 → **64** |
+| folder re-binds | 60 → **62** | 40 → **61** |
+| edits (PUBLISH child + HEAD re-bind) | 24 → 24 | 23 → **28** |
+| lone negatives | 38 → 38 | 50 → **53** |
+| create-file recipes | 10 → 10 | 12 → 12 |
+| every other planned shape | unchanged | unchanged |
+
+Prague's masks, releases and restores get SMALLER than today's, because today's are planned on a quote that is below
+the real spend for those statements at distinct places and in long lists. The re-bind row keeps every re-bind batch at
+or above today's on both schedules.
+
 ## The answer first
 
 - **The fix.** Formula 3 charges each bind-kind action one of two *rows*, chosen by whether it is a first or a later
@@ -291,6 +373,11 @@ New and changed field names:
 | (b) a fixed table of two or three entries | a loop over the entries, the same comparison per entry | **estimated** +60 to 100 B more and about 20 gas per entry per bind (the loop and one more comparison); 7 more words per entry | not needed: no second purpose keeps a list of its own today. A later need is a formula 4 |
 | (c) the kernel passes nothing and the generation declares a per-purpose function | the ingress calls the index during the quote (per bind, or once with the actions) | **estimated** at least one cold CALL (2,600) plus the calldata of the actions, per publication, and code in the index | rejected: dearer on the hot path, and the quote no longer comes from a static manifest field |
 
+**Landed:** there is ONE surcharge slot. The design already has a second per-purpose cost: a fold-hook unit with a
+purpose filter runs inside `onAdmission`, so its gas is prefix spend, and formula 3 retires `computePerHookEffect`. If
+HEAD holds the slot, the first purpose-filtered unit either goes on the ordinary rows (every purpose reserves for it) or
+needs formula 4, a kernel activation. One entry is accepted for generation 1.
+
 The kernel stays purpose-agnostic in (a). It never interprets a purpose; it compares two words. A surcharge purpose of
 0 never matches a bind that lands, because the kernel refuses a bind with purpose 0 (`LedgerCore` `E_SHAPE(leaf, 1)`).
 Even if it did match, every surcharge term is then 0.
@@ -329,6 +416,12 @@ The genesis HEAD list's own cost, measured as the formula-3 copy with the list (
 | restore | +1 rewritten | +14,253 / +21,451 | 15,000 / 22,100 |
 | re-bind (an edit) | none | 0 / 0 | 15,000 / 22,100 (over-reserved, Q5) |
 
+**Landed note on these values** (the tag design review): by the class rule, the first-row surcharge for the HEAD list is
+not needed (a HEAD first statement plus the list is under the first row), and it is what costs the tenth create-file
+recipe on prague. The values stay ("the surcharge is the list's measured cost" is the simpler rule and keeps
+create-file's margin at 1.10); they are manifest data that the later HEAD-list step can revisit. With the re-bind row the
+surcharge's re-bind share is zero, since the list does nothing on an edit, which removes the edit's over-reservation.
+
 **Without the surcharge** the formula-3 rows still cover these on prague (lowest: create file in state A, 1.055). On
 amsterdam a HEAD restore with the list rewrites 5 slots against the row's 4 and is covered only 1.01×. So the
 surcharge is what keeps the HEAD quote honest, not just safe.
@@ -357,6 +450,43 @@ thinner than formula 2's (1.04 against 1.26): that is the over-reservation going
 componentwise rule (compute ≥ the largest "other" of the class, ignoring that the slot counts already over-cover
 most shapes) would also be honest. It costs batches: prague lone negatives 38 → 36, restores and number changes
 63 → 58, amsterdam lone negatives 53 → 49 (planner, **measured** on the scratch model, Q1).
+
+**Landed: what the floor claims, and what it does not.**
+
+- **Covered:** every first statement on a topic of one word (deep first tags remain the exception of §3.6); every
+  re-bind, in a list of any length and at any number of places (it never searches); every mask, release and restore in
+  an author's list of up to 1,024 entries at one place, at any entry, with any number of distinct places in one
+  publication, quoted at 1.05× or more of its spend on both schedules; every WITHDRAW. The list is one author's entries at
+  one exact place, keyed by author, purpose and subject: for a tag, everything one author filed under one exact topic or
+  address; for a folder, one author's entries in that folder; a file's HEAD list has one entry, so edits and version
+  masks never search far.
+- **Not covered — a limit of the bare floor, not a rare case:** masks, releases and restores in longer lists. They are
+  ordinary for three kinds of author: a large folder or dataset import, a curator or bot filing under one topic, a
+  moderator's list of negatives on a busy topic. The quote covers a restore of a far entry across distinct places up to
+  4,096 entries (twelve probes, measured 1.008 / 1.003) and stops covering from 4,097 (thirteen probes, measured
+  0.995 / 0.991); the restore sets that number because it writes the most (2 fresh, 5 rewritten) on top of the search. Both
+  are pinned by tests (`test_split_break_even_covered_at_4096`, `test_split_break_even_not_covered_at_4097`), and the
+  claim by `test_split_claim_restores_across_lists_at_the_claim`.
+- **Not covered either:** two statements at one position in one publication. The quote reads the author's head before
+  the publication, so a first yes followed by a mask of the same position is quoted as two first statements; with the
+  first row no longer at or above the later row, the second is under-quoted by the difference between the rows when its
+  spend is near the later row's. In short lists the first row still covers it (measured per pair 1.420 / 1.467; pinned by
+  `test_split_two_statements_at_one_position`).
+- **What "not covered" means for a person.** Before each callback the kernel requires the gas left to cover what
+  remains of the quote (`dispatchIndex`, `E_INDEX_GAS`). A publication whose real spend is above the quote is still
+  admitted when it carries the gas: a sender that takes its gas limit from `eth_estimateGas` (the least limit at which
+  the whole publication succeeds, callbacks included) with a margin is admitted. What can fail is a publication sent
+  with a gas limit at or near the bare floor: a callback that runs out reverts it whole with `E_INDEX_GAS`, so it is
+  refused near the floor and never admitted unindexed. A planner cannot see list lengths, so a batch planned at its
+  largest size whose statements meet long lists can need more execution gas than the plan assumed; if that passes the
+  2^24 cap, `eth_estimateGas` fails, and the publication is refused at send-time as over the cap, nothing sent; the
+  sender splits it and tries again. Only a mask, a release or a restore pays the search.
+- **Not a lasting commitment.** The search lives in the index and the rows in the manifest, both per generation; a
+  later index can change either without touching a store.
+- **`indexFloor` is an upper bound** whatever the values: with no principal, every bind adds the largest of the three
+  rows in each field, surcharge rows included, so it is at or above the quote of the same publication by any author at
+  any prices (`test_index_floor_bounds_every_author_whatever_the_rows` checks it under generation 1's model and under a
+  model whose later row out-quotes its first row).
 
 ### 3.6 Deep first tags: leave the exception alone
 
@@ -593,7 +723,12 @@ offset), `test/harness/doubles/IndexDoubles.sol` (the values), and `tools/test/g
 2. **The per-purpose shape.** *Recommend (a), one surcharge entry.* A table can come later as a formula 4.
 3. **Ship the surcharge fields even if Q52 is no?** They cost 158 B and about 20 to 40 gas a bind (estimated from the
    89 gas measured for a two-bind publication). A later per-purpose list then needs no formula change. *Recommend yes.*
-4. **Where the HEAD list lives under a yes.** In `position-authors` (+179 B, no new family) or as its own family 22
+4. **Where the HEAD list lives under a yes. Ruled: its own family, with the data-contract saver.** The reasons:
+   coverage is per family id, so a later generation that stopped keeping HEAD entries inside family 20 could not say so,
+   and a HEAD key would answer stale counts as COMPLETE; with its own family, dropping it is leaving one family
+   undeclared, and every reader answers UNKNOWN. A size hint for that step (untested): one helper that returns the family
+   id and key kind for a purpose (0 for none), used by the three existing branches, in place of a second retain/release
+   pair. The recommendation below is the proposal's, superseded: In `position-authors` (+179 B, no new family) or as its own family 22
    (+620 B, needs room idea B). *Recommend `position-authors`*, with the tag design session checking that a
    `position-authors` reader keyed by a HEAD position reads as "everyone's versions of this file".
 5. **Exempt HEAD re-binds from the later surcharge?** It would be one more test in the ingress (BIND on a BOUND head,
@@ -658,7 +793,10 @@ The planner runs were `tools/gas-plan.mjs` with the five-line quote of 6.2 over 
 
 1. **Today's amsterdam lone-negative batch is 50, not 54.** 54 was the figure before RELEASE.md item 39. Formula 3
    gives 53, with or without the HEAD list.
-2. **Later statements are not "all rewrites and compute"** (design §10.4). Each writes one fresh posting-store slot,
+2. **Later statements are not "all rewrites and compute"** (design §10.4). *Precision (landed):* the fresh slot is the
+   binding's history list (family 8) and, for a re-bind, the new target's backlink entry; the posting store packs five
+   entries per word with the first in the head, so a binding's statements 2, 7, 12 and so on open a slot and the rest
+   rewrite. The rows measure a binding's second statement, the worst case, which is right for a row. Each writes one fresh posting-store slot,
    and a re-bind writes two. Formula 2 quotes them no fresh slot. On prague its 16 rewrites at 5,000 happened to cover
    that. On amsterdam each of those fresh slots also costs 97,920 of state gas.
 3. **A WITHDRAW is under-quoted 0.12× / 0.14×** for each withdraw after the first in a publication (not a claimed
