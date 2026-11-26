@@ -25,7 +25,10 @@ import {ILedgerControl, ActivationSet} from "../../src/interfaces/ILedgerControl
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
 import {DigestSpec, FamilyEntry, Readiness, Unit} from "../../src/interfaces/Index.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
-import {E_BUILD, E_INDEX_NOT_READY, E_PIN} from "../../src/interfaces/Errors.sol";
+import {E_BATCH_SHAPE, E_BUILD, E_INDEX_NOT_READY, E_PIN} from "../../src/interfaces/Errors.sol";
+import {Phase} from "../../src/interfaces/Results.sol";
+import {Layout} from "../../src/core/layout/Layout.sol";
+import {LedgerStorage} from "../../src/core/storage/LedgerStorage.sol";
 
 interface ICarriedCheck {
     function carriedCheck() external view returns (bool);
@@ -64,6 +67,42 @@ contract BreakableReads is IndexReads {
     function _carriedCheck(address gen) internal view override returns (bool) {
         if (broken) revert E_BROKEN();
         return super._carriedCheck(gen);
+    }
+}
+
+/// @notice A test double of the ledger implementation, etched over it: `setPhase` records a phase (in a slot of its
+///         own, in the proxy's storage; Foundry clears transient storage between a test's top-level calls), and
+///         `activate` writes it into the transient publication lock, as `LedgerCore` would mid-publication, then
+///         delegates to the real `LedgerControl` WITHOUT `LedgerCore`'s `idle` gate, so the control body's own phase
+///         check is reachable.
+contract UngatedActivation is LedgerStorage {
+    address internal immutable CONTROL;
+    bytes32 internal constant PHASE_SLOT = keccak256("efs/test/liveness/ungated-phase");
+
+    constructor(address control) {
+        CONTROL = control;
+    }
+
+    function setPhase(uint8 phase) external {
+        bytes32 slot = PHASE_SLOT;
+        assembly ("memory-safe") {
+            sstore(slot, phase)
+        }
+    }
+
+    function activate(ActivationSet calldata) external {
+        bytes32 slot = PHASE_SLOT;
+        uint8 phase;
+        assembly ("memory-safe") {
+            phase := sload(slot)
+        }
+        _setLockWord(_packLock(phase, 0, 0, 0));
+        (bool ok, bytes memory ret) = CONTROL.delegatecall(msg.data);
+        if (!ok) {
+            assembly ("memory-safe") {
+                revert(add(ret, 32), mload(ret))
+            }
+        }
     }
 }
 
@@ -630,24 +669,151 @@ contract LivenessTest is Test {
     }
 
     // =============================================================================================
-    // 6. The unchanged-index path
+    // 6. The unchanged-index path: keeping the live index never calls it
     // =============================================================================================
 
-    /// An activation that KEEPS the live index still reads its readiness phase (reason 2), uncaught: while the live
-    /// index does not answer, such an activation reverts with the live index's own error. The recovery is the
-    /// replacement (test 1), which no longer reads the live index.
-    function test_keeping_an_index_that_stops_answering_reverts_with_its_error() public {
-        _history(a);
-        breakable.breakNow();
-        _expectActivateRevert(
-            a, address(a.g.index), abi.encodeWithSelector(BreakableReads.E_BROKEN.selector)
-        );
-        _replaceAndCompareAfterBreak();
+    /// The set that keeps `R`'s live index (taken by the caller before the index stops answering: building it reads
+    /// nothing from the index), with another notice principal and `maxActions` 2.
+    function _keepSet(Realm storage R, address ix, bytes32 manifestHash)
+        internal
+        returns (ActivationSet memory set)
+    {
+        uint32 rev = R.revision + 1;
+        R.registry.setActiveRevision(rev);
+        set = KernelDeploy.genesisSet(R.k, address(R.batch), address(R.registry), ix, manifestHash);
+        set.revision = rev;
+        set.noticePrincipal = keccak256("efs/test/liveness/notice");
+        set.limits.maxActions = 2;
+        set.expectedExecutionSet = ExecutionSets.executionSet(set, R.k.proxy);
     }
 
-    function _replaceAndCompareAfterBreak() internal {
+    function _revisionWord(Realm storage R, uint32 rev, uint256 word)
+        internal
+        view
+        returns (bytes32)
+    {
+        return _hot(R).extsload(bytes32(Layout.revisionsRowsSlot(rev) + word));
+    }
+
+    function _expectExecRevert(Realm storage R, ActivationSet memory set, bytes memory err)
+        internal
+    {
+        Batch.Call[] memory calls = new Batch.Call[](1);
+        calls[0] = Batch.Call(R.k.proxy, abi.encodeCall(ILedgerControl.activate, (set)));
+        vm.expectRevert(err);
+        R.batch.exec(calls);
+    }
+
+    /// The kept index is still the one the previous revision pinned (address, codehash, manifest hash, generation),
+    /// and the activation changed what the set changed.
+    function _assertKept(
+        Realm storage R,
+        ActivationSet memory set,
+        address live,
+        bytes32 manifestHash
+    ) internal view {
+        ILedgerHot hot = _hot(R);
+        assertEq(hot.revision(), set.revision, "activated");
+        assertEq(hot.index(), live, "the same index");
+        assertEq(hot.indexGeneration(), 1, "the same generation");
+        assertEq(hot.noticePrincipal(), set.noticePrincipal, "the notice principal changed");
+        assertEq(
+            hot.executionSet(), set.expectedExecutionSet, "the new limits are in the execution set"
+        );
+        assertEq(_revisionWord(R, set.revision, 7), live.codehash, "pinned by codehash");
+        assertEq(_revisionWord(R, set.revision, 8), manifestHash, "pinned by manifest hash");
+    }
+
+    /// The live index's readiness reverts (`E_BROKEN`): an activation that keeps it succeeds, changes the notice
+    /// principal and the limits, and never asks the index; the index keeps folding the next publications exactly as
+    /// the twin's, under the new limits. (Before this change the same activation reverted `E_BROKEN`.)
+    function test_keeping_an_index_that_stops_answering_activates() public {
+        _history(a);
         _history(b);
-        _replaceAndCompare(ManifestCopy.ofReads(address(breakable)));
+        address live = address(a.g.index);
+        bytes32 manifestHash = IGeneration1(live).manifestHash();
+        breakable.breakNow();
+        vm.expectRevert(BreakableReads.E_BROKEN.selector);
+        IRealmIndex(live).replayReadiness();
+        ActivationSet memory set = _keepSet(a, live, manifestHash);
+        _activateSet(a, set);
+        _assertKept(a, set, live, manifestHash);
+        // the limits are in force: a three-action publication is refused, a one-action one is admitted and folded
+        Action[] memory three = new Action[](3);
+        bytes[] memory tb = new bytes[](3);
+        Native memory ctx;
+        ctx.nonce = a.nonce;
+        vm.expectRevert(abi.encodeWithSelector(E_BATCH_SHAPE.selector, uint16(3), uint16(3)));
+        ILedger(a.k.proxy).execute(three, tb, ctx, "");
+        _traffic(a);
+        _traffic(b);
+        (uint64 processed,,) = IGeneration1(live).progress();
+        assertEq(processed, 14, "the kept index folded the next publications");
+        _assertSameHeads();
+    }
+
+    /// The stronger form: every call to the live index's address reverts, and an activation that keeps it still
+    /// succeeds (so nothing in it calls the index).
+    function test_keeping_an_index_whose_every_call_reverts_activates() public {
+        _history(a);
+        address live = address(a.g.index);
+        bytes32 manifestHash = IGeneration1(live).manifestHash();
+        ActivationSet memory set = _keepSet(a, live, manifestHash);
+        vm.mockCallRevert(live, bytes(""), abi.encodeWithSignature("E_DEAD()"));
+        vm.expectRevert(abi.encodeWithSignature("E_DEAD()"));
+        IRealmIndex(live).replayReadiness();
+        _activateSet(a, set);
+        vm.clearMockedCalls();
+        _assertKept(a, set, live, manifestHash);
+    }
+
+    /// A kept index is still pinned: a set naming another manifest hash is refused 1, a set naming another codehash
+    /// is refused `E_PIN(index, 3)` (the address's code is checked first), and an index whose code is no longer the
+    /// code its revision row recorded is refused 1 even with a set that names its new code. All while every call to
+    /// the index reverts.
+    function test_a_kept_index_with_another_codehash_or_manifest_hash_is_refused_1() public {
+        _history(a);
+        address live = address(a.g.index);
+        bytes32 manifestHash = IGeneration1(live).manifestHash();
+        vm.mockCallRevert(live, bytes(""), abi.encodeWithSignature("E_DEAD()"));
+        ActivationSet memory set = _keepSet(a, live, keccak256("efs/test/liveness/other-manifest"));
+        _expectExecRevert(a, set, _notReady(1));
+        set = _keepSet(a, live, manifestHash);
+        set.components.indexCodehash = keccak256("efs/test/liveness/other-code");
+        set.expectedExecutionSet = ExecutionSets.executionSet(set, a.k.proxy);
+        _expectExecRevert(a, set, abi.encodeWithSelector(E_PIN.selector, live, uint8(3)));
+        vm.etch(live, address(b.g.index).code); // the same contract's code with another Realm's immutables
+        assertTrue(live.codehash != _revisionWord(a, a.revision, 7));
+        set = _keepSet(a, live, manifestHash);
+        _expectExecRevert(a, set, _notReady(1));
+        vm.clearMockedCalls();
+        a.registry.setActiveRevision(a.revision);
+    }
+
+    /// Reason 2 is now the kernel's own phase: the control body refuses to keep the index while this ledger's
+    /// publication lock is not IDLE. `LedgerCore.activate` is `idle`-gated, so the refusal is reached here through
+    /// an implementation double (`UngatedActivation`, etched over the ledger implementation) that sets the lock and
+    /// delegates to the real `LedgerControl`: with the lock APPLYING the keep is refused 2 without calling the index;
+    /// with the lock IDLE the same double activates.
+    function test_reason_2_is_the_ledgers_own_phase() public {
+        _history(a);
+        address live = address(a.g.index);
+        bytes32 manifestHash = IGeneration1(live).manifestHash();
+        address impl = address(a.k.implementation);
+        bytes memory original = impl.code;
+        UngatedActivation double_ = new UngatedActivation(address(a.k.control));
+        vm.etch(impl, address(double_).code);
+        vm.mockCallRevert(live, bytes(""), abi.encodeWithSignature("E_DEAD()"));
+        ActivationSet memory set = _keepSet(a, live, manifestHash);
+        set.components.ledgerImplCodehash = impl.codehash;
+        set.expectedExecutionSet = ExecutionSets.executionSet(set, a.k.proxy);
+        UngatedActivation(a.k.proxy).setPhase(Phase.APPLYING);
+        _expectExecRevert(a, set, _notReady(2));
+        UngatedActivation(a.k.proxy).setPhase(Phase.IDLE);
+        _activateSet(a, set);
+        vm.clearMockedCalls();
+        vm.etch(impl, original); // the hot reads below are the real implementation's
+        _assertKept(a, set, live, manifestHash);
     }
 
     // =============================================================================================
