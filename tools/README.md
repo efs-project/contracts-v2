@@ -53,6 +53,14 @@ reference implementation for the SDK's planner that reads only the model it is g
 `test/vectors/floor-plan.json` from it (`planVectors`), `pnpm release:check` compares it byte for byte, and
 `tools/test/gas-plan.test.mjs` tests the rule.
 
+## gas-fit.mjs
+
+The anchor rule of `gas/model.json`'s `fixed` term: `FIXED_ANCHORS` (the k1/k2 pairs the model had at `899767e`) and
+`fixedFrom(impliedFixedByPair)`, the median of `2·k1 − k2` over the anchors only. A row added to the model is fitted
+as its own constant and keeps its implied fixed cost in `fit.impliedFixedByPair`, but it is not an anchor, so it never
+changes `fixed` or the price of any existing action. `tools/gas-model.mjs` imports it; `tools/test/gas-fit.test.mjs`
+fails if a non-anchor pair moves `fixed`.
+
 ## attrib.mjs
 
 Attributes a compiled contract's runtime bytes to source functions, selector wrappers and overhead, using

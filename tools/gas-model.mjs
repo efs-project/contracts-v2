@@ -36,6 +36,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GLAMSTERDAM_FLOOR, LIMITS, WORK_MODEL, parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
+import { FIXED_ANCHORS, fixedFrom } from "./gas-fit.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-amsterdam", "check"]);
 const CHECK = !!o.check && o.check !== "0";
@@ -170,7 +171,6 @@ function lsq(X, y) {
   }
   return A.map((r, i) => r[k] / r[i]);
 }
-const median = (xs) => { const s = [...xs].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 const round = (x) => Math.round(x);
 
 /** Constants from one measured quantity per row (`q(row)`: prague frame gas, amsterdam total / execution / state). */
@@ -191,10 +191,11 @@ function fit(rows, q) {
     if (sizes.length > 1) publishBaseBySize[shape] = Object.fromEntries(sizes.map(([, n], i) => [n, round(each[i])]));
   }
   const action = Object.fromEntries(Object.entries(ACTIONS).map(([name, key]) => [name, marginal(key)]));
-  // the fixed cost: the median over every k1/k2 pair of 2·k1 − k2 (the per-pair values are kept in the rows)
+  // the fixed cost: 2·k1 − k2 of every k1/k2 pair is kept (fit.impliedFixedByPair), and `fixed` is their median over
+  // the anchor pairs only (tools/gas-fit.mjs), so a row added later never changes the price of an existing action
   const pairs = [...bytesKeys, ...Object.values(SHAPES).flat().map(([k]) => k), ...Object.values(ACTIONS)];
   const fixedByPair = Object.fromEntries(pairs.map((k) => [k, impliedFixed(k)]));
-  const fixed = median(Object.values(fixedByPair));
+  const fixed = fixedFrom(fixedByPair);
   const firstWriteSurcharge = get("first write fresh") - get("first write warm");
   const level = Object.fromEntries(Object.entries(LEVEL_ROWS).map(([k, key]) => [k, marginal(key) / LEVEL_SPAN]));
   const tagLevel = { mineNew: level.mineNew, mineExisting: level.mineExisting, sharedNew: level.allNew - level.mineNew, sharedExisting: level.allExisting - level.mineExisting };
@@ -271,6 +272,7 @@ function profile({ rows, types }, name) {
     out.split = { executionGas: rounded(ex), stateGas: rounded(st), note: "constants = executionGas + stateGas (up to rounding); the EIP-7825 per-transaction cap (2^24) counts executionGas only" };
   }
   out.fit = {
+    fixedAnchors: [...FIXED_ANCHORS],
     publishNewBaseBySize: Object.fromEntries(Object.entries(c.publishBaseBySize)),
     impliedFixedByPair: Object.fromEntries(Object.entries(c.fixedByPair).map(([k, v]) => [k, round(v)])),
     bytesResiduals: Object.fromEntries(BYTES_SIZES.map((n) => {
@@ -332,7 +334,7 @@ const model = {
     measurement: "vm.lastFrameGas() of the execute call frame (gasTotalUsed, and gasStateUsed under amsterdam); every account the setUp touched is cooled (vm.cool) before each measured execute, so each publication pays the cold costs of a transaction of its own; the principal has written before except in the first-write pair",
     marginal: "cost of one action = gas(k = 2) − gas(k = 1) of two publications of the same shape with distinct bodies",
     slopes: `perWord and perByte: least squares of the files-bytes/1 marginal over body sizes ${BYTES_SIZES.join(", ")} (100 and 1,000 are not word multiples, which separates the two terms); publishNew[shape] = its marginal − perWord·ceil(n/32) − perByte·n, averaged over the measured sizes (fit.publishNewBaseBySize)`,
-    fixed: "median of 2·gas(k = 1) − gas(k = 2) over every pair (fit.impliedFixedByPair: the first action of a kind in a publication pays some cold state that later ones find warm, which this single constant averages)",
+    fixed: "median of 2·gas(k = 1) − gas(k = 2) over the anchor pairs only (fit.fixedAnchors: the pairs the model had at 899767e, frozen in tools/gas-fit.mjs), so a row added later never changes the price of an existing action; fit.impliedFixedByPair keeps the value of every pair, anchors or not (the first action of a kind in a publication pays some cold state that later ones find warm, which this single constant averages)",
     firstWriteSurcharge: "(CREATE + PUBLISH files-directory/1 as a principal's first publication ever) − (the same shape by a principal that has written once)",
     keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; restore = BIND from MASKED to the kept target; PROPERTY binds are a label (labelKey(\"en\") on a word page → an existing text/1; a label with a new text is publishNew[\"text/1\"] + its body terms + bindPropertyFresh, validated by \"validate label new text\"); SAME and BROADER first statements run FilesFinalValidator's topic checks on subject and role (word page to word page; bindSameFreshPath 2-word path to path), their later statements are on word pages; WITHDRAW of one occurrence",
     tagLevels: TAG_LEVELS_METHOD,
