@@ -336,9 +336,12 @@ passes at the moment it is read.
 - **Fresh and carried.** A store is fresh when it names the generation as `INITIAL_WRITER` and is not attached
   (`RealmIndex._isFresh`, `IndexReads._isFresh`); every other store the generation names is carried, including the
   genesis stores (`INITIAL_WRITER = 0`), so generation 1 itself "carries" its stores.
-- **The edge cases.** With no admissions the check passes: there is no history to miss. That is also why genesis
-  needs no special case: generation 1 is checked at genesis like any later generation, on a Realm with no admissions,
-  and the kernel's check 12 has the same rule. When the generation is the live index the check passes (it folds its
+- **The edge cases.** With no admissions there is no history to miss, so the check asks something else: both of the
+  generation's stores have an empty writers list (never written in build mode or live), whoever their
+  `INITIAL_WRITER` is. An honest build or replay on an empty Realm makes no store call (`replayNextPublication`
+  returns before decoding when there is no publication; `build` folds nothing), and every build-mode or live write
+  records a writer range on its first call (`StoreBase._authorizeWriter`), so this holds for every honest store.
+  Genesis needs no special case: generation 1's stores are new, and the kernel's check 12 has the same rule. When the generation is the live index the check passes (it folds its
   stores itself; this also stops the check from asking itself). A generation with no carried store passes. A live
   index without code, or whose readiness read reverts, fails the check (with admissions).
 - **Readiness when the check fails.** `completedAdmission` and `completedPublication` are 0 and `ready` is false,
@@ -510,8 +513,12 @@ Two checks belong in `LedgerControl._checkIndex`, as defense beside the generati
 the store's pins, family list and writer ranges: a store whose `initialWriter()` is the candidate must not be
 `attached()` (13); otherwise, when the ledger has admissions, the live index's own `replayReadiness().families`
 (read from `$.index`, once, only when a carried family needs it) must hold an entry with the same family id, the
-same store address and `fromAdmission == 1` (12); a live index without code is 12. With no admissions, 12 checks
-nothing (genesis: `$.index` is 0 and nothing can be missing). The exact catch-up check (8) now runs **after** the
+same store address and `fromAdmission == 1` (12); a live index without code is 12. With no admissions, 12 instead
+requires every store of a maintained family to have an empty writers list, whoever its `INITIAL_WRITER` is
+(genesis: new stores, empty lists). Together the checks keep one invariant by induction: **every store of the live
+index holds only what pinned generation code wrote.** The base case is the empty Realm (no store written); a carried
+store is the live index's (12); a fresh store is the candidate's own, unattached, and written only by the
+candidate's codehash-pinned code (13). The exact catch-up check (8) now runs **after** the
 family loop, so a candidate that can never be ready is named 12 or 13 instead of "behind". Reasons 1 to 13 are listed
 in `src/interfaces/Errors.sol`.
 
@@ -547,6 +554,10 @@ After activation the first live write to a fresh store attaches it and keeps one
 range at (that admission − 1) and opens the new one. That attribution is late if the new generation does not touch
 a carried store for a while (the old range appears to run past the activation); it is harmless for correctness,
 because writer ranges are not coverage, but readers must not treat them as coverage.
+
+A replaced generation can never be activated again at its old address: its progress is stale, `build` refuses a
+generation that has been live (`E_BUILD(1)`), and its fresh stores are attached (reason 13). Going back means
+deploying the same code again as a new generation over the live stores (case (a)).
 
 ---
 
@@ -677,7 +688,9 @@ kernel alone; of test 4, a publication between `build` and activation (`E_INDEX_
 build-then-activate in one transaction (through a batching controller); of test 7, `build` after activation, from
 inside a publication (a fold hook of the live generation), with a nonzero `familyId`, and on a generation with a
 fresh store (`E_BUILD(4)`, step 1 only); of test 8, a fresh store already attached (`E_INDEX_NOT_READY(13)`) and an
-unbuilt frontier (8). Also: a Realm with no admissions activates a carried generation, with or without `build`.
+unbuilt frontier (8). Also: a Realm with no admissions activates a carried generation over unwritten stores, with
+or without `build`, and refuses one over a store its own `INITIAL_WRITER` wrote in build mode (`E_BUILD(7)`,
+`E_INDEX_NOT_READY(12)`); genesis stores are unwritten.
 
 1. **Built equals live, every family and counter.** Two Realms take the same mixed history: Realm L runs
    generation 2 from genesis (live); Realm B runs generation 1, then builds generation 2 and activates it. Compare
@@ -768,8 +781,9 @@ unbuilt frontier (8). Also: a Realm with no admissions activates a carried gener
 7. **Not done in step 1, though §1.4 item 6 names it:** the kernel still does not check that a store's last writer
    range belongs to the live index. Check 12 makes that unnecessary for carried families (it asks the live index's
    manifest, which is stronger), and check 13 covers fresh stores.
-8. **A residual at zero admissions.** With no admissions, neither check proves anything about a carried store, by
-   design: nothing can be missing. A store whose `INITIAL_WRITER` is some third generation could, in principle, hold
-   entries that generation wrote in `MODE_BUILD` while the Realm was idle and empty, and a candidate that carries it
-   would be accepted. A genesis store (`INITIAL_WRITER = 0`) cannot hold any. Requiring an empty writers list for a
-   carried store at zero admissions would close it; step 1 does not add that rule.
+8. **The zero-admission residual is closed.** The first version of step 1 let both checks pass anything on an empty
+   Realm, so a store that its own `INITIAL_WRITER` (code nobody pinned) had written in `MODE_BUILD` could be carried
+   into the first live generation. Now, with no admissions, every store must have an empty writers list, in the
+   generation's check and in the kernel's reason 12. That is the base case of the invariant of §5.3; checks 12 and
+   13 are its step. The simple form ("every store", not only "every carried store") held: no honest path writes a
+   store on an empty Realm.

@@ -273,13 +273,14 @@ declared by the live index in the same store from admission 1), and activation t
 carried check fails reports `completedAdmission` and `completedPublication` 0 and is not ready, at the moment it is
 read. Activation of a new index checks the same thing itself, from the live index's own readiness, and refuses two
 new reasons: **`E_INDEX_NOT_READY(12)`**, a carried family is not the live index's (with admissions; also when the
-live index has no code), and **`E_INDEX_NOT_READY(13)`**, a store that names the candidate as `INITIAL_WRITER` is
+live index has no code), or, on a Realm with no admissions, a store has already been written (its writers list is
+not empty; genesis stores are new and pass), and **`E_INDEX_NOT_READY(13)`**, a store that names the candidate as `INITIAL_WRITER` is
 already attached. The catch-up check (8) now runs after the family checks, so such a candidate is named 12 or 13, not
 8. Reasons 1 to 13 are listed in `src/interfaces/Errors.sol` (and in `release/errors.json`).
 
 **24. `E_BUILD` codes.** `build` no longer reverts `E_BUILD(0)`. Codes: 1 the generation is live or was activated, 3
 the ledger is not idle or a replay or build call is in flight, 4 the generation has a fresh store (the walk of history
-is step 2), 7 the carried check fails, 8 a nonzero `familyId`. `backfill` still reverts `E_BACKFILL(0)`;
+is step 2), 7 the carried check fails (on an empty Realm: one of its stores has been written), 8 a nonzero `familyId`. `backfill` still reverts `E_BACKFILL(0)`;
 `replayNextPublication` is unchanged.
 
 **25. Identities.** Moved, against `0fb4804`: the release digest (`0xd50c77b585e2b17259efa36b0a15c3ca4d7f9b4de9e54f86258f8d79f7cca309`, was
