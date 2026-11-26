@@ -19,7 +19,9 @@
 //   { kind: "reuse", type }                   REUSE of an existing record of `type`
 //   { kind: "create" } | { kind: "withdraw" }
 //   { kind: "bind", cost, first, levels }     any BIND, UNBIND or RELEASE: cost = a constants key ("bindTagFresh",
-//                                             "unbindTagLone", "releaseTag", ...), first = the author's head at the
+//                                             "unbindTagLone", "releaseTag", "bindPropertyFresh", "bindSameFreshWord",
+//                                             "restoreBroader", ...: the purpose is in the key, so the rule itself
+//                                             is purpose-agnostic), first = the author's head at the
 //                                             position is UNSET (a first statement of either sign; false for every
 //                                             later statement, a RELEASE always), levels = the
 //                                             tagLevel counts of a first TAG statement ({ mineNew, mineExisting,

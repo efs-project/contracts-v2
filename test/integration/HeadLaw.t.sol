@@ -10,7 +10,8 @@ import {E_FILES_FINAL} from "../../src/profiles/FilesProfile.sol";
 
 /// @notice The HEAD law at admission (design §12.5): `FilesFinalValidator` refuses every BIND at HEAD whose target is
 ///         not a `files-root/1` record naming the bind's subject in word 0 or a `files-child/1` record naming it in
-///         word 1 (code 8; an ADDRESS target keeps code 7). Masks and releases are never judged. The readers' own
+///         word 1 (code 8; an ADDRESS target keeps code 7), and every first "not this" at HEAD whose subject is not a
+///         subject created strictly before it (code 16). Masks and releases of an existing HEAD are never judged. The readers' own
 ///         checks of a bad HEAD already on chain are in `FilesPageInvalidHeadsTest` and
 ///         `EfsWeb3GatewayInvalidHeadsTest`, on Realms without the validator.
 contract HeadLawTest is FilesRecipesBase {
@@ -146,7 +147,69 @@ contract HeadLawTest is FilesRecipesBase {
         _execAs(address(this), _one(_head(fileA, aChild, 3)), new bytes[](1)); // restore to its own child
         _execAs(address(this), _one(EfsFiles.release(Purpose.HEAD, fileA, 0, 4)), new bytes[](1));
         _refused(address(this), _one(_head(fileA, bChild, 5)), new bytes[](1), 8, 0);
-        // a lone negative at a folder's HEAD position (a first mask) is never judged either
-        _execAs(bob, _one(EfsFiles.loneNegative(Purpose.HEAD, docs, 0, 0)), new bytes[](1));
+    }
+
+    // ---- code 16: a first "not this" at HEAD names a file (a subject created strictly before it) ---------------
+
+    function _lone(bytes32 subject) internal pure returns (Action memory) {
+        return EfsFiles.loneNegative(Purpose.HEAD, subject, 0, 0);
+    }
+
+    function test_a_lone_head_mask_on_an_id_that_names_nothing_is_refused() public {
+        _refused(bob, _one(_lone(keccak256("head-law/nothing"))), new bytes[](1), 16, 0);
+    }
+
+    /// A folder is a directory record, not a created subject: no revision can name it (code 8), so no "not this" either.
+    function test_a_lone_head_mask_on_a_folder_record_is_refused() public {
+        _refused(bob, _one(_lone(docs)), new bytes[](1), 16, 0);
+    }
+
+    function test_a_lone_head_mask_on_an_address_is_refused() public {
+        _refused(bob, _one(_lone(bytes32(uint256(uint160(bob))))), new bytes[](1), 16, 0);
+        _refused(bob, _one(_lone(bytes32(uint256(1)))), new bytes[](1), 16, 0);
+    }
+
+    /// A file created earlier: another author's first "not this" about it is admitted.
+    function test_a_lone_head_mask_on_a_file_created_earlier_is_admitted() public {
+        _execAs(bob, _one(_lone(fileB)), new bytes[](1));
+        // and the same author can later bind a version of it (a restore from MASKED is judged by code 8)
+        _execAs(bob, _one(_head(fileB, bChild, 1)), new bytes[](1));
+    }
+
+    /// A file created earlier in the same publication counts; one created later in it does not (strictly before).
+    function test_a_lone_head_mask_on_a_file_created_in_the_same_publication() public {
+        bytes32 salt = keccak256("head-law/same-publication");
+        bytes32 file = Keys.subject(Keys.principal(bob), salt);
+        Action[] memory a = new Action[](2);
+        a[0] = _create(salt);
+        a[1] = _lone(file);
+        _execAs(bob, a, new bytes[](2));
+        bytes32 salt2 = keccak256("head-law/created-after");
+        bytes32 later = Keys.subject(Keys.principal(bob), salt2);
+        a[0] = _lone(later);
+        a[1] = _create(salt2);
+        _refused(bob, a, new bytes[](2), 16, 0);
+    }
+
+    /// The cost of a lone HEAD "not this" about a file another author created (one publication, logged as
+    /// `head lone mask on a file gas` / `frame gas`): code 16 adds one `subjectCreatedAt` read to the final phase.
+    function test_measure_a_lone_head_mask_on_a_file() public {
+        bytes32 salt = keccak256("head-law/measured");
+        _execAs(bob, _one(_create(salt)), new bytes[](1));
+        _exec(
+            "head lone mask on a file",
+            _one(_lone(Keys.subject(Keys.principal(bob), salt))),
+            new bytes[](1)
+        );
+    }
+
+    /// The standing invariant: an author with a HEAD on a file can always mask and release it (MASK and RELEASE are
+    /// never judged), and that holds for a file's creator and for another author alike.
+    function test_an_existing_head_can_always_be_masked_and_released() public {
+        _execAs(bob, _one(_head(fileA, aRoot, 0)), new bytes[](1));
+        _execAs(bob, _one(EfsFiles.unbind(Purpose.HEAD, fileA, 0, 1)), new bytes[](1));
+        _execAs(bob, _one(EfsFiles.release(Purpose.HEAD, fileA, 0, 2)), new bytes[](1));
+        _execAs(address(this), _one(EfsFiles.unbind(Purpose.HEAD, fileB, 0, 2)), new bytes[](1));
+        _execAs(address(this), _one(EfsFiles.release(Purpose.HEAD, fileB, 0, 3)), new bytes[](1));
     }
 }

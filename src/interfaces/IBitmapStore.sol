@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import {FamilyId, ScopeKey} from "./Actions.sol";
 
 /// @title IBitmapStore — the per-Realm kind-10 scope lists and BITMAP family store (design §5.11, §4.6)
-/// @notice Same discipline as IPostingStore: STORE_ABI_ID = the ABI id of this interface under "efs/bitmap-store/1" (design §5.3's rule) exposed by
+/// @notice Same discipline as IPostingStore: STORE_ABI_ID = the ABI id of this interface under "efs/bitmap-store/2" (design §5.3's rule) exposed by
 ///         storeAbiId(); this ABI is Etched.
 interface IBitmapStore {
     /// The kind-10 list: head (count, live, lastMutation, liveBits0, entry0) and entry word in one call on
@@ -30,7 +30,11 @@ interface IBitmapStore {
     /// REBIND/RESTORE without a bit change: lastMutation only.
     function stamp(ScopeKey scope, uint64 admission) external;
 
-    /// A later BITMAP family's first live touch of a pre-declaration scope.
+    /// Opens a later BITMAP family's coverage slot for a pre-declaration scope: from the live generation at its first
+    /// live touch of the scope, or while the ledger is idle (so a scope no publication touches after the family is
+    /// declared can be backfilled to COMPLETE), or from a fresh store's builder. `E_COVERAGE(1)` when the slot is
+    /// already open. The store judges only the writer and the family; `liveFrom` is the generation's (for an idle
+    /// open, the frontier plus one). Behavior of `efs/bitmap-store/2`; `/1` refused the idle open.
     function openCoverage(FamilyId family, ScopeKey scope, uint64 liveFrom) external;
 
     /// IDLE only; MONOTONE families; within [through, liveFrom).

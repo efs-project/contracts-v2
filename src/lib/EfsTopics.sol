@@ -82,9 +82,18 @@ library EfsTopics {
         return keccak256(abi.encode(DOM_PROPERTY_KEY, keccak256(key)));
     }
 
-    /// `propertyKey("label:" ‖ language)`: the label key of a BCP 47 language tag (`en`, `pt-br`).
+    /// `propertyKey("label:" ‖ lowercase(language))`: the label key of a BCP 47 language tag. The rule: a label's
+    /// language tag is lowercased before its key is derived, so `EN` and `en` are one key and `pt-BR` is `pt-br`.
+    /// The chain cannot check it (the key is a hash), so every writer derives label keys here or in a twin that
+    /// does the same. Only ASCII `A`–`Z` are folded (to `a`–`z`); no other byte changes and nothing is validated.
+    /// `language` is not modified (the fold works on a copy).
     function labelKey(bytes memory language) internal pure returns (bytes32) {
-        return propertyKey(bytes.concat("label:", language));
+        bytes memory key = bytes.concat("label:", language);
+        for (uint256 i = 6; i < key.length; ++i) {
+            bytes1 c = key[i];
+            if (c >= "A" && c <= "Z") key[i] = bytes1(uint8(c) + 32);
+        }
+        return propertyKey(key);
     }
 
     // =============================================================================================

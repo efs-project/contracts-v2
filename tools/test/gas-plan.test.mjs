@@ -81,6 +81,36 @@ test("tagLists.priceAsNew is read from the model", () => {
   assert.deepEqual(deep, ["mineNew,sharedNew", "mineNew,sharedNew", "mineExisting,sharedExisting"]);
 });
 
+/** The statements about topics (design §12.5) and the model rows they are priced by (tools/gas-model.mjs ACTIONS). */
+const STATEMENTS = {
+  bindPropertyFresh: true, bindPropertyRebind: false, unbindProperty: false, releaseProperty: false,
+  bindSameFreshWord: true, bindSameFreshPath: true, unbindSame: false, releaseSame: false, restoreSame: false,
+  bindBroaderFresh: true, unbindBroader: false, releaseBroader: false, restoreBroader: false,
+};
+
+test("labels, SAME and BROADER statements are priced from the model alone, on every schedule", () => {
+  const model = freeze(committed());
+  for (const s of schedules(model)) {
+    const p = model.profiles[s];
+    const exec = s === "prague" ? p.constants : p.split.executionGas;
+    const pl = planner(model, s);
+    for (const [cost, first] of Object.entries(STATEMENTS)) {
+      for (const c of [p.constants, exec, p.floor.kernel]) assert.ok(Number.isInteger(c[cost]), `${s}: ${cost}`);
+      const one = pl.check([{ kind: "bind", cost, first }]);
+      assert.ok(one.fits, `${s} ${cost}`);
+      assert.equal(one.E, exec.fixed + exec[cost]);
+      assert.equal(one.K, p.floor.kernel.fixed + p.floor.kernel[cost]);
+    }
+    // a label with its text (EfsTopics.label) composes the text/1 publish row and the first PROPERTY statement
+    const label = [{ kind: "publish", shape: "text/1", bytes: 24, fresh: true }, { kind: "bind", cost: "bindPropertyFresh", first: true }];
+    const c = pl.check(label);
+    assert.equal(c.E, Math.round(exec.fixed + exec.publishNew["text/1"] + exec.perWord + exec.perByte * 24 + exec.bindPropertyFresh));
+    const v = p.validation.find((x) => x.key === "validate label new text");
+    assert.ok(v, `${s}: the label composite is validated`);
+    assert.ok(Math.abs((s === "prague" ? v.predicted : v.predictedExecutionGas) - c.E) <= 4, `${s}: the planner's E is the model's prediction up to rounding`);
+  }
+});
+
 test("the Realm limits refuse before gas", () => {
   const model = committed();
   const pl = planner(model, "prague");

@@ -36,6 +36,11 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///           and a HEAD whose subject is a folder's record id is always refused (no revision can name one: a root
 ///           names a created subject and a child inherits its parent's file). An ADDRESS target is refused first.
 ///           The readers still check the HEAD law themselves (defence in depth, and for Realms without this unit).
+///           On a first "not this" (FIRST_MASK, which carries no target) the subject must be a file: a subject
+///           created strictly before the statement (`subjectCreatedAt(subject) != 0` and below its admission), else
+///           code 16, as code 15 does for TAG. Every subject a HEAD BIND can pass code 8 on already is one (a root
+///           names a created subject and a child inherits its parent's file), so this never stops anyone saying "not
+///           this" about something that can have a version. A mask or release of an existing HEAD is never judged.
 ///         - FOLDER: on every BIND the name, parent and target laws of §12.2 above; on a first mask (FIRST_MASK)
 ///           the name and parent laws only (a mask has no target), so a first "not this" can only be said about an
 ///           entry that could exist: a real name under a directory or a home. A mask or release of an existing
@@ -99,6 +104,7 @@ import {FilesProfile, E_FILES_FINAL} from "./FilesProfile.sol";
 ///      14 TAG BIND (first bind, re-bind or restore): the target is not the role;
 ///      15 TAG first mask: the role is zero, or neither a record first admitted nor a subject created strictly before
 ///         it, nor address-shaped.
+///      16 HEAD first mask: the subject is not a subject created strictly before it.
 ///      Codes 1 and 2 also apply to a FOLDER first mask.
 contract FilesFinalValidator is IIndexHook {
     /// The exact Type ids of the profile (constructor state, never rewritten).
@@ -196,8 +202,12 @@ contract FilesFinalValidator is IIndexHook {
                 } else if (e.transitionKind == T_FIRST_MASK) {
                     _folderPlace(l, e, terminal);
                 }
-            } else if (e.kind == ActionKind.BIND && purpose == Purpose.HEAD) {
-                _head(l, e, terminal);
+            } else if (purpose == Purpose.HEAD) {
+                if (e.kind == ActionKind.BIND) {
+                    _head(l, e, terminal);
+                } else if (e.transitionKind == T_FIRST_MASK && !_file(l, e.subject, e.admission)) {
+                    revert E_FILES_FINAL(16, e.leaf);
+                }
             }
         }
         return IIndexHook.validate.selector;
@@ -252,6 +262,12 @@ contract FilesFinalValidator is IIndexHook {
         (, uint64 first,,,) = hot.recordHeader(role);
         if (first != 0 && first < admission) return true;
         uint64 created = hot.subjectCreatedAt(role);
+        return created != 0 && created < admission;
+    }
+
+    /// A HEAD first "not this" names a file: a subject created strictly before the statement.
+    function _file(Loaded memory l, bytes32 subject, uint64 admission) private view returns (bool) {
+        uint64 created = _hot(l).subjectCreatedAt(subject);
         return created != 0 && created < admission;
     }
 

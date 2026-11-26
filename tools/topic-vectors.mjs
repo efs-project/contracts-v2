@@ -301,7 +301,9 @@ export const topics = {
   childId: (t, parent, page) => keys.record(t.topic, topics.pathBody(parent, page)),
   pathId: (t, words) => words.slice(1).reduce((id, w) => topics.childId(t, id, topics.wordPageId(t, w)), topics.wordPageId(t, words[0])),
   propertyKey: (key) => keccak256(enc(["bytes32", "bytes32"], [h("efs/property-key/1"), keccak256(hexOf(key))])),
-  labelKey: (language) => topics.propertyKey(`label:${language}`),
+  // a label's BCP 47 tag is lowercased before its key is derived (ASCII A-Z only; EfsTopics.labelKey)
+  labelKey: (language) => topics.propertyKey(`label:${topics.labelLanguage(language)}`),
+  labelLanguage: (language) => language.replace(/[A-Z]/g, (c) => c.toLowerCase()),
   registerWord: (t, word) => ({ actions: [publish(t.word, hexOf(word))], bodies: [hexOf(word)] }),
   registerPath: (t, words) => {
     const actions = words.map((w) => publish(t.word, hexOf(w)));
@@ -369,6 +371,13 @@ export function topicVectors(plan) {
     return { words: ws, pageIds: ws.map((w) => topics.wordPageId(t, w)), id: at, records };
   });
   const propertyKeys = ["label:en", "label:pt-br", "definition", "moved-to"].map((key) => ({ key, id: topics.propertyKey(key) }));
+  // labelKey lowercases the language tag first: each input's key is its canonical (lowercased) tag's
+  const labelKeys = ["en", "EN", "pt-br", "pt-BR", "PT-BR", "zh-Hant-TW"].map((language) => {
+    const canonical = topics.labelLanguage(language);
+    const id = topics.labelKey(language);
+    if (id !== topics.propertyKey(`label:${canonical}`)) throw new Error(`labelKey(${language}) is not its canonical key`);
+    return { language, canonical, id };
+  });
   const cars = topics.pathId(t, ["cars"]);
   const tesla = topics.pathId(t, ["cars", "tesla"]);
   const thing = h("vectors/topics/thing");
@@ -417,7 +426,7 @@ export function topicVectors(plan) {
       record: "Keys.record(typeId, body) = keccak256(abi.encode(keccak256(\"efs/record/1\"), typeId, keccak256(body)))",
       wordPage: "Keys.record(topic-word/1, word)",
       path: "n = 1: the word page; n >= 2: Keys.record(topic/1, abi.encode(pathId(first n-1 words), wordPage(last word)))",
-      propertyKey: "keccak256(abi.encode(keccak256(\"efs/property-key/1\"), keccak256(key))); a label key is propertyKey(\"label:\" ‖ BCP 47 tag)",
+      propertyKey: "keccak256(abi.encode(keccak256(\"efs/property-key/1\"), keccak256(key))); a label key is propertyKey(\"label:\" ‖ the BCP 47 tag lowercased (ASCII A-Z only), so pt-BR is pt-br)",
     },
     order: "register every word page and path record before use and strictly before the first statement on it (an earlier action of the same publication counts): pages first, then the path records from two words on, then the statements",
     purposes: PURPOSES,
@@ -430,6 +439,7 @@ export function topicVectors(plan) {
     },
     paths,
     propertyKeys,
+    labelKeys,
     inputs: { thing, home },
     builders,
   };

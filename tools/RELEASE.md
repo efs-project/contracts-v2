@@ -209,22 +209,66 @@ this release's tree. CI now runs `pnpm check --built` after the build, which fai
 consumer that relied on "CI is green" for those three properties in earlier commits should know they were checked
 locally, not by CI.
 
+### Since the tag release (this release against `899767e`)
+
+A consumer that vendored the tag release (`899767e`, digest `0xfebf6886…8495`) re-vendors the same directories again.
+These are the changes; everything else in the consumer surface is as above.
+
+**17. Thirteen gas rows for statements about topics.** `gas/model.json` prices `PROPERTY`, `SAME` and `BROADER` on
+both schedules: `bindPropertyFresh`, `bindPropertyRebind`, `unbindProperty`, `releaseProperty`, `bindSameFreshWord`,
+`bindSameFreshPath`, `unbindSame`, `releaseSame`, `restoreSame`, `bindBroaderFresh`, `unbindBroader`,
+`releaseBroader`, `restoreBroader` ("The planning model" has the table and the nearest existing rows). A label with a
+new text is the `text/1` publish row plus `bindPropertyFresh` (composite `validate label new text`). The planner
+prices them by their constants key, with no code change.
+
+**18. The anchor rule for `fixed`.** `fixed` is the median of `2·k1 − k2` over the forty anchor pairs only
+(`fit.fixedAnchors`, `tools/gas-fit.mjs`), so adding a row never changes the price of an existing action. `fixed` is
+315,778 on prague (315,790 at `899767e`) and 899,110 on amsterdam (899,098): the anchor rows themselves moved by 12 to
+36 gas with this release's code, not the new rows. The schema now requires `fit.fixedAnchors`.
+
+**19. The label language rule.** `EfsTopics.labelKey(tag)` lowercases ASCII `A`–`Z` in the BCP 47 tag before deriving
+the key, so `pt-BR` and `pt-br` are one key (`label:pt-br`), and so are `EN` and `en`. The chain cannot check it (the
+key is a hash): the SDK's twin must fold the same way (`test/vectors/topics.json` `labelKeys`).
+
+**20. The bitmap store: `efs/bitmap-store/2`.** `IBitmapStore.openCoverage` now also accepts the live generation
+while the ledger is idle (backfill mode), so a scope that no publication touches after a later BITMAP family is
+declared can still get a coverage slot and be backfilled to COMPLETE. Nothing else changed: the writer and family
+rule is the same, `E_COVERAGE(1)` still refuses an open slot, and the store does not judge `liveFrom` (for an idle
+open the generation passes the frontier plus one). The ABI is unchanged, but the id's tag is now
+`efs/bitmap-store/2`, so `STORE_ABI_ID` is `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (was
+`0xb3240a15…5d6f`). This was the one store change that had to land before the first lasting deployment
+(docs/INDEX-BUILD.md §0, §7.2): **it is done.**
+
+**21. Refusal code 16.** `FilesFinalValidator` refuses a first "not this" at HEAD (an UNBIND with no earlier statement
+by its author) whose subject is not a subject created strictly before it: `E_FILES_FINAL(16, leaf)` inside
+`E_INDEX_CALL`. Every subject a HEAD BIND can pass code 8 on is such a file, so nothing that can have a version loses
+its "not this"; masks and releases of an existing HEAD are still never judged. The validator's codes are now 1–16. It
+adds 5,236 gas to a lone HEAD "not this" on prague and 5,224 of execution gas on amsterdam (no state gas), and on 64
+of them the final phase uses 93% of the final reserve on both schedules.
+
+**22. Identities.** Moved: the release digest, the plan hash, the execution set, the index obligations and manifest
+hash, the index (generation 1) and its reads contract, `BitmapStore` and `FilesFinalValidator` (address, initcode and
+runtime codehash), the bitmap store ABI id, and in `artifacts/` only `BitmapStore.json` and `FilesFinalValidator.json`.
+Not moved: the layout id, the hot ABI ids, the posting store ABI id, every Type id, the ledger proxy and
+implementation, the registry, every reader and the gateway, the seed (`efs-fixture-seed/4`, the root directory record
+`0xf7547aa6…c037`, `docs`, `readme.txt`, `big.bin`, `remote.txt`). The table below has the values.
+
 ### The identity table (this release against `cc59d0c`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
 
 | pin | this release | moved |
 |---|---|---|
-| release digest (`sha256(release.json)`) | `0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495` | yes (was `0x3080c7d497d248404e07169de87a5ebe0c657b2c6dce97ce3b97a4535be94045`) |
-| plan hash | `0xf5cbe78320301e69e205453876294a8ec6344810d41c42df643e13f6626b9904` | yes (was `0x12fc89b5ba9692557865a0078c648bb9b21daa89c651a021686fe691deb4caf0`) |
-| execution set | `0xf5514949f83a07bdd6811d62d6d2afb6d4b3499e1553b8cd18ad0b260e38f00d` | yes (was `0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9`) |
-| index obligations | `0xfa019dab971c12742de361bd2e8ee26e6f1dcf40820204a5e1ce5f1d40a1315f` | yes (was `0x7a7c39be2aa7dc061f901c8eded0a2a5cbcb282c15895c35c89bf88608e822b2`) |
-| index manifest hash | `0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0` | yes (was `0x5156a9991e6bde7401ee2ace2cfab0e42c448636fcd80b3ffe53ba4efbaae710`) |
+| release digest (`sha256(release.json)`) | `0x580ede64a8178920a10ea6be524954a1b39289779e587204bee27e9713fbd04e` (`0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495` at `899767e`) | yes (was `0x3080c7d497d248404e07169de87a5ebe0c657b2c6dce97ce3b97a4535be94045`) |
+| plan hash | `0xff2f4490eeb7ab6bc9ed796be42199ac6f3868a73f15a481b4aeec04888f6d83` (`0xf5cbe783…9904` at `899767e`) | yes (was `0x12fc89b5ba9692557865a0078c648bb9b21daa89c651a021686fe691deb4caf0`) |
+| execution set | `0x3a9a6aea417492210568a60a5383e17bea5cffae424aafaaded4cb835fd793e4` (`0xf5514949…f00d` at `899767e`) | yes (was `0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9`) |
+| index obligations | `0x9150afe9de8bc7ab2a529ad497d3cf423a3eee085b4669d427777950613f6524` (`0xfa019dab…315f` at `899767e`) | yes (was `0x7a7c39be2aa7dc061f901c8eded0a2a5cbcb282c15895c35c89bf88608e822b2`) |
+| index manifest hash | `0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c` (`0x781779c5…cbc0` at `899767e`) | yes (was `0x5156a9991e6bde7401ee2ace2cfab0e42c448636fcd80b3ffe53ba4efbaae710`) |
 | layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | yes (was `0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb`) |
 | hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | yes (was `0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99`) |
 | hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | yes (was `0x953f29e98a1f402cd1ab51c0b2d59b1b60f6067df47ca0969e4b8a855a36a76b`) |
 | posting store ABI id `efs/posting-store/2` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | yes (was `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229`) |
-| bitmap store ABI id `efs/bitmap-store/1` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | yes (was `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425`) |
+| bitmap store ABI id `efs/bitmap-store/2` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (`efs/bitmap-store/1` `0xb3240a15…5d6f` at `899767e`) | yes (was `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
 | Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
@@ -239,7 +283,7 @@ Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs
 | Type id `topic/1` (provisional) | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | new |
 | Type id `text/1` (provisional) | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | new |
 | ledger proxy | `0x83DbD3411050C131bD2F4e1493Ff5750D80530C6` | yes (was `0x870aa1d6873256e38F82E348c23F707B7E890c1c`) |
-| index (generation 1) | `0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6` | yes (was `0xa09CB554d43a121318DFB7deE4F7e46Aa56219dd`) |
+| index (generation 1) | `0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc` (`0x00f2a5C0…03C6` at `899767e`) | yes (was `0xa09CB554d43a121318DFB7deE4F7e46Aa56219dd`) |
 | `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | yes (was `0x02c6Cb67a439788469FD03A410E51EC90554837a`) |
 | `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | yes (was `0xFeD47e0060dBA4Acf18198c6DDc0CFBbd8A0dd55`) |
 | `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
@@ -531,7 +575,7 @@ inputs are covered by the selector, events and errors are not part of the id. Co
 | hot (release) | `efs/ledger-hot/2` | `ILedgerHot.json` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | `0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` |
 | hot (suites) | `efs/ledger-hot/2:test` | `ILedgerHot.json` | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | `0xb9163fed951b51bb8d2d13b3bd410b5de236799b79c7b1f86b9699d1d90dc603` |
 | posting store | `efs/posting-store/2` | `IPostingStore.json` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` (step 3b amended: `retain` added; `efs/posting-store/1` was `0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554`) | `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229` (under `/1`) |
-| bitmap store | `efs/bitmap-store/1` | `IBitmapStore.json` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425` |
+| bitmap store | `efs/bitmap-store/2` | `IBitmapStore.json` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (same ABI as `/1`, `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f`; the tag moved with the idle `openCoverage`) | `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425` |
 
 The release hot-ABI id is `HOT_ABI_ID` in `tools/deploy-plan.mjs` (name `HOT_ABI_ID_STRING`): `LedgerCore`'s
 `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `IndexReads`' `hotAbiId` constructor argument
@@ -734,11 +778,14 @@ amsterdam; the residual is the grammar's own validation, about 87 gas a byte aga
 `pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
 rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
 + perByte·n` and one constant per other action kind and purpose, plus a once-per-principal first-write surcharge
-(amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only). It
-is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
+(amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only).
+`fixed` is the median of `2·k1 − k2` over the **anchor pairs** only (`fit.fixedAnchors`: the forty pairs the model had
+at `899767e`, frozen in `tools/gas-fit.mjs`). A row added later is fitted as its own constant and keeps its implied
+fixed cost in `fit.impliedFixedByPair`, but it never changes `fixed`, so adding a row never re-prices an existing
+action (`tools/test/gas-fit.test.mjs`). It is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
 guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
-script predicts six composites it never fits (create file, edit, rename + move, two chunks, the last publication of
-a 40 KB file, a first tag on a fresh 6-word path) and exits 1 if a prague prediction is off by more than 15%.
+script predicts seven composites it never fits (create file, edit, rename + move, two chunks, the last publication of
+a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and exits 1 if a prague prediction is off by more than 15%.
 
 **First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
 the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author
@@ -752,6 +799,40 @@ by four `tag level` rows (`(k2 − k1) / 4` of a first statement on a 2-word and
 so each is one level: "all" rows a first tag at a fresh position, "mine" rows a first no at an existing position), on both schedules, with the amsterdam execution split as for every constant. A batch of tags is split by
 these terms; a publication sent with too little gas fails with `E_INDEX_GAS` and admits nothing. Regenerate and commit it whenever the
 kernel, the index or a Files rule changes.
+
+**Statements about topics (`PROPERTY`, `SAME`, `BROADER`, design §12.5).** One constant per statement shape, measured
+like every bind row (k2 − k1 of one and two statements at distinct positions, by an author who has written before, the
+topics and texts registered by an unmeasured publication in the row's own test). A label is `PROPERTY` at
+(topic, `labelKey("en")`) → an existing `text/1`; `SAME` is measured word page to word page and 2-word path to 2-word
+path (the two differ by about 100 gas, so a planner may use either), `BROADER` word page to word page; the later
+statements are on word pages. None of them has a per-level term: a path costs what a word page does. **A label with a
+new text** in the same publication (`EfsTopics.label`) is the `text/1` publish row plus the first statement:
+`publishNew["text/1"] + perWord·ceil(n/32) + perByte·n + bindPropertyFresh` for an n-byte text. The composite
+`validate label new text` (24 bytes) checks it: predicted 828,939 against 890,272 measured on prague (−6.89%), 2,812,603
+against 3,057,918 on amsterdam (−8.02%), inside the headroom. The rows (gas; amsterdam execution gas in brackets) and the
+nearest existing row:
+
+| constant | statement | prague | amsterdam (execution) | nearest existing row (prague; amsterdam execution) |
+|---|---|---:|---:|---|
+| `bindPropertyFresh` | a label as a first statement, naming an existing text | 328,774 | 1,303,760 (226,640) | `bindHeadFresh` −0.7%; +2.1% |
+| `bindPropertyRebind` | a label changed to another existing text (a re-bind) | 196,281 | 584,361 (192,681) | `bindHeadRebind` −3.9%; −4.0% |
+| `unbindProperty` | a mask of a label | 145,913 | 350,753 (154,913) | `unbindTag` −6.4%; −6.1% |
+| `releaseProperty` | a release of a label | 144,725 | 349,565 (153,725) | `releaseTag` −6.5%; −6.1% |
+| `bindSameFreshWord` | `same`, word page to word page, first statement | 357,488 | 1,413,358 (238,318) | `bindTagFresh` −13.7%; −13.4% |
+| `bindSameFreshPath` | `same`, path to path, first statement | 357,384 | 1,413,290 (238,250) | `bindSameFreshWord` −104 gas; −68 gas |
+| `unbindSame` | a mask of a `same` | 146,024 | 350,840 (155,000) | `unbindProperty` +111 gas; +87 gas |
+| `releaseSame` | a release of a `same` | 144,824 | 349,664 (153,824) | `releaseProperty` +99 gas; +99 gas |
+| `restoreSame` | a restore of a masked `same` | 174,603 | 474,639 (180,879) | `restoreTag` −6.5%; −6.3% |
+| `bindBroaderFresh` | `broader`, word page to word page, first statement | 357,463 | 1,413,381 (238,341) | `bindSameFreshWord` −25 gas; +23 gas |
+| `unbindBroader` | a mask of a `broader` | 146,035 | 350,875 (155,035) | `unbindSame` +11 gas; +35 gas |
+| `releaseBroader` | a release of a `broader` | 144,847 | 349,675 (153,835) | `releaseSame` +23 gas; +11 gas |
+| `restoreBroader` | a restore of a masked `broader` | 174,614 | 474,662 (180,902) | `restoreSame` +11 gas; +23 gas |
+
+`SAME` and `BROADER` cost the same to within 40 gas, and their masks and releases cost what a label's do; a first
+`SAME` or `BROADER` is about 29k above a label's (the validator reads both topics' headers) and well below a first TAG,
+which also writes the topic lists. `tools/gas-plan.mjs` prices every one of them from its constants key (`{ kind:
+"bind", cost: "bindSameFreshWord", first: true }`) with no purpose-specific code; `first` is true for the three first
+statements and false for every later one.
 
 **The floor and the planning rule (design §10.4).** Before each index callback the kernel requires a floor of
 execution gas to be visible (`gasleft()`), and on Glamsterdam only execution gas is visible and capped. So that a
@@ -824,18 +905,18 @@ cost), `<label> frame gas` and, under amsterdam, `<label> frame state gas`. Thes
 
 | §14 row | prague | amsterdam (state) |
 |---|---:|---:|
-| Root seed (PUBLISH directory, no CREATE) | 669,300 | 2,434,166 (1,958,400) |
-| Native 1-leaf PUBLISH (64 B directory body, steady author) | 573,824 | 1,853,671 (1,370,880) |
-| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,321,839 | 4,795,163 (3,818,880) |
-| M1 create file (5 leaves, fresh folder) | 1,683,951 | 6,044,428 (4,798,080) |
-| Edit | 864,874 | 2,775,614 (2,056,320) |
-| Rename / move (RELEASE + BIND) | 1,119,384 | 3,608,491 (2,643,840) |
-| Remove (RELEASE from BOUND) | 451,410 | 1,210,736 (783,360) |
-| Restore (released → same target) | 485,955 | 1,259,816 (783,360) |
-| RELEASE from mask | 400,516 | 1,064,756 (685,440) |
-| Hide (UNBIND from BOUND) | 435,504 | 1,114,146 (685,440) |
-| Restore a released placement (Move-back analog) | 500,862 | 1,355,397 (881,280) |
-| WITHDRAW | 444,440 | 1,284,087 (881,280) |
+| Root seed (PUBLISH directory, no CREATE) | 669,204 | 2,434,070 (1,958,400) |
+| Native 1-leaf PUBLISH (64 B directory body, steady author) | 573,728 | 1,853,575 (1,370,880) |
+| M1 create folder (no CREATE; first placement in root, fresh scope) | 1,321,648 | 4,794,960 (3,818,880) |
+| M1 create file (5 leaves, fresh folder) | 1,683,620 | 6,044,097 (4,798,080) |
+| Edit | 864,746 | 2,775,486 (2,056,320) |
+| Rename / move (RELEASE + BIND) | 1,119,266 | 3,608,373 (2,643,840) |
+| Remove (RELEASE from BOUND) | 451,399 | 1,210,725 (783,360) |
+| Restore (released → same target) | 485,944 | 1,259,805 (783,360) |
+| RELEASE from mask | 400,505 | 1,064,745 (685,440) |
+| Hide (UNBIND from BOUND) | 435,493 | 1,114,135 (685,440) |
+| Restore a released placement (Move-back analog) | 500,851 | 1,355,398 (881,280) |
+| WITHDRAW | 444,344 | 1,283,991 (881,280) |
 
 **Read rows** (`reads` in the report; prague). `eth_estimateGas` on the fixture includes the 21,000 intrinsic and
 calldata cost, and each read is one `eth_call`:
@@ -859,18 +940,18 @@ The prototype needed 199 calls.
 The report also carries 26 supplementary recipe steps and the fixture's 79 transaction receipts, which are prague
 only and include intrinsic cost:
 
-- Genesis code deposit: 45.39M over 30 transactions (the thirteen rules included).
+- Genesis code deposit: 45.44M over 30 transactions (the thirteen rules included).
 - Readers and views (R0–R11, 13 transactions): 24.02M (`KeysView`, `LensReader`, `FilesPageReader`, the content
   server and the gateway, the three topic readers and the five listings).
 - The thirteen descriptor blobs: 2.10M.
-- **Genesis activation: 4.09M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). Most of it is
+- **Genesis activation: 4.10M**, against the design estimate of ≈ 1.1–1.9M (a finding, not a failure). Most of it is
   `CodeScan` walking every unit of the set; when the fast walk meets a byte that reads as a forbidden opcode before
   the trailer (such as a byte of the 32-byte constants via-IR places after the final `INVALID`), it walks the unit
   again from pc 0, so a unit's constants decide whether it pays a second walk (3.02M before the tag release, which
   added units and code to the set).
 - `registerDescribed`: 0.24–0.28M each (design ≈ 0.30M).
 - Seed: root 0.66M, folder 1.32M, `readme.txt` 1.68M; `big.bin` 12.57M (two 8 KB chunks, 16,384 body bytes) +
-  5.82M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.37M.
+  5.81M (the last chunk, two spans, the descriptor, the revision, the name and both binds); `remote.txt` 2.37M.
 
 ## KERNEL-BUG
 

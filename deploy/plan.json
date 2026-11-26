@@ -64,7 +64,7 @@
     "descriptorStore": "0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c",
     "indexReplayDecoder": "0x49e9bC76aaE1a2585885D876311Daa4c974aED1b",
     "readerDirectory": "0x77865D8B084589021D9695865475cBED4fc16c31",
-    "filesFinalValidator": "0x3E23cB6E68EC7b132e0710bB9B393C24EE9db22a",
+    "filesFinalValidator": "0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0",
     "refuseAllPolicy": "0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1",
     "ledgerImpl": "0x074Dc885bc1C3744163AccD2A62F45d7336C8fF5",
     "registryImpl": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
@@ -75,9 +75,9 @@
     "ledgerAdmin": "0x428D1ac2320e3Fd628762a61f80a2359960C24B1",
     "registryAdmin": "0xb6DD5442cff406e881314E4b9236da718b540D81",
     "postingStore": "0xdAB85C02D1Ce4C2e1FddF5eC3af1921C5b1494DE",
-    "bitmapStore": "0x0dA9635c527c7a7885c92385a3641D93EE776D84",
-    "indexReads": "0x761D2aF909f6adC6916A3a1E8F7b4f6337313cA7",
-    "index": "0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6",
+    "bitmapStore": "0x164F6F6a612e0e2428f8db98eCE69318c4A4457F",
+    "indexReads": "0x2Ce5BD787D705bE79067523fBB74FF0EB93E92e6",
+    "index": "0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc",
     "lensReader": "0x5CaDE2E35B9Bd66c848DE94749b2446874f9f143",
     "filesPageReader": "0x6c9b137BbA0850375CAf186b782c0a98E184c882",
     "topicMineReader": "0xE53496e13ba1a08490Df3daBfcFeeE081C1Fd247",
@@ -140,7 +140,7 @@
     "executionProfileId": 1,
     "domainSeparator": "0xe78656098b129d2dd926988b430f748e4ed5a37d58b15c09b55b65b492512413",
     "limitsProfileId": "0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055",
-    "indexObligations": "0xfa019dab971c12742de361bd2e8ee26e6f1dcf40820204a5e1ce5f1d40a1315f"
+    "indexObligations": "0x9150afe9de8bc7ab2a529ad497d3cf423a3eee085b4669d427777950613f6524"
   },
   "activation": {
     "revision": 1,
@@ -149,9 +149,9 @@
       "ledgerImplCodehash": "0xef6a0c5d52ef23a104e136b650773fd6160c6b7aca58db66f24d5d7e2f45b8ff",
       "registryImpl": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
       "registryImplCodehash": "0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3",
-      "index": "0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6",
-      "indexCodehash": "0xbdf786523affcd8436e152cf60b3c40d6a4881f04f2af44c5a56e9ed4a214c25",
-      "indexManifestHash": "0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0",
+      "index": "0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc",
+      "indexCodehash": "0xd07b87517a0bb17fd1521d8377d2f8aeeabded3cbb654ff3debe0bcee3dc8c7a",
+      "indexManifestHash": "0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c",
       "ingress": "0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7",
       "ingressCodehash": "0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a",
       "applyDelegate": "0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343",
@@ -185,20 +185,20 @@
       "floorRewriteGas": 5000,
       "kernelTail": 20000
     },
-    "expectedExecutionSet": "0xf5514949f83a07bdd6811d62d6d2afb6d4b3499e1553b8cd18ad0b260e38f00d",
+    "expectedExecutionSet": "0x3a9a6aea417492210568a60a5383e17bea5cffae424aafaaded4cb835fd793e4",
     "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "migrationScope": [],
     "migration": "0x"
   },
   "index": {
-    "address": "0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6",
-    "runtimeCodehash": "0xbdf786523affcd8436e152cf60b3c40d6a4881f04f2af44c5a56e9ed4a214c25",
+    "address": "0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc",
+    "runtimeCodehash": "0xd07b87517a0bb17fd1521d8377d2f8aeeabded3cbb654ff3debe0bcee3dc8c7a",
     "reads": {
-      "address": "0x761D2aF909f6adC6916A3a1E8F7b4f6337313cA7",
-      "runtimeCodehash": "0xc39da9d265d547d377a3da8819e9da293e736706523452d31dff84c262c24e9f"
+      "address": "0x2Ce5BD787D705bE79067523fBB74FF0EB93E92e6",
+      "runtimeCodehash": "0x084545d7bb37ee81af675d02cddbc59fc9770907f8a221e0040328a0d64c9d86"
     },
-    "manifestHash": "0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0",
+    "manifestHash": "0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c",
     "families": [
       {
         "familyId": "0x6e9951606fbc96e12b5da9d5c55cec8c09a145840b260cb897a2b8f4be21fca4",
@@ -257,8 +257,8 @@
         "liveSemantics": 1,
         "recipe": "0x947f5d7b254172c86cbaa9f1893fa4c92e9074fcf9971412f793b59333eb453e",
         "fromAdmission": "1",
-        "store": "0x0dA9635c527c7a7885c92385a3641D93EE776D84",
-        "storeCodehash": "0xdb52d8c157006418a30b062488aabd9a9a749ff9a6d19f9ab7e3cde6f92fb79d"
+        "store": "0x164F6F6a612e0e2428f8db98eCE69318c4A4457F",
+        "storeCodehash": "0x192588d960b2591259ca9cbd992c25d9efe21d56c3deac8ce7bf0d03f6ec8858"
       },
       {
         "familyId": "0xe01d4c32df6ffe583ade88330c78f0042e0610248808bd523bfa1f37c8d73996",
@@ -341,8 +341,8 @@
         "liveSemantics": 2,
         "recipe": "0x42c8cc1813f93694a3bba25ba06ba05415217879028679022700fa73e0b210b9",
         "fromAdmission": "18446744073709551615",
-        "store": "0x0dA9635c527c7a7885c92385a3641D93EE776D84",
-        "storeCodehash": "0xdb52d8c157006418a30b062488aabd9a9a749ff9a6d19f9ab7e3cde6f92fb79d"
+        "store": "0x164F6F6a612e0e2428f8db98eCE69318c4A4457F",
+        "storeCodehash": "0x192588d960b2591259ca9cbd992c25d9efe21d56c3deac8ce7bf0d03f6ec8858"
       },
       {
         "familyId": "0xfa1f2b56a78c17244967a75b3bc174474a9c20cbaca24ed28b3ac65ef0a8eaa4",
@@ -353,8 +353,8 @@
         "liveSemantics": 2,
         "recipe": "0xa1232225b08ba308eea724402b4eec657a54f883bfcbf2b0573ac9820bd2eb32",
         "fromAdmission": "1",
-        "store": "0x0dA9635c527c7a7885c92385a3641D93EE776D84",
-        "storeCodehash": "0xdb52d8c157006418a30b062488aabd9a9a749ff9a6d19f9ab7e3cde6f92fb79d"
+        "store": "0x164F6F6a612e0e2428f8db98eCE69318c4A4457F",
+        "storeCodehash": "0x192588d960b2591259ca9cbd992c25d9efe21d56c3deac8ce7bf0d03f6ec8858"
       },
       {
         "familyId": "0x64f2802ca2cf5ba899f88d43de8d8eb830d1a71089795d6d9e9e5a80a226bc6a",
@@ -421,8 +421,8 @@
       {
         "foldHook": "0x0000000000000000000000000000000000000000",
         "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-        "finalHook": "0x3E23cB6E68EC7b132e0710bB9B393C24EE9db22a",
-        "finalCodehash": "0x05160c0418a3c8a58b27e8387f9d7e4ed6d08a3359dee9621db5560b5563f6e8",
+        "finalHook": "0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0",
+        "finalCodehash": "0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619",
         "familyIds": [],
         "purposeFilter": "0x8316732a0c2362b6d10c2442783a1b6b974d8647b23379f9dee65b576fa4afcf",
         "hotAbiId": "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856",
@@ -1336,10 +1336,10 @@
       "kind": "CREATE2",
       "contract": "FilesFinalValidator",
       "source": "src/profiles/FilesFinalValidator.sol",
-      "address": "0x3E23cB6E68EC7b132e0710bB9B393C24EE9db22a",
+      "address": "0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0xdb8cbbdde0e3219cf3f7750a786385fc6633c7830db7ddb3af740558060406bb",
-      "initcodeBytes": 4603,
+      "initcodeHash": "0xe85da7eaf7f79f2114ae061102d212073e0b21f13316c99988c7e7644cac2328",
+      "initcodeBytes": 4865,
       "args": [
         "0x2b4d22da420798302dd4daa0b18bcb0e88d0bff06e43d9c58407bbb0a7e3c27a",
         "0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba",
@@ -1348,10 +1348,10 @@
         "0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf",
         "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b"
       ],
-      "runtimeCodehash": "0x05160c0418a3c8a58b27e8387f9d7e4ed6d08a3359dee9621db5560b5563f6e8",
-      "runtimeBytes": 4265,
+      "runtimeCodehash": "0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619",
+      "runtimeBytes": 4527,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0xee00d3be4dfce7fd59affb01d0e4507ae2d30d1e87d8eb18d6c7b2b8a403d8ce"
+      "calldataHash": "0x77ddce7e43e776a340a3c3ce4ec4acf8ac5d58382af13434daede0b7318c9dd3"
     },
     {
       "id": "G13",
@@ -1462,10 +1462,10 @@
       "kind": "CREATE2",
       "contract": "BitmapStore",
       "source": "src/index/BitmapStore.sol",
-      "address": "0x0dA9635c527c7a7885c92385a3641D93EE776D84",
+      "address": "0x164F6F6a612e0e2428f8db98eCE69318c4A4457F",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0xb58ed05a74231137ee9699e644937c683fd9774a41e13eb8402a456910508b60",
-      "initcodeBytes": 9084,
+      "initcodeHash": "0x4a935fc1a96ca2f5adb292ff43dd4d2eceac95da6e73e2894f751bbf81ba5459",
+      "initcodeBytes": 9075,
       "args": [
         "0x83DbD3411050C131bD2F4e1493Ff5750D80530C6",
         "0x0000000000000000000000000000000000000000",
@@ -1475,10 +1475,10 @@
           "0xfa1f2b56a78c17244967a75b3bc174474a9c20cbaca24ed28b3ac65ef0a8eaa4"
         ]
       ],
-      "runtimeCodehash": "0xdb52d8c157006418a30b062488aabd9a9a749ff9a6d19f9ab7e3cde6f92fb79d",
-      "runtimeBytes": 7913,
+      "runtimeCodehash": "0x192588d960b2591259ca9cbd992c25d9efe21d56c3deac8ce7bf0d03f6ec8858",
+      "runtimeBytes": 7904,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0x5dd5029eeb8a688aeef988826ba79427871c9b272ca5bae45f78d22bc3788fc5"
+      "calldataHash": "0x273c20c354d1db266c6df39390ee4df2b6ff23c625f169370cde9aab01f63e96"
     },
     {
       "id": "G18",
@@ -1560,21 +1560,21 @@
       "kind": "CREATE2",
       "contract": "IndexReads",
       "source": "src/index/IndexReads.sol",
-      "address": "0x761D2aF909f6adC6916A3a1E8F7b4f6337313cA7",
+      "address": "0x2Ce5BD787D705bE79067523fBB74FF0EB93E92e6",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0x165a4d6f0292c567a975e030da169eec0b4b9cadd8ee9dab6d1f8f3cafb87558",
+      "initcodeHash": "0x2e214eb4f6557aacfeef81960d623445812b59d654a5bf45f8e772640ca08263",
       "initcodeBytes": 21489,
       "args": [
         "0x83DbD3411050C131bD2F4e1493Ff5750D80530C6",
         "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856",
         "0xdAB85C02D1Ce4C2e1FddF5eC3af1921C5b1494DE",
-        "0x0dA9635c527c7a7885c92385a3641D93EE776D84",
+        "0x164F6F6a612e0e2428f8db98eCE69318c4A4457F",
         [
           {
             "foldHook": "0x0000000000000000000000000000000000000000",
             "foldCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-            "finalHook": "0x3E23cB6E68EC7b132e0710bB9B393C24EE9db22a",
-            "finalCodehash": "0x05160c0418a3c8a58b27e8387f9d7e4ed6d08a3359dee9621db5560b5563f6e8",
+            "finalHook": "0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0",
+            "finalCodehash": "0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619",
             "familyIds": [],
             "purposeFilter": "0x8316732a0c2362b6d10c2442783a1b6b974d8647b23379f9dee65b576fa4afcf",
             "hotAbiId": "0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856",
@@ -1615,30 +1615,30 @@
         "0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf",
         "0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b"
       ],
-      "runtimeCodehash": "0xc39da9d265d547d377a3da8819e9da293e736706523452d31dff84c262c24e9f",
+      "runtimeCodehash": "0x084545d7bb37ee81af675d02cddbc59fc9770907f8a221e0040328a0d64c9d86",
       "runtimeBytes": 8894,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "calldataHash": "0x710c36deb6e98d606bbff0c109512a53eb25b5ee92e3b63c4ed644e12af2e069"
+      "calldataHash": "0xa06e73c3327833404e08ddc9e9568ad7ddd7690860bf75fe26743cb790731c0a"
     },
     {
       "id": "G19",
       "kind": "CREATE2",
       "contract": "RealmIndex",
       "source": "src/index/RealmIndex.sol",
-      "address": "0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6",
+      "address": "0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0x4b87a8848fe590fa95adaea2248fba8f72aeabece9e1633a3056ba264e8c9238",
+      "initcodeHash": "0xf433f2de27f365157a7c8cb5e002a35740fd7db33b3adb8e99de4ce0101ede26",
       "initcodeBytes": 22810,
       "args": [
         "0x83DbD3411050C131bD2F4e1493Ff5750D80530C6",
         "0x49e9bC76aaE1a2585885D876311Daa4c974aED1b",
-        "0x761D2aF909f6adC6916A3a1E8F7b4f6337313cA7"
+        "0x2Ce5BD787D705bE79067523fBB74FF0EB93E92e6"
       ],
-      "runtimeCodehash": "0xbdf786523affcd8436e152cf60b3c40d6a4881f04f2af44c5a56e9ed4a214c25",
+      "runtimeCodehash": "0xd07b87517a0bb17fd1521d8377d2f8aeeabded3cbb654ff3debe0bcee3dc8c7a",
       "runtimeBytes": 16582,
       "postCheck": "extcodehash(address) == runtimeCodehash",
-      "manifestHash": "0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0",
-      "calldataHash": "0xd67b187ccd9e9a3443138479311a7ae430d23c8d47b4bcca6d476d77a381b652"
+      "manifestHash": "0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c",
+      "calldataHash": "0xe5edd1a96696eda0dff39335135db573ee3a65cd3f67b5481904798d6001fa83"
     },
     {
       "id": "G20",
@@ -1655,9 +1655,9 @@
             "ledgerImplCodehash": "0xef6a0c5d52ef23a104e136b650773fd6160c6b7aca58db66f24d5d7e2f45b8ff",
             "registryImpl": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
             "registryImplCodehash": "0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3",
-            "index": "0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6",
-            "indexCodehash": "0xbdf786523affcd8436e152cf60b3c40d6a4881f04f2af44c5a56e9ed4a214c25",
-            "indexManifestHash": "0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0",
+            "index": "0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc",
+            "indexCodehash": "0xd07b87517a0bb17fd1521d8377d2f8aeeabded3cbb654ff3debe0bcee3dc8c7a",
+            "indexManifestHash": "0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c",
             "ingress": "0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7",
             "ingressCodehash": "0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a",
             "applyDelegate": "0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343",
@@ -1691,7 +1691,7 @@
             "floorRewriteGas": 5000,
             "kernelTail": 20000
           },
-          "expectedExecutionSet": "0xf5514949f83a07bdd6811d62d6d2afb6d4b3499e1553b8cd18ad0b260e38f00d",
+          "expectedExecutionSet": "0x3a9a6aea417492210568a60a5383e17bea5cffae424aafaaded4cb835fd793e4",
           "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
           "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
           "migrationScope": [],
@@ -1699,7 +1699,7 @@
         }
       ],
       "postCheck": "ledger.executionSet() == expectedExecutionSet; revision 1; index installed",
-      "calldataHash": "0x1d8ac707307a93f17d8db52ec321dd0c5d591d80f8142091c2171e904e8226d1"
+      "calldataHash": "0x0ebb288ab557d537f1a94b235281e6309a94786196264069d42fa3c3f30dac50"
     },
     {
       "id": "R0",
@@ -2504,5 +2504,5 @@
       "postCheck": "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"
     }
   ],
-  "planHash": "0xf5cbe78320301e69e205453876294a8ec6344810d41c42df643e13f6626b9904"
+  "planHash": "0xff2f4490eeb7ab6bc9ed796be42199ac6f3868a73f15a481b4aeec04888f6d83"
 }

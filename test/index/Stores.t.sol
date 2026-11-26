@@ -23,7 +23,7 @@ contract StoresTest is Test {
     bytes32 internal constant POSTING_STORE_ABI_ID =
         0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a;
     bytes32 internal constant BITMAP_STORE_ABI_ID =
-        0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f;
+        0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36;
 
     bytes32 internal BY_TYPE = Keys.familyId("by-type");
     bytes32 internal HISTORY = Keys.familyId("history");
@@ -481,6 +481,92 @@ contract StoresTest is Test {
         // a stranger never backfills
         vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
         bitmap.backfillOr(FamilyId.wrap(ROSTER), S, 0, 4, 20);
+    }
+
+    /// `efs/bitmap-store/2`: the live generation opens a coverage slot while the ledger is idle, for a scope that no
+    /// publication touches after the later family is declared, and backfills it to COMPLETE (docs/INDEX-BUILD.md §2.3).
+    function testIdleOpenCoverageForAnUntouchedScopeReachesComplete() public {
+        // the scope's history: two entries written live before the family is declared
+        _live(4);
+        vm.prank(GEN);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 1, adm);
+        vm.prank(GEN);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), S, 2, adm);
+        // declared later; nothing touches S live again. Idle at frontier 9, liveFrom = the frontier plus one
+        _idle(9);
+        vm.prank(GEN);
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 10);
+        (uint64 through, uint64 liveFrom,, uint8 state) =
+            bitmap.scopeCoverage(FamilyId.wrap(ROSTER), S);
+        assertEq(through, 0);
+        assertEq(liveFrom, 10);
+        assertEq(state, 1, "open");
+        vm.prank(GEN);
+        bitmap.backfillOr(FamilyId.wrap(ROSTER), S, 0, 1, 4);
+        vm.prank(GEN);
+        bitmap.backfillOr(FamilyId.wrap(ROSTER), S, 0, 2, 10);
+        (through,,, state) = bitmap.scopeCoverage(FamilyId.wrap(ROSTER), S);
+        assertEq(through, 10);
+        assertEq(state, 2, "COMPLETE without any live touch");
+        assertEq(bitmap.liveWords(S, FamilyId.wrap(ROSTER), 0, 1)[0], 3);
+        // a CURRENT_STATE family the same way, through backfillSet
+        ScopeKey t = ScopeKey.wrap(keccak256("untouched"));
+        _live(11);
+        vm.prank(GEN);
+        bitmap.appendScopeEntry(FamilyId.wrap(SCOPE), t, 1, adm);
+        _idle(11);
+        vm.prank(GEN);
+        bitmap.openCoverage(FamilyId.wrap(LIVE), t, 12);
+        vm.prank(GEN);
+        bitmap.backfillSet(FamilyId.wrap(LIVE), t, 0, false, 12);
+        (,,, state) = bitmap.scopeCoverage(FamilyId.wrap(LIVE), t);
+        assertEq(state, 2);
+        assertEq(bitmap.liveCount(t), 0);
+    }
+
+    function testIdleOpenCoverageTwiceIsRefused() public {
+        _idle(9);
+        vm.prank(GEN);
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 10);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_COVERAGE.selector, uint8(1)));
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 10);
+        // also once the slot is COMPLETE
+        vm.prank(GEN);
+        bitmap.backfillOr(FamilyId.wrap(ROSTER), S, 0, 1, 10);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_COVERAGE.selector, uint8(1)));
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 11);
+    }
+
+    /// The writer and family rule is unchanged: only the live generation (or a fresh store's builder) opens a slot.
+    function testOpenCoverageStillNeedsTheGenerationAndAFamily() public {
+        _idle(9);
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 10);
+        vm.prank(BUILDER);
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, BUILDER));
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 10);
+        _live(9);
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 10);
+        bytes32 other = Keys.familyId("not-a-family");
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_FAMILY.selector, other));
+        bitmap.openCoverage(FamilyId.wrap(other), S, 10);
+    }
+
+    /// The live-phase open (the first live touch) works as before.
+    function testLiveOpenCoverageUnchanged() public {
+        _live(20);
+        vm.prank(GEN);
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 20);
+        (, uint64 liveFrom,, uint8 state) = bitmap.scopeCoverage(FamilyId.wrap(ROSTER), S);
+        assertEq(liveFrom, 20);
+        assertEq(state, 1);
+        vm.prank(GEN);
+        vm.expectRevert(abi.encodeWithSelector(E_COVERAGE.selector, uint8(1)));
+        bitmap.openCoverage(FamilyId.wrap(ROSTER), S, 20);
     }
 
     function testCurrentStateBackfillSetsAndClearsLiveBits() public {

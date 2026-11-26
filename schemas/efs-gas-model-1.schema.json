@@ -75,13 +75,27 @@
                 "unbindTag",
                 "releaseTag",
                 "restoreTag",
+                "bindPropertyFresh",
+                "bindPropertyRebind",
+                "unbindProperty",
+                "releaseProperty",
+                "bindSameFreshWord",
+                "bindSameFreshPath",
+                "unbindSame",
+                "releaseSame",
+                "restoreSame",
+                "bindBroaderFresh",
+                "unbindBroader",
+                "releaseBroader",
+                "restoreBroader",
                 "withdraw",
                 "firstWriteSurcharge",
                 "tagLevel"
               ],
               "properties": {
                 "fixed": {
-                  "type": "integer"
+                  "type": "integer",
+                  "description": "The median of 2\u00b7gas(k = 1) \u2212 gas(k = 2) over the anchor pairs only (fit.fixedAnchors, frozen in tools/gas-fit.mjs), so a row added later never changes the price of an existing action; fit.impliedFixedByPair keeps every pair's value."
                 },
                 "perWord": {
                   "type": "integer"
@@ -166,6 +180,45 @@
                   "type": "integer"
                 },
                 "restoreTag": {
+                  "type": "integer"
+                },
+                "bindPropertyFresh": {
+                  "type": "integer"
+                },
+                "bindPropertyRebind": {
+                  "type": "integer"
+                },
+                "unbindProperty": {
+                  "type": "integer"
+                },
+                "releaseProperty": {
+                  "type": "integer"
+                },
+                "bindSameFreshWord": {
+                  "type": "integer"
+                },
+                "bindSameFreshPath": {
+                  "type": "integer"
+                },
+                "unbindSame": {
+                  "type": "integer"
+                },
+                "releaseSame": {
+                  "type": "integer"
+                },
+                "restoreSame": {
+                  "type": "integer"
+                },
+                "bindBroaderFresh": {
+                  "type": "integer"
+                },
+                "unbindBroader": {
+                  "type": "integer"
+                },
+                "releaseBroader": {
+                  "type": "integer"
+                },
+                "restoreBroader": {
                   "type": "integer"
                 }
               }
@@ -295,6 +348,24 @@
                     "firstWriteSurcharge",
                     "tagLevel"
                   ]
+                }
+              }
+            },
+            "fit": {
+              "type": "object",
+              "required": [
+                "fixedAnchors",
+                "publishNewBaseBySize",
+                "impliedFixedByPair",
+                "bytesResiduals"
+              ],
+              "properties": {
+                "fixedAnchors": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -450,6 +521,24 @@
                     "firstWriteSurcharge",
                     "tagLevel"
                   ]
+                }
+              }
+            },
+            "fit": {
+              "type": "object",
+              "required": [
+                "fixedAnchors",
+                "publishNewBaseBySize",
+                "impliedFixedByPair",
+                "bytesResiduals"
+              ],
+              "properties": {
+                "fixedAnchors": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
                 }
               }
             }

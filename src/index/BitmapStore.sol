@@ -14,10 +14,10 @@ import {E_BACKFILL, E_COVERAGE, E_ORDER, E_WRITER} from "../interfaces/Errors.so
 ///         `lastMutation`. The live-scope family (18) keeps its first 48 bits in the head word; every further
 ///         bit, and every other BITMAP family's bits, live in `bits[scope][family][word]` at bit index `entry`.
 contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
-    /// keccak("efs/bitmap-store/1" ‖ for each IBitmapStore function by selector: selector ‖ keccak(output tuple))
+    /// keccak("efs/bitmap-store/2" ‖ for each IBitmapStore function by selector: selector ‖ keccak(output tuple))
     /// (tools/abi-id.mjs; `pnpm abi:check` recomputes it from the committed snapshot).
     bytes32 public constant STORE_ABI_ID =
-        0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f;
+        0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36;
     uint256 private constant MASK48 = (1 << 48) - 1;
     uint8 private constant COVERAGE_OPEN = 1;
     uint8 private constant COVERAGE_COMPLETE = 2;
@@ -137,9 +137,11 @@ contract BitmapStore is IBitmapStore, BitmapStoreStorage, StoreBase {
     }
 
     /// @inheritdoc IBitmapStore
+    /// @dev Every mode `_authorize` grants may open a slot: the live generation while a publication is open (the
+    ///      first live touch) or while idle (`MODE_BACKFILL`: a scope nothing touches after the family is declared),
+    ///      and a builder of a fresh store. The store does not judge `liveFrom`; the pinned generation chooses it.
     function openCoverage(FamilyId family, ScopeKey scope, uint64 liveFrom) external {
-        (uint8 mode,) = _authorize(FamilyId.unwrap(family));
-        if (mode == MODE_BACKFILL) revert E_WRITER(msg.sender);
+        _authorize(FamilyId.unwrap(family));
         CoverageSlot storage c = _bitmap().coverage[FamilyId.unwrap(family)][ScopeKey.unwrap(scope)];
         if (c.state != 0) revert E_COVERAGE(1);
         c.liveFrom = uint48(liveFrom);

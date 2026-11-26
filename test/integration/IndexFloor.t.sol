@@ -202,6 +202,27 @@ contract IndexFloorTest is FloorBase {
         assertLe(fin, 3 * reserve, "within three times the reserve");
     }
 
+    /// 64 first "not this" statements at HEAD about 64 different created files (code 16): the validator reads each
+    /// subject's creation, one cold ledger read each.
+    function test_floor_final_head_masks_on_files() public {
+        Action[] memory c = new Action[](64);
+        Action[] memory a = new Action[](64);
+        for (uint256 i; i < 64; ++i) {
+            bytes32 salt = keccak256(abi.encode("floor head file", i));
+            c[i] = _create(salt);
+            a[i] = EfsFiles.loneNegative(Purpose.HEAD, Keys.subject(p, salt), 0, 0);
+        }
+        _execAs(address(this), c, new bytes[](64));
+        (uint256 fin, uint256 reserve) = _final("64 first HEAD masks on files", a, new bytes[](64));
+        emit log_named_uint(
+            "floor 64 first HEAD masks on files final phase per mille of reserve",
+            fin * 1000 / reserve
+        );
+        // ≈ 7.2k per mask against ≈ 7.7k reserved on both schedules (93%): the reserve covers it
+        assertGt(fin, 0);
+        assertGe(reserve, fin, "the final reserve covers first HEAD masks on files");
+    }
+
     /// 64 first masks whose roles are 64 different records: one cold ledger read each (the record header).
     function test_floor_final_masks_on_records() public {
         (Action[] memory w, bytes[] memory wb) = _wordPages(64, "mask-record-");
