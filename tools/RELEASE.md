@@ -283,23 +283,24 @@ the ledger is not idle or a replay or build call is in flight, 4 the generation 
 is step 2), 7 the carried check fails (on an empty Realm: one of its stores has been written), 8 a nonzero `familyId`. `backfill` still reverts `E_BACKFILL(0)`;
 `replayNextPublication` is unchanged.
 
-**25. Identities.** Moved, against `0fb4804`: the release digest (`0xd50c77b585e2b17259efa36b0a15c3ca4d7f9b4de9e54f86258f8d79f7cca309`, was
-`0x580ede64…d04e`), the plan hash (`0x234fa462baf382fe8cf9e797cd9cac7f3b86168136de7bcfe5b5d19f5e295b31`), the execution set
-(`0x3b4805c6d2f8a3bebddb6a8dc4c779f6c7e84bbfd20394a3f37f5a8f6b4fb318`), the index obligations
-(`0xf189d4e2f86c09338453e81c419e38b3ba1627384ffea7999f3460c5b0a04255`) and manifest hash
-(`0x4399e87208e345d5a54d63e5cb6f18e587aba371135110faf1ebdcb408e5979a`); the code of `LedgerControl`, `RealmIndex` and
+**25. Identities.** Moved, against `0fb4804`: the release digest (`0xa32e7718374e00ff725fe8a9cc68a1069d16041ca180074d277aada093b569e5`, was
+`0x580ede64…d04e`), the plan hash (`0x24e31f1392a12a2f255c272be23064ae0943d6947f607a5e382c872563dc32ac`), the execution set
+(`0xbc4ab679e18565670d009eda38285d19326ec5c7a0d9552c22034338fb7b5b83`), the index obligations
+(`0x554052222a26ab5ff71f5f604e71b954c2da30cde8fa9d41cc7eb3ad148b4631`) and manifest hash
+(`0xbadcd8102461d41530f6069a471662e629e21dc5824a56e530bc70c9c50eac10`); the code of `LedgerControl`, `RealmIndex` and
 `IndexReads` (in `artifacts/` only these three files changed). Because the genesis contract embeds the control
 delegate's address, every address genesis creates moved with it on the fixture Realm: the ledger implementation and
-proxy (`0xa224Bcd8d58899D720a59E9D53Cf4bCF2EE5F482`), both ProxyAdmins, the registry proxy, the controller, both
-stores, the index (`0xAF40DA654696378e460b4cc3C7D3FCF1c06177d8`) and its reads contract, and every reader that embeds
+proxy (`0xD3523C0efE21753f63282a2713186FE9eB7A136b`), both ProxyAdmins, the registry proxy, the controller, both
+stores, the index (`0x40275a9f07D1E21300399fD57aBAc345f9662839`) and its reads contract, and every reader that embeds
 the ledger's address (`lensReader`, `filesPageReader`, the three topic readers, the gateway and its content contract);
 their runtime codehashes move only through those embedded addresses. Not moved: the layout id, the hot ABI ids, both
 store ABI ids (no store code changed), every Type id, the ingress and apply delegates, the registry implementation,
 `ledgerReads`, `ledgerViews`, `readerDirectory`, `keysView`, every Files rule and the validator, and the seed
-(`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Gas: the measured publication rows rose by 12 to 132 gas on both schedules
-(the index's dispatch changed; fitted values moved by −24 to +132); `fixed` is 315,790 on prague (315,778 at `0fb4804`) and 899,110 on amsterdam
-(unchanged); the validation composites moved by at most 0.01 points (max error 5.80% prague, 7.56% amsterdam); the
-read rows rose by up to 2,352 gas (the reads contract's dispatch), and one read bound fell by one skipped entry.
+(`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Gas: the measured publication rows moved by −12 to +144 gas (almost
+all up, by 12 to 144; the index's dispatch changed); `fixed` is 315,790 on prague (315,778 at `0fb4804`) and 899,110 on
+amsterdam (unchanged); the validation composites moved by at most 0.01 points (max error 5.80% prague, 7.57%
+amsterdam, as at `0fb4804`); the read rows rose by up to 2,652 gas (the reads contract's dispatch), and one read bound
+fell by one skipped entry.
 
 ### The identity table (this release against `cc59d0c`)
 
