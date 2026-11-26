@@ -885,7 +885,7 @@ The planner runs were `tools/gas-plan.mjs` with the five-line quote of 6.2 over 
    gives 53, with or without the HEAD list.
 2. **Later statements are not "all rewrites and compute"** (design §10.4). *Precision (landed):* the fresh slot is the
    binding's history list (family 8) and, for a re-bind, the new target's backlink entry; the posting store packs five
-   entries per word with the first in the head, so a binding's statements 2, 6, 11, 16 and so on open a slot and the rest
+   entries per word with the first in the head, so a binding's statements 2, 6, 11, 16 and every fifth after (the list's count before the append is 1 or a multiple of 5) open a slot and the rest
    rewrite (`PostingStore._append`: count 1 materializes word 0 with the inline first entry; counts 5, 10 and 15 open
    words 1, 2 and 3). The mask, release and re-bind rows measure a binding's second statement, the worst case for them.
    The restore rows measure a third (yes, mask, yes), whose history append rewrites word 0, so a restore that is a

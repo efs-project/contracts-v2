@@ -82,9 +82,14 @@ against `3ca53ba`. What a consumer must change, as one list:
   97,920 of state gas):
   - **the kernel's slot, always** (the head's stored target is written fresh): one slot to E and to the kernel's own
     share K, for a lone no, for no → release → yes and for no → no → yes alike;
-  - **the index's slot, when the BIND is the binding's 2nd, 6th, 11th or 16th statement** (the head's revision before
-    it is 1, 5, 10 or 15: the binding's history list opens a word): one slot to E. For a never-bound head at revision
-    1 that is the yes directly after a lone no, two slots in all.
+  - **the index's slot, when a RESTORE opens a word of the binding's history list**: one slot to E when the head's
+    revision before the BIND is 1 or a positive multiple of 5 (the binding's 2nd, 6th, 11th, 16th statement and every
+    fifth after, without end: `PostingStore._append` opens a word when the list's count is 1 or a multiple of 5, and
+    the history takes one append per statement of any kind). It applies to the restore rows only (`restoreTag`,
+    `restoreFolder`, `restoreSame`, `restoreBroader` and their tier constants), which are measured as a binding's 3rd
+    statement, where no word opens. The mask, release and re-bind rows are measured as the 2nd statement and already
+    contain the fresh word (at other positions they over-price by one slot, the safe side). For a never-bound head at
+    revision 1 this is the yes directly after a lone no: two slots in all.
   A planner that adds both slots for every never-bound head over-prices the later variants by one slot (the safe
   side). With the rule, the SDK's planner plans the largest batch of this shape at 46 on prague and 48 on amsterdam
   (51 without it; bounded by V once K carries the head's slot). The rule ends when the vendored `gas/model.json`
@@ -393,6 +398,11 @@ Newly done in this release (items 42 to 47):
   measured composite, −29.74% amsterdam all gas, −11.47% amsterdam execution gas), and the interim consumer rule of
   this release ends with these rows. (3) The `src/interfaces/Index.sol` comment on the later row ("the largest
   measured for the class") is corrected with them: it is hashed into the release, so it waits for that regeneration.
+  (4) A planner must be able to see which shape it has, and it can, with no new read: `Head.targetKind` is 0 exactly
+  for a non-UNSET head that never bound, and the head's revision gives the statement's position. The list release
+  pins that with a reader test over five sequences (a lone no; no, release; no, no; yes, mask; yes, release), and
+  every later row in `gas/model.json` states the statement position it was measured at as a field, so a planner
+  never adds a slot by hand.
 - **The gateway's header comment on a first segment starting `0x`.** `src/periphery/EfsWeb3Gateway.sol`'s NatSpec says
   any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id"; when it serves topics the gateway
   follows the chain's word rule 6 (only `0x` followed by 40 hex digits is refused). The comment is hashed and is
