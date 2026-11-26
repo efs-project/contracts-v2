@@ -15,7 +15,14 @@ import {BitmapStore} from "../../src/index/BitmapStore.sol";
 import {RealmIndex} from "../../src/index/RealmIndex.sol";
 import {IndexReads} from "../../src/index/IndexReads.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, ActionKind, Native, PostingKey, ScopeKey} from "../../src/interfaces/Actions.sol";
+import {
+    Action,
+    ActionKind,
+    FamilyId,
+    Native,
+    PostingKey,
+    ScopeKey
+} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerControl, ActivationSet} from "../../src/interfaces/ILedgerControl.sol";
@@ -82,6 +89,18 @@ contract ArmedHook is IIndexHook {
         returns (bytes4)
     {
         return IIndexHook.validate.selector;
+    }
+}
+
+/// The INITIAL_WRITER of a store that no generation names: on an empty, idle Realm it may write it in build mode.
+contract Squatter {
+    function squat(PostingStore store) external {
+        store.append(
+            FamilyId.wrap(Keys.familyId("by-type")),
+            PostingKey.wrap(keccak256("efs/test/squat")),
+            1,
+            0
+        );
     }
 }
 
@@ -671,6 +690,46 @@ contract CarriedTest is Test {
         assertEq(to[0], 0);
         (uint64 processed,,) = gen2.progress();
         assertEq(processed, 11);
+    }
+
+    /// The base case of "every store of the live index holds only what pinned generation code wrote": on an empty
+    /// Realm a store that its own INITIAL_WRITER (a contract nobody pinned) wrote in build mode is refused, by the
+    /// generation (`build` 7, not ready) and by the kernel (12). The generation's tuple reports 0, which equals the
+    /// empty Realm's counts, so the kernel's check is what refuses it.
+    function testAnEmptyRealmRefusesAStoreWrittenBeforeAnyAdmission() public {
+        Squatter squatter = new Squatter();
+        PostingStore squatted =
+            new PostingStore(a.k.proxy, address(squatter), IndexDeploy.postingFamilies());
+        squatter.squat(squatted);
+        (address[] memory gens, uint64[] memory from,) = _writers(address(squatted));
+        assertEq(gens.length, 1);
+        assertEq(gens[0], address(squatter));
+        assertEq(from[0], 1);
+        assertFalse(squatted.attached());
+        (, IGeneration1 candidate) = _gen(a, address(squatted), address(a.g.bitmap));
+        assertFalse(ICarried(address(candidate)).carriedCheck());
+        Readiness memory r = candidate.replayReadiness();
+        assertFalse(r.ready);
+        assertEq(r.completedAdmission, 0, "0 is also the empty Realm's count");
+        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
+        candidate.build(bytes32(0), 64);
+        _expectActivateRevert(a, address(candidate), 12);
+        // the same candidate shape over pristine stores activates (testZeroAdmissionRealmActivatesACarriedGeneration)
+        IGeneration1 clean = _repin(a);
+        assertTrue(ICarried(address(clean)).carriedCheck());
+        _activate(a, address(clean));
+    }
+
+    /// Genesis is unchanged: generation 1's stores are new, their writers lists empty, and the activation in `setUp`
+    /// passed the empty-Realm rule.
+    function testGenesisStoresAreUnwritten() public view {
+        (address[] memory gens,,) = _writers(address(a.g.posting));
+        assertEq(gens.length, 0);
+        (gens,,) = _writers(address(a.g.bitmap));
+        assertEq(gens.length, 0);
+        assertEq(_hot(a).index(), address(a.g.index));
+        assertTrue(ICarried(address(a.g.index)).carriedCheck());
+        assertTrue(a.g.index.replayReadiness().ready);
     }
 
     /// Without a build, the zero-admission activation needs no build call at all.

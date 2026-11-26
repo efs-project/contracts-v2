@@ -326,11 +326,16 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             if (!_contains(IPostingStore(f.store).familyIds(), f.familyId)) {
                 revert E_INDEX_NOT_READY(10);
             }
-            _requireContiguousWriters(f.store);
-            if (IPostingStore(f.store).initialWriter() == index) {
+            uint256 ranges = _requireContiguousWriters(f.store);
+            if (c.admissions == 0) {
+                // the base case of "every store of the live index holds only what pinned generation code wrote":
+                // an empty Realm gives an honest build nothing to fold, and every build-mode or live write records a
+                // writer range, so every store must be unwritten (genesis: new stores)
+                if (ranges != 0) revert E_INDEX_NOT_READY(12);
+            } else if (IPostingStore(f.store).initialWriter() == index) {
                 // a fresh store is the candidate's own: no live write has attached it
                 if (IPostingStore(f.store).attached()) revert E_INDEX_NOT_READY(13);
-            } else if (c.admissions != 0) {
+            } else {
                 // a carried family is the live index's: the same id in the same store from admission 1, read
                 // from the live index itself, never from the candidate (docs INDEX-BUILD §3.5, §5.3)
                 if (!liveRead) {
@@ -392,11 +397,13 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         CodeScan.requirePlainRuntime(hook);
     }
 
-    function _requireContiguousWriters(address store) private view {
+    /// Returns the number of writer ranges.
+    function _requireContiguousWriters(address store) private view returns (uint256) {
         (, uint64[] memory from, uint64[] memory to) = IPostingStore(store).writers();
         for (uint256 i = 1; i < from.length; ++i) {
             if (to[i - 1] == 0 || from[i] != to[i - 1] + 1) revert E_INDEX_NOT_READY(11);
         }
+        return from.length;
     }
 
     function _contains(bytes32[] memory list, bytes32 x) private pure returns (bool) {

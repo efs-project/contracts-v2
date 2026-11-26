@@ -211,16 +211,21 @@ contract IndexReads {
     /// declared by the live index (`ledger.index()`), with the same family id, in the same store, from admission 1,
     /// as the live index's own `replayReadiness().families` say. The live index folds every admission
     /// synchronously, so while this holds and the ledger is idle those families are complete through `counts()`.
-    /// True with no admissions (no history to miss, so genesis needs no special case), when the caller is the live
-    /// index (it folds them itself), and when the caller carries nothing. False when the live index has no code
-    /// or its readiness read reverts. Asked by the generation's `build` and by `replayReadiness`.
+    /// With no admissions there is no history to miss, so the check is the base case of the invariant "every store
+    /// of the live index holds only what pinned generation code wrote": both of the generation's stores (each holds
+    /// maintained families) must have an empty writers list, whoever their INITIAL_WRITER is. Every build-mode
+    /// write records a range on its first call (`StoreBase._authorizeWriter`) and an empty Realm gives an honest
+    /// build or replay nothing to fold, so a written store there was written by code nobody pinned. Genesis passes:
+    /// its stores are new. With admissions: true when the caller is the live index (it folds them itself) and when
+    /// the caller carries nothing; false when the live index has no code or its readiness read reverts. Asked by the
+    /// generation's `build` and by `replayReadiness`.
     function carriedCheck() external view returns (bool) {
         return _carriedCheck(msg.sender);
     }
 
     function _carriedCheck(address gen) private view returns (bool) {
         (uint64 admissions,,,) = ILedgerHot(LEDGER).counts();
-        if (admissions == 0) return true;
+        if (admissions == 0) return _unwritten(POSTING) && _unwritten(BITMAP);
         address live = ILedgerHot(LEDGER).index();
         if (live == gen) return true;
         bool postingCarried = !_isFresh(POSTING, gen);
@@ -242,6 +247,11 @@ contract IndexReads {
         return true;
     }
 
+    function _unwritten(address store) private view returns (bool) {
+        (address[] memory gens,,) = IPostingStore(store).writers();
+        return gens.length == 0;
+    }
+
     function _isFresh(address store, address gen) private view returns (bool) {
         return IPostingStore(store).initialWriter() == gen && !IPostingStore(store).attached();
     }
@@ -261,10 +271,14 @@ contract IndexReads {
 
     /// The `IRealmIndex.replayReadiness()` tuple of the calling generation. When the carried check fails, the
     /// generation claims nothing: `completedAdmission` and `completedPublication` are 0 (complete from 1 through
-    /// 0) and `ready` is false, whatever its progress word says; otherwise they are its progress frontier.
+    /// 0) and `ready` is false, whatever its progress word says; otherwise they are its progress frontier. On an
+    /// empty Realm a failed check reports 0, which equals the counts, so the tuple alone would pass the kernel's
+    /// catch-up check (8): the kernel's own check 12 (`LedgerControl._checkIndex`, empty writers on an empty Realm)
+    /// is what refuses that candidate; `ready` is false here for every other reader.
     function replayReadiness() external view returns (Readiness memory r) {
         (uint64 lastProcessed, uint64 lastPublication, bool gapped) = _progress();
-        if (!_carriedCheck(msg.sender)) (lastProcessed, lastPublication) = (0, 0);
+        bool carried = _carriedCheck(msg.sender);
+        if (!carried) (lastProcessed, lastPublication) = (0, 0);
         (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
         (uint64 admissions,,, uint64 publications) = ILedgerHot(LEDGER).counts();
         r.version = 1;
@@ -278,7 +292,7 @@ contract IndexReads {
         r.completedAdmission = lastProcessed;
         r.completedPublication = lastPublication;
         r.phase = phase;
-        r.ready = phase == Phase.IDLE && lastProcessed == admissions
+        r.ready = carried && phase == Phase.IDLE && lastProcessed == admissions
             && lastPublication == publications && !gapped;
         r.units = _units;
         r.families = _families;
