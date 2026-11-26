@@ -248,22 +248,18 @@ abstract contract TopicReaderBase is IReader {
         return (Status.PRESENT, cursor);
     }
 
-    /// Fills the page laws once the scan ran: the status, the coverage, the continuation.
-    function _finish(
-        Run memory r,
-        TopicPageInfo memory info,
-        uint8 scan,
-        Coverage cov,
-        uint64[] memory cursor
-    ) internal pure {
+    /// Fills the page laws once the scan ran: the status, the coverage, the continuation. A served page's lists are
+    /// all COMPLETE (`_served`), so its `listingCoverage` is about paging alone: COMPLETE when it started at the
+    /// origin and finished, PARTIAL otherwise.
+    function _finish(Run memory r, TopicPageInfo memory info, uint8 scan, uint64[] memory cursor)
+        internal
+        pure
+    {
         info.q.status = Status.PRESENT;
         info.scanStatus = scan;
         info.selectedSoFar = r.selected;
-        info.completeFromOrigin =
-            info.startsAtOrigin && scan == SCAN_EXHAUSTED && cov == Coverage.COMPLETE;
-        info.listingCoverage = info.completeFromOrigin
-            ? Coverage.COMPLETE
-            : cov == Coverage.UNKNOWN ? Coverage.UNKNOWN : Coverage.PARTIAL;
+        info.completeFromOrigin = info.startsAtOrigin && scan == SCAN_EXHAUSTED;
+        info.listingCoverage = info.completeFromOrigin ? Coverage.COMPLETE : Coverage.PARTIAL;
         if (scan != SCAN_EXHAUSTED) {
             info.next = abi.encode(
                 CONTINUATION_VERSION,
@@ -277,10 +273,30 @@ abstract contract TopicReaderBase is IReader {
         }
     }
 
+    /// A refused page (any status but PRESENT): no rows (the caller returns none), coverage UNKNOWN, no counts, no
+    /// frontier and no continuation, whatever lists were read before the refusal.
+    function _refuse(TopicPageInfo memory info, Status st) internal pure {
+        info.q.status = st;
+        info.listingCoverage = Coverage.UNKNOWN;
+        info.scanned = 0;
+        info.frontier = 0;
+        info.rawTotal = 0;
+        info.positionsEver = 0;
+        info.repeatsSkipped = 0;
+    }
+
+    /// The rule of list coverage (the page laws of `TopicPageInfo`): a list is answered from only when the index
+    /// reports it COMPLETE; PARTIAL is treated exactly as UNKNOWN. Every list coverage a topic reader reads passes
+    /// here (`_listHead`, the live-scope coverage of `TopicMineReader` and `TopicLookupReader.entryCount`), so the
+    /// readers' coverages are COMPLETE or UNKNOWN and nothing downstream sees PARTIAL.
+    function _served(Coverage c) internal pure returns (Coverage) {
+        return c == Coverage.COMPLETE ? Coverage.COMPLETE : Coverage.UNKNOWN;
+    }
+
+    /// Two served coverages joined: COMPLETE only when both are.
     function _join(Coverage a, Coverage b) internal pure returns (Coverage) {
-        if (a == Coverage.UNKNOWN || b == Coverage.UNKNOWN) return Coverage.UNKNOWN;
-        if (a == Coverage.PARTIAL || b == Coverage.PARTIAL) return Coverage.PARTIAL;
-        return Coverage.COMPLETE;
+        return
+            a == Coverage.COMPLETE && b == Coverage.COMPLETE ? Coverage.COMPLETE : Coverage.UNKNOWN;
     }
 
     /// The rows a page can hold: the entries left, `limit` and `maxRows` (0 = no bound) and what the call can pay
@@ -320,7 +336,8 @@ abstract contract TopicReaderBase is IReader {
     // Lists
     // =============================================================================================
 
-    /// Reads a list's head into `l` (count, live) and returns its coverage; `l.hi` is set to the count.
+    /// Reads a list's head into `l` (count, live) and returns its served coverage (`_served`: COMPLETE, or UNKNOWN for
+    /// an index's UNKNOWN or PARTIAL); `l.hi` is set to the count.
     function _listHead(Run memory r, List memory l) internal view returns (Coverage c) {
         bytes memory ret = _sc(
             r.index,
@@ -338,9 +355,11 @@ abstract contract TopicReaderBase is IReader {
             revert E_TOPIC_INCONSISTENT(1);
         }
         l.hi = l.count;
+        c = _served(c);
     }
 
-    /// The `n` entries of `l` just below `hi`, ascending: `[hi - n, hi)`.
+    /// The `n` entries of `l` just below `hi`, ascending: `[hi - n, hi)`. The slice's coverage is checked only for
+    /// UNSET: a list's coverage is its head's (`_listHead`), read first on every page.
     function _below(Run memory r, List memory l, uint64 hi, uint64 n)
         internal
         view

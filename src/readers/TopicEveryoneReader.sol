@@ -49,8 +49,8 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         every author.
 ///
 ///         Page laws as `TopicPageInfo` states them: a Realm whose index keeps no topic roll-ups (family 7
-///         `NOT_MAINTAINED`) answers a below view UNKNOWN with no rows, never empty; any list or author head of
-///         UNKNOWN coverage makes the page UNKNOWN. Two bounds, whichever comes first: `limit` list entries read
+///         `NOT_MAINTAINED`) answers a below view UNKNOWN with no rows, never empty; any list or author head the index
+///         does not report COMPLETE (UNKNOWN or PARTIAL) makes the page UNKNOWN. Two bounds, whichever comes first: `limit` list entries read
 ///         (scan status 2 LIMIT) and `maxRows` rows returned (4 ROWS), 0 = no bound; `gasReserve` is checked before
 ///         each entry and must cover one window of 16 entries and the return encoding (3 GAS). Each carries a
 ///         continuation; only 1 EXHAUSTED ends the listing, and a page that is not refused reads at least one entry.
@@ -150,9 +150,9 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
             }
             left += l.hi;
         }
-        if (st == Status.PRESENT && cov == Coverage.UNKNOWN) st = Status.UNKNOWN;
+        if (st == Status.PRESENT && cov != Coverage.COMPLETE) st = Status.UNKNOWN;
         if (st != Status.PRESENT) {
-            info.q.status = st;
+            _refuse(info, st);
             return (info, rows);
         }
         uint256 cap = _capacity(p.limit, p.maxRows, left);
@@ -164,11 +164,8 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
         uint8 scan;
         uint256 got;
         (scan, got, cov) = _scan(r, p, ls, lens, rows, info, cov);
-        if (cov == Coverage.UNKNOWN) {
-            info.q.status = Status.UNKNOWN;
-            info.listingCoverage = Coverage.UNKNOWN;
-            info.scanned = 0;
-            info.repeatsSkipped = 0;
+        if (cov != Coverage.COMPLETE) {
+            _refuse(info, Status.UNKNOWN);
             assembly ("memory-safe") {
                 mstore(rows, 0)
             }
@@ -181,7 +178,7 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
         for (uint256 i; i < ls.length; ++i) {
             cursor[i] = ls[i].hi;
         }
-        _finish(r, info, scan, cov, cursor);
+        _finish(r, info, scan, cursor);
     }
 
     /// Reads windows of the lists merged newest first until a stop; leaves each list's `hi` at its first
@@ -210,7 +207,7 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
                 return (stop, got, cov);
             }
             cov = _join(cov, _facts(r, p, lens, w, rows, got));
-            if (cov == Coverage.UNKNOWN) return (SCAN_EXHAUSTED, got, cov);
+            if (cov != Coverage.COMPLETE) return (SCAN_EXHAUSTED, got, cov);
             for (uint256 k; k < w.e.length; ++k) {
                 stop = _stop(info.scanned, got, rows.length, 0, p.maxRows, p.gasReserve);
                 if (stop != 0) {
@@ -278,7 +275,7 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
             if (_shown(rows, got, c.role)) continue; // a repeat of an earlier window: no read
             List memory a = List(F_POSITION_AUTHORS, 0, 0, w.positions[k], 0, 0, 0, 0);
             cov = _join(cov, _listHead(r, a));
-            if (cov == Coverage.UNKNOWN) return cov;
+            if (cov != Coverage.COMPLETE) return cov;
             if (a.count == 0) revert E_TOPIC_INCONSISTENT(3); // a listed position has a first statement
             w.statements[k] = a.count;
             w.yes[k] = a.live;
