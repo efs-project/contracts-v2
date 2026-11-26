@@ -101,8 +101,8 @@ const WORD_OK = new Set([...WORD_ASCII].map((c) => c.charCodeAt(0)));
 
 /** The `topic-word/1` grammar (`TopicProfile.wordRefusal`, hex in): 0 admitted, else 1 length; scanning in order
  *  2 malformed UTF-8, 3 an ASCII byte outside `WORD_ASCII` or 7 a refused scalar; then 4 the word ends with `.`
- *  (so `.` and `..` too), 6 `0x` and exactly 40 lowercase hex characters. Code 5 (once a leading `~`) is unused:
- *  a `~` is code 3. */
+ *  (so `.` and `..` too), 9 it starts with `-`, 6 `0x` and exactly 40 lowercase hex characters. Code 5 (once a
+ *  leading `~`) is unused: a `~` is code 3. Code 8 is the rule's (refs present). */
 export function wordRefusal(hex) {
   const b = bytesOf(hex);
   const n = b.length;
@@ -120,6 +120,7 @@ export function wordRefusal(hex) {
     }
   }
   if (b[n - 1] === 0x2e) return 4;
+  if (b[0] === 0x2d) return 9;
   if (n === 42 && b[0] === 0x30 && b[1] === 0x78 && [...b.subarray(2)].every((c) => (c >= 0x30 && c <= 0x39) || (c >= 0x61 && c <= 0x66))) return 6;
   return 0;
 }
@@ -164,7 +165,15 @@ const WORDS = [
   ["every admitted punctuation byte", "a-b_c.d", "'-', '_' and '.' are the only ASCII punctuation a word admits"],
   ["c++ is not a word", "c++", "code 3"],
   ["c# is not a word", "c#", "code 3"],
-  ["a leading '-'", "-a", "admitted (a leading '-' is not refused by this release)"],
+  ["a leading '-'", "-a", "code 9: it keeps -word free to mean 'not' in link syntax"],
+  ["-x", "-x", "code 9"],
+  ["only '-'", "-", "code 9"],
+  ["--x", "--x", "code 9"],
+  ["-a.", "-a.", "code 4: the trailing '.' comes before the leading '-'"],
+  ["a-", "a-", "a '-' elsewhere is admitted"],
+  ["a-b", "a-b", ""],
+  ["x-", "x-", ""],
+  ["a--b", "a--b", ""],
   ["255 ASCII bytes", rep("a", 255), "the longest word"],
   ["Latin-1 letter (2 bytes)", "café", ""],
   ["CJK, 3 bytes each", "東京", ""],
@@ -368,7 +377,7 @@ export function topicVectors(plan) {
     if (row.code === 0) row.pageId = keys.record(t.word, hex);
     return row;
   });
-  for (const c of [1, 2, 3, 4, 6, 7]) if (!words.some((w) => w.code === c)) throw new Error(`topic vectors: no word with code ${c}`);
+  for (const c of [1, 2, 3, 4, 6, 7, 9]) if (!words.some((w) => w.code === c)) throw new Error(`topic vectors: no word with code ${c}`);
   if (words.some((w) => w.code === 5)) throw new Error("topic vectors: code 5 is unused");
   // the ASCII rows agree with the 39 characters
   for (let c = 0; c < 0x80; c++) {
@@ -435,16 +444,17 @@ export function topicVectors(plan) {
         "James, 2026-11-26: \"? # etc shouldn't be allowed as they are literally urlencode protected params. Nothing that breaks URLs. Nothing that breaks OS file paths.\"",
         "James, 2026-11-26, later the same day (withdraws the OS-path test): \"Don't refuse windows reserved names. I only care about URI safety and us having some delimiters we can use for URL syntax\"",
       ],
-      wordAsciiNote: "the 39 characters never need escaping in a link and leave every delimiter free. The non-ASCII side (`refused`) is unchanged and will be replaced by a generated table in a later release; a leading '-' is still admitted; Windows device names are words",
+      wordAsciiNote: "the 39 characters never need escaping in a link and leave every delimiter free. The non-ASCII side (`refused`) is unchanged and will be replaced by a generated table in a later release; Windows device names are words",
       wordTrailingDot: "code 4 refuses a word ending in '.' for link trimming (an auto-linker drops a full stop after a pasted link, so /inc. would open /inc): the tag design session's proposal, not a ruling; it also refuses '.' and '..'",
-      wordCodes: { 0: "admitted", 1: "empty or longer than 255 bytes", 2: "malformed UTF-8", 3: "an ASCII byte outside the 39 of `wordAscii`", 4: "ends with '.' (so '.' and '..' too)", 6: "'0x' and 40 lowercase hex characters (an address)", 7: "a refused scalar (any class of `refused`)" },
+      wordCodes: { 0: "admitted", 1: "empty or longer than 255 bytes", 2: "malformed UTF-8", 3: "an ASCII byte outside the 39 of `wordAscii`", 4: "ends with '.' (so '.' and '..' too)", 9: "starts with '-'", 6: "'0x' and 40 lowercase hex characters (an address)", 7: "a refused scalar (any class of `refused`)" },
       wordCodeUnused: { 5: "once 'starts with ~'; a '~' is now code 3 wherever it stands. The number is left unused, never reused" },
-      wordRuleCodes: { 8: "refs present (checked before the grammar)" },
+      wordRuleCodes: { 8: "refs present (checked before the grammar); so the leading '-' rule is 9" },
+      wordLeadingDash: "code 9 refuses a word starting with '-': it keeps -word free to mean 'not' in EFS link syntax (the founder's test that words leave delimiters free); the tag design session's default applied by the integration owner, not the founder's words. A '-' elsewhere is admitted (a-b, a-, a--b)",
       pathRuleCodes: { 10: "not exactly two refs and headers", 11: "body not exactly 64 bytes", 12: "the parent is neither topic/1 nor topic-word/1", 13: "the second ref is not a topic-word/1 record (the kernel refuses it first: E_REF code 2)" },
       text: "1..255 bytes of strict UTF-8; no C0, DEL or C1 control; no scalar of `refused` classes 2, 3 and 5; '/', '\\', U+0020, class 6 (no-break and typographic spaces), uppercase, joiners and variation selectors admitted",
       textCodes: { 0: "admitted", 20: "empty or longer than 255 bytes", 21: "malformed UTF-8", 22: "a control character (C0, DEL, C1)", 23: "a bidi control, an invisible scalar or a noncharacter (classes 2, 3, 5)" },
       textRuleCodes: { 24: "refs present (checked before the grammar)" },
-      order: "the byte codes (2, 3, 7; 21, 22, 23) are the first found scanning from the start; the length code comes first and the whole-word shapes (4, then 6) last",
+      order: "the byte codes (2, 3, 7; 21, 22, 23) are the first found scanning from the start; the length code comes first and the whole-word shapes (4, then 9, then 6) last",
       error: "E_TOPIC_REFUSED(uint8 code) on a direct call; through the kernel E_REJECTED(leaf, typeId)",
       sdk: "fold (lowercase, NFC, the SDK's fold rule) and refuse before building a plan; the chain never normalizes",
     },

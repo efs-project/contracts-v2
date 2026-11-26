@@ -124,6 +124,7 @@ function cases() {
     ["a&b(c)'d,e+f=g!h@i[j]k{l}m^n`o~p$q-r_s.txt", "admitted: & ( ) ' , + = ! @ [ ] { } ^ ` ~ $ - _"],
     ["a=b!c", "admitted: '=' and '!' stay; only ';' is reserved, so a parser can split parameters at ';' first"],
     ["-rf", "admitted: a leading '-'"],
+    ["-notes.txt", "admitted: a leading '-' (a tag word refuses one; a file name does not)"],
     [".env", "admitted: a leading '.'"],
     ["Q&A #3.pdf", "refused: '#' (URI meaning)"],
     ["50%.txt", "refused: '%' (URI meaning)"],

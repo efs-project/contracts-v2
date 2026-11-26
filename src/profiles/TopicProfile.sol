@@ -3,7 +3,7 @@ pragma solidity 0.8.37;
 
 import {FilesName} from "./FilesNameRule.sol";
 
-/// A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-4, 6, 7; 5 is
+/// A Topics-profile rule refused the record; `code` is listed on `TopicProfile.wordRefusal` (1-4, 6, 7 and 9; 5 is
 /// unused), `TopicWordRule` (8), `TopicRule` (10-13), `TopicProfile.textRefusal` (20-23) and `TextRule` (24).
 error E_TOPIC_REFUSED(uint8 code); // none
 
@@ -136,10 +136,13 @@ library TopicProfile {
     /// whitespace at all: ASCII whitespace is code 3, the rest code 7);
     /// then 4 the word ends with `.` (link trimming: an auto-linker drops a full stop after a pasted link; the tag
     /// design session's proposal, not a ruling; it also refuses `.` and `..`, the dot-segments a URL resolver
-    /// removes); 6 it is `0x` followed by exactly 40 characters of `0-9a-f` (it would read as an address: an
-    /// address is a tag's target or a home, never a word). Code 5 (once "starts with `~`") is unused and never reused: a `~` is a code 3
-    /// refusal wherever it stands. Rules 4 and 6 apply to every word, not only the first of a path, because every
-    /// word has a root-level page.
+    /// removes); then 9 the word starts with `-` (it keeps `-word` free to mean "not" in EFS link syntax; the tag
+    /// design session's default applied by the integration owner, not the founder's words; a `-` elsewhere is
+    /// admitted); then 6 it is `0x` followed by exactly 40 characters of `0-9a-f` (it would read as an address: an
+    /// address is a tag's target or a home, never a word). Code 5 (once "starts with `~`") is unused and never
+    /// reused: a `~` is a code 3 refusal wherever it stands. Code 8 is `TopicWordRule`'s (refs present), so the new
+    /// shape rule is 9. Rules 4, 9 and 6 apply to every word, not only the first of a path, because every word has a
+    /// root-level page.
     function wordRefusal(bytes calldata w) internal pure returns (uint256) {
         uint256 n = w.length;
         if (n == 0 || n > WORD_MAX) return 1;
@@ -207,9 +210,10 @@ library TopicProfile {
         return 0;
     }
 
-    /// Rules 4 and 6 on a word whose bytes already passed (the whole-word shapes).
+    /// Rules 4, 9 and 6, in that order, on a word whose bytes already passed (the whole-word shapes).
     function _shape(bytes calldata w, uint256 n) private pure returns (uint256) {
         if (w[n - 1] == ".") return 4;
+        if (w[0] == "-") return 9;
         uint256 head;
         assembly ("memory-safe") {
             head := calldataload(w.offset)

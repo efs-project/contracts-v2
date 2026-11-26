@@ -131,7 +131,12 @@ contract TopicRulesTest is Test {
         for (uint256 c; c < 0x80; ++c) {
             bool ok = _wordAscii(c);
             if (ok) ++admitted;
-            assertEq(_code(abi.encodePacked(bytes1(uint8(c)), "x")), ok ? 0 : 3, "first");
+            // first: '-' is the shape refusal 9
+            assertEq(
+                _code(abi.encodePacked(bytes1(uint8(c)), "x")),
+                ok ? (c == 0x2d ? 9 : 0) : 3,
+                "first"
+            );
             assertEq(_code(abi.encodePacked("x", bytes1(uint8(c)), "x")), ok ? 0 : 3, "inside");
             // last: '.' is the shape refusal 4
             assertEq(
@@ -147,7 +152,13 @@ contract TopicRulesTest is Test {
         assertEq(_code("c++"), 3, "c++ is not a word");
         assertEq(_code("c#"), 3, "c# is not a word");
         assertEq(_code("q&a"), 3, "& is not a word character");
-        assertEq(_code("-a"), 0, "a leading - is admitted");
+        assertEq(_code("-a"), 9, "a leading - is refused");
+        assertEq(_code("-"), 9, "only -");
+        assertEq(_code("--x"), 9);
+        assertEq(_code("-a."), 4, "the trailing dot first");
+        assertEq(_code("a-"), 0);
+        assertEq(_code("a-b"), 0);
+        assertEq(_code("a--b"), 0);
         assertEq(_text("C:\\x"), 0, "a text admits a backslash");
     }
 
@@ -178,7 +189,8 @@ contract TopicRulesTest is Test {
     }
 
     function testFuzz_word_never_answers_5(bytes memory w) public view {
-        assertTrue(probe.wordRefusal(w) != 5);
+        uint256 code = probe.wordRefusal(w);
+        assertTrue(code != 5 && code != 8, "5 is unused and 8 is the rule's");
     }
 
     // ---- word: 7 refused code points; the table -----------------------------------------------------------------
@@ -443,6 +455,9 @@ contract TopicRulesTest is Test {
             new RefHeader[](0)
         );
         uint8[7] memory codes = [1, 2, 3, 4, 3, 6, 7];
+        // a leading `-` through the rule: 9 (8 is the rule's own refs refusal)
+        vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, uint8(9)));
+        wordRule.accept(_ctx(WORD_TYPE), "-x", new bytes32[](0), new RefHeader[](0));
         for (uint256 i; i < 7; ++i) {
             vm.expectRevert(abi.encodeWithSelector(E_TOPIC_REFUSED.selector, codes[i]));
             wordRule.accept(_ctx(WORD_TYPE), bad[i], new bytes32[](0), new RefHeader[](0));
