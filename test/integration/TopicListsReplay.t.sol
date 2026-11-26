@@ -11,8 +11,9 @@ import {IBitmapStore} from "../../src/interfaces/IBitmapStore.sol";
 ///         on the real Files Realm is folded live, then replayed through the repository's replay path (a fresh
 ///         generation with fresh stores from `IndexDeployer`, `replayNextPublication` through the pinned decoder),
 ///         and every list of families 5, 6, 7, 8, 10, 11, 16, 19, 20 and 21 is compared: head (count, live, last,
-///         flags) and every entry. The index reads only write-once records, and the validator guarantees each tagged
-///         topic predates its tag, so the replayed walk is the live walk. The history and the comparison are
+///         flags) and every entry. The index reads only write-once records, and a fold from history treats a tag's
+///         subject as a topic only if it was registered strictly before the tag (docs INDEX-BUILD §4.3), so the
+///         replayed walk is the live walk whatever validator judged the history. The history and the comparison are
 ///         `TopicListsHistory`'s (shared with `test/index/BuildWalk.t.sol`).
 contract TopicListsReplayTest is TopicListsHistory {
     function _replayed() internal returns (IndexDeployer d, IGeneration1 ix) {

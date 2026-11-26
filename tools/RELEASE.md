@@ -206,7 +206,11 @@ rule, never from `indexFloor`.
   judged (docs/INDEX-BUILD.md §4.3, which audits every read of the fold and the decoder). **What remains of the gate:**
   the harness generation (a generation carrying the genesis stores with an extra fresh store and a new list, its
   deployer plan and its reads contract's per-family store routing) and built-equals-live for that new list; the
-  dropped-list test; the reader test for partial coverage; the measured gas of a build (step 4); and the
+  dropped-list test (a generation that drops a list from a store it carries activates, the replaced generation's
+  late walk can write only the dropped list, declaring that list in that store again is refused with reason 12, and
+  the kept lists equal a twin Realm's: docs/INDEX-BUILD.md §5.3); the reader test for partial coverage (a topic page
+  answers UNKNOWN, never an empty page, while a list it needs is only partly covered); the measured gas of a build
+  (step 4); and the
   liveness gate below. Until step 3 lands, "a later generation can add this list" (for example the all-authors list
   on a file's versions, QUESTIONS Q52) is not yet true. A build walks the whole history, so a later list has a price (its §6.2).
 - **Activation must not depend on the live index answering** (docs/INDEX-BUILD.md §10, new with step 2). The kernel's
