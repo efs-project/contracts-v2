@@ -21,6 +21,11 @@ import {Action, Purpose} from "../../src/interfaces/Actions.sol";
 ///         priced at 5,000 its one-recipe ratio was 0.969 (the defect this suite pins: a cold rewrite costs 12,100 of
 ///         execution gas there, docs/GAS-SCHEDULES.md).
 ///
+///         Relation to `FloorReconcile.t.sol` (index-build step 4): that suite measured the 0.969 and now asserts the
+///         create-file recipe's P / spend ≥ 1 in the same two states (the same recipe, the same state B), with the
+///         recipe's per-leaf split, the least gas that admits it against the plan and the sweep below it; this suite
+///         asserts the rule over every shape the floor claims.
+///
 ///         Deep first tags are not here: the floor does not know a topic's depth (design §10.4) and quotes them below
 ///         their spend by design; the gas model prices the walk.
 contract FloorStatesTest is FloorBase {
