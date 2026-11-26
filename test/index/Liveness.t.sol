@@ -9,6 +9,7 @@ import {RecordingFoldHook} from "../harness/HeadAuthors.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
+import {StandInTypes} from "../harness/doubles/StandInTypes.sol";
 import {AcceptAll} from "../harness/doubles/Acceptors.sol";
 import {IndexDoubleDefaults, PrefixAgreement} from "../harness/doubles/IndexDoubles.sol";
 import {IndexDeployer} from "../../src/control/IndexDeployer.sol";
@@ -128,7 +129,7 @@ contract LivenessTest is Test {
         uint32 revision;
     }
 
-    bytes32 internal constant TYPE_OK = keccak256("test/type/ok");
+    bytes32 internal constant TYPE_OK = StandInTypes.OK_ID; // derived from a real descriptor
     bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
     bytes32 internal constant NAME = keccak256("name");
     bytes32 internal constant SECOND = keccak256("second");
@@ -177,6 +178,7 @@ contract LivenessTest is Test {
         info.policyRows = 1;
         info.policyRow = 1;
         R.registry.setType(TYPE_OK, info, new bytes32[](0));
+        R.registry.setDescriptor(TYPE_OK, StandInTypes.ok());
     }
 
     function _specs() internal pure returns (DigestSpec[] memory specs) {

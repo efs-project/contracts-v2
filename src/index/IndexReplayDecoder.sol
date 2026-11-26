@@ -6,7 +6,7 @@ import {Keys} from "../lib/Keys.sol";
 import {ActionKind} from "../interfaces/Actions.sol";
 import {Effect} from "../interfaces/Index.sol";
 import {ILedgerHot} from "../interfaces/ILedgerHot.sol";
-import {ITypeRegistry, TypeInfo} from "../interfaces/ITypeRegistry.sol";
+import {ITypeRegistry} from "../interfaces/ITypeRegistry.sol";
 import {IIndexReplayDecoder} from "../interfaces/internal/IIndexReplayDecoder.sol";
 import {E_REPLAY} from "../interfaces/Errors.sol";
 
@@ -15,8 +15,15 @@ import {E_REPLAY} from "../interfaces/Errors.sol";
 ///         each admission row (two words) gives the kind, the leaf, the position ordinal, the CAS value, the
 ///         previous admission and `a`; `oldTarget`/`oldTargetKind` come from the previous bind row,
 ///         `freshRecord` from `cell.firstAdmission == admission`, withdrawals from the target row and its
-///         publication's principal, refs from the leading body words of the Type's `refCount`. The revision row
+///         publication's principal, refs from the leading body words of the Type's reference count. The revision row
 ///         in force at the publication must carry this decoder's `LAYOUT_ID` (E_REPLAY(2)).
+///         The reference count is PROVED, not read (docs INDEX-BUILD §4.3 row 19b): the registry is asked only for
+///         the Type's descriptor bytes (`descriptorBytes`), and the decoder recomputes the Type id from them and
+///         compares it with the record's Type id read from the ledger (E_REPLAY(10) on a mismatch). Trusted: that
+///         the registry answers with some bytes. Proved: that the bytes are the registered descriptor and that the
+///         count is its number of declared references, because the Type id commits to both (its shape is the hash
+///         of the whole descriptor, and it hashes the reference Types with their count). A replaced registry can
+///         withhold a descriptor (the decode reverts) but cannot change a count.
 /// @dev Stateless, immutable; the same reconstruction `LedgerViews.publication()` proves against the
 ///      `Published` event's effectsHash, pinned here per layout so replay never depends on a replaceable facet.
 contract IndexReplayDecoder is IIndexReplayDecoder {
@@ -28,6 +35,10 @@ contract IndexReplayDecoder is IIndexReplayDecoder {
     uint8 private constant T_RESTORE = 5;
     uint8 private constant T_FIRST_MASK = 6;
     uint256 private constant REVISION_LAYOUT_WORD = 17;
+    // codec efs/described/1 (DescribedCodec): the header, a field row, the most leading REF32 fields
+    uint256 private constant D_HEADER = 134;
+    uint256 private constant D_FIELD = 164;
+    uint256 private constant D_MAX_REFS = 8;
 
     constructor() {
         LAYOUT_ID = Layout.LAYOUT_ID;
@@ -121,7 +132,7 @@ contract IndexReplayDecoder is IIndexReplayDecoder {
             f.typeId = w[0];
             (uint48 firstAdmission,,,) = Layout.unpackRecordCellWord1(w[1]);
             f.freshRecord = firstAdmission == f.admission;
-            f.refCount = ITypeRegistry(registry).typeInfo(f.typeId).refCount;
+            f.refCount = _refCount(registry, f.typeId);
         } else if (kind == ActionKind.CREATE) {
             f.subjectId = Keys.subject(f.principalId, a);
         } else if (kind == ActionKind.WITHDRAW) {
@@ -169,6 +180,40 @@ contract IndexReplayDecoder is IIndexReplayDecoder {
                 f.oldTarget = w[2];
                 f.oldTargetKind = prevTargetKind;
             }
+        }
+    }
+
+    /// The Type's reference count, proved from its descriptor: the bytes come from the registry
+    /// (`descriptorBytes`, the descriptor blob's code), the count from the bytes. The projection is the
+    /// registry's `DescribedCodec.parse` restricted to what the id needs: the rule id (header bytes 66..98) and
+    /// the leading REF32 fields (kind byte 1; at most eight, required leading by the codec), each field's
+    /// `referenceType` word. It does not re-validate the descriptor: a registered descriptor parsed at
+    /// registration, and bytes that are not that descriptor cannot hash to its id. Returns `refs.length`;
+    /// `E_REPLAY(10)` when the recomputed id is not `typeId` (altered, truncated, another Type's or empty bytes).
+    function _refCount(address registry, bytes32 typeId) internal view returns (uint8 n) {
+        bytes memory d = ITypeRegistry(registry).descriptorBytes(typeId);
+        uint256 len = d.length;
+        if (len < D_HEADER) revert E_REPLAY(10);
+        uint256 fieldCount = uint8(d[3]);
+        uint256 start =
+            D_HEADER + uint8(d[13]) + (uint256(uint8(d[130])) << 8 | uint256(uint8(d[131])));
+        bytes32[] memory refs = new bytes32[](D_MAX_REFS);
+        bytes32 ruleId;
+        assembly ("memory-safe") {
+            let base := add(d, 32)
+            ruleId := mload(add(base, 66))
+            for {} and(lt(n, fieldCount), lt(n, D_MAX_REFS)) {} {
+                let p := add(start, mul(n, D_FIELD))
+                if gt(add(p, D_FIELD), len) { break }
+                if iszero(eq(byte(0, mload(add(base, add(p, 64)))), 1)) { break }
+                mstore(add(add(refs, 32), mul(n, 32)), mload(add(base, add(p, 132))))
+                n := add(n, 1)
+            }
+            mstore(refs, n)
+        }
+        if (Keys.typeId(keccak256(abi.encode(Keys.DOM_DESCRIBED_SHAPE, d)), refs, ruleId) != typeId)
+        {
+            revert E_REPLAY(10);
         }
     }
 
