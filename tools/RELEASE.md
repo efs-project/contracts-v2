@@ -252,6 +252,10 @@ this release.
   149,608 a file to keep it from genesis (9.3× / 3.8×); a cold build call's fixed share is 0.25M to 0.29M (it was
   0.49M to 0.52M while the carried check called the live index); every admitted publication builds in one 2^24 call.
 
+- **Keeping an index that no longer answers** (item "Keeping an index never calls it" below): an activation that
+  keeps the live index never calls it; reason 2 is the ledger's own phase, so a live index that no longer answers can
+  still be kept while another component or the limits change (docs/INDEX-BUILD.md §5.3).
+
 - **The above-cap state-gas path, confirmed on a real chain** (2026-11-26, `tools/state-gas-probe.mjs`,
   docs/GAS-SCHEDULES.md): on Sepolia, under both Geth and reth, a transaction whose gas limit is above 2^24 starts
   with the cap less intrinsic gas as ordinary gas and pays state gas from the reservoir; at or below the cap it pays
@@ -271,9 +275,7 @@ this release.
 - **The digest-spec case (d)**: a digest spec rebuilt in a fresh store (docs/INDEX-BUILD.md §8 test 9).
 - **The Type registry**: until freeze any replacement Type registry must keep existing Type rows unchanged, because
   the decoder's reference-count read depends on it (docs/INDEX-BUILD.md §4.3).
-- **Keeping an index that no longer answers**: an activation that keeps a live index which no longer answers still
-  reverts with that index's error (its reason-2 phase read); replacing the index is the recovery
-  (docs/INDEX-BUILD.md §5.3). A manifest copy over 24,575 B is refused, not split.
+- **A manifest copy over 24,575 B** is refused, not split (docs/INDEX-BUILD.md §10 item 34).
 - **A real chain's deployment document must describe that chain, read from the chain.** Today only the fixture tool
   writes a deployment document, and it fills the `chain` block from its `--hardfork` option (osaka or prague, both
   priced as `feeSchedule: "prague"`). No tool deploys to a real chain yet. When one is written, its `chain` block must
@@ -871,6 +873,21 @@ on both schedules (was 248).
 | read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | seed version | `efs-fixture-seed/4` | no |
 | seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
+
+**Keeping an index never calls it** (number at integration: the next free number after the formula step's items).
+An activation that keeps the live index (`set.components.index == index()`) no longer calls it. Before, it read
+`IRealmIndex(index).replayReadiness().phase` for reason 2, uncaught, so a live index that no longer answered made every
+activation that kept it revert with that index's own error. Now the kept index is pinned by the revision row alone
+(its address's code against the set's codehash, `E_PIN(index, 3)`; the codehash and manifest hash against the current
+revision row, `E_INDEX_NOT_READY(1)`, unchanged), and **`E_INDEX_NOT_READY(2)` means "the ledger's own publication lock
+is not IDLE"** (was "its readiness phase is not IDLE"); the phase the readiness echoed was the ledger's own, and
+`LedgerCore.activate` and `freeze` are already idle-gated, so no activation that passed before is refused now, and one
+that keeps a non-answering index now passes. `release/errors.json` changes with reason 2's wording. No ABI, no new error.
+**Identities:** `LedgerControl`'s code changed, so its runtime codehash moves, and with it (as for item 37) every address
+genesis creates on the fixture Realm, the realm id, the domain separator, the stores, the index and its reads contract,
+the manifest hash and obligations, the plan hash, the execution set and the release digest. **[PLACEHOLDER: the moved
+and unmoved identities and the sizes are filled in at integration, after the one regeneration.]** `LedgerControl`
+18,042 → 17,994 B (−48: `_checkIndex` −89, the inlined `LedgerStorage._lockWord` +41; budget 19,660 B, 1,666 left).
 
 ## The fixture: many instances at once
 

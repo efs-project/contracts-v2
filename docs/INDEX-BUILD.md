@@ -971,12 +971,34 @@ and asks for no copy (genesis passes an empty one). No kernel ABI change, no cha
 the Core context. `LedgerControl` 17,830 → 18,042 B. Order: the copy is checked at the first carried family, so a
 replaced candidate that carries any store now reports 14 before a later family's 13 (`HeadAuthorsBuild.t.sol`).
 
-**The unchanged-index path (found, not changed).** An activation that KEEPS the live index (`index == $.index`) still
-calls `IRealmIndex(index).replayReadiness().phase` for reason 2, uncaught: while the live index does not answer, every
-activation that keeps it reverts with the live index's own error (for example a limits or controller change).
-Replacing the index in that same activation is the recovery, and it now works with a correct copy
-(`test/index/Liveness.t.sol::test_keeping_an_index_that_stops_answering_reverts_with_its_error`). The path was left as it
-is: an index that cannot report its phase should not be kept, and the read is the design's §8.3 5h.
+**The unchanged-index path: keeping an index never calls it (2026-11-26, branch `fable/2026-11-26-decoder-registry`).**
+An activation that KEEPS the live index (`index == $.index`) used to call `IRealmIndex(index).replayReadiness().phase`
+for reason 2, uncaught, so while the live index did not answer every activation that kept it (a limits or controller
+change, for example) reverted with the live index's own error, and the only recovery was to replace the index in the
+same activation. What that read protected, read from the code: `IndexReads.replayReadiness` sets `phase` from
+`ILedgerHot(LEDGER).phase()`, the ledger's own publication lock, and the kernel looked at nothing else in the tuple.
+The generation's `replayStage` (IN_FLIGHT while its own `build` or `replayNextPublication` runs) is not in the tuple,
+and the kept index is the live one, whose `build` refuses (`E_BUILD(1)`) and whose replay refuses (`E_REPLAY(1)`)
+anyway; its `LEDGER` is the ledger the kernel checked at its activation (reason 3, an immutable). Every path to the
+check is `LedgerCore.activate` or `LedgerCore.freeze`, both `onlyController idle notFrozen`, so the lock was already
+IDLE and the read caught nothing the kernel did not know, except the index's failure to answer. **Now the kept branch
+never calls the index:** it checks the codehash and manifest hash against the current revision row (1, unchanged; the
+address's code is checked against the set's codehash before that, `E_PIN(index, 3)`) and then the ledger's OWN lock
+word (2, reworded: "the ledger's own publication lock is not IDLE"), the control body's own guard beside
+`LedgerCore`'s `idle` gate. Tests (`test/index/Liveness.t.sol`, section 6): an activation that keeps an index whose
+readiness reverts succeeds, changes the notice principal and the limits (a three-action publication is then refused
+`E_BATCH_SHAPE`), records the same codehash and manifest hash in the new revision row, and the kept index folds the next
+publications exactly as the twin's (`::test_keeping_an_index_that_stops_answering_activates`); the same with every call to
+the index's address reverting (`::test_keeping_an_index_whose_every_call_reverts_activates`); a set with another manifest
+hash is refused 1, one with another codehash `E_PIN(index, 3)`, and an index whose code no longer matches the revision
+row is refused 1 even when the set names its new code
+(`::test_a_kept_index_with_another_codehash_or_manifest_hash_is_refused_1`); reason 2 is reached through an
+implementation double that sets the lock and delegates to the real `LedgerControl` without `LedgerCore`'s gate: refused
+2 with the lock APPLYING and activated with it IDLE, the index never called (`::test_reason_2_is_the_ledgers_own_phase`).
+The tests that pinned the old behavior (`::test_keeping_an_index_that_stops_answering_reverts_with_its_error`, and
+`test/control/Activation.t.sol::test_unchanged_index_not_idle_E_INDEX_NOT_READY_2`, whose index double reported a
+phase of 2) are replaced; the second is now `::test_unchanged_index_is_not_asked_its_phase` (the same double, activated).
+No ABI change, no new error. `LedgerControl` 18,042 → 17,994 B (`_checkIndex` −89, `LedgerStorage._lockWord` +41).
 
 `LedgerControl` is part of the ledger implementation, replaceable by activation until freeze. After freeze the
 kernel never changes, and a steward activation under posture B (design §8.10) would run the frozen checks; so if
@@ -1725,8 +1747,8 @@ a fresh copy. The storage form chosen is code (item 34).
     (fixed in this release). Open: case (d), a digest spec rebuilt in a fresh store (§8 test 9); the above-cap
     state-gas path on a client that implements EIP-8037 (anvil 1.8.3 accepts `--hardfork amsterdam` but applies prague
     pricing); the work model's missing compute and per-purpose terms for later statements (item 41); until freeze any
-    replacement Type registry must keep existing Type rows (§4.3); an activation that keeps a live index which no
-    longer answers still reverts (§5.3; replacing the index is the recovery).
+    replacement Type registry must keep existing Type rows (§4.3). Done since: keeping a live index never calls it, so
+    an index that no longer answers can still be kept (§5.3).
 
 ### The liveness gate and Option A (2026-11-26, branch `fable/2026-11-26-liveness`)
 
@@ -1784,7 +1806,7 @@ a fresh copy. The storage form chosen is code (item 34).
     (was activated). Every plan builder fills the copy (`test/harness/ManifestCopy.sol`); `HeadAuthorsReads` names its
     new units through `_builtHooks`.
 38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule; the unchanged
-    index path's reason-2 read (§5.3, left as it is); a copy over 24,575 B (refused, not split).
+    index path's reason-2 read (§5.3; done since: keeping an index never calls it); a copy over 24,575 B (refused, not split).
 
 ### The final integration (2026-11-26, branch `fable/2026-11-26-final`)
 

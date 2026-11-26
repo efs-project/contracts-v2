@@ -1185,8 +1185,9 @@ RealmController.activate(ActivationSet set) onlyOwner notFrozen:
           contract the index enumerates (the two proxied implementations are codehash-pinned at 5c/5e, never scanned: the ledger must DELEGATECALL);
           every unit's hotAbiId ∈ the new implementation's SUPPORTED_HOT_ABI_IDS, and that list ⊇ the current implementation's list   E_PIN / E_CODE_SHAPE / E_HOT_ABI
        h. DELEGATECALL LedgerIngress.checkActivation(set) (ledger context; zero-write):
-            if set.components.index == realm.index: require indexCodehash and indexManifestHash equal the current revision row's and
-               IRealmIndex(index).replayReadiness().phase == IDLE                                                      (unchanged index: no readiness tuple)
+            if set.components.index == realm.index: require indexCodehash and indexManifestHash equal the current revision row's (1) and
+               the ledger's own publication lock IDLE (2); the kept index is never called (unchanged index: no readiness tuple;
+               docs/INDEX-BUILD.md §5.3)
             else: Readiness => ledger == this, layoutId == LAYOUT_ID, hotAbiId ∈ SUPPORTED_HOT_ABI_IDS, manifestHash == set.components.indexManifestHash,
                the §10.5 ready predicate re-derived (phase IDLE, completedAdmission == counts().admissions, completedPublication == counts().publications,
                every APPEND_ORDERED family from == 1 (built or carried), every store's writers ranges contiguous and every manifest family in its store's
