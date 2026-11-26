@@ -69,6 +69,12 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
     or from the rule itself, never from `eth_call`. (2) The intrinsic cost of a plain call on that chain is 15,000,
     not 21,000 (the probe's call starts 15,002 below its gas limit, 2 of that the first opcode); the 21,000 used in
     this repository's headroom arithmetic is therefore on the safe side there.
+  - **`eth_estimateGas` counts state gas, on both clients** (same probe, same day): it returns the gas limit a sender
+    needs, execution plus state gas, a little above the gas used: 2,235,141 for 20 fresh slots (2,216,383 used),
+    11,110,304 for 100 (11,021,663 used) and 22,204,258 for 200, which is above 2^24. Geth and reth gave the same
+    figures. So a gas limit taken from the estimate is sufficient and must not be clamped at 2^24. With such a
+    limit the reservoir (the limit less 2^24, when positive) may be smaller than the state gas; the rest is then
+    drawn from ordinary gas, which the rules allow, and the estimate already accounts for it.
   - The EIP text is not consistent on one point that does not touch EFS: it says account-creation costs are no
     longer part of intrinsic gas, and elsewhere that a value transfer to a new account adds to it.
 - A slot set and reset within one transaction, a reverted frame, or a failed `CREATE` produces a state-gas

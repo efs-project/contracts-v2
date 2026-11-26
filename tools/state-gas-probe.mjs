@@ -16,6 +16,9 @@
 //   - plain `eth_call`, for comparison. A client may relax the rules there (Geth 1.17.9 does not cap ordinary gas at
 //     2^24 in `eth_call`, so it shows no reservoir), which is why a planner must not read the cap from `eth_call`.
 //
+// It also asks `eth_estimateGas` for the same code, to see what an estimate counts: execution only, or execution
+// plus state gas (the gas limit a sender needs).
+//
 // `node tools/state-gas-probe.mjs <rpc url> [--json]`. It prints one table per reply and writes nothing. No gate runs
 // it (it needs a network); the result it found on Sepolia is recorded in docs/GAS-SCHEDULES.md.
 
@@ -60,6 +63,9 @@ export const CASES = [
   { n: 100, gas: 60_000_000 },
 ];
 
+/** The slot counts whose gas estimate is asked: the last one needs more than 2^24 in all. */
+export const ESTIMATES = [20, 100, 200];
+
 /** One JSON-RPC batch, so one backend of a load-balanced endpoint answers the client version and every case. */
 export function batch(cases = CASES) {
   const out = [{ jsonrpc: "2.0", id: "client", method: "web3_clientVersion", params: [] }];
@@ -85,6 +91,14 @@ export function batch(cases = CASES) {
     });
     out.push({ jsonrpc: "2.0", id: `call-${i}`, method: "eth_call", params: [{ to: PROBE, gas: hex(gas) }, "latest", { [PROBE]: { code } }] });
   });
+  for (const n of ESTIMATES) {
+    out.push({
+      jsonrpc: "2.0",
+      id: `estimate-${n}`,
+      method: "eth_estimateGas",
+      params: [{ from: SENDER, to: PROBE }, "latest", { [PROBE]: { code: probeCode(n) }, [SENDER]: { balance: hex(10n ** 20n) } }],
+    });
+  }
   return out;
 }
 
@@ -106,7 +120,11 @@ export function rows(reply, cases = CASES) {
     const cw = words(c?.result);
     out.push({ n, gas, how: "eth_call", ...(cw ? { entry: cw.entry, drawn: cw.drawn, perSlot: cw.drawn / n } : { error: JSON.stringify(c?.error ?? c ?? null) }) });
   });
-  return { client: by.get("client")?.result ?? null, rows: out };
+  const estimates = ESTIMATES.map((n) => {
+    const e = by.get(`estimate-${n}`);
+    return e?.result ? { n, estimate: Number(BigInt(e.result)) } : { n, error: JSON.stringify(e?.error ?? e ?? null) };
+  });
+  return { client: by.get("client")?.result ?? null, rows: out, estimates };
 }
 
 /** What the validated rows say: `pricing` "eip-8037" | "prague" | "unknown"; `reservoir` true | false | null. */
@@ -117,7 +135,11 @@ export function verdict(result) {
   const near = (x, y) => Math.abs(x - y) <= 300; // the loop's own ~50 gas per slot
   const pricing = under.length === 0 ? "unknown" : under.every((r) => near(r.perSlot, 110_020)) ? "eip-8037" : under.every((r) => near(r.perSlot, 22_100)) ? "prague" : "unknown";
   const reservoir = pricing !== "eip-8037" || above.length === 0 ? null : above.every((r) => near(r.perSlot, 12_100) && r.entry < CAP);
-  return { pricing, reservoir };
+  // an estimate that counts state gas is near the validated run's gas used for the same slot count (it is the gas
+  // limit a sender needs); one that counted execution only would be about a ninth of it under EIP-8037
+  const pairs = (result.estimates ?? []).filter((e) => e.estimate !== undefined).map((e) => ({ e, used: v.find((r) => r.n === e.n && r.gasUsed)?.gasUsed })).filter((x) => x.used);
+  const estimateCountsStateGas = pairs.length === 0 ? null : pairs.every(({ e, used }) => e.estimate >= used && e.estimate < used * 1.1);
+  return { pricing, reservoir, estimateCountsStateGas };
 }
 
 async function main() {
@@ -139,7 +161,8 @@ async function main() {
     const head = `  n=${String(r.n).padStart(3)} gas=${r.gas.toLocaleString("en-US").padStart(11)} ${r.how.padEnd(20)}`;
     console.log(r.error ? `${head} ${r.error.slice(0, 120)}` : `${head} gas at entry ${r.entry.toLocaleString("en-US").padStart(11)}  drawn per slot ${r.perSlot.toFixed(1).padStart(10)}${r.gasUsed ? `  gasUsed ${r.gasUsed.toLocaleString("en-US")}` : ""}`);
   }
-  console.log(`pricing: ${v.pricing}; state gas from a reservoir above 2^24: ${v.reservoir === null ? "not shown" : v.reservoir ? "yes" : "NO"}`);
+  for (const e of result.estimates) console.log(`  n=${String(e.n).padStart(3)} eth_estimateGas ${e.error ? e.error.slice(0, 120) : e.estimate.toLocaleString("en-US").padStart(11) + (e.estimate > CAP ? "  (above 2^24)" : "")}`);
+  console.log(`pricing: ${v.pricing}; state gas from a reservoir above 2^24: ${v.reservoir === null ? "not shown" : v.reservoir ? "yes" : "NO"}; an estimate counts state gas: ${v.estimateCountsStateGas === null ? "not shown" : v.estimateCountsStateGas ? "yes" : "NO"}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();
