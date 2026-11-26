@@ -69,6 +69,10 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
     or from the rule itself, never from `eth_call`. (2) The intrinsic cost of a plain call on that chain is 15,000,
     not 21,000 (the probe's call starts 15,002 below its gas limit, 2 of that the first opcode); the 21,000 used in
     this repository's headroom arithmetic is therefore on the safe side there.
+  - **Sepolia's block gas limit** (read from blocks, 2026-11-26): about 200,000,000 now (199,804,689 at the head;
+    it moves a little with validators' votes), and already 199,999,809 on 2026-10-26; it was 60,000,000 on
+    2026-09-26 and through the first half of 2026. A transaction's whole gas limit, state gas included, must fit a
+    block, so this, not 2^24, is the ceiling on a reservoir-funded transaction there.
   - **`eth_estimateGas` counts state gas, on both clients** (same probe, same day): it returns the gas limit a sender
     needs, execution plus state gas, a little above the gas used: 2,235,141 for 20 fresh slots (2,216,383 used),
     11,110,304 for 100 (11,021,663 used) and 22,204,258 for 200, which is above 2^24. Geth and reth gave the same

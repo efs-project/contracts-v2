@@ -274,6 +274,16 @@ this release.
 - **Keeping an index that no longer answers**: an activation that keeps a live index which no longer answers still
   reverts with that index's error (its reason-2 phase read); replacing the index is the recovery
   (docs/INDEX-BUILD.md §5.3). A manifest copy over 24,575 B is refused, not split.
+- **A real chain's deployment document must describe that chain, read from the chain.** Today only the fixture tool
+  writes a deployment document, and it fills the `chain` block from its `--hardfork` option (osaka or prague, both
+  priced as `feeSchedule: "prague"`). No tool deploys to a real chain yet. When one is written, its `chain` block must
+  come from the chain itself, never from an option or from what the fixture does: the fee schedule from a probe of
+  how the chain prices a fresh slot (`tools/state-gas-probe.mjs`; Sepolia prices by EIP-8037 since late 2026, so a
+  Sepolia document says `feeSchedule: "amsterdam"`, which is what a consumer's planner keys on), the block gas limit
+  from the chain's latest block (Sepolia: about 200,000,000 on 2026-11-26, 60,000,000 until late September 2026),
+  and the cap rule that applies there (under EIP-8037 the 2^24 cap counts execution gas only). A consumer that finds
+  no schedule it knows refuses to plan, so a wrong or missing name fails closed, but a WRONG known name (prague on an
+  EIP-8037 chain) would under-fund every large-state publication.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
   QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
