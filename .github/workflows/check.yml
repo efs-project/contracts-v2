@@ -16,9 +16,11 @@ jobs:
     # build info, storage layouts), never a setting that changes bytecode, so the build runs under it once and every
     # later step reuses it (the default-profile steps read a superset of what they need). Building under the default
     # profile first made the ci-profile test step compile everything again (measured locally: 329 s default build,
-    # then 334 s of the 340 s test step recompiling, the 1,221 tests themselves about 5 s). The limit stays 40 minutes
-    # from when the job compiled twice; it can come down once a single-compile run's time is on record.
-    timeout-minutes: 40
+    # then 334 s of the 340 s test step recompiling, the 1,221 tests themselves about 5 s). On record since the list
+    # release (04526b1, 1,553 tests): the build 20 minutes, `forge test` 17 minutes (it was 6: the long-list composites,
+    # KernelGrowth at 60 actions and LoneNoGas), the model check 2, the whole job 40m03s, so a limit of 40 would fail a
+    # healthy run. 60 leaves room until the slow suites are split or cut (tools/RELEASE.md item 15, "CI time").
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

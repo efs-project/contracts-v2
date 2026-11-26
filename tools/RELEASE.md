@@ -475,6 +475,14 @@ Newly done in the list release (items 49 to 59):
   constants, the 10.52% figure that sits 0.22 points from the SDK's tripwire, and the `laterRows` notes that quote both
   schedules are re-derived only by hand, at each regeneration. Add the full check (both schedules) to the `amsterdam`
   job when the n² term is modelled.
+- **CI time.** With the list release the `check` job went from 27 to 40 minutes and the `amsterdam` job from 13 to 38
+  (measured on `04526b1`: `check` builds in 20 minutes and tests in 17, where the tests took 6 before; `amsterdam`
+  builds in 21 and tests in 17). The growth is in the gas suites this release added or lengthened (the long-list
+  composites of `GasModel.t.sol`, `KernelGrowth.t.sol` at 60 actions, `LoneNoGas.t.sol`). `check`'s limit is raised
+  from 40 to 60 minutes so a healthy run does not fail; **`amsterdam.yml`'s limit is still 40 and must be raised in the
+  next release's commit** (a change to that file triggers a run of its own, so it rides the next release). When the n²
+  term is modelled: measure which suites account for the growth and propose a split (fast on every push, slow per
+  release) or a cut. No test is dropped without the integration owner's review.
 
 - **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
   since the list release (item 50) it covers every later statement across places up to 3,586 entries on prague (a yes
