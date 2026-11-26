@@ -1093,6 +1093,21 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("withdraw", x);
     }
 
+    /// Composite (never fitted): a first tag on an existing 6-word path, every list existing (the author tagged two
+    /// other things at the deepest topic, so each proper ancestor's roll-ups hold two entries).
+    function test_model_validate_deep_tag_lists_exist() public {
+        bytes32[] memory t = _levelPath("lvl-w");
+        _levelAuthors(t);
+        _tagAll(LEVEL_A, t[5], _things2(21));
+        _as(LEVEL_A);
+        _exec(
+            "model validate tag 6 words all existing",
+            _one1(_bind(Purpose.TAG, t[5], s[20], s[20], 0)),
+            new bytes[](1)
+        );
+        _as(address(0));
+    }
+
     // ---- 6. first write ---------------------------------------------------------------------------------------------
 
     /// CREATE(salt) + PUBLISH(files-directory/1, (who, salt)) by `who`, measured under `label`.
@@ -1134,6 +1149,33 @@ contract GasModelTest is FilesRecipesBase {
         a[1] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d2, keccak256("readme.txt"), 0, 1);
         a[2] = _bind(Purpose.FOLDER, rootDir, keccak256("notes.txt"), file, 0);
         _exec("model validate rename move", a, b);
+    }
+
+    /// The ordinary state (the author's lists exist): a file created in a folder that already holds one of the
+    /// author's files (d2 after an unmeasured `first.txt`); a second edit of that file; and a rename + move into a
+    /// folder that already holds the author's entries (d1, nine entries from setUp).
+    function test_model_validate_recipes_lists_exist() public {
+        (Action[] memory a, bytes[] memory b,,) = EfsFiles.createFile(
+            _types(), p, d2, _salt("v", 1), "first.txt", "Meeting at 09:00.\n", true
+        );
+        _do(a, b);
+        bytes32 file;
+        bytes32 rootRec;
+        (a, b, file, rootRec) = EfsFiles.createFile(
+            _types(), p, d2, _salt("v", 0), "readme.txt", "Meeting at 10:00.\n", true
+        );
+        _exec("model validate create file lists exist", a, b);
+        bytes32 child;
+        (a, b, child) = EfsFiles.edit(_types(), file, rootRec, "Meeting at 11:00.\n", 1);
+        _do(a, b);
+        (a, b,) = EfsFiles.edit(_types(), file, child, "Meeting at 12:00.\n", 2);
+        _exec("model validate edit lists exist", a, b);
+        a = new Action[](3);
+        b = new bytes[](3);
+        (a[0], b[0]) = _name("notes.txt");
+        a[1] = _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d2, keccak256("readme.txt"), 0, 1);
+        a[2] = _bind(Purpose.FOLDER, d1, keccak256("notes.txt"), file, 0);
+        _exec("model validate rename move lists exist", a, b);
     }
 
     function test_model_validate_two_chunks() public {
