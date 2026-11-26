@@ -201,8 +201,18 @@ rule, never from `indexFloor`.
   into an extra fresh store, with its deployer plan, its reads contract's per-family store routing and the
   built-equals-live tests for that family (step 3), and the measured cost of a build (step 4; step 2's preview: every
   admitted publication shape builds in one call under 2^24 on both schedules, so leaf-granular resume is not needed).
-  Until step 3 lands, "a later generation can add this list" (for example the all-authors list on a file's versions,
-  QUESTIONS Q52) is not yet true. A build walks the whole history, so a later list has a price (its §6.2).
+  **Done (step 3a, item 32): the as-of rule.** A fold from history reads every fact as of the admission it folds and
+  takes no fact from a validator's law, so a build is exact over any admitted history, including history no validator
+  judged (docs/INDEX-BUILD.md §4.3, which audits every read of the fold and the decoder). **What remains of the gate:**
+  the harness generation (a generation carrying the genesis stores with an extra fresh store and a new list, its
+  deployer plan and its reads contract's per-family store routing) and built-equals-live for that new list; the
+  dropped-list test (a generation that drops a list from a store it carries activates, the replaced generation's
+  late walk can write only the dropped list, declaring that list in that store again is refused with reason 12, and
+  the kept lists equal a twin Realm's: docs/INDEX-BUILD.md §5.3); the reader test for partial coverage (a topic page
+  answers UNKNOWN, never an empty page, while a list it needs is only partly covered); the measured gas of a build
+  (step 4); and the
+  liveness gate below. Until step 3 lands, "a later generation can add this list" (for example the all-authors list
+  on a file's versions, QUESTIONS Q52) is not yet true. A build walks the whole history, so a later list has a price (its §6.2).
 - **Activation must not depend on the live index answering** (docs/INDEX-BUILD.md §10, new with step 2). The kernel's
   check 12 and the generation's carried check read the live index's `replayReadiness().families` whenever the
   candidate carries a store. If that read reverts, the kernel's activation reverts with the live index's own error and
@@ -426,6 +436,45 @@ and prague `everyoneBelow` `maxSkippedEntries` 246 → 245 at every lens (now eq
 (`0x0788d659…b99d`), the index obligations and manifest hash, the layout id, the hot and store ABI ids, every Type
 id, the ledger proxy (`0x83ce0B9E…20fB`) and every other address, every other unit's code and ABI, the publication
 rows of the gas model, `release/errors.json` and the seed (`efs-fixture-seed/4`).
+
+### Build from history, step 3a: the as-of rule (this release against `26fce43`)
+
+**A consumer does not re-vendor for this step on its own account** (the standing note of item 23's section holds):
+nothing a client can call changes. No ABI, action, write, read, reader or error moved (`test/snapshots/abi/` and
+`release/errors.json` are unchanged), and no gas row a planner prices from moved by more than 61 gas. A consumer
+re-vendors once the build work is finished, or earlier only if it needs something else from a later commit.
+
+**32. The as-of rule (build from history, step 3a).** A fold from history (a replay or any `build`) reads every
+fact as of the admission it folds, and takes no fact from a validator's law: a build never re-runs final hooks, so a
+law holds only for the history judged under it (docs/INDEX-BUILD.md §4.3, which audits every read of the fold and
+the replay decoder). The one read that needed it was the topic roll-up walk's subject: on a Realm whose earlier
+history was not judged under `FilesFinalValidator` code 9 (a generation with no topic lists and no Files validator,
+for example), a tag could be admitted before its topic was registered, and a topic-list generation built later filed
+a roll-up for it or not depending on when the build ran. Now the history path treats the subject as a topic only when
+its first admission is strictly below the statement's, which is exactly what the live fold sees (the kernel calls the
+index after each leaf), so a build files what a live fold files on any history. The live fold is unchanged in what it
+reads and writes: the index tells a fold from history by the selector of the call it runs in (`replayFold`), and the
+live path pays one comparison where the walk needs it. Gas: `bindTagFresh`, `bindTagSecondAuthor` and
+`unbindTagLone` +61 on both schedules (the TAG first statements, the actions that reach the walk; `bindTagSecondAuthor`
++73 on prague); every other constant that moved, moved by ±12 (code placement); `fixed`, `tagLevel`, every read row,
+bound and recommended limit, and every floor-plan `k` are unchanged; max error 5.80% prague, 7.56% amsterdam, as
+before. A build pays about 1,500 to 2,300 gas more per first tag on prague (one more word in the walk's first batch).
+`RealmIndex` is 18,705 B (was 18,244; budget 19,660).
+
+**33. Identities.** Moved, against `26fce43`: the release digest (it also records the source commit; the value is in
+`release/release.json` and in the regeneration commit, was `0x56bd2f95…2565`), the plan hash
+(`0x71a26e4abb0d11ec9ef2ecf24b7c62cb16d8ed85b3551ab752a1d178efe3051e`, was `0xe40993da…2a2c`), the execution set
+(`0xb381c6768f0e1d3fd24e86bc040eb7fcaf89de5cd637ae33c31e9348dd26d063`, was `0x0788d659…b99d`), the index obligations
+(`0x3d0f3ec440f93749596a6849bc1614b8b8791689bb1a9601db1d6a8839fbd479`, was `0x5555dbfb…4f79`), and `RealmIndex`
+(generation 1): its address on the fixture Realm (`0xf63888F81EA42E48C1569570d6482F715593c0dE`, was
+`0x6ebfdf09…17f7`), runtime codehash (`0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e`, was
+`0x3ce5e150…b452`) and initcode; in `artifacts/` only `RealmIndex.json` changed; `gas/model.json` (sha256
+`0x433a8a63e26eaf000889d813d2374bf908924d11a0a72e72e0b78a9f9b4e5fdc`) and the floor-plan vectors' measured figures.
+Not moved: the index manifest hash (`0x3b50d7a2…009f`: it folds the reads contract, not the index), the reads contract
+(`0x73453001…329d`) and every other address and codehash (the ledger proxy `0x83ce0B9E…20fB`, the implementation, the
+control delegate, both stores, the registry, every reader and the gateway: none embeds the index's address), the layout
+id, the hot and store ABI ids, every Type id, `release/errors.json`, the ABI snapshots and the seed
+(`efs-fixture-seed/4`, root `0xf7547aa6…c037`).
 
 ### The identity table (this release against `0fb4804`)
 

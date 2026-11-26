@@ -1,11 +1,12 @@
 # Building a later index family from history: a proposal
 
 **Status: PROPOSAL, steps 1 and 2 of 4 implemented (step 1: 2026-11-26, branch `fable/2026-11-26-index-build-1`;
-step 2: 2026-11-26, branch `fable/2026-11-26-index-build-2`).** It designs the step that design §10.1 and §10.6 defer
+step 2: 2026-11-26, branch `fable/2026-11-26-index-build-2`; step 3a, the as-of rule of §4.3: 2026-11-26, branch
+`fable/2026-11-26-index-build-3a`).** It designs the step that design §10.1 and §10.6 defer
 ("a later generation builds its later families from history into its fresh stores before attachment") and that
 `tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the code", it means `main` at `899767e`, except in
-the paragraphs marked **Landed**, which describe the code after step 1 or step 2 (each says which). Where the code and
-`docs/DESIGN.md` disagree, this document follows the code and says so (§1.4).
+the paragraphs marked **Landed**, which describe the code after step 1, step 2 or step 3a (each says which). Where the
+code and `docs/DESIGN.md` disagree, this document follows the code and says so (§1.4).
 
 The work is built in four steps. **Step 1 (landed):** a generation that carries stores becomes ready and can be
 activated on a Realm with admissions, and one that carries an abandoned store cannot: the carried check (§3.5), the
@@ -14,8 +15,9 @@ maxFacts)` is the budgeted walk of history into the generation's fresh stores (�
 of its fresh stores, so a generation-1-shaped generation can rebuild both stores (case (e)) or heal either one while
 carrying the other (§4.3); coverage reads apply the carried check (§3.5). **Step 3:** a generation with an extra fresh
 `PostingStore` and a new APPEND family (the `head-authors` example, §2.2), with the deployer plan it needs (§3.1) and
-the built-equals-live tests (§8). **Step 4:** the measured gas of a build (§8 test 11). §10 lists where steps 1 and 2
-differ from this proposal.
+the built-equals-live tests (§8). **Step 3a (landed):** the as-of rule of §4.3: a fold from history reads every
+fact as of the admission it folds and takes no fact from a validator's law. **Step 4:** the measured gas of a build (§8 test 11). §10 lists where steps 1 and 2
+differ from this proposal, and step 3a's entry.
 
 Figures are marked **measured** (with the file they come from) or **estimated** (with how). No figure here was
 measured for this document.
@@ -535,6 +537,22 @@ in ascending order".
 
 ### 4.3 Folds that read state besides the effect
 
+**The as-of rule (step 3a).** A fold from history reads every fact as of the admission it folds. A validator's law
+is never a source of facts for a build. Live, the fold reads state at the moment of admission (the kernel applies a
+publication's leaves one at a time and calls the index after each, `LedgerCore._applyOne`: apply the leaf, raise
+the admissions counter, `_notifyIndex`, then the next leaf), so "as of the admission" is free and always true,
+whatever validator is installed: the fold of leaf k sees what leaves below k wrote, in earlier publications and in
+earlier leaves of its own, and nothing a later leaf writes. From history the same read sees today's state. So for any
+fact whose EXISTENCE can begin after the admission being folded, the history path compares the fact's first
+admission with the folded admission, and treats the fact as absent unless it is strictly below. A fact that is
+write-once and necessarily present at that admission by a KERNEL law needs no comparison. A validator's law (a final
+hook's refusal) is not such a law: a build never re-runs final hooks, so a law holds only for history judged under it,
+and a Realm's earlier history may have been admitted under no validator, or under one without that law. The live
+path runs the same reads as before: a fold knows it is from history by the selector of the call it runs in
+(`RealmIndex._fromHistory`: `msg.sig == replayFold`, the one entry point of every replay and build, callable only by
+the generation itself; the live fold enters through `onAdmission`), and tests it only where a read needs the
+comparison.
+
 These are the generation-1 folds that read more than the effect. In a full replay (case (e)) every one of them runs
 in the build; in a partial build only those of the built families do, and the rule after the table says which
 reads a built family may have.
@@ -548,28 +566,44 @@ that store's half (the carried mask, §3.2). The verdicts: **R** reads only what
 state, rebuilt in the same walk, or write-once ledger facts); **E** reads carried *entries* (allowed: append-only);
 **F** reads a carried head, counter or bit (forbidden); **—** does not run in that configuration.
 
-| # | read | where (code) | posting carried, bitmap fresh | posting fresh, bitmap carried |
-|---|---|---|---|---|
-| 1 | by-record head `count` (is the first occurrence still virtual?) | `_foldRecord` | — (posting part skipped) | R: fresh posting store, same walk |
-| 2 | `recordHeader(recordId).firstAdmission` | `_foldRecord` | — | R: write-once ledger record cell |
-| 3 | a digest body word | `_foldRecord` | — | R: write-once record body |
-| 4 | the digest de-duplication (`_buffered`) | `_foldRecord` | — | R: this effect's own memory buffer |
-| 5 | by-record head `count` (materialize a withdrawn virtual first occurrence) | `_foldWithdraw` | — | R: fresh posting store |
-| 6 | family 20's head `count` (is the position fresh?) | `_firstStatementLists` | — | R: fresh posting store, same walk; every earlier effect of the publication is flushed before this one folds |
-| 7 | the ancestor walk: a record's Type word and body word 0 | `_walk` | — | R: write-once records (validator code 9: the topic was registered strictly before) |
-| 8 | the scope list's `count` and entries (`_entryIndex` bisection, on RESTORE, MASK, RELEASE) | `_foldScope` | R: fresh bitmap store, same walk | — (bitmap part skipped) |
-| 9 | the entry index `appendScopeEntry` returns (used by the first mask's `setBit`) | `_foldScope` | R: fresh bitmap store | — |
-| 10 | inside `append`/`appendBatch`: the head's `count` and `last` (order law, word position) | `PostingStore._append` | — (no posting write) | R: fresh posting store |
-| 11 | inside `release`/`retain`: the head's `live` and `count` (counter bounds) | `PostingStore` | — | R: fresh posting store |
-| 12 | inside `appendScopeEntry`: the scope head's `count` and last entry (order law) | `BitmapStore` | R: fresh bitmap store | — |
-| 13 | inside `setBit`: the scope head's `count`, the live bit and `live` | `BitmapStore` | R: fresh bitmap store | — |
-| 14 | the writer rule: `ledger.index()`, `phase()`, `counts().admissions` | `StoreBase._authorizeWriter` | R: the frontier bounds the stamp only (a build write may stamp any admission up to it, `_stampAdmission`) | same |
-| 15 | the decoder: evidence cell (principal, first admission, leaf count, revision) | `IndexReplayDecoder._decode` | R: write-once | R: write-once |
-| 16 | the decoder: the revision row's layout word | `_decode` | R: written once at activation | same |
-| 17 | the decoder: each admission row, the previous bind row (`oldTarget`, kind), the binding position and the position cells | `_effect` | R: write-once | same |
-| 18 | the decoder: a withdrawal's target row and its publication's principal | `_effect` | R: write-once | same |
-| 19 | the decoder: the Type's `refCount`, the record cells, the leading body words | `_effect`, `_decode` | R: registration is append-only and never changes a Type (design §8.7); records are write-once | same |
-| 20 | the build's own leaf count of the next publication (before decoding) | `RealmIndex.build` | R: the write-once evidence cell | same |
+| # | read | where (code) | posting carried, bitmap fresh | posting fresh, bitmap carried | as of the admission: why |
+|---|---|---|---|---|---|
+| 1 | by-record head `count` (is the first occurrence still virtual?) | `_foldRecord` | — (posting part skipped) | R: fresh posting store, same walk | cannot change behind the fold: the fresh store holds exactly the admissions below this one (same walk, ascending) |
+| 2 | `recordHeader(recordId).firstAdmission` | `_foldRecord` | — | R: write-once ledger record cell | write-once, present: a REUSE or repeat PUBLISH names a record first admitted at an earlier admission (`LedgerIngress.validateLeaf`: `E_MISSING_RECORD`; `LedgerApply._applyRecord` writes the cell only when its Type word is 0) |
+| 3 | a digest body word | `_foldRecord` | — | R: write-once record body | write-once, present: the fold of a fresh record reads its own body, written by this very leaf before the index is called (`LedgerCore._applyOne`: apply, then `_notifyIndex`); `_storeBody` runs once per record |
+| 4 | the digest de-duplication (`_buffered`) | `_foldRecord` | — | R: this effect's own memory buffer | memory of this effect |
+| 5 | by-record head `count` (materialize a withdrawn virtual first occurrence) | `_foldWithdraw` | — | R: fresh posting store | as row 1 |
+| 6 | family 20's head `count` (is the position fresh?) | `_firstStatementLists` | — | R: fresh posting store, same walk; every earlier effect of the publication is flushed before this one folds | as row 1 |
+| 7a | the ancestor walk, the subject's level: its Type word and body word 0 | `_walk` | — | R: write-once records, compared with the statement's admission on the history path (7b) | **could begin to exist later.** Nothing in the kernel stops a tag under a subject that is registered after it (only validator code 9 does); write-once once it exists (`_applyRecord`). So on the history path it counts only through 7b |
+| 7b | the ancestor walk, the subject's cell word 1 (its first admission): **new, history path only**, in the same batch as 7a | `_walk` | — | R | the comparison: the subject is a topic for this statement only if its first admission is nonzero and strictly below the statement's admission; the live fold of the same leaf sees exactly the records of lower admissions (the per-leaf loop), so the two stop at the same place. Write-once (`firstAdmission` is set with the cell) |
+| 7c | the ancestor walk, each proper ancestor's Type word and body word 0 | `_walk` | — | R: write-once records | write-once, present: reached only from a subject first admitted below the statement; the kernel's reference law (`LedgerIngress._resolveRefs`: a declared reference that is no record is refused, `E_REF(leaf, i, 1)`, checked before the leaf applies) admits a `topic/1` record only after its parent (body word 0), so each ancestor's first admission is below its child's |
+| 8 | the scope list's `count` and entries (`_entryIndex` bisection, on RESTORE, MASK, RELEASE) | `_foldScope` | R: fresh bitmap store, same walk | — (bitmap part skipped) | as row 1 (the fresh bitmap store) |
+| 9 | the entry index `appendScopeEntry` returns (used by the first mask's `setBit`) | `_foldScope` | R: fresh bitmap store | — | as row 1 |
+| 10 | inside `append`/`appendBatch`: the head's `count` and `last` (order law, word position) | `PostingStore._append` | — (no posting write) | R: fresh posting store | as row 1 |
+| 11 | inside `release`/`retain`: the head's `live` and `count` (counter bounds) | `PostingStore` | — | R: fresh posting store | as row 1 |
+| 12 | inside `appendScopeEntry`: the scope head's `count` and last entry (order law) | `BitmapStore` | R: fresh bitmap store | — | as row 1 |
+| 13 | inside `setBit`: the scope head's `count`, the live bit and `live` | `BitmapStore` | R: fresh bitmap store | — | as row 1 |
+| 14 | the writer rule: `ledger.index()`, `phase()`, `counts().admissions` | `StoreBase._authorizeWriter` | R: the frontier bounds the stamp only (a build write may stamp any admission up to it, `_stampAdmission`) | same | not a fact folded: bounds the stamp a build write may carry, never what it writes |
+| 15a | the decoder: evidence cell word 0 (leaf count, first admission) | `IndexReplayDecoder._decode` | R: write-once | same | write-once, present: written once in `LedgerCore._begin` under a fresh publication ordinal, before any leaf of the publication; a build or replay runs only while idle, so every publication it decodes is complete |
+| 15b | the decoder: evidence cell word 1 (the revision in force) | `_decode` | R: write-once | same | write-once, present: as 15a (`e.revision = $.revision` in `_begin`) |
+| 15c | the decoder: evidence cell word 2 (the principal) | `_decode` | R: write-once | same | write-once, present: as 15a |
+| 16 | the decoder: the revision row's layout word | `_decode` | R: written once at activation | same | write-once, present: a revision row is written once, by the activation of that revision (`reinitializer(revision + 1)` makes revisions strictly increase), before any publication under it; a mismatch reverts (`E_REPLAY(2)`), it folds nothing |
+| 17a | the decoder: each admission row's word 0 (kind, leaf, binding ordinal, expected revision, previous admission, target kind) | `_decode`, `_effect` | R: write-once | same | write-once, present: written once by its own leaf (`LedgerApply.applyLeaf`); the one field that changes later, `withdrawn` (set on a PUBLISH/REUSE row by a WITHDRAW), is not read |
+| 17b | the decoder: each admission row's word 1 (`a`: record id, salt, target, or withdrawn admission) | `_decode`, `_effect` | R: write-once | same | write-once, present: as 17a |
+| 17c | the decoder: `bindingPosition[bindingOrdinal]` | `_effect` | R: write-once | same | write-once, present: written once by `LedgerApply._allocate` at the binding's first statement, at or before this admission (an ordinal is allocated once) |
+| 17d | the decoder: the previous bind row's word 0 (its kind and target kind: the transition, `oldTargetKind`) | `_effect` | R: write-once | same | write-once, present: an earlier admission's row (`prevAdmission` < this one; row 0, never written, means UNSET); `withdrawn` not read |
+| 17e | the decoder: the previous bind row's word 1 (`oldTarget`) | `_effect` | R: write-once | same | write-once, present: as 17d |
+| 17f | the decoder: the position cell (purpose, subject, role) | `_effect` | R: write-once | same | write-once, present: written by `_allocate` only while empty (`p.purpose == 0`), at the position's first statement by anyone, at or before this admission |
+| 18a | the decoder: a withdrawal's target row (word 0: its publication; word 1: the record id) | `_effect` | R: write-once | same | write-once, present: the target is an earlier admission (`_applyWithdraw`: `target < admission`); `withdrawn` not read |
+| 18b | the decoder: the withdrawn record's Type word | `_effect` | R: write-once | same | write-once, present: the record was first admitted at the target admission or before (`_applyRecord` writes a cell only when its Type word is 0) |
+| 18c | the decoder: the target publication's principal (evidence word 2) | `_effect` | R: write-once | same | write-once, present: as 15a, for an earlier publication |
+| 19a | the decoder: a PUBLISH/REUSE record's Type word and cell word 1 (`freshRecord` = first admission equals this one) | `_effect` | R: write-once | same | write-once, present: the leaf itself wrote the cell or found it written (`_applyRecord`); `firstAdmission` never changes (`occurrences`, which does, is not used) |
+| 19b | the decoder: the Type's `refCount` (`TypeRegistry.typeInfo`) and the registry address (`registry()`) | `_effect`, `_decode` | R: registration is append-only and never changes a Type (design §8.7) | same | write-once, present: the Type was registered before any record of it was admitted (`validateLeaf`: `E_UNKNOWN_TYPE`); `registerDescribed` returns early on an existing row; `refCount` is the length of the reference Types the id commits to; the registry address is set once, at genesis (`LedgerControl` initialize) |
+| 19c | the decoder: a record's leading body words (the refs) | `_decode` | R: write-once | same | write-once, present: written once with the record's first admission (`_storeBody`), at or before this one |
+| 20 | the build's own leaf count of the next publication (before decoding) | `RealmIndex.build` | R: the write-once evidence cell | same | write-once, present: as row 15 |
+| 21 | the fold's own progress word (`lastProcessed`, `lastPublication`), the generation's digest specs and topic Type ids | `_foldPublication`, `_foldRecord`, `_firstStatementLists` | R | same | the generation's own state and immutables: the order check and its configuration, the same for every fold; not ledger facts |
+| 22 | the build's and replay's gates: `counts()`, `phase()`, `index()`, `IndexReads.carriedCheck()`, the stores' `initialWriter()` / `attached()` | `build`, `replayNextPublication`, `_carried`, `_spoiled` | R | same | not folded: they bound the walk or refuse the call, and choose the store bits of the mask; no list entry or counter is taken from them |
+| 23 | fold hooks (called only with no store carried) and final hooks (never called from history) | `_foldHooks` | — | R (hooks: none in generation 1) | not the fold's reads: a later unit's fold hook gets the same effects as live and must keep the as-of rule itself (§3.6) |
 
 No posting write depends on a bitmap read and no bitmap write depends on a posting read: the only value one half
 takes from a store is the scope entry index (rows 8, 9), and it feeds only the bitmap half's own `setBit`. **Neither
@@ -578,7 +612,47 @@ refused, and no `E_BUILD` code is spent on one. Nothing in either half reads the
 entries, so the "E" verdict has no row in generation 1. Tests: `test/index/BuildWalk.t.sol::test_heal_the_bitmap_store`,
 `::test_heal_the_posting_store` and `test/index/BuildWalkRefusals.t.sol::testHealEachStoreAgainstATwinRealm`.
 
-The proposal's table, for its argument:
+**Landed (step 3a): the last column, the audit of every read against the as-of rule.** One read could begin to exist
+after the admission it serves: row 7a, the subject of a tag (now compared through 7b). Before step 3a the walk read the subject's Type word as
+it is when the fold runs and relied on `FilesFinalValidator` code 9 for the rest, so on a Realm whose history was not
+judged under code 9 (a first generation with no topic lists and no Files validator, or a validator without the law)
+a tag could be admitted before its topic, and a topic-list generation built later filed a roll-up for it when the
+build ran after the topic's registration and none when it ran before: the built lists depended on when the build
+ran. Fixed: on the history path `_walk` reads the subject's cell word 1 (its first admission) in the batch it already
+makes and stops when that is 0 or not strictly below the statement's admission; a live fold of the same leaf sees no
+such record and stops at the same place, so built equals live on every history. Every other read is of a fact that
+cannot begin or change after the folded admission, by a kernel law named in the column, or of the generation's own
+fresh store, rebuilt in the same walk. No other defect was found. One reach beyond the ledger: row 19b's Type row is
+write-once in the current `TypeRegistry` code, and the registry implementation can be replaced by an activation until
+freeze; a replacement must keep existing rows (a Type's `refCount` is also fixed by its id, which commits to its
+reference Types). Also outside the fold: the store writer rule (row
+14) and the build's own gates (`counts()`, `phase()`, `index()`, `IndexReads.carriedCheck`) bound or refuse a call and
+are not folded; a fold hook is called from history with the same effects as live and must keep the rule itself (a
+later unit's obligation, docs §3.6; generation 1 has none); final hooks are never called from history.
+
+**The Files laws.** No fold of generation 1 takes a fact from any of `FilesFinalValidator`'s codes 1 to 16 now. Code 9
+was the walk's (above). The others constrain what an effect may say (a FOLDER entry's name, parent and target, a
+HEAD's revision, a TAG target equal to its role, a SAME/BROADER pair of topics, a first "not this" naming something
+that exists); every list that those effects touch (backlink by target, place by subject, role-places by role,
+position-authors and history by position, role-scope, the scope list) is keyed and filled from the effect itself, so
+a list built over history that broke a law holds exactly what the live fold filed for it. Readers that rely on a law
+(the HEAD law, for example) re-check it themselves (`FilesFinalValidator` NatSpec, "defence in depth").
+
+Tests: `test/index/BuildAsOf.t.sol` (default and amsterdam profiles). Realm U admits its history with no unit and no
+topic lists; a topic-list generation with the real validator as its unit builds it. Built before the topic's
+registration and continued after it, built after it, and replayed: the same lists, with no roll-up for the early tag
+(`test_build_does_not_depend_on_when_it_runs`). Realm V takes the same history with the topic lists live beside a
+final hook that answers the topic getters and judges nothing; U's built lists equal V's live lists key by key
+(`test_built_equals_a_live_fold_without_the_law`; heads and every entry of families 5, 6, 7, 8, 11, 16, 19, 20, 21 and
+the scope lists). In one publication, a topic registered in the leaf before the tag rolls the tag up and one
+registered in the leaf after it does not, live and built (`test_same_publication_topic_first`,
+`test_same_publication_tag_first`: the topic's first admission is the tag's admission − 1 and + 1, the two sides of
+"strictly below"). The live fold never reads the first-admission word, and a build of the same tag reads it once
+(`test_the_live_fold_never_reads_the_first_admission`, a ledger read recorder on V, where nothing else reads the
+subject). The built-equals-live suites over history judged under code 9 (`BuildWalk.t.sol`, `BuildWalkRefusals.t.sol`,
+`TopicListsReplay.t.sol`, `Replay.t.sol`) pass unchanged: there the comparison is always true.
+
+The proposal's table, for its argument (its walk row relied on the validator; superseded by the as-of rule above):
 
 | read | where | why the build sees what the live fold saw |
 |---|---|---|
@@ -591,8 +665,9 @@ The proposal's table, for its argument:
 | the Type's `refCount` (decoder) | `IndexReplayDecoder._effect` | Registration is append-only and never changes an existing Type (design §8.7). |
 | position and binding cells (decoder) | `IndexReplayDecoder._effect` | Write-once. |
 
-**The rule this gives a built family:** its fold may read write-once ledger facts, and heads of families rebuilt in
-the same walk. It must **never read a carried family's head or counter**, because those hold the state at the
+**The rule this gives a built family:** its fold may read write-once ledger facts that a kernel law makes present at
+the folded admission (any other fact it compares with that admission on the history path, the as-of rule), and heads
+of families rebuilt in the same walk. It must **never read a carried family's head or counter**, because those hold the state at the
 frontier, not at admission k.
 
 A carried list's *entries* can still be read historically, because they are append-only and ordered. Example: a
@@ -1090,3 +1165,60 @@ the generation's own check can already read the recorded hash through `ILedgerHo
 revision row (as the decoder reads that row's layout word), though no getter names it. The alternative is for the
 kernel to store the live index's (family, store) pairs at activation, which changes the storage layout. Recovery route
 until then: a full replay (case (e)).
+
+### Step 3a: the as-of rule (2026-11-26, branch `fable/2026-11-26-index-build-3a`)
+
+19. **What changed.** The rule of §4.3 ("a fold from history reads every fact as of the admission it folds; a
+    validator's law is never a source of facts for a build") and its one fix. `RealmIndex._fromHistory()` is true
+    exactly when the fold runs inside `replayFold` (`msg.sig`), which is the only path of every replay and every
+    build (both stores fresh, either store healed: `_replayOne` calls it on this contract, and nothing else can,
+    `E_WRITER`); the live fold runs inside `onAdmission`. On the history path `_walk` first reads the subject's
+    level in one batch of three words (`_parentAsOf`: the Type word, body word 0 and cell word 1, the first
+    admission) and continues from the subject's parent only when the subject is a `topic/1` record first admitted at
+    a nonzero admission strictly below the statement's; otherwise it files no roll-up. The ancestors' levels then
+    read as before. Nothing else in the fold changed. The comments on `_walk`, the constructor, `_foldMore` and
+    `IndexProfiles.requireTopicUnit` no longer say the validator makes a build exact: `requireTopicUnit` stays,
+    because the law still decides what the LIVE lists mean (a live tag under an unregistered topic would be filed
+    with no roll-up), not whether a build is exact.
+    *Why the selector and not a bit in the mask word.* The first version carried a `HISTORY` bit in the carried
+    mask from `_replayOne` through `replayFold`, `_fold`, `_foldBind` and `_firstStatementLists` to `_walk`.
+    Measured on the live path (prague, one publication each, against `26fce43`): +29 to +44 gas on every bind-kind
+    action (the extra argument through `_foldBind`) and +255 to +287 per first tag (a run-time length for the walk's
+    slot array). The selector test costs the live path one comparison in `_walk` and nothing anywhere else, so it
+    replaced the bit before any regeneration. A later generation's `_foldMore` uses the same `_fromHistory()`.
+20. **Why history only.** Live, the kernel's per-leaf loop (`LedgerCore._applyOne`: validate, apply the leaf, raise
+    `counters.admissions`, `_notifyIndex`, `_recheck`, then the next leaf) means the fold of a leaf reads exactly the
+    state of all lower admissions: a record registered by an earlier leaf of the same publication is there, one
+    registered by a later leaf is not. A BIND-kind leaf registers no record, so "first admission strictly below the
+    statement's" is precisely the set of records the live fold can see. The comparison is therefore always true live
+    and costs nothing to skip; from history it is what makes the read as-of.
+21. **Why ancestors need no comparison.** The kernel's reference law: `LedgerIngress.validateLeaf` →
+    `_validateRecord` → `_resolveRefs` refuses a record whose declared reference i (body word i) is not a record
+    (`E_REF(leaf, i, 1)`), and runs before the leaf is applied, so a `topic/1` record's parent (body word 0, a
+    declared reference of `topic/1`) was first admitted strictly before it. This is the kernel's law for every
+    Type with declared references, not a validator's. Record cells and bodies are written once (`LedgerApply._applyRecord`
+    writes the cell only while its Type word is 0, `_storeBody` once), so from a subject first admitted below the
+    statement every level of the walk reads what the live fold read.
+22. **Costs (measured, prague).** *History path:* the subject's level reads one more word (its cell word 1) in the
+    batch it already made: a cold `SLOAD` (2,100) for the first statement on a subject in the call, warm (100) after,
+    plus the three-word batch's memory. Measured by `BuildWalk.t.sol::test_heaviest_publications_build_in_one_call`
+    (one cold `build` call each) against `26fce43`: per first tag +1,547 (38 lone negatives on one word, 7,183,117 →
+    7,241,906), +1,588 (64 lone negatives), +1,704 (18 first tags on a depth-8 topic, 7,466,008 → 7,496,688), +2,319
+    (3 on a depth-64 topic, 9,763,308 → 9,770,265); every admitted shape still builds in one call far under 2^24. The
+    two shapes that cannot be admitted rose by +2,160 and +6,988 per tag (64 first tags at depth 8 and 64: memory
+    expansion in a call that already holds tens of thousands of words). *Live path:* `gas/model.json` against
+    `26fce43`, every constant on both schedules: `bindTagFresh` +61, `bindTagSecondAuthor` +73 (prague) / +61
+    (amsterdam), `unbindTagLone` +61 (the three rows whose action reaches the walk: a TAG first statement); every
+    other constant that moved, moved by exactly ±12 (prague: `files-name/2` publish −12, `bindHeadFresh`,
+    `bindHeadRebind`, `bindFolderRebind`, `bindTagNumberChange`, `restoreTag` +12, `bindPropertyFresh`,
+    `bindPropertyRebind` −12; amsterdam: `bindFolderFreshFile`, `bindFolderFreshDirectory` +12, `restoreBroader` −12),
+    and none of these reach `_walk`, so the ±12 is via-IR code placement (the same ±12 the anchor rows show between
+    any two builds), not the rule; `fixed` (315,834 / 899,154), `tagLevel`, every read row, bound and recommended limit,
+    and every floor-plan `k` are unchanged; max error 5.80% / 7.56%, as before. The +61 per first tag is the flag
+    test (`msg.sig` loaded, compared, a jump) and the code around it in `_walk`. *Size:* `RealmIndex` 18,244 B → 18,705 B
+    (+461; budget 19,660 B, 955 B left); no other contract's code changed (`IndexProfiles` changed comments only).
+23. **How the live path is shown unchanged.** (i) Every existing live suite and snapshot passes untouched: no test,
+    ABI snapshot or vector other than the new suite changed (`FilesFixture._units` became `virtual`, a test harness
+    change with no effect on any other suite). (ii) `test/index/BuildAsOf.t.sol::test_the_live_fold_never_reads_the_first_admission`
+    records the ledger's storage reads during a live first tag on Realm V and fails if the subject's cell word 1 is
+    read; the same test shows a build of the same tag reads it exactly once. (iii) The gas model's live rows (item 22): only the three rows whose action reaches the walk moved by more than the ±12 of code placement, by +61.

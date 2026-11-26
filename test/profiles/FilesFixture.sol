@@ -190,7 +190,7 @@ abstract contract FilesFixture is Test {
 
     /// The manifest unit of design §10.7: no fold hook, the validator as the final hook, FOLDER only (none when
     /// `withoutValidator`).
-    function _units() internal view returns (Unit[] memory units) {
+    function _units() internal view virtual returns (Unit[] memory units) {
         if (withoutValidator) return new Unit[](0);
         units = new Unit[](1);
         units[0] = Unit({

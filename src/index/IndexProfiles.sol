@@ -23,10 +23,14 @@ library IndexProfiles {
     /// `E_PIN(address(0), TOPIC_UNIT)`: the topic Type ids and the unit list disagree (`requireTopicUnit`).
     uint8 internal constant TOPIC_UNIT = 11;
 
-    /// The structural guard of the topic lists (design §10.2 kinds 19 and 7; docs/TAG-DESIGN.md §11.7). The index
-    /// walks a tagged topic's ancestors without checking that the topic was registered before the tag: the profile's
-    /// final hook guarantees it (`FilesFinalValidator` code 9, strictly before). So the lists may be kept only by a
-    /// generation whose fixed unit list contains a final hook built for the same two topic Types: some unit's
+    /// The structural guard of the topic lists (design §10.2 kinds 19 and 7; docs/TAG-DESIGN.md §11.7). Live, the
+    /// index walks a tagged topic's ancestors as they are at the tag's admission, so a tag under a topic registered
+    /// later (even later in the same publication) would be filed with no roll-up; the profile's final hook refuses
+    /// such a tag (`FilesFinalValidator` code 9, strictly before), so no live tag misses its roll-up. This guard is
+    /// about the meaning of the LIVE lists only: a build or replay is exact without it, because a fold from history
+    /// reads every fact as of the admission it folds and takes no fact from a validator's law (docs INDEX-BUILD §4.3,
+    /// the as-of rule; `RealmIndex._walk`). The lists may be kept only by a generation whose fixed unit list contains
+    /// a final hook built for the same two topic Types: some unit's
     /// `finalHook` answers `topicTypeId() == topic` and `topicWordTypeId() == word`. Both ids zero means the
     /// generation keeps no topic lists (a Realm without the Topics profile) and needs no such unit. Any other
     /// combination reverts `E_PIN(address(0), 11)`: one id zero, or nonzero ids without a final hook answering both.

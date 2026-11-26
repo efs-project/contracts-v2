@@ -132,8 +132,10 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         F_SCOPE_BELOW = Keys.familyId("scope-below");
         F_POSITION_AUTHORS = Keys.familyId("position-authors");
         F_ROLE_PLACES = Keys.familyId("role-places");
-        // the topic lists only beside the final hook that guarantees a tagged topic was registered strictly before
-        // the tag; re-checked here over the units this generation copies, so no reads contract can switch it on
+        // the topic lists only beside the final hook that refuses, live, a first tag under a topic not registered
+        // strictly before it (so no live tag silently misses its roll-up); re-checked here over the units this
+        // generation copies, so no reads contract can switch it on. A fold from history does not rely on it: it
+        // reads as of the admission (`_walk`)
         (bytes32 topic, bytes32 word) = r.topicTypes();
         IndexProfiles.requireTopicUnit(units, topic, word);
         TOPIC_T = topic;
@@ -266,7 +268,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// Extension point for a later generation's families in further stores (docs INDEX-BUILD step 3): called after
-    /// every effect's fold, live and from history, with the same carried mask. Empty here, so it costs no code.
+    /// every effect's fold, live and from history, with the same carried mask. Empty here, so it costs no code. A
+    /// later family's fold keeps the as-of rule of docs INDEX-BUILD §4.3 on the history path (`_fromHistory`).
     function _foldMore(Effect calldata, bytes32[] calldata, uint256) internal virtual {}
 
     // ---- the posting appends of one effect, written by one appendBatch (design §4.6) --------------------------
@@ -490,15 +493,27 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// Walks the proper ancestors of a tag's subject: a `topic/1` record's parent is its body word 0, a `topic-word/1`
     /// record is a root and ends the walk, anything else (an address-shaped home) has no ancestors. No depth cap: the
     /// walk is bounded by gas alone. One batched ledger read per level (the record's Type word and its body word 0).
-    /// Nothing checks that the subject was registered before this statement: the unit list holds the final hook that
-    /// refuses any other first tag (`FilesFinalValidator` code 9, strictly before), which the constructor requires
-    /// (`IndexProfiles.requireTopicUnit`); every record read is write-once, so a replay walks what the live fold did.
+    /// The as-of rule (docs INDEX-BUILD §4.3): the walk reads what the live fold read at the statement's admission,
+    /// whatever validator is installed. Live, that is free: the kernel applies a publication's leaves one at a time and
+    /// calls the index after each, so the fold of this leaf sees records registered by earlier leaves and earlier
+    /// publications and none registered later. From history the same reads see today's records, so the history path
+    /// reads the subject's level with its first admission (record cell word 1) in the same batch, and treats the
+    /// subject as a topic only if that admission is nonzero and strictly below the statement's; a subject registered
+    /// later is no topic for this statement. No validator law is a source of facts here (`FilesFinalValidator` code 9
+    /// refuses such a tag live, but a build may fold history that was never judged under it). Ancestors need no check:
+    /// the kernel's reference law (`LedgerIngress._resolveRefs`, `E_REF`) admits a `topic/1` record only after its
+    /// parent (body word 0), and record cells and bodies are write-once, so every ancestor of a subject registered
+    /// before the statement was registered before it too. The live path runs exactly the code it ran before.
     /// `filing` is the `place-below` entry (the binding ordinal, tagged UNCOUNTED unless the position is fresh), or 0
     /// when the statement files nothing there (a later author's first no).
     function _walk(Effect calldata e, Appends memory b, uint64 filing) private {
         ILedgerHot hot = ILedgerHot(LEDGER);
         bytes32[] memory slots = new bytes32[](2);
         bytes32 cur = e.subject;
+        if (_fromHistory()) {
+            cur = _parentAsOf(hot, e); // the loop below starts at the first proper ancestor
+            if (cur == 0) return;
+        }
         while (true) {
             slots[0] = bytes32(Layout.recordsCellsSlot(cur));
             slots[1] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
@@ -517,6 +532,28 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             if (w[0] != TOPIC_T) return; // a root word, a home, or (unreachable) anything else
             cur = w[1];
         }
+    }
+
+    /// The history path's subject level of `_walk`: the subject's Type word, body word 0 and first admission in one
+    /// batch; the subject's parent when the subject is a `topic/1` record first admitted strictly before the statement,
+    /// else 0 (no proper ancestor to walk, as of the admission).
+    function _parentAsOf(ILedgerHot hot, Effect calldata e) private view returns (bytes32) {
+        bytes32[] memory s = new bytes32[](3);
+        s[0] = bytes32(Layout.recordsCellsSlot(e.subject));
+        s[1] = bytes32(Layout.recordsBodyWordsSlot(e.subject, 0));
+        s[2] = bytes32(uint256(s[0]) + 1);
+        bytes32[] memory v = hot.extsloadBatch(s);
+        (uint48 first,,,) = Layout.unpackRecordCellWord1(v[2]);
+        if (first == 0 || first >= e.admission || v[0] != TOPIC_T) return 0;
+        return v[1];
+    }
+
+    /// Whether this fold is from history (a replay or a build): the only entry point that folds history is
+    /// `replayFold`, which only this contract can call (from `_replayOne`), and the live fold enters through
+    /// `onAdmission`; so the call's own selector carries the flag, and the live path tests it only where a fold
+    /// needs it (one comparison of `msg.sig`, in `_walk`), with nothing threaded through the other folds.
+    function _fromHistory() internal pure returns (bool) {
+        return msg.sig == this.replayFold.selector;
     }
 
     function _foldWithdraw(Effect calldata e) private {
