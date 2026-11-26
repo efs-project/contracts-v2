@@ -38,6 +38,11 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
     (`test/integration/FloorReconcile.t.sol`). (3) Foundry's amsterdam profile has no reservoir, which matches the
     chain for a transaction at or below the cap and is harsher than the chain above it; the fixture tool runs only
     osaka and prague, so the above-cap path is not confirmed by anything in this repository yet.
+  - **Decision (integration owner, 2026-11-26):** the floor quote stays in execution gas and is not changed to count
+    state gas. A transaction with much state gas funds it through the reservoir (`tx.gas` above 2^24); a small one
+    takes its gas limit from `eth_estimateGas`, which already includes the state gas it will draw. A consumer's
+    state-gas figure per shape is `gas/model.json` → `profiles.amsterdam.split.stateGas` (the same keys and formula
+    as `constants`). Still open: confirming the above-cap path end to end on a chain that runs the new rules.
   - The EIP text is not consistent on one point that does not touch EFS: it says account-creation costs are no
     longer part of intrinsic gas, and elsewhere that a value transfer to a new account adds to it.
 - A slot set and reset within one transaction, a reverted frame, or a failed `CREATE` produces a state-gas
