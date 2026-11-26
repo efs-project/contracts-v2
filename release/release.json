@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "6ff6762511c4cb7c756bb6687d6f295acbd278f3",
-    "tree": "57b95ed7e3e6c93920194afbea9bd762b6f110bb",
-    "dirty": 5,
+    "commit": "d12b3f6559fa6c506c50e72d9c61fb9bbf70b5a2",
+    "tree": "c068a62c656bbdde2efe622b6f441e5a7e6cb148",
+    "dirty": 0,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -3752,7 +3752,7 @@
   },
   "vectors": {
     "vectors/layout.json": "0xfaf24b138bff4c623dafae929f45239458d909812d64ad0a436e5670bb9607e8",
-    "test/vectors/ids.json": "0xac54d538551b4ab207bff63ce0be068a156c6eb723965a2d536ebae77595c501",
+    "test/vectors/ids.json": "0xd20b4f83d59eae8341bf52358ab351b64d123f5489cb4a90213d5a88a3949df1",
     "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206",
     "test/vectors/numbers.json": "0x32239292bbf0733f1ef315d2407c9a772ebd6485803835269da5a82d81d67ccf",
     "test/vectors/topics.json": "0x846dd7ccb1d357d104004b378e1f02f070ce1b6e26bca8e1d40ddf06c55b1eb2",
