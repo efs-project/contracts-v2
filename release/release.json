@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "ee12cd40ec6340d9be88869d8807bfad94536647",
-    "tree": "e8d5cf9d72fd3851947ad9d1a6c4c6bc49447bc1",
-    "dirty": 7,
+    "commit": "33f3696d3077ee665174ae63b58ae56946ddf172",
+    "tree": "1e9d31fdf0bc6059a421ec568c9d62bdb97489ad",
+    "dirty": 3,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -102,8 +102,8 @@
     "src/index/BitmapStore.sol": "0x6dc9c264cba5cceaae2a42d29f2f2227bf1bbde67fddbf8dfd01f02f06101b13",
     "src/interfaces/IBitmapStore.sol": "0xd80f64c9080cd88bc154f17b63e615b0e71cb1fef72b1a813c569dc234e1f107",
     "src/index/IndexProfiles.sol": "0x8638e5e6a302bb0e203d6c85b158d3c2fce5fd4fceb910ea13c33f7ef31fdab5",
-    "src/index/IndexReads.sol": "0x43e427472fe0c2c293b85f0bc5553b99d8db6204a41fb3a9f36dc10f1df50e6c",
-    "src/index/RealmIndex.sol": "0x3ae9765633e921caa8d031e16ad8c92d3064f5802fc5f4f458f57873c7a543b2",
+    "src/index/IndexReads.sol": "0x7592357c27dd23f0e0e574917bec3d9275f5adf7d2ceb471ce862457cfd621b2",
+    "src/index/RealmIndex.sol": "0x50b6a1042b7d407588d5be5f7528a5c1883f26b9cb747a9c7c9f176fa58c371a",
     "src/index/storage/GenerationStorage.sol": "0x41f833ac25103535f0a09c1206fc1c8bc2dc2516016b7175f13c3ec5724578ff",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
     "src/profiles/FilesFinalValidator.sol": "0xab8406b87d255fd0eb13b23bd469a44bf3651e462021a17ed6cf99ebf3a1b81d",
@@ -989,11 +989,11 @@
     },
     "RealmIndex": {
       "source": "src/index/RealmIndex.sol",
-      "runtimeHash": "0xed89a8f1c385203fdd4782169ed291c5bcb44fe8480325cdd711de2f1232cac7",
-      "deployedBytecodeHash": "0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e",
-      "initcodeHash": "0x9263634cef6e1fd46be5694f43c3d7f7944d87227335d67ab1dfb2eae58f0eae",
-      "initcodeWithArgsHash": "0x7b3ad9e3929b95ca01fab3c4c5a3e7f858a7222197ee71a4b099788144f2ab84",
-      "address": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
+      "runtimeHash": "0xbef4daa4aa162ab487c468a7aaa0a1ad4fa1f0c06ed790e68f41ae7504f16e9c",
+      "deployedBytecodeHash": "0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094",
+      "initcodeHash": "0xc52ac36c33c3f89b1ab4160df0a216f8e8700e5b6785fcb0c41784e0352b583e",
+      "initcodeWithArgsHash": "0xa17b452dd7140ddb3d9d73c527c39c5a19a0b539d1d59bb7274e2ac1aab455e8",
+      "address": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
       "realmSpecific": true,
       "planStep": "G19",
       "immutables": [
@@ -1001,124 +1001,124 @@
           "name": "BITMAP",
           "offsets": [
             467,
-            7964,
-            8054,
-            12863
+            7930,
+            8020,
+            12850
           ]
         },
         {
           "name": "DECODER",
           "offsets": [
             3067,
-            5253,
-            6991,
-            8545,
-            8772
+            5237,
+            6975,
+            8511,
+            8738
           ]
         },
         {
           "name": "F_BACKLINK",
           "offsets": [
-            11058,
-            11554
+            11045,
+            11541
           ]
         },
         {
           "name": "F_BY_AUTHOR",
           "offsets": [
-            10081,
-            11953
+            10068,
+            11940
           ]
         },
         {
           "name": "F_BY_RECORD",
           "offsets": [
-            10253,
-            10408,
-            12587,
-            12730
+            10240,
+            10395,
+            12574,
+            12717
           ]
         },
         {
           "name": "F_BY_TYPE",
           "offsets": [
-            9966,
-            11897
+            9953,
+            11884
           ]
         },
         {
           "name": "F_DIGEST",
           "offsets": [
-            12117
+            12104
           ]
         },
         {
           "name": "F_HISTORY",
           "offsets": [
-            10785
+            10772
           ]
         },
         {
           "name": "F_LIVE_SCOPE",
           "offsets": [
-            13135,
-            13453
+            13122,
+            13440
           ]
         },
         {
           "name": "F_PLACE",
           "offsets": [
-            14992
+            14979
           ]
         },
         {
           "name": "F_PLACE_BELOW",
           "offsets": [
-            17920
+            17907
           ]
         },
         {
           "name": "F_POSITION_AUTHORS",
           "offsets": [
-            11187,
-            11372,
-            14671
+            11174,
+            11359,
+            14658
           ]
         },
         {
           "name": "F_REFERENCE_POSITION",
           "offsets": [
-            12065
+            12052
           ]
         },
         {
           "name": "F_ROLE_PLACES",
           "offsets": [
-            14907
+            14894
           ]
         },
         {
           "name": "F_ROLE_SCOPE",
           "offsets": [
-            10949
+            10936
           ]
         },
         {
           "name": "F_SCOPE",
           "offsets": [
-            13000
+            12987
           ]
         },
         {
           "name": "F_SCOPE_BELOW",
           "offsets": [
-            17847
+            17834
           ]
         },
         {
           "name": "F_UNIQUE_BY_TYPE",
           "offsets": [
-            12026
+            12013
           ]
         },
         {
@@ -1127,14 +1127,14 @@
             1107,
             1397,
             2205,
-            4989,
-            7087,
-            7534,
-            8461,
-            8698,
-            12151,
-            12659,
-            17516
+            4973,
+            7071,
+            7518,
+            8427,
+            8664,
+            12138,
+            12646,
+            17503
           ]
         },
         {
@@ -1147,13 +1147,13 @@
           "name": "POSTING",
           "offsets": [
             2999,
-            7913,
-            8007,
-            9893,
-            10687,
-            12512,
-            14566,
-            15262
+            7879,
+            7973,
+            9880,
+            10674,
+            12499,
+            14553,
+            15249
           ]
         },
         {
@@ -1161,8 +1161,8 @@
           "offsets": [
             3136,
             3239,
-            5132,
-            8854
+            5116,
+            8820
           ]
         },
         {
@@ -1175,22 +1175,22 @@
         {
           "name": "TOPIC_T",
           "offsets": [
-            14834,
-            17603,
-            18351
+            14821,
+            17590,
+            18338
           ]
         },
         {
           "name": "WORD_T",
           "offsets": [
-            17988
+            17975
           ]
         }
       ],
       "sizes": {
-        "runtime": 18705,
-        "initcode": 24893,
-        "initcodeWithArgs": 24989
+        "runtime": 18692,
+        "initcode": 24880,
+        "initcodeWithArgs": 24976
       },
       "budget": {
         "runtime": 19660,
@@ -2261,8 +2261,8 @@
     "wrappers": [],
     "index": {
       "generation": 1,
-      "address": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
-      "runtimeCodehash": "0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e",
+      "address": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
+      "runtimeCodehash": "0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094",
       "reads": {
         "address": "0x7345300136217575d8eC1cFd1beA91d25c9A329d",
         "runtimeCodehash": "0xf7de800d4339c4f2210bc1fb91b5d12e133d264adb74b33f0e637b7b9ae87108"
@@ -2773,7 +2773,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x433a8a63e26eaf000889d813d2374bf908924d11a0a72e72e0b78a9f9b4e5fdc",
+    "sha256": "0x6c7c6b3db23ff328300070d1846a78b2aa8e8cbd940fbf07854a4270a51f47c8",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2783,56 +2783,56 @@
           "osaka"
         ],
         "constants": {
-          "fixed": 315834,
+          "fixed": 315810,
           "perWord": 22729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 165040,
-            "files-span/1": 290478,
-            "files-content/1 carrier 0": 173943,
-            "files-content/1 carrier 2": 193550,
-            "files-external/1": 220845,
-            "files-directory/1": 165222,
-            "files-name/2": 152264,
-            "files-root/1 form 0": 148755,
-            "files-root/1 form 1": 174848,
-            "files-child/1 form 0": 228413,
-            "files-child/1 form 1": 254620,
-            "topic-word/1": 181889,
-            "topic/1": 211794,
-            "text/1": 182363
+            "files-bytes/1": 165091,
+            "files-span/1": 290529,
+            "files-content/1 carrier 0": 173982,
+            "files-content/1 carrier 2": 193589,
+            "files-external/1": 220896,
+            "files-directory/1": 165273,
+            "files-name/2": 152315,
+            "files-root/1 form 0": 148794,
+            "files-root/1 form 1": 174887,
+            "files-child/1 form 0": 228464,
+            "files-child/1 form 1": 254671,
+            "topic-word/1": 181928,
+            "topic/1": 211833,
+            "text/1": 182402
           },
-          "publishExisting": 176636,
-          "reuse": 180087,
-          "create": 98469,
-          "bindHeadFresh": 331618,
-          "bindHeadRebind": 204763,
-          "bindFolderFreshFile": 409496,
-          "bindFolderFreshDirectory": 409266,
-          "bindFolderRebind": 206960,
-          "unbindFolder": 160109,
-          "releaseFolder": 157088,
-          "bindTagFresh": 414658,
-          "bindTagSecondAuthor": 313258,
-          "bindTagNumberChange": 154189,
-          "unbindTagLone": 355651,
-          "unbindTag": 156404,
-          "releaseTag": 155216,
-          "restoreTag": 187087,
-          "bindPropertyFresh": 329073,
-          "bindPropertyRebind": 196646,
-          "unbindProperty": 146286,
-          "releaseProperty": 145098,
-          "bindSameFreshWord": 357914,
-          "bindSameFreshPath": 357810,
-          "unbindSame": 146499,
-          "releaseSame": 145299,
-          "restoreSame": 175027,
-          "bindBroaderFresh": 357889,
-          "unbindBroader": 146510,
-          "releaseBroader": 145322,
-          "restoreBroader": 175050,
-          "withdraw": 151826,
+          "publishExisting": 176687,
+          "reuse": 180138,
+          "create": 98508,
+          "bindHeadFresh": 331657,
+          "bindHeadRebind": 204802,
+          "bindFolderFreshFile": 409535,
+          "bindFolderFreshDirectory": 409305,
+          "bindFolderRebind": 206987,
+          "unbindFolder": 160148,
+          "releaseFolder": 157127,
+          "bindTagFresh": 414685,
+          "bindTagSecondAuthor": 313297,
+          "bindTagNumberChange": 154228,
+          "unbindTagLone": 355690,
+          "unbindTag": 156443,
+          "releaseTag": 155255,
+          "restoreTag": 187126,
+          "bindPropertyFresh": 329112,
+          "bindPropertyRebind": 196685,
+          "unbindProperty": 146325,
+          "releaseProperty": 145137,
+          "bindSameFreshWord": 357953,
+          "bindSameFreshPath": 357849,
+          "unbindSame": 146538,
+          "releaseSame": 145338,
+          "restoreSame": 175054,
+          "bindBroaderFresh": 357928,
+          "unbindBroader": 146549,
+          "releaseBroader": 145361,
+          "restoreBroader": 175089,
+          "withdraw": 151865,
           "firstWriteSurcharge": 11786,
           "tagLevel": {
             "mineNew": 34627,
@@ -2928,36 +2928,36 @@
             }
           },
           "kernel": {
-            "fixed": 266436,
+            "fixed": 266412,
             "perWord": 22729,
             "perByte": 11.8,
             "publishNew": {
-              "files-bytes/1": 133405,
-              "files-span/1": 164197,
+              "files-bytes/1": 133417,
+              "files-span/1": 164209,
               "files-content/1 carrier 0": 88786,
               "files-content/1 carrier 2": 108393,
-              "files-external/1": 141153,
-              "files-directory/1": 133587,
-              "files-name/2": 154829,
+              "files-external/1": 141165,
+              "files-directory/1": 133599,
+              "files-name/2": 154841,
               "files-root/1 form 0": 117120,
               "files-root/1 form 1": 143213,
-              "files-child/1 form 0": 127554,
-              "files-child/1 form 1": 153761,
+              "files-child/1 form 0": 127566,
+              "files-child/1 form 1": 153773,
               "topic-word/1": 139650,
               "topic/1": 151878,
               "text/1": 140124
             },
-            "publishExisting": 95843,
-            "reuse": 99271,
+            "publishExisting": 95855,
+            "reuse": 99283,
             "create": 89227,
             "bindHeadFresh": 193348,
             "bindHeadRebind": 92315,
             "bindFolderFreshFile": 220087,
             "bindFolderFreshDirectory": 217867,
-            "bindFolderRebind": 96919,
+            "bindFolderRebind": 96907,
             "unbindFolder": 62285,
             "releaseFolder": 61074,
-            "bindTagFresh": 220075,
+            "bindTagFresh": 220063,
             "bindTagSecondAuthor": 155784,
             "bindTagNumberChange": 94002,
             "unbindTagLone": 166356,
@@ -2972,7 +2972,7 @@
             "bindSameFreshPath": 217867,
             "unbindSame": 62297,
             "releaseSame": 61074,
-            "restoreSame": 91431,
+            "restoreSame": 91419,
             "bindBroaderFresh": 217855,
             "unbindBroader": 62285,
             "releaseBroader": 61074,
@@ -2999,52 +2999,52 @@
           "perWord": 110649,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 517120,
-            "files-span/1": 994616,
-            "files-content/1 carrier 0": 437993,
-            "files-content/1 carrier 2": 545632,
-            "files-external/1": 682223,
-            "files-directory/1": 517302,
-            "files-name/2": 342750,
-            "files-root/1 form 0": 412815,
-            "files-root/1 form 1": 526940,
-            "files-child/1 form 0": 756557,
-            "files-child/1 form 1": 870736,
-            "topic-word/1": 548135,
-            "topic/1": 592340,
-            "text/1": 548609
+            "files-bytes/1": 517159,
+            "files-span/1": 994655,
+            "files-content/1 carrier 0": 438020,
+            "files-content/1 carrier 2": 545659,
+            "files-external/1": 682262,
+            "files-directory/1": 517329,
+            "files-name/2": 342789,
+            "files-root/1 form 0": 412866,
+            "files-root/1 form 1": 526991,
+            "files-child/1 form 0": 756596,
+            "files-child/1 form 1": 870775,
+            "topic-word/1": 548174,
+            "topic/1": 592391,
+            "text/1": 548660
           },
-          "publishExisting": 535782,
-          "reuse": 539233,
-          "create": 362429,
-          "bindHeadFresh": 1299580,
-          "bindHeadRebind": 592843,
-          "bindFolderFreshFile": 1634254,
-          "bindFolderFreshDirectory": 1634024,
-          "bindFolderRebind": 587828,
-          "unbindFolder": 364949,
-          "releaseFolder": 361928,
-          "bindTagFresh": 1646604,
-          "bindTagSecondAuthor": 1119504,
-          "bindTagNumberChange": 432615,
-          "unbindTagLone": 1323637,
-          "unbindTag": 361244,
-          "releaseTag": 360056,
-          "restoreTag": 487147,
-          "bindPropertyFresh": 1304059,
-          "bindPropertyRebind": 584726,
-          "unbindProperty": 351126,
-          "releaseProperty": 349938,
-          "bindSameFreshWord": 1413784,
-          "bindSameFreshPath": 1413716,
-          "unbindSame": 351315,
-          "releaseSame": 350139,
-          "restoreSame": 475063,
-          "bindBroaderFresh": 1413807,
-          "unbindBroader": 351350,
-          "releaseBroader": 350150,
-          "restoreBroader": 475074,
-          "withdraw": 430186,
+          "publishExisting": 535821,
+          "reuse": 539272,
+          "create": 362468,
+          "bindHeadFresh": 1299619,
+          "bindHeadRebind": 592882,
+          "bindFolderFreshFile": 1634269,
+          "bindFolderFreshDirectory": 1634051,
+          "bindFolderRebind": 587867,
+          "unbindFolder": 364988,
+          "releaseFolder": 361967,
+          "bindTagFresh": 1646643,
+          "bindTagSecondAuthor": 1119543,
+          "bindTagNumberChange": 432654,
+          "unbindTagLone": 1323676,
+          "unbindTag": 361283,
+          "releaseTag": 360095,
+          "restoreTag": 487186,
+          "bindPropertyFresh": 1304098,
+          "bindPropertyRebind": 584765,
+          "unbindProperty": 351165,
+          "releaseProperty": 349977,
+          "bindSameFreshWord": 1413823,
+          "bindSameFreshPath": 1413767,
+          "unbindSame": 351354,
+          "releaseSame": 350178,
+          "restoreSame": 475102,
+          "bindBroaderFresh": 1413846,
+          "unbindBroader": 351389,
+          "releaseBroader": 350189,
+          "restoreBroader": 475125,
+          "withdraw": 430225,
           "firstWriteSurcharge": 85506,
           "tagLevel": {
             "mineNew": 122659,
@@ -3058,52 +3058,52 @@
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 125440,
-            "files-span/1": 211256,
-            "files-content/1 carrier 0": 144233,
-            "files-content/1 carrier 2": 153952,
-            "files-external/1": 192623,
-            "files-directory/1": 125622,
-            "files-name/2": 146910,
-            "files-root/1 form 0": 119055,
-            "files-root/1 form 1": 135260,
-            "files-child/1 form 0": 169037,
-            "files-child/1 form 1": 185296,
-            "topic-word/1": 156455,
-            "topic/1": 200660,
-            "text/1": 156929
+            "files-bytes/1": 125479,
+            "files-span/1": 211295,
+            "files-content/1 carrier 0": 144260,
+            "files-content/1 carrier 2": 153979,
+            "files-external/1": 192662,
+            "files-directory/1": 125649,
+            "files-name/2": 146949,
+            "files-root/1 form 0": 119106,
+            "files-root/1 form 1": 135311,
+            "files-child/1 form 0": 169076,
+            "files-child/1 form 1": 185335,
+            "topic-word/1": 156494,
+            "topic/1": 200711,
+            "text/1": 156980
           },
-          "publishExisting": 144102,
-          "reuse": 147553,
-          "create": 68669,
-          "bindHeadFresh": 222460,
-          "bindHeadRebind": 201163,
-          "bindFolderFreshFile": 263374,
-          "bindFolderFreshDirectory": 263144,
-          "bindFolderRebind": 196148,
-          "unbindFolder": 169109,
-          "releaseFolder": 166088,
-          "bindTagFresh": 275724,
-          "bindTagSecondAuthor": 238224,
-          "bindTagNumberChange": 138855,
-          "unbindTagLone": 246517,
-          "unbindTag": 165404,
-          "releaseTag": 164216,
-          "restoreTag": 193387,
-          "bindPropertyFresh": 226939,
-          "bindPropertyRebind": 193046,
-          "unbindProperty": 155286,
-          "releaseProperty": 154098,
-          "bindSameFreshWord": 238744,
-          "bindSameFreshPath": 238676,
-          "unbindSame": 155475,
-          "releaseSame": 154299,
-          "restoreSame": 181303,
-          "bindBroaderFresh": 238767,
-          "unbindBroader": 155510,
-          "releaseBroader": 154310,
-          "restoreBroader": 181314,
-          "withdraw": 136426,
+          "publishExisting": 144141,
+          "reuse": 147592,
+          "create": 68708,
+          "bindHeadFresh": 222499,
+          "bindHeadRebind": 201202,
+          "bindFolderFreshFile": 263389,
+          "bindFolderFreshDirectory": 263171,
+          "bindFolderRebind": 196187,
+          "unbindFolder": 169148,
+          "releaseFolder": 166127,
+          "bindTagFresh": 275763,
+          "bindTagSecondAuthor": 238263,
+          "bindTagNumberChange": 138894,
+          "unbindTagLone": 246556,
+          "unbindTag": 165443,
+          "releaseTag": 164255,
+          "restoreTag": 193426,
+          "bindPropertyFresh": 226978,
+          "bindPropertyRebind": 193085,
+          "unbindProperty": 155325,
+          "releaseProperty": 154137,
+          "bindSameFreshWord": 238783,
+          "bindSameFreshPath": 238727,
+          "unbindSame": 155514,
+          "releaseSame": 154338,
+          "restoreSame": 181342,
+          "bindBroaderFresh": 238806,
+          "unbindBroader": 155549,
+          "releaseBroader": 154349,
+          "restoreBroader": 181365,
+          "withdraw": 136465,
           "firstWriteSurcharge": -12414,
           "tagLevel": {
             "mineNew": 24739,
@@ -3205,26 +3205,26 @@
             "publishNew": {
               "files-bytes/1": 93705,
               "files-span/1": 124509,
-              "files-content/1 carrier 0": 78810,
-              "files-content/1 carrier 2": 88529,
+              "files-content/1 carrier 0": 78798,
+              "files-content/1 carrier 2": 88517,
               "files-external/1": 101465,
-              "files-directory/1": 93887,
+              "files-directory/1": 93875,
               "files-name/2": 115141,
-              "files-root/1 form 0": 87320,
-              "files-root/1 form 1": 103525,
+              "files-root/1 form 0": 87332,
+              "files-root/1 form 1": 103537,
               "files-child/1 form 0": 97778,
               "files-child/1 form 1": 114037,
               "topic-word/1": 99950,
-              "topic/1": 112178,
-              "text/1": 100424
+              "topic/1": 112190,
+              "text/1": 100436
             },
             "publishExisting": 83143,
             "reuse": 86571,
             "create": 59427,
             "bindHeadFresh": 123724,
             "bindHeadRebind": 86815,
-            "bindFolderFreshFile": 140499,
-            "bindFolderFreshDirectory": 138279,
+            "bindFolderFreshFile": 140475,
+            "bindFolderFreshDirectory": 138267,
             "bindFolderRebind": 91407,
             "unbindFolder": 59485,
             "releaseFolder": 58274,
@@ -3240,14 +3240,14 @@
             "unbindProperty": 59485,
             "releaseProperty": 58274,
             "bindSameFreshWord": 138267,
-            "bindSameFreshPath": 138267,
+            "bindSameFreshPath": 138279,
             "unbindSame": 59473,
             "releaseSame": 58274,
             "restoreSame": 78707,
             "bindBroaderFresh": 138267,
             "unbindBroader": 59485,
             "releaseBroader": 58262,
-            "restoreBroader": 78695,
+            "restoreBroader": 78707,
             "withdraw": 76254,
             "firstWriteSurcharge": -12,
             "tagLevel": {
@@ -3354,76 +3354,76 @@
         "editSmall": {
           "count": 23,
           "boundBy": "gas",
-          "gasEach": 594592,
-          "gasOfPublication": 13991445
+          "gasEach": 594682,
+          "gasOfPublication": 13993491
         },
         "edit1k": {
           "count": 11,
           "boundBy": "gas",
-          "gasEach": 1241907,
-          "gasOfPublication": 13976811
+          "gasEach": 1241997,
+          "gasOfPublication": 13977777
         },
         "createSmall": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 1301782,
-          "gasOfPublication": 13333652
+          "gasEach": 1301989,
+          "gasOfPublication": 13335698
         },
         "create1k": {
           "count": 7,
           "boundBy": "gas",
-          "gasEach": 1949097,
-          "gasOfPublication": 13959513
+          "gasEach": 1949304,
+          "gasOfPublication": 13960938
         },
         "chunk": {
           "count": 2,
           "boundBy": "gas",
-          "gasEach": 6080330,
-          "gasOfPublication": 12476493
+          "gasEach": 6080381,
+          "gasOfPublication": 12476571
         },
         "spanNode": {
           "count": 38,
           "boundBy": "gas",
-          "gasEach": 359798,
-          "gasOfPublication": 13988150
+          "gasEach": 359849,
+          "gasOfPublication": 13990064
         }
       },
       "amsterdam": {
         "editSmall": {
           "count": 30,
           "boundBy": "gas",
-          "gasEach": 2126256,
-          "gasOfPublication": 64686828
+          "gasEach": 2126334,
+          "gasOfPublication": 64689168
         },
         "edit1k": {
           "count": 14,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 5235331,
-          "gasOfPublication": 74193788
+          "gasEach": 5235409,
+          "gasOfPublication": 74194880
         },
         "createSmall": {
           "count": 12,
           "boundBy": "maxActions",
-          "gasEach": 4828448,
-          "gasOfPublication": 58840528
+          "gasEach": 4828631,
+          "gasOfPublication": 58842724
         },
         "create1k": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 7937523,
-          "gasOfPublication": 80274384
+          "gasEach": 7937706,
+          "gasOfPublication": 80276214
         },
         "chunk": {
           "count": 2,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 28939930,
-          "gasOfPublication": 58779013
+          "gasEach": 28939969,
+          "gasOfPublication": 58779091
         },
         "spanNode": {
           "count": 55,
           "boundBy": "gas",
-          "gasEach": 1327696,
-          "gasOfPublication": 73922423
+          "gasEach": 1327735,
+          "gasOfPublication": 73924568
         }
       }
     }
@@ -3466,7 +3466,7 @@
     "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206",
     "test/vectors/numbers.json": "0x32239292bbf0733f1ef315d2407c9a772ebd6485803835269da5a82d81d67ccf",
     "test/vectors/topics.json": "0x846dd7ccb1d357d104004b378e1f02f070ce1b6e26bca8e1d40ddf06c55b1eb2",
-    "test/vectors/floor-plan.json": "0x5487962a42b25d66c47007672918916989eb9cb381674f0ec4299b8eb23682f7"
+    "test/vectors/floor-plan.json": "0xdf522dd8167a5fadb9ed2aa5068c21275d0c57bbd3f779e25deff9ad7c2687c9"
   },
   "dependencyRoot": null,
   "deployPlan": {

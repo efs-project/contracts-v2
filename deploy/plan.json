@@ -77,7 +77,7 @@
     "postingStore": "0xA5CE13aB7011FcE7357b79e0267251499055DCB9",
     "bitmapStore": "0x508EB68a5e2a3aF1954e161d590B28B3C6d02D1B",
     "indexReads": "0x7345300136217575d8eC1cFd1beA91d25c9A329d",
-    "index": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
+    "index": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
     "lensReader": "0x268B3c8BfA3501D22aBAd8D90CD0EB93909C70aB",
     "filesPageReader": "0xc00D538AC16c07B678a017E24c7d2d6Ce9648F2A",
     "topicMineReader": "0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21",
@@ -140,7 +140,7 @@
     "executionProfileId": 1,
     "domainSeparator": "0x50636c43bdf2a174ee18b4b73db46465f0898170b8997fe04af75ff8d03f3c91",
     "limitsProfileId": "0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055",
-    "indexObligations": "0x3d0f3ec440f93749596a6849bc1614b8b8791689bb1a9601db1d6a8839fbd479"
+    "indexObligations": "0xcaa71c0209688789a7b860d7374ffdaca8b20ff3ee250db7a57b98cca6e44c0d"
   },
   "activation": {
     "revision": 1,
@@ -149,8 +149,8 @@
       "ledgerImplCodehash": "0xd6b26d5cdd827850a9e906422ae56ac962c0ecddbfa8dbb8b19dae198b8dee3b",
       "registryImpl": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
       "registryImplCodehash": "0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3",
-      "index": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
-      "indexCodehash": "0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e",
+      "index": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
+      "indexCodehash": "0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094",
       "indexManifestHash": "0x3b50d7a2f8ee5104dc0038713dac38a902b16e2045d4904e73635606ef33009f",
       "ingress": "0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7",
       "ingressCodehash": "0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a",
@@ -185,15 +185,15 @@
       "floorRewriteGas": 5000,
       "kernelTail": 20000
     },
-    "expectedExecutionSet": "0xb381c6768f0e1d3fd24e86bc040eb7fcaf89de5cd637ae33c31e9348dd26d063",
+    "expectedExecutionSet": "0x2f9812f21076aace773031cfaa207c8a528a8cdf6a7c5c891ce0071b5c4a861c",
     "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "migrationScope": [],
     "migration": "0x"
   },
   "index": {
-    "address": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
-    "runtimeCodehash": "0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e",
+    "address": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
+    "runtimeCodehash": "0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094",
     "reads": {
       "address": "0x7345300136217575d8eC1cFd1beA91d25c9A329d",
       "runtimeCodehash": "0xf7de800d4339c4f2210bc1fb91b5d12e133d264adb74b33f0e637b7b9ae87108"
@@ -1625,20 +1625,20 @@
       "kind": "CREATE2",
       "contract": "RealmIndex",
       "source": "src/index/RealmIndex.sol",
-      "address": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
+      "address": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000",
-      "initcodeHash": "0x7b3ad9e3929b95ca01fab3c4c5a3e7f858a7222197ee71a4b099788144f2ab84",
-      "initcodeBytes": 24989,
+      "initcodeHash": "0xa17b452dd7140ddb3d9d73c527c39c5a19a0b539d1d59bb7274e2ac1aab455e8",
+      "initcodeBytes": 24976,
       "args": [
         "0x83ce0B9E2DDd9c5CEBBfe6b2b9Bc275fda9A20fB",
         "0x49e9bC76aaE1a2585885D876311Daa4c974aED1b",
         "0x7345300136217575d8eC1cFd1beA91d25c9A329d"
       ],
-      "runtimeCodehash": "0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e",
-      "runtimeBytes": 18705,
+      "runtimeCodehash": "0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094",
+      "runtimeBytes": 18692,
       "postCheck": "extcodehash(address) == runtimeCodehash",
       "manifestHash": "0x3b50d7a2f8ee5104dc0038713dac38a902b16e2045d4904e73635606ef33009f",
-      "calldataHash": "0x24aa4227b11ff20f1eb85b43902290ec6fd26859809955e9db2b9fca311565f5"
+      "calldataHash": "0x9cdf0ee7bbfe3f78079978d95c5be927e07f996cdc7bde78a727b654b2aba6fc"
     },
     {
       "id": "G20",
@@ -1655,8 +1655,8 @@
             "ledgerImplCodehash": "0xd6b26d5cdd827850a9e906422ae56ac962c0ecddbfa8dbb8b19dae198b8dee3b",
             "registryImpl": "0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9",
             "registryImplCodehash": "0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3",
-            "index": "0xf63888F81EA42E48C1569570d6482F715593c0dE",
-            "indexCodehash": "0xf9c77ea96b7990c2e7a3990e0deedac57bc8ef43c6177bdbd16979b4d29cfa5e",
+            "index": "0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE",
+            "indexCodehash": "0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094",
             "indexManifestHash": "0x3b50d7a2f8ee5104dc0038713dac38a902b16e2045d4904e73635606ef33009f",
             "ingress": "0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7",
             "ingressCodehash": "0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a",
@@ -1691,7 +1691,7 @@
             "floorRewriteGas": 5000,
             "kernelTail": 20000
           },
-          "expectedExecutionSet": "0xb381c6768f0e1d3fd24e86bc040eb7fcaf89de5cd637ae33c31e9348dd26d063",
+          "expectedExecutionSet": "0x2f9812f21076aace773031cfaa207c8a528a8cdf6a7c5c891ce0071b5c4a861c",
           "dependencyRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
           "noticePrincipal": "0x0000000000000000000000000000000000000000000000000000000000000000",
           "migrationScope": [],
@@ -1699,7 +1699,7 @@
         }
       ],
       "postCheck": "ledger.executionSet() == expectedExecutionSet; revision 1; index installed",
-      "calldataHash": "0x049cc5b49265bd02f8838427b3ac5f168f93cb96718d74753bcc17c7dc939990"
+      "calldataHash": "0x078c9b52f6ec453189eb7140b68974ada701669544212e80b09267ce0114af4b"
     },
     {
       "id": "R0",
@@ -2504,5 +2504,5 @@
       "postCheck": "head(HEAD remote.txt) → form-1 root naming the files-external/1 record"
     }
   ],
-  "planHash": "0x71a26e4abb0d11ec9ef2ecf24b7c62cb16d8ed85b3551ab752a1d178efe3051e"
+  "planHash": "0xdc11743c2e9373ef340cc750c0c2feffadcc0ebcf33e66c00ab883b2e59db803"
 }
