@@ -291,7 +291,7 @@ const gasModel = {
   note: "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
   schedules: {
     prague: { status: "mainnet and Sepolia today (Fusaka); the cap counts all gas", hardforks: ["prague", "osaka"], constants: mp.constants, floor: mp.floor, maxAbsErrorPercent: mp.maxAbsErrorPercent },
-    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, floor: ma.floor, maxAbsErrorPercent: ma.maxAbsErrorPercent } } : {}),
+    ...(ma ? { amsterdam: { status: "EIP-8037/8038 (Glamsterdam); the cap counts execution gas only, and the total must also fit the block", hardforks: ["amsterdam"], constants: ma.constants, executionGas: ma.split?.executionGas ?? null, floor: ma.floor, maxAbsErrorPercent: ma.maxAbsErrorPercent, maxAbsExecutionErrorPercent: ma.maxAbsExecutionErrorPercent } } : {}),
   },
   planning: model.planning,
   tagLists: model.tagLists,

@@ -309,10 +309,21 @@ function profile({ rows, types }, name) {
       row.predictedExecutionGas = round(predict(ex, v.actions));
       row.measuredStateGas = m.frameStateGas ?? 0;
       row.predictedStateGas = round(predict(st, v.actions));
+      row.executionErrorPercent = Number((((row.predictedExecutionGas - row.measuredExecutionGas) / row.measuredExecutionGas) * 100).toFixed(2));
     }
     return row;
   });
-  out.maxAbsErrorPercent = Math.max(...out.validation.map((v) => Math.abs(v.errorPercent)));
+  // the largest composite error on ALL gas (prague: all gas is what the cap counts; amsterdam: execution + state gas,
+  // the constants), and the composite that sets it
+  const worst = (field) => out.validation.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
+  out.maxAbsErrorPercent = Math.abs(worst("errorPercent").errorPercent);
+  out.maxAbsErrorComposite = worst("errorPercent").key;
+  if (amsterdam) {
+    // amsterdam only: the largest composite error on EXECUTION gas (split.executionGas against the measured frame gas),
+    // the figure that bounds the EIP-7825 2^24 cap condition there (the cap counts execution gas only)
+    out.maxAbsExecutionErrorPercent = Math.abs(worst("executionErrorPercent").executionErrorPercent);
+    out.maxAbsExecutionErrorComposite = worst("executionErrorPercent").key;
+  }
   return out;
 }
 
@@ -323,7 +334,7 @@ const PLANNING = {
   txGasCap: 16777216,
   txGasCapRule: "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
   headroomPercent: 15,
-  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error (maxAbsErrorPercent over composites in both states, the author's lists new and existing: 5.8% on prague, 12.03% on amsterdam all gas; amsterdam execution gas, what the rule plans by there, at most 10.62%: a create file in a folder that already holds the author's files, predicted low)",
+  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the error of the gas the cap counts: on prague all gas, profiles.prague.maxAbsErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxAbsExecutionErrorPercent. profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxAbsExecutionErrorComposite), and each is at most headroomPercent",
   limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication },
 };
 /** Read by the planner with the tagLevel terms (design §10.4). */
@@ -373,13 +384,25 @@ writeFileSync(join(root, "gas/model.json"), toJSON(model));
 console.log(`gas-model: gas/model.json (prague${amsterdam ? " + amsterdam" : ""})`);
 for (const [name, p] of Object.entries(model.profiles)) {
   console.log(`  ${name}: ${JSON.stringify(p.constants)}`);
-  for (const v of p.validation) console.log(`    ${v.key.padEnd(32)} measured ${String(v.measured).padStart(10)} predicted ${String(v.predicted).padStart(10)} ${v.errorPercent.toFixed(2).padStart(7)}%`);
-  console.log(`    max |error| ${p.maxAbsErrorPercent}%`);
+  for (const v of p.validation) console.log(`    ${v.key.padEnd(32)} measured ${String(v.measured).padStart(10)} predicted ${String(v.predicted).padStart(10)} ${v.errorPercent.toFixed(2).padStart(7)}%${v.executionErrorPercent === undefined ? "" : ` (execution ${v.executionErrorPercent.toFixed(2)}%)`}`);
+  console.log(`    max |error| ${p.maxAbsErrorPercent}% (${p.maxAbsErrorComposite})${p.maxAbsExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxAbsExecutionErrorPercent}% (${p.maxAbsExecutionErrorComposite})`}`);
 }
-const bad = prague.validation.filter((v) => Math.abs(v.errorPercent) > LIMIT_PERCENT);
+const bad = overBound(model.profiles);
 if (bad.length) {
-  for (const v of bad) console.error(`gas-model: prague "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+  for (const m of bad) console.error(`gas-model: ${m}`);
   process.exit(1);
+}
+
+/** Every composite error over ±LIMIT_PERCENT, all gas on every profile and execution gas on amsterdam. */
+function overBound(profiles) {
+  const out = [];
+  for (const [name, p] of Object.entries(profiles)) {
+    for (const v of p.validation) {
+      if (Math.abs(v.errorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+      if (v.executionErrorPercent !== undefined && Math.abs(v.executionErrorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: ${v.executionErrorPercent}% exceeds ±${LIMIT_PERCENT}%`);
+    }
+  }
+  return out;
 }
 
 /** Paths at which `a` and `b` (parsed JSON) differ, each with both values. */
@@ -398,10 +421,8 @@ function check(committed) {
   const fresh = JSON.parse(toJSON(model));
   const bound = [];
   const differences = [];
+  bound.push(...overBound(fresh.profiles));
   for (const [name, p] of Object.entries(fresh.profiles)) {
-    for (const v of p.validation) {
-      if (Math.abs(v.errorPercent) > LIMIT_PERCENT) bound.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
-    }
     const c = committed.profiles?.[name];
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
     for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);

@@ -36,6 +36,11 @@ extra_output = ["storageLayout"]
 [profile.amsterdam]
 evm_version = "amsterdam"
 experimental = true
+# A test setting only (no bytecode change): Foundry has no EIP-8037 reservoir, so it draws state gas from the test
+# call's own gas, and setUps that write many fresh slots (TopicSliceCapTest's 70 authors, the batched tag suites)
+# exceed the default 2^30 call gas there. 10^11 is the FOUNDRY_GAS_LIMIT the measuring tools already pass; measured
+# rows are the same under both limits (test/integration/GasModel.t.sol, identical logs).
+gas_limit = 100000000000
 
 # The consumer closure (design §5: src/interfaces/ outside internal/, and src/lib/Keys.sol through the probe in
 # test/closure/) at the pragma floor without via-IR; the default profile covers 0.8.37 with via-IR. Its own out/

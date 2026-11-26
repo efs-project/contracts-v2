@@ -126,3 +126,27 @@ test("test/vectors/floor-plan.json is the rule's verdict on the committed model"
   const have = JSON.parse(readFileSync(join(root, "test/vectors/floor-plan.json"), "utf8"));
   assert.deepEqual(have, JSON.parse(JSON.stringify(planVectors(model))));
 });
+
+test("the stated maximum errors: all gas on every schedule, execution gas on amsterdam as its own field, each with its composite and within the headroom", () => {
+  const model = committed();
+  const pct = (pred, meas) => Number((((pred - meas) / meas) * 100).toFixed(2));
+  const worst = (rows, field) => rows.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
+  for (const s of schedules(model)) {
+    const p = model.profiles[s];
+    for (const v of p.validation) assert.equal(v.errorPercent, pct(v.predicted, v.measured), `${s} ${v.key}: errorPercent is all gas`);
+    const all = worst(p.validation, "errorPercent");
+    assert.equal(p.maxAbsErrorPercent, Math.abs(all.errorPercent), `${s}: maxAbsErrorPercent`);
+    assert.equal(p.maxAbsErrorComposite, all.key, `${s}: maxAbsErrorComposite names the composite that sets it`);
+    assert.ok(p.maxAbsErrorPercent <= model.planning.headroomPercent, `${s}: the all-gas maximum is inside the headroom`);
+    if (s === "prague") {
+      assert.equal(p.maxAbsExecutionErrorPercent, undefined, "prague has one figure: the cap counts all gas there");
+      continue;
+    }
+    for (const v of p.validation) assert.equal(v.executionErrorPercent, pct(v.predictedExecutionGas, v.measuredExecutionGas), `${s} ${v.key}: executionErrorPercent`);
+    const ex = worst(p.validation, "executionErrorPercent");
+    assert.equal(p.maxAbsExecutionErrorPercent, Math.abs(ex.executionErrorPercent), `${s}: maxAbsExecutionErrorPercent`);
+    assert.equal(p.maxAbsExecutionErrorComposite, ex.key, `${s}: maxAbsExecutionErrorComposite`);
+    assert.ok(p.maxAbsExecutionErrorPercent <= model.planning.headroomPercent, `${s}: the execution-gas maximum (the cap condition's) is inside the headroom`);
+    assert.match(model.planning.headroomCovers, /maxAbsExecutionErrorPercent/, "headroomCovers names the figure that bounds the cap on amsterdam");
+  }
+});
