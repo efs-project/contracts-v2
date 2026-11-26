@@ -74,6 +74,11 @@ against `3ca53ba`. What a consumer must change, as one list:
   `<row>`). A planner passes `firstAtPlace` (no earlier later statement of the same publication at the same (purpose,
   subject); default true) and `entries` (the author's entry count at the place; **default: unknown, the long tier**). **A
   stale count is treated as unknown** (a count lower than the truth under-prices by up to 21.2%).
+- **Interim rule for a yes after a lone no** (item 42; ruled, to be replaced by the list release's rows): a BIND on a
+  head whose target is zero and whose state is not UNSET (a lone no, or a lone no then a release or another no) adds
+  **two fresh slots to E** at the schedule's price: on prague 2 × 22,100; on amsterdam 2 × 12,100 of execution and
+  2 × 97,920 of state gas. It is exact for a yes directly after a lone no and over-prices the no-then-release variant by
+  one slot (the safe side). It ends when the vendored `gas/model.json` carries the proper rows.
 - **New error and reason codes** (`release/errors.json`): `E_WORK_MODEL(uint8 code, uint256 value)` (new error: 1 the
   read failed, 2 the reply is not 32 words, 3 `formulaVersion` is not 3); `E_INDEX_NOT_READY` 15 (the index's work model
   is not 32 words of the ingress's formula) and 16 (a word does not fit its field), checked for a kept index and a new
@@ -332,7 +337,8 @@ Newly done in this release (items 42 to 47):
   `test/integration/FloorSplit.t.sol`). What it meant: a later-statement publication sent near the floor could be
   refused (`E_INDEX_GAS`, nothing admitted); it could never be admitted unindexed. Prague's later batches were planned on
   that under-quote, so they are smaller now (masks 64 → 58, restores 60 → 51). Formula 3 quotes every later statement
-  the floor claims at 1.05× its spend or more (lowest 1.062 on prague, 1.052 on amsterdam).
+  the floor claims at 1.05× its spend or more (lowest 1.062 on prague, 1.052 on amsterdam), except a yes after a
+  lone no, found after the release: prague covers it only in lists of up to 256 entries (item 42).
 - **The Type registry rule** (item 46; closed by code): a build no longer reads a Type's stored reference count; it
   proves it from the Type's descriptor, and refuses `E_REPLAY(10)` when the registry's bytes do not hash to the Type id,
   so a replacement Type registry need not keep the row. A registry that withholds a descriptor (reverts) makes a build
@@ -345,13 +351,42 @@ Newly done in this release (items 42 to 47):
 - **The gas model's later rows** (item 47, the list tiers): the model's E for masks, releases and restores was 14–24%
   low at an author's entry 48 and beyond and in lists of up to 1,024 entries, because the later rows were measured at
   one place with short lists; the list tiers bring every composite within the claim inside 15% (largest under-prediction
-  9.69% on prague, 10.65% of execution gas on amsterdam), and the headroom check reads the under-prediction fields.
+  9.69% on prague, 10.65% of execution gas on amsterdam), and the headroom check reads the under-prediction fields. A
+  yes after a lone no has no composite and is outside those figures (item 42).
 
 **Open:**
 
-- **The per-purpose surcharge's use: the all-authors HEAD list** waits on QUESTIONS Q52. The surcharge itself is built
-  (formula 3, item 42; zero for generation 1); if Q52 is answered yes the list is its own family, with the work model
-  served from a data contract as it is now, as ruled.
+- **The per-purpose surcharge's use: the all-authors HEAD list** is ruled (QUESTIONS Q52, answered yes by James on
+  2026-11-26) and is built in the next release, as its own family, with the work model served from a data contract as
+  it is now. The surcharge itself is built (formula 3, item 42; zero for generation 1).
+- **The list release: make the later row true, and give the gas model rows for a yes after a lone no** (item 42;
+  ruled for the next regeneration). (1) The later row's fresh count goes to 3.0 with its compute fitted BY
+  MEASUREMENT, and it must clear the 1.05 assertion of `test_split_claim_restores_across_lists_at_the_claim` on both
+  schedules. The starting evidence, two candidate rows (fresh ×10, rewrites ×10, compute); quotes computed from the
+  formula and `GAS_SCHEDULES`, ratios computed from the measured per-statement spends of `FloorSplit.t.sol`, batch
+  sizes from `tools/gas-plan.mjs` over the committed `gas/model.json` with `floor.workModel` overridden in a scratch
+  run (nothing committed was regenerated):
+
+  | row | quote p / a | yes after a lone no, 1,025 | claim restore, 1,025 | claim mask, 1,025 | restore at 4,096 | restore at 4,097 |
+  |---|---:|---:|---:|---:|---:|---:|
+  | released (20, 50, 85,000) | 162,200 / 177,700 | 0.955 / 1.052 | 1.062 / 1.052 | 1.190 / 1.094 | 1.008 / 1.003 | 0.995 / 0.991 |
+  | (30, 50, 72,500) | 171,800 / 177,300 | 1.012 / 1.050 | 1.126 / **1.0497** | 1.261 / 1.092 | 1.068 / 1.001 | 1.055 / 0.990 |
+  | (30, 50, 79,000) | 178,300 / 183,800 | 1.051 / 1.089 | 1.168 / 1.088 | 1.309 / 1.132 | 1.108 / 1.038 | 1.095 / 1.026 |
+
+  The first candidate fails the claim test on amsterdam (1,049 thousandths against 1,050). Largest planned batches,
+  released → (30, 50, 72,500) → (30, 50, 79,000): prague tag masks and masks of masks 58 → 55 → 54, releases 58 → 56
+  → 54, restores 51 → 49 → 48; amsterdam masks, releases and masks of masks 55 → 55 → 54, restores 51 → 51 → 49;
+  every other planned shape unchanged. (2) The gas model's rows for a yes after a lone no, for every purpose that has
+  restore rows, with their tiers; the no-then-release variant; folders (a hide of an entry never bound, then a bind:
+  to be measured, not assumed); and composites for them inside the stated maxima, so the maxima are honest again.
+  Today the restore rows are two fresh slots short for this shape (item 42: −21.57% prague all gas at the worst
+  measured composite, −29.74% amsterdam all gas, −11.47% amsterdam execution gas), and the interim consumer rule of
+  this release ends with these rows. (3) The `src/interfaces/Index.sol` comment on the later row ("the largest
+  measured for the class") is corrected with them: it is hashed into the release, so it waits for that regeneration.
+- **The gateway's header comment on a first segment starting `0x`.** `src/periphery/EfsWeb3Gateway.sol`'s NatSpec says
+  any other segment starting `0x` or `0X` (and a byte more) is 400 "malformed id"; when it serves topics the gateway
+  follows the chain's word rule 6 (only `0x` followed by 40 hex digits is refused). The comment is hashed and is
+  corrected in the next release (handled on another branch).
 - **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
   it covers up to 4,096 and stops covering from 4,097 (measured: 1.008 at 4,096, 0.995 at 4,097 on prague; 1.003 and
   0.991 on amsterdam). The entry search (`RealmIndex._entryIndex` bisects the author's scope list, one store call per
@@ -379,9 +414,13 @@ Newly done in this release (items 42 to 47):
   first and uses `hardfork` only when it is absent, so `hardfork` may be whatever the chain calls its fork. A consumer that finds
   no schedule it knows refuses to plan, so a wrong or missing name fails closed, but a WRONG known name (prague on an
   EIP-8037 chain) would under-fund every large-state publication.
+- **A Realm on the `3ca53ba` kernel needs a new index generation to move to this release.** An index of work-model
+  formula 2 cannot be kept under this release's ingress: activation refuses it `E_INDEX_NOT_READY(15)` (item 44). No
+  Realm exists today, so nothing has to move.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
-  15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
-  QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
+  15.1; one committed generator from one pinned Unicode version must produce all three. The fold rule is ruled
+  (QUESTIONS Q53, 2026-11-26); the word rule and the generator change in the next release. Until then the
+  `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
 - **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
   16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
 
@@ -877,6 +916,32 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
   planned at its largest size whose statements meet long lists can need more execution gas than the plan assumed; if
   that passes the 2^24 cap, `eth_estimateGas` fails and the publication is refused at send-time as over the cap,
   nothing sent; the sender splits it and tries again.
+- **The exception found after the release: a yes after a lone no** (the tag design review; measured and pinned,
+  docs/WORK-MODEL-V3.md §3.5). It is a restore that is the binding's second statement, which the later row's
+  third-statement restores do not cover in two ways:
+  - **The floor.** `PostingStore._append` at count 1 materializes the binding's history word 0, so in a list of lone
+    noes (every live-bits word empty) with the thing linked once the yes writes 3 fresh index slots and rewrites 4,
+    against the row's 2.0 and 5.0. Across places, prague covers it in lists of up to 256 entries (1.004), stops at 257
+    (0.992) and is at 0.955 at the claim length (1,025); amsterdam, where a fresh slot and a rewrite cost the same
+    12,100 of execution, covers every measured cell (1.052 at the claim). At one topic it is covered on both (1,025:
+    1.106 / 1.238). What can happen: a publication sent at or near the bare floor is refused `E_INDEX_GAS` with
+    nothing admitted, never admitted unindexed. Masks and releases are unaffected (their most is 1 fresh and 5
+    rewritten). Pinned by `test_split_lone_no_yes_*` (`test/integration/FloorSplit.t.sol`: the short list, 256 and
+    257, the claim length, the unlinked and after-first-yeses variants, one place; per-schedule bands and exact slot
+    counts).
+  - **The gas model: two fresh slots short.** Besides the index's slot, the kernel writes the binding head's target
+    fresh (`src/core/LedgerApply.sol`, `if (head.target != target) head.target = target;`, and a lone no leaves it
+    zero); that is kernel gas, outside the floor. Measured whole publications (`test/integration/LoneNoGas.t.sol`)
+    against the model with the list tiers: prague all gas −21.57% for 32 yeses across 48-entry lists with the count
+    known (short tier), +0.81% with it omitted, −11.94% for 16 across 1,025-entry lists, −13.77% for 51 across
+    1,025; amsterdam all gas −10.33% to −29.74%, execution gas −11.47% to +12.54% (the table is in
+    docs/WORK-MODEL-V3.md §3.5). The full batch of 51 across 1,025-entry lists costs 15,274,989 gas in all on prague
+    and 14,035,893 on amsterdam, both under 2^24; the planner's restore batches are bounded by V, not E, so no planned
+    batch size moves, and `eth_estimateGas` stays the authority for a gas limit. **The model's stated
+    `maxUnderErrorPercent` (and `maxUnderExecutionErrorPercent`) does not include this shape**: no composite measures
+    it. The consumer's interim rule is in "What changes for a consumer" above.
+  - **Ruled:** this release keeps its values and names the exception; the next regeneration (the list release) makes
+    the later row true (§15, "Open").
 
 **43. Batch sizes** (the planning rule, `tools/gas-plan.mjs`, on the regenerated `gas/model.json`, against the same files
 at `3ca53ba`; `test/vectors/floor-plan.json`, whose later-statement shapes pass the measured entry count of their one
@@ -953,7 +1018,8 @@ as an immutable (`DECODER`, a constructor argument), so the index's runtime code
 **47. The gas model prices later statements across places and in long lists.** Consumer change:
 `gas/model.json` gains the list tiers (tools/RELEASE.md "The list tiers"; design §10.4), so a planner's E for masks,
 releases and restores no longer comes out 14–24% low for later statements at an author's entry 48 or beyond, or in
-lists of up to 1,024 entries.
+lists of up to 1,024 entries. One shape is outside this: a yes after a lone no, for which the restore rows are two
+fresh slots short (item 42); the maxima below do not include it.
 
 - **New fields** (exact names, `efs-gas-model/1`, all required): top-level `laterLists` (`shortTierMaxEntries` 48,
   `claimEntries` 1,024, `rule`, `note`); per profile `maxUnderErrorPercent`, `maxUnderErrorComposite`,
@@ -981,7 +1047,8 @@ lists of up to 1,024 entries.
   `maxUnderErrorPercent` 9.69% (`validate tag releases at entry 47 across topics`). Amsterdam: `maxAbsErrorPercent`
   12.05% (`validate edit lists exist`), `maxAbsExecutionErrorPercent` 13.9% (`validate tag releases of 32 entries of
   1025 at one topic`, an over-prediction), `maxUnderErrorPercent` 6.73% (`validate create file`),
-  `maxUnderExecutionErrorPercent` 10.65% (`validate create file lists exist`). `maximaExcludeStates` is `["beyondClaim"]`
+  `maxUnderExecutionErrorPercent` 10.65% (`validate create file lists exist`); none of these covers a yes after a lone
+no (item 42), which has no composite. `maximaExcludeStates` is `["beyondClaim"]`
   on both: the three composites at entry 4,096 of 4,097-entry lists (prague −2.39% to −2.85%, amsterdam −0.33% to
   −0.47% of all gas and −1.64% to −1.82% of execution gas) are listed and not counted. Every maximum is under 15%. The
   tiers move no largest batch (item 43). The constants moved with this release's code, not by a re-fit: `fixed`
@@ -1690,7 +1757,9 @@ which from entry 48 up lives in a bits word of its own rather than the head word
 +61.9k over the single-place row). A re-bind (a BIND on a
 BOUND head: a HEAD re-bind, a folder re-bind, a tag number change, a label re-bind) only stamps the scope head
 (`BitmapStore.stamp`) and never searches the list. `gas/model.json` prices this with `laterLists` and the tier rows,
-and `tools/gas-plan.mjs` `laterKey` is the reference implementation.
+and `tools/gas-plan.mjs` `laterKey` is the reference implementation. One later statement the tier rows do not price
+right: a yes after a lone no, for which the restore rows are two fresh slots short; this release's interim consumer
+rule adds the two slots (item 42).
 
 *The place and the count.* A later statement's **place** is its (purpose, subject): the author's scope list keyed by
 `Keys.scope(author, purpose, subject)`, which `RealmIndex._foldScope` both searches and flips. The **author's entry

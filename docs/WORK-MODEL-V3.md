@@ -26,7 +26,8 @@ the code does.
    (the proposal's 2.0, 4.0, 42,000); the re-bind row **2.0, 4.0, 42,000**; the first row is unchanged.
 3. **The floor claims later statements in lists of up to 1,024 entries per author per place** (the claim's number lives
    in one place: `LIST_LENGTH_CLAIM` in `test/harness/doubles/IndexDoubles.sol`, next to the values fitted to it). It
-   covers up to 4,096 entries and stops covering from 4,097 (measured and pinned, §3.5).
+   covers up to 4,096 entries and stops covering from 4,097 (measured and pinned, §3.5). One kind of restore is
+   outside that on prague: a yes after a lone no, covered in lists of up to 256 entries (§3.5).
 4. **`indexFloor` takes the largest of the three rows** in each field, surcharge included, when it has no principal, so
    it is an upper bound whatever the values (with the new later row the first row is no longer above it on amsterdam:
    142.75k against 177.7k).
@@ -62,6 +63,13 @@ the code does.
 | masks of a far entry across nine topics, lists of 4,097 | 1 | 5 | 146.5k / 172.7k | 1.107 / 1.029 |
 | re-binds: folder re-binds across 33 folders | 2 | 4 | 106.8k / 115.8k | 1.068 / 1.058 |
 | re-binds: number changes of a far entry across nine topics, lists of 1,025 | 1 | 2 | 62.3k / 66.9k | 1.833 / 1.833 |
+| **the exception:** a yes after a lone no across nine topics, lists of 48 lone noes | 2 | 4 | 128.9k / 137.8k | 1.258 / 1.289 |
+| the same, lists of 256 | 3 | 4 | 161.5k / 160.5k | 1.004 / 1.106 |
+| the same, lists of 257 | 3 | 4 | 163.5k / 162.5k | 0.992 / 1.093 |
+| the same, lists of 1,025 | 3 | 4 | 169.7k / 168.8k | 0.955 / 1.052 |
+
+The last four rows were measured after the release (`test_split_lone_no_yes_*`, §3.5); the later row was fitted
+without them.
 
 Formula 2's later quote (122.0k on prague) was below several of these on today's schedule too: 0.91 for a restore of
 entry 48 across places and 0.75 at 4,096 entries. Its prague batches were planned on that under-quote, so formula 3's
@@ -459,9 +467,10 @@ most shapes) would also be honest. It costs batches: prague lone negatives 38 �
 **Landed: what the floor claims, and what it does not.**
 
 - **Covered:** every first statement on a topic of one word (deep first tags remain the exception of §3.6); every
-  re-bind, in a list of any length and at any number of places (it never searches); every mask, release and restore in
-  an author's list of up to 1,024 entries at one place, at any entry, with any number of distinct places in one
-  publication, quoted at 1.05× or more of its spend on both schedules; every WITHDRAW. The list is one author's entries at
+  re-bind, in a list of any length and at any number of places (it never searches); every mask and release, and every
+  restore but one kind, in an author's list of up to 1,024 entries at one place, at any entry, with any number of
+  distinct places in one publication, quoted at 1.05× or more of its spend on both schedules; every WITHDRAW. The one
+  kind is a yes after a lone no, covered on prague only in lists of up to 256 entries (below). The list is one author's entries at
   one exact place, keyed by author, purpose and subject: for a tag, everything one author filed under one exact topic or
   address; for a folder, one author's entries in that folder; a file's HEAD list has one entry, so edits and version
   masks never search far.
@@ -477,6 +486,76 @@ most shapes) would also be honest. It costs batches: prague lone negatives 38 �
   first row no longer at or above the later row, the second is under-quoted by the difference between the rows when its
   spend is near the later row's. In short lists the first row still covers it (measured per pair 1.420 / 1.467; pinned by
   `test_split_two_statements_at_one_position`).
+- **Not covered on prague: a yes after a lone no in a list of more than 256 entries** (found after the release by the
+  tag design review; measured and pinned). A yes after a lone no is a restore that is the binding's SECOND statement.
+  `PostingStore._append` at count 1 materializes the binding's history word 0, a fresh slot; every restore the later
+  row was fitted to is a binding's third statement (yes, mask, yes), whose append rewrites that word. In a list of lone
+  noes no live bit is ever set, so the entry's live-bits word is empty and the yes writes it fresh; with the thing's
+  backlink list holding one entry, the yes writes that list's word 0 fresh too. The yes then writes 3 fresh index slots
+  and rewrites 4, against the row's 2.0 and 5.0. Per statement (`test/integration/FloorSplit.t.sol`, prague /
+  amsterdam; quote 162,200 / 177,700):
+
+  | the yes after a lone no | fresh | rewritten | spend p / a | ratio p / a |
+  |---|---:|---:|---:|---:|
+  | across nine topics, lists of 48 lone noes | 2 | 4 | 128,854 / 137,837 | 1.258 / 1.289 |
+  | the same, lists of 256 | 3 | 4 | 161,454 / 160,532 | 1.004 / 1.106 |
+  | the same, lists of 257 | 3 | 4 | 163,454 / 162,532 | 0.992 / 1.093 |
+  | the same, lists of 512 or 513 (alike) | 3 | 4 | 167,573 / 166,651 | 0.967 / 1.066 |
+  | the same, lists of 1,024 or 1,025 (alike) | 3 | 4 | 169,693 / 168,771 | 0.955 / 1.052 |
+  | lists of 1,025, the thing unlinked (its backlink list empty) | 3 | 3 | 164,391 / 156,369 | 0.986 / 1.136 |
+  | a lone no after 1,024 first yeses (the same bits word state) | 3 | 4 | 169,693 / 168,771 | 0.955 / 1.052 |
+  | at one topic of 48, nine spread entries | 2 | 3 | 116,368 / 118,155 | 1.393 / 1.503 |
+  | at one topic of 256 | 2.12 | 3 | 131,021 / 131,566 | 1.237 / 1.350 |
+  | at one topic of 1,025 | 2.5 | 3 | 146,599 / 143,432 | 1.106 / 1.238 |
+
+  So prague covers this shape in lists of up to 256 entries, stops at 257 (0.992), and is at 0.955 at the claim length;
+  amsterdam, where a fresh slot and a rewrite cost the same 12,100 of execution, covers every measured cell (1.052 at
+  the claim). What can happen is what "not covered" means below: a publication sent at or near the bare floor is
+  refused `E_INDEX_GAS` with nothing admitted; it is never admitted unindexed. Masks and releases are unaffected (their
+  most is 1 fresh and 5 rewritten, measured). Pinned by `test_split_lone_no_yes_short_list`,
+  `test_split_lone_no_yes_covered_at_256`, `test_split_lone_no_yes_not_covered_at_257`,
+  `test_split_lone_no_yes_at_the_claim`, `test_split_lone_no_yes_at_the_claim_unlinked`,
+  `test_split_lone_no_yes_after_yeses_at_the_claim` and `test_split_lone_no_yes_one_place_at_the_claim` (per-schedule
+  bands and exact slot counts). **Ruled:** the released values stay for this release, with the exception named and
+  pinned; at the next regeneration (the list release) the later row's fresh count goes to 3.0 with its compute fitted by
+  measurement, clearing the 1.05 assertion of `test_split_claim_restores_across_lists_at_the_claim` on both schedules
+  (tools/RELEASE.md §15, "Open").
+- **The gas model is two fresh slots short for the same yes** (kernel gas as well as index gas, so this is a gas-model
+  matter, not a floor one). Besides the index's slot above, the kernel writes the binding head's target fresh:
+  `LedgerApply` writes `head.target` only when it changes, and a lone no leaves it zero. The model's restore rows
+  (`restoreTag` and its tiers) measure a third statement, which writes neither. After a lone no and then a release or
+  a second no, the yes is the binding's third statement: its history append rewrites, so of the two extra slots only the
+  head's target remains (one slot short; not measured as a publication). A folder hide of an entry never bound, then a bind, is the
+  same transition and is to be measured, not assumed. Whole publications
+  (`test/integration/LoneNoGas.t.sol`; lists of lone noes, things linked once, file subjects as the rows use), against
+  `gas/model.json` with the list tiers, error = (predicted − measured) / measured:
+
+  | publication | tier the planner applies | prague, all gas | amsterdam, all gas | amsterdam, execution |
+  |---|---|---:|---:|---:|
+  | 32 yeses across topics, lists of 48 | short (count 48 known) | −21.57% | −29.74% | −11.47% |
+  | the same | long (count omitted) | +0.81% | −10.33% | +8.20% |
+  | 32 at one topic of 48 | short | −19.21% | −29.38% | −8.66% |
+  | the same | long | −2.64% | −22.51% | +12.54% |
+  | 32 across topics, lists of 256 | long | −10.55% | −22.76% | −1.08% |
+  | 32 at one topic of 256 | long | −5.70% | −23.62% | +8.81% |
+  | 16 across topics, lists of 1,025 | long | −11.94% | −22.46% | −2.94% |
+  | 32 at one topic of 1,025 | long | −7.40% | −25.20% | +7.23% |
+  | 51 across topics, lists of 1,025 | long | −13.77% | −23.98% | −4.90% |
+  | 51 at one topic of 1,025 | long | −9.01% | −25.64% | +5.17% |
+
+  The full batch (51, the largest planned batch of tag restores) across 1,025-entry lists costs 15,274,989 gas in all
+  on prague (15,099,369 of execution, 21,000 intrinsic, 154,620 of calldata) and 14,035,893 of execution in all on
+  amsterdam (13,860,261 of execution), both under 2^24. The planner's restore batches are bounded by V, not E (51 on
+  both schedules with the count known or omitted), so the shortfall moves no planned batch size; `eth_estimateGas`
+  stays the authority for a gas limit. The model's stated `maxUnderErrorPercent` (and amsterdam's
+  `maxUnderExecutionErrorPercent`) does NOT include this shape: no validation composite measures it. The proper rows
+  are for the list release (tools/RELEASE.md §15); until then a consumer adds two fresh slots to E for such a BIND
+  (tools/RELEASE.md item 42, the interim rule). Reproduce: `forge test --match-path
+  test/integration/LoneNoGas.t.sol -vv` on each profile (frame gas, frame state gas, calldata gas); the prediction for
+  prague all gas and amsterdam execution gas is the planner's E, `planner(model, schedule).check(actions).E` in
+  `tools/gas-plan.mjs` with `actions` one `{ kind: "bind", cost: "restoreTag", first: false, firstAtPlace, entries }`
+  per yes, and amsterdam all gas is the same sum over `profiles.amsterdam.constants` (`fixed` plus each yes's
+  `laterKey` constant).
 - **What "not covered" means for a person.** Before each callback the kernel requires the gas left to cover what
   remains of the quote (`dispatchIndex`, `E_INDEX_GAS`). A publication whose real spend is above the quote is still
   admitted when it carries the gas: a sender that takes its gas limit from `eth_estimateGas` (the least limit at which
@@ -800,9 +879,12 @@ The planner runs were `tools/gas-plan.mjs` with the five-line quote of 6.2 over 
    gives 53, with or without the HEAD list.
 2. **Later statements are not "all rewrites and compute"** (design §10.4). *Precision (landed):* the fresh slot is the
    binding's history list (family 8) and, for a re-bind, the new target's backlink entry; the posting store packs five
-   entries per word with the first in the head, so a binding's statements 2, 7, 12 and so on open a slot and the rest
-   rewrite. The rows measure a binding's second statement, the worst case, which is right for a row. Each writes one fresh posting-store slot,
-   and a re-bind writes two. Formula 2 quotes them no fresh slot. On prague its 16 rewrites at 5,000 happened to cover
+   entries per word with the first in the head, so a binding's statements 2, 6, 11, 16 and so on open a slot and the rest
+   rewrite (`PostingStore._append`: count 1 materializes word 0 with the inline first entry; counts 5, 10 and 15 open
+   words 1, 2 and 3). The mask, release and re-bind rows measure a binding's second statement, the worst case for them.
+   The restore rows measure a third (yes, mask, yes), whose history append rewrites word 0, so a restore that is a
+   binding's second statement, a yes after a lone no, writes one fresh slot more than its row (§3.5). Each measured
+   later statement writes one fresh posting-store slot, and a re-bind writes two. Formula 2 quotes them no fresh slot. On prague its 16 rewrites at 5,000 happened to cover
    that. On amsterdam each of those fresh slots also costs 97,920 of state gas.
 3. **A WITHDRAW is under-quoted 0.12× / 0.14×** for each withdraw after the first in a publication (not a claimed
    shape; refused near the floor, never admitted unindexed).
