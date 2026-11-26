@@ -3,9 +3,9 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "f951dcd408be80749514f3743f77e5c7fca9f8b5",
-    "tree": "a445dc57b847e1bfcdba1be6122906131046c856",
-    "dirty": 9,
+    "commit": "a32f564c61177c6ec7fba41a643501ca4ac16527",
+    "tree": "5220db4353f5af262bf4c662334701dab6b3342e",
+    "dirty": 1,
     "standardJsonInputHash": null
   },
   "toolchain": {
@@ -74,7 +74,7 @@
     "src/types/DescriptorStore.sol": "0x92b8fc770ff2e862400e68e0594d7093b3e853dfde5301efb4359fb6f6aa2007",
     "src/index/IndexReplayDecoder.sol": "0xd8bdd97a966ee330a9805fa6857f11e457e8a1f9178a250586e34ac89703ec6b",
     "src/interfaces/internal/IIndexReplayDecoder.sol": "0x08790824d4d2146e734c9082f86e589bab52cf8b8fa22ba5355384e1dcb831cd",
-    "src/interfaces/Readers.sol": "0xe1e190e54dd67fbf8035cd4f5fba0ca83bb8fb27e10064cb62c99380bc4b2e3c",
+    "src/interfaces/Readers.sol": "0xf4fc5f72a0ae5553432599d623ff51a9819ce38b93c97106e8dfa0d138fec6be",
     "src/periphery/ReaderDirectory.sol": "0xd7e3b95d454e2b8b055fdc4c78aca7f0fae274ad34a1b704249ae15ddd54db26",
     "src/interfaces/internal/IDescribedWrapper.sol": "0x861881859804802e1fca45354ac21e74dc4e457c1d3d25b4e38a48b7581ae8ee",
     "src/types/DescribedCodec.sol": "0xb4078c3eab2b76bcebf55d4ff4919f54bd56384c1791af932d5da0d84491396b",
@@ -2772,7 +2772,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x4476e4b6c630eb8224cabc44bf806f3a518d55dc4bd82d720405919b3ba65377",
+    "sha256": "0xa4b9f64bf6fe40e27b6c0db6bbaee3fc39bb43a7bc8e5fc2a4fe74cf90b53e34",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
