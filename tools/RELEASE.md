@@ -74,11 +74,21 @@ against `3ca53ba`. What a consumer must change, as one list:
   `<row>`). A planner passes `firstAtPlace` (no earlier later statement of the same publication at the same (purpose,
   subject); default true) and `entries` (the author's entry count at the place; **default: unknown, the long tier**). **A
   stale count is treated as unknown** (a count lower than the truth under-prices by up to 21.2%).
-- **Interim rule for a yes after a lone no** (item 42; ruled, to be replaced by the list release's rows): a BIND on a
-  head whose target is zero and whose state is not UNSET (a lone no, or a lone no then a release or another no) adds
-  **two fresh slots to E** at the schedule's price: on prague 2 × 22,100; on amsterdam 2 × 12,100 of execution and
-  2 × 97,920 of state gas. It is exact for a yes directly after a lone no and over-prices the no-then-release variant by
-  one slot (the safe side). It ends when the vendored `gas/model.json` carries the proper rows.
+- **Interim rule for a yes after a lone no** (item 42; ruled, to be replaced by the list release's rows). A planner
+  tells the shape from the head it already reads: **`state != UNSET && targetKind == 0`** is a head that never bound
+  (`Head.targetKind` is served as stored, `src/interfaces/Views.sol`; `target` is canonical and is 0 for every masked
+  or released head, so it cannot tell a lone no from a masked yes). A BIND on such a head adds fresh slots at the
+  schedule's price (`test/vectors/gas-schedules.json` `freshSlot`: prague 22,100; amsterdam 12,100 of execution and
+  97,920 of state gas):
+  - **the kernel's slot, always** (the head's stored target is written fresh): one slot to E and to the kernel's own
+    share K, for a lone no, for no → release → yes and for no → no → yes alike;
+  - **the index's slot, when the BIND is the binding's 2nd, 6th, 11th or 16th statement** (the head's revision before
+    it is 1, 5, 10 or 15: the binding's history list opens a word): one slot to E. For a never-bound head at revision
+    1 that is the yes directly after a lone no, two slots in all.
+  A planner that adds both slots for every never-bound head over-prices the later variants by one slot (the safe
+  side). With the rule, the SDK's planner plans the largest batch of this shape at 46 on prague and 48 on amsterdam
+  (51 without it; bounded by V once K carries the head's slot). The rule ends when the vendored `gas/model.json`
+  carries the proper rows.
 - **New error and reason codes** (`release/errors.json`): `E_WORK_MODEL(uint8 code, uint256 value)` (new error: 1 the
   read failed, 2 the reply is not 32 words, 3 `formulaVersion` is not 3); `E_INDEX_NOT_READY` 15 (the index's work model
   is not 32 words of the ingress's formula) and 16 (a word does not fit its field), checked for a kept index and a new
@@ -939,7 +949,8 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
     and 14,035,893 on amsterdam, both under 2^24; the planner's restore batches are bounded by V, not E, so the shortfall
     moves no planned batch size, and `eth_estimateGas` stays the authority for a gas limit. With the interim rule a
     consumer's E for this shape is about the real cost, which at 51 statements is inside the 15% headroom of the cap,
-    so its planner splits the largest batch of this shape a little smaller (computed: 47 on prague, 50 on amsterdam). **The model's stated
+    so its planner splits the largest batch of this shape a little smaller (46 on prague and 48 on amsterdam in the
+    SDK's planner, with the head's slot counted in K; 47 and 50 computed from E alone). **The model's stated
     `maxUnderErrorPercent` (and `maxUnderExecutionErrorPercent`) does not include this shape**: no composite measures
     it. The consumer's interim rule is in "What changes for a consumer" above.
   - **Ruled:** this release keeps its values and names the exception; the next regeneration (the list release) makes

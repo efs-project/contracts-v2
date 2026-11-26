@@ -550,7 +550,10 @@ most shapes) would also be honest. It costs batches: prague lone negatives 38 �
   stays the authority for a gas limit. With the interim rule below a consumer's E for this shape rises to about the
   real cost, which at 51 statements is inside the planning rule's 15% headroom of the cap, so its planner then splits
   the largest batch of this shape a little smaller (computed from the rule's budget, floor(2^24 × 85%) less `fixed`:
-  47 on prague, 50 on amsterdam); that is the planning rule working as intended, and it moves no other shape. The model's stated `maxUnderErrorPercent` (and amsterdam's
+  47 on prague, 50 on amsterdam from E alone; 46 and 48 in the SDK's planner, where the kernel's share K carries the
+  head's slot and V binds); that is the planning rule working as intended, and it moves no other shape. A planner
+  tells the shape by `state != UNSET && targetKind == 0` on the head it reads (a head that never bound; the head's
+  `target` is canonical and cannot tell it). The model's stated `maxUnderErrorPercent` (and amsterdam's
   `maxUnderExecutionErrorPercent`) does NOT include this shape: no validation composite measures it. The proper rows
   are for the list release (tools/RELEASE.md §15); until then a consumer adds two fresh slots to E for such a BIND
   (tools/RELEASE.md item 42, the interim rule). Reproduce: `forge test --match-path
