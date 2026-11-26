@@ -62,15 +62,10 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// The store's UNCOUNTED tag (`IPostingStore.append`): an entry appended without raising `live`.
     uint64 private constant UNCOUNTED = uint64(1) << 63;
     /// The carried-store mask a fold runs under (docs INDEX-BUILD §4.3): a set bit names a store the fold must not
-    /// write, because this generation carries it (the live index folds it). No store bit on the live path, in a
-    /// replay and in a build into two fresh stores; one bit in a build that heals one store; both bits when nothing
-    /// is fresh. The same word carries `HISTORY` on every fold from history.
+    /// write, because this generation carries it (the live index folds it). 0 on the live path, in a replay and in
+    /// a build into two fresh stores; one bit in a build that heals one store; both bits when nothing is fresh.
     uint256 internal constant CARRIED_POSTING = 1;
     uint256 internal constant CARRIED_BITMAP = 2;
-    /// Rides in the same word on every fold from history (replay and build, every configuration), never on the live
-    /// path: the fold must then read as of the admission it folds what the live fold read at that moment (docs
-    /// INDEX-BUILD §4.3, the as-of rule). The top bit, so a later generation's store bits stay below it.
-    uint256 internal constant HISTORY = 1 << 255;
 
     bytes32 private immutable F_BY_TYPE;
     bytes32 private immutable F_BY_AUTHOR;
@@ -183,10 +178,9 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
 
     /// One publication's effects folded in order, live (from `onAdmission`) or from history (from `replayFold`):
     /// the effects must continue the progress word exactly, and the word moves to the publication's last admission.
-    /// `carried` names the stores this fold must not write (`CARRIED_POSTING`, `CARRIED_BITMAP`) and carries `HISTORY`
-    /// on a fold from history; the fold hooks run only when no store is carried (docs INDEX-BUILD §3.6: a unit folded
-    /// live and its companion store is not rebuilt in a build that heals one store; this generation cannot tell a
-    /// carried unit from a new one, so it calls none there).
+    /// `carried` names the stores this fold must not write (`CARRIED_POSTING`, `CARRIED_BITMAP`); the fold hooks run
+    /// only when it is 0 (docs INDEX-BUILD §3.6: a unit folded live and its companion store is not rebuilt in a build
+    /// that heals one store; this generation cannot tell a carried unit from a new one, so it calls none there).
     function _foldPublication(
         uint64 publication,
         Effect[] calldata effects,
@@ -206,7 +200,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         }
         p.lastProcessed = uint48(expected - 1);
         p.lastPublication = uint48(publication);
-        if (carried & ~HISTORY == 0) _foldHooks(effects, refs, publication);
+        if (carried == 0) _foldHooks(effects, refs, publication);
     }
 
     /// @inheritdoc IRealmIndex
@@ -265,7 +259,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         } else if (
             kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
         ) {
-            _foldBind(e, posting, carried & CARRIED_BITMAP == 0, carried & HISTORY != 0);
+            _foldBind(e, posting, carried & CARRIED_BITMAP == 0);
         } else if (kind == ActionKind.WITHDRAW) {
             if (posting) _foldWithdraw(e);
         }
@@ -274,8 +268,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// Extension point for a later generation's families in further stores (docs INDEX-BUILD step 3): called after
-    /// every effect's fold, live and from history, with the same mask word (store bits and `HISTORY`, under which a
-    /// later family's fold must keep the as-of rule of docs INDEX-BUILD §4.3). Empty here, so it costs no code.
+    /// every effect's fold, live and from history, with the same carried mask. Empty here, so it costs no code. A
+    /// later family's fold keeps the as-of rule of docs INDEX-BUILD §4.3 on the history path (`_fromHistory`).
     function _foldMore(Effect calldata, bytes32[] calldata, uint256) internal virtual {}
 
     // ---- the posting appends of one effect, written by one appendBatch (design §4.6) --------------------------
@@ -379,9 +373,8 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// A bind's fold. The bitmap part (`_foldScope`) and the posting part read nothing of each other's store: the
     /// scope entry index the bitmap part takes from its own store feeds only its own `setBit`, and the posting part
     /// reads only its own heads (`_firstStatementLists`). So a build that heals one store runs one part alone, and
-    /// the order of the two parts, which touch different stores, changes neither store. `history`: a fold from history
-    /// (the as-of rule, `_walk`).
-    function _foldBind(Effect calldata e, bool posting, bool bitmap, bool history) private {
+    /// the order of the two parts, which touch different stores, changes neither store.
+    function _foldBind(Effect calldata e, bool posting, bool bitmap) private {
         uint8 tk = e.transitionKind;
         if (bitmap) _foldScope(e, tk);
         if (!posting) return;
@@ -403,7 +396,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 _pk(0, 16, 0, Keys.roleScope(e.principalId, e.purpose, e.role)),
                 e.bindingOrdinal
             );
-            _firstStatementLists(e, b, history);
+            _firstStatementLists(e, b);
         } else if (tk == T_RESTORE) {
             // a head returns to BOUND: one more author says yes at the position
             if (_authorsKept(e.purpose)) {
@@ -479,7 +472,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     ///     ordinal, under the rule of `place`, with the same `count` and `live`.
     /// A publication has one principal, who makes at most one first statement per position, and every earlier effect
     /// of the publication is flushed before this one folds, so the head read sees every earlier statement.
-    function _firstStatementLists(Effect calldata e, Appends memory b, bool history) private {
+    function _firstStatementLists(Effect calldata e, Appends memory b) private {
         bytes32 purpose = e.purpose;
         bool tag = purpose == Purpose.TAG;
         if (!tag && purpose != Purpose.FOLDER) return;
@@ -494,7 +487,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         if (fresh && tag && e.role != 0) {
             _add(b, F_ROLE_PLACES, _pk(purpose, 21, 0, e.role), e.bindingOrdinal);
         }
-        if (tag && TOPIC_T != 0) _walk(e, b, fresh || yes ? filing : 0, history);
+        if (tag && TOPIC_T != 0) _walk(e, b, fresh || yes ? filing : 0);
     }
 
     /// Walks the proper ancestors of a tag's subject: a `topic/1` record's parent is its body word 0, a `topic-word/1`
@@ -504,35 +497,28 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// whatever validator is installed. Live, that is free: the kernel applies a publication's leaves one at a time and
     /// calls the index after each, so the fold of this leaf sees records registered by earlier leaves and earlier
     /// publications and none registered later. From history the same reads see today's records, so the history path
-    /// (`history`) treats the subject as a topic only if its first admission (record cell word 1, read in the same
-    /// batch) is strictly below the statement's admission; a subject registered later is no topic for this statement.
-    /// No validator law is a source of facts here (`FilesFinalValidator` code 9 refuses such a tag live, but a build
-    /// may fold history that was never judged under it). Ancestors need no check: the kernel's reference law
-    /// (`LedgerIngress._resolveRefs`, `E_REF`) admits a `topic/1` record only after its parent (body word 0), and
-    /// record cells and bodies are write-once, so every ancestor of a subject registered before the statement was
-    /// registered before it too. The live path reads no more than before.
+    /// reads the subject's level with its first admission (record cell word 1) in the same batch, and treats the
+    /// subject as a topic only if that admission is nonzero and strictly below the statement's; a subject registered
+    /// later is no topic for this statement. No validator law is a source of facts here (`FilesFinalValidator` code 9
+    /// refuses such a tag live, but a build may fold history that was never judged under it). Ancestors need no check:
+    /// the kernel's reference law (`LedgerIngress._resolveRefs`, `E_REF`) admits a `topic/1` record only after its
+    /// parent (body word 0), and record cells and bodies are write-once, so every ancestor of a subject registered
+    /// before the statement was registered before it too. The live path runs exactly the code it ran before.
     /// `filing` is the `place-below` entry (the binding ordinal, tagged UNCOUNTED unless the position is fresh), or 0
     /// when the statement files nothing there (a later author's first no).
-    function _walk(Effect calldata e, Appends memory b, uint64 filing, bool history) private {
+    function _walk(Effect calldata e, Appends memory b, uint64 filing) private {
         ILedgerHot hot = ILedgerHot(LEDGER);
-        bytes32[] memory slots = new bytes32[](history ? 3 : 2);
+        bytes32[] memory slots = new bytes32[](2);
         bytes32 cur = e.subject;
-        if (history) slots[2] = bytes32(Layout.recordsCellsSlot(cur) + 1);
+        if (_fromHistory()) {
+            cur = _parentAsOf(hot, e); // the loop below starts at the first proper ancestor
+            if (cur == 0) return;
+        }
         while (true) {
             slots[0] = bytes32(Layout.recordsCellsSlot(cur));
             slots[1] = bytes32(Layout.recordsBodyWordsSlot(cur, 0));
             bytes32[] memory w = hot.extsloadBatch(slots);
-            if (cur == e.subject) {
-                if (history) {
-                    // as of the admission: a subject first admitted at or after it is no topic for this statement
-                    (uint48 first,,,) = Layout.unpackRecordCellWord1(w[2]);
-                    if (first == 0 || first >= e.admission) return;
-                    history = false;
-                    assembly ("memory-safe") {
-                        mstore(slots, 2) // the ancestors' levels read the two words, as live
-                    }
-                }
-            } else {
+            if (cur != e.subject) {
                 // `cur` is a proper ancestor: a topic/1 or topic-word/1 record by the topic Type's reference law
                 if (w[0] != TOPIC_T && w[0] != WORD_T) return; // unreachable for a sound topic/1 record
                 _add(
@@ -546,6 +532,28 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             if (w[0] != TOPIC_T) return; // a root word, a home, or (unreachable) anything else
             cur = w[1];
         }
+    }
+
+    /// The history path's subject level of `_walk`: the subject's Type word, body word 0 and first admission in one
+    /// batch; the subject's parent when the subject is a `topic/1` record first admitted strictly before the statement,
+    /// else 0 (no proper ancestor to walk, as of the admission).
+    function _parentAsOf(ILedgerHot hot, Effect calldata e) private view returns (bytes32) {
+        bytes32[] memory s = new bytes32[](3);
+        s[0] = bytes32(Layout.recordsCellsSlot(e.subject));
+        s[1] = bytes32(Layout.recordsBodyWordsSlot(e.subject, 0));
+        s[2] = bytes32(uint256(s[0]) + 1);
+        bytes32[] memory v = hot.extsloadBatch(s);
+        (uint48 first,,,) = Layout.unpackRecordCellWord1(v[2]);
+        if (first == 0 || first >= e.admission || v[0] != TOPIC_T) return 0;
+        return v[1];
+    }
+
+    /// Whether this fold is from history (a replay or a build): the only entry point that folds history is
+    /// `replayFold`, which only this contract can call (from `_replayOne`), and the live fold enters through
+    /// `onAdmission`; so the call's own selector carries the flag, and the live path tests it only where a fold
+    /// needs it (one comparison of `msg.sig`, in `_walk`), with nothing threaded through the other folds.
+    function _fromHistory() internal pure returns (bool) {
+        return msg.sig == this.replayFold.selector;
     }
 
     function _foldWithdraw(Effect calldata e) private {
@@ -617,15 +625,14 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// Publication `n` from history: decoded by the pinned decoder (STATICCALL), then folded by this contract calling
     /// its own `replayFold`, so the effects are in calldata as the live fold expects. The carried mask rides as one
     /// word after the ABI payload (the ABI decoder ignores trailing calldata), so it is chosen here, by this code, and
-    /// never by a caller. The word always carries `HISTORY` (replay and every build configuration). Returns the
-    /// leaves folded.
+    /// never by a caller. Returns the leaves folded.
     function _replayOne(uint64 n, uint256 carried) private returns (uint64) {
         (bool ok, bytes memory ret) =
             DECODER.staticcall(abi.encodeCall(IIndexReplayDecoder.payload, (LEDGER, n)));
         if (!ok) _bubble(ret);
         bytes memory encoded = abi.decode(ret, (bytes));
-        (ok, ret) = address(this)
-            .call(bytes.concat(this.replayFold.selector, encoded, bytes32(carried | HISTORY)));
+        (ok, ret) =
+            address(this).call(bytes.concat(this.replayFold.selector, encoded, bytes32(carried)));
         if (!ok) _bubble(ret);
         return abi.decode(ret, (uint64));
     }
