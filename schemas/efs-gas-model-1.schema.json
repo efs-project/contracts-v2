@@ -11,6 +11,7 @@
     "planning",
     "tagLists",
     "laterLists",
+    "laterRows",
     "profiles",
     "source"
   ],
@@ -53,6 +54,8 @@
             "maxAbsErrorComposite",
             "maxUnderErrorPercent",
             "maxUnderErrorComposite",
+            "maxOverErrorPercent",
+            "maxOverErrorComposite",
             "maximaExcludeStates"
           ],
           "properties": {
@@ -131,6 +134,32 @@
                 "releaseBroaderLongSamePlace",
                 "restoreBroaderLongNewPlace",
                 "restoreBroaderLongSamePlace",
+                "bindTagAfterNo",
+                "bindFolderAfterNo",
+                "bindPropertyAfterNo",
+                "bindSameAfterNo",
+                "bindBroaderAfterNo",
+                "bindHeadAfterNo",
+                "bindTagAfterNoNewPlace",
+                "bindFolderAfterNoNewPlace",
+                "restoreProperty",
+                "unbindHead",
+                "releaseHead",
+                "restoreHead",
+                "restoreTagAtHistoryWord",
+                "historyWordOpen",
+                "bindTagAfterNoLongNewPlace",
+                "bindTagAfterNoLongSamePlace",
+                "bindFolderAfterNoLongNewPlace",
+                "bindFolderAfterNoLongSamePlace",
+                "bindPropertyAfterNoLongNewPlace",
+                "bindPropertyAfterNoLongSamePlace",
+                "bindSameAfterNoLongNewPlace",
+                "bindSameAfterNoLongSamePlace",
+                "bindBroaderAfterNoLongNewPlace",
+                "bindBroaderAfterNoLongSamePlace",
+                "restorePropertyLongNewPlace",
+                "restorePropertyLongSamePlace",
                 "firstWriteSurcharge",
                 "tagLevel"
               ],
@@ -286,8 +315,8 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "longLists", "beyondClaim"],
-                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
+                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "withinClaim", "longLists", "beyondClaim"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists longer than the short tier and shorter than the claim (withinClaim), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
                   }
                 },
                 "required": [
@@ -478,6 +507,10 @@
             "maxUnderErrorComposite",
             "maxUnderExecutionErrorPercent",
             "maxUnderExecutionErrorComposite",
+            "maxOverErrorPercent",
+            "maxOverErrorComposite",
+            "maxOverExecutionErrorPercent",
+            "maxOverExecutionErrorComposite",
             "maximaExcludeStates"
           ],
           "properties": {
@@ -510,8 +543,16 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "longLists", "beyondClaim"],
-                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
+                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "withinClaim", "longLists", "beyondClaim"],
+                    "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists longer than the short tier and shorter than the claim (withinClaim), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
+                  },
+                  "allGasOverBoundPercent": {
+                    "type": "number",
+                    "description": "The composite's all-gas over-prediction bound (tools/gas-fit.mjs allGasOverBoundPercent): 15 + laterStatements \u00d7 freshSlot.stateGas \u00d7 100 / measured. tools/gas-model.mjs refuses a model in which errorPercent exceeds it."
+                  },
+                  "laterStatements": {
+                    "type": "integer",
+                    "description": "How many of the composite's actions are later statements (priced by a later row)."
                   },
                   "executionErrorPercent": {
                     "type": "number",
@@ -925,6 +966,29 @@
         },
         "note": {
           "type": "string"
+        }
+      }
+    },
+    "laterRows": {
+      "type": "object",
+      "description": "The measured statement position of every later row (tools/gas-plan.mjs historyWordAdds): rows maps a constants name to the head's revision before the measured statement, whether the binding's history list opened a word for it, and for a BIND whether it named the stored target, a new one or a head that never bound; rule says how a planner selects a row from the head view and corrects for another position (the profile's historyWordOpen constant).",
+      "required": ["rule", "note", "historyWordConstant", "rows"],
+      "properties": {
+        "rule": { "type": "string" },
+        "note": { "type": "string" },
+        "historyWordConstant": { "type": "string" },
+        "rows": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["revisionBefore", "opensHistoryWord", "target"],
+            "properties": {
+              "revisionBefore": { "type": "integer" },
+              "opensHistoryWord": { "type": "boolean" },
+              "target": { "enum": ["same", "new", "neverBound", null] },
+              "note": { "type": "string" }
+            }
+          }
         }
       }
     },

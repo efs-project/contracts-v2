@@ -548,4 +548,143 @@ contract FloorPlanTest is FloorBase {
         (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
         _covers(_prove("publishesAndTags", a, b, a1, b1), true);
     }
+
+    // ---- the list release: a yes after a lone no, and files placed at names their author removed ------------------
+
+    /// k yeses after lone noes on the one-word topic (a BIND on a head that never bound).
+    function test_plan_tag_yeses_after_lone_noes() public {
+        string memory shape = "tagYesesAfterLoneNoes";
+        uint256 k = _k(shape);
+        uint256 n = k + 1 > 64 ? 64 : k + 1;
+        Action[] memory noes = new Action[](n);
+        for (uint256 i; i < n; ++i) {
+            noes[i] = EfsTopics.deny(topic, _thing(shape, i), 0, 0);
+        }
+        _send(address(this), noes, _bodies(n));
+        Action[] memory all = new Action[](65);
+        for (uint256 i; i < 65; ++i) {
+            all[i] = EfsTopics.tag(topic, _thing(shape, i), 1, 0);
+        }
+        Action[] memory more = _more(all, k, 1);
+        _covers(_prove(shape, _prefix(all, k), _bodies(k), more, _bodies(more.length)), true);
+    }
+
+    /// `n` files `<pre>xyz.txt` created in `folder` and then removed (RELEASE), so their names are removed names.
+    function _removedIn(bytes32 folder, string memory pre, uint256 n) internal {
+        Action[] memory a = new Action[](0);
+        bytes[] memory b = new bytes[](0);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y,,) = EfsFiles.createFile(
+                _filesTypes(),
+                p,
+                folder,
+                keccak256(abi.encode("floor-plan old", pre, i)),
+                _nm(pre, i),
+                "Old notes here.\n",
+                true
+            );
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _sendSliced(address(this), a, b, 60);
+        Action[] memory rel = new Action[](n);
+        for (uint256 i; i < n; ++i) {
+            rel[i] = EfsFiles.release(Purpose.FOLDER, folder, keccak256(_nm(pre, i)), 1);
+        }
+        _send(address(this), rel, _bodies(n));
+    }
+
+    /// k create-file recipes at removed names of the root folder: the folder bind restores the RELEASED head to the new
+    /// file; with `withName` the name PUBLISH is a repeat (as `EfsFiles.createFile` writes it), else it is left out.
+    function _createAtRemoved(string memory shape, uint256 units, uint256 old, bool withName)
+        internal
+    {
+        uint256 k = _k(shape);
+        _removedIn(rootDir, "cr-", old);
+        Action[] memory all = new Action[](0);
+        bytes[] memory bodies = new bytes[](0);
+        for (uint256 i; i < old; ++i) {
+            (Action[] memory x, bytes[] memory y,,) = EfsFiles.createFile(
+                _filesTypes(),
+                p,
+                rootDir,
+                keccak256(abi.encode("floor-plan new", i)),
+                _nm("cr-", i),
+                "Meeting at 10:00.\n",
+                withName
+            );
+            assertEq(x.length, units);
+            x[x.length - 1].expectedRevision = 2;
+            (all, bodies) = EfsFiles.concat(all, bodies, x, y);
+        }
+        uint256 m = (k + 1) * units > 64 ? 65 : (k + 1) * units;
+        if (m > all.length) m = all.length; // 65 actions are never needed past the units built
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k * units);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        _covers(_prove(shape, a, b, a1, b1), false);
+    }
+
+    function test_plan_create_files_at_removed_names() public {
+        _createAtRemoved("createFilesAtRemovedNames", 5, 13, true);
+    }
+
+    function test_plan_create_files_at_removed_names_no_name() public {
+        _createAtRemoved("createFilesAtRemovedNamesNoName", 4, 17, false);
+    }
+
+    /// k moves of root-folder files into removed names of another folder: RELEASE at the root, restore at the other
+    /// folder; with `withName` the name PUBLISH is a repeat.
+    function _movesIntoRemoved(string memory shape, uint256 units, uint256 n, bool withName)
+        internal
+    {
+        uint256 k = _k(shape);
+        Action[] memory d = new Action[](1);
+        bytes[] memory db = new bytes[](1);
+        (d[0], db[0]) = _publish(
+            T_DIRECTORY, EfsFiles.directoryBody(p, keccak256(abi.encode("floor-plan dest", shape)))
+        );
+        bytes32 dest = _id(T_DIRECTORY, db[0]);
+        _send(address(this), d, db);
+        _removedIn(dest, "mb-", n);
+        Action[] memory a = new Action[](n * 5);
+        bytes[] memory b = new bytes[](n * 5);
+        bytes32[] memory file = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 f,) = EfsFiles.createFile(
+                _filesTypes(),
+                p,
+                rootDir,
+                keccak256(abi.encode("floor-plan mover", i)),
+                _nm("ma-", i),
+                "Moving notes.\n",
+                true
+            );
+            file[i] = f;
+            for (uint256 j; j < 5; ++j) {
+                (a[i * 5 + j], b[i * 5 + j]) = (x[j], y[j]);
+            }
+        }
+        _sendSliced(address(this), a, b, 60);
+        Action[] memory all = new Action[](0);
+        bytes[] memory bodies = new bytes[](0);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y) = EfsFiles.move(
+                _filesTypes(), file[i], rootDir, _nm("ma-", i), 1, dest, _nm("mb-", i), 2, withName
+            );
+            assertEq(x.length, units);
+            (all, bodies) = EfsFiles.concat(all, bodies, x, y);
+        }
+        uint256 m = (k + 1) * units > 64 ? 65 : (k + 1) * units;
+        if (m > all.length) m = all.length;
+        (Action[] memory a0, bytes[] memory b0) = _slice(all, bodies, k * units);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        _covers(_prove(shape, a0, b0, a1, b1), false);
+    }
+
+    function test_plan_moves_into_removed_names() public {
+        _movesIntoRemoved("movesIntoRemovedNames", 3, 22, true);
+    }
+
+    function test_plan_moves_into_removed_names_no_name() public {
+        _movesIntoRemoved("movesIntoRemovedNamesNoName", 2, 33, false);
+    }
 }

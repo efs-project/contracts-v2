@@ -808,6 +808,17 @@ contract FloorSplitTest is FloorBase {
         );
     }
 
+    /// Masks at the dearest list within the claim (1,023 entries, the last entry; see the restore of the same name
+    /// below): the claim is asserted on the dearest list length, not only the longest.
+    function test_split_claim_masks_at_the_dearest_list_within_the_claim() public {
+        _row(
+            "claim: masks of the last of 1,023 entries across places",
+            LATER,
+            _farAcross(9, LIST_LENGTH_CLAIM - 2, false),
+            new bytes[](9)
+        );
+    }
+
     /// Restores of the LAST entry of a `len`-entry list at each of `n` places, every entry of its live-bits word masked
     /// first, so the restore writes the word from zero (the dearest a restore can be at that length).
     function _lastRestored(uint256 n, uint256 len) internal returns (Action[] memory a) {

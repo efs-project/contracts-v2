@@ -473,6 +473,113 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("bind head rebind", x);
     }
 
+    /// A mask of a file's HEAD: UNBIND from BOUND (s[8..11) are bound to their roots in setUp: revision 1 before it,
+    /// so the history word 0 opens), with the `head-authors` list's live count lowered.
+    function test_model_unbind_head() public {
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.unbind(Purpose.HEAD, s[8 + i], 0, 1);
+        }
+        _actionPair("unbind head", x);
+    }
+
+    function test_model_release_head() public {
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsFiles.release(Purpose.HEAD, s[8 + i], 0, 1);
+        }
+        _actionPair("release head", x);
+    }
+
+    /// A restore of a file's HEAD to a NEW revision already named elsewhere: s[5..8) bound to their roots, a child
+    /// revision of each published, a second author's HEAD bound to that child (its backlink list then holds one
+    /// entry), the first author's HEAD masked; then the restore names the child (revision 2 before it; the kernel
+    /// rewrites its stored target; the `head-authors` list's live count rises).
+    function test_model_restore_head() public {
+        Action[] memory a = new Action[](6);
+        bytes[] memory b = new bytes[](6);
+        bytes32[3] memory kid;
+        for (uint256 i; i < 3; ++i) {
+            a[i] = _bind(Purpose.HEAD, s[5 + i], 0, roots[5 + i], 0);
+            (a[3 + i], b[3 + i]) =
+                _publish(T_CHILD, EfsFiles.childBody(roots[5 + i], s[5 + i], "gas-model v2"));
+            kid[i] = _id(T_CHILD, b[3 + i]);
+        }
+        _do(a, b);
+        Action[] memory o = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            o[i] = _bind(Purpose.HEAD, s[5 + i], 0, kid[i], 0);
+        }
+        _as(LEVEL_B);
+        _send(LEVEL_B, o);
+        _as(address(0));
+        for (uint256 i; i < 3; ++i) {
+            o[i] = EfsFiles.unbind(Purpose.HEAD, s[5 + i], 0, 1);
+        }
+        _do(o, new bytes[](3));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.HEAD, s[5 + i], 0, kid[i], 2);
+        }
+        _actionPair("restore head", x);
+    }
+
+    /// The same restore of a file's HEAD to the KEPT revision (for `restoreHead`'s note only): s[8..11) masked, then
+    /// restored to their roots.
+    function test_model_restore_head_same_target() public {
+        Action[] memory o = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            o[i] = EfsFiles.unbind(Purpose.HEAD, s[8 + i], 0, 1);
+        }
+        _do(o, new bytes[](3));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.HEAD, s[8 + i], 0, roots[8 + i], 2);
+        }
+        _actionPair("restore head same target", x);
+    }
+
+    /// A yes after a lone no on a file's HEAD: a second author says "not this" about s[8..11) (whose roots the first
+    /// author's HEADs name, so each root's backlink list holds one entry), then saves the root as its version (revision
+    /// 1 before it, the head never bound; the `head-authors` list's live count rises).
+    function test_model_bind_head_after_no() public {
+        Action[] memory o = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            o[i] = EfsFiles.loneNegative(Purpose.HEAD, s[8 + i], 0, 0);
+        }
+        _as(LEVEL_B);
+        _send(LEVEL_B, o);
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.HEAD, s[8 + i], 0, roots[8 + i], 1);
+        }
+        _actionPair("bind head after no", x);
+        _as(address(0));
+    }
+
+    /// Not a model row (its labels do not start "model "): what an entry in a file's `head-authors` list costs a FRESH
+    /// account (its first publication ever), the price of the list's public tier (docs/QUESTIONS-FOR-JAMES.md Q54 for
+    /// the tag case). A lone no needs only that the subject is a file; a yes needs a revision record naming the file, so
+    /// it publishes one (a 9-byte child of the file's root) and binds its HEAD to it.
+    function test_public_head_entry_cost() public {
+        uint256 snap = vm.snapshotState();
+        _as(makeAddr("gas-model fresh head author"));
+        _exec(
+            "public head entry: a fresh account's lone no",
+            _one1(EfsFiles.loneNegative(Purpose.HEAD, s[8], 0, 0)),
+            new bytes[](1)
+        );
+        vm.revertToState(snap);
+        _as(makeAddr("gas-model fresh head author"));
+        (Action memory c0, bytes memory b0) =
+            _publish(T_CHILD, EfsFiles.childBody(roots[8], s[8], "my notes"));
+        (Action[] memory a, bytes[] memory b) =
+            _two(c0, b0, _bind(Purpose.HEAD, s[8], 0, _id(T_CHILD, b0), 0), "");
+        _exec("public head entry: a fresh account's yes with its revision", a, b);
+        _as(address(0));
+        vm.revertToState(snap);
+    }
+
     function test_model_bind_folder_fresh_file() public {
         Action[3] memory x;
         for (uint256 i; i < 3; ++i) {
@@ -516,10 +623,34 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("release folder", x);
     }
 
-    /// A restore of a folder entry: BIND from MASKED to the kept target (transition RESTORE). The entries (d1, names
-    /// 0..3 → s[0..3)) are bound and masked unmeasured first, so each target is named by one entry, the ordinary case
-    /// of a file in one folder: the restore's backlink append then takes a fresh word, as a tag restore's does.
+    /// A restore of a folder entry to a NEW target already placed elsewhere (transition RESTORE, the binding's third
+    /// statement: revision 2 before it, no history word opens): the entries (d1, names 0..3 → s[0..3)) are bound and
+    /// masked unmeasured first, and each new target s[20 + i] is placed once in d2 under the same name, so the restore
+    /// rewrites the kernel's stored target and its backlink append takes a fresh word (the new target's list held one
+    /// entry). The dearest restore of a folder entry: a restore to the kept target skips the kernel's target write, and
+    /// one to a target never placed writes its backlink list's head only (both cheaper).
     function test_model_restore_folder() public {
+        Action[] memory m = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[i], 0);
+        }
+        _do(m, new bytes[](3));
+        m = new Action[](6);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(i)), 0, 1);
+            m[3 + i] = _bind(Purpose.FOLDER, d2, keccak256(_bindName(i)), s[20 + i], 0);
+        }
+        _do(m, new bytes[](6));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[20 + i], 2);
+        }
+        _actionPair("restore folder", x);
+    }
+
+    /// The same restore to the KEPT target (measured for `restoreFolder`'s note only, never a constant: a planner cannot
+    /// tell it apart, the head view does not show the stored target).
+    function test_model_restore_folder_same_target() public {
         Action[] memory m = new Action[](3);
         for (uint256 i; i < 3; ++i) {
             m[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[i], 0);
@@ -533,7 +664,25 @@ contract GasModelTest is FilesRecipesBase {
         for (uint256 i; i < 3; ++i) {
             x[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[i], 2);
         }
-        _actionPair("restore folder", x);
+        _actionPair("restore folder same target", x);
+    }
+
+    /// A yes after a lone no on a folder entry: a hide of an entry never bound (UNBIND at an UNSET head, FIRST_MASK),
+    /// then a BIND to a file (the binding's second statement: revision 1 before it, so its history word 0 opens; the
+    /// head never bound, so the kernel writes its stored target fresh). Each file s[i] is placed once in d2 first, so
+    /// its backlink append takes a fresh word too.
+    function test_model_bind_folder_after_no() public {
+        Action[] memory m = new Action[](6);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(i)), 0, 0);
+            m[3 + i] = _bind(Purpose.FOLDER, d2, keccak256(_bindName(i)), s[i], 0);
+        }
+        _do(m, new bytes[](6));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.FOLDER, d1, keccak256(_bindName(i)), s[i], 1);
+        }
+        _actionPair("bind folder after no", x);
     }
 
     bool internal _topicsRegistered;
@@ -854,6 +1003,49 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("restore tag", x);
     }
 
+    /// A yes after a lone no at a TAG position (the binding's second statement: revision 1 before it, so its history
+    /// word 0 opens; the head never bound, so the kernel writes its stored target fresh): lone noes about s[30..33) at
+    /// TOPIC, each thing tagged yes once at another topic first (its backlink list holds one entry, so the yes's
+    /// backlink append takes a fresh word, the dearer case), then the yes.
+    function test_model_bind_tag_after_no() public {
+        _tagged();
+        bytes32 o = _topicsN("gm-elsewhere-", 1)[0];
+        Action[] memory m = new Action[](6);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = _bind(Purpose.TAG, o, s[30 + i], s[30 + i], 0);
+            m[3 + i] = EfsFiles.loneNegative(Purpose.TAG, TOPIC, s[30 + i], 0);
+        }
+        _do(m, new bytes[](6));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.TAG, TOPIC, s[30 + i], s[30 + i], 1);
+        }
+        _actionPair("bind tag after no", x);
+    }
+
+    /// A restore at a word-opening position: the binding's sixth statement (yes, then a mask and three masks of the mask
+    /// with new numbers, then the restore: revision 5 before it), whose history append opens the list's word 1. Its
+    /// thing's backlink list holds one entry before it (the first yes; a mask appends nothing there), as before
+    /// `restore tag` (the third statement: yes, mask, restore), so the two differ by the history word alone:
+    /// `historyWordOpen` in gas/model.json is the difference of the two rows. (A restore after an earlier restore of
+    /// the same binding finds the backlink list longer: its word opens at other positions, which the planner cannot
+    /// see, so the restore rows keep the dearer, opening case.)
+    function test_model_restore_tag_at_history_word() public {
+        _tagged();
+        Action[] memory m = new Action[](3);
+        for (uint64 rev = 1; rev < 5; ++rev) {
+            for (uint256 i; i < 3; ++i) {
+                m[i] = EfsFiles.unbindWithStrength(Purpose.TAG, TOPIC, s[35 + i], rev, uint16(rev));
+            }
+            _do(m, new bytes[](3));
+        }
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(Purpose.TAG, TOPIC, s[35 + i], s[35 + i], 5);
+        }
+        _actionPair("restore tag at history word", x);
+    }
+
     // ---- statements about topics: PROPERTY, SAME, BROADER (design §12.5) ------------------------------------------
     // Each row registers what it states about inside its own test (one unmeasured publication: `setUp` has no
     // headroom under the amsterdam cap), so the measured pair starts from that state. Positions are distinct per
@@ -953,6 +1145,64 @@ contract GasModelTest is FilesRecipesBase {
         _actionPair("release property", x);
     }
 
+    /// A restore of a label to a NEW text already used elsewhere (the dearest restore of a label, as `restore folder`):
+    /// `label:en` → first[i] on topic[i], masked, and second[i] set as a label on another topic; then the restore
+    /// names second[i] (revision 2 before it; the kernel rewrites its stored target).
+    function test_model_restore_property() public {
+        (bytes32[3] memory topic, bytes32[3] memory first, bytes32[3] memory second) =
+            _labelled("prop-restore");
+        bytes32[] memory other = _topicsN("prop-restore-x", 3);
+        _labelAll(topic, first);
+        bytes32 key = EfsTopics.labelKey("en");
+        Action[] memory m = new Action[](6);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = EfsFiles.unbind(Purpose.PROPERTY, topic[i], key, 1);
+            m[3 + i] = EfsTopics.property(other[i], key, second[i], 0);
+        }
+        _do(m, new bytes[](6));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsTopics.property(topic[i], key, second[i], 2);
+        }
+        _actionPair("restore property", x);
+    }
+
+    /// The same restore of a label to the KEPT text (for `restoreProperty`'s note only).
+    function test_model_restore_property_same_target() public {
+        (bytes32[3] memory topic, bytes32[3] memory first,) = _labelled("prop-restore-same");
+        _labelAll(topic, first);
+        bytes32 key = EfsTopics.labelKey("en");
+        Action[] memory m = new Action[](3);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = EfsFiles.unbind(Purpose.PROPERTY, topic[i], key, 1);
+        }
+        _do(m, new bytes[](3));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsTopics.property(topic[i], key, first[i], 2);
+        }
+        _actionPair("restore property same target", x);
+    }
+
+    /// A label after a lone no on it (`label:en` never set, then "not this", then a text): the binding's second
+    /// statement on a head that never bound. Each text is first used once as a label elsewhere.
+    function test_model_bind_property_after_no() public {
+        (bytes32[3] memory topic, bytes32[3] memory first,) = _labelled("prop-after-no");
+        bytes32[] memory other = _topicsN("prop-after-no-x", 3);
+        bytes32 key = EfsTopics.labelKey("en");
+        Action[] memory m = new Action[](6);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = EfsFiles.loneNegative(Purpose.PROPERTY, topic[i], key, 0);
+            m[3 + i] = EfsTopics.property(other[i], key, first[i], 0);
+        }
+        _do(m, new bytes[](6));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = EfsTopics.property(topic[i], key, first[i], 1);
+        }
+        _actionPair("bind property after no", x);
+    }
+
     /// Composite (never fitted): a label with its text: `EfsTopics.label`, PUBLISH a new 24-byte text/1 then
     /// BIND PROPERTY to it (a first statement).
     function test_model_validate_label_new_text() public {
@@ -1005,6 +1255,33 @@ contract GasModelTest is FilesRecipesBase {
                     : _bind(purpose, w[i], w[3 + i], w[3 + i], 2);
         }
         _actionPair(key, x);
+    }
+
+    /// A yes after a lone no at `purpose` (SAME or BROADER) from w[i] to w[3 + i]: the lone no, and a first statement
+    /// to w[3 + i] from another word page (its backlink list then holds one entry), unmeasured; then the yes
+    /// (revision 1 before it, the head never bound).
+    function _relationAfterNo(string memory key, bytes32 purpose, string memory name) internal {
+        bytes32[6] memory w = _pages(name);
+        bytes32[6] memory o = _pages(string.concat(name, "-x"));
+        Action[] memory m = new Action[](6);
+        for (uint256 i; i < 3; ++i) {
+            m[i] = EfsFiles.loneNegative(purpose, w[i], w[3 + i], 0);
+            m[3 + i] = _bind(purpose, o[i], w[3 + i], w[3 + i], 0);
+        }
+        _do(m, new bytes[](6));
+        Action[3] memory x;
+        for (uint256 i; i < 3; ++i) {
+            x[i] = _bind(purpose, w[i], w[3 + i], w[3 + i], 1);
+        }
+        _actionPair(key, x);
+    }
+
+    function test_model_bind_same_after_no() public {
+        _relationAfterNo("bind same after no", Purpose.SAME, "same-a");
+    }
+
+    function test_model_bind_broader_after_no() public {
+        _relationAfterNo("bind broader after no", Purpose.BROADER, "brd-a");
     }
 
     /// `same` between word pages (the word-level synonym).
@@ -1615,6 +1892,9 @@ contract GasModelTest is FilesRecipesBase {
 
     bytes32[] internal others; // word pages: the roles (and targets) of SAME and BROADER entries
     bool internal rebindTargets; // FOLDER measured entries name s[29 + m] (the re-bind row's pattern), else s[m]
+    bool internal afterNo; // the measured entries are lone noes (the rows of a yes after a lone no)
+    bool internal newTarget; // a restore names a NEW target already placed elsewhere (FOLDER and PROPERTY)
+    bytes32[3] internal afterNoRoles; // with `afterNo`, the measured SAME and BROADER entries' roles (word pages)
 
     function _famPurpose(uint8 f) internal pure returns (bytes32) {
         return f == FAM_TAG
@@ -1634,6 +1914,11 @@ contract GasModelTest is FilesRecipesBase {
     {
         if (f == FAM_FOLDER) return _namesAndFolders(seed, NAME0, len, n);
         places = _topicsN(string.concat(seed, "-"), n);
+        if (afterNo && (f == FAM_SAME || f == FAM_BROADER)) {
+            // a role of its own per measured entry, so each yes's target has a backlink list of its own
+            bytes32[] memory x = _topicsN(string.concat(seed, "-m"), 3);
+            (afterNoRoles[0], afterNoRoles[1], afterNoRoles[2]) = (x[0], x[1], x[2]);
+        }
         if ((f == FAM_SAME || f == FAM_BROADER) && others.length < len) {
             bytes32[] memory o = _topicsN(string.concat(seed, "-o"), len);
             for (uint256 i; i < len; ++i) {
@@ -1660,9 +1945,11 @@ contract GasModelTest is FilesRecipesBase {
             role = keccak256(abi.encode("gas-model property", e));
             target = _filler("prop", 0, e);
         } else {
-            role = others[e];
+            role = afterNo && m < 3 ? afterNoRoles[m] : others[e];
             target = role;
         }
+        // with `afterNo`, a PROPERTY yes names a value of its own per measured entry
+        if (afterNo && f == FAM_PROPERTY && m < 3) target = _famNewTarget(f, m);
     }
 
     /// The author's list at each place: `len` first statements (entries 0 .. len − 1), `measured[e]` the subject
@@ -1679,13 +1966,41 @@ contract GasModelTest is FilesRecipesBase {
                     if (measuredAt[q] == i * len + e) m = q;
                 }
                 (bytes32 role, bytes32 target) = _famEntry(f, e, m);
-                a[i * len + e] = _bind(purpose, places[i], role, target, 0);
+                a[i * len + e] = afterNo && m < 40
+                    ? EfsFiles.loneNegative(purpose, places[i], role, 0)
+                    : _bind(purpose, places[i], role, target, 0);
             }
         }
         _doIn(a, new bytes[](a.length), 64);
     }
 
-    /// The later statement `which` (0 mask, 1 release, 2 restore, 3 re-bind) at `place` on entry e (measured index m).
+    /// A restore's new target for measured index m (`newTarget`): FOLDER the file s[20 + m], PROPERTY an
+    /// address-shaped value of its own.
+    function _famNewTarget(uint8 f, uint256 m) internal view returns (bytes32) {
+        return f == FAM_FOLDER ? s[20 + m] : _filler("prop-new", 0, m);
+    }
+
+    /// Places each target of the measured entries once elsewhere (unmeasured), so the measured statement's backlink
+    /// append takes a fresh word (the target's list held one entry): a TAG thing tagged yes at another topic, a FOLDER
+    /// target bound in d2, a PROPERTY value set at another topic, a SAME or BROADER role related from another topic.
+    function _famElsewhere(uint8 f, bytes32[3] memory targets) internal {
+        Action[] memory a = new Action[](3);
+        bytes32 purpose = _famPurpose(f);
+        bytes32 o = f == FAM_FOLDER ? d2 : _topicsN("gm-elsewhere-", 1)[0];
+        for (uint256 q; q < 3; ++q) {
+            if (f == FAM_FOLDER) {
+                a[q] = _bind(purpose, o, keccak256(_bindName(q)), targets[q], 0);
+            } else if (f == FAM_PROPERTY) {
+                a[q] = _bind(purpose, o, keccak256(abi.encode("gm elsewhere", q)), targets[q], 0);
+            } else {
+                a[q] = _bind(purpose, o, targets[q], targets[q], 0);
+            }
+        }
+        _do(a, new bytes[](3));
+    }
+
+    /// The later statement `which` (0 mask, 1 release, 2 restore, 3 re-bind, 4 the yes after a lone no) at `place` on
+    /// entry e (measured index m).
     function _famLater(uint8 f, bytes32 place, uint256 e, uint256 m, uint256 which)
         internal
         view
@@ -1695,7 +2010,10 @@ contract GasModelTest is FilesRecipesBase {
         (bytes32 role, bytes32 target) = _famEntry(f, e, m);
         if (which == 0) return EfsFiles.unbind(purpose, place, role, 1);
         if (which == 1) return EfsFiles.release(purpose, place, role, 1);
-        if (which == 2) return _bind(purpose, place, role, target, 2);
+        if (which == 2) {
+            return _bind(purpose, place, role, newTarget ? _famNewTarget(f, m) : target, 2);
+        }
+        if (which == 4) return _bind(purpose, place, role, target, 1);
         // re-binds: a tag number change (same target, 0 -> 75); a folder entry to s[32 + m] (the existing row's
         // pattern: old targets s[29..32), new s[32..35))
         if (f == FAM_TAG) return EfsFiles.bindWithStrength(purpose, place, role, role, 1, 75);
@@ -1704,6 +2022,7 @@ contract GasModelTest is FilesRecipesBase {
 
     function _famName(uint8 f, uint256 which) internal pure returns (string memory) {
         string[5] memory fam = ["tag", "folder", "property", "same", "broader"];
+        if (which == 4) return string.concat("bind ", fam[f], " after no");
         if (which == 3) {
             return f == FAM_TAG ? "bind tag number change" : "bind folder rebind";
         }
@@ -1721,7 +2040,7 @@ contract GasModelTest is FilesRecipesBase {
         uint256 kinds
     ) internal {
         uint256 snap = vm.snapshotState();
-        for (uint256 w; w < 4; ++w) {
+        for (uint256 w; w < 5; ++w) {
             if ((kinds >> w) & 1 == 0) continue;
             if (w == 2) {
                 vm.pauseGasMetering();
@@ -1730,6 +2049,20 @@ contract GasModelTest is FilesRecipesBase {
                     masks[q] = _famLater(f, pl[q], e[q], q, 0);
                 }
                 _do(masks, new bytes[](3));
+                if (newTarget) {
+                    _famElsewhere(
+                        f, [_famNewTarget(f, 0), _famNewTarget(f, 1), _famNewTarget(f, 2)]
+                    );
+                }
+                vm.resumeGasMetering();
+            }
+            if (w == 4) {
+                vm.pauseGasMetering();
+                bytes32[3] memory t;
+                for (uint256 q; q < 3; ++q) {
+                    (, t[q]) = _famEntry(f, e[q], q);
+                }
+                _famElsewhere(f, t);
                 vm.resumeGasMetering();
             }
             string memory key = string.concat("model ", _famName(f, w), " ", suffix);
@@ -1774,7 +2107,8 @@ contract GasModelTest is FilesRecipesBase {
         _famPairs(f, "long same place", pl, [uint256(512), 256, 768], kinds);
     }
 
-    // kinds: bit 0 mask, 1 release, 2 restore, 3 re-bind
+    // kinds: bit 0 mask, 1 release, 2 restore, 3 re-bind, 4 the yes after a lone no (with `afterNo`, in a test of its
+    // own: the measured entries are then lone noes). FOLDER and PROPERTY restores name a new target (`newTarget`).
     function test_model_tier_tag_new_place() public {
         _famNewPlace(FAM_TAG, "tnp", 1, "new place", 15);
     }
@@ -1788,6 +2122,7 @@ contract GasModelTest is FilesRecipesBase {
     }
 
     function test_model_tier_folder_new_place() public {
+        newTarget = true;
         _famNewPlace(FAM_FOLDER, "fnp", 1, "new place", 7);
     }
 
@@ -1799,19 +2134,23 @@ contract GasModelTest is FilesRecipesBase {
     }
 
     function test_model_tier_folder_long_new_place() public {
+        newTarget = true;
         _famNewPlace(FAM_FOLDER, "fln", 1025, "long new place", 7);
     }
 
     function test_model_tier_folder_long_same_place() public {
+        newTarget = true;
         _famSamePlace(FAM_FOLDER, "fls", 7);
     }
 
     function test_model_tier_property_long_new_place() public {
-        _famNewPlace(FAM_PROPERTY, "pln", 1025, "long new place", 3);
+        newTarget = true;
+        _famNewPlace(FAM_PROPERTY, "pln", 1025, "long new place", 7);
     }
 
     function test_model_tier_property_long_same_place() public {
-        _famSamePlace(FAM_PROPERTY, "pls", 3);
+        newTarget = true;
+        _famSamePlace(FAM_PROPERTY, "pls", 7);
     }
 
     function test_model_tier_same_long_new_place() public {
@@ -1828,6 +2167,67 @@ contract GasModelTest is FilesRecipesBase {
 
     function test_model_tier_broader_long_same_place() public {
         _famSamePlace(FAM_BROADER, "bls", 7);
+    }
+
+    // the rows of a yes after a lone no (kinds bit 4), at a new place (TAG and FOLDER) and in long lists
+    function test_model_tier_tag_after_no_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_TAG, "tanp", 1, "new place", 16);
+    }
+
+    function test_model_tier_tag_after_no_long_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_TAG, "taln", 1025, "long new place", 16);
+    }
+
+    function test_model_tier_tag_after_no_long_same_place() public {
+        afterNo = true;
+        _famSamePlace(FAM_TAG, "tals", 16);
+    }
+
+    function test_model_tier_folder_after_no_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_FOLDER, "fanp", 1, "new place", 16);
+    }
+
+    function test_model_tier_folder_after_no_long_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_FOLDER, "faln", 1025, "long new place", 16);
+    }
+
+    function test_model_tier_folder_after_no_long_same_place() public {
+        afterNo = true;
+        _famSamePlace(FAM_FOLDER, "fals", 16);
+    }
+
+    function test_model_tier_property_after_no_long_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_PROPERTY, "paln", 1025, "long new place", 16);
+    }
+
+    function test_model_tier_property_after_no_long_same_place() public {
+        afterNo = true;
+        _famSamePlace(FAM_PROPERTY, "pals", 16);
+    }
+
+    function test_model_tier_same_after_no_long_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_SAME, "saln", 1025, "long new place", 16);
+    }
+
+    function test_model_tier_same_after_no_long_same_place() public {
+        afterNo = true;
+        _famSamePlace(FAM_SAME, "sals", 16);
+    }
+
+    function test_model_tier_broader_after_no_long_new_place() public {
+        afterNo = true;
+        _famNewPlace(FAM_BROADER, "baln", 1025, "long new place", 16);
+    }
+
+    function test_model_tier_broader_after_no_long_same_place() public {
+        afterNo = true;
+        _famSamePlace(FAM_BROADER, "bals", 16);
     }
 
     // ---- 9b. composites for the tiers' edges and the other purposes (never fitted) ------------------------------
@@ -1936,6 +2336,625 @@ contract GasModelTest is FilesRecipesBase {
     function test_model_validate_later_broader_1024() public {
         _famComposite(
             FAM_BROADER, "lbk", "model validate broader masks of 8 entries of 1025 at one topic"
+        );
+    }
+
+    // ---- 10. a yes after a lone no, restores to new targets, HEAD later statements (composites, never fitted) -------
+    // The rows of section 4 and 9 for these statements are measured at the dearest position they can take (the yes after a
+    // lone no: the binding's second statement, its history word 0 opening; a restore: the binding's third, none
+    // opening) and on the dearest target (a thing linked once elsewhere, a new target already placed elsewhere). The
+    // composites below are whole publications in the states a person makes: lists of lone noes (every live-bits word
+    // empty), the later variants (no → release → yes, no → no → yes: revision 2 before the yes, no word), a restore deep in
+    // a toggled binding (revision 5 before it: a word opens), folders and HEADs, and files created at, or moved into,
+    // names their author removed. Lists are built with gas metering paused.
+
+    /// `k` topics `<seed>i`, the author's list at each holding `len` lone noes, the last (entry len − 1) about s[i], each
+    /// s[i] tagged yes once at another topic. Returns the topics.
+    function _noTopics(string memory seed, uint256 k, uint256 len)
+        internal
+        returns (bytes32[] memory t)
+    {
+        vm.pauseGasMetering();
+        t = _topicsN(seed, k);
+        bytes32 o = _topicsN(string.concat(seed, "o-"), 1)[0];
+        Action[] memory f = new Action[](k * len + k);
+        for (uint256 i; i < k; ++i) {
+            for (uint256 e; e < len; ++e) {
+                bytes32 x = e == len - 1 ? s[i] : _filler(seed, i, e);
+                f[i * len + e] = EfsFiles.loneNegative(Purpose.TAG, t[i], x, 0);
+            }
+            f[k * len + i] = _bind(Purpose.TAG, o, s[i], s[i], 0);
+        }
+        _doIn(f, new bytes[](f.length), 64);
+        vm.resumeGasMetering();
+    }
+
+    /// Statements at (t[i], s[i]) for every i: `kind` 0 a yes, 1 a mask, 2 a release, 3 a mask with a new number.
+    function _tagsAt(bytes32[] memory t, uint256 kind, uint64 expected)
+        internal
+        view
+        returns (Action[] memory a)
+    {
+        a = new Action[](t.length);
+        for (uint256 i; i < t.length; ++i) {
+            a[i] = kind == 0
+                ? _bind(Purpose.TAG, t[i], s[i], s[i], expected)
+                : kind == 1
+                    ? EfsFiles.unbind(Purpose.TAG, t[i], s[i], expected)
+                    : kind == 2
+                        ? EfsFiles.release(Purpose.TAG, t[i], s[i], expected)
+                        : EfsFiles.unbindWithStrength(Purpose.TAG, t[i], s[i], expected, 3);
+        }
+    }
+
+    function _paused(Action[] memory a) internal {
+        vm.pauseGasMetering();
+        _do(a, new bytes[](a.length));
+        vm.resumeGasMetering();
+    }
+
+    function test_model_validate_after_no_tags_across_48() public {
+        bytes32[] memory t = _noTopics("na48-", ACROSS, 48);
+        _exec(
+            "model validate tag yeses after lone noes across 32 topics of 48",
+            _tagsAt(t, 0, 1),
+            new bytes[](ACROSS)
+        );
+    }
+
+    function test_model_validate_after_no_tags_across_256() public {
+        bytes32[] memory t = _noTopics("na256-", ACROSS, 256);
+        _exec(
+            "model validate tag yeses after lone noes across 32 topics of 256",
+            _tagsAt(t, 0, 1),
+            new bytes[](ACROSS)
+        );
+    }
+
+    function test_model_validate_after_no_tags_across_1025() public {
+        bytes32[] memory t = _noTopics("na1k-", 16, 1025);
+        _exec(
+            "model validate tag yeses after lone noes across 16 topics of 1025",
+            _tagsAt(t, 0, 1),
+            new bytes[](16)
+        );
+    }
+
+    /// One topic whose author's list holds 1,025 lone noes; 32 of them, spread (entries 32, 64, ..., 1,024), about
+    /// s[0..32), each linked once at another topic; their yeses.
+    function test_model_validate_after_no_tags_one_topic_1025() public {
+        vm.pauseGasMetering();
+        bytes32 t = _topicsN("no1k-", 1)[0];
+        bytes32 o = _topicsN("no1k-o-", 1)[0];
+        Action[] memory f = new Action[](1025 + ACROSS);
+        Action[] memory a = new Action[](ACROSS);
+        for (uint256 e; e < 1025; ++e) {
+            bytes32 x = _filler("no1k", 0, e);
+            if (e != 0 && e % 32 == 0) {
+                uint256 q = e / 32 - 1;
+                x = s[q];
+                f[1025 + q] = _bind(Purpose.TAG, o, x, x, 0);
+                a[q] = _bind(Purpose.TAG, t, x, x, 1);
+            }
+            f[e] = EfsFiles.loneNegative(Purpose.TAG, t, x, 0);
+        }
+        _doIn(f, new bytes[](f.length), 64);
+        vm.resumeGasMetering();
+        _exec(
+            "model validate tag yeses after lone noes of 32 entries of 1025 at one topic",
+            a,
+            new bytes[](ACROSS)
+        );
+    }
+
+    /// The later variants: no → release → yes and no → no → yes (revision 2 before the yes: the head's slot is fresh,
+    /// no history word opens), across 32 topics whose lists hold the one lone no.
+    function test_model_validate_after_no_tags_variants() public {
+        bytes32[] memory t = _noTopics("nv-", ACROSS, 1);
+        uint256 snap = vm.snapshotState();
+        _paused(_tagsAt(t, 2, 1));
+        _exec(
+            "model validate tag yeses after no then release across 32 topics",
+            _tagsAt(t, 0, 2),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+        _paused(_tagsAt(t, 3, 1));
+        _exec(
+            "model validate tag yeses after no then no across 32 topics",
+            _tagsAt(t, 0, 2),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+    }
+
+    /// Restores at a word-opening position (revision 5 before them: yes, mask, yes, mask, mask with a new number), across
+    /// 32 topics whose lists hold the one entry.
+    function test_model_validate_restores_at_history_word() public {
+        vm.pauseGasMetering();
+        bytes32[] memory t = _topicsN("rw5-", ACROSS);
+        _do(_tagsAt(t, 0, 0), new bytes[](ACROSS));
+        _do(_tagsAt(t, 1, 1), new bytes[](ACROSS));
+        _do(_tagsAt(t, 0, 2), new bytes[](ACROSS));
+        _do(_tagsAt(t, 1, 3), new bytes[](ACROSS));
+        _do(_tagsAt(t, 3, 4), new bytes[](ACROSS));
+        vm.resumeGasMetering();
+        _exec(
+            "model validate tag restores at revision 5 across 32 topics",
+            _tagsAt(t, 0, 5),
+            new bytes[](ACROSS)
+        );
+    }
+
+    /// `k` folders of the author, each holding `fill` entries naming s[39] and then a hide (a lone no) of name
+    /// `NAME0 + fill`, and each s[i] placed once in another folder (`dx`, name NAME0 + i). Returns the folders.
+    function _hiddenFolders(string memory seed, uint256 k, uint256 fill)
+        internal
+        returns (bytes32[] memory d)
+    {
+        vm.pauseGasMetering();
+        uint256 names = fill + 1 > k ? fill + 1 : k;
+        bytes32[] memory all = _namesAndFolders(seed, NAME0, names, k + 1);
+        d = new bytes32[](k);
+        Action[] memory a = new Action[](k * (fill + 1) + k);
+        for (uint256 i; i < k; ++i) {
+            d[i] = all[i];
+            for (uint256 e; e < fill; ++e) {
+                a[i * (fill + 1) + e] = _entry(d[i], NAME0 + e, s[39]);
+            }
+            a[i * (fill + 1) + fill] =
+                EfsFiles.loneNegative(Purpose.FOLDER, d[i], keccak256(_nm(NAME0 + fill, 12)), 0);
+            a[k * (fill + 1) + i] = _entry(all[k], NAME0 + i, s[i]);
+        }
+        _doIn(a, new bytes[](a.length), 64);
+        vm.resumeGasMetering();
+    }
+
+    /// Statements at (d[i], name) for every i: `kind` 0 a bind to s[i], 1 a hide, 2 a release, 3 a hide with a new
+    /// number.
+    function _foldersAt(bytes32[] memory d, uint256 name, uint256 kind, uint64 expected)
+        internal
+        view
+        returns (Action[] memory a)
+    {
+        a = new Action[](d.length);
+        bytes32 role = keccak256(_nm(name, 12));
+        for (uint256 i; i < d.length; ++i) {
+            a[i] = kind == 0
+                ? _bind(Purpose.FOLDER, d[i], role, s[i], expected)
+                : kind == 1
+                    ? EfsFiles.unbind(Purpose.FOLDER, d[i], role, expected)
+                    : kind == 2
+                        ? EfsFiles.release(Purpose.FOLDER, d[i], role, expected)
+                        : EfsFiles.unbindWithStrength(Purpose.FOLDER, d[i], role, expected, 3);
+        }
+    }
+
+    function test_model_validate_after_no_folders_across() public {
+        bytes32[] memory d = _hiddenFolders("fna", ACROSS, 0);
+        uint256 snap = vm.snapshotState();
+        _exec(
+            "model validate folder yeses after hides across 32 folders",
+            _foldersAt(d, NAME0, 0, 1),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+        _paused(_foldersAt(d, NAME0, 2, 1));
+        _exec(
+            "model validate folder yeses after hide then release across 32 folders",
+            _foldersAt(d, NAME0, 0, 2),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+        _paused(_foldersAt(d, NAME0, 3, 1));
+        _exec(
+            "model validate folder yeses after hide then hide across 32 folders",
+            _foldersAt(d, NAME0, 0, 2),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+    }
+
+    function test_model_validate_after_no_folders_1025() public {
+        bytes32[] memory d = _hiddenFolders("fnk", 16, 1024);
+        _exec(
+            "model validate folder yeses after hides at entry 1024 across 16 folders",
+            _foldersAt(d, NAME0 + 1024, 0, 1),
+            new bytes[](16)
+        );
+    }
+
+    /// One folder holding 1,025 of the author's entries, the ones at 128, 256, ..., 1,024 hides (lone noes) of names
+    /// whose files s[0..8) are each placed once in another folder; their yeses.
+    function test_model_validate_after_no_folder_one_1025() public {
+        vm.pauseGasMetering();
+        bytes32[] memory all = _namesAndFolders("fn1k", NAME0, 1025, 2);
+        Action[] memory f = new Action[](1025 + 8);
+        Action[] memory a = new Action[](8);
+        for (uint256 e; e < 1025; ++e) {
+            f[e] = _entry(all[0], NAME0 + e, s[39]);
+            if (e != 0 && e % 128 == 0) {
+                uint256 q = e / 128 - 1;
+                bytes32 role = keccak256(_nm(NAME0 + e, 12));
+                f[e] = EfsFiles.loneNegative(Purpose.FOLDER, all[0], role, 0);
+                f[1025 + q] = _entry(all[1], NAME0 + q, s[q]);
+                a[q] = _bind(Purpose.FOLDER, all[0], role, s[q], 1);
+            }
+        }
+        _doIn(f, new bytes[](f.length), 64);
+        vm.resumeGasMetering();
+        _exec(
+            "model validate folder yeses after hides of 8 entries of 1025 in one folder",
+            a,
+            new bytes[](8)
+        );
+    }
+
+    /// Restores to NEW targets already placed elsewhere, across 32 folders holding one entry each: (d[i], NAME0) → s[i],
+    /// hidden, each new file n[i] placed once in another folder; then the restores name n[i].
+    function test_model_validate_folder_restores_new_targets() public {
+        vm.pauseGasMetering();
+        bytes32[] memory all = _namesAndFolders("fnt", NAME0, ACROSS, ACROSS + 1);
+        Action[] memory c = new Action[](ACROSS);
+        bytes32[] memory n = new bytes32[](ACROSS);
+        for (uint256 i; i < ACROSS; ++i) {
+            c[i] = _create(_salt("fnt new", i));
+            n[i] = Keys.subject(p, _salt("fnt new", i));
+        }
+        _do(c, new bytes[](ACROSS));
+        Action[] memory a = new Action[](2 * ACROSS);
+        for (uint256 i; i < ACROSS; ++i) {
+            a[i] = _entry(all[i], NAME0, s[i]);
+            a[ACROSS + i] = _entry(all[ACROSS], NAME0 + i, n[i]);
+        }
+        _doIn(a, new bytes[](a.length), 64);
+        Action[] memory m = new Action[](ACROSS);
+        bytes32 role = keccak256(_nm(NAME0, 12));
+        for (uint256 i; i < ACROSS; ++i) {
+            m[i] = EfsFiles.unbind(Purpose.FOLDER, all[i], role, 1);
+        }
+        _do(m, new bytes[](ACROSS));
+        for (uint256 i; i < ACROSS; ++i) {
+            m[i] = _bind(Purpose.FOLDER, all[i], role, n[i], 2);
+        }
+        vm.resumeGasMetering();
+        _exec(
+            "model validate folder restores to new targets across 32 folders",
+            m,
+            new bytes[](ACROSS)
+        );
+    }
+
+    /// 32 files of the author, each with a root and a child revision, every HEAD bound to its root.
+    function _headFiles(string memory seed)
+        internal
+        returns (bytes32[] memory f, bytes32[] memory root, bytes32[] memory kid)
+    {
+        vm.pauseGasMetering();
+        f = new bytes32[](ACROSS);
+        root = new bytes32[](ACROSS);
+        kid = new bytes32[](ACROSS);
+        Action[] memory a = new Action[](3 * ACROSS);
+        bytes[] memory b = new bytes[](3 * ACROSS);
+        for (uint256 i; i < ACROSS; ++i) {
+            a[i] = _create(_salt(seed, i));
+            f[i] = Keys.subject(p, _salt(seed, i));
+            (a[ACROSS + i], b[ACROSS + i]) = _publish(T_ROOT, EfsFiles.rootBody(f[i], "head v1"));
+            root[i] = _id(T_ROOT, b[ACROSS + i]);
+            (a[2 * ACROSS + i], b[2 * ACROSS + i]) =
+                _publish(T_CHILD, EfsFiles.childBody(root[i], f[i], "head v2"));
+            kid[i] = _id(T_CHILD, b[2 * ACROSS + i]);
+        }
+        _doIn(a, b, 64);
+        a = new Action[](ACROSS);
+        for (uint256 i; i < ACROSS; ++i) {
+            a[i] = _bind(Purpose.HEAD, f[i], 0, root[i], 0);
+        }
+        _do(a, new bytes[](ACROSS));
+        vm.resumeGasMetering();
+    }
+
+    function _headsAt(bytes32[] memory f, bytes32[] memory t, uint256 kind, uint64 expected)
+        internal
+        pure
+        returns (Action[] memory a)
+    {
+        a = new Action[](f.length);
+        for (uint256 i; i < f.length; ++i) {
+            a[i] = kind == 0
+                ? EfsFiles.bind(Purpose.HEAD, f[i], 0, t[i], expected)
+                : kind == 1
+                    ? EfsFiles.unbind(Purpose.HEAD, f[i], 0, expected)
+                    : kind == 2
+                        ? EfsFiles.release(Purpose.HEAD, f[i], 0, expected)
+                        : EfsFiles.loneNegative(Purpose.HEAD, f[i], 0, 0);
+        }
+    }
+
+    function test_model_validate_heads_across_files() public {
+        (bytes32[] memory f, bytes32[] memory root, bytes32[] memory kid) = _headFiles("hx");
+        uint256 snap = vm.snapshotState();
+        _exec(
+            "model validate head masks across 32 files",
+            _headsAt(f, root, 1, 1),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+        _exec(
+            "model validate head releases across 32 files",
+            _headsAt(f, root, 2, 1),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+        // restores to the child revision, which a second author's HEAD names first
+        vm.pauseGasMetering();
+        _as(LEVEL_B);
+        _send(LEVEL_B, _headsAt(f, kid, 0, 0));
+        _as(address(0));
+        _do(_headsAt(f, root, 1, 1), new bytes[](ACROSS));
+        vm.resumeGasMetering();
+        _exec(
+            "model validate head restores to new revisions across 32 files",
+            _headsAt(f, kid, 0, 2),
+            new bytes[](ACROSS)
+        );
+        vm.revertToState(snap);
+        // a second author's yeses after its lone noes, naming the roots the first author's HEADs name
+        vm.pauseGasMetering();
+        _as(LEVEL_B);
+        _send(LEVEL_B, _headsAt(f, root, 3, 0));
+        vm.resumeGasMetering();
+        _exec(
+            "model validate head yeses after lone noes across 32 files",
+            _headsAt(f, root, 0, 1),
+            new bytes[](ACROSS)
+        );
+        _as(address(0));
+        vm.revertToState(snap);
+    }
+
+    // Files created at names their author removed, and files moved into such names (folder restores to a new target
+    // never placed, or to a moved file placed once in its old folder): each measured with the name record's PUBLISH as a
+    // repeat (`publishExisting`, as `EfsFiles.createFile` and `move` write it) and with no name PUBLISH (an SDK omits it
+    // when the name record exists). Sizes: the largest batch the planner plans for the shape on each schedule, and 2.
+
+    /// A 10-byte name `<pre><3 letters>.md`, distinct per i.
+    function _fname(string memory pre, uint256 i) internal pure returns (bytes memory) {
+        return bytes.concat(
+            bytes(pre),
+            bytes1(uint8(97 + (i / 676) % 26)),
+            bytes1(uint8(97 + (i / 26) % 26)),
+            bytes1(uint8(97 + i % 26)),
+            ".txt"
+        );
+    }
+
+    function _createAtRemoved(uint256 k, bool withName) internal {
+        vm.pauseGasMetering();
+        Action[] memory a = new Action[](0);
+        bytes[] memory b = new bytes[](0);
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y,,) = EfsFiles.createFile(
+                _types(),
+                p,
+                rootDir,
+                _salt("old file", i),
+                _fname("cr-", i),
+                "Old notes here.\n",
+                true
+            );
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _doIn(a, b, 60);
+        Action[] memory rel = new Action[](k);
+        for (uint256 i; i < k; ++i) {
+            rel[i] = EfsFiles.release(Purpose.FOLDER, rootDir, keccak256(_fname("cr-", i)), 1);
+        }
+        _do(rel, new bytes[](k));
+        vm.resumeGasMetering();
+        (a, b) = (new Action[](0), new bytes[](0));
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y,,) = EfsFiles.createFile(
+                _types(),
+                p,
+                rootDir,
+                _salt("new file", i),
+                _fname("cr-", i),
+                "Meeting at 10:00.\n",
+                withName
+            );
+            x[x.length - 1].expectedRevision = 2;
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _exec(
+            string.concat(
+                "model validate create ",
+                vm.toString(k),
+                " files at removed names",
+                withName ? ", name repeated" : ", no name publish"
+            ),
+            a,
+            b
+        );
+    }
+
+    function _moveIntoRemoved(uint256 k, bool withName) internal {
+        vm.pauseGasMetering();
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        (a[0], b[0]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt("dest", k)));
+        bytes32 dest = _id(T_DIRECTORY, b[0]);
+        bytes32[] memory file = new bytes32[](k);
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 fl,) = EfsFiles.createFile(
+                _types(), p, rootDir, _salt("mover", i), _fname("ma-", i), "Moving notes.\n", true
+            );
+            file[i] = fl;
+            (a, b) = EfsFiles.concat(a, b, x, y);
+            (x, y,,) = EfsFiles.createFile(
+                _types(), p, dest, _salt("dest old", i), _fname("mb-", i), "Old notes here.\n", true
+            );
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _doIn(a, b, 60);
+        Action[] memory rel = new Action[](k);
+        for (uint256 i; i < k; ++i) {
+            rel[i] = EfsFiles.release(Purpose.FOLDER, dest, keccak256(_fname("mb-", i)), 1);
+        }
+        _do(rel, new bytes[](k));
+        vm.resumeGasMetering();
+        (a, b) = (new Action[](0), new bytes[](0));
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y) = EfsFiles.move(
+                _types(), file[i], rootDir, _fname("ma-", i), 1, dest, _fname("mb-", i), 2, withName
+            );
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _exec(
+            string.concat(
+                "model validate move ",
+                vm.toString(k),
+                " files into removed names",
+                withName ? ", name repeated" : ", no name publish"
+            ),
+            a,
+            b
+        );
+    }
+
+    function test_model_validate_create_at_removed_names() public {
+        uint256[3] memory k = [uint256(2), CREATE_REMOVED_PRAGUE, CREATE_REMOVED_AMSTERDAM];
+        _sizes(k, true, true);
+    }
+
+    function test_model_validate_create_at_removed_names_no_name() public {
+        uint256[3] memory k =
+            [uint256(2), CREATE_REMOVED_NONAME_PRAGUE, CREATE_REMOVED_NONAME_AMSTERDAM];
+        _sizes(k, true, false);
+    }
+
+    function test_model_validate_move_into_removed_names() public {
+        uint256[3] memory k = [uint256(2), MOVE_REMOVED_PRAGUE, MOVE_REMOVED_AMSTERDAM];
+        _sizes(k, false, true);
+    }
+
+    function test_model_validate_move_into_removed_names_no_name() public {
+        uint256[3] memory k =
+            [uint256(2), MOVE_REMOVED_NONAME_PRAGUE, MOVE_REMOVED_NONAME_AMSTERDAM];
+        _sizes(k, false, false);
+    }
+
+    /// The planner's largest batch of each shape (tools/gas-plan.mjs on this release's gas/model.json; see
+    /// `validate create … files at removed names` in tools/gas-model.mjs), per schedule.
+    uint256 internal constant CREATE_REMOVED_PRAGUE = 11;
+    uint256 internal constant CREATE_REMOVED_AMSTERDAM = 12;
+    uint256 internal constant CREATE_REMOVED_NONAME_PRAGUE = 13;
+    uint256 internal constant CREATE_REMOVED_NONAME_AMSTERDAM = 16;
+    uint256 internal constant MOVE_REMOVED_PRAGUE = 18;
+    uint256 internal constant MOVE_REMOVED_AMSTERDAM = 19;
+    uint256 internal constant MOVE_REMOVED_NONAME_PRAGUE = 25;
+    uint256 internal constant MOVE_REMOVED_NONAME_AMSTERDAM = 25;
+
+    /// Each distinct size of `k` from the same state, at removed names and, for comparison, the same shape at fresh
+    /// names (an ordinary batch of create-file recipes or moves of the same size).
+    function _sizes(uint256[3] memory k, bool create, bool withName) internal {
+        uint256 snap = vm.snapshotState();
+        for (uint256 i; i < 3; ++i) {
+            if (i == 2 && k[2] == k[1]) break;
+            if (create) _createAtRemoved(k[i], withName);
+            else _moveIntoRemoved(k[i], withName);
+            vm.revertToState(snap);
+            if (create) _createAtFresh(k[i], withName);
+            else _moveToFresh(k[i], withName);
+            vm.revertToState(snap);
+        }
+    }
+
+    /// `k` create-file recipes at fresh names in the root folder; without a name PUBLISH the names are published
+    /// first (unmeasured).
+    function _createAtFresh(uint256 k, bool withName) internal {
+        Action[] memory a = new Action[](0);
+        bytes[] memory b = new bytes[](0);
+        if (!withName) {
+            vm.pauseGasMetering();
+            Action[] memory n = new Action[](k);
+            bytes[] memory nb = new bytes[](k);
+            for (uint256 i; i < k; ++i) {
+                (n[i], nb[i]) = _name(_fname("cf-", i));
+            }
+            _do(n, nb);
+            vm.resumeGasMetering();
+        }
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y,,) = EfsFiles.createFile(
+                _types(),
+                p,
+                rootDir,
+                _salt("fresh file", i),
+                _fname("cf-", i),
+                "Meeting at 10:00.\n",
+                withName
+            );
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _exec(
+            string.concat(
+                "model validate create ",
+                vm.toString(k),
+                " files at fresh names",
+                withName ? ", name published" : ", no name publish"
+            ),
+            a,
+            b
+        );
+    }
+
+    /// `k` moves of the author's files from the root folder to fresh names in another folder; without a name PUBLISH
+    /// the names are published first (unmeasured).
+    function _moveToFresh(uint256 k, bool withName) internal {
+        vm.pauseGasMetering();
+        Action[] memory a = new Action[](1);
+        bytes[] memory b = new bytes[](1);
+        (a[0], b[0]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt("fresh dest", k)));
+        bytes32 dest = _id(T_DIRECTORY, b[0]);
+        bytes32[] memory file = new bytes32[](k);
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 fl,) = EfsFiles.createFile(
+                _types(),
+                p,
+                rootDir,
+                _salt("fresh mover", i),
+                _fname("fa-", i),
+                "Moving notes.\n",
+                true
+            );
+            file[i] = fl;
+            (a, b) = EfsFiles.concat(a, b, x, y);
+            if (!withName) {
+                Action[] memory n = new Action[](1);
+                bytes[] memory nb = new bytes[](1);
+                (n[0], nb[0]) = _name(_fname("fb-", i));
+                (a, b) = EfsFiles.concat(a, b, n, nb);
+            }
+        }
+        _doIn(a, b, 60);
+        vm.resumeGasMetering();
+        (a, b) = (new Action[](0), new bytes[](0));
+        for (uint256 i; i < k; ++i) {
+            (Action[] memory x, bytes[] memory y) = EfsFiles.move(
+                _types(), file[i], rootDir, _fname("fa-", i), 1, dest, _fname("fb-", i), 0, withName
+            );
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _exec(
+            string.concat(
+                "model validate move ",
+                vm.toString(k),
+                " files to fresh names",
+                withName ? ", name published" : ", no name publish"
+            ),
+            a,
+            b
         );
     }
 

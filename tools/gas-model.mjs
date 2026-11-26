@@ -41,14 +41,16 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { GLAMSTERDAM_FLOOR, LIMITS, WORK_MODEL, parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
-import { FIXED_ANCHORS, fixedFrom } from "./gas-fit.mjs";
-import { laterKey } from "./gas-plan.mjs";
+import { GAS_SCHEDULES, GLAMSTERDAM_FLOOR, LIMITS, WORK_MODEL, parseArgs, root, toJSON, validate } from "./deploy-plan.mjs";
+import { FIXED_ANCHORS, allGasOverBoundPercent, fixedFrom, overBound as overBoundOf } from "./gas-fit.mjs";
+import { historyWordAdds, laterKey } from "./gas-plan.mjs";
 
 const o = parseArgs(process.argv.slice(2), ["skip-amsterdam", "check"]);
 const CHECK = !!o.check && o.check !== "0";
 const SUITE = "test/integration/GasModel.t.sol";
 const LIMIT_PERCENT = 15;
+/** One fresh slot's state gas on amsterdam (EIP-8037; tools/deploy-plan.mjs GAS_SCHEDULES, the single source). */
+const FRESH_SLOT_STATE_GAS = GAS_SCHEDULES.amsterdam.freshSlot.stateGas;
 const git = (...args) => { try { return execFileSync("git", args, { cwd: root }).toString().trim(); } catch { return null; } };
 
 function run(profile) {
@@ -153,6 +155,49 @@ const ACTIONS = {
       ["unbindBroader", "unbind broader"], ["releaseBroader", "release broader"], ["restoreBroader", "restore broader"]]
       .flatMap(([name, key]) => [[`${name}LongNewPlace`, `${key} long new place`], [`${name}LongSamePlace`, `${key} long same place`]]),
   ),
+  // the list release's later rows (GasModel.t.sol sections 4, 9 and the tier tests with `afterNo`/`newTarget`): a BIND on
+  // a head that never bound (a yes after a lone no), the restore of a label, HEAD masks, releases and restores, and
+  // the restore at a word-opening position that `historyWordOpen` is derived from
+  bindTagAfterNo: "bind tag after no",
+  bindFolderAfterNo: "bind folder after no",
+  bindPropertyAfterNo: "bind property after no",
+  bindSameAfterNo: "bind same after no",
+  bindBroaderAfterNo: "bind broader after no",
+  bindHeadAfterNo: "bind head after no",
+  bindTagAfterNoNewPlace: "bind tag after no new place",
+  bindFolderAfterNoNewPlace: "bind folder after no new place",
+  restoreProperty: "restore property",
+  unbindHead: "unbind head",
+  releaseHead: "release head",
+  restoreHead: "restore head",
+  restoreTagAtHistoryWord: "restore tag at history word",
+  ...Object.fromEntries(
+    [["bindTagAfterNo", "bind tag after no"], ["bindFolderAfterNo", "bind folder after no"], ["bindPropertyAfterNo", "bind property after no"],
+      ["bindSameAfterNo", "bind same after no"], ["bindBroaderAfterNo", "bind broader after no"], ["restoreProperty", "restore property"]]
+      .flatMap(([name, key]) => [[`${name}LongNewPlace`, `${key} long new place`], [`${name}LongSamePlace`, `${key} long same place`]]),
+  ),
+};
+/** Rows measured for their notes only (never constants): restores to the KEPT target, against which the new-target
+ *  restore rows state their over-price (no planner can select them: the head view does not show the stored target). */
+const SAME_TARGET = { restoreFolder: "restore folder same target", restoreProperty: "restore property same target", restoreHead: "restore head same target" };
+
+/** The measured statement position of every later row (design §10.4; GasModel.t.sol): the head's revision before the
+ *  measured statement, whether the binding's history list opened a word for it, and for a BIND which target it named. */
+function laterRowOf(name) {
+  if (name === "unbindTagLone") return null; // a first statement
+  if (name === "restoreTagAtHistoryWord") return { revisionBefore: 5, opensHistoryWord: true, target: "same" };
+  let m = name.match(/^(unbind|release)(Tag|Folder|Property|Same|Broader|Head)(NewPlace|LongNewPlace|LongSamePlace)?$/);
+  if (m) return { revisionBefore: 1, opensHistoryWord: true, target: null };
+  m = name.match(/^restore(Tag|Folder|Property|Same|Broader|Head)(NewPlace|LongNewPlace|LongSamePlace)?$/);
+  if (m) return { revisionBefore: 2, opensHistoryWord: false, target: ["Folder", "Property", "Head"].includes(m[1]) ? "new" : "same" };
+  if (/^bind(Tag|Folder|Property|Same|Broader|Head)AfterNo(NewPlace|LongNewPlace|LongSamePlace)?$/.test(name)) return { revisionBefore: 1, opensHistoryWord: true, target: "neverBound" };
+  if (/^bindTagNumberChange(NewPlace)?$/.test(name)) return { revisionBefore: 1, opensHistoryWord: true, target: "same" };
+  if (/^bind(Folder|Property|Head)Rebind(NewPlace)?$/.test(name)) return { revisionBefore: 1, opensHistoryWord: true, target: "new" };
+  return null;
+}
+const LATER_ROWS = {
+  rule: "Every later row (a statement on a head that is not UNSET) is measured at one position of its binding, stated in `rows`: `revisionBefore`, the head's revision before the measured statement (a head's revision counts every statement of its binding); `opensHistoryWord`, whether the binding's history list opened a word for it (PostingStore._append opens one when the list's count before the append, which equals the revision before, is 1 or a positive multiple of 5: the binding's 2nd, 6th, 11th, 16th statement and every fifth after); and for a BIND `target`: \"same\" (the head's stored target), \"new\" (another target, already placed elsewhere: the kernel rewrites its stored target and the target's backlink append takes a fresh word, the dearest case), \"neverBound\" (the head never bound: the kernel writes its stored target fresh), null for an UNBIND or RELEASE. A planner selects the row from the head it reads (LedgerReads.head or LedgerViews.headsAt: state, revision, targetKind) and the action alone: an UNBIND or RELEASE of a BOUND or MASKED head is unbind<P> or release<P>; a BIND on a BOUND head is a re-bind (bind<P>Rebind, or bindTagNumberChange for TAG); a BIND on a MASKED or RELEASED head is bind<P>AfterNo when targetKind == 0 (the head never bound: Head.targetKind is served as stored and is 0 exactly for a head that never bound, while Head.target is 0 for every masked or released head) and restore<P> otherwise; the list tiers (laterLists) then choose among the row and its tier constants. A statement at another position of its binding than its row's differs by the binding's history word: when its revision before opens a word (1, or a positive multiple of 5) and its row's opensHistoryWord is false, add the profile's historyWordOpen constant to E (and its floor.kernel share, which is zero, to K); when its row's opensHistoryWord is true and its revision before opens none, subtract it (symmetric; tools/gas-plan.mjs historyWordAdds, when a bind action carries `revisionBefore`; without it the row is used as it is). The history list's length before a statement is the head's revision (RealmIndex._foldBind appends one entry per statement of every kind, first statements included), and the kernel refuses a BIND, UNBIND or RELEASE whose expected revision is not the head's (E_CAS, nothing written), so a correction made from a stale revision is refused, never admitted under-priced. Nothing else is added by hand: the kernel's stored-target write of a yes after a lone no is in the AfterNo rows, and a restore to a new target's rewrite in the restore rows of FOLDER, PROPERTY and HEAD.",
+  note: "historyWordOpen = restoreTagAtHistoryWord − restoreTag: a restore measured as the binding's sixth statement (revision 5 before it, a word opens) against the same restore as its third (none opens), at one topic. TAG, SAME and BROADER restores cannot name a new target (the target is the role), so their restore rows name the stored one. FOLDER, PROPERTY and HEAD restore rows name a new target already placed elsewhere, the dearest restore; a restore to the stored target is over-priced by the kernel's target rewrite (each row's `note`), and a restore to a target never placed before costs less than either (its backlink list's first entry sits in the list's head). Every restore and every yes after a lone no row is measured with its target's backlink list at a word-opening count (one entry before it, its word 0 opening), the dearest state; a planner cannot see that list, so a statement whose target's backlink list is at another count is over-priced by one fresh slot less a rewrite (prague about 17,100 gas; amsterdam about 97,920 of state gas and no execution gas). Re-binds have no tier; HEAD rows have no tiers (a file's HEAD scope list holds one entry per author, the HEAD itself, so every HEAD statement is at a list of one entry and at a place of its own).",
 };
 /** The list tiers (design §10.4; read by tools/gas-plan.mjs laterKey). */
 const LATER_LISTS = {
@@ -160,6 +205,12 @@ const LATER_LISTS = {
   claimEntries: 1024,
   rule: "A LATER statement (a planner bind action with first false: a mask, release, restore or re-bind) is priced by its place and the author's entry count there. Its place is (purpose, subject): the author's scope list keyed by (author, purpose, subject), which holds one entry per position the author has ever stated at that subject (masked and released ones included); `entries` is that list's length (IBitmapStore.scopeHead(Keys.scope(author, purpose, subject)).count, as TopicLookupReader.entryCount(author, purpose, place, false, …) returns it). `firstAtPlace` is true when no earlier later statement of the same publication is at the same place, of any kind. Short tier (entries known and ≤ shortTierMaxEntries): the row, or <row>NewPlace for the first later statement at its place when the constants carry one. Long tier (entries > shortTierMaxEntries, or unknown): <row>LongNewPlace when first at its place, else <row>LongSamePlace, measured at entry 1,024 of a 1,025-entry list (claimEntries). A row with no <row>LongNewPlace (a re-bind: a BIND on a BOUND head, which never searches the list) has no tier: <row>NewPlace when first at its place and the constants carry one, else the row.",
   note: "Cost depends on the list's length (RealmIndex._entryIndex bisects it, one store call per probe) and on the changed entry's index (an entry from 48 up has its live bit in a word of its own); a list of at most 48 entries bounds both. A count lower than the truth (a stale read) puts a long list in the short tier and under-prices it, so treat a count older than what the planner trusts as unknown. Above claimEntries the long tier is still applied but is outside what the stated maxima cover (state beyondClaim), as the floor's documented exception is.",
+};
+
+/** The `laterRows` document without its measured notes (predict reads the positions). */
+const LATER_ROWS_DOC = {
+  ...LATER_ROWS,
+  rows: Object.fromEntries(Object.keys(ACTIONS).map((name) => [name, laterRowOf(name)]).filter(([, v]) => v)),
 };
 
 // The per-level terms of a first tag (design §10.4): each row's k1 tags a 2-word topic and k2 a 6-word topic from the
@@ -175,12 +226,18 @@ const LEVEL_ROWS = { allNew: "tag level all new", allExisting: "tag level all ex
 const pub = (shape, n) => ({ publish: shape, n });
 const levels = (level, n) => ({ level, n });
 /** A later statement as the planner describes it (tools/gas-plan.mjs laterKey). */
-const later = (cost, firstAtPlace, entries) => ({ later: cost, firstAtPlace, entries });
+const later = (cost, firstAtPlace, entries, revisionBefore) => ({ later: cost, firstAtPlace, entries, ...(revisionBefore === undefined ? {} : { revisionBefore }) });
 /** k later statements `cost`, each at its own place whose list holds `entries`. */
 const acrossK = (cost, k, entries) => Array.from({ length: k }, () => later(cost, true, entries));
 /** k later statements `cost` at one place whose list holds `entries`. */
 const oneK = (cost, k, entries) => Array.from({ length: k }, (_, i) => later(cost, i === 0, entries));
 const BEYOND_CLAIM = "beyondClaim";
+/** The removed-names composites (GasModel.t.sol `_sizes`): [create, withName, k] for k = 2 and the planner's largest
+ *  batch of the shape on each schedule (the constants CREATE_REMOVED_* and MOVE_REMOVED_* there). */
+const REMOVED_NAMES = [
+  ...[[true, true, [2, 11, 12]], [true, false, [2, 13, 16]], [false, true, [2, 18, 19]], [false, false, [2, 25, 25]]]
+    .flatMap(([create, withName, ks]) => [...new Set(ks)].map((k) => [create, withName, k])),
+];
 const VALIDATION = [
   { state: "listsNew", key: "validate create file", what: "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
     actions: ["create", pub("files-root/1 form 0", 82), pub("files-name/3", 10), "bindHeadFresh", "bindFolderFreshFile"] },
@@ -227,6 +284,44 @@ const VALIDATION = [
     actions: of({ masks: "unbindFolder", releases: "releaseFolder", "re-binds": "bindFolderRebind", restores: "restoreFolder" }[kind]) }))),
   ...[["property", "unbindProperty"], ["same", "unbindSame"], ["broader", "unbindBroader"]].map(([p, cost]) => ({ state: "longLists", key: `validate ${p} masks of 8 entries of 1025 at one topic`,
     what: `${p.toUpperCase()} masks of 8 spread entries of a 1,025-entry list at one topic`, actions: oneK(cost, 8, 1025) })),
+  // the list release: a yes after a lone no, its later variants, a restore at a word-opening position, folders, HEADs
+  // (GasModel.t.sol section 10)
+  { state: "acrossPlaces", key: "validate tag yeses after lone noes across 32 topics of 48", what: "yeses after lone noes across 32 topics, each list 48 lone noes (count known: the short tier), each thing linked once", actions: acrossK("bindTagAfterNo", 32, 48) },
+  { state: "withinClaim", key: "validate tag yeses after lone noes across 32 topics of 256", what: "yeses after lone noes across 32 topics, each list 256 lone noes (the long tier)", actions: acrossK("bindTagAfterNo", 32, 256) },
+  { state: "longLists", key: "validate tag yeses after lone noes across 16 topics of 1025", what: "yeses after lone noes across 16 topics, each list 1,025 lone noes, the yes at entry 1,024", actions: acrossK("bindTagAfterNo", 16, 1025) },
+  { state: "longLists", key: "validate tag yeses after lone noes of 32 entries of 1025 at one topic", what: "yeses after 32 spread lone noes of a 1,025-entry list at one topic", actions: oneK("bindTagAfterNo", 32, 1025) },
+  { state: "acrossPlaces", key: "validate tag yeses after no then release across 32 topics", what: "no → release → yes across 32 topics (revision 2 before the yes: no history word; priced by bindTagAfterNo with revisionBefore 2)", actions: Array.from({ length: 32 }, () => later("bindTagAfterNo", true, 1, 2)) },
+  { state: "acrossPlaces", key: "validate tag yeses after no then no across 32 topics", what: "no → no → yes across 32 topics (revision 2 before the yes)", actions: Array.from({ length: 32 }, () => later("bindTagAfterNo", true, 1, 2)) },
+  { state: "acrossPlaces", key: "validate tag restores at revision 5 across 32 topics", what: "restores as the binding's sixth statement (revision 5 before them: a history word opens; restoreTag + historyWordOpen) across 32 topics", actions: Array.from({ length: 32 }, () => later("restoreTag", true, 1, 5)) },
+  { state: "acrossPlaces", key: "validate folder yeses after hides across 32 folders", what: "binds after hides of entries never bound, across 32 folders holding the one hide, each file placed once elsewhere", actions: acrossK("bindFolderAfterNo", 32, 1) },
+  { state: "acrossPlaces", key: "validate folder yeses after hide then release across 32 folders", what: "hide → release → bind across 32 folders (revision 2 before the bind)", actions: Array.from({ length: 32 }, () => later("bindFolderAfterNo", true, 1, 2)) },
+  { state: "acrossPlaces", key: "validate folder yeses after hide then hide across 32 folders", what: "hide → hide → bind across 32 folders (revision 2 before the bind)", actions: Array.from({ length: 32 }, () => later("bindFolderAfterNo", true, 1, 2)) },
+  { state: "longLists", key: "validate folder yeses after hides at entry 1024 across 16 folders", what: "binds after hides at entry 1,024 of 1,025-entry folders, across 16 folders", actions: acrossK("bindFolderAfterNo", 16, 1025) },
+  { state: "longLists", key: "validate folder yeses after hides of 8 entries of 1025 in one folder", what: "binds after 8 spread hides of a 1,025-entry folder", actions: oneK("bindFolderAfterNo", 8, 1025) },
+  { state: "acrossPlaces", key: "validate folder restores to new targets across 32 folders", what: "restores of hidden entries to new files already placed elsewhere, across 32 folders holding one entry", actions: acrossK("restoreFolder", 32, 1) },
+  { state: "acrossPlaces", key: "validate head masks across 32 files", what: "masks of 32 files' HEADs (BOUND, revision 1)", actions: acrossK("unbindHead", 32, 1) },
+  { state: "acrossPlaces", key: "validate head releases across 32 files", what: "releases of 32 files' HEADs", actions: acrossK("releaseHead", 32, 1) },
+  { state: "acrossPlaces", key: "validate head restores to new revisions across 32 files", what: "restores of 32 masked HEADs to child revisions a second author's HEAD names", actions: acrossK("restoreHead", 32, 1) },
+  { state: "acrossPlaces", key: "validate head yeses after lone noes across 32 files", what: "a second author's yeses after its lone noes on 32 files, naming the roots the first author's HEADs name", actions: acrossK("bindHeadAfterNo", 32, 1) },
+  ...REMOVED_NAMES.flatMap(([create, withName, k]) => {
+    const how = withName ? "name repeated" : "no name publish";
+    const removed = Array.from({ length: k }, (_, j) => create
+      ? ["create", pub("files-root/1 form 0", 82), ...(withName ? ["publishExisting"] : []), "bindHeadFresh", later("restoreFolder", j === 0, k)]
+      : [...(withName ? ["publishExisting"] : []), later("releaseFolder", j === 0, k), later("restoreFolder", j === 0, k)]).flat();
+    const fresh = Array.from({ length: k }, (_, j) => create
+      ? ["create", pub("files-root/1 form 0", 82), ...(withName ? [pub("files-name/3", 10)] : []), "bindHeadFresh", "bindFolderFreshFile"]
+      : [...(withName ? [pub("files-name/3", 10)] : []), later("releaseFolder", j === 0, k), "bindFolderFreshFile"]).flat();
+    const freshHow = withName ? "name published" : "no name publish";
+    return create
+      ? [
+        { state: "listsExist", key: `validate create ${k} files at removed names, ${how}`, what: `${k} create-file recipes at names the author removed from the root folder (the folder bind restores a RELEASED head to the new file), ${withName ? "each name PUBLISH a repeat (publishExisting)" : "no name PUBLISH"}`, actions: removed },
+        { state: "listsNew", key: `validate create ${k} files at fresh names, ${freshHow}`, what: `the same ${k} create-file recipes at fresh names (an ordinary batch, for comparison), ${withName ? "each name PUBLISH new" : "the names published before"}`, actions: fresh },
+      ]
+      : [
+        { state: "listsExist", key: `validate move ${k} files into removed names, ${how}`, what: `${k} moves into names the author removed from a folder (RELEASE at the old place, restore at the new), ${withName ? "each name PUBLISH a repeat (publishExisting)" : "no name PUBLISH"}`, actions: removed },
+        { state: "listsNew", key: `validate move ${k} files to fresh names, ${freshHow}`, what: `the same ${k} moves to fresh names (an ordinary batch, for comparison), ${withName ? "each name PUBLISH new" : "the names published before"}`, actions: fresh },
+      ];
+  }),
   { state: "acrossPlaces", key: "validate untag a file from six topics", what: "untag one file from six topics (six RELEASEs), the author's list at each holding three entries", actions: acrossK("releaseTag", 6, 3) },
   { state: "acrossPlaces", key: "validate delete six files from three folders", what: "delete (RELEASE) six files from three folders, two from each, each folder holding four of the author's entries",
     actions: Array.from({ length: 6 }, (_, i) => later("releaseFolder", i % 2 === 0, 4)) },
@@ -268,15 +363,18 @@ function fit(rows, q) {
     if (sizes.length > 1) publishBaseBySize[shape] = Object.fromEntries(sizes.map(([, n], i) => [n, round(each[i])]));
   }
   const action = Object.fromEntries(Object.entries(ACTIONS).map(([name, key]) => [name, marginal(key)]));
+  // one history word: the same restore at a word-opening position against its row (LATER_ROWS.note)
+  action.historyWordOpen = action.restoreTagAtHistoryWord - action.restoreTag;
+  const sameTarget = Object.fromEntries(Object.entries(SAME_TARGET).map(([name, key]) => [name, marginal(key)]));
   // the fixed cost: 2·k1 − k2 of every k1/k2 pair is kept (fit.impliedFixedByPair), and `fixed` is their median over
   // the anchor pairs only (tools/gas-fit.mjs), so a row added later never changes the price of an existing action
-  const pairs = [...bytesKeys, ...Object.values(SHAPES).flat().map(([k]) => k), ...Object.values(ACTIONS)];
+  const pairs = [...bytesKeys, ...Object.values(SHAPES).flat().map(([k]) => k), ...Object.values(ACTIONS), ...Object.values(SAME_TARGET)];
   const fixedByPair = Object.fromEntries(pairs.map((k) => [k, impliedFixed(k)]));
   const fixed = fixedFrom(fixedByPair);
   const firstWriteSurcharge = get("first write fresh") - get("first write warm");
   const level = Object.fromEntries(Object.entries(LEVEL_ROWS).map(([k, key]) => [k, marginal(key) / LEVEL_SPAN]));
   const tagLevel = { mineNew: level.mineNew, mineExisting: level.mineExisting, sharedNew: level.allNew - level.mineNew, sharedExisting: level.allExisting - level.mineExisting };
-  return { fixed, perWord, perByte, publishBase, action, firstWriteSurcharge, tagLevel, publishBaseBySize, fixedByPair };
+  return { fixed, perWord, perByte, publishBase, action, firstWriteSurcharge, tagLevel, publishBaseBySize, fixedByPair, sameTarget };
 }
 
 function predict(c, actions) {
@@ -286,7 +384,7 @@ function predict(c, actions) {
     else if (a.later) {
       const key = laterKey((k) => k in c.action, { cost: a.later, first: false, firstAtPlace: a.firstAtPlace, entries: a.entries }, LATER_LISTS);
       assert.ok(key in c.action, `no constant ${key}`);
-      g += c.action[key];
+      g += c.action[key] + historyWordAdds(LATER_ROWS_DOC, key, a.revisionBefore) * c.action.historyWordOpen;
     }
     else if (a.level) g += c.tagLevel[a.level] * a.n;
     else g += c.publishBase[a.publish] + c.perWord * words(a.n) + c.perByte * a.n;
@@ -345,6 +443,7 @@ function profile({ rows, types }, name) {
   const total = (r) => r.frameGas + (r.frameStateGas ?? 0);
   const c = fit(rows, total);
   const out = { quantity: amsterdam ? "frame gas + frame state gas (EIP-8037 execution + state)" : "frame gas", constants: rounded(c) };
+  const sameTargetOf = (fitted) => Object.fromEntries(Object.entries(fitted.sameTarget).map(([k, v]) => [k, round(v)]));
   let ex = null;
   let st = null;
   if (amsterdam) {
@@ -353,6 +452,7 @@ function profile({ rows, types }, name) {
     st = fit(rows, (r) => r.frameStateGas ?? 0);
     out.split = { executionGas: rounded(ex), stateGas: rounded(st), note: "constants = executionGas + stateGas (up to rounding); the EIP-7825 per-transaction cap (2^24) counts executionGas only" };
   }
+  out._sameTarget = { all: sameTargetOf(c), ...(amsterdam ? { execution: sameTargetOf(ex) } : {}) };
   out.fit = {
     fixedAnchors: [...FIXED_ANCHORS],
     publishNewBaseBySize: Object.fromEntries(Object.entries(c.publishBaseBySize)),
@@ -364,6 +464,7 @@ function profile({ rows, types }, name) {
     })),
   };
   const floor = floorOf(rows, name, types);
+  out._sameTarget.kernel = sameTargetOf(floor._kernel);
   const kernelFit = floor._kernel;
   delete floor._kernel;
   out.floor = floor;
@@ -374,13 +475,14 @@ function profile({ rows, types }, name) {
     assert.ok(m, `no "model ${v.key}" measurement`);
     const measured = total(m);
     const predicted = round(predict(c, v.actions));
-    const row = { key: v.key, state: v.state, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)) };
+    const row = { key: v.key, state: v.state, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)), laterStatements: v.actions.filter((a) => a && typeof a === "object" && a.later).length };
     if (amsterdam) {
       row.measuredExecutionGas = m.frameGas;
       row.predictedExecutionGas = round(predict(ex, v.actions));
       row.measuredStateGas = m.frameStateGas ?? 0;
       row.predictedStateGas = round(predict(st, v.actions));
       row.executionErrorPercent = Number((((row.predictedExecutionGas - row.measuredExecutionGas) / row.measuredExecutionGas) * 100).toFixed(2));
+      row.allGasOverBoundPercent = Number(allGasOverBoundPercent(row, LIMIT_PERCENT, FRESH_SLOT_STATE_GAS).toFixed(2));
     }
     return row;
   });
@@ -397,12 +499,18 @@ function profile({ rows, types }, name) {
   out.maxAbsErrorPercent = Math.abs(worst("errorPercent").errorPercent);
   out.maxAbsErrorComposite = worst("errorPercent").key;
   [out.maxUnderErrorPercent, out.maxUnderErrorComposite] = underOf("errorPercent");
+  // the largest OVER-prediction on all gas (0 when no composite is high): a bound on prague, stated on amsterdam with
+  // each composite's own bound (allGasOverBoundPercent)
+  const over = (field) => counted.reduce((a, v) => (v[field] > a[field] ? v : a));
+  const overOf = (field) => { const v = over(field); return v[field] > 0 ? [Number(v[field].toFixed(2)), v.key] : [0, null]; };
+  [out.maxOverErrorPercent, out.maxOverErrorComposite] = overOf("errorPercent");
   if (amsterdam) {
     // amsterdam only: the largest composite error on EXECUTION gas (split.executionGas against the measured frame gas),
     // the figure that bounds the EIP-7825 2^24 cap condition there (the cap counts execution gas only)
     out.maxAbsExecutionErrorPercent = Math.abs(worst("executionErrorPercent").executionErrorPercent);
     out.maxAbsExecutionErrorComposite = worst("executionErrorPercent").key;
     [out.maxUnderExecutionErrorPercent, out.maxUnderExecutionErrorComposite] = underOf("executionErrorPercent");
+    [out.maxOverExecutionErrorPercent, out.maxOverExecutionErrorComposite] = overOf("executionErrorPercent");
   }
   return out;
 }
@@ -414,7 +522,7 @@ const PLANNING = {
   txGasCap: 16777216,
   txGasCapRule: "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
   headroomPercent: 15,
-  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the under-prediction of the gas the cap counts (headroom exists to stop a plan coming out too small; an over-prediction only costs batch size): on prague all gas, profiles.prague.maxUnderErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxUnderExecutionErrorPercent. The maximum-error fields keep their meaning (maxAbsErrorPercent, and on amsterdam maxAbsExecutionErrorPercent); profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxUnderErrorComposite, maxAbsExecutionErrorComposite, maxUnderExecutionErrorComposite), each is taken over the composites whose state is not in maximaExcludeStates, and each is at most headroomPercent",
+  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the under-prediction of the gas the cap counts (headroom exists to stop a plan coming out too small; an over-prediction only costs batch size): on prague all gas, profiles.prague.maxUnderErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxUnderExecutionErrorPercent. The maximum-error fields keep their meaning (maxAbsErrorPercent, and on amsterdam maxAbsExecutionErrorPercent); profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxUnderErrorComposite, maxAbsExecutionErrorComposite, maxUnderExecutionErrorComposite), each is taken over the composites whose state is not in maximaExcludeStates. The under-prediction fields and the over-prediction of the gas the cap counts (profiles.prague.maxOverErrorPercent, profiles.amsterdam.maxOverExecutionErrorPercent) are at most headroomPercent; profiles.amsterdam.maxOverErrorPercent (all gas) is stated with a per-composite bound (method.maxima)",
   limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication },
 };
 /** Read by the planner with the tagLevel terms (design §10.4). */
@@ -425,6 +533,28 @@ const TAG_LISTS = {
 
 const prague = profile(run("default"), "prague");
 const amsterdam = o["skip-amsterdam"] ? null : profile(run("amsterdam"), "amsterdam");
+
+/** `laterRows`: the positions, and for the new-target restore rows the measured over-price of a same-target restore. */
+function laterRowsOf(profiles) {
+  const rows = JSON.parse(JSON.stringify(LATER_ROWS_DOC.rows));
+  for (const base of Object.keys(SAME_TARGET)) {
+    const parts = Object.entries(profiles).map(([name, p]) => {
+      const st = p._sameTarget;
+      const d = (fitted, same) => fitted[base] - same[base];
+      const all = d(p.constants, st.all);
+      const kernel = d(p.floor.kernel, st.kernel);
+      return name === "amsterdam"
+        ? `amsterdam ${all} all gas (${d(p.split.executionGas, st.execution)} of execution), kernel share ${kernel}`
+        : `${name} ${all} gas, kernel share ${kernel}`;
+    });
+    for (const k of Object.keys(rows).filter((k) => k === base || k.startsWith(`${base}LongNewPlace`) || k.startsWith(`${base}LongSamePlace`) || k === `${base}NewPlace`)) {
+      rows[k].note = `Measured restoring to a NEW target already placed elsewhere (the dearest restore). A restore to the head's stored target costs less by the kernel's target rewrite: ${base} against the same restore to the stored target (GasModel.t.sol, "${SAME_TARGET[base]}"), ${parts.join("; ")}. A planner cannot tell the two apart (the head view does not show the stored target), so it prices every restore by this row.`;
+    }
+  }
+  return { rule: LATER_ROWS_DOC.rule, note: LATER_ROWS_DOC.note, historyWordConstant: "historyWordOpen", rows };
+}
+const laterRows = laterRowsOf({ prague, ...(amsterdam ? { amsterdam } : {}) });
+for (const p of [prague, amsterdam].filter(Boolean)) delete p._sameTarget;
 
 const model = {
   schema: "efs-gas-model/1",
@@ -441,11 +571,12 @@ const model = {
     keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; restore = BIND from MASKED to the kept target; PROPERTY binds are a label (labelKey(\"en\") on a word page → an existing text/1; a label with a new text is publishNew[\"text/1\"] + its body terms + bindPropertyFresh, validated by \"validate label new text\"); SAME and BROADER first statements run FilesFinalValidator's topic checks on subject and role (word page to word page; bindSameFreshPath 2-word path to path), their later statements are on word pages; WITHDRAW of one occurrence",
     tagLevels: TAG_LEVELS_METHOD,
     laterLists: "later statements are priced by laterLists (the list tiers); the tier rows are their own k1/k2 pairs (GasModel.t.sol section 9: `<row> new place` at three places whose lists hold one entry; `<row> long new place` at three places whose lists hold 1,025 entries, each statement at entry 1,024; `<row> long same place` at one place of 1,025 entries, k1 the entry at 512, k2 those at 256 and 768), never anchors, so no tier row moves `fixed` or an existing row; PROPERTY, SAME and BROADER rows are already measured at distinct subjects, so they carry no `NewPlace` row",
-    maxima: "maxAbsErrorPercent, maxUnderErrorPercent (and on amsterdam maxAbsExecutionErrorPercent, maxUnderExecutionErrorPercent) are taken over every validation composite whose state is not in maximaExcludeStates (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception), and tools/gas-model.mjs refuses a model in which any of them exceeds 15%; the excluded composites are listed with their errors",
+    maxima: "Every maximum is taken over the validation composites whose state is not in maximaExcludeStates (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception). maxAbsErrorPercent is the largest |error| on all gas (the larger of maxUnderErrorPercent and maxOverErrorPercent), and on amsterdam maxAbsExecutionErrorPercent the same on execution gas; each names its composite. What tools/gas-model.mjs refuses (tools/gas-fit.mjs overBound): an UNDER-prediction above 15% anywhere (prague all gas, amsterdam all gas, amsterdam execution gas: maxUnderErrorPercent, maxUnderExecutionErrorPercent); an OVER-prediction above 15% of the gas the 2^24 cap counts (prague all gas, maxOverErrorPercent; amsterdam execution gas, maxOverExecutionErrorPercent); and on amsterdam an all-gas over-prediction above the composite's own allGasOverBoundPercent = 15 + laterStatements × freshSlot.stateGas (97,920, docs/GAS-SCHEDULES.md) × 100 / measured. That last term is the later rows' worst-case state: each is measured where its target's backlink word and its binding's history word open, which a planner cannot see, and on amsterdam one such word is a fresh slot of state gas only, so a composite whose statements open none is over-stated by up to one slot a statement. So amsterdam's maxAbsErrorPercent and maxOverErrorPercent are stated, not bounded at 15%: they bound a publication's total against the block, never the cap",
   },
   planning: PLANNING,
   tagLists: TAG_LISTS,
   laterLists: LATER_LISTS,
+  laterRows,
   profiles: { prague, ...(amsterdam ? { amsterdam } : {}) },
   source: { test: SUITE, commit: git("rev-parse", "HEAD"), dirtyFiles: (git("status", "--porcelain") || "").split("\n").filter(Boolean).length, date: new Date().toISOString(), foundry: execFileSync("forge", ["--version"]).toString().split("\n")[0].trim() },
 };
@@ -469,6 +600,7 @@ for (const [name, p] of Object.entries(model.profiles)) {
   console.log(`  ${name}: ${JSON.stringify(p.constants)}`);
   for (const v of p.validation) console.log(`    ${v.key.padEnd(32)} measured ${String(v.measured).padStart(10)} predicted ${String(v.predicted).padStart(10)} ${v.errorPercent.toFixed(2).padStart(7)}%${v.executionErrorPercent === undefined ? "" : ` (execution ${v.executionErrorPercent.toFixed(2)}%)`}`);
   console.log(`    max |error| ${p.maxAbsErrorPercent}% (${p.maxAbsErrorComposite})${p.maxAbsExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxAbsExecutionErrorPercent}% (${p.maxAbsExecutionErrorComposite})`}`);
+  console.log(`    max over-prediction ${p.maxOverErrorPercent}% (${p.maxOverErrorComposite})${p.maxOverExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxOverExecutionErrorPercent}% (${p.maxOverExecutionErrorComposite})`}`);
   console.log(`    max under-prediction ${p.maxUnderErrorPercent}% (${p.maxUnderErrorComposite})${p.maxUnderExecutionErrorPercent === undefined ? "" : `; execution gas ${p.maxUnderExecutionErrorPercent}% (${p.maxUnderExecutionErrorComposite})`} (excluding ${p.maximaExcludeStates.join(", ")})`);
 }
 const bad = overBound(model.profiles);
@@ -477,21 +609,11 @@ if (bad.length) {
   process.exit(1);
 }
 
-/** Every composite error over ±LIMIT_PERCENT (so every stated maximum, over- and under-prediction alike), all gas on
- *  every profile and execution gas on amsterdam, for the composites the maxima count (not maximaExcludeStates). */
+/** The stated bound (tools/gas-fit.mjs overBound): under-predictions everywhere, over-predictions on the gas the cap
+ *  counts, amsterdam all-gas over-predictions per composite at LIMIT_PERCENT plus its later statements' fresh-slot
+ *  state gas. */
 function overBound(profiles) {
-  const out = [];
-  for (const [name, p] of Object.entries(profiles)) {
-    for (const k of ["maxAbsErrorPercent", "maxUnderErrorPercent", "maxAbsExecutionErrorPercent", "maxUnderExecutionErrorPercent"]) {
-      if (p[k] !== undefined && p[k] > LIMIT_PERCENT) out.push(`${name} ${k} ${p[k]}% exceeds ${LIMIT_PERCENT}%`);
-    }
-    for (const v of p.validation) {
-      if ((p.maximaExcludeStates ?? []).includes(v.state)) continue;
-      if (Math.abs(v.errorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: ${v.errorPercent}% exceeds ±${LIMIT_PERCENT}%`);
-      if (v.executionErrorPercent !== undefined && Math.abs(v.executionErrorPercent) > LIMIT_PERCENT) out.push(`${name} "${v.key}" execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: ${v.executionErrorPercent}% exceeds ±${LIMIT_PERCENT}%`);
-    }
-  }
-  return out;
+  return overBoundOf(profiles, { limitPercent: LIMIT_PERCENT, freshSlotStateGas: FRESH_SLOT_STATE_GAS });
 }
 
 /** Paths at which `a` and `b` (parsed JSON) differ, each with both values. */
@@ -516,7 +638,7 @@ function check(committed) {
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
     for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
   }
-  for (const k of ["planning", "tagLists", "laterLists"]) diff(committed[k], fresh[k], k, differences);
+  for (const k of ["planning", "tagLists", "laterLists", "laterRows"]) diff(committed[k], fresh[k], k, differences);
   for (const m of bound) console.error(`gas-model --check: ${m}`);
   if (differences.length) {
     const shown = Math.min(8, differences.length);

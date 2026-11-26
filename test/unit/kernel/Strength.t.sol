@@ -237,6 +237,30 @@ contract StrengthTest is KernelFixture {
         _assertNumber(key, -1);
     }
 
+    /// The expected-revision check covers all three bind kinds alike (`LedgerApply._applyBind` for BIND,
+    /// `_applyMaskOrRelease` for UNBIND and RELEASE: `head.revision != action.expectedRevision` → `E_CAS`), for a
+    /// revision too low and too high, from BOUND and from MASKED, with nothing written. So a planner that prices a
+    /// statement from a stale head (gas/model.json `laterRows`: the history-word correction reads the revision) has the
+    /// statement refused, never admitted at a price it did not plan.
+    function test_stale_expected_revision_refused_for_bind_unbind_and_release() public {
+        bytes32 r = _land("strength/cas-kinds");
+        bytes32 key = _key(principal, FOLDER, SA, ROLE);
+        _exec(_acts(_bind(FOLDER, SA, ROLE, r, 0)), _bodies(1)); // revision 1, BOUND
+        for (uint64 wrong; wrong < 3; wrong += 2) {
+            // revision 0 (stale) and 2 (ahead) against the head's 1
+            bytes memory cas = abi.encodeWithSelector(E_CAS.selector, key, wrong, uint64(1));
+            _expectNoChange(_acts(_bind(FOLDER, SA, ROLE, r, wrong)), _bodies(1), cas);
+            _expectNoChange(_acts(_unbind(FOLDER, SA, ROLE, wrong)), _bodies(1), cas);
+            _expectNoChange(_acts(_release(FOLDER, SA, ROLE, wrong)), _bodies(1), cas);
+        }
+        _exec(_acts(_unbind(FOLDER, SA, ROLE, 1)), _bodies(1)); // revision 2, MASKED
+        bytes memory stale = abi.encodeWithSelector(E_CAS.selector, key, uint64(1), uint64(2));
+        _expectNoChange(_acts(_bind(FOLDER, SA, ROLE, r, 1)), _bodies(1), stale);
+        _expectNoChange(_acts(_unbind(FOLDER, SA, ROLE, 1)), _bodies(1), stale);
+        _expectNoChange(_acts(_release(FOLDER, SA, ROLE, 1)), _bodies(1), stale);
+        assertEq(_hotHead(key).revision, 2, "nothing written");
+    }
+
     /// The admission facet serves a bind row's strength as `strength`, never as `withdrawn` or a policy row,
     /// and a record row's policy row as `policyRow` with strength 0.
     function test_admission_view_splits_the_shared_field_by_kind() public {

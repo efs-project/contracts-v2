@@ -9,18 +9,19 @@ import {Action, Native, Purpose} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 
-/// @notice Whole publications of a yes after a lone no, measured for the gas model's error on that shape (logged only:
-///         tools/gas-model.mjs reads `test/integration/GasModel.t.sol` alone, and these labels start "lone no ", not
-///         "model "). They live in a file of their own because adding code to `GasModelTest` moves its measured rows
-///         by a few gas, which `pnpm gas:model:check` refuses.
+/// @notice Whole publications of a yes after a lone no (logged only: these labels start "lone no ", not "model ", so
+///         tools/gas-model.mjs does not read them). Since the list release the gas model prices this shape with its own
+///         rows (`bindTagAfterNo` and its tiers, gas/model.json `laterRows`), and GasModel.t.sol section 10 measures the
+///         composites of 32 yeses across 48- and 256-entry lists, 16 across 1,025 and 32 at one topic of 1,025 inside the
+///         stated maxima. The 51-statement batches (the largest restore batch of the formula-3 release) and the 32 at one
+///         topic of 48 and 256 stay here, logged only: each 51 × 1,025 state is 52,275 lone noes, about a minute per
+///         profile, too slow for the model's suite.
 ///
-///         A yes after a lone no is a restore that is the binding's 2nd statement; the model's restore rows measure a
-///         3rd (yes, mask, yes). Against the restore composites of GasModel.t.sol section 8 of the same sizes, it writes
-///         two more fresh slots per statement: one in the index (`PostingStore._append` at count 1 materializes the
-///         binding's history word 0) and one on the kernel's side (the mocked-callback run, `kernel frame gas`, is about
-///         +20.0k a statement on prague and +10.1k of execution on amsterdam, where the state gas is +2 × 97,920 a
-///         statement). The model's error is computed by hand from gas/model.json with the list tiers (`fixed` plus each
-///         statement's `laterKey` constant; error = (predicted − measured) / measured).
+///         A yes after a lone no is a BIND that is the binding's 2nd statement on a head that never bound. Against a
+///         restore (the 3rd statement: yes, mask, yes) it writes two more fresh slots per statement: one in the index
+///         (`PostingStore._append` at count 1 materializes the binding's history word 0) and one on the kernel's side (the
+///         head's stored target, written fresh). Compare a run with the `bindTagAfterNo` rows of gas/model.json by hand
+///         (`fixed` plus each statement's `laterKey` constant; error = (predicted − measured) / measured).
 ///
 ///         Method as GasModel.t.sol's: the native lane through `FilesRecipesBase._exec` (label, `gas`, `frame gas`,
 ///         `frame state gas` under amsterdam), every Realm account cooled before the measured execute
