@@ -226,6 +226,18 @@ interface IReaderDirectory {
 /// (filings) of every list at this page's read; `positionsEver`: for the place-list views (`everyone`, `about`), the
 /// lists' `live` counts, the distinct positions ever stated (an "about" figure, never a row count; 0 for other views);
 /// `selectedSoFar`: rows returned so far in the listing. `next` is bound to the query hash, the basis and the origin.
+/// `frontier`: the entry the continuation's next page reads first, i.e. the newest entry of the listing not yet
+/// processed (an entry fetched into a window but not processed when the page stopped counts as unread), in the number
+/// space of the view's row entry field: binding ordinals (`bindingOrdinal`) in `mine`, `everyone` and `about`,
+/// admission ordinals in `byName` (`firstAdmission`), `wordPage` and `children` (`admission`). For a merged view it is
+/// the largest, over the merged lists, of each list's next unread entry. Entries are never 0 (both ordinals start at
+/// 1), so on a PRESENT page `frontier` is 0 exactly when `scanStatus` is 1 EXHAUSTED; it is 0 on every refusal. The
+/// guarantee: every row any later page of this listing returns has an entry <= `frontier`, every row of this page and
+/// of earlier pages has an entry > `frontier` (strictly), and `frontier` falls strictly from page to page (each page
+/// reads at least one entry, rows or not). Two exceptions: the root row of `wordPage`'s first page is not a list entry
+/// (its `admission` is the word page's own, older than every entry), and in `mine` a lens that names one principal
+/// twice reads that author's lists twice, so a row's entry can equal `frontier` and `frontier` can repeat. Frontiers
+/// of different views, or of listings started at different origins, are not promised to be comparable.
 /// `repeatsSkipped`: entries this page left out because a row for the same thing was already on it.
 /// `dedupWithinPageOnly`: true for every view whose lists can name one thing more than once (a place list's later
 /// first yeses, a thing filed under two topics of a roll-up, a lens row that moved between pages): repeats are
@@ -239,6 +251,7 @@ struct TopicPageInfo {
     bool completeFromOrigin;
     bool dedupWithinPageOnly;
     uint64 scanned;
+    uint64 frontier;
     uint64 rawTotal;
     uint64 positionsEver;
     uint64 selectedSoFar;

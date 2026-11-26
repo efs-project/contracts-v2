@@ -82,18 +82,19 @@ contract TopicLookupTest is TopicReadersBase {
         assertEq(pages, 3);
     }
 
-    /// "Anyone's pet.jpg at this address": 300 authors at one FOLDER position of a home cost page 1 the same as 3.
+    /// "Anyone's pet.jpg at this address": 300 authors at one FOLDER position of a home cost page 1 the same as 4.
+    /// Both pages of 3 leave entries unread, so both read the one entry more that is the page's `frontier`.
     function test_by_name_cost_does_not_depend_on_the_author_count() public {
         address[] memory a = _authorsN("pet", 300);
         bytes32 pos = EfsFiles.folderPosition(home, "pet.jpg");
         vm.pauseGasMetering();
-        for (uint256 i; i < 3; ++i) {
+        for (uint256 i; i < 4; ++i) {
             _attach(a[i], home, "pet.jpg");
         }
         vm.resumeGasMetering();
         uint256 few = _byNameGas(pos);
         vm.pauseGasMetering();
-        for (uint256 i = 3; i < 300; ++i) {
+        for (uint256 i = 4; i < 300; ++i) {
             _attach(a[i], home, "pet.jpg");
         }
         vm.resumeGasMetering();
@@ -102,7 +103,7 @@ contract TopicLookupTest is TopicReadersBase {
         assertEq(uint8(q.status), uint8(Status.PRESENT));
         assertEq(statements, 300);
         assertLe(yes, statements);
-        emit log_named_uint("byName page 1 (3 rows), 3 authors", few);
+        emit log_named_uint("byName page 1 (3 rows), 4 authors", few);
         emit log_named_uint("byName page 1 (3 rows), 300 authors", many);
         assertApproxEqRel(many, few, 0.005e18, "independent of the author count");
     }

@@ -55,7 +55,9 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         each entry and must cover one window of 16 entries and the return encoding (3 GAS). Each carries a
 ///         continuation; only 1 EXHAUSTED ends the listing, and a page that is not refused reads at least one entry.
 ///         The continuation's cursor is one index per list counted from the list's start, so appends between pages
-///         never shift it.
+///         never shift it. `frontier` is the first entry of the window not consumed at the stop (the window holds the
+///         newest unread entries of both lists, so it is the larger of the two lists' next unread binding ordinals),
+///         held already: no further read.
 contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-everyone/query/1");
 
@@ -201,13 +203,20 @@ contract TopicEveryoneReader is TopicReaderBase, ITopicEveryoneReader {
             Win memory w;
             (w.e, w.src) = _window(r, ls, m == 0 ? 1 : m);
             if (w.e.length == 0) return (SCAN_EXHAUSTED, got, cov);
+            // a stop's frontier is the window's first unconsumed entry: the window holds the newest unread entries
             uint8 stop = _stop(info.scanned, got, rows.length, p.limit, p.maxRows, p.gasReserve);
-            if (stop != 0) return (stop, got, cov);
+            if (stop != 0) {
+                info.frontier = w.e[0];
+                return (stop, got, cov);
+            }
             cov = _join(cov, _facts(r, p, lens, w, rows, got));
             if (cov == Coverage.UNKNOWN) return (SCAN_EXHAUSTED, got, cov);
             for (uint256 k; k < w.e.length; ++k) {
                 stop = _stop(info.scanned, got, rows.length, 0, p.maxRows, p.gasReserve);
-                if (stop != 0) return (stop, got, cov);
+                if (stop != 0) {
+                    info.frontier = w.e[k];
+                    return (stop, got, cov);
+                }
                 --ls[w.src[k]].hi;
                 ++info.scanned;
                 bytes32 thing = w.cells[k].role;
