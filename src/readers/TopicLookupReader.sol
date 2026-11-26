@@ -46,8 +46,9 @@ import {E_TOPIC_INCONSISTENT, E_TOPIC_STATUS, TopicReaderBase} from "./TopicRead
 ///         (admission → author → head) for the page: three calls for up to 64 rows.
 ///
 ///         `placeCount`, `authorCount`, `entryCount`: one list head each (families 6/7, 20, and the author's scope
-///         head or roll-up), with the list's coverage; UNKNOWN (count 0) when the list is not maintained (a roll-up
-///         on an index without topic lists). `placeCount`'s `positionsEver` is an "about" count: positions that
+///         head or roll-up), with the list's coverage; UNKNOWN (coverage UNKNOWN, counts 0) unless the index reports
+///         the list COMPLETE: a list not maintained (a roll-up on an index without topic lists) or still being built
+///         (PARTIAL) has no count. `placeCount`'s `positionsEver` is an "about" count: positions that
 ///         ever received a statement, including those nobody says yes to now.
 ///
 ///         `wordPage(page)`: the places whose own word is the word of the `topic-word/1` record `page`: the root
@@ -102,11 +103,9 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_BY_NAME, position));
         List memory l = List(F_POSITION_AUTHORS, 0, 0, position, 0, 0, 0, 0);
-        Coverage cov;
-        Status st;
-        (st, cov) = _openList(r, expected, continuation, l, info);
+        Status st = _openList(r, expected, continuation, l, info);
         if (st != Status.PRESENT) {
-            info.q.status = st;
+            _refuse(info, st);
             return (info, rows);
         }
         uint64 n = limit == 0 || limit > BY_NAME_MAX ? uint64(BY_NAME_MAX) : limit;
@@ -129,7 +128,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         }
         info.scanned = n;
         r.selected += n;
-        _end(r, info, l, cov, next);
+        _end(r, info, l, next);
     }
 
     // =============================================================================================
@@ -147,12 +146,13 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, VIEW_ABOUT, thing, sample));
         List memory l = List(F_ROLE_PLACES, Purpose.TAG, 0, thing, 0, 0, 0, 0);
-        (Status st, Coverage cov) = _openList(r, expected, continuation, l, info);
+        Status st = _openList(r, expected, continuation, l, info);
         info.positionsEver = l.live;
         if (st != Status.PRESENT) {
-            info.q.status = st;
+            _refuse(info, st);
             return (info, rows);
         }
+        Coverage cov = Coverage.COMPLETE; // the list's (`_openList` refuses any other)
         uint64 n = limit == 0 || limit > BY_NAME_MAX ? uint64(BY_NAME_MAX) : limit;
         if (n > l.hi) n = l.hi;
         rows = new PlaceRow[](n);
@@ -176,19 +176,19 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
                 row.decider = uint8(SELECTED_NONE); // no lens
                 row.statements = a.count;
                 row.yes = a.live;
-                if (sample != 0 && cov != Coverage.UNKNOWN) {
+                if (sample != 0 && cov == Coverage.COMPLETE) {
                     _sample(r, sample, a, positions[k], row);
                 }
             }
             l.hi -= n;
         }
-        if (cov == Coverage.UNKNOWN) {
-            info.q.status = Status.UNKNOWN;
+        if (cov != Coverage.COMPLETE) {
+            _refuse(info, Status.UNKNOWN);
             return (info, new PlaceRow[](0));
         }
         info.scanned = n;
         r.selected += n;
-        _end(r, info, l, cov, next);
+        _end(r, info, l, next);
     }
 
     // =============================================================================================
@@ -268,10 +268,11 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
             (Coverage, uint64, uint64, uint8)
         );
         if (c == Coverage.UNSET) revert E_TOPIC_INCONSISTENT(6);
-        if (c == Coverage.UNKNOWN) return (Qualified(Status.UNKNOWN, r.observed), c, 0, 0);
+        c = _served(c);
+        if (c != Coverage.COMPLETE) return (Qualified(Status.UNKNOWN, r.observed), c, 0, 0);
     }
 
-    /// One list head as a count: UNKNOWN (and no count) when the list's coverage is.
+    /// One list head as a count: UNKNOWN (and no count) unless the list is COMPLETE (`_served`).
     function _count(Run memory r, BasisCommit calldata expected, List memory l)
         private
         view
@@ -282,7 +283,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         q.observed = r.observed;
         if (q.status != Status.PRESENT) return (q, Coverage.UNKNOWN);
         c = _listHead(r, l);
-        if (c == Coverage.UNKNOWN) q.status = Status.UNKNOWN;
+        if (c != Coverage.COMPLETE) q.status = Status.UNKNOWN;
     }
 
     // =============================================================================================
@@ -319,11 +320,12 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         Run memory r;
         r.queryHash = keccak256(abi.encode(DOM_QUERY, LEDGER, view_, id));
         List memory l = List(F_REFERENCE, TOPIC_TYPE, view_ == VIEW_WORD ? 1 : 0, id, 0, 0, 0, 0);
-        (Status st, Coverage cov) = _openList(r, expected, continuation, l, info);
+        Status st = _openList(r, expected, continuation, l, info);
+        Coverage cov = Coverage.COMPLETE; // the list's (`_openList` refuses any other)
         uint64 firstAdmission;
         if (st == Status.PRESENT) (st, firstAdmission) = _place(r, view_, id);
         if (st != Status.PRESENT) {
-            info.q.status = st;
+            _refuse(info, st);
             return (info, rows);
         }
         bool root = view_ == VIEW_WORD && info.startsAtOrigin;
@@ -348,13 +350,13 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
             }
             l.hi -= entries;
         }
-        if (cov == Coverage.UNKNOWN) {
-            info.q.status = Status.UNKNOWN;
+        if (cov != Coverage.COMPLETE) {
+            _refuse(info, Status.UNKNOWN);
             return (info, new PlaceCount[](0));
         }
         info.scanned = entries;
         r.selected += uint64(rows.length);
-        _end(r, info, l, cov, next);
+        _end(r, info, l, next);
     }
 
     /// The directory's own record: a `topic-word/1` record for a word page; a `topic/1` or `topic-word/1` record
@@ -413,17 +415,17 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         bytes calldata continuation,
         List memory l,
         TopicPageInfo memory info
-    ) private view returns (Status st, Coverage cov) {
+    ) private view returns (Status st) {
         uint64[] memory cursor;
         (st, cursor) = _open(r, expected, 0, false, continuation, 1, info);
-        if (st != Status.PRESENT) return (st, cov);
-        cov = _listHead(r, l);
+        if (st != Status.PRESENT) return st;
+        Coverage cov = _listHead(r, l);
         info.rawTotal = l.count;
         if (r.resumed) {
-            if (cursor[0] > l.count) return (Status.INVALID, cov);
+            if (cursor[0] > l.count) return Status.INVALID;
             l.hi = cursor[0];
         }
-        if (cov == Coverage.UNKNOWN) return (Status.UNKNOWN, cov);
+        if (cov != Coverage.COMPLETE) return Status.UNKNOWN;
     }
 
     /// The `n` (>= 1) entries of `l` just below `l.hi`, ascending, and `next`, the entry just below them (the list's
@@ -445,14 +447,14 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     }
 
     /// `next` is the list's next unread entry (0 when `l.hi` is 0): the page's frontier.
-    function _end(Run memory r, TopicPageInfo memory info, List memory l, Coverage cov, uint64 next)
+    function _end(Run memory r, TopicPageInfo memory info, List memory l, uint64 next)
         private
         pure
     {
         if (l.hi != 0) info.frontier = next;
         uint64[] memory cursor = new uint64[](1);
         cursor[0] = l.hi;
-        _finish(r, info, l.hi == 0 ? SCAN_EXHAUSTED : SCAN_LIMIT, cov, cursor);
+        _finish(r, info, l.hi == 0 ? SCAN_EXHAUSTED : SCAN_LIMIT, cursor);
     }
 }
 

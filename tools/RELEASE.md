@@ -211,7 +211,8 @@ rule, never from `indexFloor`.
   only the dropped list (since item 37 it is refused outright once its copy is stale), declaring it in that store
   again is refused 12, the kept lists equal a twin Realm's: no
   kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
-  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE); a new unit's fold hook built with the walk;
+  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE; since item 36 PARTIAL is treated exactly as
+  UNKNOWN); a new unit's fold hook built with the walk;
   and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
   add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **Done (step 4, item 36): the
   measured gas of a build** on both schedules (`test/index/BuildGas.t.sol`, docs/INDEX-BUILD.md §6): adding
@@ -565,6 +566,32 @@ code changed.
   `LedgerControl` (the controller delegate: reason 14) changed, so their runtime codehashes and every address and
   identity derived from them move: the index and its reads contract, the index manifest hash and obligations, the
   ledger implementation, the plan hash, the execution set and the release digest.
+
+**The topic readers answer only from complete lists.** **A consumer re-vendors for the release this lands in** (`release/`, `artifacts/`, `deploy/plan.json`,
+`gas/model.json` and the rest of the set above, together): the three topic readers' bytecode, and so their addresses,
+change. Their ABIs do not (`test/snapshots/abi/` is unchanged), and nothing observable changes on a Realm whose live
+index is complete, which every live index is: the rule only decides what a reader does with an index that reports a
+list PARTIAL, and a live index never does.
+
+**38. The list-coverage rule.** A topic reader (`TopicMineReader`, `TopicEveryoneReader`, every view of
+`TopicLookupReader`, the count views `placeCount`, `authorCount` and `entryCount` included) answers from a list only
+when the index reports that list's coverage COMPLETE. A list reported PARTIAL is treated exactly as one reported
+UNKNOWN: status UNKNOWN, no rows, coverage UNKNOWN, no counts (`rawTotal`, `positionsEver` and a count view's two
+counts 0), `frontier` 0 and no continuation; one needed list that is not COMPLETE refuses the view whatever the others
+report, and a listing resumed after a needed list stopped being COMPLETE is refused from that page on. Before, PARTIAL
+gave a PRESENT page with its coverage PARTIAL. Why: that PARTIAL did not survive paging (every page that is not
+origin-started and finished already says PARTIAL, so a listing over a partly built list ended looking like an
+ordinary long one), and its rows could not be promised (`everyone` decides from the `position-authors` counters, and
+no design says what a partly built list's counters hold). A page's own `listingCoverage` is unchanged: COMPLETE only
+when the listing started at the origin and finished on that page, PARTIAL on every other served page; it is now about
+paging alone. Every refusal of a topic view (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) also carries
+no counts now: `rawTotal` and `positionsEver` used to keep the counts of lists read before the refusal (for example
+the exact lists of a `mine` below on an index without topic roll-ups). Reading a partly built list (newest pages while
+old history is built) would be a new reader contract, designed with that feature, with a list-coverage field of its
+own that survives paging.
+
+For consumers, in one line: a served topic page can be trusted to come from complete lists, and UNKNOWN on a topic view
+now also covers "the index is still building this list".
 
 ### The identity table (this release against `0fb4804`)
 

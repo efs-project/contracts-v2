@@ -313,13 +313,25 @@ children).
   comes first, or at its gas reserve. A short or empty page is not the end: every page says whether the list is
   finished and where to resume. One number cannot bound both, because skipping a padded stretch is cheap and a shown
   row under a large lens is not.
+- **Only complete lists are read.** A view answers from a list only when the index reports the list's coverage
+  COMPLETE. A list the index reports PARTIAL (a later index generation still building it from history) is treated
+  exactly like one it reports UNKNOWN: the view, count views included, answers UNKNOWN with no rows and no counts,
+  and one such list refuses the view whatever the others report, including a listing resumed after the list stopped
+  being complete. Two reasons. A list's PARTIAL would not survive paging, because every page that does not start at
+  the origin and finish already says PARTIAL for its own paging, so a listing missing rows would end looking like an
+  ordinary long one. And the rows could not be promised, because Everyone decides from the yes-counts of
+  `position-authors`, and nothing says what a partly built list's counters hold. Reading a partly built list (newest
+  pages while old history is built) would be a new reader contract, designed with that feature, with a list-coverage
+  field of its own that survives paging. A live index is always complete, so no page of a real Realm changes. A
+  page's own coverage is unchanged: COMPLETE only when it started at the origin and finished, PARTIAL otherwise.
 - **The frontier.** Every page also says how far down the listing it got: `frontier` is the entry the next page
   reads first, the newest entry not yet processed, in the number space of the view's row entry (binding ordinals in
   Mine, Everyone and the thing's places; admission ordinals in an item's authors, a word's page and children). A
   view over two or more lists merged gives the largest of each list's next unread entry. On every page that is
   served:
   1. `frontier` is 0 exactly when the listing is finished (scan status EXHAUSTED); entries are never 0, since both
-     ordinals start at 1. Every refusal (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) carries 0.
+     ordinals start at 1. Every refusal (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) carries 0,
+     no continuation and no counts.
   2. Every row of the page has an entry strictly greater than `frontier`, and every row any later page of the
      listing returns has an entry less than or equal to it. The lists one view merges never hold the same entry
      twice: in Everyone the place list holds filings at the place itself and the roll-up filings under a proper
