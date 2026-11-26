@@ -145,6 +145,11 @@
       },
       {
         "internalType": "uint64",
+        "name": "frontier",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
         "name": "rawTotal",
         "type": "uint64"
       },
@@ -356,6 +361,11 @@
             },
             {
               "name": "scanned",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "frontier",
               "type": "uint64",
               "internalType": "uint64"
             },

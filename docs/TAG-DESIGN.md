@@ -294,6 +294,30 @@ children).
   comes first, or at its gas reserve. A short or empty page is not the end: every page says whether the list is
   finished and where to resume. One number cannot bound both, because skipping a padded stretch is cheap and a shown
   row under a large lens is not.
+- **The frontier.** Every page also says how far down the listing it got: `frontier` is the entry the next page
+  reads first, the newest entry not yet processed, in the number space of the view's row entry (binding ordinals in
+  Mine, Everyone and the thing's places; admission ordinals in an item's authors, a word's page and children). A
+  view over two or more lists merged gives the largest of each list's next unread entry. On every page that is
+  served:
+  1. `frontier` is 0 exactly when the listing is finished (scan status EXHAUSTED); entries are never 0, since both
+     ordinals start at 1. Every refusal (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) carries 0.
+  2. Every row of the page has an entry strictly greater than `frontier`, and every row any later page of the
+     listing returns has an entry less than or equal to it. The lists one view merges never hold the same entry
+     twice: in Everyone the place list holds filings at the place itself and the roll-up filings under a proper
+     descendant, and a binding has one place; in Mine each list holds only its own author's bindings, the exact list
+     at the place and the roll-up below it.
+  3. It is the first entry the next page reads, so an entry already fetched into a window but not processed when the
+     page stopped (after a ROWS stop, say) is still ahead of it.
+  4. It falls strictly from page to page within one listing, rows or not: every page reads at least one entry. So a
+     consumer merging several listings newest first can lower its floor for a list on every page, including a page
+     of a padded stretch that returns no rows.
+
+  Two exceptions, both stated in the page laws: the word page's root row on its first page is not a list entry (its
+  admission is the word page's own, older than every entry), and in Mine a lens that names one principal twice
+  reads that author's lists twice, so a row's entry can equal `frontier` and `frontier` can repeat (a consumer
+  passes each principal once). Frontiers of different views, or of listings started at different origins, are not
+  promised to be comparable. It costs nothing in Mine and Everyone (the page holds it already) and one more entry of
+  the page's slice in the lookups.
 
 | Read (cold call) | Gas |
 |---|---:|
@@ -310,7 +334,7 @@ children).
 - **Depth makes no difference to a read.** Depth 8 and 64 cost the same to the gas.
 - **Call size.** Providers cap the gas of one read call. The release publishes the read terms and, at a 10M cap less
   10%, the bounds: keep page × lens at or below 768 (`mine` exact), 416 (`mine` below), 688 (`everyone` exact) and
-  408 (`everyone` below), at most 150 rows and 246 entries per call (245 on Glamsterdam). The SDK splits larger
+  408 (`everyone` below), at most 150 rows and 245 entries per call. The SDK splits larger
   reads, so a big lens never fails as one call too big.
 
 ## 7. Spam and what stays true

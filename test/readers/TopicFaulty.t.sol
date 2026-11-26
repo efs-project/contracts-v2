@@ -502,15 +502,18 @@ contract TopicFaultyTest is TopicReadersBase {
         assertEq(uint8(info.q.status), uint8(Status.UNSUPPORTED));
         assertEq(rows.length, 0);
         assertEq(uint8(info.listingCoverage), uint8(Coverage.UNKNOWN));
+        assertEq(info.frontier, 0, "a refusal's frontier is 0");
         (TopicPageInfo memory w, PlaceCount[] memory p) = fk.wordPage(page, _unbound(), "", 0);
         assertEq(uint8(w.q.status), uint8(Status.UNSUPPORTED));
         assertEq(p.length, 0);
+        assertEq(w.frontier, 0, "a refusal's frontier is 0");
     }
 
     function test_an_unlisted_index_profile_is_unsupported_as_data() public {
         _set(fi, bytes4(keccak256("CALLBACK_PROFILE()")), M_SET_WORD, 0, 1);
         (TopicPageInfo memory info,) = _byNameF();
         assertEq(uint8(info.q.status), uint8(Status.UNSUPPORTED));
+        assertEq(info.frontier, 0, "a refusal's frontier is 0");
     }
 
     // ---- the new primitives ----------------------------------------------------------------------------------

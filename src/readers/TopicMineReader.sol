@@ -52,7 +52,9 @@ import {E_TOPIC_INCONSISTENT, TopicReaderBase} from "./TopicReaderBase.sol";
 ///         `maxRows` rows returned (4 ROWS), 0 = no bound; `gasReserve` is checked before each batch and must cover
 ///         one batch of 16 rows and the return encoding (3 GAS). Each carries a continuation; only 1 EXHAUSTED ends
 ///         the listing, and a page that is not refused reads at least one entry. The continuation's cursor is one
-///         index per list counted from the list's start, so appends between pages never shift it.
+///         index per list counted from the list's start, so appends between pages never shift it. `frontier` is the
+///         merge's front entry at the stop (the largest next unread binding ordinal over the lens lists), held already:
+///         no further read.
 contract TopicMineReader is TopicReaderBase, ITopicMineReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-mine/query/1");
 
@@ -240,11 +242,15 @@ contract TopicMineReader is TopicReaderBase, ITopicMineReader {
         uint64[] memory ord = new uint64[](WINDOW);
         uint256[] memory src = new uint256[](WINDOW);
         for (;;) {
-            (uint256 best,) = _front(r, s, b.limit);
+            (uint256 best, uint64 front) = _front(r, s, b.limit);
             if (best == type(uint256).max) return (SCAN_EXHAUSTED, got);
-            // a stop leaves the cursor at this candidate (a refill reads, it never consumes)
+            // a stop leaves the cursor at this candidate (a refill reads, it never consumes): the next page reads it
+            // first, so it is the page's frontier
             uint8 stop = _stop(info.scanned, got, rows.length, b.limit, b.maxRows, b.gasReserve);
-            if (stop != 0) return (stop, got);
+            if (stop != 0) {
+                info.frontier = front;
+                return (stop, got);
+            }
             uint256 room = rows.length - got;
             if (b.maxRows != 0 && b.maxRows - got < room) room = b.maxRows - got;
             if (room > WINDOW) room = WINDOW;

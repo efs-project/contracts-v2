@@ -60,6 +60,10 @@ import {E_TOPIC_INCONSISTENT, E_TOPIC_STATUS, TopicReaderBase} from "./TopicRead
 ///         fold (docs/TAG-DESIGN.md §2.1); a place that lies under another group of the same word is the client's to
 ///         merge (spec §3.4). ABSENT_PROVEN when `page`/`topic` is no record, INVALID when it is a record of another
 ///         Type; UNKNOWN when the index keeps no topic roll-ups (the below counts are then unknown).
+///
+///         The paged views' `frontier` (`byName`, `about`, `wordPage`, `children`: one list each) is the list's entry
+///         just below the page, read as one more entry of the page's slice when one is left (on `wordPage`'s first
+///         page of only the root row, the list head's `last`). The word page's root row is not a list entry.
 contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
     bytes32 internal constant DOM_QUERY = keccak256("efs/topic-lookup/query/1");
     /// The most rows of one `byName`, `wordPage` or `children` page (the facets' batch bound).
@@ -108,8 +112,10 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         uint64 n = limit == 0 || limit > BY_NAME_MAX ? uint64(BY_NAME_MAX) : limit;
         if (n > l.hi) n = l.hi;
         rows = new AuthorRow[](n);
+        uint64 next;
         if (n != 0) {
-            uint64[] memory adm = _below(r, l, l.hi, n);
+            uint64[] memory adm;
+            (adm, next) = _slice(r, l, n);
             (Status[] memory s, bytes32[] memory who, Head[] memory hs) = _authors(r, position, adm);
             for (uint256 i; i < n; ++i) {
                 uint256 k = n - 1 - i; // newest first
@@ -123,7 +129,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         }
         info.scanned = n;
         r.selected += n;
-        _end(r, info, l, cov);
+        _end(r, info, l, cov, next);
     }
 
     // =============================================================================================
@@ -150,8 +156,10 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         uint64 n = limit == 0 || limit > BY_NAME_MAX ? uint64(BY_NAME_MAX) : limit;
         if (n > l.hi) n = l.hi;
         rows = new PlaceRow[](n);
+        uint64 next;
         if (n != 0) {
-            uint64[] memory e = _below(r, l, l.hi, n);
+            uint64[] memory e;
+            (e, next) = _slice(r, l, n);
             (bytes32[] memory positions, Coordinate[] memory cells) = _cells(r, e);
             for (uint256 i; i < n; ++i) {
                 uint256 k = n - 1 - i; // newest first
@@ -180,7 +188,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         }
         info.scanned = n;
         r.selected += n;
-        _end(r, info, l, cov);
+        _end(r, info, l, cov, next);
     }
 
     // =============================================================================================
@@ -328,8 +336,12 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         if (root) {
             cov = _join(cov, _counts(r, id, firstAdmission, rows[k++]));
         }
+        // the root row alone (a first page of one row) reads no entry: the next unread entry is the list's newest, its
+        // head's `last` (0 when the list is empty)
+        uint64 next = l.last;
         if (entries != 0) {
-            uint64[] memory adm = _below(r, l, l.hi, entries);
+            uint64[] memory adm;
+            (adm, next) = _slice(r, l, entries);
             for (uint256 i; i < entries; ++i) {
                 uint64 a = adm[entries - 1 - i];
                 cov = _join(cov, _counts(r, _registered(a), a, rows[k++]));
@@ -342,7 +354,7 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         }
         info.scanned = entries;
         r.selected += uint64(rows.length);
-        _end(r, info, l, cov);
+        _end(r, info, l, cov, next);
     }
 
     /// The directory's own record: a `topic-word/1` record for a word page; a `topic/1` or `topic-word/1` record
@@ -414,10 +426,30 @@ contract TopicLookupReader is TopicReaderBase, ITopicLookupReader {
         if (cov == Coverage.UNKNOWN) return (Status.UNKNOWN, cov);
     }
 
-    function _end(Run memory r, TopicPageInfo memory info, List memory l, Coverage cov)
+    /// The `n` (>= 1) entries of `l` just below `l.hi`, ascending, and `next`, the entry just below them (the list's
+    /// next unread entry once they are read; 0 when none is left): one slice of `n + 1` entries when one is left.
+    function _slice(Run memory r, List memory l, uint64 n)
+        private
+        view
+        returns (uint64[] memory e, uint64 next)
+    {
+        if (l.hi == n) return (_below(r, l, l.hi, n), 0);
+        e = _below(r, l, l.hi, n + 1);
+        next = e[0];
+        // drop the first entry in place: the array starts one word later, its length one less
+        assembly ("memory-safe") {
+            let len := mload(e)
+            e := add(e, 32)
+            mstore(e, sub(len, 1))
+        }
+    }
+
+    /// `next` is the list's next unread entry (0 when `l.hi` is 0): the page's frontier.
+    function _end(Run memory r, TopicPageInfo memory info, List memory l, Coverage cov, uint64 next)
         private
         pure
     {
+        if (l.hi != 0) info.frontier = next;
         uint64[] memory cursor = new uint64[](1);
         cursor[0] = l.hi;
         _finish(r, info, l.hi == 0 ? SCAN_EXHAUSTED : SCAN_LIMIT, cov, cursor);
