@@ -1,9 +1,9 @@
 {
   "schema": "efs-gas-report/1",
   "measurement": {
-    "commit": "43108df8881d6136e9929b1b9b892fd7bdbb4b31",
+    "commit": "97ccd6c8dde116736a9dda99d447c95e5b79ed6e",
     "dirtyFiles": 0,
-    "date": "2026-11-26T01:46:37.927Z",
+    "date": "2026-11-26T02:48:35.005Z",
     "foundry": "forge Version: 1.8.3"
   },
   "method": {
@@ -24,12 +24,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       },
       "designEstimate": null
@@ -43,12 +43,12 @@
       },
       "conditions": "files-directory/1, 64-byte body (two words, as the design row's 41 B / 2 words); the author has published before",
       "prague": {
-        "gas": 573740,
-        "frameGas": 569987
+        "gas": 573836,
+        "frameGas": 570083
       },
       "amsterdam": {
-        "gas": 1853575,
-        "frameGas": 478941,
+        "gas": 1853695,
+        "frameGas": 479061,
         "frameStateGas": 1370880
       },
       "designEstimate": {
@@ -65,12 +65,12 @@
       },
       "conditions": "first placement in the root folder (a fresh scope, not steady)",
       "prague": {
-        "gas": 1321684,
-        "frameGas": 1316816
+        "gas": 1322286,
+        "frameGas": 1317418
       },
       "amsterdam": {
-        "gas": 4794996,
-        "frameGas": 971248,
+        "gas": 4795598,
+        "frameGas": 971850,
         "frameStateGas": 3818880
       },
       "designEstimate": {
@@ -87,12 +87,12 @@
       },
       "conditions": "first placement in a fresh folder; 18-byte inline document",
       "prague": {
-        "gas": 1683680,
-        "frameGas": 1677671
+        "gas": 1684773,
+        "frameGas": 1678764
       },
       "amsterdam": {
-        "gas": 6044157,
-        "frameGas": 1240069,
+        "gas": 6045250,
+        "frameGas": 1241162,
         "frameStateGas": 4798080
       },
       "designEstimate": {
@@ -109,12 +109,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 864770,
-        "frameGas": 860427
+        "gas": 865330,
+        "frameGas": 860987
       },
       "amsterdam": {
-        "gas": 2775510,
-        "frameGas": 714847,
+        "gas": 2776070,
+        "frameGas": 715407,
         "frameStateGas": 2056320
       },
       "designEstimate": {
@@ -131,12 +131,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 1119302,
-        "frameGas": 1114414
+        "gas": 1120218,
+        "frameGas": 1115330
       },
       "amsterdam": {
-        "gas": 3608409,
-        "frameGas": 959680,
+        "gas": 3609337,
+        "frameGas": 960608,
         "frameStateGas": 2643840
       },
       "designEstimate": {
@@ -153,12 +153,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 451411,
-        "frameGas": 447648
+        "gas": 451845,
+        "frameGas": 448082
       },
       "amsterdam": {
-        "gas": 1210737,
-        "frameGas": 423614,
+        "gas": 1211171,
+        "frameGas": 424048,
         "frameStateGas": 783360
       },
       "designEstimate": {
@@ -175,12 +175,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 485956,
-        "frameGas": 482190
+        "gas": 486328,
+        "frameGas": 482562
       },
       "amsterdam": {
-        "gas": 1259805,
-        "frameGas": 472678,
+        "gas": 1260201,
+        "frameGas": 473074,
         "frameStateGas": 783360
       },
       "designEstimate": {
@@ -197,12 +197,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 400517,
-        "frameGas": 396777
+        "gas": 400913,
+        "frameGas": 397173
       },
       "amsterdam": {
-        "gas": 1064757,
-        "frameGas": 375577,
+        "gas": 1065153,
+        "frameGas": 375973,
         "frameStateGas": 685440
       },
       "designEstimate": {
@@ -219,12 +219,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 435505,
-        "frameGas": 431737
+        "gas": 435939,
+        "frameGas": 432171
       },
       "amsterdam": {
-        "gas": 1114147,
-        "frameGas": 424937,
+        "gas": 1114581,
+        "frameGas": 425371,
         "frameStateGas": 685440
       },
       "designEstimate": {
@@ -241,12 +241,12 @@
       },
       "conditions": "same target, not a different old target",
       "prague": {
-        "gas": 500863,
-        "frameGas": 497120
+        "gas": 501235,
+        "frameGas": 497492
       },
       "amsterdam": {
-        "gas": 1355410,
-        "frameGas": 470386,
+        "gas": 1355794,
+        "frameGas": 470770,
         "frameStateGas": 881280
       },
       "designEstimate": {
@@ -263,12 +263,12 @@
       },
       "conditions": "as the suite runs it",
       "prague": {
-        "gas": 444356,
-        "frameGas": 440618
+        "gas": 444498,
+        "frameGas": 440760
       },
       "amsterdam": {
-        "gas": 1284003,
-        "frameGas": 398984,
+        "gas": 1284145,
+        "frameGas": 399126,
         "frameStateGas": 881280
       },
       "designEstimate": {
@@ -285,12 +285,12 @@
         "label": "recipe bind before its parent and name publish"
       },
       "prague": {
-        "gas": 1418759,
-        "frameGas": 1413332
+        "gas": 1419454,
+        "frameGas": 1414027
       },
       "amsterdam": {
-        "gas": 5156019,
-        "frameGas": 1037952,
+        "gas": 5156738,
+        "frameGas": 1038671,
         "frameStateGas": 4112640
       }
     },
@@ -301,12 +301,12 @@
         "label": "recipe place under a withdrawn directory"
       },
       "prague": {
-        "gas": 997801,
-        "frameGas": 993493
+        "gas": 998295,
+        "frameGas": 993987
       },
       "amsterdam": {
-        "gas": 3443473,
-        "frameGas": 795325,
+        "gas": 3443967,
+        "frameGas": 795819,
         "frameStateGas": 2643840
       }
     },
@@ -317,12 +317,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -333,12 +333,12 @@
         "label": "recipe create + root (no binds)"
       },
       "prague": {
-        "gas": 683474,
-        "frameGas": 679164
+        "gas": 683687,
+        "frameGas": 679377
       },
       "amsterdam": {
-        "gas": 2293712,
-        "frameGas": 526842,
+        "gas": 2293925,
+        "frameGas": 527055,
         "frameStateGas": 1762560
       }
     },
@@ -349,12 +349,12 @@
         "label": "recipe publish alias"
       },
       "prague": {
-        "gas": 566860,
-        "frameGas": 563108
+        "gas": 566968,
+        "frameGas": 563216
       },
       "amsterdam": {
-        "gas": 1832506,
-        "frameGas": 457874,
+        "gas": 1832614,
+        "frameGas": 457982,
         "frameStateGas": 1370880
       }
     },
@@ -365,12 +365,12 @@
         "label": "recipe publish grandchild"
       },
       "prague": {
-        "gas": 658069,
-        "frameGas": 654356
+        "gas": 658177,
+        "frameGas": 654464
       },
       "amsterdam": {
-        "gas": 2194551,
-        "frameGas": 526198,
+        "gas": 2194671,
+        "frameGas": 526318,
         "frameStateGas": 1664640
       }
     },
@@ -381,12 +381,12 @@
         "label": "recipe publish large child"
       },
       "prague": {
-        "gas": 1318263,
-        "frameGas": 1312013
+        "gas": 1318371,
+        "frameGas": 1312121
       },
       "amsterdam": {
-        "gas": 2646503,
-        "frameGas": 1171443,
+        "gas": 2646623,
+        "frameGas": 1171563,
         "frameStateGas": 1468800
       }
     },
@@ -397,12 +397,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -413,12 +413,12 @@
         "label": "recipe create + FOLDER bind before its name"
       },
       "prague": {
-        "gas": 1147460,
-        "frameGas": 1142592
+        "gas": 1148059,
+        "frameGas": 1143191
       },
       "amsterdam": {
-        "gas": 4166172,
-        "frameGas": 832024,
+        "gas": 4166771,
+        "frameGas": 832623,
         "frameStateGas": 3329280
       }
     },
@@ -429,12 +429,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -445,12 +445,12 @@
         "label": "recipe create + place"
       },
       "prague": {
-        "gas": 1146009,
-        "frameGas": 1141154
+        "gas": 1146608,
+        "frameGas": 1141753
       },
       "amsterdam": {
-        "gas": 4164709,
-        "frameGas": 830574,
+        "gas": 4165320,
+        "frameGas": 831185,
         "frameStateGas": 3329280
       }
     },
@@ -461,12 +461,12 @@
         "label": "recipe hide"
       },
       "prague": {
-        "gas": 450405,
-        "frameGas": 446667
+        "gas": 450839,
+        "frameGas": 447101
       },
       "amsterdam": {
-        "gas": 1209731,
-        "frameGas": 422633,
+        "gas": 1210165,
+        "frameGas": 423067,
         "frameStateGas": 783360
       }
     },
@@ -477,12 +477,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -493,12 +493,12 @@
         "label": "recipe create + name + place"
       },
       "prague": {
-        "gas": 1145293,
-        "frameGas": 1140438
+        "gas": 1145892,
+        "frameGas": 1141037
       },
       "amsterdam": {
-        "gas": 4164005,
-        "frameGas": 829870,
+        "gas": 4164604,
+        "frameGas": 830469,
         "frameStateGas": 3329280
       }
     },
@@ -509,12 +509,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -525,12 +525,12 @@
         "label": "recipe realm-notice/1 frozen"
       },
       "prague": {
-        "gas": 611706,
-        "frameGas": 607947
+        "gas": 611826,
+        "frameGas": 608067
       },
       "amsterdam": {
-        "gas": 2045892,
-        "frameGas": 475413,
+        "gas": 2046012,
+        "frameGas": 475533,
         "frameStateGas": 1566720
       }
     },
@@ -541,12 +541,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -557,12 +557,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -573,12 +573,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -589,12 +589,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -605,12 +605,12 @@
         "label": "recipe a folder at two names with a file inside"
       },
       "prague": {
-        "gas": 2666241,
-        "frameGas": 2658557
+        "gas": 2667936,
+        "frameGas": 2660252
       },
       "amsterdam": {
-        "gas": 9922977,
-        "frameGas": 1885853,
+        "gas": 9924672,
+        "frameGas": 1887548,
         "frameStateGas": 8029440
       }
     },
@@ -621,12 +621,12 @@
         "label": "recipe release one placement of a non-empty folder"
       },
       "prague": {
-        "gas": 453241,
-        "frameGas": 449540
+        "gas": 453675,
+        "frameGas": 449974
       },
       "amsterdam": {
-        "gas": 1212567,
-        "frameGas": 425506,
+        "gas": 1213001,
+        "frameGas": 425940,
         "frameStateGas": 783360
       }
     },
@@ -637,12 +637,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -653,12 +653,12 @@
         "label": "recipe create file without placement"
       },
       "prague": {
-        "gas": 1085202,
-        "frameGas": 1080334
+        "gas": 1085813,
+        "frameGas": 1080945
       },
       "amsterdam": {
-        "gas": 3927786,
-        "frameGas": 789478,
+        "gas": 3928385,
+        "frameGas": 790077,
         "frameStateGas": 3133440
       }
     },
@@ -669,12 +669,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     },
@@ -685,12 +685,12 @@
         "label": "recipe root seed (PUBLISH directory)"
       },
       "prague": {
-        "gas": 669216,
-        "frameGas": 665509
+        "gas": 669312,
+        "frameGas": 665605
       },
       "amsterdam": {
-        "gas": 2434070,
-        "frameGas": 471963,
+        "gas": 2434190,
+        "frameGas": 472083,
         "frameStateGas": 1958400
       }
     }
@@ -704,7 +704,7 @@
         "function": "listDirectory"
       },
       "prague": {
-        "estimateGas": 560181,
+        "estimateGas": 561390,
         "calldataBytes": 548,
         "returndataBytes": 1856,
         "rpcCalls": 1
@@ -735,8 +735,8 @@
       "prague": {
         "calls": 6,
         "rows": 1000,
-        "maxGasPerPage": 29853404,
-        "totalGas": 160316818,
+        "maxGasPerPage": 29854613,
+        "totalGas": 160324072,
         "maxReturndataBytesPerPage": 72800,
         "totalReturndataBytes": 389664,
         "pages": [
@@ -744,42 +744,42 @@
             "page": 1,
             "rows": 187,
             "scanStatus": 3,
-            "gas": 29341707,
+            "gas": 29342916,
             "returndataBytes": 72800
           },
           {
             "page": 2,
             "rows": 186,
             "scanStatus": 3,
-            "gas": 29481875,
+            "gas": 29483084,
             "returndataBytes": 72416
           },
           {
             "page": 3,
             "rows": 185,
             "scanStatus": 3,
-            "gas": 29606717,
+            "gas": 29607926,
             "returndataBytes": 72032
           },
           {
             "page": 4,
             "rows": 184,
             "scanStatus": 3,
-            "gas": 29732100,
+            "gas": 29733309,
             "returndataBytes": 71648
           },
           {
             "page": 5,
             "rows": 187,
             "scanStatus": 3,
-            "gas": 29853404,
+            "gas": 29854613,
             "returndataBytes": 72800
           },
           {
             "page": 6,
             "rows": 71,
             "scanStatus": 1,
-            "gas": 12301015,
+            "gas": 12302224,
             "returndataBytes": 27968
           }
         ]
@@ -794,8 +794,8 @@
       "prague": {
         "calls": 11,
         "rows": 1000,
-        "maxGasPerPage": 15553062,
-        "totalGas": 154752056,
+        "maxGasPerPage": 15554271,
+        "totalGas": 154765355,
         "maxReturndataBytesPerPage": 39392,
         "totalReturndataBytes": 394624,
         "pages": [
@@ -803,77 +803,77 @@
             "page": 1,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15119623,
+            "gas": 15120832,
             "returndataBytes": 39392
           },
           {
             "page": 2,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15167114,
+            "gas": 15168323,
             "returndataBytes": 39392
           },
           {
             "page": 3,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15225334,
+            "gas": 15226543,
             "returndataBytes": 39392
           },
           {
             "page": 4,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15260599,
+            "gas": 15261808,
             "returndataBytes": 39392
           },
           {
             "page": 5,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15318843,
+            "gas": 15320052,
             "returndataBytes": 39392
           },
           {
             "page": 6,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15354340,
+            "gas": 15355549,
             "returndataBytes": 39392
           },
           {
             "page": 7,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15401210,
+            "gas": 15402419,
             "returndataBytes": 39392
           },
           {
             "page": 8,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15459436,
+            "gas": 15460645,
             "returndataBytes": 39392
           },
           {
             "page": 9,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15494951,
+            "gas": 15496160,
             "returndataBytes": 39392
           },
           {
             "page": 10,
             "rows": 100,
             "scanStatus": 2,
-            "gas": 15553062,
+            "gas": 15554271,
             "returndataBytes": 39392
           },
           {
             "page": 11,
             "rows": 0,
             "scanStatus": 1,
-            "gas": 1397544,
+            "gas": 1398753,
             "returndataBytes": 704
           }
         ]
@@ -888,8 +888,8 @@
       "prague": {
         "calls": 6,
         "rows": 1000,
-        "maxGasPerPage": 29847617,
-        "totalGas": 160283072,
+        "maxGasPerPage": 29848826,
+        "totalGas": 160290326,
         "maxReturndataBytesPerPage": 72800,
         "totalReturndataBytes": 389664,
         "pages": [
@@ -897,42 +897,42 @@
             "page": 1,
             "rows": 187,
             "scanStatus": 3,
-            "gas": 29335920,
+            "gas": 29337129,
             "returndataBytes": 72800
           },
           {
             "page": 2,
             "rows": 186,
             "scanStatus": 3,
-            "gas": 29476096,
+            "gas": 29477305,
             "returndataBytes": 72416
           },
           {
             "page": 3,
             "rows": 185,
             "scanStatus": 3,
-            "gas": 29600946,
+            "gas": 29602155,
             "returndataBytes": 72032
           },
           {
             "page": 4,
             "rows": 184,
             "scanStatus": 3,
-            "gas": 29726337,
+            "gas": 29727546,
             "returndataBytes": 71648
           },
           {
             "page": 5,
             "rows": 187,
             "scanStatus": 3,
-            "gas": 29847617,
+            "gas": 29848826,
             "returndataBytes": 72800
           },
           {
             "page": 6,
             "rows": 71,
             "scanStatus": 1,
-            "gas": 12296156,
+            "gas": 12297365,
             "returndataBytes": 27968
           }
         ]
@@ -947,8 +947,8 @@
       "prague": {
         "calls": 4,
         "rows": 1000,
-        "maxGasPerPage": 50937434,
-        "totalGas": 165249853,
+        "maxGasPerPage": 50938643,
+        "totalGas": 165254689,
         "maxReturndataBytesPerPage": 119264,
         "totalReturndataBytes": 387680,
         "pages": [
@@ -956,28 +956,28 @@
             "page": 1,
             "rows": 305,
             "scanStatus": 3,
-            "gas": 50040533,
+            "gas": 50041742,
             "returndataBytes": 118112
           },
           {
             "page": 2,
             "rows": 306,
             "scanStatus": 3,
-            "gas": 50398955,
+            "gas": 50400164,
             "returndataBytes": 118496
           },
           {
             "page": 3,
             "rows": 308,
             "scanStatus": 3,
-            "gas": 50937434,
+            "gas": 50938643,
             "returndataBytes": 119264
           },
           {
             "page": 4,
             "rows": 81,
             "scanStatus": 1,
-            "gas": 13872931,
+            "gas": 13874140,
             "returndataBytes": 31808
           }
         ]
@@ -987,12 +987,12 @@
   "fixtureReceipts": {
     "hardfork": "osaka",
     "chainId": 31337,
-    "startedAt": "2026-11-26T01:46:20.974Z",
-    "instance": "ib1gas3",
+    "startedAt": "2026-11-26T02:48:19.431Z",
+    "instance": "ib2-report",
     "rows": [
       {
         "row": "Genesis code deposit (every CREATE2 of G1–G19 + RealmGenesis.run)",
-        "gasUsed": 45690669,
+        "gasUsed": 45904506,
         "transactions": 30
       },
       {
@@ -1007,7 +1007,7 @@
       },
       {
         "row": "Activation (genesis, G20)",
-        "gasUsed": 4165017,
+        "gasUsed": 4194475,
         "design": {
           "prague": "≈ 1.1–1.9M",
           "amsterdam": "≈ 3.5–4.3M"
@@ -1119,27 +1119,27 @@
       },
       {
         "row": "Seed seed root (PUBLISH files-directory/1)",
-        "gasUsed": 664806
+        "gasUsed": 664914
       },
       {
         "row": "Seed seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)",
-        "gasUsed": 1316080
+        "gasUsed": 1316682
       },
       {
         "row": "Seed seed file docs/readme.txt (CREATE, PUBLISH root form 0, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "gasUsed": 1677070
+        "gasUsed": 1678151
       },
       {
         "row": "Seed seed docs/big.bin publication 1/2 (2 actions, 16384 body bytes)",
-        "gasUsed": 12565399
+        "gasUsed": 12565615
       },
       {
         "row": "Seed seed docs/big.bin publication 2/2 (9 actions, 4351 body bytes)",
-        "gasUsed": 5814831
+        "gasUsed": 5816373
       },
       {
         "row": "Seed seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "gasUsed": 2372292
+        "gasUsed": 2373606
       }
     ],
     "journal": [
@@ -1148,7 +1148,7 @@
         "label": "fund the factory deployer",
         "txHash": "0x1830051f0c7350759cca1c95276d6919fcc6144ea70a45d1e72eea3dc7784c26",
         "blockNumber": 1,
-        "blockHash": "0xca8ff1485e54fe6b17202d73f90afcdcd85ac430108cfdafb55f6c05ec0b227d",
+        "blockHash": "0xbf67fe9e1bf5105c382db863af3e4896cdec9c7fcf589d865523f6e32e128ad6",
         "gasUsed": 21000
       },
       {
@@ -1156,7 +1156,7 @@
         "label": "factory presigned tx",
         "txHash": "0xeddf9e61fb9d8f5111840daef55e5fde0041f5702856532cdbb5a02998033d26",
         "blockNumber": 2,
-        "blockHash": "0x5ab5e71d241ed4901624f9a7ad5a65830040806fbddd03d81d9ba4660e8ff05a",
+        "blockHash": "0xec852055e89070b80d186c679e43c028ab80cf3ef38d1da0f73da8d729b84bad",
         "gasUsed": 68137
       },
       {
@@ -1164,7 +1164,7 @@
         "label": "LedgerIngress",
         "txHash": "0x13b9bec89775ce0076ed24b2c2b25149f719ae771b4a5930509a977f96c7bbbf",
         "blockNumber": 3,
-        "blockHash": "0x4e1228b1ea45d07086d1bfafd376cd51b8fd3a4cb1981119b8ce9ae8b5aaf12f",
+        "blockHash": "0xbd5c1d440f54dbe725f0d5b984b5ebcedcdceb38dfae4e1e97f332646e0d9856",
         "gasUsed": 4227760
       },
       {
@@ -1172,7 +1172,7 @@
         "label": "LedgerApply",
         "txHash": "0xe92fccb6fef31182fd8506fe7e628d61f7b2a3fa569cd876ff629be4e5baf6cd",
         "blockNumber": 4,
-        "blockHash": "0x27aa4ff3e5aedf67c74359f0fea50e4d2d82d5a8411685249a4d01d97a65dc60",
+        "blockHash": "0xeb3599c59c715c320420ced15dd504f3e7cecf132b909eedd283bbeb39f7b69c",
         "gasUsed": 1267045
       },
       {
@@ -1180,7 +1180,7 @@
         "label": "LedgerControl",
         "txHash": "0xa7c8f1bdc64d00412cc386aeb2b246961fdb88335e61474d2ea10381c420bb76",
         "blockNumber": 5,
-        "blockHash": "0x42fadb240b7782e29d6bcc504cc2b8cee32fdbf09e56a23e1e94c4b921d0d31f",
+        "blockHash": "0xfb0c645fb4c01d0f3338bbe184ecd778ebedb3b371ec9f8bf50f48954f25bf92",
         "gasUsed": 3890022
       },
       {
@@ -1188,7 +1188,7 @@
         "label": "LedgerReads",
         "txHash": "0xb48837dd0a01f549fc123bb2511f2176394559b1b39603cdf6993821dc0d07fa",
         "blockNumber": 6,
-        "blockHash": "0x84f7e2e001d93f2db2e8c1d69aa0587ea23a40f68f92e3d4dffea3c89a661cb9",
+        "blockHash": "0x3814950c471d142d592d4eab9caa682204634be5c47c4b78a88466f6663bf0b3",
         "gasUsed": 3148205
       },
       {
@@ -1196,7 +1196,7 @@
         "label": "LedgerViews",
         "txHash": "0x768c6a1857572be5efd1939285f1fa052e5112fbadfc965f786554eef7b71e23",
         "blockNumber": 7,
-        "blockHash": "0x8597aeaf604035ff112be38dde2a29d10d41923a11e5aeb8cdb4b82c41469110",
+        "blockHash": "0x32dca5cf2f478c6862623cb534cfcb10523246a5ca27c56384bbfcad03a3ba55",
         "gasUsed": 4078113
       },
       {
@@ -1204,7 +1204,7 @@
         "label": "DescriptorStore",
         "txHash": "0x0311ca98f1bc7308cffe96d09e7579ebc6a073ec8015231c52117b31228903f9",
         "blockNumber": 8,
-        "blockHash": "0x08cfcf501591f8b2345641647cf39bad46dffc1a2ff8934a9dd46f00e6141a16",
+        "blockHash": "0x34849a5f9f291cca83adfbc345f9781f4809d3395cc6b00ac1d9c9c4588c26ae",
         "gasUsed": 217390
       },
       {
@@ -1212,7 +1212,7 @@
         "label": "IndexReplayDecoder",
         "txHash": "0xb830d94820652f65d885d54a1704f8726453d2eccd17ab2b96e646ec07f293cc",
         "blockNumber": 9,
-        "blockHash": "0x1e0134fb607af2d624c6cb6496467326ef6633f0eac602b0d5b5aa95a360c2da",
+        "blockHash": "0xeadbbc17fc5cdbd5bc2aa7f584f568cc9ac5cecf35bcdd53edafc23ab9be9fd5",
         "gasUsed": 1223989
       },
       {
@@ -1220,7 +1220,7 @@
         "label": "ReaderDirectory",
         "txHash": "0x400bb46ff4da5cf08d1dffbfa8a7f5950f5cd8ec619da04047e72f892d361d0d",
         "blockNumber": 10,
-        "blockHash": "0xcced7d31af7f1b09543dcfc97bac18200ecb331e3cb1bfe19e075dd399ed1c29",
+        "blockHash": "0x2905833d89a3cb5a3d64edd2c32068a59a67b039cec9ce3b2038824194a19417",
         "gasUsed": 377313
       },
       {
@@ -1228,7 +1228,7 @@
         "label": "FilesBytesRule",
         "txHash": "0x7d0ab5b16ece1c7244357d9b83a1f667821fcea49ceed21b01eba3c7cabf8a44",
         "blockNumber": 11,
-        "blockHash": "0xbbd7dea3f44f4011abfdb59f126d333ecd48d8a829374eb142903b4cccd26aaf",
+        "blockHash": "0xe1db943b17062c7c8dd77fea4374f24238d2679dc44242d91a2e723d9725e0dc",
         "gasUsed": 173432
       },
       {
@@ -1236,7 +1236,7 @@
         "label": "FilesSpanRule",
         "txHash": "0x73ad15a9633bddcd43a0d87b058e00eca54596874d0f4c289fde9cad4d6ac931",
         "blockNumber": 12,
-        "blockHash": "0xe72620270024afc6728e88857eff20ba67001c52a0998a0eaa39a04df9517c9b",
+        "blockHash": "0x1297dbb92241b3cded5e2e2715cabb29b92d45df9dcde0ce42636cfd26fb178b",
         "gasUsed": 283232
       },
       {
@@ -1244,7 +1244,7 @@
         "label": "FilesContentRule",
         "txHash": "0xa07519962b364c490c0a216b43abdd6cf9d27312cb84111b14d6b1414f1d8c90",
         "blockNumber": 13,
-        "blockHash": "0x7e9d28c8a6629242ba7c86985fef812a79e310eb6e1f109c90342c5c470c8266",
+        "blockHash": "0xba203fe1d86ce6e94e19c535209b170d70afb16457bcaef62114c55fa79432e6",
         "gasUsed": 506435
       },
       {
@@ -1252,7 +1252,7 @@
         "label": "FilesExternalContentRule",
         "txHash": "0xbf817b29d2606785af5bfee8c67cc794a37864b23bf79261bf8b615cc1bfd47c",
         "blockNumber": 14,
-        "blockHash": "0x345e1d533c8fed270dd407bc0708b38c634ce9651f8658e715df497a1ccccad2",
+        "blockHash": "0x63000cc17b6eedc92bdffdc2d7194727df44ffd2eb8d8885979feb576e3b51ab",
         "gasUsed": 567823
       },
       {
@@ -1260,7 +1260,7 @@
         "label": "FilesRootRule",
         "txHash": "0x39b2bf682873126086a2cff67298e38bfbb7de308b697228ccc430765eb587e9",
         "blockNumber": 15,
-        "blockHash": "0xba250cfb94b2b1442c4b4cf9ebd538e0fcd9fde3f1462dc48cb84d05a5ed2314",
+        "blockHash": "0xcb65c713ccb5bb70658efdceff014596caee8e1ddfa8a415de3a21606114a313",
         "gasUsed": 350103
       },
       {
@@ -1268,7 +1268,7 @@
         "label": "FilesChildRule",
         "txHash": "0xec2cb9fbce8c96e8e9e2d5904e84f866126c20c99a966c71e5b57e49c7de307b",
         "blockNumber": 16,
-        "blockHash": "0xf07bdcb9037e474339f8e8378cb31e3c538871a0fc2e6f38b4880a27414b8d82",
+        "blockHash": "0xce571c08738c07d8e5495228b0ded3d1afe5a422a44db8cd1b34fcac15b946f7",
         "gasUsed": 407755
       },
       {
@@ -1276,7 +1276,7 @@
         "label": "FilesDirectoryRule",
         "txHash": "0x54a2d6a16c6775234b0ad03b9c9efeb7a09980f9890215a8f95b1e3213ef0dbe",
         "blockNumber": 17,
-        "blockHash": "0xdb1092cd7609f23e04e1f5aedce5fb8bc343ae4e851abc33c24f2c0f78cc2940",
+        "blockHash": "0x724e6ae9d300c898dbe5e56d8cc1ec02ad20524ab515770906018307c5abf351",
         "gasUsed": 169092
       },
       {
@@ -1284,7 +1284,7 @@
         "label": "FilesNameRule",
         "txHash": "0x925973196f9379a4f9a358e3cc8cd7aaf6c0bb3315607e70ccd871425124d7a4",
         "blockNumber": 18,
-        "blockHash": "0x48c4ef0539d9877e77606cf63a66069b5d64ed829e1d847156c0cd773d923af4",
+        "blockHash": "0x3982ef26254f56be80d4eda7386254d1ab0388f7ee148d7f7156f52b63caa1b6",
         "gasUsed": 418055
       },
       {
@@ -1292,7 +1292,7 @@
         "label": "RealmNoticeRule",
         "txHash": "0xef2ab5178b5a8f8630fd5cf4e7227d1221b7905c16d07e85d66737c5ea3d196f",
         "blockNumber": 19,
-        "blockHash": "0xd84a82b4530c0142f83610f523f474c765308d8c010e4d32c0199a024eb0a673",
+        "blockHash": "0xc4cf29b708bb9a2216fb30077cca781d545c99521d411f685ae33bae8a64a06f",
         "gasUsed": 354535
       },
       {
@@ -1300,7 +1300,7 @@
         "label": "DirectoryAliasRule",
         "txHash": "0x3126facaae35911f258beb016e548fdfa29c79517b06b010f5827bbcf804bdbb",
         "blockNumber": 20,
-        "blockHash": "0x1e232105519cb371203025652010936e763fbe2f59f524d6c9d200e6832bf4e6",
+        "blockHash": "0x06f0f8352a8cb369f0350e9674e21d0de62de247255f78d75b5a56b012499af5",
         "gasUsed": 308584
       },
       {
@@ -1308,7 +1308,7 @@
         "label": "TopicWordRule",
         "txHash": "0x8205c287db3090855f0472742b14f7982a580c3ea9b1fea6186bc7b42901a66e",
         "blockNumber": 21,
-        "blockHash": "0xa07ff83ab52ceb208eb9470cd220805071a21de235cab027bc66fc5f2f15e2f3",
+        "blockHash": "0x037e2147285ca06748209bf4707577b5693c463605755a974172d0e3979fed27",
         "gasUsed": 463271
       },
       {
@@ -1316,7 +1316,7 @@
         "label": "TopicRule",
         "txHash": "0x8b96f19b1a7872729d4666d8cec9662f9a2cd76b9fc5f060b07a47b47d33a08e",
         "blockNumber": 22,
-        "blockHash": "0x53626c1c7fd8539a62ed02c37374c0d04df848f5ed4d1a26c4a454f4e0990653",
+        "blockHash": "0x17bb764f3fc03306d158789e14ee4ba65898ff69af2c732dbe3f70267d07ec8c",
         "gasUsed": 211954
       },
       {
@@ -1324,7 +1324,7 @@
         "label": "TextRule",
         "txHash": "0x9025800316216db49e6887070582db8a22d68d5cedb7d3ffa155ff2350561f1d",
         "blockNumber": 23,
-        "blockHash": "0x834223d2080042df9d2f836199652a3f28b82eb50fb7c375728c845bd66d4412",
+        "blockHash": "0x6eca3c6c00acbea9845c333a38db2514938e324202a827a8742be10e7883ab02",
         "gasUsed": 436393
       },
       {
@@ -1332,7 +1332,7 @@
         "label": "RefuseAllPolicy",
         "txHash": "0xeaf45a9450ba0b5c39c3b97d357a86e234083c5e7257dc64dd8fce4b5054c72e",
         "blockNumber": 24,
-        "blockHash": "0xcc11adbb18d8631ee016d58fedf32ef110627d392ce38b71bcba751aff6b0de0",
+        "blockHash": "0x0194e43aa4a6b16edd9c1a6963bf793aedfb9d0f523d775113720c3140317aa2",
         "gasUsed": 111284
       },
       {
@@ -1340,7 +1340,7 @@
         "label": "DescriptorStore",
         "txHash": "0x09a18e5a6b17e381698d3ae91414217c8441be7a74be41a7336d243943702548",
         "blockNumber": 25,
-        "blockHash": "0x9cad1da3f8e76dbb4bae7897bbf60d01cc107dbf4b75a5f4ed1d6bd37473344c",
+        "blockHash": "0x5d0766cfd4962abb8453ea4e35ee54032910dc39b2e00d553c582a11d968a677",
         "gasUsed": 145555
       },
       {
@@ -1348,7 +1348,7 @@
         "label": "DescriptorStore",
         "txHash": "0x3c4068a27172dff1090411fc101ed54d8ad8c40abd6d78dddd232d5fdba7eb2d",
         "blockNumber": 26,
-        "blockHash": "0xc11a09ea5576f95649f2ab8cc65a05640e3f63d82a61d1b09012580599688811",
+        "blockHash": "0x7e16a8859f435a4e2da093f7b91d4c1209c68c67ea2fe5d92d49a9fe6423a256",
         "gasUsed": 185821
       },
       {
@@ -1356,7 +1356,7 @@
         "label": "DescriptorStore",
         "txHash": "0xd8bea116989f05789298f50e39486f85bb1343890c8fd01e916bab30ab235371",
         "blockNumber": 27,
-        "blockHash": "0xc38c08fda69a39b93606cbc53448ea8901385ef0fdd77e6c7a0609f94254125c",
+        "blockHash": "0x797f662895458715574bfcf96ef4535fb154ed1452424bb581caa1bf6b08bca5",
         "gasUsed": 140739
       },
       {
@@ -1364,7 +1364,7 @@
         "label": "DescriptorStore",
         "txHash": "0xefb45efceb17ec041dc2d3e3430b6d367e2f250710c99ec800062d099d35bb0a",
         "blockNumber": 28,
-        "blockHash": "0xd14d0b05318caf857ed7412b21ae31b9ba7c2ee4757efe96a42bcbe968a64906",
+        "blockHash": "0xa5e9ceff7765adccd2cddd20cb0eb608483fd196dda1afa475188ccbf4311a43",
         "gasUsed": 124922
       },
       {
@@ -1372,7 +1372,7 @@
         "label": "DescriptorStore",
         "txHash": "0x188fa003c9d046d296632a546a857ff9fec94882ee876cb23e7b2a71b057c665",
         "blockNumber": 29,
-        "blockHash": "0x9f9c938f8e0e2e8d5c48109aef560e8ec4b281cf278e9081cd818b817573d5d1",
+        "blockHash": "0xf3c0d7673f86166eac706ca3abf0f65e8d6951f3711ea23b60070026d433d749",
         "gasUsed": 129123
       },
       {
@@ -1380,7 +1380,7 @@
         "label": "DescriptorStore",
         "txHash": "0x5093e5b7cc8a7547530c021f8c08fa6b1966a2ed6e6d580231074b798ac5310e",
         "blockNumber": 30,
-        "blockHash": "0x529a4f53d25cdf6bb7f36dbce282a05dad835a5b366b1937edad1e23b07b9b1e",
+        "blockHash": "0x22e9c8f3d921ff6e91ea6f69f244c287bed3489e83126f1c315599f849c07a8b",
         "gasUsed": 222721
       },
       {
@@ -1388,7 +1388,7 @@
         "label": "DescriptorStore",
         "txHash": "0x7f7182692e754209bd8ac5521257c1bf86c48fac87b864d23a436452a9c258db",
         "blockNumber": 31,
-        "blockHash": "0xdd44fbe72c27be5be5f6f4da496b54460a9d3f029107b11f4c05b5bfbe7817dc",
+        "blockHash": "0x263836eaa7acb177d32dd30767e62fd8883a2743c50ff5edb7bdf4c96d055527",
         "gasUsed": 193374
       },
       {
@@ -1396,7 +1396,7 @@
         "label": "DescriptorStore",
         "txHash": "0x2a2e4a400c69027b668322732e75818cf0e96852b817de8969982b2105f3c560",
         "blockNumber": 32,
-        "blockHash": "0x809eec6fdd1e44e41e6ed322a9a1f6ed1b7a17f976aceafe63ddeaf06bbe2eb8",
+        "blockHash": "0xa6f8d8831edb67e1297e1c8efc90addc3b5b3902f131194baecadc6548a6444d",
         "gasUsed": 125367
       },
       {
@@ -1404,7 +1404,7 @@
         "label": "DescriptorStore",
         "txHash": "0xf80a95f8d621c69aed80d33ad6936d8a43ebb8c9e14d7c96b070fc4d11117aa2",
         "blockNumber": 33,
-        "blockHash": "0x5bd5a484771d665770d8ea8996128cc558f58cf0afcb8b173995d5e940e8017c",
+        "blockHash": "0x1291a7207488136095e412202d613b9f8f04286fd745663c9cbb324f9fbbf6ed",
         "gasUsed": 124286
       },
       {
@@ -1412,7 +1412,7 @@
         "label": "DescriptorStore",
         "txHash": "0x1e911d1b5e5baf04c7797e02174f66448e63af9976446b3e7e1c54d94934feec",
         "blockNumber": 34,
-        "blockHash": "0xc376425fd73ecd4028a18996426bd7bb5b07b07b6ba5e7515a772d2e14f71597",
+        "blockHash": "0x7b474d1a960f74d708f528d45ace10c59fec9573b5bb0902a6df1b41dda932c2",
         "gasUsed": 211576
       },
       {
@@ -1420,7 +1420,7 @@
         "label": "DescriptorStore",
         "txHash": "0x48f0a646bb2efe6e0755d3ac0032d198430edf4088b8b52c40e5c1c4bfbedcdf",
         "blockNumber": 35,
-        "blockHash": "0x5e491d68c374b8a2be84eaede7ac6e249b67db4f7cdc094892aa83f2a52f0e9b",
+        "blockHash": "0x802bd4baab60b84ea72d10789f6d35d12e56ea1dfbd579240a3f543ed6973c3a",
         "gasUsed": 157524
       },
       {
@@ -1428,7 +1428,7 @@
         "label": "DescriptorStore",
         "txHash": "0x1c69e61a9d2a70ce6b5be44273ffe7c6036f09c378828e4bd4e89851567784ea",
         "blockNumber": 36,
-        "blockHash": "0xa0065ad84d801308ce8d594d70d9d419d306cdcb5e2d7c77de4ca233480e6849",
+        "blockHash": "0xdaf0c0e6001fce17c63c4e77b7eb2a31162f172a81f287f371f273214531bcde",
         "gasUsed": 201046
       },
       {
@@ -1436,7 +1436,7 @@
         "label": "DescriptorStore",
         "txHash": "0xe658d6cf55cd69b9c108f07a433acb444f1a5449b053488449d387530742d052",
         "blockNumber": 37,
-        "blockHash": "0xbe6ff487a9febd508bd12c99c05d6a97b7924e574fcbc4b8ae52f55eff67260a",
+        "blockHash": "0x74425a0a53f11a1e697451f2e15f8b3e9b4d2ec31524c69a929cfc0f85021e60",
         "gasUsed": 138823
       },
       {
@@ -1444,7 +1444,7 @@
         "label": "FilesFinalValidator",
         "txHash": "0xdb15e67e2906aaac5864c4a7985072021ac087a49d336f2ef774fb05d9f30f69",
         "blockNumber": 38,
-        "blockHash": "0x8919b85612494e8ba6095f6b63a1bc35a33a60904a592b0db860b34f8377f403",
+        "blockHash": "0x86052aaa39eb421efdbf0d3ba6255ce6c1ad41a575fb1b18d7080ca9e6e5e4ba",
         "gasUsed": 1171761
       },
       {
@@ -1452,7 +1452,7 @@
         "label": "LedgerCore",
         "txHash": "0x749e4ee2958e41f2ef399a3c0aa0b34e4c828be3d83a81577d74d617954d3b7f",
         "blockNumber": 39,
-        "blockHash": "0x66f836b87632c4970bffd0f9a21cac373b9ce906371dbadf17e9ac83c3f16dd8",
+        "blockHash": "0x9cd2e1b22d88583181c122bb148af64183ecb8b9d6a92fc0ad02e65d3ba66e4a",
         "gasUsed": 3350115
       },
       {
@@ -1460,7 +1460,7 @@
         "label": "TypeRegistry",
         "txHash": "0xdd0814a74af331c510782aeb3005944707360a58a71b42003bdfbec640451ff3",
         "blockNumber": 40,
-        "blockHash": "0xd25f2cf87027454444a6363c05029919c55cbb62a25e962cef3ac3f5cf2d515c",
+        "blockHash": "0x1f3ababd88d9a34536732f431295ad328d0b9bff6c27b2dc73d7694e4221c60d",
         "gasUsed": 3442120
       },
       {
@@ -1468,7 +1468,7 @@
         "label": "RealmGenesis",
         "txHash": "0xe64a457bf924ea1a34e783dd5c6282627a3208a8d5b8bcabd41cd3e63e93fc3a",
         "blockNumber": 41,
-        "blockHash": "0x37d017ab1b71ecfc4311bb355edeb46507a7f972f4721f29867a2b9e4c2e3582",
+        "blockHash": "0xfc734de05d7538175c27db2560a1acbd547e3464fbbeac3f167cd2c157aac165",
         "gasUsed": 1171366
       },
       {
@@ -1476,7 +1476,7 @@
         "label": "PostingStore",
         "txHash": "0xe041c9d6517358421300a08d567a87eb229eb3b4b18b60c9d1e844cce36dc8f5",
         "blockNumber": 42,
-        "blockHash": "0x7bb17126c60fb7b3780bcbaf6709e5548c4c74978d841360061f596a66d7b59b",
+        "blockHash": "0xae0c7ec58167430522ddd22d51da90446f6d738b0dc408a0c5292abe475958bc",
         "gasUsed": 1883456
       },
       {
@@ -1484,7 +1484,7 @@
         "label": "BitmapStore",
         "txHash": "0xa71b0240fc6b3132ec8ef7f0aa4633968fecc2cd59cdb2fe9284bf346481829e",
         "blockNumber": 43,
-        "blockHash": "0xb57448c7c197bcd851378c91b4e7bda869ca134bf479edd57afd5af7fc60b165",
+        "blockHash": "0xacae7cff003e974e67b19eedf2dc59f65dc6eba3e5c28be4e6afacb06380397e",
         "gasUsed": 1869339
       },
       {
@@ -1492,293 +1492,293 @@
         "label": "RealmGenesis",
         "txHash": "0xa3b299c64288d422ac778cf90d81a6dbd78ebbce19cfeca205569f9cea567102",
         "blockNumber": 44,
-        "blockHash": "0x84e53f47accb8cad6a8f55ce428d4e7f2b3d4a25eebd2756c6e4d8c46a403973",
+        "blockHash": "0x413dff0285241fe9b8d5c7321df7bbbc5bb3ba8ee4f6db59d1fe7afa05c9432e",
         "gasUsed": 5141103
       },
       {
         "id": "G19a",
         "label": "IndexReads",
-        "txHash": "0xd96db60fb976e54b24e09506ec6944c428a28ab391bae9c4bddb8ec828ee0465",
+        "txHash": "0x4d3ad2f687c4819c73cdf5bff863f26d140f4abd32fe50cbad916d89f6f13ada",
         "blockNumber": 45,
-        "blockHash": "0x25ab349560918bc6b6510eac6e47f1d9a2fbbef51494ebc92334d94322de84b0",
-        "gasUsed": 5407965
+        "blockHash": "0xe813c319beacf363c7aca50bbd87fa8c76dbf06b3f3d3781cb246c8dbdb5ef8f",
+        "gasUsed": 5520332
       },
       {
         "id": "G19",
         "label": "RealmIndex",
-        "txHash": "0xabe559c3da0a47e10a7b34fe8d2dad3a58ea7c52af30d9245e2c5986c182c009",
+        "txHash": "0x6369c99845654190620447d264b3092b3e32fac71d16e3e2e56efcd0874d974e",
         "blockNumber": 46,
-        "blockHash": "0xe2eb9a49fd781957311a7c168fb206b696a0db2260ff8911e762e728698bd063",
-        "gasUsed": 4469624
+        "blockHash": "0xe764cee2c1abbb5ccd173971093735d4dd832a059aed3a6f743e451dc3a06caf",
+        "gasUsed": 4683461
       },
       {
         "id": "G20",
         "label": "RealmController",
-        "txHash": "0x718dc405588c6eebd4049d74380c74289048932ff45f1ef5e4b9e44ff5eaff46",
+        "txHash": "0xeca9c64148e631d2602d1af7b7391f4f0b6145be80aa46caa7fd155cdccfc32b",
         "blockNumber": 47,
-        "blockHash": "0x17c81766054e770cfaf423814fc2ccd2299fc3e3a848613aa2c12b2ee45e1bcb",
-        "gasUsed": 4165017
+        "blockHash": "0x0f9d7cd03c077dddd352a0566a2c9ccdb9f851d0db81e466ae398c8a8fa14628",
+        "gasUsed": 4194475
       },
       {
         "id": "R0",
         "label": "KeysView",
-        "txHash": "0x33e2842831842efef7ff45bd7c0ff0adeddc328132ce4cc69b7562393225cccc",
+        "txHash": "0x33e5de52aed7d2edf45afbb1c276eb587046026e7f817294c9798912fbb0b6d7",
         "blockNumber": 48,
-        "blockHash": "0x700e7ce450e947efeb7127dd2001d4506c94876cc72d7a6bca964df54793cd71",
+        "blockHash": "0xe9880c720a21447abfc3ece04b6cbc2e2c230b51cb54aff1852509765c87c989",
         "gasUsed": 381713
       },
       {
         "id": "R1",
         "label": "LensReader",
-        "txHash": "0xb49bc36df5513e57d5f0aa5c1d574cb49b95f8399f92066a389e7b595b0142b7",
+        "txHash": "0xe52833cceceb46a8392be0621db7661689697486c199e8b654fa4276ceb3700a",
         "blockNumber": 49,
-        "blockHash": "0x17316f6374a0c2ddc6d013441c9a14a576cb0d9534cb1e37644f549bbabc2748",
+        "blockHash": "0x743c5688b70894a4acb6cfe522d2c4f74c1e2d3414fb178707e882f44fcd9757",
         "gasUsed": 3837730
       },
       {
         "id": "R2",
         "label": "FilesPageReader",
-        "txHash": "0x809d5be91ba0a7126e58c1646ca9d6c2b65335da6e912332c46609da18fb4d5c",
+        "txHash": "0xfd7409148b01418666e64687481b9206324f80df17bb70d3313998220b74e35f",
         "blockNumber": 50,
-        "blockHash": "0x1b5b165da43e19c4c535a2e86907df76b185d5b829985c4dd6d0b3c3c781cc90",
+        "blockHash": "0x2f6d312b2f408523ed99a38fe45dbf798c45ec3193a9ea9664aaf21b4205552c",
         "gasUsed": 2814840
       },
       {
         "id": "R3",
         "label": "list LensReader under efs/reader/lens/1",
-        "txHash": "0x8fd563f0918d7e35e3bee9b4c59431e27aef872a1918c6c333aba219ecdaafb6",
+        "txHash": "0xba7d6a003cde7ae68e949e321af50c4d02556c35ccde5cc844be78704dc0cd07",
         "blockNumber": 51,
-        "blockHash": "0x8a9d184467d8a0e2231da91dd3432c2815000fe2ff895bf771993081f35a9d0e",
+        "blockHash": "0xa7911b2f9b8d55a44e8550cec3f545201fc767fa164474e9c5141ddf9db95413",
         "gasUsed": 164671
       },
       {
         "id": "R4",
         "label": "list FilesPageReader under efs/reader/files-page/1",
-        "txHash": "0x9b9b0db159513b27d6c063de678956f701ad4c10fad260063d39ddef1e8090fb",
+        "txHash": "0xb95dcfbd58605d8dabb16db1f9aa27fd8a2cda78b0ceac489210cdda740382b3",
         "blockNumber": 52,
-        "blockHash": "0x74bde134596619251c5dbe8562d6490e064d97464bed9db47c37bee59a2348de",
+        "blockHash": "0x9cc958081f042d9bd15b5c719047513a1b555ce7e518f1bfbbbab67ef5047db1",
         "gasUsed": 164429
       },
       {
         "id": "G21.0",
         "label": "TypeRegistry",
-        "txHash": "0x7fa57a9190e073ae5ad98cb75b514e8f1320bf8664a43cc376618ff837a2b521",
+        "txHash": "0x491e506d81dc51aaa697fd3028e25fe0468c30da1791a76353ba99c4ca730627",
         "blockNumber": 53,
-        "blockHash": "0x5a6ba8707809637ba10675936106964c7bd8d850f6989c6415e1dfc2b9abdbe1",
+        "blockHash": "0xc29a69710881c32c3ca94f536a6695cb5769bb467ab0304e8de5360963f7a180",
         "gasUsed": 260616
       },
       {
         "id": "G21.1",
         "label": "TypeRegistry",
-        "txHash": "0xca5c88528ad32413b6e1b0fa00ff5b4d10ebbcfc2610e67c4a5b22dadf1940e5",
+        "txHash": "0x47e55a292f718348688ef3b93d32e79653a1da6729c8f1b85de9a1562ffd90cc",
         "blockNumber": 54,
-        "blockHash": "0xf0d43b788d67c8605d205d5c31fc8a3088da275a40b103b6c34e2cd0401251bf",
+        "blockHash": "0x660032bd3d36bba1125cd928392a2aaa15265d9fee7352ff74fff17cd2dfe6c7",
         "gasUsed": 250626
       },
       {
         "id": "G21.2",
         "label": "TypeRegistry",
-        "txHash": "0x421fc2ca22d8f817730fc39b4c0526317c4b40ca9192e7bf77bc15c947a4d192",
+        "txHash": "0x0d8e2092b96b06931cf4e568b56fcce731bb4d7bb44ceb8fc2176f3cae20ce1f",
         "blockNumber": 55,
-        "blockHash": "0xb240af42cb197c455c3a754330c1d2cf832b5e0b7980de3beb4f0cfc1ea2f8e0",
+        "blockHash": "0x8dce0900ef0b45950e8c2bce9208659b3e63a418b3918b0d7b061f343aab0785",
         "gasUsed": 243100
       },
       {
         "id": "G21.3",
         "label": "TypeRegistry",
-        "txHash": "0x849575b0b688defff23fbd90acb068d4cc99eeb1d6121459fd0c391571600c6f",
+        "txHash": "0xf89148440b34a5d4c9f33827ff94e3c7793a90c4f1c665f2e987328b6eda567e",
         "blockNumber": 56,
-        "blockHash": "0x94fae36afeb4b4c9cc7985382514cd3ebb4b6447a7594d34970fc0ad060e6b11",
+        "blockHash": "0x5cdf72bfda44c7f025be5b79487e7eb765f602009b60506491b33e9845ef7620",
         "gasUsed": 241816
       },
       {
         "id": "G21.4",
         "label": "TypeRegistry",
-        "txHash": "0x075eb738c1bf18abda8b6a7c57c5aa19bec878352c9a15b04aa31da30529fef6",
+        "txHash": "0xe250dbc4bd83cf8a490adf9907b4369a5e0eb5e2c84c0a8a56d45266e3ba5152",
         "blockNumber": 57,
-        "blockHash": "0xc702b0edacd03d6f1c472ef6d6a92ab314a6b92a7fe071739587ce899c8321c5",
+        "blockHash": "0x6599b608ad4c05e9d7ca3da7337f9dc21b0e45304b9abc1972d39f77da75d456",
         "gasUsed": 242267
       },
       {
         "id": "G21.5",
         "label": "TypeRegistry",
-        "txHash": "0xb0b0c79f23ee38d82926f90b779f9abdf423958780126cdbd33c4a0608b92724",
+        "txHash": "0xcd993c620722d23e48ea7b64d303ab8fcc1a20a5ef6d95d002c0630cdcfaf105",
         "blockNumber": 58,
-        "blockHash": "0xb82ad381cf7c310f9ece00443c9336a12d1bd67367173aeff5fd17f3652ced48",
+        "blockHash": "0xedd87cbf0519b37f19ee82e819f4352fd0883d433757ca4dd1fe721a7fb485ce",
         "gasUsed": 253671
       },
       {
         "id": "G21.6",
         "label": "TypeRegistry",
-        "txHash": "0x69e8543b829e24b30fe0e17e6bc02afd2b59b24c818bbc6730a914d135380bfb",
+        "txHash": "0x8a1201983330c017cd92e470d9900d0ef40dec74cdc287b1f8fb864779ecc6ea",
         "blockNumber": 59,
-        "blockHash": "0x327155af28b73b96f21df8e6ea7e718fa658ea93380dc1e2b303c51a3f36e99a",
+        "blockHash": "0x7ced85d0fe0c0bc0606f05a837a82d8e9d518ecf88044b3074719ec206706d0d",
         "gasUsed": 271578
       },
       {
         "id": "G21.7",
         "label": "TypeRegistry",
-        "txHash": "0x78333770bf9a2e3004ac8d3c5da6ebdc16c3c290aa341a753dedb8d5ce8bde2f",
+        "txHash": "0x440ace1162d12ad1d0fb362de8ad44e987d797524667bd8c8b68854780580278",
         "blockNumber": 60,
-        "blockHash": "0xac93db481128e68fe0c3dde473bd85d4a1023e1f71b303bed3e817ffa202ab60",
+        "blockHash": "0x3824a81215d73e4a1f979f6ab951034023353739d446345038a1449849e0756f",
         "gasUsed": 241849
       },
       {
         "id": "G21.8",
         "label": "TypeRegistry",
-        "txHash": "0x6f41714e530c71453ea46aef4c82cfbd75532483b6055e1887b09d3c14dc0ce4",
+        "txHash": "0xb5901a8892c0c8768532270ed161324bf6f8b23d196a053274f1a53bc13407d2",
         "blockNumber": 61,
-        "blockHash": "0x620b9723d0ddb0b0c9f906692a5fae3623c6f15efca46b616e9d4c65b409b557",
+        "blockHash": "0x64819d6cc70bd9c850ac0db4be926b302d4a025f05198b717b3b8660cb6f0eb2",
         "gasUsed": 241805
       },
       {
         "id": "G21.9",
         "label": "TypeRegistry",
-        "txHash": "0xce6c2819b5d00558dfd0a33432ad0520da5c2afea4e02c568753fc662dab1042",
+        "txHash": "0x1cd1831dd8f4edbff17afd6c924b8307905ca20f164aa43d540e9c5b4277a3c6",
         "blockNumber": 62,
-        "blockHash": "0x05aa2c684f176e6c010b2ed3b04d81ec0c91c8a95f93fa6f87a6f94637ba404a",
+        "blockHash": "0xd33ae4f961b9f44813900e6761e320e66cb5cc6499a64e47d81a3386f3c2589d",
         "gasUsed": 257011
       },
       {
         "id": "G21.10",
         "label": "TypeRegistry",
-        "txHash": "0xb3155f9d175356c577db26b463a223a8857a4b682b685791c839f504205c10f7",
+        "txHash": "0xac7ec2563885d12a50fd691d39dd20fbaac4ae130b306b74f51b23a30d0e041f",
         "blockNumber": 63,
-        "blockHash": "0x3877a89ce97403985e476227afc0aaea752a0c00d089ece21420383fea8d162c",
+        "blockHash": "0x5c6adf56494fde4723d90c92bcd3c3a8cb18720c78f162e3a6364eff4d99c41c",
         "gasUsed": 244562
       },
       {
         "id": "G21.11",
         "label": "TypeRegistry",
-        "txHash": "0x2678cbca143207c4bc2928be92cdcfc2c825811d3ada913e80387769d1d90d43",
+        "txHash": "0x42592ebed5a9ac2c0b576bbf5bd26c2191c1245493391dd0817d08f4811b62f7",
         "blockNumber": 64,
-        "blockHash": "0xf7e7534c67a1c61b969a5e13cc4dc2f881ca3173622ebff497b3d67936cb331a",
+        "blockHash": "0x362bf9ab8b95b1b59f8999cf062d3805b601873c18d1b35f67d96d8a0c844f92",
         "gasUsed": 276368
       },
       {
         "id": "G21.12",
         "label": "TypeRegistry",
-        "txHash": "0x89e175617d7271f522b291f53583d0b74583da063f26f77c36db8661b06733ce",
+        "txHash": "0x4bab775a931e8a3b0c5f08fcc795366e4f81abc6a075be9f632a0e9c573b8093",
         "blockNumber": 65,
-        "blockHash": "0x07a9b87446330a21196a8aaa8b5f65ecbcd0555df2f0fbb5f92ae8cd79dd9a44",
+        "blockHash": "0xf90a79c372be8995e3c56acf0155d6cea7917b351c7eee24505ff0a5536abad5",
         "gasUsed": 242982
       },
       {
         "id": "R5a",
         "label": "EfsWeb3Content",
-        "txHash": "0x6659d6c50ba55d9673c0e071c797f42773e23d5cb0065e65047d43f9b54a4d51",
+        "txHash": "0x6c52a8a981d3dd32d224f1c34f29b860cd3fe0c77d98acfd4e4fe7c3216aae5e",
         "blockNumber": 66,
-        "blockHash": "0xcfc4d34ebb5733d80a41fd4c21954e753403175187afcf5023f2f7f12a829428",
+        "blockHash": "0x3029151b4439ffae7c42a0fc30f0d8e1f6ec14ea4e8f8bc7eff4c259783a794a",
         "gasUsed": 2009758
       },
       {
         "id": "R5",
         "label": "EfsWeb3Gateway",
-        "txHash": "0xb96e46d5b3126fbff39ea28da695b41943663196cf1ece374c41a1dc92798a7e",
+        "txHash": "0x4af8075b6bcd144ae907231fb50ecc56ec8bc0f1c68cf81a972722a986ad2fe9",
         "blockNumber": 67,
-        "blockHash": "0xf7f9a43970cb0fab7d598410d01bd359a704809f47344c4f5608b46064ee9a2b",
+        "blockHash": "0xce35b359c5c81abfe82f5afbf6e896f6a712e2308ac64825f7cbbb6c332f4bff",
         "gasUsed": 3416232
       },
       {
         "id": "R6",
         "label": "TopicMineReader",
-        "txHash": "0xbdd19cd9d25c34b6c9a90a12d74f02e157f057ff32f0b7f5a48a56763b807bd3",
+        "txHash": "0x85f866090f8d916000bf9c495a2751ff850e700998c3548b7c10b8948f72afe1",
         "blockNumber": 68,
-        "blockHash": "0xf0533ef9d26f3cf033927ab81db673e4390936ba2df4fa96506bc98d8ee10b5e",
+        "blockHash": "0x361817fd6c5a0dbb8ece2b121fbaa39c7760fc5d93040b2d349d32cabab43586",
         "gasUsed": 3421624
       },
       {
         "id": "R7",
         "label": "TopicEveryoneReader",
-        "txHash": "0xd132393b3c75b582bd08cf4e195f164719cc503f7e3d899f917a88b9ad3bd9f9",
+        "txHash": "0x354e2a7ed4010394c750b9ff23ad3bc2aa6bbfd33da4af8b9594734028e885a5",
         "blockNumber": 69,
-        "blockHash": "0xf22562f91951dcf1cd1af38e32f233e3fb86494e10b8f19f5ac65217a32038a1",
+        "blockHash": "0xe89bcb44720db630b7bb7d202ff247939e2807bd0d7f1b9705c1811c76c8b5b5",
         "gasUsed": 3665309
       },
       {
         "id": "R8",
         "label": "TopicLookupReader",
-        "txHash": "0x98fce3624e7e457566a0ed421483df3203f409425b16d71bba88b96d2cb6a4bd",
+        "txHash": "0xed1be82129a5da381e2cd497198a97924db8aa321d761fa687d7fdf3489cec31",
         "blockNumber": 70,
-        "blockHash": "0x0c3e911b1d0acbdc669476f0de936f5a9d75e39d7024a6265f3bdfe5ba46c1ea",
+        "blockHash": "0x05cca0bda076fc14d91c79ffe1234a423e84593334158d83f625f93b7afff7ef",
         "gasUsed": 3654717
       },
       {
         "id": "R9",
         "label": "list TopicMineReader under efs/reader/topic-mine/1",
-        "txHash": "0x64cee28bb71ac0e913c92df0755feb3e69d35e03ced598a1b0b5d326210e63e2",
+        "txHash": "0x81821bd6e0d714d98b079dc0145b656085d37dfbe16832b04081374eb7541f50",
         "blockNumber": 71,
-        "blockHash": "0x76935a7df64cd9ed5577a08d468540da206ce2a8642a57a7f53231ebdd8115c9",
+        "blockHash": "0x7f92b7fe8468ec866945317d75dde5f3f70b225bea76845440dec44e243fd907",
         "gasUsed": 164142
       },
       {
         "id": "R10",
         "label": "list TopicEveryoneReader under efs/reader/topic-everyone/1",
-        "txHash": "0x5071f687cb921a33b7f397819f8ebdc892cc20d6361a24520d46d8408b851ddf",
+        "txHash": "0xf7f6d5284852af9ee37ad146c05e9e9ef0991d7982181d298f76fbee76b6e6a9",
         "blockNumber": 72,
-        "blockHash": "0x5fb5a3bcc360e2e7b99130f12c833fce318192c988d0acecd85261cb1417d071",
+        "blockHash": "0x46aa3658a18f5dfd5f091062125bdd3a50d522c4c664941ec482ca0b673ff990",
         "gasUsed": 164077
       },
       {
         "id": "R11",
         "label": "list TopicLookupReader under efs/reader/topic-lookup/1",
-        "txHash": "0x42734aeee03773ab6584c60c786fa02412a49d548555725bc2d3de69968b8b83",
+        "txHash": "0x15c0ca1cdceb9420794c8d361afafa731018ac776af42b4b84950afe02477b56",
         "blockNumber": 73,
-        "blockHash": "0xe778002420894ebe260eab2c6af91b514b33e7de2acf49577993a8abddf4d597",
+        "blockHash": "0x19e552cf76bfcfefa59b7db5347e5c3bf18e14b77e946fe3861c7c9ea2aa9f53",
         "gasUsed": 164292
       },
       {
         "id": "G22.root",
         "label": "seed root (PUBLISH files-directory/1)",
-        "txHash": "0x020215afa7052e8cfc9923f0d527b8a576e860af57eb9d771a46e3791b36ce05",
+        "txHash": "0x50c0f7b19363f922bc128c3f8e99fdb4f7a8cef4752d696f2cf554b1c58b0bee",
         "blockNumber": 74,
-        "blockHash": "0x53a6a3d7779e035d1a83ddff7494574b9828ff486583b95f82f36bd9d672e22d",
-        "gasUsed": 664806,
+        "blockHash": "0x6a5481acf40a3997206757396281d5997e5a46c43d3421d761a463078e5bfb7e",
+        "gasUsed": 664914,
         "publication": 1
       },
       {
         "id": "G22.folder",
         "label": "seed folder docs/ (PUBLISH directory, PUBLISH name, BIND FOLDER)",
-        "txHash": "0x182d1efacdebe7085b4caaf32c1df48de6e020498358c7f58974ef688812658b",
+        "txHash": "0xe3ba9607eaaf9c49e5b6702f57b69e092cd140dc090605a73dbb9d2641df019e",
         "blockNumber": 75,
-        "blockHash": "0xa83e3d42a4a2677ebbbf2ccaf416d4b9fc144129baa3217b11ae01c730df567d",
-        "gasUsed": 1316080,
+        "blockHash": "0xc2075eb290b8d0fa9cdbe88a139c1ad9a70da4750a82572f7716fef57ec7ffdf",
+        "gasUsed": 1316682,
         "publication": 2
       },
       {
         "id": "G22.file",
         "label": "seed file docs/readme.txt (CREATE, PUBLISH root form 0, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0x381600873787a68bedc983992e909ddd09dbd9733d6e29d669cdaf2f1408e827",
+        "txHash": "0x0423bda9ffa58c23097c64900c3ab4c6eb3924336c4aa47d5c911d3bb762a87f",
         "blockNumber": 76,
-        "blockHash": "0x876ffc4cd20f1312c8921f9c55e31ee7aa2b1ef88b7b2a37df94fa5234a00105",
-        "gasUsed": 1677070,
+        "blockHash": "0xa475285ebef0dfed67b738926891ebb4015185e1e372034e97d4739c3519e029",
+        "gasUsed": 1678151,
         "publication": 3
       },
       {
         "id": "G22.big.0",
         "label": "seed docs/big.bin publication 1/2 (2 actions, 16384 body bytes)",
-        "txHash": "0xf65752d56ef5e95b4549fde3679b2494cc3f4e26debdccd640513229ab0bc4a2",
+        "txHash": "0x2383432844b33bad68f3bbd50a3a1e5050ceb23db44fadbab67136deb6253b5b",
         "blockNumber": 77,
-        "blockHash": "0x22c49a9a06ee39b42d6c4ae8ed49ce3a98a73742c249eac0d4253c583fa86b9b",
-        "gasUsed": 12565399,
+        "blockHash": "0x70f80ad201039fab9d3e8a236780558617015e379acc511a13da539d6e8927b3",
+        "gasUsed": 12565615,
         "publication": 4
       },
       {
         "id": "G22.big.1",
         "label": "seed docs/big.bin publication 2/2 (9 actions, 4351 body bytes)",
-        "txHash": "0xe49177579415afde4977937f5da64ab97c8761e92c40d00d6c2f003657760918",
+        "txHash": "0x487d0e63967ed6aea4a89b58caf832e9023100080e2255d6eaa2e1fe91709f38",
         "blockNumber": 78,
-        "blockHash": "0xa86f890f9e6f16aece5e1ce873d62d74095d236e926496af4a34723e8f9c5193",
-        "gasUsed": 5814831,
+        "blockHash": "0x59847dbe471701632c6d9af051cf009c032f9abfeeffa397bd784c9f7cbf4a9a",
+        "gasUsed": 5816373,
         "publication": 5
       },
       {
         "id": "G22.remote",
         "label": "seed docs/remote.txt (PUBLISH sentinel bytes, PUBLISH files-external/1, CREATE, PUBLISH root form 1, PUBLISH name, BIND HEAD, BIND FOLDER)",
-        "txHash": "0xc04d25485dc453876afb2015842c7ffbe70f47b424b2c17d07f2786fbf1bf2a7",
+        "txHash": "0x19b6be15bd7d1fb9ca160bd56a9728caa376f823854dd2abe3b0815cf64e0149",
         "blockNumber": 79,
-        "blockHash": "0x5d3c3e5fed7fbf424c0d8dc8971be1f1475a8b40291ebaea667aaed98a0f6711",
-        "gasUsed": 2372292,
+        "blockHash": "0xf35ad116008aa1e13acaad8499f63f2ad13571a46f48c2b53be6a2069763f02e",
+        "gasUsed": 2373606,
         "publication": 6
       }
     ]
