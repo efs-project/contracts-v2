@@ -1001,12 +1001,13 @@ export async function verify(o = {}) {
   eq("gateway listing", [listed.status, listed.headers["x-efs-listing"], JSON.parse(hexToString(listed.body))], [200, "complete", { entries: exp.files.map((f) => ({ name: f.name, kind: "file" })), complete: true }]);
   eq("gateway statuses", [(await web3Get(`${base}/missing.txt`)).status, (await web3Get(`${base}/${gwReadme.name}?offset=${gwReadme.length}`)).status], [404, 416]);
   // the first segment decides the kind: a plain word is a topic (not served, so `docs` is never a folder there),
-  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing); the id of an existing
+  // `~` the system, `0x<40 hex>` a home (the fixture account's own, which holds nothing), any other `0x` segment a word
+  // (the root principal id, 64 hex digits, is a topic path, as on the chain's rule 6); the id of an existing
   // object that is neither a folder nor a file (the sample file's revision record) is 501, never 404, and so is a
   // revision link to a record that is not a revision (the root folder); only an id that names nothing is 404
   const nothing = keccak256(toHex("efs/fixture/no such object"));
   eq("gateway forms", [(await web3Get(`/docs/${gwReadme.name}`)).status, (await web3Get(`/~home/${dep.actors.fixturePrincipal}/docs`)).status, (await web3Get(`/${exp.root.principalId}/docs`)).status, (await web3Get(`/~efs/o/${exp.file.rootRecordId}/`)).status, (await web3Get(`/~efs/v/${exp.root.directoryRecordId}`)).status, (await web3Get(`/~efs/o/${nothing}/`)).status, (await web3Get(`/~efs/v/${nothing}`)).status, (await web3Get("/~efs/v")).status],
-    [501, 400, 400, 501, 501, 404, 404, 400]);
+    [501, 400, 501, 501, 501, 404, 404, 400]);
   // the sample file by its object link (its creator's HEAD) and by its revision link serve the sample bytes
   const byId = await web3Get(`/~efs/o/${exp.file.subjectId}`);
   eq("gateway file by id", [byId.status, sha256(byId.body), byId.headers["x-efs-record"], byId.headers["content-type"]], [200, gwReadme.sha256, exp.file.rootRecordId, "application/octet-stream"]);

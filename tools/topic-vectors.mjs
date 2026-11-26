@@ -239,6 +239,30 @@ const WORDS = [
   ["a refused scalar before a malformed byte", cat("a", cp(0x200b), x("0xc0")), "code 7: the scan stops at the first refusal"],
   ["a malformed byte before a forbidden ASCII byte", x("0xc0412f"), "code 2"],
 ];
+// every pair of rules that can both apply, with the code the chain returns (the order: 1; then 2, 3 or 7 by position;
+// then 4, then 9, then 6). 4 and 6, and 9 and 6, cannot both apply: an address-shaped word starts with 0 and ends with
+// a hex digit.
+for (const [label, w, note] of [
+  ["pair 1+3: 256 capitals", rep("A", 256), "code 1: the length first"],
+  ["pair 1+4: 255 a and a dot", cat(rep("a", 255), "."), "code 1"],
+  ["pair 2+3: malformed first", x("0xc041"), "code 2"],
+  ["pair 3+2: capital first", cat("A", x("0xc0")), "code 3"],
+  ["pair 3+7: capital first", cat("A", cp(0x200b)), "code 3"],
+  ["pair 7+3: refused scalar first", cat(cp(0x200b), "A"), "code 7"],
+  ["pair 2+7: malformed first", cat(x("0xc0"), cp(0x200b)), "code 2"],
+  ["pair 3+4: A.", "A.", "code 3: the scan before the shapes"],
+  ["pair 3+9: -A", "-A", "code 3"],
+  ["pair 3+9: -~", "-~", "code 3"],
+  ["pair 2+9", cat("-", x("0xc0")), "code 2"],
+  ["pair 7+9", cat("-", cp(0x200b)), "code 7"],
+  ["pair 7+4", cat("a", cp(0x200b), "."), "code 7"],
+  ["pair 2+4", cat(x("0xc0"), "."), "code 2"],
+  ["pair 4+9: -a.", "-a.", "code 4"],
+  ["pair 4+9: -.", "-.", "code 4"],
+  ["0x and 40 hex and a dot", cat("0x", rep("a", 40), "."), "code 4: not address-shaped (43 bytes)"],
+  ["0x, 39 hex and a dot", cat("0x", rep("a", 39), "."), "code 4"],
+  ["pair 3+6: 0x, 39 hex and a capital", cat("0x", rep("a", 39), "A"), "code 3"],
+]) WORDS.push([label, w, note]);
 // every ASCII byte as a one-byte word and between two letters (admitted, or code 3; '.' alone is code 4)
 for (let c = 0; c < 0x80; c++) {
   const name = `0x${c.toString(16).padStart(2, "0")}`;
@@ -379,6 +403,11 @@ export function topicVectors(plan) {
   });
   for (const c of [1, 2, 3, 4, 6, 7, 9]) if (!words.some((w) => w.code === c)) throw new Error(`topic vectors: no word with code ${c}`);
   if (words.some((w) => w.code === 5)) throw new Error("topic vectors: code 5 is unused");
+  // a note that names a code agrees with the verdict (the order of refusals, pinned for the SDK)
+  for (const w of words) {
+    const m = w.note?.match(/^code (\d+)/);
+    if (m && Number(m[1]) !== w.code) throw new Error(`topic vectors: ${w.label} is noted code ${m[1]}, the grammar says ${w.code}`);
+  }
   // the ASCII rows agree with the 39 characters
   for (let c = 0; c < 0x80; c++) {
     const inside = words.find((w) => w.label === `ASCII 0x${c.toString(16).padStart(2, "0")} inside`);

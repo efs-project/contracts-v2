@@ -135,27 +135,54 @@ contract EfsWeb3GatewayFormsTest is Web3GatewayHarness {
         _status(string.concat("/", P, "/hello.txt"), 501);
     }
 
-    function test_malformed_address_shaped_segments_are_400() public view {
-        assertEq(_status("/0x1234/hello.txt", 400).body, "malformed id");
+    /// The chain's rule 6, in the gateway: only `0x` (or `0X`) and exactly 40 hex digits (either case) is an address;
+    /// any other first segment starting `0x` is a word, so the path is a topic path and answers as every topic path
+    /// does (501 "topic paths are not served": this gateway serves no topic yet, registered or not).
+    function test_a_0x_word_first_segment_is_a_topic_path() public view {
+        bytes memory topic = "topic paths are not served";
+        assertEq(_status("/0xsplits", 501).body, topic, "a word");
+        assertEq(_status("/0xsplits/hello.txt", 501).body, topic, "a deeper path");
+        assertEq(_status("/0xsplits/a/b", 501).body, topic);
+        assertEq(_status("/0xnope", 501).body, topic, "an unregistered word: as /tesla");
+        assertEq(_status("/0xnope", 501).body, _status("/tesla", 501).body);
         assertEq(
-            _status("/0x00000000000000000000000000000000000000zz/hello.txt", 400).body,
-            "malformed id"
+            _status("/0Xabc", 501).body, topic, "a refused word: the gateway runs no word rule"
         );
-        assertEq(_status(string.concat("/0x", P, "/hello.txt"), 400).body, "malformed id");
+        assertEq(_status("/0x1234/hello.txt", 501).body, topic, "short hex");
+        assertEq(_status(string.concat("/0x", _cut39(alice)), 501).body, topic, "39 hex digits");
+        assertEq(
+            _status(string.concat("/0x", _hexAddr(alice), "0"), 501).body, topic, "41 hex digits"
+        );
+        assertEq(
+            _status("/0x00000000000000000000000000000000000000zz/hello.txt", 501).body,
+            topic,
+            "40 characters, not all hex"
+        );
+        assertEq(_status("/0xsplitssplitssplitssplitssplitssplitsspli", 501).body, topic);
+        assertEq(_status(string.concat("/0x", P, "/hello.txt"), 501).body, topic, "64 hex digits");
+        // the address forms are unchanged: 0x or 0X, hex digits in either case. `0X` + 40 hex is an ADDRESS (today's
+        // handling, kept byte for byte), never a word: the chain refuses it as a word anyway (code 3)
         assertEq(_status(string.concat("/0X", _hexAddr(alice), "/x"), 404).body, "not found");
+        _status(string.concat("/0X", _hexAddr(alice)), 200); // 0X + 40 hex: a home
+        _status(string.concat("/0x", _lower(_hexAddr(alice))), 200); // lowercase hex: a home
+        assertEq(_status(string.concat("/0x", _hexAddr(alice), "/x"), 404).body, "not found");
     }
 
-    /// PINNED, today's behavior, not the chain's word rule: the chain admits `0xsplits` and every other `0x` word
-    /// except `0x` and exactly 40 of `0-9a-f` (`TopicProfile.wordRefusal` rule 6), and the SDK reads such a first
-    /// segment as a topic word, so by that rule these are topic paths (501). The gateway decides the kind on the
-    /// first two bytes alone and answers 400 "malformed id". Reported to the integration owner (2026-11-26) with the
-    /// size of a fix; this test changes when the gateway does.
-    function test_pinned_an_0x_word_first_segment_is_400_today() public view {
-        assertEq(_status("/0xsplits", 400).body, "malformed id");
-        assertEq(_status("/0xsplits/hello.txt", 400).body, "malformed id");
-        assertEq(_status("/0xdeadbeef", 400).body, "malformed id");
-        // 42 bytes that are not all hex: a word on chain (rule 6 needs 40 hex), 400 here
-        assertEq(_status("/0xsplitssplitssplitssplitssplitssplitsspli", 400).body, "malformed id");
+    function _lower(string memory s) internal pure returns (string memory) {
+        bytes memory b = bytes(s);
+        for (uint256 i; i < b.length; ++i) {
+            if (b[i] >= "A" && b[i] <= "Z") b[i] = bytes1(uint8(b[i]) + 32);
+        }
+        return string(b);
+    }
+
+    function _cut39(address a) internal pure returns (string memory) {
+        bytes memory h = bytes(_hexAddr(a));
+        bytes memory out = new bytes(39);
+        for (uint256 i; i < 39; ++i) {
+            out[i] = h[i];
+        }
+        return string(out);
     }
 
     // ---- helpers ------------------------------------------------------------------------------------------------
