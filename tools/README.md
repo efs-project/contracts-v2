@@ -61,6 +61,15 @@ reservation part of that list's price (docs/INDEX-BUILD.md §6.2): the largest p
 generation 1's model and under the example's. `node tools/gas-plan-later.mjs [--json]`; it writes nothing and no gate
 runs it.
 
+## state-gas-probe.mjs
+
+A read-only probe of how an RPC endpoint's chain charges for fresh storage slots and from where (docs/GAS-SCHEDULES.md,
+"What counts against the 2^24 cap"): whether the node prices by EIP-8037, and whether a transaction above 2^24 pays
+state gas from the reservoir. It deploys and sends nothing: it asks the node to run a few bytes of code placed by a
+state override, with `eth_simulateV1` (validation on) and with plain `eth_call` for comparison.
+`node tools/state-gas-probe.mjs <rpc url> [--json]`; no gate runs it (it needs a network), and
+`tools/test/state-gas-probe.test.mjs` tests its code and its reading of replies offline.
+
 ## gas-fit.mjs
 
 The anchor rule of `gas/model.json`'s `fixed` term: `FIXED_ANCHORS` (the k1/k2 pairs the model had at `899767e`) and
