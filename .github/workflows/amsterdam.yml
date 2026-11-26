@@ -3,7 +3,10 @@
 # "How we measure"). Every release quotes amsterdam numbers, and check.yml runs prague only, so without this an
 # amsterdam-only failure could sit unseen. To spend few runner minutes it runs only after a push to main that changes
 # the regenerated release (`release/**` or `gas/model.json`: every release step, which is when the quoted amsterdam
-# numbers change), or by hand; never on pull requests, never on a schedule, and not on ordinary code pushes. A
+# numbers change), a change to this file, or by hand; never on pull requests, never on a schedule, and not on
+# ordinary code pushes. What that leaves uncovered, on purpose: a test-only or tools-only change that breaks only on
+# amsterdam is seen at the next release step, not at once (a `src/` change that moves bytecode must regenerate the
+# release, so it always triggers this). The prague job in check.yml still runs on every push and pull request. A
 # workflow of its own because GitHub's `paths` filter applies to a whole workflow: put on check.yml it would also skip
 # the prague job.
 name: amsterdam
@@ -14,6 +17,7 @@ on:
     paths:
       - "release/**"
       - "gas/model.json"
+      - ".github/workflows/amsterdam.yml"
   workflow_dispatch:
 
 permissions:
