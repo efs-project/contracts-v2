@@ -276,14 +276,17 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             CodeScan.requirePlainRuntime(set.components.steward);
         }
         if (index == $.index) {
+            // keeping the live index never asks its readiness: it is pinned by the code and manifest it was
+            // activated with, and the phase its readiness would echo is this ledger's own (docs INDEX-BUILD §5.3)
             RevisionRow storage current = _revisions().rows[$.revision];
             if (
                 current.indexCodehash != set.components.indexCodehash
                     || current.indexManifestHash != set.components.indexManifestHash
             ) revert E_INDEX_NOT_READY(1);
-            if (IRealmIndex(index).replayReadiness().phase != Phase.IDLE) {
-                revert E_INDEX_NOT_READY(2);
-            }
+            (uint8 phase,,,) = _unpackLock(_lockWord());
+            if (phase != Phase.IDLE) revert E_INDEX_NOT_READY(2);
+            // the one read of a kept index: its work model, the read every publication makes, so an ingress of
+            // another formula is refused here and not at the first publication (reasons 15 and 16)
             _checkWorkModel(index);
             return;
         }

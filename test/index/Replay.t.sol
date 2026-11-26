@@ -8,6 +8,7 @@ import {ManifestCopy} from "../harness/ManifestCopy.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
+import {StandInTypes} from "../harness/doubles/StandInTypes.sol";
 import {AcceptAll} from "../harness/doubles/Acceptors.sol";
 import {IndexDoubleDefaults} from "../harness/doubles/IndexDoubles.sol";
 import {IndexDeployer} from "../../src/control/IndexDeployer.sol";
@@ -71,7 +72,7 @@ contract ReplayTest is Test {
     IndexDeploy.Gen1 internal g;
     ILedger internal ledger;
     ILedgerHot internal hot;
-    bytes32 internal constant TYPE_OK = keccak256("test/type/ok");
+    bytes32 internal constant TYPE_OK = StandInTypes.OK_ID; // derived from a real descriptor
     bytes32 internal constant FOLDER = keccak256("efs/purpose/folder/1");
     bytes32 internal constant NAME = keccak256("name");
     bytes32 internal principal;
@@ -111,6 +112,7 @@ contract ReplayTest is Test {
         info.policyRows = 1;
         info.policyRow = 1;
         registry.setType(TYPE_OK, info, new bytes32[](0));
+        registry.setDescriptor(TYPE_OK, StandInTypes.ok());
         principal = Keys.principalFor(address(this), hot.realmOrigin());
         subject = Keys.subject(principal, salt);
         recordId = Keys.recordFromHash(TYPE_OK, keccak256(body));

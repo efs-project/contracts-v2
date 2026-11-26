@@ -3,6 +3,7 @@ pragma solidity 0.8.37;
 
 import {ITypeRegistry, TypeInfo} from "../../../src/interfaces/ITypeRegistry.sol";
 import {ILedgerHot} from "../../../src/interfaces/ILedgerHot.sol";
+import {StandInTypes} from "./StandInTypes.sol";
 
 /// A double was asked for behaviour it does not model (the selector names what was asked).
 error MockUnsupported(bytes4 selector);
@@ -20,7 +21,10 @@ error MockCaller(address caller);
 ///      the test calls `bumpMutations` where the real registry would have. An unknown Type reads as the zero
 ///      row (grade 0, mandatory 0) and the kernel decides what that means (`E_UNKNOWN_TYPE`). The owner may
 ///      open `bumpMutations` to other accounts (`setMutator`) so an index double can drift the basis from
-///      inside a publication (`MutatingRule` in IndexDoubles.sol).
+///      inside a publication (`MutatingRule` in IndexDoubles.sol). `descriptorBytes` answers only for a Type given
+///      a descriptor (`setDescriptor`, which requires the descriptor to derive the id, as the real registry's
+///      registration does; `setRawDescriptor`, unchecked, serves altered bytes to the decoder's refusal tests), and
+///      reverts `MockUnsupported` otherwise.
 contract MockRegistry is ITypeRegistry {
     struct RoleExpectation {
         bytes32 expectedType;
@@ -33,6 +37,8 @@ contract MockRegistry is ITypeRegistry {
     mapping(bytes32 => bytes32[]) internal _refTypes;
     mapping(bytes32 => mapping(bytes32 => RoleExpectation)) internal _roles;
     mapping(address => bool) public mutator;
+    mapping(bytes32 => bytes) internal _descriptors;
+    mapping(bytes32 => bool) internal _hasDescriptor;
     uint64 internal _mutations;
     uint32 internal _activeRevision;
     address internal _ledger;
@@ -51,6 +57,22 @@ contract MockRegistry is ITypeRegistry {
     {
         _types[typeId] = info;
         _refTypes[typeId] = refTypes_;
+    }
+
+    /// A descriptor for `typeId`, which must be the id it derives (`StandInTypes.typeIdOf`).
+    function setDescriptor(bytes32 typeId, bytes memory descriptor) external onlyOwner {
+        require(
+            StandInTypes.typeIdOf(descriptor) == typeId,
+            "MockRegistry: descriptor does not derive the id"
+        );
+        _descriptors[typeId] = descriptor;
+        _hasDescriptor[typeId] = true;
+    }
+
+    /// Any bytes as `typeId`'s descriptor (a registry that answers wrongly).
+    function setRawDescriptor(bytes32 typeId, bytes memory descriptor) external onlyOwner {
+        _descriptors[typeId] = descriptor;
+        _hasDescriptor[typeId] = true;
     }
 
     function setRoleExpectation(bytes32 purpose, bytes32 role, bytes32 expectedType, uint16 row)
@@ -163,8 +185,11 @@ contract MockRegistry is ITypeRegistry {
         revert MockUnsupported(ITypeRegistry.catalogCount.selector);
     }
 
-    function descriptorBytes(bytes32) external pure returns (bytes memory) {
-        revert MockUnsupported(ITypeRegistry.descriptorBytes.selector);
+    function descriptorBytes(bytes32 typeId) external view returns (bytes memory) {
+        if (!_hasDescriptor[typeId]) {
+            revert MockUnsupported(ITypeRegistry.descriptorBytes.selector);
+        }
+        return _descriptors[typeId];
     }
 
     function declaration(bytes32) external pure returns (address, bool, bytes32) {
