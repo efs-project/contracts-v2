@@ -70,8 +70,8 @@ contract Creator {
 /// @notice Logs the gas of both forms on the running schedule (run once on the default profile and once on
 ///         amsterdam): deployment (execution and state gas, as `vm.lastFrameGas` reports them) of the copy alone (the
 ///         holder with the copy minus the holder with an empty one) and the cold read of the copy, for a copy of the
-///         shape of the release's generation 1 (20 families, one final-hook unit with no family ids, two digest specs)
-///         and for one with 40 more families. Also the real `IndexReads` with and without the copy.
+///         shape of the release's generation 1 (18 families, one final-hook unit with no family ids, two digest specs)
+///         for a plausible later generation (40 families, 6 units) and for 58 families. Also the real `IndexReads` with and without the copy.
 contract LivenessCostTest is Test {
     Creator internal creator;
 
@@ -83,7 +83,8 @@ contract LivenessCostTest is Test {
         return _copy(extraFamilies, 1);
     }
 
-    /// A copy with `nUnits` final-hook units (each with one family id) and 20 + `extraFamilies` families.
+    /// A copy with `nUnits` final-hook units (each with one family id when more than one) and 18 + `extraFamilies`
+    /// families (generation 1 declares 18).
     function _copy(uint256 extraFamilies, uint256 nUnits) internal returns (bytes memory c) {
         address ledger = address(0x1ED6E);
         PostingStore p = new PostingStore(ledger, address(0), IndexDeploy.postingFamilies());
@@ -178,8 +179,8 @@ contract LivenessCostTest is Test {
 
     function test_log_the_cost_of_both_forms() public {
         _measure("gen1-shaped", _copy(0));
-        _measure("40 lists, 6 units", _copy(20, 6));
-        _measure("gen1 + 40 families", _copy(40));
+        _measure("40 families, 6 units", _copy(22, 6));
+        _measure("58 families, 1 unit", _copy(40));
     }
 
     /// The real `IndexReads` (form (b)) with and without a copy of the release-shaped manifest.
