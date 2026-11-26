@@ -638,6 +638,19 @@ the exact lists of a `mine` below on an index without topic roll-ups). Reading a
 old history is built) would be a new reader contract, designed with that feature, with a list-coverage field of its
 own that survives paging.
 
+**The `about` order, fixed at the final integration.** `about` read each row's `position-authors` head and refused a
+zero count (`E_TOPIC_INCONSISTENT(3)`) before it looked at that list's coverage, so on an index that does not declare
+the family (whose head reply is `(UNKNOWN, 0, 0, 0, false)`), or one that stopped keeping it over a carried store,
+`about` reverted for every position first stated after the drop; it now checks coverage first and refuses UNKNOWN as
+data, and a zero count is a fault only on a COMPLETE list. The two below-count refusals at a purpose other than TAG
+(`placeCount` and `entryCount` with `below`) now carry coverage UNKNOWN, as every refusal does (they carried the
+COMPLETE coverage of the list read). Every other check that can run on a list before its coverage is required
+(`_listHead`'s range checks, the scope heads' and the coverage replies' own ranges) holds for any honest reply,
+COMPLETE or not, so none of them can turn a not-COMPLETE list into a revert; the tests now also run every view
+against every list it needs in the reply shape of an undeclared family (`FaultyReads.UNDECLARED`). One order is left
+as it is and written in the page laws: on a resumed page the continuation's cursor is checked against a list's count
+before its coverage, so only a forged continuation gets INVALID there instead of UNKNOWN.
+
 For consumers, in one line: a served topic page can be trusted to come from complete lists, and UNKNOWN on a topic view
 now also covers "the index is still building this list".
 
