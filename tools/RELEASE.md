@@ -936,8 +936,10 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
     known (short tier), +0.81% with it omitted, −11.94% for 16 across 1,025-entry lists, −13.77% for 51 across
     1,025; amsterdam all gas −10.33% to −29.74%, execution gas −11.47% to +12.54% (the table is in
     docs/WORK-MODEL-V3.md §3.5). The full batch of 51 across 1,025-entry lists costs 15,274,989 gas in all on prague
-    and 14,035,893 on amsterdam, both under 2^24; the planner's restore batches are bounded by V, not E, so no planned
-    batch size moves, and `eth_estimateGas` stays the authority for a gas limit. **The model's stated
+    and 14,035,893 on amsterdam, both under 2^24; the planner's restore batches are bounded by V, not E, so the shortfall
+    moves no planned batch size, and `eth_estimateGas` stays the authority for a gas limit. With the interim rule a
+    consumer's E for this shape is about the real cost, which at 51 statements is inside the 15% headroom of the cap,
+    so its planner splits the largest batch of this shape a little smaller (computed: 47 on prague, 50 on amsterdam). **The model's stated
     `maxUnderErrorPercent` (and `maxUnderExecutionErrorPercent`) does not include this shape**: no composite measures
     it. The consumer's interim rule is in "What changes for a consumer" above.
   - **Ruled:** this release keeps its values and names the exception; the next regeneration (the list release) makes

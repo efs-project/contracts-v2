@@ -547,7 +547,10 @@ most shapes) would also be honest. It costs batches: prague lone negatives 38 �
   on prague (15,099,369 of execution, 21,000 intrinsic, 154,620 of calldata) and 14,035,893 of execution in all on
   amsterdam (13,860,261 of execution), both under 2^24. The planner's restore batches are bounded by V, not E (51 on
   both schedules with the count known or omitted), so the shortfall moves no planned batch size; `eth_estimateGas`
-  stays the authority for a gas limit. The model's stated `maxUnderErrorPercent` (and amsterdam's
+  stays the authority for a gas limit. With the interim rule below a consumer's E for this shape rises to about the
+  real cost, which at 51 statements is inside the planning rule's 15% headroom of the cap, so its planner then splits
+  the largest batch of this shape a little smaller (computed from the rule's budget, floor(2^24 × 85%) less `fixed`:
+  47 on prague, 50 on amsterdam); that is the planning rule working as intended, and it moves no other shape. The model's stated `maxUnderErrorPercent` (and amsterdam's
   `maxUnderExecutionErrorPercent`) does NOT include this shape: no validation composite measures it. The proper rows
   are for the list release (tools/RELEASE.md §15); until then a consumer adds two fresh slots to E for such a BIND
   (tools/RELEASE.md item 42, the interim rule). Reproduce: `forge test --match-path
