@@ -2,8 +2,8 @@
   "schema": "efs-fixture-expected/1",
   "seedVersion": "efs-fixture-seed/4",
   "chainId": 31337,
-  "ledger": "0xD3523C0efE21753f63282a2713186FE9eB7A136b",
-  "executionSet": "0x1343377b58bab8b9b9192489fa0ea3a34e03f70095acb519d323e348d1fb20a3",
+  "ledger": "0x83ce0B9E2DDd9c5CEBBfe6b2b9Bc275fda9A20fB",
+  "executionSet": "0x0788d65963e48f73fe655a469cc2110365bc9e498cc37c56030d60ac3a9cb99d",
   "revision": 1,
   "root": {
     "directoryRecordId": "0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037",
