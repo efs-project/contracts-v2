@@ -52,9 +52,9 @@ contract IndexReads {
     uint8 private constant SHAPE_BITMAP = 2;
     uint8 private constant KIND_BY_RECORD = 12;
 
-    FamilyEntry[] private _families;
+    FamilyEntry[] internal _families;
     /// familyId → its index in `_families` + 1 (0 = undeclared), so a read finds its family in one SLOAD.
-    mapping(bytes32 familyId => uint256) private _familyAt;
+    mapping(bytes32 familyId => uint256) internal _familyAt;
     Unit[] private _units;
     DigestSpec[] private _specs;
     WorkModel private _work;
@@ -119,7 +119,7 @@ contract IndexReads {
         uint8 liveSemantics,
         address store,
         uint64 from
-    ) private {
+    ) internal {
         bytes32 id = Keys.familyId(name);
         _families.push(
             FamilyEntry({
@@ -237,7 +237,8 @@ contract IndexReads {
         return _carriedCheck(msg.sender);
     }
 
-    function _carriedCheck(address gen) private view returns (bool) {
+    /// Virtual so that a later generation with more stores (docs INDEX-BUILD step 3) can check them all.
+    function _carriedCheck(address gen) internal view virtual returns (bool) {
         (uint64 admissions,,,) = ILedgerHot(LEDGER).counts();
         if (admissions == 0) return _unwritten(POSTING, gen) && _unwritten(BITMAP, gen);
         address live = ILedgerHot(LEDGER).index();
@@ -264,7 +265,7 @@ contract IndexReads {
 
     /// Unwritten, and writable in build mode by nobody but `gen` until a live write attaches it: its INITIAL_WRITER
     /// is 0 or `gen` (kernel reason 12 on an empty Realm asks the same).
-    function _unwritten(address store, address gen) private view returns (bool) {
+    function _unwritten(address store, address gen) internal view returns (bool) {
         (address[] memory gens,,) = IPostingStore(store).writers();
         address iw = IPostingStore(store).initialWriter();
         return gens.length == 0 && (iw == address(0) || iw == gen);
@@ -273,7 +274,7 @@ contract IndexReads {
     /// `carried`: the store is not fresh for `gen` (fresh = names `gen` as INITIAL_WRITER and not attached);
     /// `spoiled`: it names `gen` as INITIAL_WRITER and is attached (so it is carried too, and no carried check passes).
     function _storeOf(address store, address gen)
-        private
+        internal
         view
         returns (bool carried, bool spoiled)
     {
@@ -283,7 +284,7 @@ contract IndexReads {
     }
 
     function _declaresFromOne(FamilyEntry[] memory list, bytes32 id, address store)
-        private
+        internal
         pure
         returns (bool)
     {
@@ -422,8 +423,8 @@ contract IndexReads {
         if (pos == 0) return (Coverage.UNKNOWN, 0, 0, 0, false);
         (c,,,) = _coverage(FamilyId.unwrap(family));
         uint8 kind = _families[pos - 1].kind;
-        (count, live, last,) =
-            IPostingStore(POSTING).postingHead(_pk(TypeId.unwrap(typeId), kind, ordinal, value));
+        (count, live, last,) = IPostingStore(_postingOf(pos))
+            .postingHead(_pk(TypeId.unwrap(typeId), kind, ordinal, value));
         if (count == 0 && kind == KIND_BY_RECORD) {
             (, uint64 firstAdmission,, uint64 occurrences,) = ILedgerHot(LEDGER).recordHeader(value);
             if (firstAdmission != 0) return (c, 1, occurrences, firstAdmission, true);
@@ -443,7 +444,8 @@ contract IndexReads {
         (c,,,) = _coverage(FamilyId.unwrap(family));
         uint8 kind = _families[pos - 1].kind;
         PostingKey key = _pk(TypeId.unwrap(typeId), kind, ordinal, value);
-        (uint64 count,,,) = IPostingStore(POSTING).postingHead(key);
+        IPostingStore ps = IPostingStore(_postingOf(pos));
+        (uint64 count,,,) = ps.postingHead(key);
         if (count == 0 && kind == KIND_BY_RECORD) {
             (, uint64 firstAdmission,,,) = ILedgerHot(LEDGER).recordHeader(value);
             if (firstAdmission != 0 && from == 0 && n != 0) {
@@ -453,7 +455,14 @@ contract IndexReads {
             }
             return (c, entries, firstAdmission != 0);
         }
-        entries = IPostingStore(POSTING).postingSlice(key, from, n);
+        entries = ps.postingSlice(key, from, n);
+    }
+
+    /// The posting store that holds the family at `pos` (its index in `_families` + 1). Generation 1 keeps every
+    /// posting family in its one posting store; virtual so that a later generation with more posting stores (docs
+    /// INDEX-BUILD step 3) routes each read to the family's own store.
+    function _postingOf(uint256) internal view virtual returns (address) {
+        return POSTING;
     }
 
     function occurrencesOf(bytes32 recordId)

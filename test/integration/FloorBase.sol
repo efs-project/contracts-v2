@@ -53,7 +53,7 @@ abstract contract FloorBase is FilesRecipesBase {
 
     /// Every account the Realm's publications touch, cooled so the measured publication pays the cold costs of a
     /// transaction of its own.
-    function _coolRealm() internal {
+    function _coolRealm() internal virtual {
         address[16] memory a = [
             r.k.proxy,
             address(r.k.implementation),
