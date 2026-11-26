@@ -797,7 +797,7 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
 `test/vectors/floor-plan.json`). **Prague's later batches get SMALLER than today's:** tag masks, releases and masks of
 masks 64 → 58, tag restores 60 → 51. Why: today's are planned on a quote that is below the real spend for those
 statements at distinct places and in long lists (0.91 for a restore of entry 48 across places, 0.75 at 4,096 entries;
-§15). Re-binds have a row of their own and keep or gain: tag number changes 60 → 63, folder re-binds 60 → 62, edits 24 →
+§15). Re-binds have a row of their own and keep or gain: tag number changes 60 → 62, folder re-binds 60 → 62, edits 24 →
 24. Amsterdam: tag masks, releases and masks of masks 44 → 55, restores 41 → 51, number changes 41 → 64, folder
 re-binds 40 → 61, edits 23 → 28, lone negatives 50 → 53. Unchanged on both: first tags at every depth and state,
 repeat publishes, name records, a name record and a first tag, the registration chunk, create-file recipes (10 / 12) and

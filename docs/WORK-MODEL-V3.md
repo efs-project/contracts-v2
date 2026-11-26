@@ -70,14 +70,14 @@ on the length the floor claims. Reading a whole word of five entries per probe n
 binding's entry index when it is appended, would shorten or remove it; either is a change to the index, so to a later
 generation, and would let the later row shrink.
 
-**Batch sizes as landed** (the planning rule, `tools/gas-plan.mjs` with the deploy plan's work model on the committed
-gas model; today = the released `test/vectors/floor-plan.json`; edits from `tools/gas-plan-later.mjs`'s shape):
+**Batch sizes as landed** (the planning rule, `tools/gas-plan.mjs`, on the gas model regenerated with this code (not
+committed here: it is regenerated once when the pieces are joined); today = the released `test/vectors/floor-plan.json`; edits from `tools/gas-plan-later.mjs`'s shape):
 
 | shape | prague today → formula 3 | amsterdam today → formula 3 |
 |---|---|---|
 | tag masks, releases, masks of masks | 64 → **58** | 44 → **55** |
 | tag restores | 60 → **51** | 41 → **51** |
-| tag number changes (re-binds) | 60 → **63** | 41 → **64** |
+| tag number changes (re-binds) | 60 → **62** | 41 → **64** |
 | folder re-binds | 60 → **62** | 40 → **61** |
 | edits (PUBLISH child + HEAD re-bind) | 24 → 24 | 23 → **28** |
 | lone negatives | 38 → 38 | 50 → **53** |
