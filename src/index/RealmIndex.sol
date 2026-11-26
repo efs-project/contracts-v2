@@ -36,11 +36,11 @@ import {
 ///         contract's address and codehash into `MANIFEST_HASH`. Every read this contract does not answer itself
 ///         is forwarded to that contract by `STATICCALL` from the fallback (design §10.1), so the manifest,
 ///         readiness and coverage reads keep their selectors at this address and no forwarded call can change
-///         state. Of the entry points of §10.6, replay into fresh stores runs in this contract's own code; `build`
-///         moves the frontier of a generation that carries both stores (docs INDEX-BUILD §3.5) and refuses a
-///         generation with a fresh store until the walk of history lands; `backfill` reverts, because generation 1
-///         has no later family to build (the `IndexBuild` delegate is withdrawn: an index may not DELEGATECALL;
-///         design §10.6).
+///         state. Of the entry points of §10.6, replay into fresh stores and `build` run in this contract's own
+///         code: `build` moves the frontier of a generation that carries both stores (docs INDEX-BUILD §3.5) and
+///         walks history into the fresh stores of one that does not, folding only the families those stores hold
+///         (§3.2–3.4, §4.3); `backfill` reverts, because generation 1 has no later family to build (the `IndexBuild`
+///         delegate is withdrawn: an index may not DELEGATECALL; design §10.6).
 contract RealmIndex is IRealmIndex, GenerationStorage {
     address public immutable LEDGER;
     address public immutable DECODER;
@@ -61,6 +61,11 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     uint8 private constant T_FIRST_MASK = 6;
     /// The store's UNCOUNTED tag (`IPostingStore.append`): an entry appended without raising `live`.
     uint64 private constant UNCOUNTED = uint64(1) << 63;
+    /// The carried-store mask a fold runs under (docs INDEX-BUILD §4.3): a set bit names a store the fold must not
+    /// write, because this generation carries it (the live index folds it). 0 on the live path, in a replay and in
+    /// a build into two fresh stores; one bit in a build that heals one store; both bits when nothing is fresh.
+    uint256 internal constant CARRIED_POSTING = 1;
+    uint256 internal constant CARRIED_BITMAP = 2;
 
     bytes32 private immutable F_BY_TYPE;
     bytes32 private immutable F_BY_AUTHOR;
@@ -164,6 +169,22 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         _requireLedger();
         (uint8 phase, uint64 staged,,) = ILedgerHot(LEDGER).phase();
         if (phase != Phase.APPLYING || publication != staged) revert E_STAGED(staged, publication);
+        _gen().progress.liveStarted = 1; // read by nothing the fold or its hooks reach before the hooks run
+        _foldPublication(publication, effects, refs, 0);
+        return IRealmIndex.onAdmission.selector;
+    }
+
+    /// One publication's effects folded in order, live (from `onAdmission`) or from history (from `replayFold`):
+    /// the effects must continue the progress word exactly, and the word moves to the publication's last admission.
+    /// `carried` names the stores this fold must not write (`CARRIED_POSTING`, `CARRIED_BITMAP`); the fold hooks run
+    /// only when it is 0 (docs INDEX-BUILD §3.6: a unit folded live and its companion store is not rebuilt in a build
+    /// that heals one store; this generation cannot tell a carried unit from a new one, so it calls none there).
+    function _foldPublication(
+        uint64 publication,
+        Effect[] calldata effects,
+        bytes32[] calldata refs,
+        uint256 carried
+    ) private {
         Progress storage p = _gen().progress;
         uint64 expected = p.lastProcessed + 1;
         uint256 refIndex;
@@ -171,15 +192,13 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             Effect calldata e = effects[i];
             if (e.admission != expected) revert E_ORDER(expected, e.admission);
             if (e.publication != publication) revert E_STAGED(publication, e.publication);
-            _fold(e, refs[refIndex:refIndex + e.refCount]);
+            _fold(e, refs[refIndex:refIndex + e.refCount], carried);
             refIndex += e.refCount;
             ++expected;
         }
         p.lastProcessed = uint48(expected - 1);
         p.lastPublication = uint48(publication);
-        p.liveStarted = 1;
-        _foldHooks(effects, refs, publication);
-        return IRealmIndex.onAdmission.selector;
+        if (carried == 0) _foldHooks(effects, refs, publication);
     }
 
     /// @inheritdoc IRealmIndex
@@ -227,19 +246,28 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
 
     // ---- the generic fold (design §10.2) -------------------------------------------------------------
 
-    function _fold(Effect calldata e, bytes32[] calldata refs) private {
+    /// The fold of one effect. A record or a withdrawal writes only the posting store; a bind writes both stores, each
+    /// part only from the effect, write-once ledger facts and the state of its own store (docs INDEX-BUILD §4.3), so
+    /// skipping a carried store's part changes nothing the other part writes.
+    function _fold(Effect calldata e, bytes32[] calldata refs, uint256 carried) private {
         uint8 kind = e.kind;
+        bool posting = carried & CARRIED_POSTING == 0;
         if (kind == ActionKind.PUBLISH || kind == ActionKind.REUSE) {
-            _foldRecord(e, refs);
+            if (posting) _foldRecord(e, refs);
         } else if (
             kind == ActionKind.BIND || kind == ActionKind.UNBIND || kind == ActionKind.RELEASE
         ) {
-            _foldBind(e);
+            _foldBind(e, posting, carried & CARRIED_BITMAP == 0);
         } else if (kind == ActionKind.WITHDRAW) {
-            _foldWithdraw(e);
+            if (posting) _foldWithdraw(e);
         }
         // CREATE touches no family
+        _foldMore(e, refs, carried);
     }
+
+    /// Extension point for a later generation's families in further stores (docs INDEX-BUILD step 3): called after
+    /// every effect's fold, live and from history, with the same carried mask. Empty here, so it costs no code.
+    function _foldMore(Effect calldata, bytes32[] calldata, uint256) internal virtual {}
 
     // ---- the posting appends of one effect, written by one appendBatch (design §4.6) --------------------------
 
@@ -339,32 +367,26 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         _flush(b);
     }
 
-    function _foldBind(Effect calldata e) private {
+    /// A bind's fold. The bitmap part (`_foldScope`) and the posting part read nothing of each other's store: the
+    /// scope entry index the bitmap part takes from its own store feeds only its own `setBit`, and the posting part
+    /// reads only its own heads (`_firstStatementLists`). So a build that heals one store runs one part alone, and
+    /// the order of the two parts, which touch different stores, changes neither store.
+    function _foldBind(Effect calldata e, bool posting, bool bitmap) private {
+        uint8 tk = e.transitionKind;
+        if (bitmap) _foldScope(e, tk);
+        if (!posting) return;
         IPostingStore ps = IPostingStore(POSTING);
-        IBitmapStore bs = IBitmapStore(BITMAP);
         uint64 admission = e.admission;
-        bytes32 scope = Keys.scope(e.principalId, e.purpose, e.subject);
-        bytes32 bindingKey = Keys.binding(e.principalId, e.position);
         Appends memory b = _appends(8);
-        _add(b, F_HISTORY, _pk(0, 8, 0, bindingKey), admission);
+        _add(b, F_HISTORY, _pk(0, 8, 0, Keys.binding(e.principalId, e.position)), admission);
         // a BIND that keeps its asserted target (a number-only re-bind) leaves the backlink list alone: releasing
         // and re-appending the same key would change no live count and only grow the list
         bool sameTarget = e.kind == ActionKind.BIND && e.oldTarget != 0 && e.oldTarget == e.target;
         if (e.oldTarget != 0 && !sameTarget) {
             ps.release(FamilyId.wrap(F_BACKLINK), _pk(e.purpose, 5, 0, e.oldTarget), 1);
         }
-        uint8 tk = e.transitionKind;
         if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
-            // a first statement of either sign appends the scope entry and the role-scope entry; the store
-            // appends live entries, so a first mask clears the entry's live bit at once
-            uint64 entry = bs.appendScopeEntry(
-                FamilyId.wrap(F_SCOPE), ScopeKey.wrap(scope), e.bindingOrdinal, admission
-            );
-            if (tk == T_FIRST_MASK) {
-                bs.setBit(
-                    FamilyId.wrap(F_LIVE_SCOPE), ScopeKey.wrap(scope), entry, false, admission
-                );
-            }
+            // a first statement of either sign appends the role-scope entry and the first-statement lists
             _add(
                 b,
                 F_ROLE_SCOPE,
@@ -372,32 +394,15 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
                 e.bindingOrdinal
             );
             _firstStatementLists(e, b);
-        } else if (tk == T_REBIND) {
-            bs.stamp(ScopeKey.wrap(scope), admission);
         } else if (tk == T_RESTORE) {
-            bs.setBit(
-                FamilyId.wrap(F_LIVE_SCOPE),
-                ScopeKey.wrap(scope),
-                _entryIndex(bs, scope, e.bindingOrdinal),
-                true,
-                admission
-            );
             // a head returns to BOUND: one more author says yes at the position
             if (_authorsKept(e.purpose)) {
                 ps.retain(FamilyId.wrap(F_POSITION_AUTHORS), _pk(0, 20, 0, e.position), 1);
             }
-        } else {
-            // MASK (from BOUND, MASKED or RELEASED) or RELEASE; clearing a clear bit changes no count
-            bs.setBit(
-                FamilyId.wrap(F_LIVE_SCOPE),
-                ScopeKey.wrap(scope),
-                _entryIndex(bs, scope, e.bindingOrdinal),
-                false,
-                admission
-            );
-            // a head leaves BOUND (the kernel sets `oldTarget` only from a BOUND head, and a BIND's target is never
-            // zero): one fewer author says yes at the position; a mask or release of a masked or released head
-            // changes nothing
+        } else if (tk != T_REBIND) {
+            // MASK (from BOUND, MASKED or RELEASED) or RELEASE: a head leaves BOUND (the kernel sets `oldTarget` only
+            // from a BOUND head, and a BIND's target is never zero): one fewer author says yes at the position; a
+            // mask or release of a masked or released head changes nothing
             if (e.oldTarget != 0 && _authorsKept(e.purpose)) {
                 ps.release(FamilyId.wrap(F_POSITION_AUTHORS), _pk(0, 20, 0, e.position), 1);
             }
@@ -406,6 +411,35 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             _add(b, F_BACKLINK, _pk(e.purpose, 5, 0, e.target), admission);
         }
         _flush(b);
+    }
+
+    /// A bind's bitmap part: the scope list (family 10) and its live bits (family 18), from the effect and the scope
+    /// list in this generation's own bitmap store.
+    function _foldScope(Effect calldata e, uint8 tk) private {
+        IBitmapStore bs = IBitmapStore(BITMAP);
+        uint64 admission = e.admission;
+        ScopeKey scope = ScopeKey.wrap(Keys.scope(e.principalId, e.purpose, e.subject));
+        if (tk == T_FIRST_BIND || tk == T_FIRST_MASK) {
+            // a first statement of either sign appends the scope entry; the store appends live entries, so a first
+            // mask clears the entry's live bit at once
+            uint64 entry =
+                bs.appendScopeEntry(FamilyId.wrap(F_SCOPE), scope, e.bindingOrdinal, admission);
+            if (tk == T_FIRST_MASK) {
+                bs.setBit(FamilyId.wrap(F_LIVE_SCOPE), scope, entry, false, admission);
+            }
+        } else if (tk == T_REBIND) {
+            bs.stamp(scope, admission);
+        } else {
+            // RESTORE sets the entry's live bit; MASK (from BOUND, MASKED or RELEASED) or RELEASE clears it, and
+            // clearing a clear bit changes no count
+            bs.setBit(
+                FamilyId.wrap(F_LIVE_SCOPE),
+                scope,
+                _entryIndex(bs, scope, e.bindingOrdinal),
+                tk == T_RESTORE,
+                admission
+            );
+        }
     }
 
     /// Whether the purpose keeps the first-statement lists (TAG and FOLDER).
@@ -498,17 +532,17 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// Bisection over the scope list (strictly increasing binding ordinals).
-    function _entryIndex(IBitmapStore bs, bytes32 scope, uint64 bindingOrdinal)
+    function _entryIndex(IBitmapStore bs, ScopeKey scope, uint64 bindingOrdinal)
         private
         view
         returns (uint64)
     {
-        (uint64 count,,,,,) = bs.scopeHead(ScopeKey.wrap(scope));
+        (uint64 count,,,,,) = bs.scopeHead(scope);
         uint64 lo;
         uint64 hi = count;
         while (lo < hi) {
             uint64 mid = (lo + hi) / 2;
-            uint64 v = bs.scopeEntry(ScopeKey.wrap(scope), mid);
+            uint64 v = bs.scopeEntry(scope, mid);
             if (v == bindingOrdinal) return mid;
             if (v < bindingOrdinal) lo = mid + 1;
             else hi = mid;
@@ -532,12 +566,13 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     /// @dev Fresh stores only: both stores name this generation as INITIAL_WRITER and are unattached, this
     ///      generation has never folded live, the ledger is idle. One publication per call, decoded by the
     ///      pinned decoder (STATICCALL) and folded through `replayFold` on this contract, so the live fold
-    ///      code is the replay fold code; `maxFacts` bounds the leaves of that publication (≤ 64).
+    ///      code is the replay fold code; `maxFacts` bounds the leaves of that publication (≤ 64). `build(0, n)`
+    ///      walks the same way with a budget (docs INDEX-BUILD §3.3).
     function replayNextPublication(uint16 maxFacts) external returns (uint64 processed) {
         if (maxFacts == 0 || maxFacts > 64) revert E_REPLAY(6);
         if (DECODER == address(0)) revert E_REPLAY(5);
         Progress storage p = _gen().progress;
-        if (p.liveStarted != 0 || !_fresh()) revert E_REPLAY(1);
+        if (p.liveStarted != 0 || _carried() != 0) revert E_REPLAY(1);
         (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
         if (phase != Phase.IDLE) revert E_REPLAY(3);
         if (p.replayStage == 4) revert E_REPLAY(3); // a fold hook re-entering the replay in flight
@@ -545,53 +580,72 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         uint64 n = p.lastPublication + 1;
         if (n > publications) return 0;
         p.replayStage = 4; // IN_FLIGHT
-        (bool ok, bytes memory ret) =
-            DECODER.staticcall(abi.encodeCall(IIndexReplayDecoder.payload, (LEDGER, n)));
-        if (!ok) _bubble(ret);
-        bytes memory encoded = abi.decode(ret, (bytes));
-        (ok, ret) = address(this).call(bytes.concat(this.replayFold.selector, encoded));
-        if (!ok) _bubble(ret);
-        processed = abi.decode(ret, (uint64));
+        processed = _replayOne(n, 0);
         if (processed > maxFacts) revert E_REPLAY(6);
         p.replayStage = n == publications ? 3 : 2; // CAUGHT_UP : REPLAYING
     }
 
-    /// The replay fold: the decoder's payload, applied exactly as a live `onAdmission` would be, by this
-    /// contract calling itself (the stores see the generation as INITIAL_WRITER before attachment).
+    /// Publication `n` from history: decoded by the pinned decoder (STATICCALL), then folded by this contract calling
+    /// its own `replayFold`, so the effects are in calldata as the live fold expects. The carried mask rides as one
+    /// word after the ABI payload (the ABI decoder ignores trailing calldata), so it is chosen here, by this code, and
+    /// never by a caller. Returns the leaves folded.
+    function _replayOne(uint64 n, uint256 carried) private returns (uint64) {
+        (bool ok, bytes memory ret) =
+            DECODER.staticcall(abi.encodeCall(IIndexReplayDecoder.payload, (LEDGER, n)));
+        if (!ok) _bubble(ret);
+        bytes memory encoded = abi.decode(ret, (bytes));
+        (ok, ret) =
+            address(this).call(bytes.concat(this.replayFold.selector, encoded, bytes32(carried)));
+        if (!ok) _bubble(ret);
+        return abi.decode(ret, (uint64));
+    }
+
+    /// The replay and build fold: the decoder's payload, applied exactly as a live `onAdmission` would be, by this
+    /// contract calling itself (the stores see the generation as INITIAL_WRITER before attachment), with the carried
+    /// mask `_replayOne` appended after the payload.
     function replayFold(uint64 publication, Effect[] calldata effects, bytes32[] calldata refs)
         external
         returns (uint64)
     {
         if (msg.sender != address(this)) revert E_WRITER(msg.sender);
-        Progress storage p = _gen().progress;
-        uint64 expected = p.lastProcessed + 1;
-        uint256 refIndex;
-        for (uint256 i; i < effects.length; ++i) {
-            Effect calldata e = effects[i];
-            if (e.admission != expected) revert E_ORDER(expected, e.admission);
-            if (e.publication != publication) revert E_STAGED(publication, e.publication);
-            _fold(e, refs[refIndex:refIndex + e.refCount]);
-            refIndex += e.refCount;
-            ++expected;
-        }
-        p.lastProcessed = uint48(expected - 1);
-        p.lastPublication = uint48(publication);
-        _foldHooks(effects, refs, publication);
+        _foldPublication(
+            publication, effects, refs, uint256(bytes32(msg.data[msg.data.length - 32:]))
+        );
         return uint64(effects.length);
     }
 
-    /// Both stores are fresh: replay rebuilds every family.
-    function _fresh() private view returns (bool) {
-        return _isFresh(POSTING) && _isFresh(BITMAP);
+    /// The carried mask of this generation's stores (`CARRIED_POSTING`, `CARRIED_BITMAP`). A store is fresh for this
+    /// generation when it names this generation as `INITIAL_WRITER` and no live write has attached it; every other
+    /// store this generation names is carried (re-pinned: the live index folded its history). Virtual so that a
+    /// later generation with more stores (docs INDEX-BUILD step 3) can add its own bits.
+    function _carried() internal view virtual returns (uint256 mask) {
+        if (!_isFresh(POSTING)) mask |= CARRIED_POSTING;
+        if (!_isFresh(BITMAP)) mask |= CARRIED_BITMAP;
     }
 
-    /// A store is fresh for this generation when it names this generation as `INITIAL_WRITER` and no live write has
-    /// attached it; every other store this generation names is carried (re-pinned: the live index folded its
-    /// history). The posting and bitmap stores answer the same two getters.
-    function _isFresh(address store) private view returns (bool) {
+    /// The mask with every store of this generation carried: nothing to walk.
+    function _allCarried() internal pure virtual returns (uint256) {
+        return CARRIED_POSTING | CARRIED_BITMAP;
+    }
+
+    /// Whether a store that names this generation as `INITIAL_WRITER` has been attached by a live write: it is
+    /// neither fresh (a build may not write it) nor carried (the live index did not fold it for this generation).
+    /// Only a live write attaches, so an attached store of this generation's own means some live index wrote it
+    /// (kernel reason 13 refuses the same).
+    function _spoiled() internal view virtual returns (bool) {
+        return _isSpoiled(POSTING) || _isSpoiled(BITMAP);
+    }
+
+    /// The posting and bitmap stores answer the same two getters.
+    function _isFresh(address store) internal view returns (bool) {
         return
             IPostingStore(store).initialWriter() == address(this)
                 && !IPostingStore(store).attached();
+    }
+
+    function _isSpoiled(address store) internal view returns (bool) {
+        return
+            IPostingStore(store).initialWriter() == address(this) && IPostingStore(store).attached();
     }
 
     function _bubble(bytes memory ret) private pure {
@@ -605,28 +659,56 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// @inheritdoc IRealmIndex
-    /// @dev Docs INDEX-BUILD §3.2, §3.5. Permissionless and idle-gated; `familyId` must be 0 (one walk builds every
-    ///      built family). A generation with no fresh store (it carries both stores: a re-pin) folds nothing: once
-    ///      the carried check passes, the live index keeps every family this generation carries in the very store
-    ///      it names, and it folds every admission synchronously, so those families are complete through
-    ///      `counts()`; the frontier moves straight there and moves again on the next call after more publications.
-    ///      `maxFacts` bounds nothing here (nothing is folded). A generation with a fresh store is refused for now
-    ///      (`E_BUILD(4)`): the budgeted walk of history into its fresh stores is the next step, and
-    ///      `replayNextPublication` keeps serving the all-fresh case.
-    function build(bytes32 familyId, uint16) external returns (uint64 through) {
+    /// @dev Docs INDEX-BUILD §3.2–3.5. Permissionless and idle-gated; `familyId` must be 0 (one walk builds every
+    ///      built family). Refused: a nonzero `familyId` (8); once this generation is the live index or has folded
+    ///      live (1); inside a publication, or while a replay or build call of this generation is in flight (3); when
+    ///      a store names this generation as INITIAL_WRITER but is attached (2); when the carried check fails (7).
+    ///
+    ///      With no fresh store (a re-pin) nothing is folded: the live index keeps every carried family in the very
+    ///      store this generation names and folds every admission synchronously, so the frontier moves straight to
+    ///      `counts()` and moves again on the next call after more publications; `maxFacts` bounds nothing.
+    ///
+    ///      With a fresh store (both fresh: the full replay; one fresh: a build that heals that store), the call
+    ///      walks history from the frontier, one whole publication at a time, while the leaves folded in this call
+    ///      plus the next publication's leaf count stay within `maxFacts`, and folds only the families of the fresh
+    ///      stores (the carried mask; §4.3: no family's fold reads the other store). The next publication's leaf
+    ///      count is read from its evidence cell before it is decoded (one ledger read, which the decoder then reads
+    ///      warm). It folds at least one publication when one is pending and reverts `E_BUILD(6)` when the first
+    ///      pending one alone exceeds `maxFacts` (so `maxFacts >= 64` always makes progress); with nothing pending it
+    ///      returns the frontier. No decoder pinned: `E_BUILD(5)`. Returns the last admission folded (the frontier).
+    function build(bytes32 familyId, uint16 maxFacts) external returns (uint64 through) {
         if (familyId != 0) revert E_BUILD(8);
         Progress storage p = _gen().progress;
         ILedgerHot hot = ILedgerHot(LEDGER);
         if (p.liveStarted != 0 || hot.index() == address(this)) revert E_BUILD(1);
         (uint8 phase,,,) = hot.phase();
         if (phase != Phase.IDLE || p.replayStage == 4) revert E_BUILD(3);
-        if (_isFresh(POSTING) || _isFresh(BITMAP)) revert E_BUILD(4);
+        if (_spoiled()) revert E_BUILD(2);
         if (!IndexReads(READS).carriedCheck()) revert E_BUILD(7);
         (uint64 admissions,,, uint64 publications) = hot.counts();
-        p.lastProcessed = uint48(admissions);
-        p.lastPublication = uint48(publications);
-        p.replayStage = 3; // CAUGHT_UP
-        return admissions;
+        uint256 carried = _carried();
+        if (carried == _allCarried()) {
+            p.lastProcessed = uint48(admissions);
+            p.lastPublication = uint48(publications);
+            p.replayStage = 3; // CAUGHT_UP
+            return admissions;
+        }
+        if (DECODER == address(0)) revert E_BUILD(5);
+        uint64 n = p.lastPublication + 1;
+        uint256 used;
+        p.replayStage = 4; // IN_FLIGHT
+        for (; n <= publications; ++n) {
+            (,,,, uint8 leaves,,) = Layout.unpackEvidenceCellWord0(
+                hot.extsload(bytes32(Layout.publicationsEvidenceSlot(n)))
+            );
+            if (used + leaves > maxFacts) {
+                if (used == 0) revert E_BUILD(6);
+                break;
+            }
+            used += _replayOne(n, carried);
+        }
+        p.replayStage = n > publications ? 3 : 2; // CAUGHT_UP : BUILDING
+        return p.lastProcessed;
     }
 
     /// @inheritdoc IRealmIndex

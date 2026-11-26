@@ -104,7 +104,7 @@ error E_STAGED(uint64 expected, uint64 have); // none
 error E_FAMILY(bytes32 familyId); // none
 error E_UNIT(uint8 index); // none
 error E_REPLAY(uint8 code); // none: 1 stores not fresh or already live 2 foreign layout at that publication 3 not idle 5 no decoder 6 maxFacts 7 no such publication 8 unreadable row 9 bind row without an ordinal
-error E_BUILD(uint8 code); // none: 1 the generation is live or was activated 3 the ledger is not idle, or a replay or build call of this generation is in flight 4 the generation has a fresh store: the walk of history into fresh stores is not built yet 7 the carried check fails (docs INDEX-BUILD §3.5): a family the generation carries is not the live index's, or on an empty Realm one of its stores has already been written 8 a nonzero familyId (one walk builds every built family)
+error E_BUILD(uint8 code); // none: 1 the generation is live or was activated 2 a store names the generation as INITIAL_WRITER but a live write has attached it (neither fresh nor carried) 3 the ledger is not idle, or a replay or build call of this generation is in flight 5 the generation has a fresh store and no decoder 6 the next publication's leaf count exceeds maxFacts (nothing was folded in this call) 7 the carried check fails (docs INDEX-BUILD §3.5): a family the generation carries is not the live index's, or on an empty Realm one of its stores has already been written 8 a nonzero familyId (one walk builds every built family)
 error E_BACKFILL(uint8 code); // none: 0 this generation declares no later family; 1 coverage not open 2 through outside [through, liveFrom]
 error E_COVERAGE(uint8 code); // none: 1 already open 2 nothing to retire
 

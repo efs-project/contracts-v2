@@ -217,8 +217,11 @@ contract IndexReads {
     /// write records a range on its first call (`StoreBase._authorizeWriter`) and an empty Realm gives an honest
     /// build or replay nothing to fold, so a written store there was written by code nobody pinned. Genesis passes:
     /// its stores are new. With admissions: true when the caller is the live index (it folds them itself) and when
-    /// the caller carries nothing; false when the live index has no code or its readiness read reverts. Asked by the
-    /// generation's `build` and by `replayReadiness`.
+    /// the caller carries nothing; false when the live index has no code or its readiness read reverts, and false
+    /// when a store names the caller as INITIAL_WRITER but is attached (only a live write attaches, so some live
+    /// index wrote a store the caller never vouched for; kernel reason 13 refuses the same). Asked by the
+    /// generation's `build`, by `replayReadiness` and by the coverage of a carried family of a generation that is
+    /// not the live index.
     function carriedCheck() external view returns (bool) {
         return _carriedCheck(msg.sender);
     }
@@ -228,8 +231,9 @@ contract IndexReads {
         if (admissions == 0) return _unwritten(POSTING) && _unwritten(BITMAP);
         address live = ILedgerHot(LEDGER).index();
         if (live == gen) return true;
-        bool postingCarried = !_isFresh(POSTING, gen);
-        bool bitmapCarried = !_isFresh(BITMAP, gen);
+        (bool postingCarried, bool postingSpoiled) = _storeOf(POSTING, gen);
+        (bool bitmapCarried, bool bitmapSpoiled) = _storeOf(BITMAP, gen);
+        if (postingSpoiled || bitmapSpoiled) return false;
         if (!postingCarried && !bitmapCarried) return true;
         if (live.code.length == 0) return false;
         FamilyEntry[] memory theirs;
@@ -252,8 +256,16 @@ contract IndexReads {
         return gens.length == 0;
     }
 
-    function _isFresh(address store, address gen) private view returns (bool) {
-        return IPostingStore(store).initialWriter() == gen && !IPostingStore(store).attached();
+    /// `carried`: the store is not fresh for `gen` (fresh = names `gen` as INITIAL_WRITER and not attached);
+    /// `spoiled`: it names `gen` as INITIAL_WRITER and is attached (so it is carried too, and no carried check passes).
+    function _storeOf(address store, address gen)
+        private
+        view
+        returns (bool carried, bool spoiled)
+    {
+        bool mine = IPostingStore(store).initialWriter() == gen;
+        bool attached = IPostingStore(store).attached();
+        return (!mine || attached, mine && attached);
     }
 
     function _declaresFromOne(FamilyEntry[] memory list, bytes32 id, address store)
@@ -300,11 +312,22 @@ contract IndexReads {
         r.buildCodehash = bytes32(0);
     }
 
+    /// A maintained family of the calling generation is covered from 1 through its progress frontier: COMPLETE when
+    /// that is the ledger's admission count and the progress is not gapped, PARTIAL otherwise (a generation that is
+    /// building, or behind). A generation that is not the live index vouches for a family in a carried store only
+    /// through its carried check (docs INDEX-BUILD §3.5): when the check fails, such a family is PARTIAL from 1
+    /// through 0 (it claims nothing, as `replayReadiness` does), whatever the frontier. A family in a fresh store
+    /// was folded by the generation itself, so the check does not touch it. The live index needs no check (it
+    /// folds every admission into its own stores), so its reads pay one ledger read for this.
     function _coverage(bytes32 id) private view returns (Coverage, uint64, uint64, uint8) {
         uint256 pos = _familyAt[id];
         (uint8 phase,,,) = ILedgerHot(LEDGER).phase();
         if (pos == 0 || _families[pos - 1].fromAdmission == IndexProfiles.NOT_MAINTAINED) {
             return (Coverage.UNKNOWN, 0, 0, phase);
+        }
+        if (ILedgerHot(LEDGER).index() != msg.sender) {
+            (bool carried,) = _storeOf(_families[pos - 1].store, msg.sender);
+            if (carried && !_carriedCheck(msg.sender)) return (Coverage.PARTIAL, 1, 0, phase);
         }
         (uint64 through,, bool gapped) = _progress();
         (uint64 admissions,,,) = ILedgerHot(LEDGER).counts();
