@@ -326,8 +326,8 @@ contract ActivationTest is ControlFixture {
         );
     }
 
-    /// Keeping the live index never calls it (docs INDEX-BUILD §5.3): a kept index whose readiness reports a phase
-    /// other than IDLE is not asked, so the activation passes; reason 2 is the ledger's own lock, which `activate`'s
+    /// Keeping the live index never asks its readiness; only its work model is read (docs INDEX-BUILD §5.3): a kept
+    /// index whose readiness reports a phase other than IDLE is not asked, so the activation passes; reason 2 is the ledger's own lock, which `activate`'s
     /// `idle` gate already holds IDLE here (it is reached in `test/index/Liveness.t.sol::test_reason_2_is_the_ledgers_own_phase`).
     function test_unchanged_index_is_not_asked_its_phase() public {
         Readiness memory r = liveReadiness(index);

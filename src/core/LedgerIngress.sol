@@ -392,7 +392,7 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
     uint256 private constant W_SURCHARGE_PURPOSE = 22;
 
     /// The live index's work model, read as raw ABI words. What it assumes: `IIndexReads.workModel()` returns the
-    /// static struct `WorkModel`, whose ABI encoding is its 26 fields as 26 words in declaration order, each field
+    /// static struct `WorkModel`, whose ABI encoding is its 32 fields as 32 words in declaration order, each field
     /// right-aligned in its word (an index's own `abi.encode` of a struct it holds). A reply of any other length is
     /// refused (`E_WORK_MODEL` 2), and so is a word 0 that is not `FORMULA_VERSION` (`E_WORK_MODEL` 3): a wrong shape is
     /// a refusal, never a mis-read. Words are used whole (no masking); the index is pinned by codehash and its work

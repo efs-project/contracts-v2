@@ -95,7 +95,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     Unit[] private _units;
     DigestSpec[] private _specs;
     /// The work model, held as the code of a data contract this constructor created: one STOP byte, then
-    /// `abi.encode(work)` (the 26 words `IIndexReads.workModel()` returns), bound by address and codehash as
+    /// `abi.encode(work)` (the 32 words `IIndexReads.workModel()` returns), bound by address and codehash as
     /// `IndexReads` holds the live manifest copy. The ingress reads it on every publication's quote, so it is served
     /// with one EXTCODECOPY instead of storage reads. The code can never change (it starts with STOP, so it never runs).
     address private immutable WORK;

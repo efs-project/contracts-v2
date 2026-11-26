@@ -24,7 +24,15 @@ import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
 import {ILedgerControl, ActivationSet} from "../../src/interfaces/ILedgerControl.sol";
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
-import {DigestSpec, FamilyEntry, Readiness, Unit} from "../../src/interfaces/Index.sol";
+import {
+    DigestSpec,
+    FamilyEntry,
+    FORMULA_VERSION,
+    Readiness,
+    Unit,
+    WorkModel
+} from "../../src/interfaces/Index.sol";
+import {IIndexReads} from "../../src/interfaces/IIndexReads.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 import {E_BATCH_SHAPE, E_BUILD, E_INDEX_NOT_READY, E_PIN} from "../../src/interfaces/Errors.sol";
 import {Phase} from "../../src/interfaces/Results.sol";
@@ -671,7 +679,7 @@ contract LivenessTest is Test {
     }
 
     // =============================================================================================
-    // 6. The unchanged-index path: keeping the live index never calls it
+    // 6. The unchanged-index path: keeping the live index never asks its readiness; only its work model is read
     // =============================================================================================
 
     /// The set that keeps `R`'s live index (taken by the caller before the index stops answering: building it reads
@@ -727,7 +735,8 @@ contract LivenessTest is Test {
     }
 
     /// The live index's readiness reverts (`E_BROKEN`): an activation that keeps it succeeds, changes the notice
-    /// principal and the limits, and never asks the index; the index keeps folding the next publications exactly as
+    /// principal and the limits, and never asks the index's readiness (it reads only its work model, which still
+    /// answers); the index keeps folding the next publications exactly as
     /// the twin's, under the new limits. (Before this change the same activation reverted `E_BROKEN`.)
     function test_keeping_an_index_that_stops_answering_activates() public {
         _history(a);
@@ -754,9 +763,13 @@ contract LivenessTest is Test {
         _assertSameHeads();
     }
 
-    /// The stronger form: every call to the live index's address reverts, and an activation that keeps it still
-    /// succeeds (so nothing in it calls the index).
-    function test_keeping_an_index_whose_every_call_reverts_activates() public {
+    /// Every call to the live index's address reverts: an activation that keeps it is refused
+    /// `E_INDEX_NOT_READY(15)`. Keeping an index reads exactly one thing from it, its work model, the read every
+    /// publication's quote makes (`LedgerIngress._workModel`, `E_WORK_MODEL(1)` there). An index that cannot answer
+    /// that cannot serve a publication either, so refusing to keep it refuses nothing a kept index could have done;
+    /// and the check is what stops a new ingress from running under an index of another formula. With the work model
+    /// answering again (the readiness still reverting) the same set activates.
+    function test_keeping_an_index_whose_every_call_reverts_is_refused_15() public {
         _history(a);
         address live = address(a.g.index);
         bytes32 manifestHash = IGeneration1(live).manifestHash();
@@ -764,8 +777,40 @@ contract LivenessTest is Test {
         vm.mockCallRevert(live, bytes(""), abi.encodeWithSignature("E_DEAD()"));
         vm.expectRevert(abi.encodeWithSignature("E_DEAD()"));
         IRealmIndex(live).replayReadiness();
+        _expectExecRevert(a, set, _notReady(15));
+        vm.clearMockedCalls();
+        vm.mockCallRevert(
+            live,
+            abi.encodeWithSelector(IRealmIndex.replayReadiness.selector),
+            abi.encodeWithSignature("E_DEAD()")
+        );
         _activateSet(a, set);
         vm.clearMockedCalls();
+        _assertKept(a, set, live, manifestHash);
+    }
+
+    /// The case the kept-index check exists for: the kept index answers a work model of another formula while its
+    /// readiness reverts. A formula-2 reply (17 words, word 0 = 2) and a 32-word reply whose `formulaVersion` is 2 are
+    /// each refused `E_INDEX_NOT_READY(15)`, so an implementation is never activated over an index whose work model
+    /// its ingress would refuse at the first publication (`E_WORK_MODEL` 2 or 3); with the real work model the same
+    /// set activates.
+    function test_keeping_an_index_of_another_formula_is_refused_15() public {
+        _history(a);
+        address live = address(a.g.index);
+        bytes32 manifestHash = IGeneration1(live).manifestHash();
+        ActivationSet memory set = _keepSet(a, live, manifestHash);
+        breakable.breakNow();
+        bytes memory formula2 = new bytes(17 * 32);
+        formula2[31] = bytes1(uint8(2));
+        vm.mockCall(live, abi.encodeWithSelector(IIndexReads.workModel.selector), formula2);
+        _expectExecRevert(a, set, _notReady(15));
+        WorkModel memory w = IndexDoubleDefaults.workModel();
+        w.formulaVersion = 2;
+        vm.mockCall(live, abi.encodeWithSelector(IIndexReads.workModel.selector), abi.encode(w));
+        _expectExecRevert(a, set, _notReady(15));
+        vm.clearMockedCalls();
+        assertEq(IIndexReads(live).workModel().formulaVersion, FORMULA_VERSION);
+        _activateSet(a, set);
         _assertKept(a, set, live, manifestHash);
     }
 
@@ -795,8 +840,9 @@ contract LivenessTest is Test {
     /// Reason 2 is now the kernel's own phase: the control body refuses to keep the index while this ledger's
     /// publication lock is not IDLE. `LedgerCore.activate` is `idle`-gated, so the refusal is reached here through
     /// an implementation double (`UngatedActivation`, etched over the ledger implementation) that sets the lock and
-    /// delegates to the real `LedgerControl`: with the lock APPLYING the keep is refused 2 without calling the index;
-    /// with the lock IDLE the same double activates.
+    /// delegates to the real `LedgerControl`: with the lock APPLYING the keep is refused 2 before the index is read;
+    /// with the lock IDLE the same double activates. The index's readiness reverts throughout; its work model answers
+    /// (the one read a kept index gets).
     function test_reason_2_is_the_ledgers_own_phase() public {
         _history(a);
         address live = address(a.g.index);
@@ -805,7 +851,11 @@ contract LivenessTest is Test {
         bytes memory original = impl.code;
         UngatedActivation double_ = new UngatedActivation(address(a.k.control));
         vm.etch(impl, address(double_).code);
-        vm.mockCallRevert(live, bytes(""), abi.encodeWithSignature("E_DEAD()"));
+        vm.mockCallRevert(
+            live,
+            abi.encodeWithSelector(IRealmIndex.replayReadiness.selector),
+            abi.encodeWithSignature("E_DEAD()")
+        );
         ActivationSet memory set = _keepSet(a, live, manifestHash);
         set.components.ledgerImplCodehash = impl.codehash;
         set.expectedExecutionSet = ExecutionSets.executionSet(set, a.k.proxy);
