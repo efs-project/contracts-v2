@@ -257,69 +257,65 @@ all remaining gas and V includes E, so neither is refused nor left unfinishable)
 
 | shape | prague k | E | V | P / spend | F / final | next | amsterdam k | E (execution) | V | P / spend | F / final | next |
 |---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---|
-| lone negatives, one-word topic | 38 | 13,144,367 | 14,333,062 | 1.14 | 1.39 | gas | 54 | 12,968,171 | 13,889,681 | 1.08 | 1.39 | gas |
-| first tags, depth 8, everything new | 18 | 11,231,081 | 11,406,713 | 0.50 | 1.41 | gas | 19 | 8,423,892 | 8,607,042 | 0.47 | 1.41 | gas |
-| first tags, depth 64, everything new | 3 | 10,447,656 | 10,510,526 | 0.07 | 1.27 | gas | 3 | 7,443,556 | 7,506,426 | 0.07 | 1.26 | gas |
-| first tags, depth 8, everything existing | 22 | 11,362,902 | 11,568,604 | 0.55 | 1.42 | gas | 20 | 8,305,985 | 8,496,652 | 0.46 | 1.41 | gas |
-| first tags, depth 64, everything existing | 4 | 8,220,775 | 8,291,163 | 0.12 | 1.30 | gas | 3 | 7,354,811 | 7,417,681 | 0.07 | 1.26 | gas |
-| second author's first tags, depth 8 | 22 | 11,650,946 | 11,856,648 | 0.53 | 1.42 | gas | 20 | 8,310,143 | 8,500,810 | 0.46 | 1.41 | gas |
-| masks of tags | 64 | 11,165,399 | 13,266,879 | 1.24 | 2.61 | limit | 64 | 11,714,681 | 13,008,120 | 1.10 | 2.60 | limit |
-| releases of tags | 64 | 11,086,651 | 13,186,659 | 1.24 | 2.61 | limit | 64 | 11,635,933 | 12,927,900 | 1.10 | 2.60 | limit |
-| restores of tags | 60 | 12,318,826 | 14,326,111 | 1.24 | 2.57 | gas | 64 | 13,510,562 | 14,382,925 | 1.04 | 2.56 | limit |
-| number changes of tags | 60 | 9,800,553 | 14,347,867 | 2.16 | 2.57 | gas | 64 | 9,444,331 | 14,406,133 | 2.24 | 2.56 | limit |
-| masks of masks | 64 | 9,119,129 | 13,112,731 | 1.75 | 2.61 | limit | 64 | 8,739,951 | 12,853,972 | 1.81 | 2.60 | limit |
-| folder entries re-bound to another file | 60 | 13,309,890 | 14,538,595 | 1.22 | 0.56 | gas | 61 | 13,272,109 | 14,364,081 | 1.19 | 0.56 | gas |
-| repeat publishes of existing name records | 64 | 12,687,090 | 13,564,175 | 1.11 | 1.12 | limit | 64 | 10,346,490 | 10,752,699 | 1.05 | 1.12 | limit |
-| fresh name records | 61 | 13,337,470 | 13,636,250 | 1.06 | 1.12 | gas | 64 | 10,370,680 | 10,648,792 | 1.06 | 1.12 | limit |
-| a name record and a first tag (2 actions each) | 21 | 13,412,498 | 13,773,634 | 1.02 | 1.31 | gas | 30 | 13,251,146 | 13,714,514 | 1.04 | 1.31 | gas |
-| registration chunk (word pages) | 64 | 13,909,124 | 14,275,123 | 1.08 | 1.12 | limit | 64 | 10,335,664 | 10,612,684 | 1.06 | 1.12 | limit |
-| create-file recipes (5 actions each) | 10 | 12,908,974 | 14,102,886 | 1.28 | 0.84 | gas | 12 | 10,861,569 | 11,848,168 | 1.26 | 0.84 | limit |
+| lone negatives, one-word topic | 38 | 13,164,513 | 14,333,094 | 1.13 | 1.39 | gas | 50 | 11,997,777 | 14,342,087 | 1.32 | 1.39 | gas |
+| first tags, depth 8, everything new | 18 | 11,241,065 | 11,416,697 | 0.50 | 1.41 | gas | 19 | 8,434,470 | 8,617,620 | 0.57 | 1.41 | gas |
+| first tags, depth 64, everything new | 3 | 10,449,420 | 10,512,290 | 0.07 | 1.27 | gas | 3 | 7,445,332 | 7,508,202 | 0.09 | 1.25 | gas |
+| first tags, depth 8, everything existing | 22 | 11,375,078 | 11,580,780 | 0.55 | 1.42 | gas | 20 | 8,317,111 | 8,507,778 | 0.55 | 1.41 | gas |
+| first tags, depth 64, everything existing | 4 | 8,223,087 | 8,293,475 | 0.12 | 1.29 | gas | 3 | 7,356,587 | 7,419,457 | 0.09 | 1.25 | gas |
+| second author's first tags, depth 8 | 22 | 11,663,122 | 11,868,824 | 0.53 | 1.42 | gas | 20 | 8,321,247 | 8,511,914 | 0.55 | 1.41 | gas |
+| masks of tags | 64 | 11,199,715 | 13,266,911 | 1.23 | 2.60 | limit | 44 | 8,034,574 | 14,141,417 | 2.12 | 2.59 | gas |
+| releases of tags | 64 | 11,120,967 | 13,186,691 | 1.23 | 2.60 | limit | 44 | 7,981,045 | 14,086,876 | 2.12 | 2.59 | gas |
+| restores of tags | 60 | 12,348,002 | 14,326,143 | 1.24 | 2.56 | gas | 41 | 8,631,234 | 14,069,123 | 2.01 | 2.55 | gas |
+| number changes of tags | 60 | 9,831,469 | 14,347,899 | 2.14 | 2.56 | gas | 41 | 6,081,753 | 14,083,982 | 4.25 | 2.55 | gas |
+| masks of masks | 64 | 9,151,013 | 13,112,763 | 1.74 | 2.60 | limit | 44 | 5,996,830 | 14,035,429 | 3.48 | 2.59 | gas |
+| folder entries re-bound to another file | 60 | 13,342,170 | 14,538,627 | 1.21 | 0.56 | gas | 40 | 8,743,008 | 14,160,624 | 2.27 | 0.57 | gas |
+| repeat publishes of existing name records | 64 | 12,694,014 | 13,564,207 | 1.11 | 1.16 | limit | 64 | 10,353,652 | 12,921,577 | 1.56 | 1.16 | limit |
+| fresh name records | 61 | 13,346,757 | 13,638,966 | 1.05 | 1.17 | gas | 64 | 10,381,168 | 12,820,487 | 1.93 | 1.16 | limit |
+| a name record and a first tag (2 actions each) | 21 | 13,427,297 | 13,774,590 | 1.02 | 1.32 | gas | 27 | 11,974,734 | 14,071,173 | 1.40 | 1.32 | gas |
+| registration chunk (word pages) | 64 | 13,918,864 | 14,277,971 | 1.08 | 1.16 | limit | 64 | 10,346,164 | 12,784,391 | 1.92 | 1.16 | limit |
+| create-file recipes (5 actions each) | 10 | 12,922,344 | 14,103,798 | 1.28 | 0.85 | gas | 12 | 10,877,817 | 13,373,334 | 1.70 | 0.85 | limit |
 
-> **Will change at regeneration (2026-11-26, the Glamsterdam rewrite price).** The amsterdam columns above were
-> planned with the floor pricing a rewrite at 5,000; on Glamsterdam a cold rewrite costs 12,100 of execution gas
-> (docs/GAS-SCHEDULES.md), and `floorRewriteGas` is now 12,100 there. The integration step regenerates
-> `gas/model.json` and `test/vectors/floor-plan.json` and refills this table; until then, the rule's figures on
-> amsterdam with the corrected price (`tools/gas-plan.mjs` on the committed model with only
-> `profiles.amsterdam.floor.limits.floorRewriteGas` changed, which is all the regeneration changes for these figures;
-> V and P in gas, E is unchanged) are below. **Prague does not move** (every prague figure of the vectors is identical).
-> Measured after the fix (`FloorPlan.t.sol`, amsterdam, prefix P / spend at the new k): lone negatives 1.33, masks and
-> releases 2.12, restores 2.01, number changes 4.25, masks of masks 3.49, folder re-binds 2.27, repeat publishes 1.56,
-> name records 1.93, a name record and a first tag 1.40, registration chunk 1.93, create files 1.70; deep first tags
-> 0.08–0.57 (the floor does not know the depth). The "lists exist" state (`FloorStates.t.sol`) is 1.26–2.16 on
-> amsterdam and 1.05–1.65 on prague.
->
-> | shape | k before | k after | V at the old k, before | V at the old k, after | V at the new k | P at the old k, before → after |
-> |---|---:|---:|---:|---:|---:|---:|
-> | lone negatives, one-word topic | 54 | 50 | 14,053,591 | 15,272,722 | 14,168,540 | 7,037,000 → 8,577,700 |
-> | first tags, depth 8, everything new | 19 | 19 | 13,754,312 | 13,754,312 | 13,754,312 | 2,543,800 → 3,090,500 |
-> | first tags, depth 64, everything new | 3 | 3 | 10,695,394 | 10,695,394 | 10,695,394 | 487,000 → 579,300 |
-> | first tags, depth 8, everything existing | 20 | 20 | 13,932,229 | 13,932,229 | 13,932,229 | 2,666,300 → 3,241,400 |
-> | first tags, depth 64, everything existing | 3 | 3 | 12,950,875 | 12,950,875 | 12,950,875 | 487,000 → 579,300 |
-> | second author's first tags, depth 8 | 20 | 20 | 13,844,526 | 13,844,526 | 13,844,526 | 2,666,300 → 3,241,400 |
-> | masks of tags | 64 | 44 | 12,704,934 | 20,215,299 | 14,012,475 | 7,903,300 → 15,180,800 |
-> | releases of tags | 64 | 44 | 12,627,430 | 20,137,795 | 13,959,191 | 7,903,300 → 15,180,800 |
-> | restores of tags | 64 | 41 | 14,077,990 | 21,588,355 | 13,961,666 | 7,903,300 → 15,180,800 |
-> | number changes of tags | 64 | 41 | 14,101,222 | 21,611,587 | 13,976,549 | 7,903,300 → 15,180,800 |
-> | masks of masks | 64 | 44 | 12,704,934 | 20,215,299 | 14,012,475 | 7,903,300 → 15,180,800 |
-> | folder entries re-bound to another file | 61 | 40 | 14,073,457 | 21,232,118 | 14,048,790 | 7,537,300 → 14,474,000 |
-> | repeat publishes of existing name records | 64 | 64 | 10,235,327 | 12,404,173 | 12,404,173 | 4,332,900 → 6,434,500 |
-> | fresh name records | 64 | 64 | 11,269,792 | 13,438,639 | 13,438,639 | 2,554,200 → 4,655,800 |
-> | a name record and a first tag (2 actions each) | 30 | 27 | 13,888,111 | 15,785,851 | 14,257,629 | 5,099,600 → 6,938,500 |
-> | registration chunk (word pages) | 64 | 64 | 11,355,002 | 12,467,925 | 12,467,925 | 2,554,200 → 4,655,800 |
-> | create-file recipes (5 actions each) | 12 | 12 | 11,786,032 | 13,310,086 | 13,310,086 | 4,205,000 → 5,681,800 |
-> | edits: PUBLISH child + HEAD re-bind (2 actions each; not a FloorPlan shape) | 30 | 23 | 13,860,905 | 18,396,433 | 14,194,389 | 5,992,100 → 10,387,000 |
->
-> The "64 lone negatives fit one amsterdam publication" statement below (V 16.45M) no longer holds: with 12,100 the
-> floor's requirement for 64 is 18.34M against the 16.60M a 2^24 transaction leaves (`IndexFloor.t.sol`).
+Measured with this release's code and the regenerated `test/vectors/floor-plan.json` (`FloorPlan.t.sol -vv` on both
+profiles). **Since the Glamsterdam rewrite price** (the floor's `floorRewriteGas` 12,100 on a Glamsterdam Realm, was
+5,000; docs/GAS-SCHEDULES.md, tools/RELEASE.md item 39) the amsterdam columns moved; prague's did not (every prague `k`
+and floor quote is as before; E and V moved by a few gas to a few thousand with this release's code). The planning
+rule's floor quote V and largest batch on amsterdam, from `gas/model.json` `planning` and the floor-plan vectors at
+`726993e` against this release (V at the largest batch; the edits shape is the planner's only, `tools/gas-plan-later.mjs`):
+
+| shape | k before | k after | V at the old k, before | V at the old k, after | V at the new k | P at the old k, before → after |
+|---|---:|---:|---:|---:|---:|---:|
+| lone negatives, one-word topic | 54 | 50 | 14,053,591 | 15,272,720 | 14,168,538 | 7,037,000 → 8,577,700 |
+| first tags, depth 8, everything new | 19 | 19 | 13,754,312 | 13,754,796 | 13,754,796 | 2,543,800 → 3,090,500 |
+| first tags, depth 64, everything new | 3 | 3 | 10,695,394 | 10,695,526 | 10,695,526 | 487,000 → 579,300 |
+| first tags, depth 8, everything existing | 20 | 20 | 13,932,229 | 13,932,735 | 13,932,735 | 2,666,300 → 3,241,400 |
+| first tags, depth 64, everything existing | 3 | 3 | 12,950,875 | 12,951,007 | 12,951,007 | 487,000 → 579,300 |
+| second author's first tags, depth 8 | 20 | 20 | 13,844,526 | 13,845,032 | 13,845,032 | 2,666,300 → 3,241,400 |
+| masks of tags | 64 | 44 | 12,704,934 | 20,215,297 | 14,012,473 | 7,903,300 → 15,180,800 |
+| releases of tags | 64 | 44 | 12,627,430 | 20,137,793 | 13,959,189 | 7,903,300 → 15,180,800 |
+| restores of tags | 64 | 41 | 14,077,990 | 21,588,353 | 13,961,664 | 7,903,300 → 15,180,800 |
+| number changes of tags | 64 | 41 | 14,101,222 | 21,611,585 | 13,976,547 | 7,903,300 → 15,180,800 |
+| masks of masks | 64 | 44 | 12,704,934 | 20,215,297 | 14,012,473 | 7,903,300 → 15,180,800 |
+| folder entries re-bound to another file | 61 | 40 | 14,073,457 | 21,232,116 | 14,048,788 | 7,537,300 → 14,474,000 |
+| repeat publishes of existing name records | 64 | 64 | 10,235,327 | 12,404,939 | 12,404,939 | 4,332,900 → 6,434,500 |
+| fresh name records | 64 | 64 | 11,269,792 | 13,440,045 | 13,440,045 | 2,554,200 → 4,655,800 |
+| a name record and a first tag (2 actions each) | 30 | 27 | 13,888,111 | 15,786,509 | 14,258,221 | 5,099,600 → 6,938,500 |
+| registration chunk (word pages) | 64 | 64 | 11,355,002 | 12,469,331 | 12,469,331 | 2,554,200 → 4,655,800 |
+| create-file recipes (5 actions each) | 12 | 12 | 11,786,032 | 13,310,756 | 13,310,756 | 4,205,000 → 5,681,800 |
+| edits: PUBLISH child + HEAD re-bind (2 actions each; not a FloorPlan shape) | 30 | 23 | 13,860,905 | 18,396,731 | 14,194,617 | 5,992,100 → 10,387,000 |
+
+The budget is 14,260,633 (2^24 less the 15% headroom). Prague, the same files: every `k` is unchanged (38, 18, 3, 22,
+4, 22, 64, 64, 60, 60, 64, 60, 64, 61, 21, 64, 10; edits 24) and every P is unchanged; V moved by +22 to +1,364 gas with
+this release's re-fitted constants. 64 lone negatives no longer fit one amsterdam publication: the floor's requirement
+for 64 is 18.34M against the 16.60M a 2^24 transaction leaves (`IndexFloor.t.sol`), so the rule plans 50.
 
 The model's estimates for deep tags run high (the composition prices every roll-up append from the per-level terms
 with the price-as-new rule), so the rule under-fills those publications rather than over-fills them.
 
-**The floor** (`IndexFloor.t.sol`, both profiles). 64 lone negatives on a one-word topic execute in 15.46M on
-amsterdam; the kernel's own share K is 7.34M, the prefix floor 8.32M and the final reserve 494k (1.39× the final
-phase's 355k); the floor's requirement V = max(K + P·(64/63)² + 2k, E) + F·64/63 + 20k is 16.45M, within the 16.60M
-a 2^24 transaction leaves after intrinsic gas and calldata, so all 64 are admitted in one publication. On prague
-their execution gas alone is over the cap. The final phase's worst cases, 64 actions each (amsterdam execution gas,
+**The floor** (`IndexFloor.t.sol`, both profiles). 64 lone negatives on a one-word topic execute in 15.49M on
+amsterdam; the kernel's own share K is 7.34M, the prefix floor 10.15M (8.32M with a rewrite priced at 5,000) and the
+final reserve 494k (1.39× the final phase's 355k); the floor's requirement V = max(K + P·(64/63)² + 2k, E) + F·64/63 +
+20k is 18.34M, over the 16.60M a 2^24 transaction leaves after intrinsic gas and calldata (it was 16.45M, within it),
+so the planning rule splits them (50 a publication). On prague their execution gas alone is over the cap. The final phase's worst cases, 64 actions each (amsterdam execution gas,
 reserve 494k): first masks about 64 created subjects 994k, about 64 records 738k, first tags on 64 distinct topics
 471k, lone negatives about addresses 355k: the per-bind reserve (`finalComputePerBind` 7,400) is set from the topics
 row, and a per-bind term large enough for the subjects row would put 64 lone negatives over the cap (design §10.4).

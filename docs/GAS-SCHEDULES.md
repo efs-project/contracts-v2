@@ -70,8 +70,11 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
   solc's experimental `amsterdam` target (`experimental = true`) and runs the same suites under the repriced
   schedule; forge-std 1.17.0 exposes `vm.lastFrameGas()` with `gasStateUsed` there (it is zero under prague).
   Those bytes are never shipped or size-gated.
-- End-to-end fixture measurements can also run on **anvil 1.8.3 with `--hardfork amsterdam`** against the
-  prague build and record `gasUsed` from receipts.
+- **anvil 1.8.3 does not measure Glamsterdam.** It accepts `--hardfork amsterdam` and a gas limit above 2^24, but
+  applies prague pricing: no state gas and no reservoir (measured on this machine). So a fixture run there records
+  prague receipts, and nothing in this repository confirms the above-cap state-gas path end to end; that waits on a
+  client that implements EIP-8037 (tools/RELEASE.md §15). Glamsterdam figures come only from the amsterdam profile
+  above, which draws state gas from the same gas as execution (the rule of a transaction at or below 2^24).
 - The gas report in every release bundle records, per supported operation: fresh slots, rewritten slots,
   cleared slots, code bytes deployed and accounts created, so either schedule can be applied without
   re-measuring. "Within ±10k of the prototype" statements are meaningless as Glamsterdam statements.

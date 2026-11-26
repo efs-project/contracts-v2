@@ -201,10 +201,10 @@ itself.
   carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
   history and is switched on, and its lists equal those of a Realm that kept the list from genesis, key by key
   ([INDEX-BUILD.md](INDEX-BUILD.md) §2.2, §8; the list and its generation are an example, not product). The build's cost
-  is measured (step 4, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the Realm's whole history, about 485k gas
-  per file today (582k on Glamsterdam, state gas included) against about 51k (150k) to keep the list from the start,
-  9.5 times (3.9 times) as much; 10,000 files cost about 4.8 billion gas in some 290 transactions, a million files
-  about 485 billion in some 29,000. So adding it later is realistic for a small or young Realm and an indexer is the
+  is measured (step 4, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the Realm's whole history, about 478k gas
+  per file today (576k on Glamsterdam, state gas included) against about 51k (150k) to keep the list from the start,
+  9.3 times (3.8 times) as much; 10,000 files cost about 4.8 billion gas in some 286 transactions, a million files
+  about 478 billion in some 28,500. So adding it later is realistic for a small or young Realm and an indexer is the
   route for a large one. The condition: adding a
   generation is an act of the Realm's controller, possible until the Realm is frozen, so the option exists only while
   the Realm is not frozen (Q52).
@@ -277,15 +277,18 @@ none. Registration parts are safe to send first and harmless if the save is aban
 
 **The planning rule and the floor.** Before each index call the kernel requires a floor of visible gas, priced from
 the index's work model in slot counts (DESIGN §10.4, formula 2). The release fixes the spike's finding: the final
-reserve per bind is 7,400 (it was 120,000), so 64 lone negatives fit one publication on Glamsterdam, and three terms
+reserve per bind is 7,400 (it was 120,000), and three terms
 keep the quote above what the index spends (later statements, publishes of existing records, the final phase per
 publish). The floor does not know a tag's depth; the gas model does. So the SDK plans every publication from the
 published gas model (`planning`, `floor`, the per-level terms; `tools/gas-plan.mjs` is the reference planner): a
 publication is planned when it is inside the Realm's limits and its estimate and the floor's requirement both fit
 under the cap less 15%, and anything larger is split before it is signed. The largest planned publication of each
 of seventeen shapes is tested on both schedules (TAG-NUMBERS "The largest publication"): for example 38 lone
-negatives today and 54 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
-recipes, and 64 masks, releases or registration pages. `indexFloor` is an upper bound only; the fixture checks that
+negatives today and 50 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
+recipes, 64 masks or releases today and 44 on Glamsterdam, and 64 registration pages on both. On Glamsterdam the floor
+prices a rewrite of an existing slot at 12,100 (its real execution price there; it was 5,000), which makes the quote
+cover what the index spends in every state and lowers the largest batch of later statements (masks, releases,
+restores, number changes) and folder re-binds; 64 lone negatives no longer fit one Glamsterdam publication. `indexFloor` is an upper bound only; the fixture checks that
 the deployed index prices exactly like the published model.
 
 ## 6. Reading

@@ -50,6 +50,47 @@ tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --j
 
 ## What changes for a consumer in this release
 
+**This release IS a re-vendor point.** The SDK is pinned to `cbf5b78` ("Merge the reader release: frontier in
+TopicPageInfo"); this release (items 32 to 41) moves it to the final-step head. Re-vendor `release/`, `artifacts/`,
+`deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/`, `vectors/layout.json` and `test/vectors/`
+together, and re-pin every value of "The identity table" below, which compares against `cbf5b78`. What a consumer must
+change:
+
+- **ABI.** `IIndexReads` gained `liveManifestCopy()` (selector `0x1c317828`; `test/snapshots/abi/IIndexReads.json` is
+  the only ABI snapshot that differs from `cbf5b78`). The hot and store ABI ids did not move (item 37).
+- **Errors** (`release/errors.json`). New `E_INDEX_NOT_READY` reason 14 (the candidate's copy of the live index's
+  manifest is not the recorded one) and `E_PIN` code 12 (a copy over 24,575 B); reason 12 no longer covers "the live
+  index has no code"; `E_BUILD(7)` also covers a stale or wrong copy and a refused new fold-hook unit (item 37).
+- **Topic readers** (item 38). A list the index reports PARTIAL is treated as UNKNOWN; every refused topic page
+  carries no counts (`rawTotal`, `positionsEver` and a count view's two counts are 0). No reader ABI changed; the three
+  readers' addresses did.
+- **Glamsterdam floor and batch sizes** (item 39). A Glamsterdam Realm prices a rewrite at 12,100 in the floor
+  (`profiles.amsterdam.floor.limits.floorRewriteGas`, was 5,000); amsterdam's largest planned batches fall for the
+  rewrite-heavy shapes (lone negatives 54 → 50; masks, releases and masks of masks of tags 64 → 44; restores and number
+  changes 64 → 41; folder re-binds 61 → 40; a name record and a first tag 30 → 27; edits 30 → 23). Prague's plan,
+  quotes and `k` did not move. A planner that reads the model needs no code change; one that hard-codes batch sizes does.
+- **Gas model** (item 40). `validation` rows gained `state` (`listsNew` | `listsExist`) and four composites; amsterdam
+  rows gained `executionErrorPercent`. The stated maximum errors: prague 5.80% (`maxAbsErrorPercent`); amsterdam
+  12.03% on all gas (`maxAbsErrorPercent`) and 10.62% on execution gas (`maxAbsExecutionErrorPercent`, new and
+  required); each names its composite (`maxAbsErrorComposite`, `maxAbsExecutionErrorComposite`). **On amsterdam test the
+  2^24 cap condition against `maxAbsExecutionErrorPercent`**, never against the all-gas figure.
+- **Read bounds.** `reads.schedules.*.bounds.*.everyoneExact.maxSkippedEntries` is 247 at every lens on both schedules
+  (was 248). The recommended limits (`limitEntries` 245, `maxRows` 150, `pageTimesLens` 768 / 416 / 688 / 408) did not
+  move on either schedule.
+- **Addresses.** Every genesis address on the fixture Realm moved (the control delegate changed, and genesis embeds
+  it), with the index, its reads contract and every reader that embeds the ledger's address; recompute them for any
+  other `(chainId, realmSalt)` with `tools/deploy-plan.mjs`.
+
+What did not change: the layout id, the hot ABI ids (release and test) and both store ABI ids, the status vocabulary
+id, the limits profile id, every Type id, every action, write and read ABI other than `IIndexReads`, the ingress and
+apply delegates, the registry implementation, the decoder, `ledgerReads`, `ledgerViews`, `readerDirectory`,
+`keysView`, every Files rule and the validator, the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`), and
+prague's floor prices and largest batches. The gas-model constants moved only with this release's code: +20 to +134
+gas each on both schedules (`fixed` 315,834 → 315,854 on prague, 899,154 → 899,174 on amsterdam); no row was re-fitted
+and no term was added.
+
+### The tag release (the SDK's earlier re-vendor, against `cc59d0c`)
+
 The SDK's single re-vendor moves it from the release it vendors now (`cc59d0c`, "Merge the folder identity fix and
 the remove/move/hide recipes") to this one: the tag work of docs/TAG-DESIGN.md, built in the order of its §12 and
 integrated on `fable/2026-11-25-tags-release`. Everything below is a change a consumer must make or a fact it must
@@ -186,69 +227,57 @@ checked against the gas model field by field by the fixture (`verify`, group `pr
 BIND and UNBIND as a first statement; it is exact only when every bind-kind action is one. Plan from the gas model's
 rule, never from `indexFloor`.
 
-**15. Pre-freeze gates** (none blocks a disposable testnet; each blocks freezing a Realm):
+**15. Pre-freeze gates** (none blocks a disposable testnet; each blocks freezing a Realm). One current list, as of
+this release.
 
-- **The build-from-history step and its three counters.** A later index generation builds its new families from
-  history before it is attached (design §10.6). It must rebuild three COUNTERS, not only list entries: family 5's
-  `live`, family 20's yes-count and the distinct figure of families 6 and 7. The design is `docs/INDEX-BUILD.md`
-  (reviewed 2026-11-25), built in four steps. **Done (step 1, item 23):** a generation that carries every store it
-  names (a re-pin, for example generation 1's code with a fixed hook) can be built and activated on a Realm with
-  history, and the kernel's two readiness checks of carried and fresh stores (`E_INDEX_NOT_READY` 12 and 13) are in
-  `LedgerControl`. **Done (step 2, item 26):** the budgeted walk of history into a generation's fresh stores, for
-  generation 1's families: a generation can rebuild both stores (the heal path, case (e)) or rebuild either store
-  while carrying the other, and the rebuilt stores, all three counters among them, equal the live ones
-  (`test/index/BuildWalk.t.sol`). **Not done:** a generation that carries the genesis stores and builds a NEW family
-  into an extra fresh store, with its deployer plan, its reads contract's per-family store routing and the
-  built-equals-live tests for that family (step 3), and the measured cost of a build (step 4; step 2's preview: every
-  admitted publication shape builds in one call under 2^24 on both schedules, so leaf-granular resume is not needed).
-  **Done (step 3a, item 32): the as-of rule.** A fold from history reads every fact as of the admission it folds and
-  takes no fact from a validator's law, so a build is exact over any admitted history, including history no validator
-  judged (docs/INDEX-BUILD.md §4.3, which audits every read of the fold and the decoder). **Done (step 3b, item 34):**
-  the harness generation (it carries the genesis stores, keeps a new list, `head-authors`, in a third fresh store,
-  has a deployer plan of carried and fresh stores and a reads contract that routes and covers per family; an example,
-  not product) and built-equals-live for that list against a Realm that ran it from genesis, every counter included;
-  the dropped-list test (dropping a list from a carried store activates, the replaced generation's late walk writes
-  only the dropped list (since item 37 it is refused outright once its copy is stale), declaring it in that store
-  again is refused 12, the kept lists equal a twin Realm's: no
-  kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
-  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE; since item 38 PARTIAL is treated exactly as
-  UNKNOWN); a new unit's fold hook built with the walk;
-  and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
-  add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **Done (step 4, item 36): the
-  measured gas of a build** on both schedules (`test/index/BuildGas.t.sol`, docs/INDEX-BUILD.md §6): adding
-  `head-authors` later to a Realm of 1,000,000 files costs 484.6B gas in 28,920 transactions on prague (484,560 a file)
-  and 582.4B on amsterdam (474.7B of execution in 28,330 transactions and 107.7B of state gas), against 51,167 /
-  149,608 a file to keep it from genesis (9.5× / 3.9×); 10,000 files cost 4.85B / 5.82B; a full replay of the same
-  history 1,237.6B / 3,121.3B; every admitted publication builds in one call under 2^24, both for a later list and
-  for a full replay, so a build never needs to resume inside a publication. **Done (item 37): the liveness gate and
-  Option A** (below). **What remains of the gate:** case (d), a digest spec rebuilt in a fresh store (its test, §8
-  test 9); if a real later generation adds a HEAD list, a per-purpose work-model term or an accepted over-quote of TAG
-  and FOLDER statements (docs/INDEX-BUILD.md §6.2: lone negatives 38 → 32 on prague, 54 → 47 on amsterdam; create
-  files 10 → 9 on prague); and the amsterdam rewrite price of the floor (docs/INDEX-BUILD.md §10 item 29: no planned
-  transaction fails, but the quote is 0.969× a create-file recipe's spend in a folder where the author already has
-  files; fixed in this release, item 39).
-- **Activation must not depend on the live index answering. DONE (item 37).** The candidate carries a copy of the live
-  index's manifest preimage; the kernel (reason 14) and the generation check it against the recorded
-  `indexManifestHash` and never call the live index, so a broken live index is replaced by an ordinary re-pin
-  (docs/INDEX-BUILD.md §10). **The fold-hook gap is DONE too (Option A, item 37):** a re-pin that adds a fold-hook unit
-  is refused unless it walks and builds that hook. Still true and written down: an activation that KEEPS a live index
-  which no longer answers reverts with that index's error (its reason-2 phase read; replacing the index is the
-  recovery, docs/INDEX-BUILD.md §5.3); a manifest copy over 24,575 B is refused, not split; and until freeze any
-  replacement Type registry must keep existing Type rows unchanged, because the decoder's reference-count read depends
-  on it (docs/INDEX-BUILD.md §4.3).
+**Done:**
+
+- **The build from history, steps 1 to 4** (docs/INDEX-BUILD.md, reviewed 2026-11-25). A later index generation that
+  carries the stores it names can be built and activated on a Realm with history, and the kernel checks carried and
+  fresh stores (`E_INDEX_NOT_READY` 12 and 13; step 1, item 23); the budgeted walk of history rebuilds generation 1's
+  families, all three counters among them, into fresh stores (step 2, item 26); a new list in a further fresh store is
+  built from history and equals a Realm that kept it from genesis, key by key, with the dropped-list, fold-hook and
+  partial-coverage tests (step 3b, item 34; the list is a test harness, not product).
+- **The as-of rule** (step 3a, item 32): a fold from history reads every fact as of the admission it folds and takes
+  no fact from a validator's law (docs/INDEX-BUILD.md §4.3).
+- **The liveness gate** (item 37): activation never depends on the live index answering; the candidate carries a copy
+  of the live index's manifest, which the kernel (reason 14) and the generation check against the recorded hash.
+- **The fold-hook refusal** (Option A, item 37): a generation that carries a store is refused a fold-hook unit the live
+  index does not declare, unless it walks history and names the unit as built.
+- **The Glamsterdam rewrite price** (item 39): a Glamsterdam Realm's floor prices a rewrite at 12,100, so the quote
+  covers the callbacks' spend in every measured state on both schedules (docs/INDEX-BUILD.md §10 item 29, fixed).
+- **Measured build gas** (step 4, item 36; re-measured with the manifest copy, docs/INDEX-BUILD.md §6): adding
+  `head-authors` later to a Realm of 1,000,000 files costs 477.7B gas in 28,513 transactions on prague (477,732 a file)
+  and 575.7B on amsterdam (468.0B of execution in 27,930 transactions and 107.7B of state gas), against 51,167 /
+  149,608 a file to keep it from genesis (9.3× / 3.8×); a cold build call's fixed share is 0.25M to 0.29M (it was
+  0.49M to 0.52M while the carried check called the live index); every admitted publication builds in one 2^24 call.
+
+**Open:**
+
+- **The above-cap state-gas path, end to end, on a client that implements EIP-8037.** The floor quote stays in
+  execution gas (the integration owner's ruling); a transaction with much state gas funds it by setting `tx.gas` above
+  2^24, from EIP-8037's reservoir. Nothing here has confirmed that path: Foundry's amsterdam profile has no reservoir,
+  and anvil 1.8.3 accepts `--hardfork amsterdam` and a gas limit above 2^24 but applies prague pricing (no state gas,
+  no reservoir; measured on this machine).
+- **Later statements on Glamsterdam are over-reserved.** The work model has no compute term for later statements and
+  no per-purpose term: it charges a later statement (`rwPerBindLater`) twelve "rewrites" that are really compute, so at
+  12,100 a rewrite later statements are reserved 2.0 to 4.3 times their spend on Glamsterdam and their batches shrink
+  (masks, releases and masks of masks 64 → 44, restores and number changes 64 → 41, folder re-binds 61 → 40; accepted
+  for this release). The remedy is a compute term for later statements in the reservation formula, decided together
+  with QUESTIONS Q52 (a per-purpose term, which a later HEAD list would need too: docs/INDEX-BUILD.md §6.2) as one
+  change to the formula. The formula is in `LedgerIngress`, which has 396 B left under the 19,660 B budget, so the
+  change needs a size plan before code.
+- **The digest-spec case (d)**: a digest spec rebuilt in a fresh store (docs/INDEX-BUILD.md §8 test 9).
+- **The Type registry**: until freeze any replacement Type registry must keep existing Type rows unchanged, because
+  the decoder's reference-count read depends on it (docs/INDEX-BUILD.md §4.3).
+- **Keeping an index that no longer answers**: an activation that keeps a live index which no longer answers still
+  reverts with that index's error (its reason-2 phase read); replacing the index is the recovery
+  (docs/INDEX-BUILD.md §5.3). A manifest copy over 24,575 B is refused, not split.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
   15.1; one committed generator from one pinned Unicode version must produce all three (it waits on the fold rule,
   QUESTIONS Q53). Until then the `topic-word/1`, `topic/1` and `text/1` Type ids are provisional.
 - **The expiry field's width.** The head row's expiry field is 32 bits (seconds until 2106) since the number took
   16; widening it later is a layout change (`layoutId`), so its width is settled before freeze.
-
-- **The above-cap state-gas path on a real Glamsterdam chain.** EIP-8037 counts intrinsic gas and calldata as
-  execution gas inside the 2^24 cap and funds state gas from a reservoir only when `tx.gas` exceeds the cap
-  (docs/GAS-SCHEDULES.md); a transaction at or below the cap pays state gas from ordinary gas, which is what
-  Foundry's amsterdam profile emulates. The floor quote stays in execution gas (the integration owner's ruling): a
-  transaction with much state gas funds it by setting `tx.gas` above 2^24. What remains is to confirm that path end to
-  end on a chain that runs the new rules (Foundry's amsterdam profile has no reservoir; the fixture tool runs only
-  osaka and prague).
 
 **16. A gap in CI, now closed (it predates this release).** `pnpm check` ran only before the build in CI, so its
 artifact checks were reported as pending and never ran there: the opcode lint that the ingress writes nothing, the
@@ -404,9 +433,9 @@ new `generationProgress()` is in no consumer interface).
 
 ### The topic page frontier (this release against `24fa269`; the SDK re-vendors from `0fb4804`)
 
-**A consumer re-vendors for this release.** It is the next re-vendor point after `0fb4804`, the commit the SDK is
-pinned to: re-vendor the same directories as above (`test/snapshots/abi/` included) and re-pin every value of the
-identity table below, which compares against `0fb4804`. Between `0fb4804` and this release:
+**A consumer re-vendored for this release** (it became `cbf5b78`, the commit the SDK is pinned to now): it was the
+next re-vendor point after `0fb4804`. Between `0fb4804` and that release (the identity table below now compares this
+release against `cbf5b78`; the values at `cbf5b78` are its "was" column):
 
 - **Build from history, steps 1 and 2** (items 23 to 28) change nothing a client can call: no ABI, action, write or
   read; they move the release digest, the plan hash, the execution set, the index's identities and, through the
@@ -544,7 +573,11 @@ transaction needs the state gas on top, and a single create-file sent with exact
 refused (14k to 56k short; with the 15% headroom it is admitted, and every planned batch is admitted with exactly the
 plan). Take the gas limit from `eth_estimateGas`, as the planning rule says, never from V; on prague the plan covers
 every measured shape with no headroom (41,534 to spare for the tightest). A callback that runs out never lets a
-publication land unindexed: it is refused `E_INDEX_GAS` and nothing is admitted.
+publication land unindexed: it is refused `E_INDEX_GAS` and nothing is admitted. *(Since items 37 and 39, at
+regeneration: the fixed share of a cold call is 0.25M–0.29M and the 1,000,000-file build 477.7B / 575.7B, because the
+carried check reads the manifest copy from code; and with the Glamsterdam rewrite price one create-file recipe sent
+with exactly max(E, V) plus its state gas is admitted on amsterdam in both states, 114,791 and 78,791 to spare.
+docs/INDEX-BUILD.md §6, §10 items 29 and 39.)*
 
 **37. The liveness gate and Option A (build from history; docs/INDEX-BUILD.md §3.5, §3.6, §5.3, §10 items 34–38).**
 A consumer **re-vendors for the release this lands in**: an ABI, an error, the index's constructor and three units'
@@ -561,15 +594,22 @@ code changed.
   contract's address and codehash; it does not need the live index to answer) and passes it as `IndexReads`' new last
   constructor argument (`IndexDeployer.Plan.liveManifest`); genesis passes empty bytes. The copy is held as the code of
   a data contract the reads contract creates (`LIVE_COPY`, `LIVE_COPY_CODEHASH`). **What an operator pays** (measured,
-  `test/index/LivenessCost.t.sol`): for generation 1's shape (7,168 B) about 1.54 M gas on prague and 0.27 M execution +
-  11.2 M state gas on amsterdam on top of the reads contract's deployment; a copy grows 320 B per family and 320 B per
+  `test/index/LivenessCost.t.sol`, re-run on this release's build: the real `IndexReads` with generation 1's copy
+  against an empty one): for generation 1's shape (7,168 B) 1,537,383 gas on prague and 271,177 execution + 11,152,170
+  state gas on amsterdam on top of the reads contract's deployment (`liveManifestCopy()` cold: 7,374 / 7,974); genesis
+  passes an empty copy, so `gas/report.json` has no row for it; a copy grows 320 B per family and 320 B per
   unit (+32 B per unit family id, +96 B per digest spec). A copy is valid only while the index it copies is live: if
   the live index is replaced before the candidate is activated, redeploy the candidate with a fresh copy.
 - **Option A.** A generation that carries a store refuses (`build` 7, readiness not ready, activation 8) any fold-hook
   unit the live index does not declare with the same fold hook, fold codehash and `purposeFilter`, unless the
   generation walks history and its reads contract names the unit as built (`IndexReads.builtHooks()`, read by the
   generation at construction into `RealmIndex.BUILT_HOOKS`). Final-hook-only units and the empty Realm are unaffected.
-  Generation 1 builds none (`builtHooks() == 0`).
+  Generation 1 builds none (`builtHooks() == 0`). The claim "this generation builds that hook" counts only when the
+  generation actually walks history, that is when it has a fresh store; a generation that carries every store is
+  refused a new fold-hook unit whatever it claims.
+- **A replaced generation that carries any store can no longer build at all**, because its manifest copy went stale
+  when the index it copied was replaced; only a generation whose every store is fresh can still walk history late
+  (docs/INDEX-BUILD.md §5.3).
 - **Addresses move.** `IndexReads` (constructor, code), `RealmIndex` (code: `BUILT_HOOKS`, `_hookRuns`) and
   `LedgerControl` (the controller delegate: reason 14) changed, so their runtime codehashes and every address and
   identity derived from them move: the index and its reads contract, the index manifest hash and obligations, the
@@ -603,8 +643,8 @@ now also covers "the index is still building this list".
 
 **The Glamsterdam floor price and the ordinary-state composites.** A consumer re-vendors `gas/model.json`,
 `schemas/`, `test/vectors/` and the release digest once this lands; nothing a client calls changes (no ABI, action,
-read, error, Type id or `src/` file moved). **The regenerated figures below are marked PLACEHOLDER: the integration
-step regenerates `gas/model.json`, `release/` and `test/vectors/floor-plan.json` once and fills them in.**
+read, error, Type id or `src/` file moved). The figures below are the regenerated files' (`gas/model.json` and
+`test/vectors/floor-plan.json` against the same files at `726993e`).
 
 **39. The Glamsterdam floor prices a rewrite at 12,100, not 5,000.** On Glamsterdam (EIP-8038) a cold rewrite of an
 existing slot costs 12,100 of execution gas, the same as the execution part of a fresh slot (prague 5,000 and 22,100);
@@ -614,13 +654,13 @@ prices of both schedules are now read from one table, `tools/deploy-plan.mjs` `G
 Solidity suites in `test/vectors/gas-schedules.json`; `tools/test/gas-schedules.test.mjs` checks the mirror, the
 docs/GAS-SCHEDULES.md table and the floor constants against it, `test/integration/FloorPrices.t.sol` checks the
 harness against the mirror and measures both prices on each profile, and `tools/release.mjs` refuses a model whose
-amsterdam `floor.limits` differ). What it changes for a consumer: **on amsterdam only** (prague's quote, plan and
-vectors are byte-for-byte unchanged), the floor quote P of a publication grows by 7,100 per quoted rewrite, so its
+amsterdam `floor.limits` differ). What it changes for a consumer: **on amsterdam only** (prague's quotes P and every
+prague `k` are unchanged; prague's V moved by +22 to +1,364 gas with this release's re-fitted constants), the floor quote P of a publication grows by 7,100 per quoted rewrite, so its
 requirement V grows and the planning rule's largest batch falls for the rewrite-heavy shapes: lone negatives 54 → 50,
 masks, releases and masks of masks of tags 64 → 44, restores and number changes 64 → 41, folder re-binds 61 → 40,
 a name record and a first tag 30 → 27 units, edits (PUBLISH child + HEAD re-bind) 30 → 23; first tags, name records,
 repeat publishes, registration chunks and create-file recipes keep their k (docs/TAG-NUMBERS.md has the full table).
-64 lone negatives no longer fit one amsterdam publication by V (18.34M against 16.60M; they did at 16.46M). Why it
+64 lone negatives no longer fit one amsterdam publication by V (18.34M against 16.60M; they did at 16.45M). Why it
 matters: with 5,000 a create-file recipe in a folder that already holds the author's files was quoted at 0.969× its
 callbacks' prefix spend on amsterdam (it can refuse a transaction sent near the floor, never admit an unindexed one);
 after the fix the lowest P / spend of any shape the floor claims, in both states and on both schedules, is 1.02
@@ -634,37 +674,73 @@ measured in the state where the author's lists exist: a create file in a folder 
 files, a second edit of a file, a rename + move into a folder holding the author's entries, and a first tag on an
 existing 6-word path whose roll-ups hold entries (`GasModel.t.sol` `test_model_validate_recipes_lists_exist`,
 `test_model_validate_deep_tag_lists_exist`). No constant is refitted (`fixed` stays on its forty anchor pairs). Errors
-with the current constants (measured on an incremental build; PLACEHOLDER until the regeneration): prague create file
-−4.43%, edit +4.99%, rename move −2.41%, deep tag +2.58%; amsterdam all gas −3.89%, +12.03%, −1.83%, +4.29%, and
-execution gas (what the rule plans by there) −10.62%, −3.11%, −8.37%, +0.25%. `maxAbsErrorPercent` becomes 5.80%
-prague (unchanged) and 12.03% amsterdam (was 7.56%: the second edit's state gas is predicted 17.65% high); the largest
-execution-gas error is the ordinary create file, predicted low by 10.62%. Both stay under the rule's 15% headroom,
-which also covers intrinsic gas and calldata; `planning.headroomCovers` says so. Why the model is low there (both
+of the four, from the regenerated model: prague create file −4.44%, edit +4.98%, rename move −2.41%, deep tag +2.58%;
+amsterdam all gas −3.89%, +12.03%, −1.83%, +4.29%, and execution gas (what the rule plans by there) −10.62%, −3.11%,
+−8.37%, +0.24%.
+
+**The stated maximum errors, and which field bounds the cap.** Each profile states its largest composite error on all
+gas, `maxAbsErrorPercent` (its meaning is unchanged: |`errorPercent`|, predicted against measured all gas), with the
+composite that sets it, `maxAbsErrorComposite` (new). Amsterdam also states its largest error on execution gas as a
+field of its own, `maxAbsExecutionErrorPercent`, with `maxAbsExecutionErrorComposite` (both new and required on
+amsterdam by the schema; each amsterdam row carries `executionErrorPercent`). Regenerated: prague 5.80% (`validate
+create file`); amsterdam 12.03% on all gas (`validate edit lists exist`; was 7.56%: the second edit's state gas is
+predicted 17.65% high) and 10.62% on execution gas (`validate create file lists exist`, predicted low). **A consumer's
+headroom check of the 2^24 cap condition uses `profiles.prague.maxAbsErrorPercent` on prague, where the cap counts
+all gas, and `profiles.amsterdam.maxAbsExecutionErrorPercent` on amsterdam, where it counts execution gas only;**
+`profiles.amsterdam.maxAbsErrorPercent` bounds the publication's total against the block, never the cap. All three
+are under the rule's 15% headroom, which also covers intrinsic gas and calldata; `planning.headroomCovers` names both
+figures and which one bounds the cap; `tools/gas-model.mjs` fails a model in which any composite's all-gas or
+execution-gas error exceeds 15%, and `tools/test/gas-plan.test.mjs` checks every field against the rows. The model
+stays as it is: no re-fit and no new term (a per-kind term was considered and not taken: docs/INDEX-BUILD.md §10
+item 42). Why the model is low there (both
 states, both schedules): the kernel's share is predicted within 0.6%, and the gap is in the index callbacks and the
 final phase, which spend 20–40k more per extra distinct action kind in a publication than the sum of per-action
 marginals (each kind's first touch of its index state is cold; a k2 − k1 marginal sees it once, inside `fixed`).
 
-**41. Identities of this release.** PLACEHOLDER, written once at regeneration: against `cbf5b78` (the commit the SDK
-is pinned to), every identity that moved and every one that did not, for items 32 to 40 together.
+**41. Identities of this release** (items 32 to 40 together, against `cbf5b78`, the commit the SDK is pinned to;
+every value is in the table below). **Moved:** the release digest (`0x354ef0c5…c280`, was `0x56bd2f95…2565`), the
+plan hash (`0x426a14ca…2b6b`), the execution set (`0x768d8353…dde7`), the index obligations (`0xbc6d4b7d…3a3a`) and
+manifest hash (`0x073676c0…2e3c`); the code of `LedgerControl` (reason 14), `RealmIndex` (`BUILT_HOOKS`), `IndexReads`
+(the copy, Option A) and the three topic readers (the list-coverage rule): in `artifacts/` exactly these six files
+changed; `release/errors.json` (reason 14, `E_PIN` 12, the reworded 12 and `E_BUILD(7)`); `gas/model.json` (the
+amsterdam floor price, the composites, the error fields, the re-fit with this release's code, one read bound);
+`schemas/efs-gas-model-1.schema.json`; `test/vectors/floor-plan.json` (amsterdam) and the new
+`test/vectors/gas-schedules.json`; one ABI snapshot, `IIndexReads.json`. Because the genesis contract embeds the
+control delegate's address, every address genesis creates moved with it on the fixture Realm (the ledger proxy
+`0xFEd9404A…43Ef`, its implementation `LedgerCore` and ProxyAdmin, the registry proxy and its ProxyAdmin, the
+controller, the genesis contract), and so did the realm id and domain separator, both stores (their runtime codehashes
+through the embedded ledger address only), the index (`0xC2eD8A21…9bfd`) and its reads contract (`0x519cE2e7…9FC9`),
+and every reader that embeds the ledger's address (`lensReader`, `filesPageReader`, the three topic readers, the
+gateway and its content contract). **Not moved:** the layout id, the hot ABI ids (release `0xf37d24d0…9856`, test
+`0x79a1dd51…cce0`), both store ABI ids, the status vocabulary id, the limits profile id, every Type id, the ingress and
+apply delegates, the registry implementation (`TypeRegistry`), the decoder, `ledgerReads`, `ledgerViews`,
+`readerDirectory`, `keysView`, every Files and Topics rule, `RefuseAllPolicy`, the Files validator, every ABI snapshot
+but `IIndexReads.json`, `vectors/layout.json`, every test vector but the two floor files, the recommended read limits,
+and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the `src/` contracts that changed against
+`726993e` (budget 19,660 B): `LedgerControl` 18,042 B (1,618 left), `RealmIndex` 18,834 B (826 left), `IndexReads`
+12,431 B, `TopicMineReader` 15,461 B, `TopicEveryoneReader` 16,688 B, `TopicLookupReader` 17,109 B, and
+`IndexDeployer` 6,624 B (not a release unit); `LedgerIngress` is unchanged at 19,264 B (396 left).
 
-### The identity table (this release against `0fb4804`)
+### The identity table (this release against `cbf5b78`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture
 configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`) of this release, against the same files at
-`0fb4804` (`git show 0fb4804:<file>`), the commit the SDK is pinned to. Addresses are the fixture Realm's; on any other
+`cbf5b78` (`git show cbf5b78:<file>`), the commit the SDK is pinned to; the ABI ids are computed from
+`test/snapshots/abi/` with `tools/abi-id.mjs` at both commits. Addresses are the fixture Realm's; on any other
 `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. Every value an SDK vendors is here: the documents'
 digests, the identities of the execution set and the index, the ABI ids, every Type id, every deployed unit's address
-and runtime codehash, the read bounds and the seed. Beyond the table, `artifacts/` differs from `0fb4804` in
-`IndexReads`, `LedgerControl`, `RealmIndex` and the three topic readers, and `test/snapshots/abi/` in the three topic
-readers' interfaces.
+and runtime codehash, the read bounds and the seed. Beyond the table, `artifacts/` differs from `cbf5b78` in
+`IndexReads`, `LedgerControl`, `RealmIndex` and the three topic readers, and `test/snapshots/abi/` in `IIndexReads.json`
+only. The one read bound that moved is not a recommended limit: `everyoneExact.maxSkippedEntries` is 247 at every lens
+on both schedules (was 248).
 
-| pin | this release | moved against `0fb4804` |
+| pin | this release | moved against `cbf5b78` |
 |---|---|---|
-| release digest (`sha256(release/release.json)`) | `0x56bd2f9524e3de85cada737526b1e237c6f69c1b8822f2d36b2a9805100c2565` | yes (was `0x580ede64…d04e`) |
-| plan hash | `0xe40993daed758041730c5e7b728b86c1171da768c570522bcba2e07b9a432a2c` | yes (was `0xff2f4490…6d83`) |
-| execution set | `0x0788d65963e48f73fe655a469cc2110365bc9e498cc37c56030d60ac3a9cb99d` | yes (was `0x3a9a6aea…93e4`) |
-| index obligations | `0x5555dbfb2f06017916926a884b60e8cd72ac362a37661dc09d3e6b3674674f79` | yes (was `0x9150afe9…6524`) |
-| index manifest hash | `0x3b50d7a2f8ee5104dc0038713dac38a902b16e2045d4904e73635606ef33009f` | yes (was `0x608cabe7…006c`) |
+| release digest (`sha256(release/release.json)`) | `0x354ef0c5d5bfdec54fad602ae6ba9b7d2a0a209e5021c7cdf4490e0d9442c280` | yes (was `0x56bd2f95…2565`) |
+| plan hash | `0x426a14cad6e38510dd16ee319bc12ef8ea26389b6f02b4577d488d57f4c92b6b` | yes (was `0xe40993da…2a2c`) |
+| execution set | `0x768d8353040e477be465dca8086d75431cf09d7e4573096b55176d90f0b9dde7` | yes (was `0x0788d659…b99d`) |
+| index obligations | `0xbc6d4b7ddfe9e2dbbd704199b27789e9afd626d0212777a4c6afefb7ac313a3a` | yes (was `0x5555dbfb…4f79`) |
+| index manifest hash | `0x073676c0b3d067da839015fbb8e8e86b6c7ec23469c3abeb78e220a623ed2e3c` | yes (was `0x3b50d7a2…009f`) |
 | layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | no |
 | hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | no |
 | hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | no |
@@ -672,10 +748,10 @@ readers' interfaces.
 | bitmap store ABI id | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` | no |
 | status vocabulary id | `0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87` | no |
 | limits profile id | `0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055` | no |
-| realm id | `0xc1e804018fed84a16135c2c3241382251686115d655e79f6e86e347bcba4700a` | yes (was `0x95909a76…e0e5`) |
-| domain separator | `0x50636c43bdf2a174ee18b4b73db46465f0898170b8997fe04af75ff8d03f3c91` | yes (was `0xe7865609…2413`) |
-| `gas/model.json` sha256 | `0xa4b9f64bf6fe40e27b6c0db6bbaee3fc39bb43a7bc8e5fc2a4fe74cf90b53e34` | yes (was `0xe4df874a…f09d`) |
-| `release/errors.json` sha256 | `0xa97d387cae3fcdcc57ff79787d418603664791d08188388859478d7458e21f17` | yes (was `0xaa8fa61b…640c`) |
+| realm id | `0x791e5fa5ca744f9269dcaabed8244503b2864f7dbbc16b22f63626a07b064193` | yes (was `0xc1e80401…700a`) |
+| domain separator | `0xee65704ebe4f133186edae6f66c635bc50d9fbd00655332c36f6c1dde8e3c9a7` | yes (was `0x50636c43…3c91`) |
+| `gas/model.json` sha256 | `0xf477f75ad6c777f00302228cc88c9c48805d75d24c7057f77c45f4588afff626` | yes (was `0xa4b9f64b…3e34`) |
+| `release/errors.json` sha256 | `0xa3278b62ff632d139382799769dd4a9d0991731d73bb82faff9f75d0e8afff7e` | yes (was `0xa97d387c…1f17`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
 | Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
@@ -689,70 +765,81 @@ readers' interfaces.
 | Type id `topic-word/1` | `0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b` | no |
 | Type id `topic/1` | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | no |
 | Type id `text/1` | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | no |
-| ledger proxy | `0x83ce0B9E2DDd9c5CEBBfe6b2b9Bc275fda9A20fB` | yes (was `0x83DbD341…30C6`) |
-| ledger implementation (`LedgerCore`) | `0x3C56f31A136aB3F04F1cD1e6eaa6f6AE56c0042C` | yes (was `0x074Dc885…8fF5`) |
-| ledger ProxyAdmin | `0x5e292A49455b94545a6818F59c224e1c0B3350AB` | yes (was `0x428D1ac2…24B1`) |
-| registry proxy | `0xa1657E67598eeC461e2bf0Ac5CB3903CA7C40BD2` | yes (was `0xdFCd716a…AD7C`) |
+| ledger proxy | `0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef` | yes (was `0x83ce0B9E…20fB`) |
+| ledger implementation (`LedgerCore`) | `0xF0C32073603683e74c79604f407996047B349E40` | yes (was `0x3C56f31A…042C`) |
+| ledger ProxyAdmin | `0x154E96bfc18A9f3533767a660ac71c4ef8F27307` | yes (was `0x5e292A49…50AB`) |
+| registry proxy | `0xF22eF34A0a2F5fd0116C49A7632b230354d4ab85` | yes (was `0xa1657E67…0BD2`) |
 | registry implementation | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9` | no |
-| registry ProxyAdmin | `0x2dEb3CeB5454811F0D1aE8d2619bBa1F3FFc1439` | yes (was `0xb6DD5442…0D81`) |
-| controller | `0xA6aFe20eD91162AC8AfE9aE082522fB69cb66E30` | yes (was `0x126c1775…9296`) |
-| genesis contract | `0xff73065986D14D2E1D1050d59f7cCd7ACe043533` | yes (was `0x6fCEec8E…36bf`) |
-| index (generation 1) | `0x6ebfdf09F489bBdBeeF929bcb0C8B7eae02217f7` | yes (was `0xCa5A752A…d4Dc`) |
-| index runtime codehash | `0x3ce5e1501d5edb8090832d0fc9b960f5d99efce7716b18598c64160c1013b452` | yes (was `0xd07b8751…8c7a`) |
-| index reads contract | `0x7345300136217575d8eC1cFd1beA91d25c9A329d` | yes (was `0x2Ce5BD78…92e6`) |
-| posting store | `0xA5CE13aB7011FcE7357b79e0267251499055DCB9` | yes (was `0xdAB85C02…94DE`) |
-| bitmap store | `0x508EB68a5e2a3aF1954e161d590B28B3C6d02D1B` | yes (was `0x164F6F6a…457F`) |
+| registry ProxyAdmin | `0x885F77f02E5Ff3eC164Fda9382835ce97cC9A642` | yes (was `0x2dEb3CeB…1439`) |
+| controller | `0xdb1415d673b0a94f2F26eeA97E7391aDb6679be0` | yes (was `0xA6aFe20e…6E30`) |
+| genesis contract | `0x0628338EE25589a698dC44d54d7B172B94E6539C` | yes (was `0xff730659…3533`) |
+| index (generation 1) | `0xC2eD8A212be073C2D7E46229E20c358229Dd9bfd` | yes (was `0x6ebfdf09…17f7`) |
+| index runtime codehash | `0xc0dee80c59530af952f7f19c2a33e19230da73fcdad7c383e51eade803d5a546` | yes (was `0x3ce5e150…b452`) |
+| index reads contract | `0x519cE2e72BcD5EEa8a3Aee01b25056356c639FC9` | yes (was `0x73453001…329d`) |
+| posting store | `0x55c2D07CDafF496Fc0B408C2AdD9d9f49b76f4C3` | yes (was `0xA5CE13aB…DCB9`) |
+| bitmap store | `0xb3d6f84109E8355ebbDacB7653B6D304D5e5A1f4` | yes (was `0x508EB68a…2D1B`) |
 | `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | no |
 | `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | no |
 | `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
 | `readers.keysView` | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` | no |
-| `readers.lensReader` | `0x268B3c8BfA3501D22aBAd8D90CD0EB93909C70aB` | yes (was `0x5CaDE2E3…f143`) |
-| `readers.lensReader` runtime codehash | `0x1e292b4ddd241b346e6789b20810a3dacbf36709958874a11be3c3ae84177c07` | yes (was `0x860798ab…8ce1`) |
-| `readers.filesPageReader` | `0xc00D538AC16c07B678a017E24c7d2d6Ce9648F2A` | yes (was `0x6c9b137B…c882`) |
-| `readers.filesPageReader` runtime codehash | `0x149a571c99b2dbf8d972a1ba436f2cc3f9acc8fbaf539b3f689d54e49087f2c4` | yes (was `0xb92d98d3…8dcd`) |
-| `readers.topicMineReader` | `0xFB2f372bebEa5204292ebf4Aefd19EB4e4E09f21` | yes (was `0xE53496e1…d247`) |
-| `readers.topicMineReader` runtime codehash | `0x2a7d824c8a0dc7a9499cf0d38e0f6104a950268c8ac0eb0876c1e2ef108b15cc` | yes (was `0xb63c773d…4b25`) |
-| `readers.topicEveryoneReader` | `0x1ee0AB9D6f342cE440BA1a16f53c6FF3C8f986D2` | yes (was `0x5bfC28aC…eC0D`) |
-| `readers.topicEveryoneReader` runtime codehash | `0x50347b7bdc521b6b3531efbf3ee7286a6274bfdc9f3811c31188ff71d23cbe5e` | yes (was `0x4004a077…1fe6`) |
-| `readers.topicLookupReader` | `0xC74BacA330C94774f332F918FbDca568AB5E119C` | yes (was `0x99B1C129…7204`) |
-| `readers.topicLookupReader` runtime codehash | `0x8068237209320bb83f2b2b1580185d3a1064e8c818841e7fef6d6eaa44e25596` | yes (was `0xb97894ec…8649`) |
-| `readers.web3Gateway` | `0xcA9eC410de151d86C3620EbBbc3Aa9DF0E822981` | yes (was `0x18c605A8…6077`) |
-| `readers.web3Gateway` runtime codehash | `0xcd627a0eeb1ee4943a407382c30b4d1a75cc6074131761a85cb5fe6cc4242727` | yes (was `0xc1051430…85a8`) |
-| `readers.web3Gateway.content` (`EfsWeb3Content`) | `0x502a7CCe35D221884FBfFE4f32687C4e288841FA` | yes (was `0x2c80161a…4929`) |
-| `readers.web3Gateway.content` runtime codehash | `0x4e20242c4ab3065cfc558a4423978d15edbb8f7ba2318d90a22d892f74d519aa` | yes (was `0xcc3533b8…a060`) |
-| `LedgerIngress` (address, runtime codehash) | `0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7` / `0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a` | no |
-| `LedgerApply` (address, runtime codehash) | `0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343` / `0x7d788fac98935e8c48d36d9e4886246093bef0a0eb20d445a7d28db275637669` | no |
-| `LedgerControl` (address, runtime codehash) | `0x7f9eA1e98fb218467F6B7632bd64e07b36A6789e` / `0xb56cb5079ee7082629918824d81dde7ca9c265fb13353d58164e57b5d07e00ec` | yes (was `0x5c82f235…5564` / `0x6cf43cd4…34c1`) |
-| `LedgerReads` (address, runtime codehash) | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` / `0x7aafb133b4b1b130b239da67027f7de118918861850b94584b68c101e0b71657` | no |
-| `LedgerViews` (address, runtime codehash) | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` / `0xf15400a4921e6b3282e9e1b486a14a4268c0f01b1b18e88234659394abc9eb03` | no |
-| `DescriptorStore` (address, runtime codehash) | `0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c` / `0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc` | no |
-| `IndexReplayDecoder` (address, runtime codehash) | `0x49e9bC76aaE1a2585885D876311Daa4c974aED1b` / `0x0f2574f466a8c3d6bb667d72dd1fdbfc9222636e26c33b4224ccc766fb8f2605` | no |
-| `ReaderDirectory` (address, runtime codehash) | `0x77865D8B084589021D9695865475cBED4fc16c31` / `0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f` | no |
-| `FilesBytesRule` (address, runtime codehash) | `0xdD9AE013bf2CCaf784626D70bcab5Be307b07e40` / `0x26b7e1529674fd83c36fbe5ccc9dab915a2f1821d853c707a2cd187e68066d2c` | no |
-| `FilesSpanRule` (address, runtime codehash) | `0x248C3f75c03d525c1813e6dCeDFAd10E2193a8b7` / `0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6` | no |
-| `FilesContentRule` (address, runtime codehash) | `0x24a5E41C539FB0e1FF5924239fE23D3bF86De11E` / `0x9989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a9` | no |
-| `FilesExternalContentRule` (address, runtime codehash) | `0x9A0B471E27F1CDC8478E214c301aA6Aa4F189FaF` / `0x637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f55` | no |
-| `FilesRootRule` (address, runtime codehash) | `0xd65df37B79581dEdC752ECDf3325bD91e54c561E` / `0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39` | no |
-| `FilesChildRule` (address, runtime codehash) | `0x4d670A2Ef8915ccb1347b6BcC01C1efd073fB6A8` / `0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4` | no |
-| `FilesDirectoryRule` (address, runtime codehash) | `0x5A266C0a5428e3caDe9F4c5a8B830DCBDf478615` / `0xaea9d912818cd9f49a7b8426807494ca91551040ec499ec6dfaec6e40ad6bfd2` | no |
-| `FilesNameRule` (address, runtime codehash) | `0x245098a6b090227e8F542c460f1C3be3F948884f` / `0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17` | no |
-| `RealmNoticeRule` (address, runtime codehash) | `0xB0be8d1E04D0B5D5268C05a6330c3254d6e5df34` / `0x52b5a16a788796687ec4607ff1ef59c4d99140c5eea9f583e8239b9d79b0ddcc` | no |
-| `DirectoryAliasRule` (address, runtime codehash) | `0x60B6B7611961E258dC8FF63b37830281Ce0F4bDa` / `0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667` | no |
-| `TopicWordRule` (address, runtime codehash) | `0x44186F79ddA5e09dce338b0649b4c5E6ee4432a5` / `0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5` | no |
-| `TopicRule` (address, runtime codehash) | `0xD07aaA9b8b6719B7E8Af64e34B4366700c9a4CdC` / `0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a` | no |
-| `TextRule` (address, runtime codehash) | `0xD10088139D60Be3faB03FD3012F3706C3Ac69485` / `0xb839d97202882243312d2792eebda9be94bb272490e3d652c73f2a1a9a0661a5` | no |
-| `RefuseAllPolicy` (address, runtime codehash) | `0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1` / `0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44` | no |
-| `FilesFinalValidator` (address, runtime codehash) | `0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0` / `0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | no |
-| `LedgerCore` (address, runtime codehash) | `0x3C56f31A136aB3F04F1cD1e6eaa6f6AE56c0042C` / `0xd6b26d5cdd827850a9e906422ae56ac962c0ecddbfa8dbb8b19dae198b8dee3b` | yes (was `0x074Dc885…8fF5` / `0xef6a0c5d…b8ff`) |
-| `TypeRegistry` (address, runtime codehash) | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9` / `0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3` | no |
-| `RealmGenesis` (address, runtime codehash) | `0xff73065986D14D2E1D1050d59f7cCd7ACe043533` / `0x6138027c761937f074a871c95e4505d66e5e11cabbf2f9afe0ca558324bd7660` | yes (was `0x6fCEec8E…36bf` / `0x8b2b401f…6083`) |
-| `PostingStore` (address, runtime codehash) | `0xA5CE13aB7011FcE7357b79e0267251499055DCB9` / `0x180ab3612928cce982ad6efcd75db4935bcc2d5696eb0227adb61ce6cd3b858f` | yes (was `0xdAB85C02…94DE` / `0x9a89824d…8040`) |
-| `BitmapStore` (address, runtime codehash) | `0x508EB68a5e2a3aF1954e161d590B28B3C6d02D1B` / `0xcc0c33afa91b6070db27d016b14bab50b2916f27fc6aa6c94d01bf6826941b1b` | yes (was `0x164F6F6a…457F` / `0x192588d9…8858`) |
-| `RealmController` (address, runtime codehash) | `0xA6aFe20eD91162AC8AfE9aE082522fB69cb66E30` / `0x871f2a71707d659b8ed4f5cc9bc238e76e5939a2602489b5026540e63cb3c5b7` | yes (was `0x126c1775…9296` / `0xf438ffe1…eaec`) |
-| `IndexReads` (address, runtime codehash) | `0x7345300136217575d8eC1cFd1beA91d25c9A329d` / `0xf7de800d4339c4f2210bc1fb91b5d12e133d264adb74b33f0e637b7b9ae87108` | yes (was `0x2Ce5BD78…92e6` / `0x084545d7…9d86`) |
-| `RealmIndex` (address, runtime codehash) | `0x6ebfdf09F489bBdBeeF929bcb0C8B7eae02217f7` / `0x3ce5e1501d5edb8090832d0fc9b960f5d99efce7716b18598c64160c1013b452` | yes (was `0xCa5A752A…d4Dc` / `0xd07b8751…8c7a`) |
-| `KeysView` (address, runtime codehash) | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` / `0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3` | no |
-| read bounds (prague): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | yes (was `246, 150, 768 / 416 / 688 / 408`) |
+| `readers.lensReader` | `0x072C087f2E58bE64eCD7488AB79E6F7083055Bc4` | yes (was `0x268B3c8B…70aB`) |
+| `readers.lensReader` runtime codehash | `0x61e15445973e5fb7ed0820f0d0b3abd34b7a5eb46548306aae23461e221d7fe0` | yes (was `0x1e292b4d…7c07`) |
+| `readers.filesPageReader` | `0xa03716f5200f87D05192b6c3E45D863181FA7404` | yes (was `0xc00D538A…8F2A`) |
+| `readers.filesPageReader` runtime codehash | `0x302810eb9496c55d29007d91d7442407a483b23db68d8ccc15dce86c5080dcd6` | yes (was `0x149a571c…f2c4`) |
+| `readers.topicMineReader` | `0x0de61140Ff961cC101137e6aC9D0A9A90C32cc6e` | yes (was `0xFB2f372b…9f21`) |
+| `readers.topicMineReader` runtime codehash | `0x7f435e19e60ace99f1749f965e958edb6a5c5f4207a615ee54d3114260f71bc6` | yes (was `0x2a7d824c…15cc`) |
+| `readers.topicEveryoneReader` | `0x0E082ab787e39860b07282CEDb54F54794fDa76B` | yes (was `0x1ee0AB9D…86D2`) |
+| `readers.topicEveryoneReader` runtime codehash | `0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f` | yes (was `0x50347b7b…be5e`) |
+| `readers.topicLookupReader` | `0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2` | yes (was `0xC74BacA3…119C`) |
+| `readers.topicLookupReader` runtime codehash | `0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68` | yes (was `0x80682372…5596`) |
+| `readers.web3Gateway` | `0x99780AaA0D2cbc87fB85062a67d31DB2144E583a` | yes (was `0xcA9eC410…2981`) |
+| `readers.web3Gateway` runtime codehash | `0xec9ea7c949c978a5a7c107e08f270a5b16c53b245161089b7bb2db0e5482c029` | yes (was `0xcd627a0e…2727`) |
+| `readers.web3Gateway.content` | `0x7D73d40047140d8Db7C7bC9ac8e57e9E075C3D15` | yes (was `0x502a7CCe…41FA`) |
+| `readers.web3Gateway.content` runtime codehash | `0x3113647b4b11990b64df8f1650688a1a3f1858162f597055059b74e0324f3a08` | yes (was `0x4e20242c…19aa`) |
+| `LedgerIngress` (address, runtime codehash) | `0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7 / 0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a` | no |
+| `LedgerApply` (address, runtime codehash) | `0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343 / 0x7d788fac98935e8c48d36d9e4886246093bef0a0eb20d445a7d28db275637669` | no |
+| `LedgerControl` (address, runtime codehash) | `0x973f33FE2c3CACB310827ad5ec34CDcBbE350160 / 0x078461f174f83a07cf6ecf592beaab0862f1b8d4ab36bdb59e94a5df93877daa` | yes (was `0x7f9eA1e9…789e / 0xb56cb507…00ec`) |
+| `LedgerReads` (address, runtime codehash) | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366 / 0x7aafb133b4b1b130b239da67027f7de118918861850b94584b68c101e0b71657` | no |
+| `LedgerViews` (address, runtime codehash) | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648 / 0xf15400a4921e6b3282e9e1b486a14a4268c0f01b1b18e88234659394abc9eb03` | no |
+| `DescriptorStore` (address, runtime codehash) | `0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c / 0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc` | no |
+| `IndexReplayDecoder` (address, runtime codehash) | `0x49e9bC76aaE1a2585885D876311Daa4c974aED1b / 0x0f2574f466a8c3d6bb667d72dd1fdbfc9222636e26c33b4224ccc766fb8f2605` | no |
+| `ReaderDirectory` (address, runtime codehash) | `0x77865D8B084589021D9695865475cBED4fc16c31 / 0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f` | no |
+| `FilesBytesRule` (address, runtime codehash) | `0xdD9AE013bf2CCaf784626D70bcab5Be307b07e40 / 0x26b7e1529674fd83c36fbe5ccc9dab915a2f1821d853c707a2cd187e68066d2c` | no |
+| `FilesSpanRule` (address, runtime codehash) | `0x248C3f75c03d525c1813e6dCeDFAd10E2193a8b7 / 0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6` | no |
+| `FilesContentRule` (address, runtime codehash) | `0x24a5E41C539FB0e1FF5924239fE23D3bF86De11E / 0x9989c5027fc25da8bceb23b0b5dab216bb1f33c2f8b8fd5d04bc8485bcc712a9` | no |
+| `FilesExternalContentRule` (address, runtime codehash) | `0x9A0B471E27F1CDC8478E214c301aA6Aa4F189FaF / 0x637f6861202f82a7432588841d9a5544375dac5d0e77710db9b7b986f7f06f55` | no |
+| `FilesRootRule` (address, runtime codehash) | `0xd65df37B79581dEdC752ECDf3325bD91e54c561E / 0xcb7ba484cea9625fa2a8cbc35f81b312a1c936f2c69339e325fa5c4a7b5a9f39` | no |
+| `FilesChildRule` (address, runtime codehash) | `0x4d670A2Ef8915ccb1347b6BcC01C1efd073fB6A8 / 0x38d96ac3bc562bdc7adf3708808ab74c2420b46a2df59af8107e4e952f90f9d4` | no |
+| `FilesDirectoryRule` (address, runtime codehash) | `0x5A266C0a5428e3caDe9F4c5a8B830DCBDf478615 / 0xaea9d912818cd9f49a7b8426807494ca91551040ec499ec6dfaec6e40ad6bfd2` | no |
+| `FilesNameRule` (address, runtime codehash) | `0x245098a6b090227e8F542c460f1C3be3F948884f / 0xd73a9ee29819be1f26d1bc18d766fc0118d68555005c9c6acafc6e64bfdbfd17` | no |
+| `RealmNoticeRule` (address, runtime codehash) | `0xB0be8d1E04D0B5D5268C05a6330c3254d6e5df34 / 0x52b5a16a788796687ec4607ff1ef59c4d99140c5eea9f583e8239b9d79b0ddcc` | no |
+| `DirectoryAliasRule` (address, runtime codehash) | `0x60B6B7611961E258dC8FF63b37830281Ce0F4bDa / 0xc10493df425c8ccfa89ee4f6948a0a85bacc0426127510fa337562fe68ddb667` | no |
+| `TopicWordRule` (address, runtime codehash) | `0x44186F79ddA5e09dce338b0649b4c5E6ee4432a5 / 0x29442a0e789e1692d9ffc9e9c5202ee791f06860417b5dbd8ceeaffe81f1dfd5` | no |
+| `TopicRule` (address, runtime codehash) | `0xD07aaA9b8b6719B7E8Af64e34B4366700c9a4CdC / 0x6c3de3abe7422d0f0150b084e5a14ea4918c75f7f681ba9da0424f2460b6d69a` | no |
+| `TextRule` (address, runtime codehash) | `0xD10088139D60Be3faB03FD3012F3706C3Ac69485 / 0xb839d97202882243312d2792eebda9be94bb272490e3d652c73f2a1a9a0661a5` | no |
+| `RefuseAllPolicy` (address, runtime codehash) | `0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1 / 0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44` | no |
+| `FilesFinalValidator` (address, runtime codehash) | `0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0 / 0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | no |
+| `LedgerCore` (address, runtime codehash) | `0xF0C32073603683e74c79604f407996047B349E40 / 0x69dd18979547353e97c078934ff1949130ec29951229b8a2d6d04818a5d7bef1` | yes (was `0x3C56f31A…042C / 0xd6b26d5c…ee3b`) |
+| `TypeRegistry` (address, runtime codehash) | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9 / 0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3` | no |
+| `RealmGenesis` (address, runtime codehash) | `0x0628338EE25589a698dC44d54d7B172B94E6539C / 0x5b057dffa98066bebda77765c253ed53bee8322262b2210d0490407c26f43d9a` | yes (was `0xff730659…3533 / 0x6138027c…7660`) |
+| `PostingStore` (address, runtime codehash) | `0x55c2D07CDafF496Fc0B408C2AdD9d9f49b76f4C3 / 0xa4b86e3093c4ad6dfe3c598dd409ccbb75b3c622a54d7cf493dc8dde3c524a8d` | yes (was `0xA5CE13aB…DCB9 / 0x180ab361…858f`) |
+| `BitmapStore` (address, runtime codehash) | `0xb3d6f84109E8355ebbDacB7653B6D304D5e5A1f4 / 0x3569a27c77c51a46b9d64db64df5a43f59c6798037bfae5809dfe4c814f095d9` | yes (was `0x508EB68a…2D1B / 0xcc0c33af…1b1b`) |
+| `RealmController` (address, runtime codehash) | `0xdb1415d673b0a94f2F26eeA97E7391aDb6679be0 / 0x646adad3c8fb69cf3b7fbf2c11a7776c00d7f81b04c4112adb8eca1247142e2f` | yes (was `0xA6aFe20e…6E30 / 0x871f2a71…c5b7`) |
+| `TypeRegistryProxy` (address, runtime codehash) | `0xF22eF34A0a2F5fd0116C49A7632b230354d4ab85 / 0x2e2060dade8827dbf5de0f5c7de5541066ba32bc356d5273e6a617217d55e263` | yes (was `0xa1657E67…0BD2 / 0x493df695…35f9`) |
+| `LedgerProxy` (address, runtime codehash) | `0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef / 0xd9f1cf09c1cb31ae59e019d161f171312ca5040ee84e0ec17953a9303a824134` | yes (was `0x83ce0B9E…20fB / 0xf3d10e15…f684`) |
+| `RegistryProxyAdmin` (address, runtime codehash) | `0x885F77f02E5Ff3eC164Fda9382835ce97cC9A642 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x2dEb3CeB…1439 / 0xf32a01cd…52b2`) |
+| `LedgerProxyAdmin` (address, runtime codehash) | `0x154E96bfc18A9f3533767a660ac71c4ef8F27307 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x5e292A49…50AB / 0xf32a01cd…52b2`) |
+| `IndexReads` (address, runtime codehash) | `0x519cE2e72BcD5EEa8a3Aee01b25056356c639FC9 / 0x09258a9a5a86420aead8b63ce987a3e48533e25be60f37eddf2c19f3f37e2007` | yes (was `0x73453001…329d / 0xf7de800d…7108`) |
+| `RealmIndex` (address, runtime codehash) | `0xC2eD8A212be073C2D7E46229E20c358229Dd9bfd / 0xc0dee80c59530af952f7f19c2a33e19230da73fcdad7c383e51eade803d5a546` | yes (was `0x6ebfdf09…17f7 / 0x3ce5e150…b452`) |
+| `KeysView` (address, runtime codehash) | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F / 0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3` | no |
+| `LensReader` (address, runtime codehash) | `0x072C087f2E58bE64eCD7488AB79E6F7083055Bc4 / 0x61e15445973e5fb7ed0820f0d0b3abd34b7a5eb46548306aae23461e221d7fe0` | yes (was `0x268B3c8B…70aB / 0x1e292b4d…7c07`) |
+| `FilesPageReader` (address, runtime codehash) | `0xa03716f5200f87D05192b6c3E45D863181FA7404 / 0x302810eb9496c55d29007d91d7442407a483b23db68d8ccc15dce86c5080dcd6` | yes (was `0xc00D538A…8F2A / 0x149a571c…f2c4`) |
+| `EfsWeb3Content` (address, runtime codehash) | `0x7D73d40047140d8Db7C7bC9ac8e57e9E075C3D15 / 0x3113647b4b11990b64df8f1650688a1a3f1858162f597055059b74e0324f3a08` | yes (was `0x502a7CCe…41FA / 0x4e20242c…19aa`) |
+| `EfsWeb3Gateway` (address, runtime codehash) | `0x99780AaA0D2cbc87fB85062a67d31DB2144E583a / 0xec9ea7c949c978a5a7c107e08f270a5b16c53b245161089b7bb2db0e5482c029` | yes (was `0xcA9eC410…2981 / 0xcd627a0e…2727`) |
+| `TopicMineReader` (address, runtime codehash) | `0x0de61140Ff961cC101137e6aC9D0A9A90C32cc6e / 0x7f435e19e60ace99f1749f965e958edb6a5c5f4207a615ee54d3114260f71bc6` | yes (was `0xFB2f372b…9f21 / 0x2a7d824c…15cc`) |
+| `TopicEveryoneReader` (address, runtime codehash) | `0x0E082ab787e39860b07282CEDb54F54794fDa76B / 0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f` | yes (was `0x1ee0AB9D…86D2 / 0x50347b7b…be5e`) |
+| `TopicLookupReader` (address, runtime codehash) | `0x48b3Be999Cdc9785e4Cc57D7F548061D222CB4F2 / 0x12186bd4e537fcf5ed03ea104be0f206a52d4f88ab173d4fd03c93b957944b68` | yes (was `0xC74BacA3…119C / 0x80682372…5596`) |
+| read bounds (prague): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | seed version | `efs-fixture-seed/4` | no |
 | seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
@@ -1268,8 +1355,8 @@ path (the two differ by about 100 gas, so a planner may use either), `BROADER` w
 statements are on word pages. None of them has a per-level term: a path costs what a word page does. **A label with a
 new text** in the same publication (`EfsTopics.label`) is the `text/1` publish row plus the first statement:
 `publishNew["text/1"] + perWord·ceil(n/32) + perByte·n + bindPropertyFresh` for an n-byte text. The composite
-`validate label new text` (24 bytes) checks it: predicted 828,939 against 890,272 measured on prague (−6.89%), 2,812,603
-against 3,057,918 on amsterdam (−8.02%), inside the headroom. The rows (gas; amsterdam execution gas in brackets) and the
+`validate label new text` (24 bytes) checks it: predicted 850,458 against 890,871 measured on prague (−4.54%), 2,862,918
+against 3,058,505 on amsterdam (−6.39%; this release's model), inside the headroom. The rows (gas; amsterdam execution gas in brackets) and the
 nearest existing row:
 
 | constant | statement | prague | amsterdam (execution) | nearest existing row (prague; amsterdam execution) |
@@ -1350,7 +1437,8 @@ most worst-case rows, and skipped entries, one call reads under `callGasCap` les
 `--check 1` compares the measured rows exactly, like the publication rows.
 
 `pnpm gas:model:check` (`node tools/gas-model.mjs --check 1 --skip-amsterdam 1`) writes nothing: it re-measures the
-prague profile, refits, and exits 1 when a validation composite is off by more than 15% or when any fitted constant
+prague profile, refits, and exits 1 when a validation composite is off by more than 15% (on amsterdam, on all gas or
+on execution gas) or when any fitted constant
 or measured row differs from the committed `gas/model.json`, printing the first differences and the regeneration
 commands (`pnpm run gas:model`, then `pnpm run release`). Gas is deterministic for identical bytecode, so the
 comparison is exact; CI runs it after `pnpm release:check` on the prague build the suites left warm, and without
