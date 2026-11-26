@@ -149,7 +149,8 @@ interface IFilesPageReader is IReader {
         uint8 rowKind;
     }
 
-    /// One directory page; see the listing-coverage law above.
+    /// One directory page; see the listing-coverage law above. `frontier` here is the least coverage `through` of
+    /// the scopes read, an admission high water; it is a different thing from `TopicPageInfo.frontier`.
     struct DirectoryPage {
         Qualified q;
         Row[] rows;
@@ -237,7 +238,8 @@ interface IReaderDirectory {
 /// reads at least one entry, rows or not). Two exceptions: the root row of `wordPage`'s first page is not a list entry
 /// (its `admission` is the word page's own, older than every entry), and in `mine` a lens that names one principal
 /// twice reads that author's lists twice, so a row's entry can equal `frontier` and `frontier` can repeat. Frontiers
-/// of different views, or of listings started at different origins, are not promised to be comparable.
+/// of different views, or of listings started at different origins, are not promised to be comparable. It is a
+/// different thing from `IFilesPageReader.DirectoryPage.frontier` (a coverage high water).
 /// `repeatsSkipped`: entries this page left out because a row for the same thing was already on it.
 /// `dedupWithinPageOnly`: true for every view whose lists can name one thing more than once (a place list's later
 /// first yeses, a thing filed under two topics of a roll-up, a lens row that moved between pages): repeats are

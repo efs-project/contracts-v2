@@ -2,6 +2,13 @@
 pragma solidity 0.8.37;
 
 import {TopicReadersBase} from "./TopicReadersBase.sol";
+import {FaultyReads} from "../harness/doubles/FaultyReads.sol";
+import {CountCapReads} from "../harness/doubles/CountCapReads.sol";
+import {TopicMineReader} from "../../src/readers/TopicMineReader.sol";
+import {TopicEveryoneReader} from "../../src/readers/TopicEveryoneReader.sol";
+import {TopicLookupReader} from "../../src/readers/TopicLookupReader.sol";
+import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
+import {E_TOPIC_READ} from "../../src/readers/TopicReaderBase.sol";
 import {Keys} from "../../src/lib/Keys.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {FamilyId, Purpose, ScopeKey, TypeId} from "../../src/interfaces/Actions.sol";
@@ -602,5 +609,230 @@ contract TopicFrontierWithoutTopicListsTest is TopicFrontierBase {
         (info,) = _mine(_lens1(alice), t[0], false, "", 0);
         _ok(info);
         assertEq(info.frontier, 0);
+    }
+}
+
+/// @notice Full pages and the entry-read counts: every lookup view's full page (64 rows) with entries left gives the
+///         right `frontier`, and every reader path, read through `CountCapReads` in front of the index and the bitmap
+///         store, asks for no more entries per read than the Realm's `limits.maxReadCount` (the documented maximum
+///         of `IIndexReads.postingSliceOf`). The tighter caps pin what each path asks for at most: the `mine` and
+///         `everyone` windows 16, a row's sample 64, a lookup page its rows plus the one look-ahead entry (65 on a
+///         full page with entries left).
+contract TopicSliceCapTest is TopicFrontierBase {
+    uint256 internal constant N = 70;
+    bytes32[] internal t; // /sc-0 /sc-0/sc-1
+    bytes32 internal x; // tagged by N authors at t[0]: byName, sample
+    bytes32 internal y; // tagged by alice under N children of t[1]: about, children, mine and everyone below
+    bytes32 internal page; // the word page `w`, the last word of N paths
+
+    function setUp() public override {
+        super.setUp();
+        t = _regPath("sc", 2);
+        x = things[0];
+        y = things[1];
+        address[] memory a = _authorsN("sc", N);
+        for (uint256 i; i < N; ++i) {
+            _tag(a[i], t[0], x);
+            bytes32 c = _child(t[1], bytes(string.concat("sc", vm.toString(i))), true);
+            _tag(alice, c, y);
+        }
+        page = EfsTopics.wordPageId(typeIds[T_TOPIC_WORD], "w");
+        for (uint256 i; i < N; ++i) {
+            _child(_regPath(string.concat("scw", vm.toString(i)), 1)[0], "w", i == 0);
+        }
+    }
+
+    /// Readers whose index and bitmap store refuse any entry read above `cap`.
+    function _capped(uint256 cap)
+        internal
+        returns (TopicMineReader m, TopicEveryoneReader e, TopicLookupReader k)
+    {
+        CountCapReads bs = new CountCapReads(address(r.g.bitmap), cap, address(0));
+        CountCapReads ix = new CountCapReads(address(r.g.index), cap, address(bs));
+        FaultyReads fl = new FaultyReads(address(r.ledger));
+        fl.setFault(
+            ILedgerHot.index.selector,
+            FaultyReads.Fault(fl.SET_WORD(), 0, false, bytes32(0), uint160(address(ix)))
+        );
+        m = new TopicMineReader(address(fl), address(views), address(reads));
+        e = new TopicEveryoneReader(address(fl), address(views), address(reads));
+        k = new TopicLookupReader(
+            address(fl), address(views), address(reads), typeIds[T_TOPIC], typeIds[T_TOPIC_WORD]
+        );
+    }
+
+    function _pg(TopicPageInfo memory info, uint64[] memory rows)
+        internal
+        pure
+        returns (Pg memory pg)
+    {
+        pg.info = info;
+        pg.rows = rows;
+    }
+
+    function _byNameChain(TopicLookupReader k, uint16 limit)
+        internal
+        view
+        returns (Listing memory c)
+    {
+        bytes32 pos = Keys.position(Purpose.TAG, t[0], x);
+        c = _listing(_desc(_authors(Purpose.TAG, t[0], x)));
+        bytes memory cont;
+        while (true) {
+            (TopicPageInfo memory info, AuthorRow[] memory rows) =
+                k.byName(pos, _unbound(), cont, limit);
+            uint64[] memory e = new uint64[](rows.length);
+            for (uint256 i; i < rows.length; ++i) {
+                e[i] = rows[i].firstAdmission;
+            }
+            _step(c, _pg(info, e));
+            if (info.next.length == 0) break;
+            cont = info.next;
+        }
+    }
+
+    function _aboutChain(TopicLookupReader k, uint16 limit, uint16 sample)
+        internal
+        view
+        returns (Listing memory c)
+    {
+        c = _listing(_desc(_rolePlaces(Purpose.TAG, y)));
+        bytes memory cont;
+        while (true) {
+            (TopicPageInfo memory info, PlaceRow[] memory rows) =
+                k.about(y, sample, _unbound(), cont, limit);
+            uint64[] memory e = new uint64[](rows.length);
+            for (uint256 i; i < rows.length; ++i) {
+                e[i] = rows[i].bindingOrdinal;
+            }
+            _step(c, _pg(info, e));
+            if (info.next.length == 0) break;
+            cont = info.next;
+        }
+    }
+
+    function _dirChain(TopicLookupReader k, bool word, uint16 limit)
+        internal
+        view
+        returns (Listing memory c)
+    {
+        bytes32 id = word ? page : t[1];
+        c = _listing(_desc(_refList(word ? 1 : 0, id)));
+        bytes memory cont;
+        while (true) {
+            (TopicPageInfo memory info, PlaceCount[] memory rows) = word
+                ? k.wordPage(id, _unbound(), cont, limit)
+                : k.children(id, _unbound(), cont, limit);
+            uint256 skip = word && cont.length == 0 ? 1 : 0; // the word page's root row is no list entry
+            uint64[] memory e = new uint64[](rows.length - skip);
+            for (uint256 i; i < e.length; ++i) {
+                e[i] = rows[i + skip].admission;
+            }
+            _step(c, _pg(info, e));
+            if (info.next.length == 0) break;
+            cont = info.next;
+        }
+    }
+
+    function _mineChain(TopicMineReader m) internal view returns (Listing memory c) {
+        c = _listing(_mergeDesc(_scopeList(alice, t[0]), _scopeBelow(alice, t[0])));
+        bytes memory cont;
+        while (true) {
+            (TopicPageInfo memory info, MineRow[] memory rows) =
+                m.mine(_lens1(alice), t[0], true, _unbound(), cont, 0, 0, 0);
+            uint64[] memory e = new uint64[](rows.length);
+            for (uint256 i; i < rows.length; ++i) {
+                e[i] = rows[i].bindingOrdinal;
+            }
+            _step(c, _pg(info, e));
+            if (info.next.length == 0) break;
+            cont = info.next;
+        }
+    }
+
+    function _everyoneChain(TopicEveryoneReader ev, uint16 sample)
+        internal
+        view
+        returns (Listing memory c)
+    {
+        c = _listing(_mergeDesc(_place(Purpose.TAG, t[0]), _placeBelow(t[0])));
+        bytes memory cont;
+        while (true) {
+            (TopicPageInfo memory info, PlaceRow[] memory rows) = ev.everyone(
+                ITopicEveryoneReader.PlaceQuery(Purpose.TAG, t[0], true, true, sample),
+                new bytes32[](0),
+                _unbound(),
+                cont,
+                0,
+                0,
+                0
+            );
+            uint64[] memory e = new uint64[](rows.length);
+            for (uint256 i; i < rows.length; ++i) {
+                e[i] = rows[i].bindingOrdinal;
+            }
+            _step(c, _pg(info, e));
+            if (info.next.length == 0) break;
+            cont = info.next;
+        }
+    }
+
+    /// A full page (64 rows) of every lookup view, with entries left: the frontier is the 65th entry.
+    function test_full_lookup_pages_have_the_right_frontier() public view {
+        Listing memory c = _byNameChain(lookup, 64);
+        assertEq(c.pages, 2);
+        assertEq(c.frontiers[0], c.all[64], "byName: the 65th entry");
+        c = _aboutChain(lookup, 64, 0);
+        assertEq(c.pages, 2);
+        assertEq(c.frontiers[0], c.all[64], "about: the 65th entry");
+        c = _dirChain(lookup, false, 64);
+        assertEq(c.pages, 2);
+        assertEq(c.frontiers[0], c.all[64], "children: the 65th entry");
+        c = _dirChain(lookup, true, 64); // 63 entries and the root row, then 64
+        assertEq(c.pages, 2);
+        assertEq(c.frontiers[0], c.all[63], "wordPage: the 64th entry after the root row");
+        assertGe(N, 66);
+    }
+
+    /// Through readers whose index and store refuse a read above the Realm's `maxReadCount`, every view's full
+    /// listing reads as it does directly.
+    function test_no_reader_path_asks_for_more_than_max_read_count() public {
+        uint256 cap = reads.describe(address(r.ledger)).limits.maxReadCount;
+        assertEq(cap, 256, "the release profile's maxReadCount");
+        (TopicMineReader m, TopicEveryoneReader e, TopicLookupReader k) = _capped(cap);
+        _mineChain(m);
+        _everyoneChain(e, 64);
+        _byNameChain(k, 64);
+        _byNameChain(k, 0);
+        _aboutChain(k, 64, 64);
+        _dirChain(k, false, 64);
+        _dirChain(k, true, 64);
+    }
+
+    /// What each path asks for at most: the windows 16, a sample 64, a lookup page its rows plus one.
+    function test_what_each_path_asks_for_at_most() public {
+        (TopicMineReader m, TopicEveryoneReader e, TopicLookupReader k) = _capped(16);
+        _mineChain(m);
+        _everyoneChain(e, 0);
+        _byNameChain(k, 15); // 15 rows and the look-ahead entry
+        (, e, k) = _capped(64);
+        _everyoneChain(e, 64);
+        _byNameChain(k, 63);
+        _aboutChain(k, 63, 64);
+        _dirChain(k, false, 63);
+        _dirChain(k, true, 64); // 63 entries and the look-ahead, then 64 with entries left: below
+        // a full page with entries left asks for its 64 rows and the look-ahead entry in one slice: 65
+        bytes32 pos = Keys.position(Purpose.TAG, t[0], x);
+        vm.expectPartialRevert(E_TOPIC_READ.selector);
+        this.byName64(k, pos);
+        (,, k) = _capped(65);
+        _byNameChain(k, 64);
+        _aboutChain(k, 64, 0);
+        _dirChain(k, false, 64);
+        _dirChain(k, true, 64);
+    }
+
+    function byName64(TopicLookupReader k, bytes32 pos) external view {
+        k.byName(pos, _unbound(), "", 64);
     }
 }
