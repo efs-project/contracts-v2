@@ -324,9 +324,14 @@ call plus the next publication's leaf count stay within `maxFacts` (at least one
 pending it returns the frontier). It folds only the families of the generation's fresh stores, with the live fold
 code, so a generation of generation 1's code can rebuild both stores (the heal path) or either one while carrying the
 other (docs/INDEX-BUILD.md §3.2–3.4, §4.3). `replayNextPublication` is unchanged. Fold hooks run only when both stores
-are fresh; final hooks never run in a build or replay. Coverage reads of a generation that is not the live index now
-apply its carried check to families in carried stores (PARTIAL from 1 through 0 when it fails); the live index's
-answers are unchanged. **`E_BUILD` codes:** 1 live or activated, 2 a store names the generation as `INITIAL_WRITER`
+are fresh; final hooks never run in a build or replay. Coverage reads of a generation that has never folded live now
+apply its carried check to families in carried stores (PARTIAL from 1 through 0 when it fails); a generation that has
+folded live (the live index, or a replaced one) answers exactly as before, at the same cost: it is told apart by its
+own `liveStarted`, read in the call coverage already made. **`E_INDEX_NOT_READY(12)` gains a case:** on a Realm with no
+admissions, a store of a maintained family must also name 0 or the candidate as `INITIAL_WRITER` (a third contract
+could otherwise write it in build mode after activation, before the first live write attaches it); the generation's
+carried check refuses the same (`build` gives 7). Genesis stores (`INITIAL_WRITER` 0) and a generation's own fresh
+stores are unaffected. **`E_BUILD` codes:** 1 live or activated, 2 a store names the generation as `INITIAL_WRITER`
 but a live write has attached it, 3 not idle or a call in flight, 5 a fresh store and no decoder, 6 the next
 publication's leaf count exceeds `maxFacts`, 7 the carried check fails, 8 a nonzero `familyId`; **4 is removed** (and
 stays unused). The meanings are in `src/interfaces/Errors.sol` and `release/errors.json`.

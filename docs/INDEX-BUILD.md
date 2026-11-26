@@ -326,7 +326,11 @@ live path runs the split code too. The next publication's leaf count is read fro
 ledger per publication (a cold slot the decoder then reads warm, so it adds about a call's overhead, not a cold read).
 `maxFacts = 0` with a pending publication reverts 6; with nothing pending any budget returns the frontier. Measured
 (test 7, `test/index/BuildWalk.t.sol::test_heaviest_publications_build_in_one_call`): every admitted shape's
-largest publication builds in one call well under 2^24 on both schedules (§8 test 11 has the figures).
+largest publication builds in one call well under 2^24 on both schedules (§8 test 11 has the figures). The walk
+needs one admitted publication's build to fit one transaction; for the heaviest admitted publication today that is
+9.76M of the 16.7M a 2^24 transaction leaves the call (depth-64 first tags, prague). A generation whose folds are
+heavier than those of the generation that admitted the history (more lists, or a full replay with extra families)
+must measure this again, and leaf-granular resume is the remedy, which can ship in that generation's own code.
 
 Leaf granularity (resuming inside a publication) is not proposed. It would be needed only if one publication's
 build cost could exceed one transaction's gas. A build of the HEAD family costs far less per leaf than the
@@ -380,7 +384,8 @@ passes at the moment it is read.
   `INITIAL_WRITER` is. An honest build or replay on an empty Realm makes no store call (`replayNextPublication`
   returns before decoding when there is no publication; `build` folds nothing), and every build-mode or live write
   records a writer range on its first call (`StoreBase._authorizeWriter`), so this holds for every honest store.
-  Genesis needs no special case: generation 1's stores are new, and the kernel's check 12 has the same rule. When the generation is the live index the check passes (it folds its
+  Genesis needs no special case: generation 1's stores are new, and the kernel's check 12 has the same rule.
+  **Since step 2** each store must also name 0 or the generation itself as `INITIAL_WRITER` (below, §5.3). When the generation is the live index the check passes (it folds its
   stores itself; this also stops the check from asking itself). A generation with no carried store passes. A live
   index without code, or whose readiness read reverts, fails the check (with admissions).
 - **Readiness when the check fails.** `completedAdmission` and `completedPublication` are 0 and `ready` is false,
@@ -405,12 +410,19 @@ apply the check to carried families there.
 `coverageOfType`, `coverageOfSpec`, `coverageOfDigest`, `postingHeadOf`, `postingSliceOf` and `occurrencesOf`)
 answers, for a maintained family of the calling generation:
 
+The caller's state is read from its own progress word, in the one call coverage already made to it
+(`generationProgress()`, which returns the frontier and `liveStarted`): a generation that has folded live answers
+exactly as before step 2, with no ledger read and no check, so the live index's reads cost what they cost at
+`99d617a` (tools/RELEASE.md item 27). Only a generation that has never folded live takes the check.
+
 | state of the caller | family in a fresh store | family in a carried store |
 |---|---|---|
-| the live index (`ledger.index()`) | COMPLETE (1, admissions) while idle; inside a publication, as before (unchanged) | same (no check: it folds its own stores; one more ledger read, `index()`) |
-| not live, building or behind (frontier < admissions), check passes | PARTIAL (1, frontier) | PARTIAL (1, frontier) |
-| not live, caught up, check passes | COMPLETE (1, admissions) | COMPLETE (1, admissions) |
-| not live, check fails | PARTIAL (1, frontier) (or COMPLETE when caught up): it folded these itself | **PARTIAL (1, 0)**: it claims nothing, as readiness does |
+| the live index, has folded live (`liveStarted`) | as before step 2: COMPLETE (1, admissions) while idle; unchanged inside a publication | same (no check, no extra read) |
+| the live index, activated but no live admission yet (`liveStarted == 0`) | takes the check, which passes for the live index: COMPLETE (1, admissions) | same |
+| folded live, then replaced | as before step 2, from its stale frontier: COMPLETE while nothing has been admitted since, PARTIAL (1, frontier) after | same (stale, as before; the check is not asked) |
+| never live, building or behind (frontier < admissions), check passes | PARTIAL (1, frontier) | PARTIAL (1, frontier) |
+| never live, caught up, check passes | COMPLETE (1, admissions) | COMPLETE (1, admissions) |
+| never live, check fails | PARTIAL (1, frontier) (or COMPLETE when caught up): it folded these itself | **PARTIAL (1, 0)**: it claims nothing, as readiness does |
 | any | gapped: PARTIAL (1, frontier) | same |
 
 A family that is not maintained, or not declared, is UNKNOWN (0, 0) as before. "Carried" here includes a store that
@@ -640,7 +652,46 @@ requires every store of a maintained family to have an empty writers list, whoev
 (genesis: new stores, empty lists). Together the checks keep one invariant by induction: **every store of the live
 index holds only what pinned generation code wrote.** The base case is the empty Realm (no store written); a carried
 store is the live index's (12); a fresh store is the candidate's own, unattached, and written only by the
-candidate's codehash-pinned code (13). The exact catch-up check (8) now runs **after** the
+candidate's codehash-pinned code (13).
+
+**Landed (step 2): the base case, closed, and the induction argued again.** A store accepts exactly three writers
+(`StoreBase._authorizeWriter`): the live index while a publication is open (live), the live index while idle
+(backfill: `openCoverage`, `backfillOr`, `backfillSet`, `retireCoverage` only), and the store's `INITIAL_WRITER`
+while the store is unattached and the ledger idle (build). The first two are the live index, whose code the kernel
+pinned at activation. So the invariant rests on the third: who is a store's `INITIAL_WRITER`, for as long as it is
+unattached. Step 1's empty-Realm rule asked only that a store be unwritten at activation; a store whose
+`INITIAL_WRITER` was a third contract could then be written by it in build mode after activation, before the first
+live write attached it. **The rule is now: on a Realm with no admissions every maintained family's store is
+unwritten AND names 0 or the candidate as `INITIAL_WRITER`** (reason 12, and the generation's carried check, so
+`build` gives 7). With it, by induction over activations: the first activated index that names a store S was either
+activated on an empty Realm (so `INITIAL_WRITER(S)` is 0 or that index), or with admissions, where S is either fresh
+for it (`INITIAL_WRITER(S)` is that index, unattached: 13) or carried, which 12 allows only if the live index already
+names S, contradicting "first". **So every store any live index has named has `INITIAL_WRITER` 0 or a generation
+that was itself activated over it** (codehash-pinned, its activation having passed every check).
+
+The lazily attached store: with admissions, a store of the live index L can still be unattached, because stores
+attach at their first live write and no admission has touched it yet. Who can write it in build mode?
+
+- **A genesis store** (`INITIAL_WRITER = 0`): nobody (`StoreBase` refuses a zero `INITIAL_WRITER`).
+- **A store whose `INITIAL_WRITER` is a generation G that was activated over it and later replaced before the store
+  attached.** G is pinned code that was activated. It can write S in build mode only through its own `build` or
+  `replayNextPublication`, which refuse once G has folded live (1); so G was replaced before any admission reached it
+  (`liveStarted == 0`), and its frontier is the count at its activation (check 8). Its walk folds only admissions
+  after that, and every admission since then that touches S's families was folded live by G's successors into S,
+  which attached S on the first one; while S is unattached there is none, so G's walk writes nothing to S (it may
+  fold CREATEs, which touch no store), and once S is attached G is refused (2). This assumes G folds no family into S
+  that the generation folding live does not: true for every generation of generation 1's code, whose family sets are
+  fixed per store; a later generation that drops a family from a store it carries must re-argue this. Shown:
+  `test/index/BuildWalkRefusals.t.sol::testAFreshStoreAttachedByALiveWriteRefusesTheBuild` (C builds, is activated,
+  is replaced by D before any admission; C's `build` then folds nothing; D's first write attaches C's stores; C gets
+  2 and the kernel 13).
+- **A candidate's own fresh store** (`INITIAL_WRITER` = the candidate, unattached: 13): only the candidate, pinned by
+  the codehash the activation names. Once it is the live index, its writes are live or backfill (rule 1 is checked
+  first), and its `build` refuses (1).
+
+No case lets unpinned code write a store of the live index. Tests: `testAnEmptyRealmRefusesAStoreAThirdContractCouldWrite`
+(the candidate is refused 12 and `build` 7; the squatter's write then lands in a store no index names, and it cannot
+write the genesis stores the live index uses) and `testAnEmptyRealmStillActivatesARePinAndAFreshGeneration`. The exact catch-up check (8) now runs **after** the
 family loop, so a candidate that can never be ready is named 12 or 13 instead of "behind". Reasons 1 to 13 are listed
 in `src/interfaces/Errors.sol`.
 
@@ -982,25 +1033,29 @@ for any publication the kernel admits** (§9 q1), on this evidence; step 4 measu
     carried check (so readiness claims nothing) and in coverage.
 12. **§4.3's table was incomplete** (the withdrawal's by-record read, every store-internal read, the writer rule,
     most decoder reads); the full table is there, and it shows both mixed configurations are exact.
-13. **"A fresh store attached by any live write ends the build" (§8 test 7) can happen only before the build
-    starts.** An index that names another generation's fresh store passes kernel check 12 only on a Realm with no
-    admissions, where the store must be unwritten; with admissions, a carried store must be the live index's, and
-    a fresh store is no live index's. So no live write can attach a fresh store after its first build write, short of
-    a kernel bug. The test therefore attaches it on the empty Realm and shows the generation (2) and the kernel (13)
-    refusing it after history has landed.
+13. **"A fresh store attached by any live write ends the build" (§8 test 7).** Under the kernel's checks a
+    generation's fresh store is attached by a live write only after the generation itself was activated over it:
+    the empty-Realm route (another index carrying it) is closed by the `INITIAL_WRITER` rule (§5.3). What remains is
+    a generation activated and replaced before any admission reached it; the test takes that route and shows the
+    generation (2) and the kernel (13) refusing it once its successor's first live write attached the stores.
 14. **The stranger's builder** (§8 test 7: "a builder that is not the fresh store's `INITIAL_WRITER` … is refused
     `E_WRITER`"): a stranger generation that names a fresh store of another generation treats it as carried, and its
     carried check fails (7) before it writes anything, so the store's `E_WRITER` is never reached through `build`. The
     store's refusal is shown by a write from that generation's address.
-15. **Coverage applies the carried check** (§3.5 said step 3 should): a carried family of a generation that is not
-    live reports PARTIAL (1, 0) when the check fails, so a not-live generation never reports COMPLETE for a family it
-    cannot vouch for, whatever its frontier. The live index's reads pay one more ledger read (`index()`).
+15. **Coverage applies the carried check** (§3.5 said step 3 should): a carried family of a generation that has
+    never folded live reports PARTIAL (1, 0) when the check fails. The first version asked the ledger `index()` on
+    every coverage read, which made the live index's reads dearer and moved the readers' bounds; the check now keys
+    on the generation's own `liveStarted`, read in the call coverage already made (`generationProgress()`, a new
+    getter on `RealmIndex`, not in a consumer interface), so a generation that has folded live answers exactly as
+    before step 2. A replaced generation answers from its stale frontier, as it did before.
+18. **The empty-Realm rule gained `INITIAL_WRITER`** (§5.3): reason 12 and the carried check also refuse, on a Realm
+    with no admissions, a store whose `INITIAL_WRITER` is neither 0 nor the candidate.
 16. **Fold hooks.** As §3.6 proposes, with the gap it leaves made explicit: a generation-1-shaped generation cannot
     tell a carried unit from a new one, so a build that heals one store calls no fold hook at all; an all-fresh build
     calls them as replay does.
-17. **Sizes.** `RealmIndex` 17,144 B → 18,135 B (budget 19,660; the proposal's estimate of 3–5 KB more was for a
-    generation with per-family store routing, which is step 3); `IndexReads` 11,127 B → 11,645 B; `LedgerControl`
-    unchanged (17,687 B).
+17. **Sizes.** `RealmIndex` 17,144 B → 18,244 B (budget 19,660; the proposal's estimate of 3–5 KB more was for a
+    generation with per-family store routing, which is step 3); `IndexReads` 11,127 B → 11,556 B; `LedgerControl`
+    17,687 B → 17,830 B.
 
 **Pre-freeze gate: activation must not depend on the live index answering.** Check 12 and the generation's carried
 check read the live index's `replayReadiness().families` at run time, whenever the candidate carries a store (a re-pin
