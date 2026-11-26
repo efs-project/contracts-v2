@@ -477,9 +477,9 @@ carried store declared by the live index in the same store from 1), the three-st
 families (carried genesis stores) the same while the check passes, and PARTIAL (1, 0) when it fails
 (`test/index/HeadAuthorsBuild.t.sol::test_build_races_and_switches_on`,
 `::test_admissions_refuse_another_writers_third_store`). What the readers do with PARTIAL and UNKNOWN is pinned per
-view and per family by `test/readers/TopicPartialCoverage.t.sol` (§8): UNKNOWN is a refusal with no rows; PARTIAL is a
-PRESENT page with the faithful rows and its coverage stated (never COMPLETE, never `completeFromOrigin`), as
-`src/interfaces/Readers.sol` specifies; an empty list at PARTIAL is an empty PRESENT page that says PARTIAL.
+view and per family by `test/readers/TopicPartialCoverage.t.sol` (§8): since 2026-11-26 both are a refusal with no
+rows and no counts (PARTIAL is treated exactly as UNKNOWN, docs/TAG-DESIGN.md §6), as `src/interfaces/Readers.sol`
+specifies; an empty list at PARTIAL is UNKNOWN, never an empty page.
 
 Why not trust the writers history instead? Because it cannot tell "complete" from "abandoned". Example: generation
 1 writes store S; generation 2 replays into fresh stores and goes live; S stops receiving writes; generation 3
@@ -1106,10 +1106,13 @@ test of §5.3 (`test/index/DroppedList.t.sol`); the example's work model against
 UNKNOWN and then PARTIAL by a wrapped index). **Not in step 3b:** test 9 (case (d), a digest spec), test 10 (BITMAP
 families) and test 11 (the measured gas of a build, step 4).
 
-**The readers under partial coverage (step 3b), per view.** A family is listed for a view when reporting it UNKNOWN
-or PARTIAL changes the view's answer; for every listed pair the answer is UNKNOWN, no rows and coverage UNKNOWN under
-UNKNOWN, and PRESENT with the faithful rows and coverage PARTIAL (never COMPLETE, never `completeFromOrigin`) under
-PARTIAL; no pair reverts:
+**The readers under partial coverage (step 3b; the rule since 2026-11-26), per view.** A family is listed for a view
+when reporting it UNKNOWN or PARTIAL changes the view's answer. Since the list-coverage rule of 2026-11-26
+(docs/TAG-DESIGN.md §6, the page laws of `src/interfaces/Readers.sol`) PARTIAL is treated exactly as UNKNOWN: for
+every listed pair the answer under either is UNKNOWN, no rows, coverage UNKNOWN, no counts, `frontier` 0 and no
+continuation, and the two answers are identical; a listing resumed after a needed list turned PARTIAL is refused the
+same way; no pair reverts. (Step 3b recorded the earlier behavior, a PRESENT page with the faithful rows and coverage
+PARTIAL; the table of families is unchanged.)
 
 | view | families it needs |
 |---|---|
@@ -1124,7 +1127,7 @@ PARTIAL; no pair reverts:
 | `entryCount` exact / below | live-scope / scope-below |
 | `wordPage`, `children` | place, place-below, reference-position |
 
-An empty list at PARTIAL is an empty PRESENT page that says PARTIAL (`::test_an_empty_list_at_partial_is_never_an_empty_complete_page`).
+An empty list at PARTIAL is UNKNOWN, never an empty PRESENT page (`::test_an_empty_list_at_partial_is_unknown_never_an_empty_page`).
 
 **Test 11 preview (measured, one cold `build` call with nothing else pending; execution gas, which EIP-7825's cap
 bounds; amsterdam's state gas is drawn from a reservoir beyond it):**
@@ -1390,7 +1393,8 @@ until then: a full replay (case (e)).
     history is now written (§3.6, rule (i)). (f) The kernel was not changed and needed no change for three stores.
     (g) §8's reader test: the readers answer PARTIAL as a PRESENT page that states its coverage, as
     `src/interfaces/Readers.sol` specifies, not as UNKNOWN; "UNKNOWN with no rows" holds for UNKNOWN only. No reader was
-    changed. (h) Not in this step: case (d), BITMAP families, the measured gas of a build (step 4).
+    changed. (Superseded 2026-11-26: the list-coverage rule treats PARTIAL exactly as UNKNOWN, docs/TAG-DESIGN.md §6;
+    the three topic readers changed for it.) (h) Not in this step: case (d), BITMAP families, the measured gas of a build (step 4).
 27. **The work model (§6.3).** The model has no per-purpose term, so the new list's price is charged on every
     bind-kind action: `freshPerBindFresh` +10 (one fresh slot on a first statement: the list's head, or its word 0),
     `rwPerBind` +10 (the head rewritten by a later author's first statement), `rwPerBindLater` +10 (the counter on a

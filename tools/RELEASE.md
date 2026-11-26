@@ -210,7 +210,8 @@ rule, never from `indexFloor`.
   the dropped-list test (dropping a list from a carried store activates, the replaced generation's late walk writes
   only the dropped list, declaring it in that store again is refused 12, the kept lists equal a twin Realm's: no
   kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
-  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE); a new unit's fold hook built with the walk;
+  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE; since item 36 PARTIAL is treated exactly as
+  UNKNOWN); a new unit's fold hook built with the walk;
   and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
   add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **What remains
   of the gate:** the measured gas of a build on both schedules (step 4); the liveness gate below; a re-pin that adds a
@@ -512,6 +513,38 @@ from genesis, and the dropped-list, fold-hook and partial-coverage tests of the 
 and the floor-plan vectors' measured figures. Not moved: the index manifest hash (it folds the reads contract, not the
 index), the reads contract (`IndexReads`' runtime is byte-identical) and every other address and codehash, the layout
 id, the hot and store ABI ids, every Type id, `release/errors.json`, the ABI snapshots and the seed.
+
+### The topic readers answer only from complete lists (this release against `4003069`)
+
+**A consumer re-vendors for the release this lands in** (`release/`, `artifacts/`, `deploy/plan.json`,
+`gas/model.json` and the rest of the set above, together): the three topic readers' bytecode, and so their addresses,
+change. Their ABIs do not (`test/snapshots/abi/` is unchanged), and nothing observable changes on a Realm whose live
+index is complete, which every live index is: the rule only decides what a reader does with an index that reports a
+list PARTIAL, and a live index never does.
+
+**36. The list-coverage rule.** A topic reader (`TopicMineReader`, `TopicEveryoneReader`, every view of
+`TopicLookupReader`, the count views `placeCount`, `authorCount` and `entryCount` included) answers from a list only
+when the index reports that list's coverage COMPLETE. A list reported PARTIAL is treated exactly as one reported
+UNKNOWN: status UNKNOWN, no rows, coverage UNKNOWN, no counts (`rawTotal`, `positionsEver` and a count view's two
+counts 0), `frontier` 0 and no continuation; one needed list that is not COMPLETE refuses the view whatever the others
+report, and a listing resumed after a needed list stopped being COMPLETE is refused from that page on. Before, PARTIAL
+gave a PRESENT page with its coverage PARTIAL. Why: that PARTIAL did not survive paging (every page that is not
+origin-started and finished already says PARTIAL, so a listing over a partly built list ended looking like an
+ordinary long one), and its rows could not be promised (`everyone` decides from the `position-authors` counters, and
+no design says what a partly built list's counters hold). A page's own `listingCoverage` is unchanged: COMPLETE only
+when the listing started at the origin and finished on that page, PARTIAL on every other served page; it is now about
+paging alone. Every refusal of a topic view (UNKNOWN, BASIS_STALE, UNSUPPORTED, LIMIT_EXCEEDED, INVALID) also carries
+no counts now: `rawTotal` and `positionsEver` used to keep the counts of lists read before the refusal (for example
+the exact lists of a `mine` below on an index without topic roll-ups). Reading a partly built list (newest pages while
+old history is built) would be a new reader contract, designed with that feature, with a list-coverage field of its
+own that survives paging.
+
+For consumers, in one line: a served topic page can be trusted to come from complete lists, and UNKNOWN on a topic view
+now also covers "the index is still building this list".
+
+**37. Identities.** PLACEHOLDER, filled in at regeneration: the release digest, the plan hash, the three topic
+readers' addresses, runtime codehashes and initcode, their `artifacts/` files, the `gas/model.json` `reads` terms if
+they move, and the list of what did not move.
 
 ### The identity table (this release against `0fb4804`)
 
