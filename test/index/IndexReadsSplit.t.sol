@@ -39,6 +39,11 @@ contract ProgressClaimer {
         return (7, 3, false);
     }
 
+    /// The same claim as coverage asks it (`IndexReads._coverage`), as a generation that has folded live.
+    function generationProgress() external pure returns (uint64, uint64, bool, bool) {
+        return (7, 3, false, true);
+    }
+
     function ask(IndexReads reads, FamilyId family)
         external
         view

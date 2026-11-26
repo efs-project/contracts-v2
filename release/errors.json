@@ -154,7 +154,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": "none",
-      "meaning": "1 the generation is live or was activated 3 the ledger is not idle, or a replay or build call of this generation is in flight 4 the generation has a fresh store: the walk of history into fresh stores is not built yet 7 the carried check fails (docs INDEX-BUILD §3.5): a family the generation carries is not the live index's, or on an empty Realm one of its stores has already been written 8 a nonzero familyId (one walk builds every built family)"
+      "meaning": "1 the generation is live or was activated 2 a store names the generation as INITIAL_WRITER but a live write has attached it (neither fresh nor carried) 3 the ledger is not idle, or a replay or build call of this generation is in flight 5 the generation has a fresh store and no decoder 6 the next publication's leaf count exceeds maxFacts (nothing was folded in this call) 7 the carried check fails (docs INDEX-BUILD §3.5): a family the generation carries is not the live index's, or on an empty Realm one of its stores has already been written or names an INITIAL_WRITER other than 0 and the generation 8 a nonzero familyId (one walk builds every built family)"
     },
     "0xc41bde55": {
       "name": "E_CANARY",
@@ -713,7 +713,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": "none",
-      "meaning": "activation of the index (design §8.3 5g–5h). An unchanged index: 1 codehash or manifest hash other than the revision row's 2 its readiness phase is not IDLE. A new index: 3 its readiness names another ledger 4 another layout 5 an unsupported hot ABI 6 another manifest hash 7 a phase other than IDLE 8 completedAdmission or completedPublication is not the ledger's counts (behind: build or replay again) 9 an APPEND family maintained from an admission other than 1 10 a family's store does not list it 11 a store's writer ranges are not contiguous 12 a carried family is not the live index's (with admissions: a family in a store that does not name the candidate as INITIAL_WRITER is not declared by the live index in the same store from admission 1, or the live index has no code), or on an empty Realm a store has already been written (its writers list is not empty) 13 a store that names the candidate as INITIAL_WRITER is already attached (with admissions)"
+      "meaning": "activation of the index (design §8.3 5g–5h). An unchanged index: 1 codehash or manifest hash other than the revision row's 2 its readiness phase is not IDLE. A new index: 3 its readiness names another ledger 4 another layout 5 an unsupported hot ABI 6 another manifest hash 7 a phase other than IDLE 8 completedAdmission or completedPublication is not the ledger's counts (behind: build or replay again) 9 an APPEND family maintained from an admission other than 1 10 a family's store does not list it 11 a store's writer ranges are not contiguous 12 a carried family is not the live index's (with admissions: a family in a store that does not name the candidate as INITIAL_WRITER is not declared by the live index in the same store from admission 1, or the live index has no code), or on an empty Realm a store has already been written (its writers list is not empty) or names an INITIAL_WRITER other than 0 and the candidate (that contract could write it in build mode until a live write attaches it) 13 a store that names the candidate as INITIAL_WRITER is already attached (with admissions)"
     },
     "0x43e505ed": {
       "name": "E_INDEX_RETURNDATA",

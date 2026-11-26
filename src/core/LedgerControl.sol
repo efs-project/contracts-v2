@@ -330,8 +330,12 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             if (c.admissions == 0) {
                 // the base case of "every store of the live index holds only what pinned generation code wrote":
                 // an empty Realm gives an honest build nothing to fold, and every build-mode or live write records a
-                // writer range, so every store must be unwritten (genesis: new stores)
+                // writer range, so every store must be unwritten (genesis: new stores); and until a live write
+                // attaches it, its INITIAL_WRITER may still write it in build mode, so that must be nobody (0) or
+                // the candidate's own pinned code
                 if (ranges != 0) revert E_INDEX_NOT_READY(12);
+                address iw = IPostingStore(f.store).initialWriter();
+                if (iw != address(0) && iw != index) revert E_INDEX_NOT_READY(12);
             } else if (IPostingStore(f.store).initialWriter() == index) {
                 // a fresh store is the candidate's own: no live write has attached it
                 if (IPostingStore(f.store).attached()) revert E_INDEX_NOT_READY(13);

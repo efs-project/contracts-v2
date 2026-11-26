@@ -651,14 +651,13 @@ contract CarriedTest is Test {
             keccak256(abi.encodeWithSelector(E_BUILD.selector, uint8(3)))
         );
         hook.arm(address(0));
-        // a generation with a fresh store: the walk is the next step (one fresh, one carried; and both fresh)
+        // a generation with a fresh store walks history into it (step 2; `test/index/BuildWalk.t.sol`): one fresh and
+        // one carried, and both fresh, where replay and build resume each other's frontier
         (, IGeneration1 mixed) = _gen(a, address(a.g.posting), address(0));
-        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(4)));
-        mixed.build(bytes32(0), 64);
+        assertEq(mixed.build(bytes32(0), 64), 12);
         (, IGeneration1 fresh) = _gen(a, address(0), address(0));
-        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(4)));
-        fresh.build(bytes32(0), 64);
         assertEq(fresh.replayNextPublication(64), 3, "replay still serves the all-fresh case");
+        assertEq(fresh.build(bytes32(0), 64), 12, "the build resumes the replay's frontier");
         // after the generation is live
         assertEq(gen2.build(bytes32(0), 64), 12);
         _activate(a, address(gen2));
