@@ -58,7 +58,7 @@ export const ABI_IDS = [
     ],
   },
   {
-    name: "efs/bitmap-store/1",
+    name: "efs/bitmap-store/2",
     snapshot: "test/snapshots/abi/IBitmapStore.json",
     pins: [
       { file: "src/index/BitmapStore.sol", pattern: /STORE_ABI_ID\s*=\s*(0x[0-9a-fA-F]{64})/ },
