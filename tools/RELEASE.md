@@ -312,6 +312,53 @@ amsterdam (unchanged); the validation composites moved by at most 0.01 points (m
 amsterdam, as at `0fb4804`); the read rows rose by up to 2,652 gas (the reads contract's dispatch), and one read bound
 fell by one skipped entry.
 
+### Build from history, step 2 (this release against `99d617a`)
+
+**A consumer does not re-vendor for this step** (the standing note of item 23's section holds): no ABI, action, write
+or reader changed, and no selector moved (`test/snapshots/abi/` is unchanged). What moved is below; a consumer
+re-vendors once the build work is finished, or earlier only if it needs something else from a later commit.
+
+**26. The walk of history (build from history, step 2).** `build(0, maxFacts)` on a generation with a fresh store
+walks history into it: whole publications in order from the generation's frontier, while the leaves folded in the
+call plus the next publication's leaf count stay within `maxFacts` (at least one publication per call; with nothing
+pending it returns the frontier). It folds only the families of the generation's fresh stores, with the live fold
+code, so a generation of generation 1's code can rebuild both stores (the heal path) or either one while carrying the
+other (docs/INDEX-BUILD.md §3.2–3.4, §4.3). `replayNextPublication` is unchanged. Fold hooks run only when both stores
+are fresh; final hooks never run in a build or replay. Coverage reads of a generation that is not the live index now
+apply its carried check to families in carried stores (PARTIAL from 1 through 0 when it fails); the live index's
+answers are unchanged. **`E_BUILD` codes:** 1 live or activated, 2 a store names the generation as `INITIAL_WRITER`
+but a live write has attached it, 3 not idle or a call in flight, 5 a fresh store and no decoder, 6 the next
+publication's leaf count exceeds `maxFacts`, 7 the carried check fails, 8 a nonzero `familyId`; **4 is removed** (and
+stays unused). The meanings are in `src/interfaces/Errors.sol` and `release/errors.json`.
+
+**27. Gas.** The index's fold now threads a carried-store mask and runs a bind's two stores' halves one after the
+other (docs/INDEX-BUILD.md §10 item 10), and every coverage read of the live index makes one more ledger read
+(`index()`, item 26). Against `99d617a`: the measured publication rows moved by −12 to +1,746 gas (the per-action
+constants rose by 101 to 464 on prague and 96 to 452 on amsterdam: +101 to +108 per PUBLISH, REUSE or CREATE, +365
+to +464 per bind-kind action, +142 per WITHDRAW); `fixed` is unchanged (315,790 prague, 899,110 amsterdam); the
+validation composites moved by at most 0.01 points (max error 5.80% prague, 7.56% amsterdam, was 7.57%). The read
+rows rose by 1,209 to 135,408 gas (about 1,209 to 1,239 per list read, times the reads a page makes), so the reads
+bounds and recommended limits fell slightly: `limitEntries` 245 → 237, `pageTimesLens.everyoneExact` 688 → 680,
+`everyoneBelow` 408 → 400, and a few `bounds` rows by 1 to 4 rows or 8 to 9 skipped entries, on both schedules. An SDK
+that keeps the old limits stays under the 10,000,000 call cap, with less of its 10% margin (the rise is about 3.4%
+of a skipped entry's cost). The floor-plan vectors' `k` did not move for any shape.
+
+**28. Identities.** Moved, against `99d617a`: the release digest (`0xf4e485a48b2955fecf3bdd775bd7faf65f5928bcade7ac9e56b1baa16cf4d207`, was
+`0xa32e7718…69e5`), the plan hash (`0xb43b747fe7ed5feaeb6d0adcb3e02845c58ddb83e8290d78e67aee74db3f4c18`, was
+`0x24e31f13…32ac`), the execution set (`0x1343377b58bab8b9b9192489fa0ea3a34e03f70095acb519d323e348d1fb20a3`, was
+`0xbc4ab679…5b83`), the index obligations (`0x0dd3161e99d3c6450e47e735804704519b4af8939b9a63ba669751aca67256a3`, was
+`0x55405222…4631`) and manifest hash (`0x3bbafe392a3d019270422f061f1dae0adfc8f39990094fac4889e7f12e6da5ca`, was
+`0xbadcd810…ac10`); the code of `RealmIndex` and `IndexReads` (in `artifacts/` only these two files changed), and with
+it, on the fixture Realm, the index (`0xe12318239118a93F7edE13bC3636D473a174Dc8b`, runtime codehash
+`0x8246b8aca3c96efaa22c41ff93ca2a391e0f947a6d6e4cae996947d39aa0b797`) and its reads contract
+(`0x0c8342FcBa52e8D69eD5d6e222C571705B935a6D`, runtime codehash
+`0x5c2e7fbdde924d716254d80bd120463fb838070764c12f4a1165bae19c636e51`); `release/errors.json` (the `E_BUILD` meanings),
+`gas/model.json` and the floor-plan vectors' measured figures. Not moved: `LedgerControl` and every other kernel
+contract, the ledger implementation and proxy (`0xD3523C0efE21753f63282a2713186FE9eB7A136b`), both ProxyAdmins, the
+registry, the controller, both stores (address and code), every reader and the gateway, the layout id, the hot ABI
+ids, both store ABI ids, every Type id, the decoder, every Files rule and the validator, and the seed
+(`efs-fixture-seed/4`, root `0xf7547aa6…c037`).
+
 ### The identity table (this release against `cc59d0c`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
