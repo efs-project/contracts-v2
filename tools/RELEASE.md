@@ -252,6 +252,9 @@ this release.
   149,608 a file to keep it from genesis (9.3× / 3.8×); a cold build call's fixed share is 0.25M to 0.29M (it was
   0.49M to 0.52M while the carried check called the live index); every admitted publication builds in one 2^24 call.
 
+- **The Type registry** (item "A build proves a Type's reference count" below): a build no longer reads a Type's
+  stored reference count; it proves it from the Type's descriptor, so a replacement Type registry need not keep the
+  row. What remains: a registry that withholds a descriptor makes a build refuse (docs/INDEX-BUILD.md §4.3).
 - **Keeping an index that no longer answers** (item "Keeping an index never calls it" below): an activation that
   keeps the live index never calls it; reason 2 is the ledger's own phase, so a live index that no longer answers can
   still be kept while another component or the limits change (docs/INDEX-BUILD.md §5.3).
@@ -273,8 +276,6 @@ this release.
   change to the formula. The formula is in `LedgerIngress`, which has 396 B left under the 19,660 B budget, so the
   change needs a size plan before code.
 - **The digest-spec case (d)**: a digest spec rebuilt in a fresh store (docs/INDEX-BUILD.md §8 test 9).
-- **The Type registry**: until freeze any replacement Type registry must keep existing Type rows unchanged, because
-  the decoder's reference-count read depends on it (docs/INDEX-BUILD.md §4.3).
 - **A manifest copy over 24,575 B** is refused, not split (docs/INDEX-BUILD.md §10 item 34).
 - **A real chain's deployment document must describe that chain, read from the chain.** Today only the fixture tool
   writes a deployment document, and it fills the `chain` block from its `--hardfork` option (osaka or prague, both
@@ -888,6 +889,33 @@ genesis creates on the fixture Realm, the realm id, the domain separator, the st
 the manifest hash and obligations, the plan hash, the execution set and the release digest. **[PLACEHOLDER: the moved
 and unmoved identities and the sizes are filled in at integration, after the one regeneration.]** `LedgerControl`
 18,042 → 17,994 B (−48: `_checkIndex` −89, the inlined `LedgerStorage._lockWord` +41; budget 19,660 B, 1,666 left).
+
+**A build proves a Type's reference count** (number at integration: after "Keeping an index never calls it").
+`IndexReplayDecoder` (pinned by every index generation as `DECODER`) no longer reads `typeInfo(id).refCount`. For a
+PUBLISH or REUSE leaf it asks the registry for `descriptorBytes(id)`, recomputes the Type id from those bytes (the
+registry's derivation: `Keys.typeId(Keys.shape(d), refs, ruleId)` over the leading REF32 fields and header bytes
+66..98) and compares it with the record's Type id; on a mismatch it refuses **`E_REPLAY(10)`** (new code; `Errors.sol`
+and `release/errors.json`), and the count is the descriptor's number of references. Trusted: the registry answers with
+some bytes. Proved: they are the registered descriptor and the count, because the Type id commits to both. A registry
+whose `descriptorBytes` reverts makes the decode (`decode`, `payload`) and any `build` or `replayNextPublication` that
+reaches such a record revert with the registry's own error. Decoded effects are unchanged for every Type a real
+registry registers. No ABI change. Measured (the count read alone, cold / warm; today is `typeInfo`):
+
+| descriptor | prague today | prague proved | amsterdam today | amsterdam proved |
+|---|---|---|---|---|
+| `realm-notice/1` (239 B, the smallest) | 25,050 / 5,541 | 19,461 / 5,452 | 26,250 / 5,541 | 21,161 / 5,552 |
+| `files-content/1` (698 B, the largest in the release) | 25,050 / 5,541 | 20,392 / 6,383 | 26,250 / 5,541 | 22,092 / 6,483 |
+| the codec's largest (4,096 B, 8 references) | 25,050 / 5,541 | 27,634 / 13,625 | 26,250 / 5,541 | 29,334 / 13,725 |
+
+In a build (`test/index/BuildGas.t.sol`): per marginal publication −137 to +609 (prague) and −37 to +709 (amsterdam);
+the fixed share of a cold call −5,500 / −5,100 per distinct Type; a later list over §6.2's 1,000,000 files ≈ +0.33%
+(prague) and ≈ +0.45% of execution (amsterdam), docs/INDEX-BUILD.md §10. **Identities:** the decoder's code changed
+(5,404 → 5,578 B), so its runtime codehash and its address (CREATE2 of its initcode) move; generation 1's index pins it as
+an immutable (`DECODER`, a constructor argument), so the index's runtime codehash and address, the index obligations,
+the execution set, the plan hash and the release digest move with it. The index manifest hash does not (the plan
+computes it from the reads contract, which does not name the decoder), and nothing in the kernel or the registry moves
+for this change. **[PLACEHOLDER: the moved and unmoved identities are filled in at integration,
+after the one regeneration.]**
 
 ## The fixture: many instances at once
 

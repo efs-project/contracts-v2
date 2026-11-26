@@ -744,7 +744,7 @@ state, rebuilt in the same walk, or write-once ledger facts); **E** reads carrie
 | 18b | the decoder: the withdrawn record's Type word | `_effect` | R: write-once | same | write-once, present: the record was first admitted at the target admission or before (`_applyRecord` writes a cell only when its Type word is 0) |
 | 18c | the decoder: the target publication's principal (evidence word 2) | `_effect` | R: write-once | same | write-once, present: as 15a, for an earlier publication |
 | 19a | the decoder: a PUBLISH/REUSE record's Type word and cell word 1 (`freshRecord` = first admission equals this one) | `_effect` | R: write-once | same | write-once, present: the leaf itself wrote the cell or found it written (`_applyRecord`); `firstAdmission` never changes (`occurrences`, which does, is not used) |
-| 19b | the decoder: the Type's `refCount` (`TypeRegistry.typeInfo`) and the registry address (`registry()`) | `_effect`, `_decode` | R: registration is append-only and never changes a Type (design §8.7) | same | write-once, present: the Type was registered before any record of it was admitted (`validateLeaf`: `E_UNKNOWN_TYPE`); `registerDescribed` returns early on an existing row; `refCount` is the length of the reference Types the id commits to; the registry address is set once, at genesis (`LedgerControl` initialize) |
+| 19b | the decoder: the Type's reference count, **proved** from the Type's descriptor bytes (`TypeRegistry.descriptorBytes`), and the registry address (`registry()`) | `_effect`, `_refCount`, `_decode` | R: the count is proved, not read (since 2026-11-26) | same | fixed by the record's Type id (write-once, row 19a), which commits to the whole descriptor (its shape) and to the reference Types with their count: the decoder recomputes the id from the bytes the registry returns and refuses `E_REPLAY(10)` unless it equals the record's, so the count is the descriptor's whatever the registry's implementation; trusted: only that the registry answers (one that withholds or alters a descriptor makes the decode and the build refuse, never fold another count); the registry address is set once, at genesis (`LedgerControl` initialize) |
 | 19c | the decoder: a record's leading body words (the refs) | `_decode` | R: write-once | same | write-once, present: written once with the record's first admission (`_storeBody`), at or before this one |
 | 20 | the build's own leaf count of the next publication (before decoding) | `RealmIndex.build` | R: the write-once evidence cell | same | write-once, present: as row 15 |
 | 21 | the fold's own progress word (`lastProcessed`, `lastPublication`), the generation's digest specs and topic Type ids | `_foldPublication`, `_foldRecord`, `_firstStatementLists` | R | same | the generation's own state and immutables: the order check and its configuration, the same for every fold; not ledger facts |
@@ -768,10 +768,12 @@ ran. Fixed: on the history path `_walk` reads the subject's cell word 1 (its fir
 makes and stops when that is 0 or not strictly below the statement's admission; a live fold of the same leaf sees no
 such record and stops at the same place, so built equals live on every history. Every other read is of a fact that
 cannot begin or change after the folded admission, by a kernel law named in the column, or of the generation's own
-fresh store, rebuilt in the same walk. No other defect was found. One reach beyond the ledger: row 19b's Type row is
-write-once in the current `TypeRegistry` code, and the registry implementation can be replaced by an activation until
-freeze; a replacement must keep existing rows (a Type's `refCount` is also fixed by its id, which commits to its
-reference Types). Also outside the fold: the store writer rule (row
+fresh store, rebuilt in the same walk. No other defect was found. One reach beyond the ledger was row 19b's Type row, write-once in
+the current `TypeRegistry` code but behind an implementation that an activation can replace until freeze. **Done
+(2026-11-26): the decoder no longer reads that row;** it proves the count from the Type's descriptor (row 19b, §10
+"A build proves a Type's reference count"). What remains true of a replacement registry: one that withholds a
+descriptor (reverts, or answers bytes that do not hash to the Type id) makes every build and replay that meets a record
+of that Type refuse, with its own error or `E_REPLAY(10)`; it can never make one fold a different count. Also outside the fold: the store writer rule (row
 14) and the build's own gates (`counts()`, `phase()`, `index()`, `IndexReads.carriedCheck`) bound or refuse a call and
 are not folded; a fold hook is called from history with the same effects as live and must keep the rule itself (a
 later unit's obligation, docs §3.6; generation 1 has none); final hooks are never called from history.
@@ -808,7 +810,7 @@ The proposal's table, for its argument (its walk row relied on the validator; su
 | `recordHeader(recordId).firstAdmission` | `RealmIndex._foldRecord` | Written once, when the record is first admitted. |
 | a digest body word | `RealmIndex._foldRecord` | Record bodies are write-once. |
 | the ancestor walk: a record's Type word and body word 0 | `RealmIndex._walk` | Write-once records; the validator admitted the tag only if its topic was registered strictly before (code 9; `IndexProfiles.sol:26-34`), so every record on the chain existed at the original admission and has not changed. Records registered later are not on the chain: a parent link is written when its child is registered. |
-| the Type's `refCount` (decoder) | `IndexReplayDecoder._effect` | Registration is append-only and never changes an existing Type (design §8.7). |
+| the Type's `refCount` (decoder) | `IndexReplayDecoder._effect` | Registration is append-only and never changes an existing Type (design §8.7). (Since 2026-11-26 proved from the descriptor: row 19b above.) |
 | position and binding cells (decoder) | `IndexReplayDecoder._effect` | Write-once. |
 
 **The rule this gives a built family:** its fold may read write-once ledger facts that a kernel law makes present at
@@ -1746,9 +1748,9 @@ a fresh copy. The storage form chosen is code (item 34).
     since step 4: the liveness gate and the fold-hook gap (Option A, items 34–38) and item 29's amsterdam rewrite price
     (fixed in this release). Open: case (d), a digest spec rebuilt in a fresh store (§8 test 9); the above-cap
     state-gas path on a client that implements EIP-8037 (anvil 1.8.3 accepts `--hardfork amsterdam` but applies prague
-    pricing); the work model's missing compute and per-purpose terms for later statements (item 41); until freeze any
-    replacement Type registry must keep existing Type rows (§4.3). Done since: keeping a live index never calls it, so
-    an index that no longer answers can still be kept (§5.3).
+    pricing); the work model's missing compute and per-purpose terms for later statements (item 41). Done
+    since: keeping a live index never calls it, so an index that no longer answers can still be kept (§5.3); and a build proves a Type's reference count instead of
+    reading the registry's row, so a replacement Type registry no longer has to keep it (§4.3).
 
 ### The liveness gate and Option A (2026-11-26, branch `fable/2026-11-26-liveness`)
 
@@ -1805,7 +1807,7 @@ a fresh copy. The storage form chosen is code (item 34).
     unit is refused 7 (Option A). `HeadAuthorsHooks.t.sol::test_a_re_pin_cannot_build_a_new_units_hook`: refused 7 / 8
     (was activated). Every plan builder fills the copy (`test/harness/ManifestCopy.sol`); `HeadAuthorsReads` names its
     new units through `_builtHooks`.
-38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule; the unchanged
+38. **Still open.** Case (d), a digest spec rebuilt in a fresh store (§8 test 9); the Type-registry rule (done since: a build proves the count, §4.3); the unchanged
     index path's reason-2 read (§5.3; done since: keeping an index never calls it); a copy over 24,575 B (refused, not split).
 
 ### The final integration (2026-11-26, branch `fable/2026-11-26-final`)
@@ -1859,3 +1861,58 @@ alone; merged on `main` at `726993e` (step 4), they were built, tested together 
     tag-level terms count, and prague's edits +7.5% to +8.0% at 20k to 24k. A real term would need a row measured
     independently of the composites it is judged against. Not pursued in this release; the model stays as it is,
     with no re-fit and no new term (tools/RELEASE.md item 40).
+
+### A build proves a Type's reference count (2026-11-26, branch `fable/2026-11-26-decoder-registry`)
+
+**What changed.** `IndexReplayDecoder._refCount`: for a PUBLISH or REUSE leaf the decoder asks the registry only for
+`descriptorBytes(typeId)`, projects the rule id (header bytes 66..98) and the leading REF32 fields (kind byte 1, at most
+eight: the codec requires references to lead), recomputes `Keys.typeId(keccak(DOM_DESCRIBED_SHAPE, d), refs, ruleId)`,
+compares it with the record's Type id read from the ledger (row 19a) and refuses `E_REPLAY(10)` on a mismatch (or bytes
+shorter than the 134-byte header); the count is `refs.length`. It no longer calls `typeInfo`. **Trusted:** that the
+registry answers with some bytes. **Proved:** that they are the registered descriptor and that the count is its number
+of declared references, because the Type id commits to both (its shape hashes the whole descriptor, and it hashes the
+reference Types with their count). The projection is not the full `DescribedCodec.parse`: a registered descriptor
+parsed at registration, and bytes that are not it cannot hash to its id. A record whose Type id no descriptor derives
+cannot be decoded; on a real Realm none exists, because `TypeRegistry._retain` registers a Type only under
+`Keys.typeId(Keys.shape(descriptor), refs, h.ruleCodehash)` and the kernel admits a record only of a registered Type
+(`E_UNKNOWN_TYPE`). Decoded effects are identical to before: every suite that decodes or builds on the real registry
+(`BuildWalk`, `BuildAsOf`, `TopicListsReplay`, the `HeadAuthors*` suites, `DroppedList`, `BuildGas`) passes unchanged.
+
+**The stand-in Types.** Four suites run on `MockRegistry` with a made-up Type id (`keccak256("test/type/ok")`), which no
+descriptor derives, so the proving decoder refused their records (20 tests, `MockUnsupported` from the mock's
+`descriptorBytes`). Their `TYPE_OK` is now `StandInTypes.OK_ID`, the id of a real codec-1 descriptor with no references
+(as `TYPE_OK` always had), registered on the mock by `setDescriptor` (which refuses a descriptor that does not derive
+the id); nothing else in those suites changed (`Replay`, `Carried`, `Liveness`, `BuildWalkRefusals`: one import, the
+constant, one `setDescriptor` line each). `testReplayRefusals` sees `E_REPLAY(6)` again, and the decode-equals-live checks
+(`testReplayEqualsLiveAcrossEveryNewTransition`, `testDecoderMatchesTheLiveStream`) pass as they are.
+
+**Tests** (`test/index/ProvedRefCount.t.sol`): the thirteen release Types' stored counts are pinned (0, 1, 0, 0, 0, 1,
+1, 0, 0, 2, 0, 2, 0 in `FilesFixture` order) and the proved count equals each; a registry whose `typeInfo` answers a
+wrong count (7) for every Type is never asked (`vm.expectCall` count 0), every publication of the mixed history decodes
+to the same payload, and a full replay builds to the end; altered bytes (a name byte, a rule-id byte), the last byte cut,
+bytes cut below the header, another Type's descriptor (`topic/1`, two references) and empty bytes are each refused
+`E_REPLAY(10)`; a `build` over a registry that answers wrongly refuses `E_REPLAY(10)` and its frontier does not move,
+and builds to the end once the registry answers truly; a registry whose `descriptorBytes` reverts is bubbled (the decode
+and the `build` revert with the registry's own error, nothing changes); a 4,096-byte descriptor with eight references,
+registered as a real NATIVE Type, is proved 8; and a record of a made-up Type id on a `MockRegistry` that serves a
+descriptor deriving another id cannot be decoded (`UnderivedTypeTest`, `E_REPLAY(10)`).
+
+**Gas** (measured; the count read alone, a probe calling the registry and the proof, cold then warm in one call; today =
+`typeInfo(id).refCount`):
+
+| descriptor | prague today | prague proved | amsterdam today | amsterdam proved |
+|---|---|---|---|---|
+| smallest, `realm-notice/1` (239 B) | 25,050 / 5,541 | 19,461 / 5,452 | 26,250 / 5,541 | 21,161 / 5,552 |
+| largest of the release, `files-content/1` (698 B) | 25,050 / 5,541 | 20,392 / 6,383 | 26,250 / 5,541 | 22,092 / 6,483 |
+| the codec's largest (4,096 B, 8 references) | 25,050 / 5,541 | 27,634 / 13,625 | 26,250 / 5,541 | 29,334 / 13,725 |
+
+Cold is cheaper (`descriptorBytes` reads one slot of the Type row; `typeInfo` reads about six); warm costs −89 to +942
+on the release's Types. In a build (`BuildGas.t.sol`, both profiles, against `63fa839`): per marginal publication,
+create file −16 (prague) / +184 (amsterdam), edit and second author's version +609 / +709, folder move −99 / +1, plain
+publish −137 / −37, HEAD transitions and first tag +20 / +20 (code placement: they publish no record); the fixed share of a
+cold call falls by 5,500 (prague) / 5,100 (amsterdam) per distinct Type it meets (create file −11,000 / −10,200); the
+mixed segment +20,998 / +32,398 (+0.22% / +0.34%). Applied to §6.2's history: ≈ +1,560 a file on prague (477,732 →
+≈ 479,290, +0.33%) and ≈ +2,100 of execution on amsterdam (467,971 → ≈ 470,070, +0.45%; +0.36% of all gas), an
+extrapolation from the marginal figures, not a measured run. Every band of `BuildGas.t.sol` holds unchanged. No cache:
+the decoder is STATICCALLed once per publication (so no transient storage), and a warm proof costs about what the old
+read did. Size: `IndexReplayDecoder` 5,404 → 5,578 B (budget 19,660 B).
