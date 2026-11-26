@@ -35,13 +35,18 @@ library KernelDeploy {
     }
 
     Vm private constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-    /// EIP-8037 (Glamsterdam): the execution-gas part of a fresh slot. The GAS opcode never sees the state-gas
-    /// reservoir, so every floor term is an execution-gas price on that schedule (design §10.4).
+    /// The floor prices per schedule: execution gas only, because the GAS opcode never sees EIP-8037's state gas
+    /// (design §10.4). They mirror tools/deploy-plan.mjs GAS_SCHEDULES through test/vectors/gas-schedules.json, and
+    /// test/integration/FloorPrices.t.sol fails when either differs or when a measured cold write is not this price.
+    uint32 internal constant PRAGUE_FLOOR_FRESH_GAS = 22_100;
+    uint32 internal constant PRAGUE_FLOOR_REWRITE_GAS = 5_000;
+    /// EIP-8037/8038 (Glamsterdam): the execution-gas part of a fresh slot, and a cold rewrite of an existing slot,
+    /// which costs the same execution gas.
     uint32 internal constant GLAMSTERDAM_FLOOR_FRESH_GAS = 12_100;
+    uint32 internal constant GLAMSTERDAM_FLOOR_REWRITE_GAS = 12_100;
 
-    /// The design's §4.2 limits. Under `FOUNDRY_PROFILE=amsterdam` the floor's fresh-slot price is the
-    /// Glamsterdam execution-gas price (a rewrite stays 5,000: measured, the callbacks' non-fresh execution gas is
-    /// the same on both schedules), so the suites run with the limits a Glamsterdam Realm would activate.
+    /// The design's §4.2 limits. Under `FOUNDRY_PROFILE=amsterdam` the floor's prices are the Glamsterdam
+    /// execution-gas prices, so the suites run with the limits a Glamsterdam Realm would activate.
     function s1Limits() internal view returns (Limits memory l) {
         l.maxActions = 64;
         l.maxBody = 8_192;
@@ -57,8 +62,8 @@ library KernelDeploy {
         l.maxFreshSlotsPerPublication = 600;
         l.maxReadIds = 64;
         l.maxReadCount = 256;
-        l.floorFreshGas = _amsterdam() ? GLAMSTERDAM_FLOOR_FRESH_GAS : 22_100;
-        l.floorRewriteGas = 5_000;
+        l.floorFreshGas = _amsterdam() ? GLAMSTERDAM_FLOOR_FRESH_GAS : PRAGUE_FLOOR_FRESH_GAS;
+        l.floorRewriteGas = _amsterdam() ? GLAMSTERDAM_FLOOR_REWRITE_GAS : PRAGUE_FLOOR_REWRITE_GAS;
         l.kernelTail = 20_000;
     }
 
