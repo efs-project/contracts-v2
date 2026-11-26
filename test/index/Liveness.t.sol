@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Batch} from "./Carried.t.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {ManifestCopy} from "../harness/ManifestCopy.sol";
+import {RecordingFoldHook} from "../harness/HeadAuthors.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {MockRegistry} from "../harness/doubles/MockRegistry.sol";
@@ -245,6 +246,16 @@ contract LivenessTest is Test {
         internal
         returns (IGeneration1 ix)
     {
+        return _gen(R, posting, bitmap, copy, new Unit[](0));
+    }
+
+    function _gen(
+        Realm storage R,
+        address posting,
+        address bitmap,
+        bytes memory copy,
+        Unit[] memory units
+    ) internal returns (IGeneration1 ix) {
         IndexDeployer.Plan memory plan;
         plan.hotAbiId = KernelDeploy.HOT_ABI_ID;
         plan.decoder = address(new IndexReplayDecoder());
@@ -256,7 +267,7 @@ contract LivenessTest is Test {
         plan.bitmap = bitmap;
         plan.readsInitcode = type(IndexReads).creationCode;
         plan.generationInitcode = type(RealmIndex).creationCode;
-        plan.units = new Unit[](0);
+        plan.units = units;
         plan.specs = _specs();
         plan.work = IndexDoubleDefaults.workModel();
         plan.liveManifest = copy;
@@ -637,5 +648,32 @@ contract LivenessTest is Test {
     function _replaceAndCompareAfterBreak() internal {
         _history(b);
         _replaceAndCompare(ManifestCopy.ofReads(address(breakable)));
+    }
+
+    // =============================================================================================
+    // 7. Option A on the empty Realm
+    // =============================================================================================
+
+    /// With no admissions there is no history a new fold hook could miss: a re-pin that walks nothing and adds a unit
+    /// with a fold hook the live index never ran passes and activates (docs INDEX-BUILD §3.6).
+    function test_the_empty_realm_accepts_a_new_fold_hook_unit() public {
+        RecordingFoldHook h = new RecordingFoldHook();
+        Unit[] memory units = new Unit[](1);
+        units[0] = Unit({
+            foldHook: address(h),
+            foldCodehash: address(h).codehash,
+            finalHook: address(0),
+            finalCodehash: 0,
+            familyIds: new bytes32[](0),
+            purposeFilter: 0,
+            hotAbiId: KernelDeploy.HOT_ABI_ID,
+            identity: keccak256("test/unit/new-on-empty")
+        });
+        IGeneration1 g2 = _gen(a, address(a.g.posting), address(a.g.bitmap), "", units);
+        assertTrue(ICarriedCheck(address(g2)).carriedCheck());
+        assertEq(g2.build(bytes32(0), 64), 0);
+        _activate(a, address(g2));
+        _history(a);
+        assertEq(h.calls(), 11, "the hook folded every admission live, from 1");
     }
 }

@@ -473,13 +473,17 @@ contract BuildWalkRefusalsTest is Test {
             _gen(a, address(0), address(0), _hookUnit(address(replayHook)), true);
         while (replayed.replayNextPublication(64) != 0) {}
         assertEq(replayHook.calls(), 11);
-        // one store carried: no fold hook is called (the unit folded live; its companion store is not rebuilt)
+        // one store carried: a build that heals one store calls no fold hook of a unit its reads contract does not
+        // name as built, so a unit the live index never ran would miss the history; Option A refuses it (docs
+        // INDEX-BUILD §3.6: the carried check fails, `build` 7, readiness claims nothing). Before Option A this
+        // build passed with the hook called for nothing.
         CountingHook mixedHook = new CountingHook();
         (, IGeneration1 mixed) =
             _gen(a, address(0), address(a.g.bitmap), _hookUnit(address(mixedHook)), true);
-        assertEq(mixed.build(bytes32(0), 64), 11);
+        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
+        mixed.build(bytes32(0), 64);
         assertEq(mixedHook.calls(), 0, "no fold hook in a build that heals one store");
-        assertTrue(mixed.replayReadiness().ready);
+        assertFalse(mixed.replayReadiness().ready);
     }
 
     // =============================================================================================

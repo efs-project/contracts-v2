@@ -315,7 +315,7 @@ contract IndexReads {
         (bool bitmapCarried, bool bitmapSpoiled) = _storeOf(BITMAP, gen);
         if (postingSpoiled || bitmapSpoiled) return false;
         if (!postingCarried && !bitmapCarried) return true;
-        (bool ok, FamilyEntry[] memory theirs,) = _liveManifest();
+        (bool ok, FamilyEntry[] memory theirs, Unit[] memory theirUnits) = _liveManifest();
         if (!ok) return false;
         for (uint256 i; i < _families.length; ++i) {
             FamilyEntry storage f = _families[i];
@@ -323,7 +323,51 @@ contract IndexReads {
             if (!(f.store == POSTING ? postingCarried : bitmapCarried)) continue;
             if (!_declaresFromOne(theirs, f.familyId, f.store)) return false;
         }
+        return _unitsCarried(theirUnits, !postingCarried || !bitmapCarried);
+    }
+
+    /// Option A (docs INDEX-BUILD §3.6), the half of the carried check for fold hooks, asked only when the generation
+    /// carries a store (a build that carries a store calls no hook of a unit unless `_builtHooks` names it; an
+    /// all-fresh build calls every hook from history). Every unit with a fold hook must be CARRIED: the live index
+    /// (`theirs`, from the verified copy) declares a unit with the same fold hook, the same fold codehash and the same
+    /// `purposeFilter`, the three fields that decide which effects `RealmIndex._foldHooks` gives the hook, so the live
+    /// index has called it with exactly these effects for every admission. A wider filter would leave effects the hook
+    /// never saw, a narrower one folds the hook would no longer be given; neither is what the hook would hold had it
+    /// run from genesis under this unit, so both are NEW. `familyIds`, the final hook and its codehash, `hotAbiId` and
+    /// `identity` decide no fold call and are not compared. A NEW unit passes only when `_builtHooks` names it AND the
+    /// generation walks history (`walks`: it has a fresh store, so `build` folds every publication from 1 and calls the
+    /// hook on each); a generation that carries every store walks nothing, so no claim to build a hook can be true for
+    /// it and none is accepted. Otherwise the check fails (`build` 7, readiness claims nothing, so activation refuses
+    /// 8). Final-hook-only units are never judged here.
+    function _unitsCarried(Unit[] memory theirs, bool walks) internal view returns (bool) {
+        uint256 built = walks ? _builtHooks() : 0;
+        for (uint256 i; i < _units.length; ++i) {
+            Unit storage u = _units[i];
+            address hook = u.foldHook;
+            if (hook == address(0) || (built >> i) & 1 != 0) continue;
+            bool found;
+            for (uint256 j; j < theirs.length && !found; ++j) {
+                found = theirs[j].foldHook == hook && theirs[j].foldCodehash == u.foldCodehash
+                    && theirs[j].purposeFilter == u.purposeFilter;
+            }
+            if (!found) return false;
+        }
         return true;
+    }
+
+    /// The opt-out of Option A (docs INDEX-BUILD §3.6): bit i set says unit i's fold hook is built from history by this
+    /// generation's own code, so a build that carries stores calls it on every effect it walks and the carried check
+    /// does not require the live index to have called it (only when the generation walks: `_unitsCarried`). The
+    /// generation reads this mask once, at construction (`RealmIndex.BUILT_HOOKS`), and its `_hookRuns` follows it,
+    /// so the claim the check accepts and the calls the build makes are one value and cannot drift. Generation 1 builds
+    /// no hook: 0. A bit for a hook the code does not really build from history is the author's lie in pinned code
+    /// (the manifest hash covers this code), not a gap the kernel could close.
+    function _builtHooks() internal view virtual returns (uint256) {
+        return 0;
+    }
+
+    function builtHooks() external view returns (uint256) {
+        return _builtHooks();
     }
 
     /// Unwritten, and writable in build mode by nobody but `gen` until a live write attaches it: its INITIAL_WRITER

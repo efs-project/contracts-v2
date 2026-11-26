@@ -50,6 +50,10 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     address public immutable READS;
     bytes32 public immutable READS_CODEHASH;
     bytes32 public immutable MANIFEST_HASH;
+    /// Bit i set: unit i's fold hook is built from history by this generation (docs INDEX-BUILD §3.6, Option A's
+    /// opt-out), read from READS (`IndexReads.builtHooks`) at construction so the reads contract's carried check and
+    /// this contract's `_hookRuns` answer from the one value.
+    uint256 public immutable BUILT_HOOKS;
     bytes32 public constant PHYSICAL_PROFILE = IndexProfiles.PHYSICAL;
     bytes32 public constant CALLBACK_PROFILE = IndexProfiles.CALLBACK;
     bytes32 public constant MANIFEST_HEADER = IndexProfiles.MANIFEST_HEADER;
@@ -147,6 +151,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
             _specs.push(specs[i]);
         }
         _work = work;
+        BUILT_HOOKS = IndexReads(reads).builtHooks();
         MANIFEST_HASH = keccak256(
             abi.encode(
                 header, families, units, specs, work, physical, callback, reads, reads.codehash
@@ -272,11 +277,12 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// Whether unit `unit`'s fold hook runs in a fold under the carried mask `carried`: live, in a replay and in an
-    /// all-fresh build (mask 0), and nowhere else. Virtual so that a later generation that knows which of its units
-    /// are new (docs INDEX-BUILD §3.6, §8 test 12) calls a new unit's hook in a build that carries other stores, and
-    /// never a carried unit's.
-    function _hookRuns(uint256, uint256 carried) internal view virtual returns (bool) {
-        return carried == 0;
+    /// all-fresh build (mask 0), and, in a build that carries a store, only for a unit `BUILT_HOOKS` names (docs
+    /// INDEX-BUILD §3.6: a unit this generation builds from history; a carried unit's hook folded live already). Not
+    /// virtual: a later generation opts in through its reads contract's `_builtHooks`, which the carried check reads
+    /// too, so the hooks a build calls and the hooks the check accepts as built cannot differ.
+    function _hookRuns(uint256 unit, uint256 carried) private view returns (bool) {
+        return carried == 0 || (BUILT_HOOKS >> unit) & 1 != 0;
     }
 
     /// Extension point for a later generation's families in further stores (docs INDEX-BUILD step 3): called after
