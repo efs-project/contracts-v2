@@ -680,9 +680,19 @@ attach at their first live write and no admission has touched it yet. Who can wr
   (`liveStarted == 0`), and its frontier is the count at its activation (check 8). Its walk folds only admissions
   after that, and every admission since then that touches S's families was folded live by G's successors into S,
   which attached S on the first one; while S is unattached there is none, so G's walk writes nothing to S (it may
-  fold CREATEs, which touch no store), and once S is attached G is refused (2). This assumes G folds no family into S
-  that the generation folding live does not: true for every generation of generation 1's code, whose family sets are
-  fixed per store; a later generation that drops a family from a store it carries must re-argue this. Shown:
+  fold CREATEs, which touch no store), and once S is attached G is refused (2). "Writes nothing" holds when G and
+  the generation folding live keep the same lists in S, which is true for every generation of generation 1's code.
+  **If the successor dropped a list F from S**, the precise statement is: a publication that touches only F does not
+  attach S (the successor writes nothing for it), so G's walk can still fold F's entries for it into S. That does
+  not break the invariant: G is pinned code that was activated, and what it writes is the honest fold of F. The
+  entries are dead weight: nobody reads them through the live index, which does not declare F, and no later
+  generation can declare F in S again, because check 12 needs the live index to declare F in S from admission 1. A
+  list the successor still keeps can never be written by G after the switch: any publication touching it was folded
+  live first, which attached S. So dropping a list from a carried store is allowed and is not refused; forbidding it
+  would force a whole-history rebuild of the kept lists (§6.2) for an ordinary cost cut. This is argued from the
+  store and generation rules, not yet from a test; step 3 proves it with a generation that drops a list (the drop
+  activates; the replaced generation's late walk writes only the dropped list; declaring it again is refused 12;
+  the kept lists equal a twin Realm's), and a refusal is added only if that test finds a case. Shown today:
   `test/index/BuildWalkRefusals.t.sol::testAFreshStoreAttachedByALiveWriteRefusesTheBuild` (C builds, is activated,
   is replaced by D before any admission; C's `build` then folds nothing; D's first write attaches C's stores; C gets
   2 and the kernel 13).
@@ -1056,7 +1066,11 @@ for any publication the kernel admits** (§9 q1), on this evidence; step 4 measu
     calls them as replay does.
 17. **Sizes.** `RealmIndex` 17,144 B → 18,244 B (budget 19,660; the proposal's estimate of 3–5 KB more was for a
     generation with per-family store routing, which is step 3); `IndexReads` 11,127 B → 11,556 B; `LedgerControl`
-    17,687 B → 17,830 B.
+    17,687 B → 17,830 B. **`RealmIndex` has 1,416 B left under the budget.** One more list in a third store costs a
+    fold and a store address, and the budget is the project's, below the protocol's 24,576 B. But a real later
+    generation that keeps every generation-1 list and adds several more in the same contract needs room made first
+    (for example by moving fold code it no longer needs out, or by raising the budget on purpose): plan that
+    before promising the lists.
 
 **Pre-freeze gate: activation must not depend on the live index answering.** Check 12 and the generation's carried
 check read the live index's `replayReadiness().families` at run time, whenever the candidate carries a store (a re-pin
