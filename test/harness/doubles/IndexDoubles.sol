@@ -537,6 +537,12 @@ contract MalformedFinal is BaseIndexDouble {
 contract WritingFinal is IndexDoubleCore {
     error E_FINAL_WRITE();
 
+    /// Gas for the nested self-call: enough for its one first write of `finalWrites` (0 to 1) on both
+    /// schedules, so under a plain `CALL` it writes and only a `STATICCALL` makes it fail. Prague prices that
+    /// write at 22,100; Glamsterdam (EIP-8037/8038, `FOUNDRY_PROFILE=amsterdam`) at 12,100 + 97,920 state gas,
+    /// which Foundry draws from the same gas, so the former 50,000 ran out under a plain `CALL` there.
+    uint256 public constant NESTED_GAS = 150_000;
+
     bool public immutable NESTED;
     uint256 public finalWrites;
 
@@ -558,7 +564,7 @@ contract WritingFinal is IndexDoubleCore {
     {
         _requireLedger();
         if (NESTED) {
-            (bool ok,) = address(this).call{gas: 50_000}(abi.encodeCall(this.writeOnce, ()));
+            (bool ok,) = address(this).call{gas: NESTED_GAS}(abi.encodeCall(this.writeOnce, ()));
             if (!ok) revert E_FINAL_WRITE();
         } else {
             ++finalWrites;

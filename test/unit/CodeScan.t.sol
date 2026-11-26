@@ -107,6 +107,11 @@ contract BaselineProbe {
 contract CodeScanTest is Test {
     /// The trailer solc 0.8.37 writes under `bytecode_hash = "none"`: a1 64 "solc" 43 00 08 25, L = 10.
     bytes internal constant TRAILER = hex"a164736f6c6343000825000a";
+    /// The trailer the same compiler writes with `experimental = true` (`FOUNDRY_PROFILE=amsterdam`, solc's
+    /// experimental `amsterdam` target): the map gains `experimental: true`, so it is a2 6c "experimental" f5
+    /// 64 "solc" 43 00 08 25, L = 24. Only test builds carry it; release bytes come from the prague build.
+    bytes internal constant EXPERIMENTAL_TRAILER =
+        hex"a26c6578706572696d656e74616cf564736f6c63430008250018";
     bytes internal constant PROXY_HEAD = hex"363d3d373d3d3d363d73";
     bytes internal constant PROXY_TAIL = hex"5af43d82803e903d91602b57fd5bf3";
     address internal constant SLOT = address(0xC0DE);
@@ -407,17 +412,28 @@ contract CodeScanTest is Test {
         assertEq(CodeScan.scan(helper.code), 0);
     }
 
-    /// The compiled trailer is the solc version map the scan expects: L = 10, 12 bytes in all.
+    /// The compiled trailer is the solc version map the scan expects: on the release build (prague) L = 10,
+    /// 12 bytes in all. The scan reads L from the code, not a constant, so the amsterdam profile's longer map
+    /// (`EXPERIMENTAL_TRAILER`, L = 24) is pinned exactly too, and the helper is plain under either.
     function test_compiledTrailerIsTheSolcVersionMap() public {
         bytes memory code = address(new PlainHelper()).code;
         uint256 n = code.length;
         uint256 length = (uint256(uint8(code[n - 2])) << 8) | uint8(code[n - 1]);
-        assertEq(length, 10);
+        bytes memory expected = _amsterdam() ? EXPERIMENTAL_TRAILER : TRAILER;
+        assertEq(length + 2, expected.length);
         bytes memory tail = new bytes(length + 2);
         for (uint256 i; i < tail.length; ++i) {
             tail[i] = code[n - tail.length + i];
         }
-        assertEq(tail, TRAILER);
+        assertEq(tail, expected);
+        assertEq(CodeScan.scan(code), 0);
+    }
+
+    /// The profile the suite was compiled under (the same rule as `test/integration/FloorPrices.t.sol`).
+    function _amsterdam() internal view returns (bool) {
+        return
+            keccak256(bytes(vm.envOr("FOUNDRY_PROFILE", string("default"))))
+                == keccak256("amsterdam");
     }
 
     function test_compiledDelegatecallFails() public {
