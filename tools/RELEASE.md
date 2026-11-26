@@ -50,10 +50,70 @@ tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --j
 
 ## What changes for a consumer in this release
 
-**This release IS a re-vendor point.** The SDK is pinned to `cbf5b78` ("Merge the reader release: frontier in
-TopicPageInfo"); this release (items 32 to 41) moves it to the final-step head. Re-vendor `release/`, `artifacts/`,
+**This release IS a re-vendor point.** The SDK is pinned to `3ca53ba` ("Merge the final step: liveness gate, fold-hook
+refusal, reader rule, Glamsterdam floor price"); this release (items 42 to 48) moves it to this bundle's head: work-model
+formula 3, the Type registry rule, the kept-index fix and the gas model's list tiers, built and regenerated together.
+Re-vendor `release/`, `artifacts/`, `deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/`,
+`vectors/layout.json` and `test/vectors/` together, and re-pin every value of "The identity table" below, which compares
+against `3ca53ba`. What a consumer must change, as one list:
+
+- **The reservation formula** (item 42), for a planner that reproduces the kernel's quote (`tools/gas-plan.mjs`
+  `quote()` is the reference): the work model is **32 words** (`WORK_MODEL_WORDS`, was 17; `formulaVersion` 3); each
+  BIND, UNBIND or RELEASE adds **one of three rows** by class (a first statement: the author's head UNSET; a re-bind: a
+  BIND on a BOUND head; any other later statement: a mask, a release, a restore, a RELEASE always), plus **the
+  per-purpose surcharge's** row of the same class when the action's purpose word equals `surchargePurpose` (zero for
+  generation 1, so never today); **every WITHDRAW after the first** of a publication adds the later row; with no
+  principal (`indexFloor`, an **unknown author**) every bind-kind action adds the **largest of the three rows** field by
+  field, surcharge included. Generation 1's rows: first `55, 20, 44,000`, re-bind `20, 40, 42,000`, later `20, 50,
+  85,000` (fresh ×10, rewrites ×10, compute).
+- **The gas model's list tiers** (item 47; "The list tiers" under "The planning model" below), for the execution
+  estimate E of later statements. The three-line rule: an author's entry count at the place known and at most 48 (the
+  short tier) prices the first later statement at its place with `<row>NewPlace` (when the model carries it, else
+  `<row>`) and any further one at that place with `<row>`; more than 48, or unknown (the long tier), prices them with
+  `<row>LongNewPlace` and `<row>LongSamePlace`; a re-bind has no tier (`<row>NewPlace` first at its place, else
+  `<row>`). A planner passes `firstAtPlace` (no earlier later statement of the same publication at the same (purpose,
+  subject); default true) and `entries` (the author's entry count at the place; **default: unknown, the long tier**). **A
+  stale count is treated as unknown** (a count lower than the truth under-prices by up to 21.2%).
+- **New error and reason codes** (`release/errors.json`): `E_WORK_MODEL(uint8 code, uint256 value)` (new error: 1 the
+  read failed, 2 the reply is not 32 words, 3 `formulaVersion` is not 3); `E_INDEX_NOT_READY` 15 (the index's work model
+  is not 32 words of the ingress's formula) and 16 (a word does not fit its field), checked for a kept index and a new
+  one; **`E_INDEX_NOT_READY(2)` now means "the ledger's own publication lock is not IDLE"** (was "the kept index's
+  readiness phase is not IDLE"); `E_PIN` 13 (the index's work model could not be held as a data contract); `E_REPLAY` 10
+  (a PUBLISH or REUSE record's Type: the registry's `descriptorBytes` do not hash to its Type id).
+- **New and renamed gas-model fields** (`efs-gas-model/1`, all required): top-level `laterLists` (`shortTierMaxEntries`
+  48, `claimEntries` 1,024, `rule`, `note`); per profile `maxUnderErrorPercent`, `maxUnderErrorComposite` and
+  `maximaExcludeStates` (`["beyondClaim"]`), and on amsterdam `maxUnderExecutionErrorPercent` and
+  `maxUnderExecutionErrorComposite`; `method.laterLists` and `method.maxima`; 37 new constants (item 47); new validation
+  states `acrossPlaces`, `acrossPlacesBitsWord`, `longLists`, `beyondClaim`. Nothing was renamed or removed in the model
+  itself; the floor's `workModel` now has formula 3's 32 fields (`freshPerBindFresh`, `rwPerBind` and
+  `computePerHookEffect` are gone). **A headroom check of the 2^24 cap condition reads `maxUnderErrorPercent` on prague
+  and `maxUnderExecutionErrorPercent` on amsterdam** (`planning.headroomCovers` says so).
+- **Batch sizes** (item 43; `test/vectors/floor-plan.json`): prague tag masks, releases and masks of masks 64 → 58, tag
+  restores 60 → 51, number changes 60 → 62, folder re-binds 60 → 62; amsterdam masks, releases and masks of masks
+  44 → 55, restores 41 → 51, number changes 41 → 64, folder re-binds 40 → 61, lone negatives 50 → 53; edits (not a
+  FloorPlan shape) 24 → 24 and 23 → 28. Every other shape is unchanged on both schedules. A planner that reads the model
+  needs no other change; one that hard-codes batch sizes does.
+- **ABI snapshots that changed** (against `3ca53ba`, exactly three): `IIndexReads.json` (the `WorkModel` struct that
+  `workModel()` and `manifest()` return has formula 3's 32 fields), `ILedgerIngress.json` (new `formulaVersion()`,
+  selector `0x70a3985b`, which activation reads), `Errors.json` (new `E_WORK_MODEL`, selector `0xc8be0e1a`).
+
+What did not change: the layout id, the hot ABI ids (release and test), both store ABI ids, the status vocabulary id,
+the limits profile id, every Type id, every reader's ABI (and every action, write and read ABI other than the three
+snapshots above), the apply delegate, the registry implementation, `ledgerReads`, `ledgerViews`, `readerDirectory`,
+`keysView`, every Files and Topics rule and the validator, the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`), and
+every read bound and recommended read limit on both schedules. Every genesis address on the fixture Realm moved again
+(the ingress, the control delegate and the decoder changed; the control delegate embeds the ingress's address, the ledger implementation both, and genesis the implementation's); recompute them for any
+other `(chainId, realmSalt)` with `tools/deploy-plan.mjs`.
+
+### The final step (the SDK's current pin, `3ca53ba`, against `cbf5b78`)
+
+What `3ca53ba` changed against `cbf5b78` (items 32 to 41), kept for a consumer still on `cbf5b78`; every value it names
+is superseded by this release's identity table.
+
+**That release was a re-vendor point.** It moved the SDK from `cbf5b78` ("Merge the reader release: frontier in
+TopicPageInfo") to the final-step head, `3ca53ba` (items 32 to 41). Re-vendor `release/`, `artifacts/`,
 `deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/`, `vectors/layout.json` and `test/vectors/`
-together, and re-pin every value of "The identity table" below, which compares against `cbf5b78`. What a consumer must
+together, and re-pin every value of its identity item (41), which compares against `cbf5b78`. What a consumer must
 change:
 
 - **ABI.** `IIndexReads` gained `liveManifestCopy()` (selector `0x1c317828`; `test/snapshots/abi/IIndexReads.json` is
@@ -77,9 +137,6 @@ change:
 - **Read bounds.** `reads.schedules.*.bounds.*.everyoneExact.maxSkippedEntries` is 247 at every lens on both schedules
   (was 248). The recommended limits (`limitEntries` 245, `maxRows` 150, `pageTimesLens` 768 / 416 / 688 / 408) did not
   move on either schedule.
-- **Work-model formula 3** (items 42 to 45, joined into this release): the floor's formula, the 32-word work model, the
-  per-purpose surcharge, WITHDRAW, the errors and reasons, and batch sizes that fall on prague for masks, releases and
-  restores. A planner must take the formula of item 42.
 - **Addresses.** Every genesis address on the fixture Realm moved (the control delegate changed, and genesis embeds
   it), with the index, its reads contract and every reader that embeds the ledger's address; recompute them for any
   other `(chainId, realmSalt)` with `tools/deploy-plan.mjs`.
@@ -226,9 +283,9 @@ first tags on deep topics are still limited by their per-level list cost, which 
 does not (the per-shape table is docs/TAG-NUMBERS.md "The largest publication"). The deployed index's work model is
 checked against the gas model field by field by the fixture (`verify`, group `pricing`).
 
-**14. `ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal, so it prices every
-BIND and UNBIND as a first statement; it is exact only when every bind-kind action is one. Plan from the gas model's
-rule, never from `indexFloor`.
+**14. `ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal; since formula 3 (item
+42) it prices every bind-kind action with the largest of the three rows field by field (under formula 2: as a first
+statement). Plan from the gas model's rule, never from `indexFloor`.
 
 **15. Pre-freeze gates** (none blocks a disposable testnet; each blocks freezing a Realm). One current list, as of
 this release.
@@ -243,56 +300,71 @@ this release.
   partial-coverage tests (step 3b, item 34; the list is a test harness, not product).
 - **The as-of rule** (step 3a, item 32): a fold from history reads every fact as of the admission it folds and takes
   no fact from a validator's law (docs/INDEX-BUILD.md §4.3).
-- **The liveness gate** (item 37): activation never depends on the live index answering; the candidate carries a copy
+- **The liveness gate** (item 37): replacing the live index never depends on it answering; the candidate carries a copy
   of the live index's manifest, which the kernel (reason 14) and the generation check against the recorded hash.
 - **The fold-hook refusal** (Option A, item 37): a generation that carries a store is refused a fold-hook unit the live
   index does not declare, unless it walks history and names the unit as built.
-- **Later statements over-reserved on Glamsterdam, and under-reserved at distinct places and in long lists** (item 42,
-  work-model formula 3): later statements get honest slot counts and compute in rows of their own (re-binds a row that
-  never searches), fitted to lists of up to 1,024 entries per author per place; the per-purpose surcharge exists (zero
-  for generation 1). **A finding against the released floor, on today's schedule too:** in the current release a later
-  statement's quote is below its callbacks' spend when the statements are at distinct places or in long lists (0.91 for
-  a restore of entry 48 across places, 0.75 at 4,096 entries, prague); so today a later-statement publication sent near
-  the floor can be refused, but it can never be admitted unindexed; fixed by formula 3 (docs/INDEX-BUILD.md §10 item 43).
 - **The Glamsterdam rewrite price** (item 39): a Glamsterdam Realm's floor prices a rewrite at 12,100, so the quote
   covers the callbacks' spend in every measured state on both schedules (docs/INDEX-BUILD.md §10 item 29, fixed).
-- **Measured build gas** (step 4, item 36; re-measured with the manifest copy, docs/INDEX-BUILD.md §6): adding
-  `head-authors` later to a Realm of 1,000,000 files costs 477.7B gas in 28,513 transactions on prague (477,732 a file)
-  and 575.7B on amsterdam (468.0B of execution in 27,930 transactions and 107.7B of state gas), against 51,167 /
-  149,608 a file to keep it from genesis (9.3× / 3.8×); a cold build call's fixed share is 0.25M to 0.29M (it was
-  0.49M to 0.52M while the carried check called the live index); every admitted publication builds in one 2^24 call.
-
-- **The Type registry** (item "A build proves a Type's reference count" below): a build no longer reads a Type's
-  stored reference count; it proves it from the Type's descriptor, so a replacement Type registry need not keep the
-  row. What remains: a registry that withholds a descriptor makes a build refuse (docs/INDEX-BUILD.md §4.3).
-- **Keeping an index that no longer answers** (item "Keeping an index never calls it" below): an activation that
-  keeps the live index never calls it; reason 2 is the ledger's own phase, so a live index that no longer answers can
-  still be kept while another component or the limits change (docs/INDEX-BUILD.md §5.3).
-
-- **The gas model prices later statements across places and in long lists** (the unnumbered item above; tools/RELEASE.md
-  "The list tiers"): the model's E for masks, releases and restores was 14–24% low at an author's entry 48 and beyond
-  and in lists of up to 1,024 entries; the list tiers bring every composite within the claim inside 15%, and the
-  headroom check reads the new under-prediction fields.
-
+- **Measured build gas** (step 4, item 36; re-measured with this release's code, docs/INDEX-BUILD.md §6): adding
+  `head-authors` later to a Realm of 1,000,000 files costs 479.3B gas in 28,608 transactions on prague (479,325 a file)
+  and 577.8B on amsterdam (470.1B of execution in 28,058 transactions and 107.7B of state gas), against 51,351 /
+  149,890 a file to keep it from genesis (9.3× / 3.9×); a cold build call's fixed share is 0.25M to 0.28M; every
+  admitted publication builds in one 2^24 call.
 - **The above-cap state-gas path, confirmed on a real chain** (2026-11-26, `tools/state-gas-probe.mjs`,
   docs/GAS-SCHEDULES.md): on Sepolia, under both Geth and reth, a transaction whose gas limit is above 2^24 starts
   with the cap less intrinsic gas as ordinary gas and pays state gas from the reservoir; at or below the cap it pays
   state gas out of ordinary gas. So the floor quote staying in execution gas is right for a transaction that funds
   its state gas above the cap. A planner must not read this from plain `eth_call` (Geth relaxes the cap there).
 
+Newly done in this release (items 42 to 47):
+
+- **Later statements over-reserved on Glamsterdam** (item 42, work-model formula 3): a later statement's reservation
+  was twelve "rewrites" that were really a compute margin, so at the Glamsterdam rewrite price (12,100) later statements
+  were reserved 2.0 to 4.3 times their spend and their batches shrank. Formula 3 gives them honest slot counts and
+  compute in rows of their own (a re-bind has a row that never searches the list), fitted to lists of up to 1,024
+  entries per author per place; the per-purpose surcharge exists (zero for generation 1). Amsterdam's later batches
+  grow (masks 44 → 55, number changes 41 → 64, item 43).
+- **The released floor's shortfall on today's schedule for later statements at distinct places and in long lists**
+  (item 42; a finding against the previous release, `3ca53ba`, fixed here). In that release a later statement's quote
+  (formula 2: 122.0k on prague) was below its callbacks' spend when the statements were at distinct places or in long
+  lists: 0.91 for a restore of entry 48 across places, 0.75 at 4,096 entries (prague,
+  `test/integration/FloorSplit.t.sol`). What it meant: a later-statement publication sent near the floor could be
+  refused (`E_INDEX_GAS`, nothing admitted); it could never be admitted unindexed. Prague's later batches were planned on
+  that under-quote, so they are smaller now (masks 64 → 58, restores 60 → 51). Formula 3 quotes every later statement
+  the floor claims at 1.05× its spend or more (lowest 1.062 on prague, 1.052 on amsterdam).
+- **The Type registry rule** (item 46; closed by code): a build no longer reads a Type's stored reference count; it
+  proves it from the Type's descriptor, and refuses `E_REPLAY(10)` when the registry's bytes do not hash to the Type id,
+  so a replacement Type registry need not keep the row. A registry that withholds a descriptor (reverts) makes a build
+  refuse with its own error (docs/INDEX-BUILD.md §4.3).
+- **Keeping an index that no longer answers** (item 45; closed): an activation that keeps the live index never asks its
+  readiness; it reads only its work model, the read every publication makes. Reason 2 is the ledger's own lock, so a
+  live index whose readiness no longer answers can still be kept while another component or the limits change; an
+  index that cannot answer its work model is refused 15, because it could not serve a publication either
+  (docs/INDEX-BUILD.md §5.3).
+- **The gas model's later rows** (item 47, the list tiers): the model's E for masks, releases and restores was 14–24%
+  low at an author's entry 48 and beyond and in lists of up to 1,024 entries, because the later rows were measured at
+  one place with short lists; the list tiers bring every composite within the claim inside 15% (largest under-prediction
+  9.69% on prague, 10.65% of execution gas on amsterdam), and the headroom check reads the under-prediction fields.
+
 **Open:**
 
-- **The per-purpose term's use: the all-authors HEAD list** waits on QUESTIONS Q52. The term itself is built (formula 3's
-  surcharge, item 42, zero for generation 1); if Q52 is answered yes the list is its own family with the work model
-  served from a data contract, as ruled.
-- **The gas model's later rows** (`unbindTag`, `releaseTag`, `restoreTag`, `bindTagNumberChange`, `unbindFolder`,
-  `releaseFolder`, `bindFolderRebind`) are measured in one place with short lists, so the planner's estimate E is short
-  for later statements at distinct places and in long lists (about +37k per statement for a restore of entry 48 across
-  places, +65k at 4,096 entries, prague). Being fixed in this release on its own branch.
-- **The entry search** (`RealmIndex._entryIndex` bisects the author's scope list, one store call per probe: about 2.2k
-  per doubling within one place, 4.2k to 5.1k across places) is what makes the later row grow with list length; reading
-  a whole word of five entries per probe near the end of the search, or storing a binding's entry index, would shorten or
-  remove it. An index change for a later generation (docs/WORK-MODEL-V3.md, "Landed").
+- **The per-purpose surcharge's use: the all-authors HEAD list** waits on QUESTIONS Q52. The surcharge itself is built
+  (formula 3, item 42; zero for generation 1); if Q52 is answered yes the list is its own family, with the work model
+  served from a data contract as it is now, as ruled.
+- **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
+  it covers up to 4,096 and stops covering from 4,097 (measured: 1.008 at 4,096, 0.995 at 4,097 on prague; 1.003 and
+  0.991 on amsterdam). The entry search (`RealmIndex._entryIndex` bisects the author's scope list, one store call per
+  probe: about 2.2k per doubling within one place, 4.2k to 5.1k across places) is what makes a later statement grow with
+  the list; reading a whole word of five entries per probe near the end of the search, or storing a binding's entry
+  index, would shorten or remove it. An index change for a later generation (docs/WORK-MODEL-V3.md, "Landed").
+- **A planned full batch that meets lists longer than the planner knows.** A planner cannot see list lengths it has not
+  read; a batch planned at its largest size whose statements hit lists beyond what the planner knows can need more
+  execution gas than the plan assumed. If that passes the 2^24 cap, `eth_estimateGas` fails and the publication is
+  refused at send-time as over the cap, nothing sent; the sender then plans it again in smaller parts.
+- **HEAD has no mask, release or restore row in the gas model.** A HEAD scope list holds at most one entry per author,
+  so a HEAD later statement is always the short tier at its own place, but the model has no row that measures one (only
+  `bindHeadRebind`); a planner prices a HEAD mask, release or restore from the nearest row it has.
 - **The digest-spec case (d)**: a digest spec rebuilt in a fresh store (docs/INDEX-BUILD.md §8 test 9).
 - **A manifest copy over 24,575 B** is refused, not split (docs/INDEX-BUILD.md §10 item 34).
 - **A real chain's deployment document must describe that chain, read from the chain.** Today only the fixture tool
@@ -744,8 +816,9 @@ states, both schedules): the kernel's share is predicted within 0.6%, and the ga
 final phase, which spend 20–40k more per extra distinct action kind in a publication than the sum of per-action
 marginals (each kind's first touch of its index state is cold; a k2 − k1 marginal sees it once, inside `fixed`).
 
-**41. Identities of this release** (items 32 to 40 together, against `cbf5b78`, the commit the SDK is pinned to;
-every value is in the table below). **Moved:** the release digest (`0x9f360a55…f321`, was `0x56bd2f95…2565`), the
+**41. Identities of the final-step release** (`3ca53ba`: items 32 to 40 together, against `cbf5b78`, the commit the SDK
+was pinned to then; its full identity table is this file at `3ca53ba`, and "The identity table" below now compares
+against `3ca53ba`). **Moved:** the release digest (`0x9f360a55…f321`, was `0x56bd2f95…2565`), the
 plan hash (`0x3b88f634…0a3e`), the execution set (`0x768d8353…dde7`), the index obligations (`0xbc6d4b7d…3a3a`) and
 manifest hash (`0x073676c0…2e3c`); the code of `LedgerControl` (reason 14), `RealmIndex` (`BUILT_HOOKS`), `IndexReads`
 (the copy, Option A) and the three topic readers (the list-coverage rule): in `artifacts/` exactly these six files
@@ -770,7 +843,11 @@ and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the `src
 order fix (item 38) `TopicLookupReader` is 17,081 B (2,579 left) and its address `0xE32505C0…d5De`; the read rows of
 `about` fell by 273 to 813 gas and `placeCount`'s rose by 3, and no read bound or recommended limit moved.
 
-### Work-model formula 3 (this piece, against `018e290`; joined and regenerated with the other pieces of the release)
+### This release: formula 3, the registry rule, the kept-index fix and the list tiers (against `3ca53ba`)
+
+Three pieces (formula 3; the registry rule with the kept-index fix; the list tiers), each reviewed alone, built and
+tested together on both schedules and regenerated once
+(docs/INDEX-BUILD.md §10 item 44 says what had to change where they met). Items 42 to 48.
 
 **42. The index floor's formula is formula 3** (docs/WORK-MODEL-V3.md, design §10.4, §5.11). What a consumer's planner
 must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SDK's `kernelQuote` must reproduce it):
@@ -801,15 +878,28 @@ must change, exactly (`tools/gas-plan.mjs` `quote()` is the reference and the SD
   that passes the 2^24 cap, `eth_estimateGas` fails and the publication is refused at send-time as over the cap,
   nothing sent; the sender splits it and tries again.
 
-**43. Batch sizes** (the planning rule on the same gas model with formula 3's work model; today = the released
-`test/vectors/floor-plan.json`). **Prague's later batches get SMALLER than today's:** tag masks, releases and masks of
-masks 64 → 58, tag restores 60 → 51. Why: today's are planned on a quote that is below the real spend for those
-statements at distinct places and in long lists (0.91 for a restore of entry 48 across places, 0.75 at 4,096 entries;
-§15). Re-binds have a row of their own and keep or gain: tag number changes 60 → 62, folder re-binds 60 → 62, edits 24 →
-24. Amsterdam: tag masks, releases and masks of masks 44 → 55, restores 41 → 51, number changes 41 → 64, folder
-re-binds 40 → 61, edits 23 → 28, lone negatives 50 → 53. Unchanged on both: first tags at every depth and state,
-repeat publishes, name records, a name record and a first tag, the registration chunk, create-file recipes (10 / 12) and
-prague's lone negatives (38). A planner that reads the model needs only the formula change of item 42.
+**43. Batch sizes** (the planning rule, `tools/gas-plan.mjs`, on the regenerated `gas/model.json`, against the same files
+at `3ca53ba`; `test/vectors/floor-plan.json`, whose later-statement shapes pass the measured entry count of their one
+place, so the list tiers are applied as a consumer would apply them). Run as a consumer would run it, the tiers do not
+move any later shape: every later shape gives the same largest batch with a known short count (48), with the count
+unknown (the long tier) and with each statement at a place of its own, because these batches are bounded by the floor's
+requirement V, not by the estimate E. The edits shape is the planner's only (`tools/gas-plan-later.mjs`).
+
+| shape | prague `3ca53ba` → now | amsterdam `3ca53ba` → now |
+|---|---|---|
+| tag masks, releases, masks of masks | 64 → **58** | 44 → **55** |
+| tag restores | 60 → **51** | 41 → **51** |
+| tag number changes (re-binds) | 60 → **62** | 41 → **64** |
+| folder re-binds | 60 → **62** | 40 → **61** |
+| edits (PUBLISH child + HEAD re-bind) | 24 → 24 | 23 → **28** |
+| lone negatives | 38 → 38 | 50 → **53** |
+| create-file recipes | 10 → 10 | 12 → 12 |
+| first tags at every depth and state, repeat publishes, name records, a name record and a first tag, the registration chunk | unchanged | unchanged |
+
+**Prague's masks, releases and restores get SMALLER than `3ca53ba`'s:** those were planned on a quote below the real
+spend for those statements at distinct places and in long lists (0.91 for a restore of entry 48 across places, 0.75 at
+4,096 entries; §15). Re-binds have a row of their own and keep or gain. A planner that reads the model needs only the
+formula change of item 42.
 
 **44. Errors and activation.** New `E_WORK_MODEL(uint8 code, uint256 value)`: the ingress reads the work model as raw
 words and refuses 1 a failed read, 2 a reply that is not 32 words (a formula-2 index answers 17), 3 a `formulaVersion`
@@ -819,13 +909,48 @@ New `E_PIN` code 13 (the index's work model could not be held as a data contract
 a data contract (one STOP byte, then the 32 words), bound by address and codehash; the manifest hash still folds the same
 `work` struct, so it commits to the exact words.
 
-**45. Identities of this piece: PLACEHOLDER.** This piece is joined with the others of the release and regenerated
-once; the release digest, plan hash, execution set, manifest hash and index obligations, every address that depends on
-the ingress, the control delegate, `RealmIndex`, `IndexReads` or `LensReader` (whose code carries `WORK_MODEL_WORDS`),
-`gas/model.json`, `release/errors.json`, `test/vectors/floor-plan.json` and the ABI snapshots move then and are recorded
-in that release's identity item. The layout id, the hot ABI ids and both store ABI ids do not move.
 
-**The gas model prices later statements across places and in long lists.** (Number at integration.) Consumer change:
+**45. Keeping an index never asks its readiness; only its work model is read.** An activation that keeps the live
+index (`set.components.index == index()`) used to call `IRealmIndex(index).replayReadiness().phase` for reason 2,
+uncaught, so a live index whose readiness no longer answered made every activation that kept it revert with that
+index's own error. Now the kept index is pinned by the revision row (its address's code against the set's codehash,
+`E_PIN(index, 3)`; the codehash and manifest hash against the current revision row, `E_INDEX_NOT_READY(1)`,
+unchanged), **`E_INDEX_NOT_READY(2)` means "the ledger's own publication lock is not IDLE"** (was "its readiness phase
+is not IDLE"; the phase the readiness echoed was the ledger's own, and `LedgerCore.activate` and `freeze` are already
+idle-gated), and the one thing read from the kept index is its work model (`_checkWorkModel`, reasons 15 and 16 of item
+44), the read every publication's quote makes. So a kept index whose readiness reverts still activates and folds like
+its twin; a kept index whose every call reverts is refused `E_INDEX_NOT_READY(15)` (it cannot answer its work model, so
+it could not serve a publication either); and a kept index that answers a work model of another formula (17 words, or 32
+words of version 2) is refused 15, so an implementation never runs its ingress over an index whose work model that
+ingress would refuse at the first publication (`test/index/Liveness.t.sol` section 6,
+`test/control/WorkModelChecks.t.sol`). `release/errors.json` changes with reason 2's wording. No ABI, no new error.
+
+**46. A build proves a Type's reference count.**
+`IndexReplayDecoder` (pinned by every index generation as `DECODER`) no longer reads `typeInfo(id).refCount`. For a
+PUBLISH or REUSE leaf it asks the registry for `descriptorBytes(id)`, recomputes the Type id from those bytes (the
+registry's derivation: `Keys.typeId(Keys.shape(d), refs, ruleId)` over the leading REF32 fields and header bytes
+66..98) and compares it with the record's Type id; on a mismatch it refuses **`E_REPLAY(10)`** (new code; `Errors.sol`
+and `release/errors.json`), and the count is the descriptor's number of references. Trusted: the registry answers with
+some bytes. Proved: they are the registered descriptor and the count, because the Type id commits to both. A registry
+whose `descriptorBytes` reverts makes the decode (`decode`, `payload`) and any `build` or `replayNextPublication` that
+reaches such a record revert with the registry's own error. Decoded effects are unchanged for every Type a real
+registry registers. No ABI change. Measured (the count read alone, cold / warm; today is `typeInfo`):
+
+| descriptor | prague today | prague proved | amsterdam today | amsterdam proved |
+|---|---|---|---|---|
+| `realm-notice/1` (239 B, the smallest) | 25,050 / 5,541 | 19,461 / 5,452 | 26,250 / 5,541 | 21,161 / 5,552 |
+| `files-content/1` (698 B, the largest in the release) | 25,050 / 5,541 | 20,392 / 6,383 | 26,250 / 5,541 | 22,092 / 6,483 |
+| the codec's largest (4,096 B, 8 references) | 25,050 / 5,541 | 27,634 / 13,625 | 26,250 / 5,541 | 29,334 / 13,725 |
+
+In a build (`test/index/BuildGas.t.sol`, measured on this release against the figures of `3ca53ba` in
+docs/INDEX-BUILD.md §6): per marginal publication −137 to +609 (prague) and −37 to +709 (amsterdam); the fixed share of a
+cold call −5,500 / −5,100 per distinct Type it meets (create file 281,227 → 270,480 on prague, 286,627 → 276,680 on
+amsterdam, with 253 gas of formula 3's example-generation code on top: a cold call with nothing pending is 240,681, was
+240,428); a later list over §6.2's 1,000,000 files 477,732 → 479,325 a file (+0.33%, prague) and 467,971 → 470,112 of
+execution (+0.46%; 575,683 → 577,824 in all, +0.37%, amsterdam), docs/INDEX-BUILD.md §6.2. The decoder's code changed
+(5,404 → 5,578 B), so its runtime codehash and its address (CREATE2 of its initcode) move; generation 1's index pins it
+as an immutable (`DECODER`, a constructor argument), so the index's runtime codehash and address move with it (item 48).
+**47. The gas model prices later statements across places and in long lists.** Consumer change:
 `gas/model.json` gains the list tiers (tools/RELEASE.md "The list tiers"; design §10.4), so a planner's E for masks,
 releases and restores no longer comes out 14–24% low for later statements at an author's entry 48 or beyond, or in
 lists of up to 1,024 entries.
@@ -851,47 +976,76 @@ lists of up to 1,024 entries.
   `maxUnderExecutionErrorPercent` on amsterdam. The maxima (`maxAbs*` and `maxUnder*`) leave out `beyondClaim`
   composites, which stay listed with their errors; `tools/gas-model.mjs` refuses a model in which any of the four
   exceeds 15%.
-- **Regenerated figures** (PLACEHOLDER: fill in at integration from the regenerated `gas/model.json`): prague
-  maxAbsErrorPercent ⟨…⟩ (⟨composite⟩), maxUnderErrorPercent ⟨…⟩ (⟨composite⟩); amsterdam maxAbsErrorPercent ⟨…⟩,
-  maxAbsExecutionErrorPercent ⟨…⟩, maxUnderErrorPercent ⟨…⟩, maxUnderExecutionErrorPercent ⟨…⟩ (each with its
-  composite); the largest batches that moved in `test/vectors/floor-plan.json` ⟨…⟩. Measured on the branch before
-  integration (local regeneration, not committed): prague 11.13% (`validate property masks of 8 entries of 1025 at one
-  topic`, an over-prediction) and under 9.69% (`validate tag releases at entry 47 across topics`); amsterdam 12.03%
-  (`validate edit lists exist`), execution 13.91% (`validate tag releases of 32 entries of 1025 at one topic`), under
-  6.72% (`validate create file`), execution under 10.62% (`validate create file lists exist`); prague tag restores
-  60 → 59 (their 61 entries put them in the long tier), every other shape unchanged on both schedules.
+- **Regenerated figures** (`gas/model.json`; error = predicted − measured, so an under-prediction is negative). Prague:
+  `maxAbsErrorPercent` 11.16% (`validate property masks of 8 entries of 1025 at one topic`, an over-prediction),
+  `maxUnderErrorPercent` 9.69% (`validate tag releases at entry 47 across topics`). Amsterdam: `maxAbsErrorPercent`
+  12.05% (`validate edit lists exist`), `maxAbsExecutionErrorPercent` 13.9% (`validate tag releases of 32 entries of
+  1025 at one topic`, an over-prediction), `maxUnderErrorPercent` 6.73% (`validate create file`),
+  `maxUnderExecutionErrorPercent` 10.65% (`validate create file lists exist`). `maximaExcludeStates` is `["beyondClaim"]`
+  on both: the three composites at entry 4,096 of 4,097-entry lists (prague −2.39% to −2.85%, amsterdam −0.33% to
+  −0.47% of all gas and −1.64% to −1.82% of execution gas) are listed and not counted. Every maximum is under 15%. The
+  tiers move no largest batch (item 43). The constants moved with this release's code, not by a re-fit: `fixed`
+  315,854 → 311,787 on prague and 899,174 → 895,683 on amsterdam (the index serves the work model the kernel reads from a
+  data contract, item 44), every other existing row −111 to +373 gas; the `tagLevel` terms did not move; 37 constants are new.
 
-### The identity table (this release against `cbf5b78`)
+**48. Identities of this release** (items 42 to 47 together, against `3ca53ba`, the commit the SDK is pinned to; every
+value is in the table below). **Moved:** the release digest (`0xc4935467…71e4`, was `0x9f360a55…f321`), the plan hash
+(`0x4fc3364f…c575`), the execution set (`0x9c22c034…c9e5`), the index obligations (`0x38ac8541…d78f`) and manifest
+hash (`0x755a082e…3537`: the work model is in the manifest); the code of `LedgerIngress` (formula 3), `LedgerControl`
+(the work-model checks, the kept-index path), `IndexReplayDecoder` (the proved count), `RealmIndex` (the work model
+from a data contract), `IndexReads` (the 32-word `WorkModel`) and `LensReader` (it carries `WORK_MODEL_WORDS`); in
+`artifacts/` exactly these six files changed, and `LedgerCore.json` in its ABI only (it lists `E_WORK_MODEL`; its
+bytecode is unchanged); `release/errors.json` (`E_WORK_MODEL`, `E_INDEX_NOT_READY` 2 reworded and 15, 16, `E_PIN` 13,
+`E_REPLAY` 10); `gas/model.json` (formula 3's floor, the list tiers, the new fields, the kernel's lower `fixed`);
+`schemas/efs-gas-model-1.schema.json`, `schemas/efs-deploy-plan-1.schema.json`, `schemas/efs-deployment-1.schema.json`;
+`test/vectors/floor-plan.json`; three ABI snapshots (`IIndexReads.json`, `ILedgerIngress.json`, `Errors.json`). The
+control delegate embeds the ingress's address and the ledger implementation both, and the genesis contract embeds the
+implementation's, so every address genesis creates moved on the fixture Realm: the ledger proxy (`0xe942147e…3429`), its
+implementation and ProxyAdmin, the registry proxy and its ProxyAdmin, the controller, the genesis contract; so did the
+realm id and the domain separator, both stores (through the embedded ledger address only), the index
+(`0x9ca434fC…9f26`) and its reads contract (`0x98de1725…07DF`), the decoder, and every reader that embeds the ledger's
+address (`lensReader`, `filesPageReader`, the three topic readers, the gateway and its content contract). **Not
+moved:** the layout id, the hot ABI ids (release `0xf37d24d0…9856`, test `0x79a1dd51…cce0`), both store ABI ids, the
+status vocabulary id, the limits profile id, every Type id, the apply delegate, the registry implementation
+(`TypeRegistry`), `ledgerReads`, `ledgerViews`, `readerDirectory`, `keysView`, the descriptor store, every Files and
+Topics rule, `RefuseAllPolicy`, the Files validator, every other ABI snapshot, `vectors/layout.json`, every test vector
+but `floor-plan.json`, every read row, bound and recommended read limit on both schedules, and the seed
+(`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the `src/` contracts that changed against `3ca53ba` (runtime
+bytes; budget 19,660 B; tightest first): `LedgerIngress` 19,264 → 18,955 B (705 left), `RealmIndex` 18,834 → 18,408 B
+(1,252 left), `LedgerControl` 18,042 → 18,363 B (1,297 left), `LensReader` 17,399 → 17,399 B (2,261 left; six bytes of
+code differ), `IndexReads` 12,431 → 12,960 B (6,700 left), `IndexReplayDecoder` 5,404 → 5,578 B (14,082 left).
+
+### The identity table (this release against `3ca53ba`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture
 configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`) of this release, against the same files at
-`cbf5b78` (`git show cbf5b78:<file>`), the commit the SDK is pinned to; the ABI ids are computed from
+`3ca53ba` (`git show 3ca53ba:<file>`), the commit the SDK is pinned to; the ABI ids are computed from
 `test/snapshots/abi/` with `tools/abi-id.mjs` at both commits. Addresses are the fixture Realm's; on any other
 `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. Every value an SDK vendors is here: the documents'
 digests, the identities of the execution set and the index, the ABI ids, every Type id, every deployed unit's address
-and runtime codehash, the read bounds and the seed. Beyond the table, `artifacts/` differs from `cbf5b78` in
-`IndexReads`, `LedgerControl`, `RealmIndex` and the three topic readers, and `test/snapshots/abi/` in `IIndexReads.json`
-only. The one read bound that moved is not a recommended limit: `everyoneExact.maxSkippedEntries` is 247 at every lens
-on both schedules (was 248).
+and runtime codehash, the read bounds and the seed. Beyond the table, `artifacts/` differs from `3ca53ba` in
+`IndexReads`, `IndexReplayDecoder`, `LedgerControl`, `LedgerIngress`, `LensReader` and `RealmIndex` (and `LedgerCore` in
+its ABI only), and `test/snapshots/abi/` in `IIndexReads.json`, `ILedgerIngress.json` and `Errors.json`. No read bound
+moved.
 
-| pin | this release | moved against `cbf5b78` |
+| pin | this release | moved against `3ca53ba` |
 |---|---|---|
-| release digest (`sha256(release/release.json)`) | `0x9f360a55c3756d9dac843920b9df9241404507bf972d415ee283339017b1f321` | yes (was `0x56bd2f95…2565`) |
-| plan hash | `0x3b88f634d4dfa285205eedaffe53c49d28f579df537fce1a659b53eeb8590a3e` | yes (was `0xe40993da…2a2c`) |
-| execution set | `0x768d8353040e477be465dca8086d75431cf09d7e4573096b55176d90f0b9dde7` | yes (was `0x0788d659…b99d`) |
-| index obligations | `0xbc6d4b7ddfe9e2dbbd704199b27789e9afd626d0212777a4c6afefb7ac313a3a` | yes (was `0x5555dbfb…4f79`) |
-| index manifest hash | `0x073676c0b3d067da839015fbb8e8e86b6c7ec23469c3abeb78e220a623ed2e3c` | yes (was `0x3b50d7a2…009f`) |
+| release digest (`sha256(release/release.json)`) | `0xc4935467e40c164417878cad8717725f4f71b623386a2f1d95e8e9bd4b9471e4` | yes (was `0x9f360a55…f321`) |
+| plan hash | `0x4fc3364f1d30e8f13b06f0535d8a65f54f66fc21c79ff150ac021af67b55c575` | yes (was `0x3b88f634…0a3e`) |
+| execution set | `0x9c22c034e660c606de155654f43f35a7a24f29513d6e1d5dd5c94a1e1c60c9e5` | yes (was `0x768d8353…dde7`) |
+| index obligations | `0x38ac8541875e7088b16c0d089ffb69e684598d49c1945377378a40135e29d78f` | yes (was `0xbc6d4b7d…3a3a`) |
+| index manifest hash | `0x755a082e5564c4c599b61131e11b0ff1a86642fcc53ac1be9cd23b67512d3537` | yes (was `0x073676c0…2e3c`) |
 | layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | no |
-| hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | no |
-| hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | no |
-| posting store ABI id | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | no |
-| bitmap store ABI id | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` | no |
+| ABI id `efs/ledger-hot/2` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | no |
+| ABI id `efs/ledger-hot/2:test` | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | no |
+| ABI id `efs/posting-store/2` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | no |
+| ABI id `efs/bitmap-store/2` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` | no |
 | status vocabulary id | `0xd873af00e96f1b685c8cf256f1c6cdd79cc546a37704b0b913b514bfdb690f87` | no |
 | limits profile id | `0x0ee9b6c0be6c7a4c600b9d48f05847efeb7d01d7e910061522af092c7b5a5055` | no |
-| realm id | `0x791e5fa5ca744f9269dcaabed8244503b2864f7dbbc16b22f63626a07b064193` | yes (was `0xc1e80401…700a`) |
-| domain separator | `0xee65704ebe4f133186edae6f66c635bc50d9fbd00655332c36f6c1dde8e3c9a7` | yes (was `0x50636c43…3c91`) |
-| `gas/model.json` sha256 | `0x6b754403ffd6a3deaacc63128401fc8168dad3333889a5f97c5d38064fb58dad` | yes (was `0xa4b9f64b…3e34`) |
-| `release/errors.json` sha256 | `0xa3278b62ff632d139382799769dd4a9d0991731d73bb82faff9f75d0e8afff7e` | yes (was `0xa97d387c…1f17`) |
+| realm id | `0xdfef48c90e48dafc642f4380c8f39c14c1af7d84d5047e5acb7d508d5316460e` | yes (was `0x791e5fa5…4193`) |
+| domain separator | `0xef73e6345147076e5cab816f3a50e5695626648b1771dcc6f52a0327322b77d7` | yes (was `0xee65704e…c9a7`) |
+| `gas/model.json` sha256 | `0x77848e722c7f122463b009b0ccdc864c5ea40ab750007f490f0721d76c39c438` | yes (was `0x6b754403…8dad`) |
+| `release/errors.json` sha256 | `0xc1030128f82e0dec4a6901045bb9f12fc5407dd2a4ff17de973815e282e1606c` | yes (was `0xa3278b62…ff7e`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
 | Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
@@ -905,44 +1059,44 @@ on both schedules (was 248).
 | Type id `topic-word/1` | `0xadf365a36950129688fc6b662ec39a18f0b54b2cfa634b6ec634ebd3ec8c886b` | no |
 | Type id `topic/1` | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | no |
 | Type id `text/1` | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | no |
-| ledger proxy | `0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef` | yes (was `0x83ce0B9E…20fB`) |
-| ledger implementation (`LedgerCore`) | `0xF0C32073603683e74c79604f407996047B349E40` | yes (was `0x3C56f31A…042C`) |
-| ledger ProxyAdmin | `0x154E96bfc18A9f3533767a660ac71c4ef8F27307` | yes (was `0x5e292A49…50AB`) |
-| registry proxy | `0xF22eF34A0a2F5fd0116C49A7632b230354d4ab85` | yes (was `0xa1657E67…0BD2`) |
+| ledger proxy | `0xe942147e5E9112c64ced569e8f5FA18B20073429` | yes (was `0xFEd9404A…43Ef`) |
+| ledger implementation (`LedgerCore`) | `0x13b04891ce92Bec464CA5fDF8e412E4FFB64342E` | yes (was `0xF0C32073…9E40`) |
+| ledger ProxyAdmin | `0x6894E327133006F2Fe5383006d14b290a1692035` | yes (was `0x154E96bf…7307`) |
+| registry proxy | `0x6cD3F5A2a7c8fDC22259BFFc9a81c699AFBBB415` | yes (was `0xF22eF34A…ab85`) |
 | registry implementation | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9` | no |
-| registry ProxyAdmin | `0x885F77f02E5Ff3eC164Fda9382835ce97cC9A642` | yes (was `0x2dEb3CeB…1439`) |
-| controller | `0xdb1415d673b0a94f2F26eeA97E7391aDb6679be0` | yes (was `0xA6aFe20e…6E30`) |
-| genesis contract | `0x0628338EE25589a698dC44d54d7B172B94E6539C` | yes (was `0xff730659…3533`) |
-| index (generation 1) | `0xC2eD8A212be073C2D7E46229E20c358229Dd9bfd` | yes (was `0x6ebfdf09…17f7`) |
-| index runtime codehash | `0xc0dee80c59530af952f7f19c2a33e19230da73fcdad7c383e51eade803d5a546` | yes (was `0x3ce5e150…b452`) |
-| index reads contract | `0x519cE2e72BcD5EEa8a3Aee01b25056356c639FC9` | yes (was `0x73453001…329d`) |
-| posting store | `0x55c2D07CDafF496Fc0B408C2AdD9d9f49b76f4C3` | yes (was `0xA5CE13aB…DCB9`) |
-| bitmap store | `0xb3d6f84109E8355ebbDacB7653B6D304D5e5A1f4` | yes (was `0x508EB68a…2D1B`) |
+| registry ProxyAdmin | `0x890795926ff55dc3bAC27103c51BF42d5ED7ba44` | yes (was `0x885F77f0…A642`) |
+| controller | `0xb89a7b732325bc25194AD9B1b51b72fad00EF770` | yes (was `0xdb1415d6…9be0`) |
+| genesis contract | `0xc2EeEe8765C8c99809B99aef72cb748daF3f9F62` | yes (was `0x0628338E…539C`) |
+| index (generation 1) | `0x9ca434fCb6EdfBa18e6F985EE9697e903f019f26` | yes (was `0xC2eD8A21…9bfd`) |
+| index runtime codehash | `0x086f70d323160eb4ee66d82883c656547e08fda0a841ee38f0b45197b01e67a8` | yes (was `0xc0dee80c…a546`) |
+| index reads contract | `0x98de17254E0fb67ee3F5F5800f2BaCF4bAb907DF` | yes (was `0x519cE2e7…9FC9`) |
+| posting store | `0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33` | yes (was `0x55c2D07C…f4C3`) |
+| bitmap store | `0xCEe929eC6398c54265EFCE369F76dAdD47477088` | yes (was `0xb3d6f841…A1f4`) |
 | `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | no |
 | `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | no |
 | `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
 | `readers.keysView` | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F` | no |
-| `readers.lensReader` | `0x072C087f2E58bE64eCD7488AB79E6F7083055Bc4` | yes (was `0x268B3c8B…70aB`) |
-| `readers.lensReader` runtime codehash | `0x61e15445973e5fb7ed0820f0d0b3abd34b7a5eb46548306aae23461e221d7fe0` | yes (was `0x1e292b4d…7c07`) |
-| `readers.filesPageReader` | `0xa03716f5200f87D05192b6c3E45D863181FA7404` | yes (was `0xc00D538A…8F2A`) |
-| `readers.filesPageReader` runtime codehash | `0x302810eb9496c55d29007d91d7442407a483b23db68d8ccc15dce86c5080dcd6` | yes (was `0x149a571c…f2c4`) |
-| `readers.topicMineReader` | `0x0de61140Ff961cC101137e6aC9D0A9A90C32cc6e` | yes (was `0xFB2f372b…9f21`) |
-| `readers.topicMineReader` runtime codehash | `0x7f435e19e60ace99f1749f965e958edb6a5c5f4207a615ee54d3114260f71bc6` | yes (was `0x2a7d824c…15cc`) |
-| `readers.topicEveryoneReader` | `0x0E082ab787e39860b07282CEDb54F54794fDa76B` | yes (was `0x1ee0AB9D…86D2`) |
-| `readers.topicEveryoneReader` runtime codehash | `0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f` | yes (was `0x50347b7b…be5e`) |
-| `readers.topicLookupReader` | `0xE32505C0CE36D95478607b684F2faB83abABd5De` | yes (was `0xC74BacA3…119C`) |
-| `readers.topicLookupReader` runtime codehash | `0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63` | yes (was `0x80682372…5596`) |
-| `readers.web3Gateway` | `0x99780AaA0D2cbc87fB85062a67d31DB2144E583a` | yes (was `0xcA9eC410…2981`) |
-| `readers.web3Gateway` runtime codehash | `0xec9ea7c949c978a5a7c107e08f270a5b16c53b245161089b7bb2db0e5482c029` | yes (was `0xcd627a0e…2727`) |
-| `readers.web3Gateway.content` | `0x7D73d40047140d8Db7C7bC9ac8e57e9E075C3D15` | yes (was `0x502a7CCe…41FA`) |
-| `readers.web3Gateway.content` runtime codehash | `0x3113647b4b11990b64df8f1650688a1a3f1858162f597055059b74e0324f3a08` | yes (was `0x4e20242c…19aa`) |
-| `LedgerIngress` (address, runtime codehash) | `0x23eC6bBDeE632Cd4C0131bD7ED5915B286cEb1a7 / 0x1491217b620dce1fd28b6aaf6d17c0ab4a41c507bb0cf44e8379cd35a4b0079a` | no |
+| `readers.lensReader` | `0xbb20026c277926D7eDD3d9bCa070FEcA85b4E374` | yes (was `0x072C087f…5Bc4`) |
+| `readers.lensReader` runtime codehash | `0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1` | yes (was `0x61e15445…7fe0`) |
+| `readers.filesPageReader` | `0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2` | yes (was `0xa03716f5…7404`) |
+| `readers.filesPageReader` runtime codehash | `0x52f038b5ce032260ac4147389646c72b0c5cc763403e37659834a9f062c42f6c` | yes (was `0x302810eb…dcd6`) |
+| `readers.topicMineReader` | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33` | yes (was `0x0de61140…cc6e`) |
+| `readers.topicMineReader` runtime codehash | `0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | yes (was `0x7f435e19…1bc6`) |
+| `readers.topicEveryoneReader` | `0x6082241a955e214432b069beC81A5a57c2EC39A0` | yes (was `0x0E082ab7…a76B`) |
+| `readers.topicEveryoneReader` runtime codehash | `0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | yes (was `0xc420fe4b…b70f`) |
+| `readers.topicLookupReader` | `0xF9176797604bEE9E49E8C7BC1Ac4a9A1a3B6d1a9` | yes (was `0xE32505C0…d5De`) |
+| `readers.topicLookupReader` runtime codehash | `0x48c379a6eee2a1f0caacbe966d885fed1b16037c9bcc22494e22307bd3b74487` | yes (was `0x77800e5d…fe63`) |
+| `readers.web3Gateway` | `0x78267F061679839Cb5e483d9aba806d5D032479e` | yes (was `0x99780AaA…583a`) |
+| `readers.web3Gateway` runtime codehash | `0xa73f9fffe1fc2ff4b788d502d9222d061057fc16294db24d75f1000fc7505c41` | yes (was `0xec9ea7c9…c029`) |
+| `readers.web3Gateway.content` | `0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47` | yes (was `0x7D73d400…3D15`) |
+| `readers.web3Gateway.content` runtime codehash | `0x91096216c4ec9ccfa94a7f40fcd4ed54562091a76d794413da539375bffb5a66` | yes (was `0x3113647b…3a08`) |
+| `LedgerIngress` (address, runtime codehash) | `0x064cB3432FCEa1965b2531eDe7B6f03461788319 / 0xd3e3e0cfcaba81a37807209c9c138387db51ad1a9ca38aeee6b3b1aee8b4728e` | yes (was `0x23eC6bBD…b1a7 / 0x1491217b…079a`) |
 | `LedgerApply` (address, runtime codehash) | `0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343 / 0x7d788fac98935e8c48d36d9e4886246093bef0a0eb20d445a7d28db275637669` | no |
-| `LedgerControl` (address, runtime codehash) | `0x973f33FE2c3CACB310827ad5ec34CDcBbE350160 / 0x078461f174f83a07cf6ecf592beaab0862f1b8d4ab36bdb59e94a5df93877daa` | yes (was `0x7f9eA1e9…789e / 0xb56cb507…00ec`) |
+| `LedgerControl` (address, runtime codehash) | `0x992482530deb668f7B98D23edb19432796007722 / 0xa0386f81586303a1a8f7d11b79dca2cbd0439ea7938764bdabd182e21d58a6da` | yes (was `0x973f33FE…0160 / 0x078461f1…7daa`) |
 | `LedgerReads` (address, runtime codehash) | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366 / 0x7aafb133b4b1b130b239da67027f7de118918861850b94584b68c101e0b71657` | no |
 | `LedgerViews` (address, runtime codehash) | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648 / 0xf15400a4921e6b3282e9e1b486a14a4268c0f01b1b18e88234659394abc9eb03` | no |
 | `DescriptorStore` (address, runtime codehash) | `0xdD13148b5d7cbFdE29C52a1D3C9D22e969BDE71c / 0x96d412de94866a8ce21410434df2a38eb4e3573169f024ddf9669887df72f5dc` | no |
-| `IndexReplayDecoder` (address, runtime codehash) | `0x49e9bC76aaE1a2585885D876311Daa4c974aED1b / 0x0f2574f466a8c3d6bb667d72dd1fdbfc9222636e26c33b4224ccc766fb8f2605` | no |
+| `IndexReplayDecoder` (address, runtime codehash) | `0x5fdA1ac334D046E3666FceBe45dBd3F5DaFdd3f4 / 0xf183f5c83d76686f23bc41f8f4e6f6f06447adc54da83f5f2751128ebf00dd03` | yes (was `0x49e9bC76…ED1b / 0x0f2574f4…2605`) |
 | `ReaderDirectory` (address, runtime codehash) | `0x77865D8B084589021D9695865475cBED4fc16c31 / 0xb929f9e1714d97a570f12cf66daeeff6f06cfb10b373c1a1b22cc51238c31b5f` | no |
 | `FilesBytesRule` (address, runtime codehash) | `0xdD9AE013bf2CCaf784626D70bcab5Be307b07e40 / 0x26b7e1529674fd83c36fbe5ccc9dab915a2f1821d853c707a2cd187e68066d2c` | no |
 | `FilesSpanRule` (address, runtime codehash) | `0x248C3f75c03d525c1813e6dCeDFAd10E2193a8b7 / 0x15a6e10285c6953d9157a023a600f567b5cd2dfb807070c85517f6774fb8e5f6` | no |
@@ -959,72 +1113,30 @@ on both schedules (was 248).
 | `TextRule` (address, runtime codehash) | `0xD10088139D60Be3faB03FD3012F3706C3Ac69485 / 0xb839d97202882243312d2792eebda9be94bb272490e3d652c73f2a1a9a0661a5` | no |
 | `RefuseAllPolicy` (address, runtime codehash) | `0xeba0FBaa0F4bE2a8444C994783120094fFe2BBB1 / 0xefcebe5a8ee27ed2e419e3753d17a6ad67a87fe257797ad10652bd3bc44b2a44` | no |
 | `FilesFinalValidator` (address, runtime codehash) | `0xc672EfB35936f09A05611f5f61057Ef2C4DD35C0 / 0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | no |
-| `LedgerCore` (address, runtime codehash) | `0xF0C32073603683e74c79604f407996047B349E40 / 0x69dd18979547353e97c078934ff1949130ec29951229b8a2d6d04818a5d7bef1` | yes (was `0x3C56f31A…042C / 0xd6b26d5c…ee3b`) |
+| `LedgerCore` (address, runtime codehash) | `0x13b04891ce92Bec464CA5fDF8e412E4FFB64342E / 0x2fdc95dda795c657c7500ee5ee2644fe0ceb6ee5a5bf4cd7e25f21366d56f23f` | yes (was `0xF0C32073…9E40 / 0x69dd1897…bef1`) |
 | `TypeRegistry` (address, runtime codehash) | `0x0A5eFCc70026787b94bf6872A8148CA1A29C08C9 / 0xa7e9307a6ef01411f232895f1ae4a5f40b095b5c8da8788a259ffc06846178d3` | no |
-| `RealmGenesis` (address, runtime codehash) | `0x0628338EE25589a698dC44d54d7B172B94E6539C / 0x5b057dffa98066bebda77765c253ed53bee8322262b2210d0490407c26f43d9a` | yes (was `0xff730659…3533 / 0x6138027c…7660`) |
-| `PostingStore` (address, runtime codehash) | `0x55c2D07CDafF496Fc0B408C2AdD9d9f49b76f4C3 / 0xa4b86e3093c4ad6dfe3c598dd409ccbb75b3c622a54d7cf493dc8dde3c524a8d` | yes (was `0xA5CE13aB…DCB9 / 0x180ab361…858f`) |
-| `BitmapStore` (address, runtime codehash) | `0xb3d6f84109E8355ebbDacB7653B6D304D5e5A1f4 / 0x3569a27c77c51a46b9d64db64df5a43f59c6798037bfae5809dfe4c814f095d9` | yes (was `0x508EB68a…2D1B / 0xcc0c33af…1b1b`) |
-| `RealmController` (address, runtime codehash) | `0xdb1415d673b0a94f2F26eeA97E7391aDb6679be0 / 0x646adad3c8fb69cf3b7fbf2c11a7776c00d7f81b04c4112adb8eca1247142e2f` | yes (was `0xA6aFe20e…6E30 / 0x871f2a71…c5b7`) |
-| `TypeRegistryProxy` (address, runtime codehash) | `0xF22eF34A0a2F5fd0116C49A7632b230354d4ab85 / 0x2e2060dade8827dbf5de0f5c7de5541066ba32bc356d5273e6a617217d55e263` | yes (was `0xa1657E67…0BD2 / 0x493df695…35f9`) |
-| `LedgerProxy` (address, runtime codehash) | `0xFEd9404Ae31E9645Ae52BeE0Dfac7ae2B97243Ef / 0xd9f1cf09c1cb31ae59e019d161f171312ca5040ee84e0ec17953a9303a824134` | yes (was `0x83ce0B9E…20fB / 0xf3d10e15…f684`) |
-| `RegistryProxyAdmin` (address, runtime codehash) | `0x885F77f02E5Ff3eC164Fda9382835ce97cC9A642 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x2dEb3CeB…1439 / 0xf32a01cd…52b2`) |
-| `LedgerProxyAdmin` (address, runtime codehash) | `0x154E96bfc18A9f3533767a660ac71c4ef8F27307 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x5e292A49…50AB / 0xf32a01cd…52b2`) |
-| `IndexReads` (address, runtime codehash) | `0x519cE2e72BcD5EEa8a3Aee01b25056356c639FC9 / 0x09258a9a5a86420aead8b63ce987a3e48533e25be60f37eddf2c19f3f37e2007` | yes (was `0x73453001…329d / 0xf7de800d…7108`) |
-| `RealmIndex` (address, runtime codehash) | `0xC2eD8A212be073C2D7E46229E20c358229Dd9bfd / 0xc0dee80c59530af952f7f19c2a33e19230da73fcdad7c383e51eade803d5a546` | yes (was `0x6ebfdf09…17f7 / 0x3ce5e150…b452`) |
+| `RealmGenesis` (address, runtime codehash) | `0xc2EeEe8765C8c99809B99aef72cb748daF3f9F62 / 0x631085c94713962726cd0e64ab985602dcf9c6e6542aa88b2fd079b27bf0272c` | yes (was `0x0628338E…539C / 0x5b057dff…3d9a`) |
+| `PostingStore` (address, runtime codehash) | `0x1546aCdEe8ae52b8E3f1e6E79404329B96876D33 / 0xc2b395ce1b118831a35bd0e72a6ca07382887fd106281b6cf9e93549fd164465` | yes (was `0x55c2D07C…f4C3 / 0xa4b86e30…4a8d`) |
+| `BitmapStore` (address, runtime codehash) | `0xCEe929eC6398c54265EFCE369F76dAdD47477088 / 0xd8b36e1b30ec57c36304f9d0a86785bc7e8e00ec8028abb0097c060399442fdd` | yes (was `0xb3d6f841…A1f4 / 0x3569a27c…95d9`) |
+| `RealmController` (address, runtime codehash) | `0xb89a7b732325bc25194AD9B1b51b72fad00EF770 / 0x93341dc000015afd1a3c22e833d1ebb06e4239d253430a6ab6973f1a1de53930` | yes (was `0xdb1415d6…9be0 / 0x646adad3…2e2f`) |
+| `TypeRegistryProxy` (address, runtime codehash) | `0x6cD3F5A2a7c8fDC22259BFFc9a81c699AFBBB415 / 0xd044c103027b2c4ac7472651a7bc92cb82606b2a878b423a1146850a70015264` | yes (was `0xF22eF34A…ab85 / 0x2e2060da…e263`) |
+| `LedgerProxy` (address, runtime codehash) | `0xe942147e5E9112c64ced569e8f5FA18B20073429 / 0x9e0eb139edf90b2bac14563b114e92c6ba2f5a330686a4e9ec1003e57179ded1` | yes (was `0xFEd9404A…43Ef / 0xd9f1cf09…4134`) |
+| `RegistryProxyAdmin` (address, runtime codehash) | `0x890795926ff55dc3bAC27103c51BF42d5ED7ba44 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x885F77f0…A642 / 0xf32a01cd…52b2`) |
+| `LedgerProxyAdmin` (address, runtime codehash) | `0x6894E327133006F2Fe5383006d14b290a1692035 / 0xf32a01cd7613147ce1fce81b16c52ddeb9377c8a9ec26c61cbfca5f1251752b2` | yes (was `0x154E96bf…7307 / 0xf32a01cd…52b2`) |
+| `IndexReads` (address, runtime codehash) | `0x98de17254E0fb67ee3F5F5800f2BaCF4bAb907DF / 0x9abcfb6220404631fcd97e6ac59f6f5cdcd92680cd6afde0e2967fbe79072f43` | yes (was `0x519cE2e7…9FC9 / 0x09258a9a…2007`) |
+| `RealmIndex` (address, runtime codehash) | `0x9ca434fCb6EdfBa18e6F985EE9697e903f019f26 / 0x086f70d323160eb4ee66d82883c656547e08fda0a841ee38f0b45197b01e67a8` | yes (was `0xC2eD8A21…9bfd / 0xc0dee80c…a546`) |
 | `KeysView` (address, runtime codehash) | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F / 0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3` | no |
-| `LensReader` (address, runtime codehash) | `0x072C087f2E58bE64eCD7488AB79E6F7083055Bc4 / 0x61e15445973e5fb7ed0820f0d0b3abd34b7a5eb46548306aae23461e221d7fe0` | yes (was `0x268B3c8B…70aB / 0x1e292b4d…7c07`) |
-| `FilesPageReader` (address, runtime codehash) | `0xa03716f5200f87D05192b6c3E45D863181FA7404 / 0x302810eb9496c55d29007d91d7442407a483b23db68d8ccc15dce86c5080dcd6` | yes (was `0xc00D538A…8F2A / 0x149a571c…f2c4`) |
-| `EfsWeb3Content` (address, runtime codehash) | `0x7D73d40047140d8Db7C7bC9ac8e57e9E075C3D15 / 0x3113647b4b11990b64df8f1650688a1a3f1858162f597055059b74e0324f3a08` | yes (was `0x502a7CCe…41FA / 0x4e20242c…19aa`) |
-| `EfsWeb3Gateway` (address, runtime codehash) | `0x99780AaA0D2cbc87fB85062a67d31DB2144E583a / 0xec9ea7c949c978a5a7c107e08f270a5b16c53b245161089b7bb2db0e5482c029` | yes (was `0xcA9eC410…2981 / 0xcd627a0e…2727`) |
-| `TopicMineReader` (address, runtime codehash) | `0x0de61140Ff961cC101137e6aC9D0A9A90C32cc6e / 0x7f435e19e60ace99f1749f965e958edb6a5c5f4207a615ee54d3114260f71bc6` | yes (was `0xFB2f372b…9f21 / 0x2a7d824c…15cc`) |
-| `TopicEveryoneReader` (address, runtime codehash) | `0x0E082ab787e39860b07282CEDb54F54794fDa76B / 0xc420fe4be050aae6b3b92d814b94dfcf73bb9557dc8514857affc64b81efb70f` | yes (was `0x1ee0AB9D…86D2 / 0x50347b7b…be5e`) |
-| `TopicLookupReader` (address, runtime codehash) | `0xE32505C0CE36D95478607b684F2faB83abABd5De / 0x77800e5d3bc98db19c56a752ef7eed959a3b2291578d1c9bf78816e801befe63` | yes (was `0xC74BacA3…119C / 0x80682372…5596`) |
+| `LensReader` (address, runtime codehash) | `0xbb20026c277926D7eDD3d9bCa070FEcA85b4E374 / 0x862b457115bf94c5220aeef72df6de52c184159349cafb10a570e4e4e4e132d1` | yes (was `0x072C087f…5Bc4 / 0x61e15445…7fe0`) |
+| `FilesPageReader` (address, runtime codehash) | `0x3dba5FD3f30b0390f795846d8b0e4df8ac0df8a2 / 0x52f038b5ce032260ac4147389646c72b0c5cc763403e37659834a9f062c42f6c` | yes (was `0xa03716f5…7404 / 0x302810eb…dcd6`) |
+| `EfsWeb3Content` (address, runtime codehash) | `0x8d06AbED192b097dbBc2efA37E7F3aaCAB6D5E47 / 0x91096216c4ec9ccfa94a7f40fcd4ed54562091a76d794413da539375bffb5a66` | yes (was `0x7D73d400…3D15 / 0x3113647b…3a08`) |
+| `EfsWeb3Gateway` (address, runtime codehash) | `0x78267F061679839Cb5e483d9aba806d5D032479e / 0xa73f9fffe1fc2ff4b788d502d9222d061057fc16294db24d75f1000fc7505c41` | yes (was `0x99780AaA…583a / 0xec9ea7c9…c029`) |
+| `TopicMineReader` (address, runtime codehash) | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33 / 0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | yes (was `0x0de61140…cc6e / 0x7f435e19…1bc6`) |
+| `TopicEveryoneReader` (address, runtime codehash) | `0x6082241a955e214432b069beC81A5a57c2EC39A0 / 0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | yes (was `0x0E082ab7…a76B / 0xc420fe4b…b70f`) |
+| `TopicLookupReader` (address, runtime codehash) | `0xF9176797604bEE9E49E8C7BC1Ac4a9A1a3B6d1a9 / 0x48c379a6eee2a1f0caacbe966d885fed1b16037c9bcc22494e22307bd3b74487` | yes (was `0xE32505C0…d5De / 0x77800e5d…fe63`) |
 | read bounds (prague): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | read bounds (amsterdam): limitEntries, maxRows, pageTimesLens mine exact / mine below / everyone exact / everyone below | `245, 150, 768 / 416 / 688 / 408` | no |
 | seed version | `efs-fixture-seed/4` | no |
 | seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
-
-**Keeping an index never calls it** (number at integration: the next free number after the formula step's items).
-An activation that keeps the live index (`set.components.index == index()`) no longer calls it. Before, it read
-`IRealmIndex(index).replayReadiness().phase` for reason 2, uncaught, so a live index that no longer answered made every
-activation that kept it revert with that index's own error. Now the kept index is pinned by the revision row alone
-(its address's code against the set's codehash, `E_PIN(index, 3)`; the codehash and manifest hash against the current
-revision row, `E_INDEX_NOT_READY(1)`, unchanged), and **`E_INDEX_NOT_READY(2)` means "the ledger's own publication lock
-is not IDLE"** (was "its readiness phase is not IDLE"); the phase the readiness echoed was the ledger's own, and
-`LedgerCore.activate` and `freeze` are already idle-gated, so no activation that passed before is refused now, and one
-that keeps a non-answering index now passes. `release/errors.json` changes with reason 2's wording. No ABI, no new error.
-**Identities:** `LedgerControl`'s code changed, so its runtime codehash moves, and with it (as for item 37) every address
-genesis creates on the fixture Realm, the realm id, the domain separator, the stores, the index and its reads contract,
-the manifest hash and obligations, the plan hash, the execution set and the release digest. **[PLACEHOLDER: the moved
-and unmoved identities and the sizes are filled in at integration, after the one regeneration.]** `LedgerControl`
-18,042 → 17,994 B (−48: `_checkIndex` −89, the inlined `LedgerStorage._lockWord` +41; budget 19,660 B, 1,666 left).
-
-**A build proves a Type's reference count** (number at integration: after "Keeping an index never calls it").
-`IndexReplayDecoder` (pinned by every index generation as `DECODER`) no longer reads `typeInfo(id).refCount`. For a
-PUBLISH or REUSE leaf it asks the registry for `descriptorBytes(id)`, recomputes the Type id from those bytes (the
-registry's derivation: `Keys.typeId(Keys.shape(d), refs, ruleId)` over the leading REF32 fields and header bytes
-66..98) and compares it with the record's Type id; on a mismatch it refuses **`E_REPLAY(10)`** (new code; `Errors.sol`
-and `release/errors.json`), and the count is the descriptor's number of references. Trusted: the registry answers with
-some bytes. Proved: they are the registered descriptor and the count, because the Type id commits to both. A registry
-whose `descriptorBytes` reverts makes the decode (`decode`, `payload`) and any `build` or `replayNextPublication` that
-reaches such a record revert with the registry's own error. Decoded effects are unchanged for every Type a real
-registry registers. No ABI change. Measured (the count read alone, cold / warm; today is `typeInfo`):
-
-| descriptor | prague today | prague proved | amsterdam today | amsterdam proved |
-|---|---|---|---|---|
-| `realm-notice/1` (239 B, the smallest) | 25,050 / 5,541 | 19,461 / 5,452 | 26,250 / 5,541 | 21,161 / 5,552 |
-| `files-content/1` (698 B, the largest in the release) | 25,050 / 5,541 | 20,392 / 6,383 | 26,250 / 5,541 | 22,092 / 6,483 |
-| the codec's largest (4,096 B, 8 references) | 25,050 / 5,541 | 27,634 / 13,625 | 26,250 / 5,541 | 29,334 / 13,725 |
-
-In a build (`test/index/BuildGas.t.sol`): per marginal publication −137 to +609 (prague) and −37 to +709 (amsterdam);
-the fixed share of a cold call −5,500 / −5,100 per distinct Type; a later list over §6.2's 1,000,000 files ≈ +0.33%
-(prague) and ≈ +0.45% of execution (amsterdam), docs/INDEX-BUILD.md §10. **Identities:** the decoder's code changed
-(5,404 → 5,578 B), so its runtime codehash and its address (CREATE2 of its initcode) move; generation 1's index pins it as
-an immutable (`DECODER`, a constructor argument), so the index's runtime codehash and address, the index obligations,
-the execution set, the plan hash and the release digest move with it. The index manifest hash does not (the plan
-computes it from the reads contract, which does not name the decoder), and nothing in the kernel or the registry moves
-for this change. **[PLACEHOLDER: the moved and unmoved identities are filled in at integration,
-after the one regeneration.]**
 
 ## The fixture: many instances at once
 
@@ -1409,8 +1521,8 @@ build is absent). Exit 1 on any mismatch; a tampered `expected.json` was tested 
 7. **The index.** `manifestHash()` equals the offline manifest hash; `replayReadiness()` is ready, with families and
    units equal to the plan; `progress().lastProcessed` equals 27; `digestSpecCount` is 1 for `files-content/1` and for
    `files-external/1`. **The index prices like the release** (group `pricing`): `workModel()` read at the index address
-   is compared field by field (every field of the ABI's `WorkModel`, `formulaVersion` and formula 2's
-   `rwPerBindLater`, `freshPerPublishExisting` and `finalComputePerPublish` included) with the deploy plan's work model,
+   is compared field by field (every field of the ABI's `WorkModel`, formula 3's 32: `formulaVersion`, the three rows,
+   `surchargePurpose` and the surcharge rows included) with the deploy plan's work model,
    the deployment document's `index.workModel`, every schedule's `gasModel.schedules.<s>.floor.workModel` in
    `release.json` and, in a checkout, every `profiles.<s>.floor.workModel` in `gas/model.json`; and `describe().limits`'
    floor prices (`floorFreshGas`, `floorRewriteGas`, `kernelTail`) with the `floor.limits` of the schedule that prices
@@ -1516,11 +1628,10 @@ guess, and `eth_estimateGas` stays the authority before sending. It excludes int
 script predicts seven composites it never fits (create file, edit, rename + move, two chunks, the last publication of
 a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and exits 1 if a prague prediction is off by more than 15%.
 
-**The later rows are measured in one place with short lists** (an accuracy item, being fixed in this release on its own
-branch): `unbindTag`, `releaseTag`, `restoreTag`, `bindTagNumberChange`, `unbindFolder`, `releaseFolder` and
-`bindFolderRebind` come from one topic or one folder (`GasModel.t.sol`), so E is short for later statements at
-distinct places and in long lists, by about +37k per statement for a restore of entry 48 across places and +65k at
-4,096 entries on prague (`test/integration/FloorSplit.t.sol`).
+**The later rows and the list tiers.** The single-place later rows (`unbindTag`, `releaseTag`, `restoreTag`,
+`bindTagNumberChange`, `unbindFolder`, `releaseFolder`, `bindFolderRebind`, and the PROPERTY, SAME and BROADER later
+rows) are measured at one topic or folder with short lists; later statements at distinct places and in long lists are
+priced by the list tiers below (item 47), which bring every composite within the claim inside the headroom.
 
 **First tags are priced per level (step 3b, design §10.4).** The index's walk of a tagged topic's ancestors is not in
 the kernel's floor, so the model carries it: a first statement at TAG (either sign) costs `bindTagFresh` when no author
@@ -1655,12 +1766,17 @@ and digest `specs` in `types`, `callGasRetained` = 63/64, `dispatchOverhead`), `
 gas: every `GasModel.t.sol` publication is also run from the same state with the index's two callbacks answered by
 `vm.mockCall`, logged as `kernel frame gas`, and fitted like the constants) and `formula`, the plain statement:
 
-- quote (work-model formula 2): `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new record ?
-  freshPerPublishFresh + freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_bind-kind(head UNSET ?
-  freshPerBindFresh : 0)`, `rw10 = rwPerPublication + Σ_publish/reuse rwPerPublish + Σ_bind-kind(rwPerBind + (head
-  UNSET ? 0 : rwPerBindLater))` (a RELEASE is always a later statement, a REUSE always an existing record); `P =
-  computeBase + n·computePerAction + binds·computePerHookEffect + ⌈fresh10/10⌉·floorFreshGas +
-  ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish`;
+- quote (work-model formula 3, item 42): `fresh10 = freshPerPublication + Σ_publish/reuse(freshPerRef·refs + (new
+  record ? freshPerPublishFresh + freshPerDigestSpec·specs : freshPerPublishExisting)) + Σ_rows fresh`, `rw10 =
+  rwPerPublication + Σ_publish/reuse rwPerPublish + Σ_rows rw`, `compute = computeBase + n·computePerAction + Σ_rows
+  compute`, where each BIND, UNBIND or RELEASE adds one row by class, first statement (head UNSET: `freshPerBindFirst`,
+  `rwPerBindFirst`, `computePerBindFirst`), re-bind (a BIND on a BOUND head: `freshPerRebind`, `rwPerRebind`,
+  `computePerRebind`) or other later statement (`freshPerBindLater`, `rwPerBindLater`, `computePerBindLater`; a RELEASE
+  always), plus the surcharge's row of the same class when its purpose word equals `surchargePurpose` (never when that
+  is zero), and every WITHDRAW after the first adds the later row (a REUSE always names an existing record); with no
+  principal every bind-kind action adds the largest of the three rows field by field; `P = compute +
+  ⌈fresh10/10⌉·floorFreshGas + ⌈rw10/10⌉·floorRewriteGas`; `F = finalComputeBase + binds·finalComputePerBind +
+  publishes·finalComputePerPublish`;
 - requirement: `V = max(K + ⌈(⌈P·64/63⌉ + dispatchOverhead)·64/63⌉, E) + ⌈F·64/63⌉ + kernelTail`, E the execution
   estimate (prague `constants`, amsterdam `split.executionGas`) and K from `floor.kernel` with the same composition.
 
@@ -1690,9 +1806,9 @@ the suite also logs the callbacks' prefix spend (E − K − the final phase) an
 for every shape but the first tags (whose depth the floor does not know) and the folder re-binds' final phase it
 asserts the quote covers them.
 
-**`ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal, so every BIND and UNBIND
-reads an UNSET head and is priced as a first statement (`freshPerBindFresh`, which is above `rwPerBindLater` on both
-schedules); it is exact only when every bind-kind action is one. A consumer plans from the gas model's rule
+**`ILedgerCommitments.indexFloor` is an upper bound only.** It quotes without a principal, so it prices every
+bind-kind action with the largest of formula 3's three rows field by field, surcharge included (with the later row of
+formula 3 the first row is no longer the largest on amsterdam). A consumer plans from the gas model's rule
 (`planning`, `floor`), never from `indexFloor`.
 
 **Read terms (`reads`, step 4).** Every run also measures the topic readers (`tools/gas-reads.mjs` over
@@ -1816,9 +1932,9 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
    passes the real G7 decoder; the suites pass `address(0)`. `efs-deployment.json` records `index.runtimeCodehash` and
    `index.reads {address, runtimeCodehash}`; `verify` checks both codehashes on chain and `readsContract()`.
 9. **Work model.** `src/` has no release work model, so the index uses
-   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4, formula 2; the
-   constants are measured with the step-3b lists in place, the later-statement, existing-record and per-publish final
-   terms by `test/integration/IndexFloor.t.sol`'s `later`/`publish`/`reuse` rows; `gas/model.json` `floor.workModel`
+   `test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel()` (design §10.4, formula 3; the
+   rows are measured per action by `test/integration/FloorSplit.t.sol`, the existing-record and per-publish final
+   terms by `test/integration/IndexFloor.t.sol`'s `publish`/`reuse` rows; `gas/model.json` `floor.workModel`
    must equal it, which `pnpm release` asserts). `WorkModel` is returned inline by `IIndexReads.manifest()`, so a
    field added to it moves the two profile words after it; `LensReader` finds them from the struct's encoded size
    (the other readers ask `PHYSICAL_PROFILE()`/`CALLBACK_PROFILE()`), and `test/index/IndexReadsSplit.t.sol` asserts

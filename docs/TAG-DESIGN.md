@@ -201,10 +201,10 @@ itself.
   carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
   history and is switched on, and its lists equal those of a Realm that kept the list from genesis, key by key
   ([INDEX-BUILD.md](INDEX-BUILD.md) §2.2, §8; the list and its generation are an example, not product). The build's cost
-  is measured (step 4, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the Realm's whole history, about 478k gas
-  per file today (576k on Glamsterdam, state gas included) against about 51k (150k) to keep the list from the start,
-  9.3 times (3.8 times) as much; 10,000 files cost about 4.8 billion gas in some 286 transactions, a million files
-  about 478 billion in some 28,500. So adding it later is realistic for a small or young Realm and an indexer is the
+  is measured (step 4, re-measured with this release's code, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the
+  Realm's whole history, about 479k gas per file today (578k on Glamsterdam, state gas included) against about 51k
+  (150k) to keep the list from the start, 9.3 times (3.9 times) as much; 10,000 files cost about 4.8 billion gas in some
+  287 transactions, a million files about 479 billion in some 28,600. So adding it later is realistic for a small or young Realm and an indexer is the
   route for a large one. The condition: adding a
   generation is an act of the Realm's controller, possible until the Realm is frozen, so the option exists only while
   the Realm is not frozen (Q52).
@@ -284,11 +284,12 @@ published gas model (`planning`, `floor`, the per-level terms; `tools/gas-plan.m
 publication is planned when it is inside the Realm's limits and its estimate and the floor's requirement both fit
 under the cap less 15%, and anything larger is split before it is signed. The largest planned publication of each
 of seventeen shapes is tested on both schedules (TAG-NUMBERS "The largest publication"): for example 38 lone
-negatives today and 50 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
-recipes, 64 masks or releases today and 44 on Glamsterdam, and 64 registration pages on both. On Glamsterdam the floor
+negatives today and 53 on Glamsterdam, 18 and 19 first tags at depth 8, 3 at depth 64, 10 and 12 create-file
+recipes, 58 masks or releases today and 55 on Glamsterdam (work-model formula 3), and 64 registration pages on both. On Glamsterdam the floor
 prices a rewrite of an existing slot at 12,100 (its real execution price there; it was 5,000), which makes the quote
-cover what the index spends in every state and lowers the largest batch of later statements (masks, releases,
-restores, number changes) and folder re-binds; 64 lone negatives no longer fit one Glamsterdam publication. `indexFloor` is an upper bound only; the fixture checks that
+cover what the index spends in every state; work-model formula 3 gives later statements (masks, releases, restores,
+number changes) and folder re-binds rows of their own, so their Glamsterdam batches are 51 to 64; 64 lone negatives do
+not fit one Glamsterdam publication. `indexFloor` is an upper bound only; the fixture checks that
 the deployed index prices exactly like the published model.
 
 ## 6. Reading
@@ -489,8 +490,8 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 4. **Everyone's versions of one file are not listed on chain today: keep that list from the start, or leave it
    out?** Keeping it costs a storage slot for every file ever created: about 30k gas per file today in the store a
    HEAD statement already writes (about 2% of creating a file; 51k as measured in a separate third store; 118k to
-   150k on Glamsterdam). Adding it later is possible and measured at about 478k per file today (576k on
-   Glamsterdam), 9.3 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 478 billion for a
+   150k on Glamsterdam). Adding it later is possible and measured at about 479k per file today (578k on
+   Glamsterdam), 9.3 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 479 billion for a
    million, so "later" suits only a small or young Realm. Keeping it can be undone (a later generation may drop a
    list); leaving it out cannot, for a large Realm. Your 2026-07-15 ruling (everything written through EFS is
    indexed automatically) bears on it. *The tag design session and the contracts dev both now recommend keeping it

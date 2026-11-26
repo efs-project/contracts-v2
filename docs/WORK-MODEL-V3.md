@@ -38,10 +38,14 @@ the code does.
 7. **If the HEAD list is kept (Q52), it will be its own family** with the data-contract saver, not folded into
    `position-authors` (ruled; reasons under Q4). It is not built here.
 8. **The gas model's later rows** (`unbindTag`, `releaseTag`, `restoreTag`, `bindTagNumberChange`, `unbindFolder`,
-   `releaseFolder`, `bindFolderRebind`) are measured in one place with short lists, so the planner's E is short for later
-   statements at distinct places and in long lists (by about +37k per statement for a restore of entry 48 across places
-   and +65k at 4,096 entries, prague). That is being fixed in this release on its own branch; this branch changes only
-   the floor section of `tools/gas-model.mjs` and the planner's quote.
+   `releaseFolder`, `bindFolderRebind`) were measured in one place with short lists, so the planner's E was short for
+   later statements at distinct places and in long lists (by about +37k per statement for a restore of entry 48 across
+   places and +65k at 4,096 entries, prague). Done in the same release: the gas model's list tiers (tools/RELEASE.md
+   items 47 and "The list tiers"); formula 3 itself changes only the floor section of `tools/gas-model.mjs` and the
+   planner's quote.
+9. **Sizes in the release** (runtime bytes, budget 19,660 B; formula 3 together with the release's other pieces):
+   `LedgerIngress` 18,955 B (705 left), `RealmIndex` 18,408 B (1,252 left), `LedgerControl` 18,363 B (1,297 left),
+   `IndexReads` 12,960 B; at `3ca53ba` 19,264, 18,834, 18,042 and 12,431 B.
 
 **The measurements behind the later row** (`FloorSplit.t.sol`, per action, spend p / a, the formula-3 quote's ratio):
 
@@ -70,8 +74,9 @@ on the length the floor claims. Reading a whole word of five entries per probe n
 binding's entry index when it is appended, would shorten or remove it; either is a change to the index, so to a later
 generation, and would let the later row shrink.
 
-**Batch sizes as landed** (the planning rule, `tools/gas-plan.mjs`, on the gas model regenerated with this code (not
-committed here: it is regenerated once when the pieces are joined); today = the released `test/vectors/floor-plan.json`; edits from `tools/gas-plan-later.mjs`'s shape):
+**Batch sizes as landed** (the planning rule, `tools/gas-plan.mjs`, on the regenerated `gas/model.json` with the list
+tiers applied, which move none of these; "today" = `test/vectors/floor-plan.json` at `3ca53ba`; edits from
+`tools/gas-plan-later.mjs`'s shape):
 
 | shape | prague today → formula 3 | amsterdam today → formula 3 |
 |---|---|---|
