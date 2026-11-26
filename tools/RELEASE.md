@@ -252,13 +252,14 @@ this release.
   149,608 a file to keep it from genesis (9.3× / 3.8×); a cold build call's fixed share is 0.25M to 0.29M (it was
   0.49M to 0.52M while the carried check called the live index); every admitted publication builds in one 2^24 call.
 
+- **The above-cap state-gas path, confirmed on a real chain** (2026-11-26, `tools/state-gas-probe.mjs`,
+  docs/GAS-SCHEDULES.md): on Sepolia, under both Geth and reth, a transaction whose gas limit is above 2^24 starts
+  with the cap less intrinsic gas as ordinary gas and pays state gas from the reservoir; at or below the cap it pays
+  state gas out of ordinary gas. So the floor quote staying in execution gas is right for a transaction that funds
+  its state gas above the cap. A planner must not read this from plain `eth_call` (Geth relaxes the cap there).
+
 **Open:**
 
-- **The above-cap state-gas path, end to end, on a client that implements EIP-8037.** The floor quote stays in
-  execution gas (the integration owner's ruling); a transaction with much state gas funds it by setting `tx.gas` above
-  2^24, from EIP-8037's reservoir. Nothing here has confirmed that path: Foundry's amsterdam profile has no reservoir,
-  and anvil 1.8.3 accepts `--hardfork amsterdam` and a gas limit above 2^24 but applies prague pricing (no state gas,
-  no reservoir; measured on this machine).
 - **Later statements on Glamsterdam are over-reserved.** The work model has no compute term for later statements and
   no per-purpose term: it charges a later statement (`rwPerBindLater`) twelve "rewrites" that are really compute, so at
   12,100 a rewrite later statements are reserved 2.0 to 4.3 times their spend on Glamsterdam and their batches shrink

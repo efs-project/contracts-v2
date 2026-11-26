@@ -45,13 +45,30 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
     Under the cap the callbacks' state gas comes out of the same `gas_left`, which the quote does not count, so a
     transaction sent near the quote can be refused with `E_INDEX_GAS`; it is never admitted unindexed
     (`test/integration/FloorReconcile.t.sol`). (3) Foundry's amsterdam profile has no reservoir, which matches the
-    chain for a transaction at or below the cap and is harsher than the chain above it; the fixture tool runs only
-    osaka and prague, so the above-cap path is not confirmed by anything in this repository yet.
+    chain for a transaction at or below the cap and is harsher than the chain above it. The above-cap path is
+    confirmed on Sepolia by simulation (next item).
   - **Decision (integration owner, 2026-11-26):** the floor quote stays in execution gas and is not changed to count
     state gas. A transaction with much state gas funds it through the reservoir (`tx.gas` above 2^24); a small one
     takes its gas limit from `eth_estimateGas`, which already includes the state gas it will draw. A consumer's
     state-gas figure per shape is `gas/model.json` → `profiles.amsterdam.split.stateGas` (the same keys and formula
-    as `constants`). Still open: confirming the above-cap path end to end on a chain that runs the new rules.
+    as `constants`).
+  - **Confirmed on Sepolia, 2026-11-26** (`tools/state-gas-probe.mjs`; read-only: code placed by a state override,
+    nothing deployed or sent). Both clients serving the endpoint, Geth 1.17.9 and reth 2.11.0, price by EIP-8037: a
+    fresh slot draws about 110,020 gas from a transaction under the cap (measured 110,068 with the probe's loop),
+    where Prague draws 22,100. Under `eth_simulateV1` with validation on, which applies the real transaction rules,
+    both clients agree: a transaction at or below 2^24 starts with its gas limit less intrinsic gas and pays state gas
+    out of it (100 fresh slots at a limit of 16,777,216: 11,006,640 drawn from ordinary gas); the same code at a limit
+    of 30,000,000 or 60,000,000 starts with exactly 16,762,214 of ordinary gas (the cap less intrinsic gas) and draws
+    only 1,214,640 from it (12,146 a slot), the 97,920 a slot of state gas coming from the reservoir. Gas used is the
+    same either way (11,021,663): the reservoir changes where gas is drawn from, not what is paid. Mined
+    transactions agree: in 200 recent blocks 185 transactions had a gas limit above 2^24 (the largest 74,270,700),
+    and one used 35,021,153 gas.
+  - **Two cautions for a planner, from the same probe.** (1) Plain `eth_call` is not the real rule on every client:
+    Geth 1.17.9 does not cap ordinary gas at 2^24 there (at a limit of 30,000,000 the call starts with 29,984,998 and
+    pays state gas out of it), while reth does. Read the cap and the reservoir from `eth_simulateV1` with validation,
+    or from the rule itself, never from `eth_call`. (2) The intrinsic cost of a plain call on that chain is 15,000,
+    not 21,000 (the probe's call starts 15,002 below its gas limit, 2 of that the first opcode); the 21,000 used in
+    this repository's headroom arithmetic is therefore on the safe side there.
   - The EIP text is not consistent on one point that does not touch EFS: it says account-creation costs are no
     longer part of intrinsic gas, and elsewhere that a value transfer to a new account adds to it.
 - A slot set and reset within one transaction, a reverted frame, or a failed `CREATE` produces a state-gas
@@ -72,9 +89,9 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
   Those bytes are never shipped or size-gated.
 - **anvil 1.8.3 does not measure Glamsterdam.** It accepts `--hardfork amsterdam` and a gas limit above 2^24, but
   applies prague pricing: no state gas and no reservoir (measured on this machine). So a fixture run there records
-  prague receipts, and nothing in this repository confirms the above-cap state-gas path end to end; that waits on a
-  client that implements EIP-8037 (tools/RELEASE.md §15). Glamsterdam figures come only from the amsterdam profile
-  above, which draws state gas from the same gas as execution (the rule of a transaction at or below 2^24).
+  prague receipts. Glamsterdam figures come from the amsterdam profile above, which draws state gas from the same
+  gas as execution (the rule of a transaction at or below 2^24); the above-cap path is confirmed against a real
+  chain by `tools/state-gas-probe.mjs` (the item above), which any reader can re-run against a Sepolia endpoint.
 - The gas report in every release bundle records, per supported operation: fresh slots, rewritten slots,
   cleared slots, code bytes deployed and accounts created, so either schedule can be applied without
   re-measuring. "Within ±10k of the prototype" statements are meaningless as Glamsterdam statements.
