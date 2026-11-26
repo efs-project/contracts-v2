@@ -206,7 +206,7 @@ name a subject created strictly before it (`test/integration/HeadLaw.t.sol`).
 
 **Landed (step 3b), as an EXAMPLE, not product.** `head-authors`, kind 22 and the generation that keeps it are a test
 harness (`test/harness/HeadAuthors.sol`: `HeadAuthorsIndex`, `HeadAuthorsReads`, `ListIndexDeployer`); the product
-keeps no all-authors HEAD list (Q52, unchanged), and kind 22 is not reserved by anything in `src/`. The fold is the
+keeps no all-authors HEAD list (Q52: whether the first index should keep it is James's decision, and both recommendations are now to keep it), and kind 22 is not reserved by anything in `src/`. The fold is the
 table above, in `HeadAuthorsIndex._foldMore`, on BIND, UNBIND and RELEASE effects at HEAD only, with the third store's
 carried bit (`CARRIED_THIRD = 4`) honored; it reads nothing but the effect, so it needs no as-of comparison, live or
 from history. The store is a fresh `PostingStore` with family set `[head-authors]` and `INITIAL_WRITER` = the

@@ -471,11 +471,15 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
    own ids uses its own kind of link, at the same cost. *Recommend keeping it.* (Q50)
 3. **No word may start with `~`, look like an address or contain white space,** anywhere in a path. *Recommend
    keeping it.* (Q51)
-4. **Everyone's versions of one file are not listed on chain.** Keeping that list costs a storage slot for every
-   file ever created (measured with its call, about 51k gas per file today, 150k on Glamsterdam). Adding it later is
-   possible and measured at about 485k per file today (582k on Glamsterdam), 9.5 times (3.9 times) as much, paid at
-   once: 4.8 billion gas for 10,000 files, 485 billion for a million, so it suits only a small or young Realm. *Recommend leaving it to the
-   indexer, with the build-from-history step written before any freeze.* (Q52)
+4. **Everyone's versions of one file are not listed on chain today: keep that list from the start, or leave it
+   out?** Keeping it costs a storage slot for every file ever created: about 30k gas per file today in the store a
+   HEAD statement already writes (about 2% of creating a file; 51k as measured in a separate third store; 118k to
+   150k on Glamsterdam). Adding it later is possible and measured at about 485k per file today (582k on
+   Glamsterdam), 9.5 to about 16 times as much, paid at once: 4.8 billion gas for 10,000 files, 485 billion for a
+   million, so "later" suits only a small or young Realm. Keeping it can be undone (a later generation may drop a
+   list); leaving it out cannot, for a large Realm. Your 2026-07-15 ruling (everything written through EFS is
+   indexed automatically) bears on it. *The tag design session and the contracts dev both now recommend keeping it
+   from the start, as its own list.* (Q52)
 5. **The refused code point table** waits on your fold rule; until one generator produces it, the Topics Type ids
    are provisional. (Q53) **Sybil bumping** in public "newest first" views costs about 0.34M–0.68M per bump today.
    (Q54)
