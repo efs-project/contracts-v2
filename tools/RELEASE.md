@@ -203,16 +203,22 @@ rule, never from `indexFloor`.
   admitted publication shape builds in one call under 2^24 on both schedules, so leaf-granular resume is not needed).
   **Done (step 3a, item 32): the as-of rule.** A fold from history reads every fact as of the admission it folds and
   takes no fact from a validator's law, so a build is exact over any admitted history, including history no validator
-  judged (docs/INDEX-BUILD.md §4.3, which audits every read of the fold and the decoder). **What remains of the gate:**
-  the harness generation (a generation carrying the genesis stores with an extra fresh store and a new list, its
-  deployer plan and its reads contract's per-family store routing) and built-equals-live for that new list; the
-  dropped-list test (a generation that drops a list from a store it carries activates, the replaced generation's
-  late walk can write only the dropped list, declaring that list in that store again is refused with reason 12, and
-  the kept lists equal a twin Realm's: docs/INDEX-BUILD.md §5.3); the reader test for partial coverage (a topic page
-  answers UNKNOWN, never an empty page, while a list it needs is only partly covered); the measured gas of a build
-  (step 4); and the
-  liveness gate below. Until step 3 lands, "a later generation can add this list" (for example the all-authors list
-  on a file's versions, QUESTIONS Q52) is not yet true. A build walks the whole history, so a later list has a price (its §6.2).
+  judged (docs/INDEX-BUILD.md §4.3, which audits every read of the fold and the decoder). **Done (step 3b, item 34):**
+  the harness generation (it carries the genesis stores, keeps a new list, `head-authors`, in a third fresh store,
+  has a deployer plan of carried and fresh stores and a reads contract that routes and covers per family; an example,
+  not product) and built-equals-live for that list against a Realm that ran it from genesis, every counter included;
+  the dropped-list test (dropping a list from a carried store activates, the replaced generation's late walk writes
+  only the dropped list, declaring it in that store again is refused 12, the kept lists equal a twin Realm's: no
+  kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
+  rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE); a new unit's fold hook built with the walk;
+  and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
+  add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **What remains
+  of the gate:** the measured gas of a build on both schedules (step 4); the liveness gate below; a re-pin that adds a
+  unit with a fold hook builds no history for it (docs/INDEX-BUILD.md §3.6: a generation adding such a unit needs a
+  fresh store, nothing refuses the other shape); case (d), a digest spec rebuilt in a fresh store (its test, §8 test
+  9); and, if a real later generation adds a HEAD list, a per-purpose work-model term or an accepted over-quote of TAG
+  and FOLDER statements (docs/INDEX-BUILD.md §10 item 27). A build walks the whole history, so a later list has a
+  price (its §6.2).
 - **Activation must not depend on the live index answering** (docs/INDEX-BUILD.md §10, new with step 2). The kernel's
   check 12 and the generation's carried check read the live index's `replayReadiness().families` whenever the
   candidate carries a store. If that read reverts, the kernel's activation reverts with the live index's own error and
@@ -475,6 +481,37 @@ Not moved: the index manifest hash (`0x3b50d7a2…009f`: it folds the reads cont
 control delegate, both stores, the registry, every reader and the gateway: none embeds the index's address), the layout
 id, the hot and store ABI ids, every Type id, `release/errors.json`, the ABI snapshots and the seed
 (`efs-fixture-seed/4`, root `0xf7547aa6…c037`).
+
+### Build from history, step 3b: a new list in a third store, as a test harness (this release against `5dfb146`)
+
+**A consumer does not re-vendor for this step on its own account** (the standing note of item 23's section holds):
+nothing a client can call changes. No ABI, action, write, read, reader or error moved (`test/snapshots/abi/` and
+`release/errors.json` are unchanged); the new list, its generation and its deployer are a test harness, not product,
+and nothing of them is deployed or in the release. A consumer re-vendors once the build work is finished, or earlier
+only if it needs something else from a later commit.
+
+**34. A new list built from history (build from history, step 3b).** `RealmIndex` and `IndexReads` gained internal
+extension points that cost nothing unused, so a later generation that carries the genesis stores and keeps a new list
+in a further fresh store can be written as those contracts with their extension points overridden: `RealmIndex`'s
+fold hooks now run when `_hookRuns(unit, carried)` says so (default: only with nothing carried, as before), and
+`IndexReads`' family table and `_declare` are internal, `_carriedCheck` is virtual and the posting reads take the
+family's store from `_postingOf` (default: the one posting store). `IndexReads`' runtime is byte-identical;
+`RealmIndex` is 18,692 B (was 18,705; budget 19,660). The example (`head-authors`, everyone's versions of a file,
+provisional kind 22, in `test/harness/HeadAuthors.sol`) is built, switched on and compared with a Realm that ran it
+from genesis, and the dropped-list, fold-hook and partial-coverage tests of the pre-freeze gate pass (docs/INDEX-BUILD.md
+§10 items 24–28). Gas (`gas/model.json` against `5dfb146`): every constant moved by −24 to +51 on both schedules (prague: `fixed` −24, the per-action constants +27 to +51, most +39; amsterdam +15 to +51), multi-leaf measured rows by up to +429 (about 39 a leaf); the live fold's only new work is the carried mask passed to the fold-hook loop (generation 1 pins no fold hook, so `_hookRuns` is never reached live), the rest is via-IR code placement; `reads`, `tagLists`, `planning`, every read bound and recommended limit and every floor-plan `k` are unchanged; max error 5.80% prague, 7.56% amsterdam, as before.
+
+**35. Identities.** Moved, against `5dfb146`: the release digest (it also records the source commit; the value is in
+`release/release.json` and in the regeneration commit), the plan hash
+(`0xdc11743c2e9373ef340cc750c0c2feffadcc0ebcf33e66c00ab883b2e59db803`, was `0x71a26e4a…051e`), the execution set
+(`0x2f9812f21076aace773031cfaa207c8a528a8cdf6a7c5c891ce0071b5c4a861c`, was `0xb381c676…d063`), the index obligations
+(`0xcaa71c0209688789a7b860d7374ffdaca8b20ff3ee250db7a57b98cca6e44c0d`, was `0x3d0f3ec4…d479`), and `RealmIndex`
+(generation 1): its address on the fixture Realm (`0xef782FF1Bb38eDA3A07469DB397f68a75f5034cE`, was
+`0xf63888F8…c0dE`), runtime codehash (`0xe7ca5368dda61eb94b908a0d2402246493d070326b621e0ad4f35d7199d0c094`, was
+`0xf9c77ea9…fa5e`) and initcode (24,976 B, was 24,989); in `artifacts/` only `RealmIndex.json` changed; `gas/model.json`
+and the floor-plan vectors' measured figures. Not moved: the index manifest hash (it folds the reads contract, not the
+index), the reads contract (`IndexReads`' runtime is byte-identical) and every other address and codehash, the layout
+id, the hot and store ABI ids, every Type id, `release/errors.json`, the ABI snapshots and the seed.
 
 ### The identity table (this release against `0fb4804`)
 

@@ -249,7 +249,7 @@ abstract contract FilesFixture is Test {
 
     /// The Realm's generation-1 index: the topic lists ride on the validator, which guarantees a tagged topic was
     /// registered before the tag (zero topic Type ids without it, or with `withoutTopicLists`).
-    function _gen1(address ledger) internal returns (IndexDeploy.Gen1 memory) {
+    function _gen1(address ledger) internal virtual returns (IndexDeploy.Gen1 memory) {
         bool off = withoutValidator || withoutTopicLists;
         return IndexDeploy.deploy(
             ledger,

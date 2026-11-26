@@ -178,9 +178,10 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
 
     /// One publication's effects folded in order, live (from `onAdmission`) or from history (from `replayFold`):
     /// the effects must continue the progress word exactly, and the word moves to the publication's last admission.
-    /// `carried` names the stores this fold must not write (`CARRIED_POSTING`, `CARRIED_BITMAP`); the fold hooks run
-    /// only when it is 0 (docs INDEX-BUILD §3.6: a unit folded live and its companion store is not rebuilt in a build
-    /// that heals one store; this generation cannot tell a carried unit from a new one, so it calls none there).
+    /// `carried` names the stores this fold must not write (`CARRIED_POSTING`, `CARRIED_BITMAP`); a unit's fold hook
+    /// runs when `_hookRuns` says so, by default only when it is 0 (docs INDEX-BUILD §3.6: a unit folded live and its
+    /// companion store is not rebuilt in a build that heals one store; this generation cannot tell a carried unit from
+    /// a new one, so it calls none there).
     function _foldPublication(
         uint64 publication,
         Effect[] calldata effects,
@@ -200,7 +201,7 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         }
         p.lastProcessed = uint48(expected - 1);
         p.lastPublication = uint48(publication);
-        if (carried == 0) _foldHooks(effects, refs, publication);
+        _foldHooks(effects, refs, publication, carried);
     }
 
     /// @inheritdoc IRealmIndex
@@ -227,12 +228,15 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         return IRealmIndex.afterPublication.selector;
     }
 
-    function _foldHooks(Effect[] calldata effects, bytes32[] calldata refs, uint64 publication)
-        private
-    {
+    function _foldHooks(
+        Effect[] calldata effects,
+        bytes32[] calldata refs,
+        uint64 publication,
+        uint256 carried
+    ) private {
         for (uint256 i; i < _units.length; ++i) {
             Unit storage u = _units[i];
-            if (u.foldHook == address(0)) continue;
+            if (u.foldHook == address(0) || !_hookRuns(i, carried)) continue;
             uint256 refIndex;
             for (uint256 j; j < effects.length; ++j) {
                 Effect calldata e = effects[j];
@@ -265,6 +269,14 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
         }
         // CREATE touches no family
         _foldMore(e, refs, carried);
+    }
+
+    /// Whether unit `unit`'s fold hook runs in a fold under the carried mask `carried`: live, in a replay and in an
+    /// all-fresh build (mask 0), and nowhere else. Virtual so that a later generation that knows which of its units
+    /// are new (docs INDEX-BUILD §3.6, §8 test 12) calls a new unit's hook in a build that carries other stores, and
+    /// never a carried unit's.
+    function _hookRuns(uint256, uint256 carried) internal view virtual returns (bool) {
+        return carried == 0;
     }
 
     /// Extension point for a later generation's families in further stores (docs INDEX-BUILD step 3): called after

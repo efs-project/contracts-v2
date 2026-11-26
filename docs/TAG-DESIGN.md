@@ -197,12 +197,15 @@ itself.
   and "where a name is used" for FOLDER.
 - **Can the HEAD list be added later? Yes, at a price, and with one condition.** Every list is derived from the
   kernel's permanent record of statements, so a later index generation can add a list and build it from history
-  into a fresh store before it is switched on. That build step is designed ([INDEX-BUILD.md](INDEX-BUILD.md)) but
-  not written (generation 1's `build` refuses). The price: a build walks the Realm's whole history, estimated at
+  into a fresh store before it is switched on. That build step is written and tested: a test harness generation
+  carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
+  history and is switched on, and its lists equal those of a Realm that kept the list from genesis, key by key
+  ([INDEX-BUILD.md](INDEX-BUILD.md) §2.2, §8; the list and its generation are an example, not product). What is not
+  done yet is the measured cost of a build (step 4). The price: a build walks the Realm's whole history, estimated at
   about 290k gas per file today against about 31k to 36k to keep the list from the start, so adding it later is
   realistic for a small or young Realm and an indexer is the route for a large one. The condition: adding a
-  generation is an act of the Realm's controller, possible until the Realm is frozen, so the build step must be
-  written before the freeze (Q52).
+  generation is an act of the Realm's controller, possible until the Realm is frozen, so the option exists only while
+  the Realm is not frozen (Q52).
 - **Rebuild equals live.** A test drives a mixed history through the live index, replays it into a fresh index, and
   compares every list.
 - **The topic lists exist only with their validator.** The index keeps them only when its own fixed list of units
@@ -210,6 +213,16 @@ itself.
   combination, so no Realm can keep topic lists without the "registered before" law that makes them complete. The
   law is what makes the LIVE lists complete; a build from history is exact without it, because the ancestor walk
   then compares the subject's first admission with the tag's (the as-of rule, [INDEX-BUILD.md](INDEX-BUILD.md) §4.3).
+- **A Realm that admitted tags before it had the validator.** There the roll-ups hold what a live fold filed, which
+  is less than the law would have given: (a) a roll-up's distinct-things count is a floor, not exact; (b) a tag made
+  before its topic was registered is never rolled up later by its author, because a first statement files once and
+  the author's later changes file nothing; (c) live and built agree on this (a build reads as of the admission), so it
+  is a property of that history, not a defect of a build. Example, from `test/index/BuildAsOf.t.sol` (Realm U, no
+  validator): Alice tags a thing under `late-0/late-1` before that topic exists, then the topic is registered, then
+  Bob says yes at Alice's position and Carol tags a new thing there. The `place-below` list at the word page
+  `late-0` ends with count 2 and live 1 although it lists two distinct positions: Bob's yes is a later author's first
+  yes at a position that already existed, so it is filed uncounted, and Alice's fresh filing of that position never
+  rolled up; only Carol's fresh position counts.
 
 **A first tag, by depth** (one statement alone in its publication; Glamsterdam all gas):
 
