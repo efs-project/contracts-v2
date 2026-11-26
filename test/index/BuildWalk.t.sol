@@ -579,7 +579,12 @@ contract BuildWalkTest is TopicListsHistory {
         // 64 leaves of each (admitted here with the test's ample gas; the floor admits fewer)
         (fit,) = _measure(d, ix, "64 lone negatives", _tags(word, "ln-64", 64, true));
         assertTrue(fit, "64 lone negatives");
-        _measure(d, ix, "64 depth-8 first tags", _tags(deep8, "d8-64", 64, false));
-        _measure(d, ix, "64 depth-64 first tags", _tags(deep64, "d64-64", 64, false));
+        // information only: neither can be admitted (its live execution is far over 2^24), so no history holds one
+        _measure(
+            d, ix, "64 depth-8 first tags (cannot be admitted)", _tags(deep8, "d8-64", 64, false)
+        );
+        _measure(
+            d, ix, "64 depth-64 first tags (cannot be admitted)", _tags(deep64, "d64-64", 64, false)
+        );
     }
 }

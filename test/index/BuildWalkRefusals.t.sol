@@ -2,7 +2,7 @@
 pragma solidity 0.8.37;
 
 import {Test} from "forge-std/Test.sol";
-import {Batch, ArmedHook} from "./Carried.t.sol";
+import {Batch, ArmedHook, Squatter} from "./Carried.t.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {IGeneration1, IndexDeploy} from "../harness/IndexDeploy.sol";
 import {ExecutionSets} from "../harness/ExecutionSets.sol";
@@ -520,16 +520,30 @@ contract BuildWalkRefusalsTest is Test {
     // A fresh store attached by a live write (E_BUILD(2), kernel reason 13)
     // =============================================================================================
 
-    /// Under the kernel's checks a live write can attach a candidate's fresh store only through an index that names
-    /// the store and was activated; check 12 allows that only on a Realm with no admissions, where the store must be
-    /// unwritten (so before any build write). Here: on the empty Realm, X carries candidate C's fresh posting store and
-    /// is activated; the history then folds into it live and attaches it.
+    /// The route that remains under the kernel's checks: C replays into its fresh stores and is activated; before any
+    /// admission reaches C, D re-pins C's stores (they are the live index's: check 12 passes) and is activated; the
+    /// next publication folds into them live through D and attaches them. C has never folded live, is not the live
+    /// index, and names stores that call it their INITIAL_WRITER and are attached: neither fresh nor carried.
+    /// Before that publication C may still call `build` (its stores are unattached and its own), and it folds nothing:
+    /// nothing has been admitted past its frontier, and any admission that would give it something to fold attaches
+    /// the store first (docs INDEX-BUILD §5.3, the lazily attached store).
     function testAFreshStoreAttachedByALiveWriteRefusesTheBuild() public {
-        (IndexDeployer dc, IGeneration1 c) = _gen(a, address(0), address(0));
-        (, IGeneration1 x) = _gen(a, dc.postingStore(), address(a.g.bitmap));
-        _activate(a, address(x));
         _history(a);
+        (IndexDeployer dc, IGeneration1 c) = _gen(a, address(0), address(0));
+        assertEq(c.build(bytes32(0), 64), 11);
+        _activate(a, address(c));
+        (, IGeneration1 d) = _gen(a, dc.postingStore(), dc.bitmapStore());
+        assertEq(d.build(bytes32(0), 64), 11);
+        _activate(a, address(d));
         IPostingStore stolen = IPostingStore(dc.postingStore());
+        assertFalse(stolen.attached(), "no admission since: the stores are unattached");
+        (address[] memory g0, uint64[] memory f0, uint64[] memory t0) = stolen.writers();
+        assertEq(
+            c.build(bytes32(0), 64), 11, "the replaced generation may build, and folds nothing"
+        );
+        (address[] memory g1, uint64[] memory f1, uint64[] memory t1) = stolen.writers();
+        assertEq(keccak256(abi.encode(g1, f1, t1)), keccak256(abi.encode(g0, f0, t0)));
+        assertEq(_one(a, _publish(THIRD), THIRD), 9); // D's first live write attaches C's posting store
         assertTrue(stolen.attached());
         assertEq(stolen.initialWriter(), address(c));
         // the generation: build 2, replay 1, the carried check fails, readiness claims nothing
@@ -545,6 +559,89 @@ contract BuildWalkRefusalsTest is Test {
         assertEq(abi.encode(cov, from, through), abi.encode(Coverage.PARTIAL, uint64(1), uint64(0)));
         // the kernel
         _expectActivateRevert(a, address(c), 13);
+    }
+
+    // =============================================================================================
+    // The empty-Realm rule: a store's INITIAL_WRITER is nobody or the candidate (kernel reason 12, build 7)
+    // =============================================================================================
+
+    /// The gap the rule closes: on a Realm with no admissions a candidate carried an unwritten store whose
+    /// INITIAL_WRITER is a third contract; once activated, that contract could still write the store in build mode
+    /// (it is unattached until the first live write), after every check had run. Now the candidate is refused, so the
+    /// squatter's late write lands in a store no index names; it cannot write the genesis stores the live index uses.
+    function testAnEmptyRealmRefusesAStoreAThirdContractCouldWrite() public {
+        Squatter squatter = new Squatter();
+        PostingStore squatted =
+            new PostingStore(a.k.proxy, address(squatter), IndexDeploy.postingFamilies());
+        (address[] memory gens,,) = squatted.writers();
+        assertEq(gens.length, 0, "unwritten: the step-1 rule alone would pass it");
+        (, IGeneration1 candidate) = _gen(a, address(squatted), address(a.g.bitmap));
+        assertFalse(ICarriedCheck(address(candidate)).carriedCheck());
+        assertFalse(candidate.replayReadiness().ready);
+        vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
+        candidate.build(bytes32(0), 64);
+        _expectActivateRevert(a, address(candidate), 12);
+        // the attack has nothing to ride on: the squatter writes its own store, which no index names, and is refused
+        // by the stores the live index does use
+        squatter.squat(squatted);
+        assertEq(_hot(a).index(), address(a.g.index));
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(squatter)));
+        squatter.squat(a.g.posting);
+        _history(a);
+        (uint64 c,,,) = squatted.postingHead(PostingKey.wrap(keccak256("efs/test/squat")));
+        assertEq(c, 1, "the junk sits where nothing reads it");
+    }
+
+    /// The rule keeps both honest shapes on an empty Realm: a re-pin of the genesis stores (INITIAL_WRITER 0) and a
+    /// generation with its own fresh stores (INITIAL_WRITER = the candidate).
+    function testAnEmptyRealmStillActivatesARePinAndAFreshGeneration() public {
+        (, IGeneration1 repin) = _gen(a, address(a.g.posting), address(a.g.bitmap));
+        assertTrue(ICarriedCheck(address(repin)).carriedCheck());
+        assertEq(repin.build(bytes32(0), 64), 0);
+        _activate(a, address(repin));
+        (, IGeneration1 fresh) = _gen(b, address(0), address(0));
+        assertTrue(ICarriedCheck(address(fresh)).carriedCheck());
+        assertTrue(fresh.replayReadiness().ready);
+        _activate(b, address(fresh));
+        _history(a);
+        _history(b);
+        _assertSame(
+            a,
+            IPostingStore(address(a.g.posting)),
+            IBitmapStore(address(a.g.bitmap)),
+            b,
+            IPostingStore(fresh.postingStore()),
+            IBitmapStore(fresh.bitmapStore())
+        );
+    }
+
+    // =============================================================================================
+    // Only the generation itself can call replayFold (the trailing carried-mask word is its own)
+    // =============================================================================================
+
+    function testOnlyTheGenerationCallsReplayFold() public {
+        _history(a);
+        (, IGeneration1 mixed) = _gen(a, address(a.g.posting), address(0));
+        IndexReplayDecoder dec = IndexReplayDecoder(mixed.decoder());
+        (Effect[] memory effects, bytes32[] memory refs) = dec.decode(a.k.proxy, 1);
+        // a stranger, with or without a mask word of its choosing, is refused before anything is read or written
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(this)));
+        mixed.replayFold(1, effects, refs);
+        (bool ok, bytes memory err) = address(mixed)
+            .call(
+                bytes.concat(abi.encodeCall(RealmIndex.replayFold, (1, effects, refs)), bytes32(0))
+            );
+        assertFalse(ok);
+        assertEq(
+            keccak256(err), keccak256(abi.encodeWithSelector(E_WRITER.selector, address(this)))
+        );
+        // the live index cannot either, nor a fold hook (any other address)
+        vm.prank(address(a.g.index));
+        vm.expectRevert(abi.encodeWithSelector(E_WRITER.selector, address(a.g.index)));
+        mixed.replayFold(1, effects, refs);
+        (uint64 processed,,) = mixed.progress();
+        assertEq(processed, 0, "nothing folded");
+        assertEq(mixed.build(bytes32(0), 64), 11, "its own build still folds");
     }
 
     // =============================================================================================
@@ -592,10 +689,27 @@ contract BuildWalkRefusalsTest is Test {
         assertFalse(mixed.replayReadiness().ready);
         vm.expectRevert(abi.encodeWithSelector(E_BUILD.selector, uint8(7)));
         mixed.build(bytes32(0), 64);
-        // the live index answers as before
+        // the live index, activated but not yet folded live (liveStarted 0: it takes the check, which passes for the
+        // live index), answers COMPLETE
         (cov, from, through) = _coverage(gen2, "scope");
         assertEq(
             abi.encode(cov, from, through), abi.encode(Coverage.COMPLETE, uint64(1), uint64(11))
+        );
+        // generation 1 folded live and was replaced: it answers as before step 2, from its stale frontier, with no
+        // check (COMPLETE while nothing has been admitted since, PARTIAL after)
+        IGeneration1 gen1 = IGeneration1(address(a.g.index));
+        (cov, from, through) = _coverage(gen1, "by-type");
+        assertEq(
+            abi.encode(cov, from, through), abi.encode(Coverage.COMPLETE, uint64(1), uint64(11))
+        );
+        assertEq(_one(a, _publish(THIRD), THIRD), 9);
+        (cov, from, through) = _coverage(gen1, "by-type");
+        assertEq(
+            abi.encode(cov, from, through), abi.encode(Coverage.PARTIAL, uint64(1), uint64(11))
+        );
+        (cov, from, through) = _coverage(gen2, "scope");
+        assertEq(
+            abi.encode(cov, from, through), abi.encode(Coverage.COMPLETE, uint64(1), uint64(12))
         );
         // a not-maintained family stays UNKNOWN
         (cov, from, through) = _coverage(mixed, "roster");

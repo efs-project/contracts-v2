@@ -601,8 +601,10 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     }
 
     /// The replay and build fold: the decoder's payload, applied exactly as a live `onAdmission` would be, by this
-    /// contract calling itself (the stores see the generation as INITIAL_WRITER before attachment), with the carried
-    /// mask `_replayOne` appended after the payload.
+    /// contract calling itself (the stores see the generation as INITIAL_WRITER before attachment). The carried mask
+    /// is NOT an argument: `_replayOne` appends it as one word after the ABI-encoded arguments, the ABI decoder ignores
+    /// trailing calldata, and it is read here as the last word of `msg.data`. That is safe only because nothing but
+    /// this contract can call this function (the first line), so the word is always `_replayOne`'s own.
     function replayFold(uint64 publication, Effect[] calldata effects, bytes32[] calldata refs)
         external
         returns (uint64)
@@ -744,6 +746,17 @@ contract RealmIndex is IRealmIndex, GenerationStorage {
     {
         Progress storage p = _gen().progress;
         return (p.lastProcessed, p.lastPublication, p.gapped != 0);
+    }
+
+    /// The progress word with its live flag, for the reads contract's coverage (`IndexReads._coverage`): a generation
+    /// that has folded live answers coverage with no carried check.
+    function generationProgress()
+        external
+        view
+        returns (uint64 lastProcessed, uint64 lastPublication, bool gapped, bool liveStarted)
+    {
+        Progress storage p = _gen().progress;
+        return (p.lastProcessed, p.lastPublication, p.gapped != 0, p.liveStarted != 0);
     }
 
     /// Read by final hooks during a publication (`FilesFinalValidator`), so it is answered here.
