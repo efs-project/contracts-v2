@@ -94,7 +94,7 @@ delimiters we can use for URL syntax". So a word never needs escaping in a link,
 every delimiter free: `c++`, `c#`, `r&b` and `don't` are not words (the word is `cpp`, and its label says "C++"), and
 `~` appears nowhere in a word, while `.net`, `sci-fi`, `model_3` and `con` are words. A word also never ends with `.`
 (`inc.` is not a word): an auto-linker trims a full stop after a pasted link, so `/inc.` would open `/inc`. That
-rule is this design session's proposal, not a consequence of the ruling. Refusal code 4 now means "ends with `.`";
+rule is the tag design session's proposal, applied by the integration owner; it is not James's ruling. Refusal code 4 now means "ends with `.`";
 code 5 (once "starts with `~`") is unused, because a `~` is refused as code 3 wherever it stands. A word also never starts with `-` (code 9; `-x`, `-` and `--x` are refused, `a-b`, `a-` and `a--b` are words): it keeps `-word` free to mean "not" in EFS link syntax, the founder's test that words leave delimiters free; this is the tag design session's default applied by the integration owner, not his words. File names keep a leading `-` (`-notes.txt`). Still open:
 the non-ASCII side (the generator of Q53 replaces the table, and the word Type's id moves once more).
 
@@ -512,7 +512,7 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
    own ids uses its own kind of link, at the same cost. *Recommend keeping it.* (Q50)
 3. **No word may contain `~` or any ASCII punctuation but `-`, `_` and `.`, end with `.`, look like an address or
    contain white space,** anywhere in a path. The 39 ASCII characters apply your 2026-11-26 ruling; the trailing `.`
-   is this session's proposal (an auto-linker trims it); the non-ASCII side is open. *Recommend keeping it.* (Q51)
+   is the tag design session's proposal, applied by the integration owner and not your ruling (an auto-linker trims it); the non-ASCII side is open. *Recommend keeping it.* (Q51)
 4. **Settled (2026-11-26): keep everyone's versions of one file listed from the start.** James ruled yes ("we
    definitely need a good 'show all' view from the start"; Q52); the list is built in the list release (`head-authors`,
    family 22: 26,054 gas a new file today, 16,154 of execution plus 97,920 of state gas on Glamsterdam, measured). The

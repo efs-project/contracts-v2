@@ -470,6 +470,11 @@ Newly done in the list release (items 49 to 59):
   with it, including the 0.22-point margin between amsterdam's execution under-prediction (10.52%) and the SDK
   tripwire's firing point (10.74%). Until then `FloorPlan.t.sol` executing every planned shape's largest batch on both
   schedules is the guard (item 51).
+- **No CI job runs the full `gas-model --check`.** `pnpm gas:model:check` (the `check` workflow) passes
+  `--skip-amsterdam`, and the `amsterdam` workflow builds and tests but does not run the model check. So the amsterdam
+  constants, the 10.52% figure that sits 0.22 points from the SDK's tripwire, and the `laterRows` notes that quote both
+  schedules are re-derived only by hand, at each regeneration. Add the full check (both schedules) to the `amsterdam`
+  job when the n² term is modelled.
 
 - **Lists beyond the claim.** The floor claims later statements in lists of up to 1,024 entries per author per place;
   since the list release (item 50) it covers every later statement across places up to 3,586 entries on prague (a yes
@@ -1453,7 +1458,7 @@ refusals and boundaries of `files-name/2`'s tests, lengths 0, 1, 255 and 256, an
 `test/profiles/FilesNameVectors.sol` (the tool reads that file and refuses to generate if its grammar disagrees with a
 verdict there). Every row
 has the verdict, the rule code (0 or 2), an informative first-failed check, the role (`keccak256(name)`) and, when
-admitted, the record id for this release's `files-name/3` Type id. `test/vectors/topics.json` grows to 470 words (every ASCII byte alone and inside a word, `~` first, inside and last, the trailing `.` and leading `-` cases) and adds `grammar.wordAscii`, `wordAsciiRulings`, `wordAsciiNote`, `wordTrailingDot`, `wordLeadingDash` and `wordCodeUnused`; `wordCodes` lists 9 and no longer lists 5.
+admitted, the record id for this release's `files-name/3` Type id. `test/vectors/topics.json` grows to 489 words and 45 texts (every ASCII byte alone and inside a word, `~` first, inside and last, the trailing `.` and leading `-` cases, and a vector for every pair of rules that can both apply) and adds `grammar.wordAscii`, `wordAsciiRulings`, `wordAsciiNote`, `wordTrailingDot`, `wordLeadingDash` and `wordCodeUnused`; `wordCodes` lists 9 and no longer lists 5.
 `pnpm release` writes both, `pnpm release:check` compares both byte for byte (`names.json` is listed in
 `release.json` `vectors` beside the others), `node tools/name-vectors.mjs --check 1` compares the name file alone, and
 `test/profiles/NameVectors.t.sol` and `TopicVectors.t.sol` assert every row against the rules.
