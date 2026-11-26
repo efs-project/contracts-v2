@@ -281,7 +281,9 @@ this release.
   how the chain prices a fresh slot (`tools/state-gas-probe.mjs`; Sepolia prices by EIP-8037 since late 2026, so a
   Sepolia document says `feeSchedule: "amsterdam"`, which is what a consumer's planner keys on), the block gas limit
   from the chain's latest block (Sepolia: about 200,000,000 on 2026-11-26, 60,000,000 until late September 2026),
-  and the cap rule that applies there (under EIP-8037 the 2^24 cap counts execution gas only). A consumer that finds
+  and the cap rule that applies there (under EIP-8037 the 2^24 cap counts execution gas only). **`feeSchedule` is
+  always written**, with one of the schedule names of `gas/model.json` (`prague`, `amsterdam`): a consumer keys on it
+  first and uses `hardfork` only when it is absent, so `hardfork` may be whatever the chain calls its fork. A consumer that finds
   no schedule it knows refuses to plan, so a wrong or missing name fails closed, but a WRONG known name (prague on an
   EIP-8037 chain) would under-fund every large-state publication.
 - **One Unicode generator.** `TopicProfile.REFUSED`, its JS copy and the SDK's vectors are hand-written from Unicode
