@@ -286,8 +286,8 @@ contract ReentrancyTest is Test, IRelay {
         expected[10] = _add(k.proxy, abi.encodeCall(ILedgerControl.freeze, (terminal)), c, active);
         expected[11] =
             _add(address(registry), abi.encodeCall(ITypeRegistry.activate, (2)), c, active);
-        // a candidate generation: replay is idle-gated; build/backfill are not implemented at S1 and refuse
-        // unconditionally (src/index/RealmIndex.sol:460-467)
+        // a candidate generation: replay and build are idle-gated (build's familyId must be 0, or it refuses with
+        // code 8 before the gate); backfill is not implemented and refuses unconditionally
         expected[12] = _add(
             cand,
             abi.encodeCall(IRealmIndex.replayNextPublication, (64)),
@@ -296,9 +296,9 @@ contract ReentrancyTest is Test, IRelay {
         );
         expected[13] = _add(
             cand,
-            abi.encodeCall(IRealmIndex.build, (byAuthor, 64)),
+            abi.encodeCall(IRealmIndex.build, (bytes32(0), 64)),
             address(0),
-            abi.encodeWithSelector(E_BUILD.selector, uint8(0))
+            abi.encodeWithSelector(E_BUILD.selector, uint8(3))
         );
         expected[14] = _add(
             cand,

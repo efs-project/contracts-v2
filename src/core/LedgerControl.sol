@@ -300,10 +300,6 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         if (!_contains(supported, r.hotAbiId)) revert E_INDEX_NOT_READY(5);
         if (r.manifestHash != set.components.indexManifestHash) revert E_INDEX_NOT_READY(6);
         if (r.phase != Phase.IDLE) revert E_INDEX_NOT_READY(7); // the tuple must echo an idle ledger
-        CountersStorage storage c = _counters();
-        if (r.completedAdmission != c.admissions || r.completedPublication != c.publications) {
-            revert E_INDEX_NOT_READY(8);
-        }
         if (r.build != address(0)) {
             CodePins.requireRealCode(r.build);
             if (r.build.codehash != r.buildCodehash) revert E_PIN(r.build, 7);
@@ -317,6 +313,9 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             _pinUnit(u.foldHook, u.foldCodehash);
             _pinUnit(u.finalHook, u.finalCodehash);
         }
+        CountersStorage storage c = _counters();
+        FamilyEntry[] memory liveFamilies;
+        bool liveRead;
         for (uint256 i; i < r.families.length; ++i) {
             FamilyEntry memory f = r.families[i];
             if (f.fromAdmission == NOT_MAINTAINED) continue;
@@ -327,8 +326,50 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
             if (!_contains(IPostingStore(f.store).familyIds(), f.familyId)) {
                 revert E_INDEX_NOT_READY(10);
             }
-            _requireContiguousWriters(f.store);
+            uint256 ranges = _requireContiguousWriters(f.store);
+            if (c.admissions == 0) {
+                // the base case of "every store of the live index holds only what pinned generation code wrote":
+                // an empty Realm gives an honest build nothing to fold, and every build-mode or live write records a
+                // writer range, so every store must be unwritten (genesis: new stores)
+                if (ranges != 0) revert E_INDEX_NOT_READY(12);
+            } else if (IPostingStore(f.store).initialWriter() == index) {
+                // a fresh store is the candidate's own: no live write has attached it
+                if (IPostingStore(f.store).attached()) revert E_INDEX_NOT_READY(13);
+            } else {
+                // a carried family is the live index's: the same id in the same store from admission 1, read
+                // from the live index itself, never from the candidate (docs INDEX-BUILD §3.5, §5.3)
+                if (!liveRead) {
+                    liveFamilies = _liveFamilies($.index);
+                    liveRead = true;
+                }
+                if (!_declaresFromOne(liveFamilies, f)) revert E_INDEX_NOT_READY(12);
+            }
         }
+        // checked after the families, so a candidate that can never be ready (12, 13) is named as such, not as behind
+        if (r.completedAdmission != c.admissions || r.completedPublication != c.publications) {
+            revert E_INDEX_NOT_READY(8);
+        }
+    }
+
+    function _liveFamilies(address live) private view returns (FamilyEntry[] memory) {
+        if (live.code.length == 0) revert E_INDEX_NOT_READY(12);
+        return IRealmIndex(live).replayReadiness().families;
+    }
+
+    function _declaresFromOne(FamilyEntry[] memory list, FamilyEntry memory f)
+        private
+        pure
+        returns (bool)
+    {
+        for (uint256 i; i < list.length; ++i) {
+            if (
+                list[i].familyId == f.familyId && list[i].store == f.store
+                    && list[i].fromAdmission == 1
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// The proxy's admin is a ProxyAdmin owned by the executing controller (S7). The admin is not taken from
@@ -356,11 +397,13 @@ contract LedgerControl is ILedgerControlDelegate, LedgerStorage {
         CodeScan.requirePlainRuntime(hook);
     }
 
-    function _requireContiguousWriters(address store) private view {
+    /// Returns the number of writer ranges.
+    function _requireContiguousWriters(address store) private view returns (uint256) {
         (, uint64[] memory from, uint64[] memory to) = IPostingStore(store).writers();
         for (uint256 i = 1; i < from.length; ++i) {
             if (to[i - 1] == 0 || from[i] != to[i - 1] + 1) revert E_INDEX_NOT_READY(11);
         }
+        return from.length;
     }
 
     function _contains(bytes32[] memory list, bytes32 x) private pure returns (bool) {
