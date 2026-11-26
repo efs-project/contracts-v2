@@ -179,7 +179,7 @@ library FilesTypes {
     function nameSpec() internal pure returns (Spec memory s) {
         s.name = "files-name/3";
         s.description =
-            "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, not . or .., ~efs reserved";
+            "raw UTF-8 name, 1-255 bytes, well-formed, byte-exact, case-sensitive, none of # ? % < > \" | : * ;, not ending in ., ~efs reserved";
         s.dependencyClass = 1;
         s.refHeaderWords = 1;
         s.flags = 1; // TYPE_FLAG_EMITS_BODY: a name is followed from events alone
