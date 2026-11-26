@@ -200,10 +200,12 @@ itself.
   into a fresh store before it is switched on. That build step is written and tested: a test harness generation
   carries the genesis stores, adds exactly this list (everyone's versions of a file) in a third store, builds it from
   history and is switched on, and its lists equal those of a Realm that kept the list from genesis, key by key
-  ([INDEX-BUILD.md](INDEX-BUILD.md) §2.2, §8; the list and its generation are an example, not product). What is not
-  done yet is the measured cost of a build (step 4). The price: a build walks the Realm's whole history, estimated at
-  about 290k gas per file today against about 31k to 36k to keep the list from the start, so adding it later is
-  realistic for a small or young Realm and an indexer is the route for a large one. The condition: adding a
+  ([INDEX-BUILD.md](INDEX-BUILD.md) §2.2, §8; the list and its generation are an example, not product). The build's cost
+  is measured (step 4, [INDEX-BUILD.md](INDEX-BUILD.md) §6): a build walks the Realm's whole history, about 485k gas
+  per file today (582k on Glamsterdam, state gas included) against about 51k (150k) to keep the list from the start,
+  9.5 times (3.9 times) as much; 10,000 files cost about 4.8 billion gas in some 290 transactions, a million files
+  about 485 billion in some 29,000. So adding it later is realistic for a small or young Realm and an indexer is the
+  route for a large one. The condition: adding a
   generation is an act of the Realm's controller, possible until the Realm is frozen, so the option exists only while
   the Realm is not frozen (Q52).
 - **Rebuild equals live.** A test drives a mixed history through the live index, replays it into a fresh index, and
@@ -470,8 +472,9 @@ is a numbered question with its alternatives in QUESTIONS-FOR-JAMES.md.
 3. **No word may start with `~`, look like an address or contain white space,** anywhere in a path. *Recommend
    keeping it.* (Q51)
 4. **Everyone's versions of one file are not listed on chain.** Keeping that list costs a storage slot for every
-   file ever created (about 36k gas today, 124k on Glamsterdam). Adding it later is possible but is estimated at 8
-   to 9 times that per file, paid at once, so it suits only a small or young Realm. *Recommend leaving it to the
+   file ever created (measured with its call, about 51k gas per file today, 150k on Glamsterdam). Adding it later is
+   possible and measured at about 485k per file today (582k on Glamsterdam), 9.5 times (3.9 times) as much, paid at
+   once: 4.8 billion gas for 10,000 files, 485 billion for a million, so it suits only a small or young Realm. *Recommend leaving it to the
    indexer, with the build-from-history step written before any freeze.* (Q52)
 5. **The refused code point table** waits on your fold rule; until one generator produces it, the Topics Type ids
    are provisional. (Q53) **Sybil bumping** in public "newest first" views costs about 0.34M–0.68M per bump today.

@@ -1,9 +1,10 @@
 # Building a later index family from history: a proposal
 
-**Status: PROPOSAL, steps 1 to 3 of 4 implemented (step 1: 2026-11-26, branch `fable/2026-11-26-index-build-1`;
+**Status: PROPOSAL, steps 1 to 4 implemented (step 1: 2026-11-26, branch `fable/2026-11-26-index-build-1`;
 step 2: 2026-11-26, branch `fable/2026-11-26-index-build-2`; step 3a, the as-of rule of §4.3: 2026-11-26, branch
 `fable/2026-11-26-index-build-3a`; step 3b, a new list in a third store, as a test harness: 2026-11-26, branch
-`fable/2026-11-26-index-build-3b`).** It designs the step that design §10.1 and §10.6 defer
+`fable/2026-11-26-index-build-3b`; step 4, the measured gas of a build: 2026-11-26, branch
+`fable/2026-11-26-index-build-4`).** It designs the step that design §10.1 and §10.6 defer
 ("a later generation builds its later families from history into its fresh stores before attachment") and that
 `tools/RELEASE.md` §15 lists as a pre-freeze gate. Where it says "the code", it means `main` at `899767e`, except in
 the paragraphs marked **Landed**, which describe the code after step 1, step 2, step 3a or step 3b (each says which). Where the
@@ -17,11 +18,13 @@ of its fresh stores, so a generation-1-shaped generation can rebuild both stores
 carrying the other (§4.3); coverage reads apply the carried check (§3.5). **Step 3:** a generation with an extra fresh
 `PostingStore` and a new APPEND family (the `head-authors` example, §2.2), with the deployer plan it needs (§3.1) and
 the built-equals-live tests (§8); **landed as step 3b**, as a test harness (the list is an example, not product). **Step 3a (landed):** the as-of rule of §4.3: a fold from history reads every
-fact as of the admission it folds and takes no fact from a validator's law. **Step 4:** the measured gas of a build (§8 test 11). §10 lists where steps 1 and 2
-differ from this proposal, and the entries of steps 3a and 3b.
+fact as of the admission it folds and takes no fact from a validator's law. **Step 4 (landed):** the measured gas of a build (§6, §8 test 11), measurement and docs only. §10 lists where steps 1
+and 2 differ from this proposal, and the entries of steps 3a, 3b and 4 (step 4 has an open finding against the
+release's amsterdam floor prices: §10 item 29).
 
-Figures are marked **measured** (with the file they come from) or **estimated** (with how). No figure here was
-measured for this document.
+Figures are marked **measured** (with the file they come from) or **estimated** (with how). The cost figures of §6
+were measured for this document in step 4 (`test/index/BuildGas.t.sol`); the rest were measured by the suites each
+paragraph names.
 
 Reviewed on 2026-11-25 by the integration owner and by the tag design session; both accepted the shape and the
 recommendations of §9 (question 9 waits on QUESTIONS Q3). Their follow-ups are in §2.2 (what a built list
@@ -357,10 +360,12 @@ heavier than those of the generation that admitted the history (more lists, or a
 must measure this again, and leaf-granular resume is the remedy, which can ship in that generation's own code.
 
 Leaf granularity (resuming inside a publication) is not proposed. It would be needed only if one publication's
-build cost could exceed one transaction's gas. A build of the HEAD family costs far less per leaf than the
-original callbacks did. A full replay of a publication near the cap (64 lone negatives used 15.46M of 16.60M on
-amsterdam, **measured**, design §10.4) adds the decode on top of the callbacks but drops the kernel's own share,
-so it probably fits; this must be measured (§8, test 11) before the heal path is relied on.
+build cost could exceed one transaction's gas. **Done (step 4, measured, §8 test 11):** for the example generation
+(a list added later) and for a full replay, the heaviest publication of every shape the planning rule admits builds in
+one cold call under 2^24 on both schedules; the least headroom is a full replay of 64 lone negatives on prague
+(12,416,008 of the 16,755,216 the call has: 4.34M to spare). So **a build need not resume inside a publication** for
+any history the kernel admits today. A generation whose fold is heavier than generation 1's must measure this again
+(`test/index/BuildGas.t.sol::test_heaviest_admitted_publications` is the test to copy).
 
 ### 3.4 Where progress lives
 
@@ -931,75 +936,142 @@ index's writes up to the activation, and the new generation's first live write t
 
 ## 6. Cost
 
-### 6.1 Unit prices
+### 6.1 Unit prices (**measured**, step 4)
 
-| item | prague | amsterdam (EIP-8037/8038) | source |
-|---|---:|---:|---|
-| a fresh slot (raw) | 22,100 | ≈ 110,020 | measured: `docs/GAS-SCHEDULES.md:7-8` |
-| a slot rewrite (raw) | 5,000 | 12,100 | measured: `docs/GAS-SCHEDULES.md:7-8` |
-| one more entry, on a new list (incl. call and key work) | 27,139 | 115,156 | measured: `docs/TAG-NUMBERS.md:237` (`tagLevel.sharedNew`) |
-| one more entry, on an existing list | 15,354 | 29,765 | measured: `docs/TAG-NUMBERS.md:238` (`tagLevel.sharedExisting`) |
-| a counter write (`release` or `retain`) | ≈ 14,700 | ≈ 21,900 | measured: design §10.4 (`DESIGN.md:1363`), citing `TAG-NUMBERS.md` |
-| decode per publication (evidence, revision row, decoder and self-call) | ≈ 20,000 | ≈ 20,000 | **estimated**: about 4 cold slots plus two calls; cold reads assumed unchanged by EIP-8037/8038 |
-| decode per non-bind leaf | ≈ 12,000 | ≈ 12,000 | **estimated**: row (2 cold slots), record cell, a registry call |
-| decode per bind leaf | ≈ 20,000 | ≈ 20,000 | **estimated**: row, binding position, previous row, three position cells |
+All figures of §6.1 and §6.2 are **measured** by `test/index/BuildGas.t.sol` (run on the default profile, prague, and
+with `FOUNDRY_PROFILE=amsterdam FOUNDRY_OUT=out/amsterdam FOUNDRY_CACHE_PATH=cache/amsterdam FOUNDRY_GAS_LIMIT=100000000000`)
+unless a row names another file. The Realm is the Files Realm of `TopicListsHistory` with generation 1 live; two building
+generations are caught up before each measurement: **EX**, the example generation of step 3b (carries both genesis
+stores, builds `head-authors` into a fresh third store: "add one list later"), and **FR**, generation 1's code over two
+fresh stores (a full replay, the heal path, §6.4).
 
-Entries are five to a word (`PostingStore.sol:11`), and the first entry lives in the head, so: a list's first entry
-costs one fresh slot; its second materializes word 0 (another fresh slot); every fifth after that takes a fresh
-word; the rest are rewrites. A counter write is one rewrite of the list head plus the call. Within one build
-transaction, a head touched again is warm, so the per-entry prices above are upper bounds there.
+**How a call is made cold.** The publications to build are admitted live (generation 1), the state is snapshotted, and
+every account a build touches is cooled with `vm.cool` (account and storage): the kernel's five contracts, the registry
+and its implementation, the descriptor store, generation 1's index, reads and stores, the Files validator, the rule
+instances, and both building generations with their reads contracts, decoders and stores. Then one `build(0, 65535)`
+call is made with ample gas and read with `vm.lastFrameGas()`: `gasTotalUsed` is its gas (on amsterdam, execution gas
+only: Foundry reports EIP-8037 state gas apart, as `gasStateUsed`, and the `gasleft()` delta around the call is their
+sum plus the caller's CALL), and the state is reverted, so every kind is measured from the same state. **Derived by
+difference:** the marginal publication of a kind is (C9 − C1)/8, C1 the cold call over one publication and C9 over nine
+of the same kind, each on its own file; the call's fixed share is C1 − marginal. The marginal leaf of the kinds whose
+leaves are all alike is the same over one publication of 1 and of 9 leaves. **The list's storage** is the same EX call
+with the third store's `append`, `retain` and `release` answered by `vm.mockCall` (the CALL is still made; the store's
+code and storage are not run), subtracted: so "list" below is the third store's write, code and storage, and "walk" is
+the decode, the self-call, the fold and the CALL.
 
-### 6.2 Worked estimate: `head-authors` for a Realm of 1 million files (**all estimated**)
+**EX, adding `head-authors` later, per marginal publication** (gas; amsterdam: execution gas, and the state gas apart):
 
-Assumed history: 1,000,000 files, each created by a 5-leaf create-file publication (design §14) with one HEAD
-FIRST_BIND and one FOLDER bind; 3 edits per file on average, each 2 leaves (PUBLISH child, BIND HEAD rebind); 10%
-of files get a second author's own version (2 leaves, one HEAD FIRST_BIND); 6% of files see a HEAD mask, release
-or restore of an asserted head. That is about 4.16M publications, 11.3M leaves, 5.2M bind leaves.
+| publication kind (leaves) | prague walk | prague list | prague total | amsterdam walk | amsterdam list | amsterdam total | amsterdam state gas |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| create file, design §14 recipe (5) | 148,259 | 30,225 | 178,484 | 148,259 | 20,325 | 168,584 | 97,920 |
+| edit: PUBLISH child + HEAD re-bind (2) | 91,462 | 0 | 91,462 | 91,462 | 0 | 91,462 | 0 |
+| second author's own version (2) | 87,889 | 35,527 | 123,416 | 87,889 | 32,727 | 120,616 | 97,920 |
+| HEAD mask of a BOUND head (1) | 61,367 | 12,238 | 73,605 | 61,367 | 19,438 | 80,805 | 0 |
+| HEAD release of a BOUND head (1) | 61,383 | 12,238 | 73,621 | 61,383 | 19,438 | 80,821 | 0 |
+| HEAD restore of a masked head (1) | 61,135 | 12,174 | 73,309 | 61,135 | 19,374 | 80,509 | 0 |
+| first tag on a one-word topic (1) | 55,848 | 0 | 55,848 | 55,848 | 0 | 55,848 | 0 |
+| folder move with a new name: PUBLISH name, RELEASE, BIND FOLDER (3) | 114,409 | 0 | 114,409 | 114,409 | 0 | 114,409 | 0 |
+| plain publish of a name record (1) | 50,082 | 0 | 50,082 | 50,082 | 0 | 50,082 | 0 |
 
-| part | count | prague | amsterdam |
-|---|---:|---:|---:|
-| new lists (one per file) | 1.0M × 27.1k / 115.2k | 27.1B | 115.2B |
-| second entries (word 0) | 0.1M × 27.1k / 115.2k (priced as new, `tagLists.priceAsNew`) | 2.7B | 11.5B |
-| counter writes | 0.06M × 14.7k / 21.9k | 0.9B | 1.3B |
-| decode, publications | 4.16M × 20k | 83B | 83B |
-| decode, bind leaves | 5.2M × 20k | 104B | 104B |
-| decode, other leaves | 6.1M × 12k | 73B | 73B |
-| **total** | | **≈ 290B gas** | **≈ 390B gas** |
+The walk is the same on both schedules to the gas: it reads, and EIP-8037/8038 did not reprice what it reads here. The
+list's first entry is one fresh slot (prague 30,225 with its code; amsterdam 20,325 of execution and 97,920 of state
+gas); its counter is one rewrite of the list's head (prague 12,238; amsterdam 19,438: a cold rewrite costs 7,200 more
+execution gas there). **The fixed share of a cold call** (C1 − marginal) is 488,026 to 516,515 on prague and 492,926 to
+522,215 on amsterdam; a cold EX call with nothing pending costs 475,716 / 480,216 (its gates, the carried check, which
+asks the live index's `replayReadiness()` and reads its family table, and the progress word). FR's fixed share is
+91,588 to 181,812 (prague) and 95,188 to 296,977 (amsterdam); FR with nothing pending 77,278 / 80,478 (it carries
+nothing, so it asks the live index nothing).
 
-That is roughly 17,000 transactions of 2^24 gas on prague and 23,000 on amsterdam, or 290 / 390 ETH at 1 gwei
-(2.9 / 3.9 ETH at 0.01 gwei).
+**Per leaf that touches nothing the list keeps** (the term of "a list on one purpose is dear to add to a long history";
+marginal leaf inside one publication, EX, the same on both schedules): a first tag 29,860, a plain publish 24,155, a
+CREATE 10,983. The same leaf as a publication of its own costs 55,848 (tag) and 50,082 (publish): about 26k of every
+publication is its own decode (evidence cell, revision row, decoder and self-call). A HEAD mask leaf, which does touch
+the list, is 47,612 (prague) / 54,812 (amsterdam), of which the walk is 35,374.
 
-Two things stand out. First, the walk, not the storage, dominates on today's schedule: a build pays to decode every
-admission, including the 7M that do not touch HEAD. A decoder that reads only a leaf's kind and a bind's purpose
-before deciding to skip would cut the walk to roughly 100B (estimated: 2.1k per skipped non-bind, 6.3k per
-non-HEAD bind, 12k per HEAD bind, 6k per publication), but it is a second decode path to prove (§9, Q7).
-Second, the storage part is what keeping the list from genesis would have cost anyway, spread over the files'
-writers (QUESTIONS Q52: about 36k per file today and 124k after Glamsterdam). Deferring is cheaper only if the list
-is never wanted.
+**What the estimate said (§6.1 before step 4):** decode ≈ 20,000 per publication, ≈ 12,000 per non-bind leaf, ≈ 20,000
+per bind leaf; a new list's entry 27,139 / 115,156; a counter write ≈ 14,700 / ≈ 21,900. Measured, a publication's own
+decode is about 26k, a non-bind leaf 11k to 24k, the walk of a whole create-file recipe 148,259 and of an edit 91,462;
+the list's first entry 30,225 (prague) and 20,325 + 97,920 of state gas (amsterdam), its counter 12,238 / 19,438.
 
-**The price of "add it later" (all estimated, from the table above).** Per file, for this list:
+### 6.2 `head-authors` for a Realm of 1 million files (**measured** unit costs, the same assumed history)
+
+Assumed history, unchanged from the estimate: 1,000,000 files, each created by a 5-leaf create-file publication (design
+§14); 3 edits per file, each 2 leaves; 10% of files get a second author's own version (2 leaves); 6% of files see a
+HEAD mask, release or restore of an asserted head (1 leaf; priced at the mean of the three). That is 4.16M publications
+and 11.26M leaves. Priced from §6.1's marginal figures; the transactions are cold `build` calls of up to the 16,755,216
+gas a 2^24 transaction leaves the call (21,000 base, 1,000 of calldata; on amsterdam the cap counts execution gas only,
+state gas comes from the reservoir), each paying the fixed share of the create-file row once.
+
+| part | count × measured unit | prague | amsterdam execution | amsterdam state gas | the estimate said (prague / amsterdam) |
+|---|---|---:|---:|---:|---:|
+| new lists (one per file) | 1.0M × 30,225 / 20,325 + 97,920 | 30.23B | 20.33B | 97.92B | 27.1B / 115.2B |
+| second entries (word 0) | 0.1M × 35,527 / 32,727 + 97,920 | 3.55B | 3.27B | 9.79B | 2.7B / 11.5B |
+| counter writes | 0.06M × 12,217 / 19,417 | 0.73B | 1.17B | 0 | 0.9B / 1.3B |
+| walk of the create-file publications | 1.0M × 148,259 | 148.26B | 148.26B | 0 | (decode, three rows: |
+| walk of the edits | 3.0M × 91,462 | 274.39B | 274.39B | 0 | 83B publications, |
+| walk of the second authors' versions | 0.1M × 87,889 | 8.79B | 8.79B | 0 | 104B bind leaves, |
+| walk of the HEAD transitions | 0.06M × 61,295 | 3.68B | 3.68B | 0 | 73B other leaves) |
+| fixed share of each call | 28,920 × 516,515 / 28,330 × 522,215 | 14.94B | 14.79B | 0 | — |
+| **total** | | **484.56B** | **474.67B** | **107.71B** | **≈ 290B / ≈ 390B** |
+| transactions of 2^24 | | **28,920** | **28,330** | | ≈ 17,000 / ≈ 23,000 |
+| per file | | **484,560** | **474,669** | **107,712** | ≈ 290k / ≈ 390k |
+
+So on amsterdam the build costs 582.38B gas in all (582,381 per file), 474.67B of it execution. At 1 gwei that is 484.6
+ETH on prague and 582.4 ETH on amsterdam. **Cross-check** (`::test_mixed_segment`): one cold EX call over a segment of the
+mix (20 files: 20 recipes, 60 edits, 2 second authors' versions, a mask, a release and a restore; 85 publications, 227
+leaves) costs 9,886,345 on prague (9,674,045 + 2,154,240 of state gas on amsterdam) and fits one call; the per-kind
+figures above add up to 10,041,282 for it (prague), 1.6% more: the marginal figures do not grow over a call of 85
+publications.
+
+**The price of "add it later"** (per file, this history):
 
 | | prague | amsterdam |
 |---|---:|---:|
-| kept from genesis (the storage rows above; Q52 quotes 36k and 124k) | ≈ 31k | ≈ 128k |
-| built later, generic decoder | ≈ 290k | ≈ 390k |
-| built later, filtered decoder (§9, Q7) | ≈ 130k | ≈ 230k |
-| later against genesis | 8× to 9× (≈ 4× filtered) | ≈ 3× (≈ 1.8× filtered) |
+| kept from genesis (the list's live cost, measured cold) | 51,167 | 41,896 execution + 107,712 state = 149,608 |
+| built later (EX) | 484,560 | 474,669 execution + 107,712 state = 582,381 |
+| later against genesis | **9.5×** | **3.9×** in all gas (11.3× in execution gas) |
+| what the estimate said | ≈ 31k kept, ≈ 290k later, 8× to 9× | ≈ 128k kept, ≈ 390k later, ≈ 3× |
 
-The ratio depends on how much of the history the new list does not care about: here 7 of 11 leaves. The walk is
-paid per admission in the Realm's whole history, not per entry in the new list, so a list that touches a small
-share of a long history is the dearest kind to add later. The storage part is the same either way; what "later"
-adds is the walk, paid by one operator at once instead of by each writer as they go.
+Kept from genesis is the list's live price, measured cold by `test/index/HeadAuthorsFloor.t.sol` (`FloorBase._need`:
+every account of the Realm cooled; E of the example generation minus E of generation 1 for the same shape from the same
+state): a first HEAD statement (create file) 41,683 (prague) / 32,195 + 97,920 state (amsterdam), a second author's
+first statement 46,554 / 44,154 + 97,920, a later statement (mask, release, restore) 22,925 to 23,100 / 30,525 to 30,712,
+an edit's re-bind 1,149 / 1,149; weighted by the history above. The estimate's "kept" counted only the list's storage;
+the measured live price also pays the CALL to the third store and its writer rule.
 
-**The rule this gives.** Adding an on-chain list later is affordable for a small or young Realm and not for a
-large one. At about 290k gas per file, 10,000 files cost about 2.9B gas (some 170 transactions, 2.9 ETH at
-1 gwei); a million files cost about 290B. For a large Realm the realistic route to a list nobody kept is an
-indexer, or a new Realm that keeps it from genesis. So "we can add it later" is true and has a price that grows
-with every admission made before the list is added. These figures stay estimates until test 11 of §8 measures a
-build.
+**What the measurement changes.** The walk, not the storage, is the price, and it is dearer than estimated: 435.11B of
+the 484.56B on prague (90%), the same 435.11B on amsterdam. It is paid per publication and per leaf of the whole
+history, whatever the list keeps: here the edits alone, which the list ignores (a re-bind changes nothing in it), cost
+274.39B, more than half. The storage part is what keeping the list from genesis would have cost anyway, so "later" adds
+the walk, paid by one operator at once.
 
-For comparison, a full replay (case (e)) re-materializes every posting at the fresh-slot price (design §10.6: about
-110k per re-materialized posting on amsterdam, an estimate there).
+**The rule this gives** (unchanged, with measured figures). Adding an on-chain list later is affordable for a small or
+young Realm and not for a large one. For 10,000 files of this history: 4.85B gas in 290 transactions on prague (4.85 ETH
+at 1 gwei); on amsterdam 4.75B of execution in 284 transactions plus 1.08B of state gas, 5.82B in all. For 1,000,000
+files: 484.6B gas, 28,920 transactions (prague); 582.4B, 28,330 transactions (amsterdam). For a large Realm the realistic
+route to a list nobody kept is an indexer, or a new Realm that keeps it from genesis.
+
+**The third part of the price: the reservation a later list adds to every other statement** (step 3b, §10 item 27;
+measured with the planning rule, `tools/gas-plan-later.mjs`, which runs `tools/gas-plan.mjs` unchanged on a copy of
+`gas/model.json` whose `floor.workModel` is the example generation's, `HeadAuthorsGenesis.workModel`). The work model has
+no per-purpose term, so the list's reservation (+10 fresh tenths on a first statement, +10 rewrite tenths on every bind
+and on every later statement, +27,000 compute per bind-kind action) is charged on every TAG and FOLDER statement too.
+The largest publication the planning rule plans, generation 1 → the example generation:
+
+| shape | prague | amsterdam |
+|---|---|---|
+| lone negatives on a one-word topic | 38 → **32** | 54 → **47** |
+| first tags, depth 8, everything new | 18 → 18 | 19 → 19 |
+| first tags, depth 64, everything new | 3 → 3 | 3 → 3 |
+| create-file recipes (5 actions each) | 10 → **9** | 12 → 12 (V 11.79M → 12.88M; 12 is the 64-action limit) |
+| plain edits (PUBLISH files-child/1, HEAD re-bind; 2 actions each) | 24 → **23** | 30 → **28** |
+
+The first tags are limited by their own execution estimate (E, the per-level list cost), not by the floor, so the
+reservation does not move them; the lone negatives lose 16% (prague) and 13% (amsterdam) of their batch. The table is
+the same with the list's own live execution added to E on HEAD statements (`LIST_LIVE` in the tool, the figures above),
+because those shapes are bounded by V. The edits shape is planner arithmetic only (no FloorPlan test builds it); the
+other four are FloorPlan's shapes. A per-purpose term in the ingress's quote (a formula change, replaceable until
+freeze) would leave every non-HEAD shape at generation 1's batch.
 
 ### 6.3 Who pays
 
@@ -1008,6 +1080,19 @@ practice the Realm's operator pays, and should plan the build like a deployment:
 same generation, because one walk builds them all (§2.6). After activation every new file
 pays the new list's live price through the new work model (a new manifest hash, so signed plans bound to the old
 set are refused, QUESTIONS Q11).
+
+### 6.4 A full replay, the heal path (**measured**, FR)
+
+Per marginal publication (prague; amsterdam execution + state gas): create file 461,687; 371,749 + 893,520. Edit
+243,324; 229,212 + 354,960. Second author's version 252,177; 202,827 + 489,600. HEAD mask 132,026; 143,826 + 97,920.
+HEAD release 132,014; 143,814 + 97,920. HEAD restore 132,092; 151,092 + 97,920. First tag on a one-word topic 227,067;
+172,704 + 538,560. Folder move with a new name 374,247; 335,410 + 599,760. Plain publish 85,342; 79,254 + 61,200. Per
+leaf inside one publication: first tag 201,266; 146,903 + 538,560. Plain publish 59,446; 53,359 + 61,200. CREATE
+10,877; 10,877. HEAD mask 106,118; 117,918 + 97,920. For the history of §6.2: 1,237.6B gas, 73,865 transactions, 1.24M
+per file on prague; 1,108.1B of execution in 66,134 transactions plus 2,013.2B of state gas, 3.12M per file in all, on
+amsterdam. (The estimate said "about 110k per re-materialized posting on amsterdam".) A full replay re-materializes
+every list at the fresh-slot price, so it costs 2.6× (prague) and 5.4× (amsterdam, all gas) a later list's build of the
+same history.
 
 ---
 
@@ -1104,7 +1189,7 @@ test of §5.3 (`test/index/DroppedList.t.sol`); the example's work model against
 (`test/index/HeadAuthorsFloor.t.sol`, §10 item 27); and the readers under partial coverage
 (`test/readers/TopicPartialCoverage.t.sol`: every view of the three topic readers with each family it reads reported
 UNKNOWN and then PARTIAL by a wrapped index). **Not in step 3b:** test 9 (case (d), a digest spec), test 10 (BITMAP
-families) and test 11 (the measured gas of a build, step 4).
+families) and test 11 (the measured gas of a build, step 4, done below).
 
 **The readers under partial coverage (step 3b), per view.** A family is listed for a view when reporting it UNKNOWN
 or PARTIAL changes the view's answer; for every listed pair the answer is UNKNOWN, no rows and coverage UNKNOWN under
@@ -1126,24 +1211,23 @@ PARTIAL; no pair reverts:
 
 An empty list at PARTIAL is an empty PRESENT page that says PARTIAL (`::test_an_empty_list_at_partial_is_never_an_empty_complete_page`).
 
-**Test 11 preview (measured, one cold `build` call with nothing else pending; execution gas, which EIP-7825's cap
-bounds; amsterdam's state gas is drawn from a reservoir beyond it):**
+**Test 11 (done, step 4: `test/index/BuildGas.t.sol`, both profiles).** The per-publication and per-leaf costs of a
+build for every publication kind, for a list added later (EX) and a full replay (FR), are §6.1, §6.2 and §6.4. The
+heaviest admitted publications (`floor-plan.json` k, generation 1's planning rule; the example generation's rule admits
+fewer, §6.2), each admitted live and then built alone in one cold call (gas; amsterdam execution gas, + its state gas;
+headroom under the 16,755,216 a 2^24 transaction leaves the call):
 
-| publication | prague leaves / execution gas | amsterdam leaves / execution gas (+ state gas) |
-|---|---:|---:|
-| lone negatives, the largest the planning rule admits (`floor-plan.json` k) | 38 / 7,183,073 | 54 / 7,835,425 (+ 23,696,640) |
-| first tags on a depth-8 topic, largest admitted | 18 / 7,465,964 | 19 / 6,056,622 (+ 17,136,000) |
-| first tags on a depth-64 topic, largest admitted | 3 / 9,763,264 | 3 / 7,071,564 (+ 26,536,320) |
-| 64 lone negatives | 64 / 13,073,204 | 64 / 9,898,784 (+ 27,613,440) |
-| 64 first tags, depth 8 (not admissible: the live publication needs far more than 2^24) | 64 / 26,209,649 | 64 / 21,213,285 (+ 51,799,680) |
-| 64 first tags, depth 64 (not admissible) | 64 / 225,117,045 | 64 / 207,318,745 (+ 194,371,200) |
+| publication | leaves (prague / amsterdam) | EX prague | EX amsterdam | FR prague | FR amsterdam |
+|---|---:|---:|---:|---:|---:|
+| lone negatives, largest admitted | 38 / 54 | 1,691,892 (15.06M left) | 2,223,641 (14.53M) | 7,199,069 (9.56M) | 7,897,298 + 23,500,800 (8.86M) |
+| first tags, depth 8, largest admitted | 18 / 19 | 1,059,142 (15.70M) | 1,094,899 (15.66M) | 7,496,685 (9.26M) | 6,089,158 + 17,136,000 (10.67M) |
+| first tags, depth 64, largest admitted | 3 / 3 | 605,152 (16.15M) | 610,052 (16.15M) | 9,770,262 (6.98M) | 7,078,562 + 26,536,320 (9.68M) |
+| create-file recipes, largest admitted | 50 / 60 | 2,124,228 (14.63M) | 2,348,883 + 1,175,040 (14.41M) | 4,580,625 (12.17M) | 4,594,622 + 10,673,280 (12.16M) |
+| 64 lone negatives | 64 / 64 | 2,557,616 (14.20M) | 2,562,516 (14.19M) | 12,416,008 (4.34M) | 9,462,308 + 27,809,280 (7.29M) |
 
-The cap a 2^24 transaction leaves the call is 16,755,216 (21,000 base, 1,000 of calldata). Every admitted shape
-fits with room, and on prague the capped call was run and succeeded. The two 64-first-tag rows do not fit, but no
-such publication can be admitted: its live execution is several times the cap (the largest admitted is the k row).
-A build costs less than the publication's own live execution (lone negatives 38: 7.18M built against 13.81M live on
-prague, `floor-plan.json` E; depth-64 first tags 3: 9.76M against 11.75M), so **leaf-granular resume is not needed
-for any publication the kernel admits** (§9 q1), on this evidence; step 4 measures it properly.
+On prague each call was also run with exactly 16,755,216 gas, and succeeded. Every row fits; leaf-granular resume is not
+needed (§3.3, §9 q1). The step-2 preview (`BuildWalk.t.sol::test_heaviest_publications_build_in_one_call`, generation
+1's code over fresh stores) measured the FR rows' shapes with the same method; it stays as it is.
 
 1. **Built equals live, every family and counter.** Two Realms take the same mixed history: Realm L runs
    generation 2 from genesis (live); Realm B runs generation 1, then builds generation 2 and activates it. Compare
@@ -1174,7 +1258,7 @@ for any publication the kernel admits** (§9 q1), on this evidence; step 4 measu
     its backfill is cleared by the live hook; a pre-declaration scope that no publication touches is backfilled to
     COMPLETE. For a fresh store built from history: the same two orders give the bits a genesis-live family gives.
 11. **Gas.** Measure the build per publication and per leaf on both schedules (this replaces §6's estimates), and
-    the heaviest admitted publication (64 deep first tags; 64 lone negatives) replayed within 2^24.
+    the heaviest admitted publication (64 deep first tags; 64 lone negatives) replayed within 2^24. **Done (step 4).**
 12. **Fold hooks** of carried units are not called during a build; a new unit's fold hook is.
 
 ---
@@ -1207,7 +1291,7 @@ for any publication the kernel admits** (§9 q1), on this evidence; step 4 measu
     admission. Cheaper for some families, but it is a second derivation with its own proof. *Recommend not for the
     first build.*
 12. **Who funds a large build.** *Recommend the operator; record the measured cost (test 11) in the release notes so
-    "we can add it later" comes with a price.*
+    "we can add it later" comes with a price. **Recorded (step 4):** §6 and tools/RELEASE.md item 36.
 
 ---
 
@@ -1411,11 +1495,98 @@ until then: a full replay (case (e)).
     over-quote: every TAG and FOLDER statement is quoted 37k to 54k more than it spends for the list, which shrinks
     the planning rule's largest batches of those shapes for such a generation (not measured here: `FloorPlan.t.sol`
     plans generation 1). A real generation that adds a HEAD list would want a per-purpose term (a formula change in the
-    ingress, replaceable until freeze) or accept that. Observed in passing, not reconciled: in this suite's state
-    generation 1's own model quotes a create-file recipe at 0.97× its prefix spend on amsterdam and 1.10× on prague
-    (design §10.4 says about 1.1×).
+    ingress, replaceable until freeze) or accept that. Observed in passing, reconciled in step 4 (item 29, item 32): in this
+    suite's state generation 1's own model quotes a create-file recipe at 0.97× its prefix spend on amsterdam (and
+    1.43× on prague, not 1.10× as first written); design §10.4's about 1.1× is the state of a first file in a folder.
 28. **Preview figures (warm, within one test transaction; step 4 measures cold).** The build of the example
     generation over the history of test 1 (53 publications, 92 admissions; the walk folds only `head-authors`, the two
     genesis stores are carried): prague 4,874,870 gas in 2 calls (budget 64), 91,978 per publication, 52,987 per leaf; amsterdam 5,415,290 gas in 2 calls, 102,175 per publication,
     58,861 per leaf (Foundry's amsterdam profile draws state gas from the call, so these include it).
 
+### Step 4: the measured gas of a build (2026-11-26, branch `fable/2026-11-26-index-build-4`)
+
+29. **OPEN FINDING against the release: on amsterdam, generation 1's prefix quote is below a create-file recipe's
+    callback spend in a folder where the author already has files (0.969×).** Measured by
+    `test/integration/FloorReconcile.t.sol` (FloorBase's method on both profiles: cold, every Realm account cooled;
+    spend = E − K − the final phase, split per leaf by mocking the callbacks of leaves ≥ i):
+
+    | state | prague P / spend | amsterdam P / spend | index slots written |
+    |---|---:|---:|---|
+    | A: FloorPlan's state, the author's first file in the folder (1 recipe) | 610,600 / 552,842 = 1.104 | 450,600 / 407,140 = 1.106 | 17 fresh, 3 rewritten |
+    | A: the planned batch (10 / 12 recipes) | 4,761,500 / 3,718,143 = 1.280 | 4,205,000 / 3,346,113 = 1.256 | 98 / 120 fresh, 3 rewritten |
+    | B: HeadAuthorsFloor's state, the author has two files in the folder (1 recipe) | 610,600 / 410,534 = 1.487 | **450,600 / 464,766 = 0.969** | 7 fresh, 17 rewritten |
+
+    Both figures are right: design §10.4's "about 1.1×" is state A (IndexFloor's and FloorPlan's), step 3b's 0.97× is
+    state B (`HeadAuthorsFloorGen1Test`, the same E, 1,304,106). Not warm against cold (both cold), not a different
+    definition (both E − K − final phase, the same kernel check), not a different fixture code: a different STATE. The
+    quote is the same for every create-file recipe (it prices each bind as a first statement on new lists: 16 fresh
+    slots at `floorFreshGas`, 19 rewrites at `floorRewriteGas`), while what the callbacks write depends on whether the
+    lists exist. On prague a fresh slot (22,100) costs 4.4 rewrites, so a folder with entries is cheaper and the ratio
+    rises (1.49×). On amsterdam a cold rewrite costs about 12,100 execution gas (EIP-8038; measured here as the list
+    counter's rewrite, 12,238 on prague and 19,438 on amsterdam, §6.1) and the Realm's `floorRewriteGas` is 5,000 on both
+    schedules (`tools/deploy-plan.mjs` `GLAMSTERDAM_FLOOR`; `test/harness/KernelDeploy.sol`, whose comment "a rewrite
+    stays 5,000: measured" was measured on first-statement shapes, which rewrite little). So writing into existing lists
+    is not cheaper in execution there, and B's 17 rewrites are each quoted ~7k short: per leaf, B's PUBLISH of the root
+    spends 110,238 against A's 85,180 and the name record 77,338 against 52,178 (appending to existing by-type,
+    by-author and reference lists). **The term that is short: `limits.floorRewriteGas` on a Glamsterdam Realm (5,000
+    against about 12,100).** Shortfall in B: 14,166 gas (3.1%).
+
+    **What it can and cannot do.** The kernel checks, before each prefix callback, that (gasleft − F − T)·63/64 at the
+    kernel and 63/64 of that at the ingress is at least the remaining quote (P less what the earlier callbacks spent,
+    never below 0), then calls the index with all of it; the final phase checks F the same way. Every callback failure
+    reverts the whole publication: empty returndata (out of gas) is `E_INDEX_GAS(quoted, available)` from `_ack`
+    (`LedgerIngress.sol`), any other failure `E_INDEX_CALL` / `E_INDEX_ACK` / `E_INDEX_RETURNDATA`; the final call is a
+    `STATICCALL` acknowledged the same way; a unit's fold hook runs inside `onAdmission` and a final hook inside
+    `afterPublication`, both plain Solidity calls whose failure bubbles (`RealmIndex._foldHooks`, `afterPublication`);
+    nothing on the live path catches a failure. So **a quote below the spend can never let a publication land
+    unindexed**; it only weakens the early check (the last callback of B is checked against a remaining quote of 0, so
+    it can run out after every check passed, and is then refused `E_INDEX_GAS`, consuming nothing). Tests:
+    `FloorReconcile.t.sol::test_a_callback_that_runs_out_admits_nothing` (every gas from 2,000 below the least that
+    admits a recipe: refused, nothing admitted; on prague 40 of 40 refusals are the early check, on amsterdam 40 of 40
+    come after every check passed, in both states), `BurningFoldHookTest` and `BurningFinalHookTest` (a unit's fold hook
+    or final hook that runs out: `E_INDEX_GAS`, nothing admitted, at 3M to 200M gas), and the kernel doubles of
+    `test/integration/atomicity/Ordered.t.sol` (§7: burning, writing and malformed callbacks).
+
+    **With the planned gas** (`FloorReconcile.t.sol::test_planned_gas_admits_create_files`; plan = max(E, V), the
+    model's for the planned batch, from the measured E and K and the kernel's quote for one recipe; "least" = the least
+    execution gas that admits it, to 1 gas):
+
+    | shape | prague: plan − least | amsterdam: plan + state gas − least | amsterdam with the headroom (plan / 0.85 + state) |
+    |---|---:|---:|---|
+    | A, 10 / 12 recipes (the planned batch) | +236,188 | +177,803 | admitted |
+    | A, 1 recipe | +45,404 (model plan: +50,593) | **−24,277** (model plan: −19,488) | admitted |
+    | B, 10 / 12 recipes | +230,859 | +188,693 | admitted |
+    | B, 1 recipe | +41,534 (model plan: +46,723) | **−14,144** (model plan: −55,522) | admitted |
+
+    On prague the plan covers every shape with no headroom (the tightest: one recipe in B, 41,534 to spare). On
+    amsterdam the plan is execution gas only and the transaction also carries the state gas; Foundry draws it from the
+    same gas, which is the chain's rule for a transaction of at most 2^24 (no reservoir), and harsher than the chain for
+    the 12-recipe batch (58M with its state gas; on chain the reservoir pays state gas first). One recipe sent with
+    exactly the plan and its state gas is refused in BOTH states, so the cause is not the quote (A's quote covers the
+    spend): it is the callbacks' state gas (17 and 7 fresh index slots, 97,920 each) drawn from regular gas through the
+    two 63/64 steps and past the F + T the kernel holds back, which V (an execution-gas figure) does not count; in B the
+    model's E also under-estimates the shape (model 1,165,959, measured 1,304,766, +11.9%, beyond the model's stated
+    7.56% maximum error, which is over its fitted rows). With the 15% headroom every shape is admitted, and no largest
+    planned batch has to shrink. The planning rule already says the gas limit comes from `eth_estimateGas`, never from
+    V; a consumer that sends max(E, V) as the gas limit on amsterdam fails every write by the whole state gas.
+    **Not fixed here** (measurement only): raising `floorRewriteGas` for Glamsterdam Realms (with the work model's
+    rewrite tenths re-checked) would make the quote honest in state B; it moves the deploy plan and the floor-plan
+    vectors, so it is a release change for James's queue.
+30. **What changed.** No `src/` file and no release file. New: `test/index/BuildGas.t.sol` (the measurement suite of
+    §6 and §8 test 11, with upper bands on every per-publication and per-leaf figure, about 25% over the measured
+    values), `test/integration/FloorReconcile.t.sol` (item 29) and `tools/gas-plan-later.mjs` (the planning rule on the
+    example generation's work model, §6.2; no gate runs it, and it changes nothing the gates compute).
+31. **What the estimate had wrong** (§6.1, §6.2). The decode is dearer: about 26k of every publication and 11k to 24k
+    per leaf (estimated 20k and 12k to 20k), so the walk is 435.11B of a 1M-file build (estimated 260B) and a later
+    list costs 484,560 per file on prague (estimated 290k) and 582,381 on amsterdam in all gas (estimated 390k); kept
+    from genesis, measured cold, is 51,167 / 149,608 (estimated 31k / 128k), so later against genesis is 9.5× / 3.9×
+    (estimated 8× to 9× / 3×). A cold EX call pays a fixed share of about 0.49M to 0.52M (the carried check asks the live
+    index's `replayReadiness()`), which the estimate did not have; it is 3% of the price at 2^24 a call.
+32. **Correction to item 27.** Step 3b observed "generation 1's own model quotes a create-file recipe at 0.97× its
+    prefix spend on amsterdam and 1.10× on prague" in its floor suite. The amsterdam figure reproduces (0.969×, item
+    29); on prague that suite measures 1.427× (`HeadAuthorsFloorGen1Test`: 610,600 / 427,634). The example generation's
+    own model quotes it at 1.531× (prague) and 1.084× (amsterdam), and the example under generation 1's model at 1.301×
+    and 0.906×.
+33. **What remains of the pre-freeze gate** (tools/RELEASE.md §15): the liveness gate (activation must not depend on the
+    live index answering, above); case (d), a digest spec rebuilt in a fresh store (§8 test 9); the gap that a
+    generation carrying every store never builds a new unit's fold hook (§3.6); and item 29's amsterdam rewrite price.
