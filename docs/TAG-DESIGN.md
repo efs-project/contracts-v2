@@ -130,7 +130,9 @@ author can always mask or release a binding of theirs that already exists, and n
   names a file, a subject created strictly before it (as 15 does for tags). Anything that can have a version is such
   a file, so this never stops anyone saying "not this" about something others can publish a version of.
 - **Tags.** 9: a first statement (either sign) sits under a home or under a topic registered strictly before it, in
-  an earlier action (a topic registered later in the same publication would silently miss its list entries).
+  an earlier action (a topic registered later in the same publication would silently miss its list entries). A build
+  or replay does not lean on this law: it reads as of each admission ([INDEX-BUILD.md](INDEX-BUILD.md) §4.3), so it files what the
+  live fold filed even over history that no validator judged.
   14: a tag's target is the thing it names (its role). 15: a first "not this" names something that exists: a record
   or a subject admitted before it, or an address.
 - **`same` and `broader`.** 10 and 11: both ends are topics registered strictly before; 12: the two ends differ;
@@ -205,7 +207,9 @@ itself.
   compares every list.
 - **The topic lists exist only with their validator.** The index keeps them only when its own fixed list of units
   contains the profile validator built for the same two topic Types; its constructor refuses any other
-  combination, so no Realm can keep topic lists without the "registered before" law that makes them complete.
+  combination, so no Realm can keep topic lists without the "registered before" law that makes them complete. The
+  law is what makes the LIVE lists complete; a build from history is exact without it, because the ancestor walk
+  then compares the subject's first admission with the tag's (the as-of rule, [INDEX-BUILD.md](INDEX-BUILD.md) §4.3).
 
 **A first tag, by depth** (one statement alone in its publication; Glamsterdam all gas):
 
