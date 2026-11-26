@@ -42,52 +42,52 @@
         "perWord": 22729,
         "perByte": 11.8,
         "publishNew": {
-          "files-bytes/1": 164888,
-          "files-span/1": 290326,
-          "files-content/1 carrier 0": 173786,
-          "files-content/1 carrier 2": 193393,
-          "files-external/1": 220700,
-          "files-directory/1": 165070,
-          "files-name/2": 152124,
-          "files-root/1 form 0": 148603,
-          "files-root/1 form 1": 174696,
-          "files-child/1 form 0": 228261,
-          "files-child/1 form 1": 254468,
-          "topic-word/1": 181737,
-          "topic/1": 211642,
-          "text/1": 182199
+          "files-bytes/1": 164996,
+          "files-span/1": 290434,
+          "files-content/1 carrier 0": 173899,
+          "files-content/1 carrier 2": 193506,
+          "files-external/1": 220801,
+          "files-directory/1": 165190,
+          "files-name/2": 152232,
+          "files-root/1 form 0": 148711,
+          "files-root/1 form 1": 174804,
+          "files-child/1 form 0": 228369,
+          "files-child/1 form 1": 254576,
+          "topic-word/1": 181845,
+          "topic/1": 211750,
+          "text/1": 182319
         },
-        "publishExisting": 176506,
-        "reuse": 179957,
-        "create": 98342,
-        "bindHeadFresh": 331198,
-        "bindHeadRebind": 204277,
-        "bindFolderFreshFile": 409088,
-        "bindFolderFreshDirectory": 408858,
-        "bindFolderRebind": 206474,
-        "unbindFolder": 159653,
-        "releaseFolder": 156632,
-        "bindTagFresh": 414189,
-        "bindTagSecondAuthor": 312777,
-        "bindTagNumberChange": 153742,
-        "unbindTagLone": 355203,
-        "unbindTag": 155948,
-        "releaseTag": 154760,
-        "restoreTag": 186669,
-        "bindPropertyFresh": 328665,
-        "bindPropertyRebind": 196172,
-        "unbindProperty": 145829,
-        "releaseProperty": 144641,
-        "bindSameFreshWord": 357506,
-        "bindSameFreshPath": 357402,
-        "unbindSame": 146042,
-        "releaseSame": 144842,
-        "restoreSame": 174621,
-        "bindBroaderFresh": 357493,
-        "unbindBroader": 146053,
-        "releaseBroader": 144865,
-        "restoreBroader": 174656,
-        "withdraw": 151662,
+        "publishExisting": 176614,
+        "reuse": 180065,
+        "create": 98447,
+        "bindHeadFresh": 331596,
+        "bindHeadRebind": 204741,
+        "bindFolderFreshFile": 409474,
+        "bindFolderFreshDirectory": 409256,
+        "bindFolderRebind": 206914,
+        "unbindFolder": 160087,
+        "releaseFolder": 157066,
+        "bindTagFresh": 414563,
+        "bindTagSecondAuthor": 313175,
+        "bindTagNumberChange": 154167,
+        "unbindTagLone": 355568,
+        "unbindTag": 156382,
+        "releaseTag": 155194,
+        "restoreTag": 187065,
+        "bindPropertyFresh": 329051,
+        "bindPropertyRebind": 196624,
+        "unbindProperty": 146264,
+        "releaseProperty": 145076,
+        "bindSameFreshWord": 357892,
+        "bindSameFreshPath": 357788,
+        "unbindSame": 146477,
+        "releaseSame": 145277,
+        "restoreSame": 175005,
+        "bindBroaderFresh": 357867,
+        "unbindBroader": 146488,
+        "releaseBroader": 145300,
+        "restoreBroader": 175028,
+        "withdraw": 151804,
         "firstWriteSurcharge": 11786,
         "tagLevel": {
           "mineNew": 34627,
@@ -141,16 +141,16 @@
         ],
         "publishNewBaseBySize": {
           "files-external/1": {
-            "264": 219188,
-            "624": 222212
+            "264": 219289,
+            "624": 222313
           },
           "files-name/2": {
-            "12": 136039,
-            "200": 168208
+            "12": 136147,
+            "200": 168316
           },
           "topic-word/1": {
-            "12": 179927,
-            "40": 183548
+            "12": 180035,
+            "40": 183656
           }
         },
         "impliedFixedByPair": {
@@ -163,9 +163,9 @@
           "pub span": 286751,
           "pub content c0": 330498,
           "pub content c2": 330510,
-          "pub external 40": 363461,
-          "pub external 400": 363414,
-          "pub directory": 324547,
+          "pub external 40": 363485,
+          "pub external 400": 363438,
+          "pub directory": 324523,
           "pub name 12": 392964,
           "pub name 200": 392928,
           "pub root f0": 324487,
@@ -175,24 +175,24 @@
           "pub topic word 12": 337502,
           "pub topic word 40": 337473,
           "pub topic": 399764,
-          "pub text 24": 337514,
+          "pub text 24": 337502,
           "pub existing": 310947,
           "reuse": 310968,
           "create": 268822,
-          "bind head fresh": 281127,
-          "bind head rebind": 293439,
+          "bind head fresh": 281115,
+          "bind head rebind": 293427,
           "bind folder fresh file": 275599,
-          "bind folder fresh dir": 275623,
-          "bind folder rebind": 300235,
+          "bind folder fresh dir": 275599,
+          "bind folder rebind": 300247,
           "unbind folder": 293311,
           "release folder": 297170,
-          "bind tag fresh": 294724,
-          "bind tag second author": 332909,
-          "bind tag number change": 291175,
+          "bind tag fresh": 294736,
+          "bind tag second author": 332897,
+          "bind tag number change": 291163,
           "unbind tag lone": 294755,
           "unbind tag": 294858,
           "release tag": 294884,
-          "restore tag": 294841,
+          "restore tag": 294829,
           "bind property fresh": 304432,
           "bind property rebind": 288363,
           "unbind property": 286393,
@@ -202,10 +202,10 @@
           "unbind same": 286369,
           "release same": 286419,
           "restore same": 286363,
-          "bind broader fresh": 291401,
+          "bind broader fresh": 291425,
           "unbind broader": 286381,
           "release broader": 286419,
-          "restore broader": 286339,
+          "restore broader": 286363,
           "withdraw": 288956
         },
         "bytesResiduals": {
@@ -312,8 +312,8 @@
             "files-span/1": 164175,
             "files-content/1 carrier 0": 88764,
             "files-content/1 carrier 2": 108371,
-            "files-external/1": 141143,
-            "files-directory/1": 133565,
+            "files-external/1": 141131,
+            "files-directory/1": 133577,
             "files-name/2": 154819,
             "files-root/1 form 0": 117098,
             "files-root/1 form 1": 143191,
@@ -321,25 +321,25 @@
             "files-child/1 form 1": 153739,
             "topic-word/1": 139628,
             "topic/1": 151856,
-            "text/1": 140090
+            "text/1": 140102
           },
           "publishExisting": 95843,
           "reuse": 99271,
           "create": 89227,
-          "bindHeadFresh": 193336,
-          "bindHeadRebind": 92303,
+          "bindHeadFresh": 193348,
+          "bindHeadRebind": 92315,
           "bindFolderFreshFile": 220087,
-          "bindFolderFreshDirectory": 217867,
-          "bindFolderRebind": 96907,
+          "bindFolderFreshDirectory": 217879,
+          "bindFolderRebind": 96895,
           "unbindFolder": 62285,
           "releaseFolder": 61074,
-          "bindTagFresh": 220075,
-          "bindTagSecondAuthor": 155772,
-          "bindTagNumberChange": 93990,
+          "bindTagFresh": 220063,
+          "bindTagSecondAuthor": 155784,
+          "bindTagNumberChange": 94002,
           "unbindTagLone": 166356,
           "unbindTag": 62285,
           "releaseTag": 61074,
-          "restoreTag": 93627,
+          "restoreTag": 93639,
           "bindPropertyFresh": 215867,
           "bindPropertyRebind": 92711,
           "unbindProperty": 62285,
@@ -349,10 +349,10 @@
           "unbindSame": 62297,
           "releaseSame": 61074,
           "restoreSame": 91431,
-          "bindBroaderFresh": 217867,
+          "bindBroaderFresh": 217855,
           "unbindBroader": 62285,
           "releaseBroader": 61074,
-          "restoreBroader": 91443,
+          "restoreBroader": 91431,
           "withdraw": 81754,
           "firstWriteSurcharge": 17088,
           "tagLevel": {
@@ -367,898 +367,898 @@
         {
           "key": "bind broader fresh k1",
           "test": "test_model_bind_broader_fresh()",
-          "kernelFrameGas": 467259,
-          "gas": 652692,
-          "frameGas": 648894
+          "kernelFrameGas": 467271,
+          "gas": 653090,
+          "frameGas": 649292
         },
         {
           "key": "bind broader fresh k2",
           "test": "test_model_bind_broader_fresh()",
           "kernelFrameGas": 685126,
-          "gas": 1010744,
-          "frameGas": 1006387
+          "gas": 1011516,
+          "frameGas": 1007159
         },
         {
           "key": "bind folder fresh dir k1",
           "test": "test_model_bind_folder_fresh_dir()",
-          "kernelFrameGas": 467283,
-          "gas": 688257,
-          "frameGas": 684481
+          "kernelFrameGas": 467271,
+          "gas": 688631,
+          "frameGas": 684855
         },
         {
           "key": "bind folder fresh dir k2",
           "test": "test_model_bind_folder_fresh_dir()",
           "kernelFrameGas": 685150,
-          "gas": 1097672,
-          "frameGas": 1093339
+          "gas": 1098444,
+          "frameGas": 1094111
         },
         {
           "key": "bind folder fresh file k1",
           "test": "test_model_bind_folder_fresh_file()",
           "kernelFrameGas": 469479,
-          "gas": 688463,
-          "frameGas": 684687
+          "gas": 688849,
+          "frameGas": 685073
         },
         {
           "key": "bind folder fresh file k2",
           "test": "test_model_bind_folder_fresh_file()",
           "kernelFrameGas": 689566,
-          "gas": 1098108,
-          "frameGas": 1093775
+          "gas": 1098880,
+          "frameGas": 1094547
         },
         {
           "key": "bind folder rebind k1",
           "test": "test_model_bind_folder_rebind()",
           "kernelFrameGas": 346335,
-          "gas": 510485,
-          "frameGas": 506709
+          "gas": 510937,
+          "frameGas": 507161
         },
         {
           "key": "bind folder rebind k2",
           "test": "test_model_bind_folder_rebind()",
-          "kernelFrameGas": 443242,
-          "gas": 717516,
-          "frameGas": 713183
+          "kernelFrameGas": 443230,
+          "gas": 718408,
+          "frameGas": 714075
         },
         {
           "key": "bind head fresh k1",
           "test": "test_model_bind_head_fresh()",
           "kernelFrameGas": 444752,
-          "gas": 616101,
-          "frameGas": 612325
+          "gas": 616487,
+          "frameGas": 612711
         },
         {
           "key": "bind head fresh k2",
           "test": "test_model_bind_head_fresh()",
-          "kernelFrameGas": 638088,
-          "gas": 947856,
-          "frameGas": 943523
+          "kernelFrameGas": 638100,
+          "gas": 948640,
+          "frameGas": 944307
         },
         {
           "key": "bind head rebind k1",
           "test": "test_model_bind_head_rebind()",
           "kernelFrameGas": 343731,
-          "gas": 501492,
-          "frameGas": 497716
+          "gas": 501944,
+          "frameGas": 498168
         },
         {
           "key": "bind head rebind k2",
           "test": "test_model_bind_head_rebind()",
-          "kernelFrameGas": 436034,
-          "gas": 706326,
-          "frameGas": 701993
+          "kernelFrameGas": 436046,
+          "gas": 707242,
+          "frameGas": 702909
         },
         {
           "key": "bind property fresh k1",
           "test": "test_model_bind_property_fresh()",
           "kernelFrameGas": 467283,
-          "gas": 636899,
-          "frameGas": 633097
+          "gas": 637285,
+          "frameGas": 633483
         },
         {
           "key": "bind property fresh k2",
           "test": "test_model_bind_property_fresh()",
           "kernelFrameGas": 683150,
-          "gas": 966123,
-          "frameGas": 961762
+          "gas": 966895,
+          "frameGas": 962534
         },
         {
           "key": "bind property rebind k1",
           "test": "test_model_bind_property_rebind()",
           "kernelFrameGas": 344127,
-          "gas": 488345,
-          "frameGas": 484535
+          "gas": 488797,
+          "frameGas": 484987
         },
         {
           "key": "bind property rebind k2",
           "test": "test_model_bind_property_rebind()",
           "kernelFrameGas": 436838,
-          "gas": 685076,
-          "frameGas": 680707
+          "gas": 685980,
+          "frameGas": 681611
         },
         {
           "key": "bind same fresh path k1",
           "test": "test_model_bind_same_fresh_path()",
           "kernelFrameGas": 467283,
-          "gas": 652631,
-          "frameGas": 648827
+          "gas": 653017,
+          "frameGas": 649213
         },
         {
           "key": "bind same fresh path k2",
           "test": "test_model_bind_same_fresh_path()",
           "kernelFrameGas": 685150,
-          "gas": 1010605,
-          "frameGas": 1006229
+          "gas": 1011377,
+          "frameGas": 1007001
         },
         {
           "key": "bind same fresh word k1",
           "test": "test_model_bind_same_fresh_word()",
           "kernelFrameGas": 467247,
-          "gas": 652657,
-          "frameGas": 648859
+          "gas": 653043,
+          "frameGas": 649245
         },
         {
           "key": "bind same fresh word k2",
           "test": "test_model_bind_same_fresh_word()",
           "kernelFrameGas": 685150,
-          "gas": 1010723,
-          "frameGas": 1006365
+          "gas": 1011495,
+          "frameGas": 1007137
         },
         {
           "key": "bind tag fresh k1",
           "test": "test_model_bind_tag_fresh()",
           "kernelFrameGas": 469491,
-          "gas": 712701,
-          "frameGas": 708913
+          "gas": 713087,
+          "frameGas": 709299
         },
         {
           "key": "bind tag fresh k2",
           "test": "test_model_bind_tag_fresh()",
-          "kernelFrameGas": 689566,
-          "gas": 1127449,
-          "frameGas": 1123102
+          "kernelFrameGas": 689554,
+          "gas": 1128209,
+          "frameGas": 1123862
         },
         {
           "key": "bind tag number change k1",
           "test": "test_model_bind_tag_number_change()",
           "kernelFrameGas": 343418,
-          "gas": 448707,
-          "frameGas": 444917
+          "gas": 449120,
+          "frameGas": 445330
         },
         {
           "key": "bind tag number change k2",
           "test": "test_model_bind_tag_number_change()",
-          "kernelFrameGas": 437408,
-          "gas": 603008,
-          "frameGas": 598659
+          "kernelFrameGas": 437420,
+          "gas": 603846,
+          "frameGas": 599497
         },
         {
           "key": "bind tag second author k1",
           "test": "test_model_bind_tag_second_author()",
           "kernelFrameGas": 404659,
-          "gas": 649477,
-          "frameGas": 645686
+          "gas": 649863,
+          "frameGas": 646072
         },
         {
           "key": "bind tag second author k2",
           "test": "test_model_bind_tag_second_author()",
-          "kernelFrameGas": 560431,
-          "gas": 962814,
-          "frameGas": 958463
+          "kernelFrameGas": 560443,
+          "gas": 963598,
+          "frameGas": 959247
         },
         {
           "key": "create k1",
           "test": "test_model_create()",
           "kernelFrameGas": 338102,
-          "gas": 370940,
-          "frameGas": 367164
+          "gas": 371045,
+          "frameGas": 367269
         },
         {
           "key": "create k2",
           "test": "test_model_create()",
           "kernelFrameGas": 427329,
-          "gas": 469835,
-          "frameGas": 465506
+          "gas": 470045,
+          "frameGas": 465716
         },
         {
           "key": "first write fresh",
           "test": "test_model_first_write()",
-          "kernelFrameGas": 552710,
-          "gas": 666687,
-          "frameGas": 662348
+          "kernelFrameGas": 552698,
+          "gas": 666888,
+          "frameGas": 662549
         },
         {
           "key": "first write warm",
           "test": "test_model_first_write()",
-          "kernelFrameGas": 535622,
-          "gas": 654910,
-          "frameGas": 650562
+          "kernelFrameGas": 535610,
+          "gas": 655111,
+          "frameGas": 650763
         },
         {
           "key": "pub bytes 100 k1",
           "test": "test_model_publish_bytes_100()",
           "kernelFrameGas": 492951,
-          "gas": 585498,
-          "frameGas": 581703
+          "gas": 585606,
+          "frameGas": 581811
         },
         {
           "key": "pub bytes 100 k2",
           "test": "test_model_publish_bytes_100()",
           "kernelFrameGas": 718650,
-          "gas": 843268,
-          "frameGas": 838907
+          "gas": 843484,
+          "frameGas": 839123
         },
         {
           "key": "pub bytes 1000 k1",
           "test": "test_model_publish_bytes_1000()",
           "kernelFrameGas": 1139321,
-          "gas": 1231983,
-          "frameGas": 1228073
+          "gas": 1232091,
+          "frameGas": 1228181
         },
         {
           "key": "pub bytes 1000 k2",
           "test": "test_model_publish_bytes_1000()",
           "kernelFrameGas": 2011556,
-          "gas": 2136375,
-          "frameGas": 2131813
+          "gas": 2136591,
+          "frameGas": 2132029
         },
         {
           "key": "pub bytes 1024 k1",
           "test": "test_model_publish_bytes_1024()",
           "kernelFrameGas": 1139759,
-          "gas": 1232421,
-          "frameGas": 1228511
+          "gas": 1232529,
+          "frameGas": 1228619
         },
         {
           "key": "pub bytes 1024 k2",
           "test": "test_model_publish_bytes_1024()",
           "kernelFrameGas": 2012468,
-          "gas": 2137287,
-          "frameGas": 2132725
+          "gas": 2137503,
+          "frameGas": 2132941
         },
         {
           "key": "pub bytes 4096 k1",
           "test": "test_model_publish_bytes_4096()",
           "kernelFrameGas": 3356050,
-          "gas": 3449108,
-          "frameGas": 3444802
+          "gas": 3449216,
+          "frameGas": 3444910
         },
         {
           "key": "pub bytes 4096 k2",
           "test": "test_model_publish_bytes_4096()",
           "kernelFrameGas": 6446322,
-          "gas": 6571832,
-          "frameGas": 6566579
+          "gas": 6572048,
+          "frameGas": 6566795
         },
         {
           "key": "pub bytes 64 k1",
           "test": "test_model_publish_bytes_64()",
           "kernelFrameGas": 447332,
-          "gas": 539870,
-          "frameGas": 536084
+          "gas": 539978,
+          "frameGas": 536192
         },
         {
           "key": "pub bytes 64 k2",
           "test": "test_model_publish_bytes_64()",
           "kernelFrameGas": 627340,
-          "gas": 751943,
-          "frameGas": 747597
+          "gas": 752159,
+          "frameGas": 747813
         },
         {
           "key": "pub bytes 8192 k1",
           "test": "test_model_publish_bytes_8192()",
           "kernelFrameGas": 6312272,
-          "gas": 6405858,
-          "frameGas": 6401024
+          "gas": 6405966,
+          "frameGas": 6401132
         },
         {
           "key": "pub bytes 8192 k2",
           "test": "test_model_publish_bytes_8192()",
           "kernelFrameGas": 12361180,
-          "gas": 12487612,
-          "frameGas": 12481437
+          "gas": 12487828,
+          "frameGas": 12481653
         },
         {
           "key": "pub child f0 k1",
           "test": "test_model_publish_child_form0()",
           "kernelFrameGas": 560190,
-          "gas": 678170,
-          "frameGas": 674365
+          "gas": 678278,
+          "frameGas": 674473
         },
         {
           "key": "pub child f0 k2",
           "test": "test_model_publish_child_form0()",
           "kernelFrameGas": 849134,
-          "gas": 1068418,
-          "frameGas": 1064038
+          "gas": 1068634,
+          "frameGas": 1064254
         },
         {
           "key": "pub child f1 k1",
           "test": "test_model_publish_child_form1()",
           "kernelFrameGas": 519389,
-          "gas": 637353,
-          "frameGas": 633564
+          "gas": 637461,
+          "frameGas": 633672
         },
         {
           "key": "pub child f1 k2",
           "test": "test_model_publish_child_form1()",
           "kernelFrameGas": 765552,
-          "gas": 984811,
-          "frameGas": 980456
+          "gas": 985027,
+          "frameGas": 980672
         },
         {
           "key": "pub content c0 k1",
           "test": "test_model_publish_content_carrier0()",
           "kernelFrameGas": 591076,
-          "gas": 739158,
-          "frameGas": 735344
+          "gas": 739271,
+          "frameGas": 735457
         },
         {
           "key": "pub content c0 k2",
           "test": "test_model_publish_content_carrier0()",
           "kernelFrameGas": 910900,
-          "gas": 1144587,
-          "frameGas": 1140190
+          "gas": 1144813,
+          "frameGas": 1140416
         },
         {
           "key": "pub content c2 k1",
           "test": "test_model_publish_content_carrier2()",
           "kernelFrameGas": 610695,
-          "gas": 758778,
-          "frameGas": 754963
+          "gas": 758891,
+          "frameGas": 755076
         },
         {
           "key": "pub content c2 k2",
           "test": "test_model_publish_content_carrier2()",
           "kernelFrameGas": 950126,
-          "gas": 1183816,
-          "frameGas": 1179416
+          "gas": 1184042,
+          "frameGas": 1179642
         },
         {
           "key": "pub directory k1",
           "test": "test_model_publish_directory()",
-          "kernelFrameGas": 447077,
-          "gas": 539613,
-          "frameGas": 535829
+          "kernelFrameGas": 447065,
+          "gas": 539709,
+          "frameGas": 535925
         },
         {
           "key": "pub directory k2",
           "test": "test_model_publish_directory()",
           "kernelFrameGas": 626854,
-          "gas": 751455,
-          "frameGas": 747111
+          "gas": 751671,
+          "frameGas": 747327
         },
         {
           "key": "pub existing k1",
           "test": "test_model_publish_existing()",
           "kernelFrameGas": 357143,
-          "gas": 491239,
-          "frameGas": 487453
+          "gas": 491347,
+          "frameGas": 487561
         },
         {
           "key": "pub existing k2",
           "test": "test_model_publish_existing()",
           "kernelFrameGas": 452986,
-          "gas": 668304,
-          "frameGas": 663959
+          "gas": 668520,
+          "frameGas": 664175
         },
         {
           "key": "pub external 40 k1",
           "test": "test_model_publish_external_40()",
-          "kernelFrameGas": 622511,
-          "gas": 794131,
-          "frameGas": 790321
+          "kernelFrameGas": 622523,
+          "gas": 794256,
+          "frameGas": 790446
         },
         {
           "key": "pub external 40 k2",
           "test": "test_model_publish_external_40()",
           "kernelFrameGas": 969814,
-          "gas": 1221573,
-          "frameGas": 1217181
+          "gas": 1221799,
+          "frameGas": 1217407
         },
         {
           "key": "pub external 400 k1",
           "test": "test_model_publish_external_400()",
-          "kernelFrameGas": 879748,
-          "gas": 1051405,
-          "frameGas": 1047558
+          "kernelFrameGas": 879760,
+          "gas": 1051530,
+          "frameGas": 1047683
         },
         {
           "key": "pub external 400 k2",
           "test": "test_model_publish_external_400()",
           "kernelFrameGas": 1484335,
-          "gas": 1736164,
-          "frameGas": 1731702
+          "gas": 1736390,
+          "frameGas": 1731928
         },
         {
           "key": "pub name 12 k1",
           "test": "test_model_publish_name_12()",
           "kernelFrameGas": 428921,
-          "gas": 555652,
-          "frameGas": 551873
+          "gas": 555760,
+          "frameGas": 551981
         },
         {
           "key": "pub name 12 k2",
           "test": "test_model_publish_name_12()",
           "kernelFrameGas": 590525,
-          "gas": 715118,
-          "frameGas": 710782
+          "gas": 715334,
+          "frameGas": 710998
         },
         {
           "key": "pub name 200 k1",
           "test": "test_model_publish_name_200()",
           "kernelFrameGas": 599644,
-          "gas": 726395,
-          "frameGas": 722596
+          "gas": 726503,
+          "frameGas": 722704
         },
         {
           "key": "pub name 200 k2",
           "test": "test_model_publish_name_200()",
           "kernelFrameGas": 932007,
-          "gas": 1056638,
-          "frameGas": 1052264
+          "gas": 1056854,
+          "frameGas": 1052480
         },
         {
           "key": "pub root f0 k1",
           "test": "test_model_publish_root_form0()",
           "kernelFrameGas": 522644,
-          "gas": 615198,
-          "frameGas": 611396
+          "gas": 615306,
+          "frameGas": 611504
         },
         {
           "key": "pub root f0 k2",
           "test": "test_model_publish_root_form0()",
           "kernelFrameGas": 778048,
-          "gas": 902678,
-          "frameGas": 898305
+          "gas": 902894,
+          "frameGas": 898521
         },
         {
           "key": "pub root f1 k1",
           "test": "test_model_publish_root_form1()",
           "kernelFrameGas": 481827,
-          "gas": 574364,
-          "frameGas": 570579
+          "gas": 574472,
+          "frameGas": 570687
         },
         {
           "key": "pub root f1 k2",
           "test": "test_model_publish_root_form1()",
           "kernelFrameGas": 694336,
-          "gas": 818941,
-          "frameGas": 814593
+          "gas": 819157,
+          "frameGas": 814809
         },
         {
           "key": "pub span k1",
           "test": "test_model_publish_span()",
           "kernelFrameGas": 506796,
-          "gas": 650180,
-          "frameGas": 646395
+          "gas": 650288,
+          "frameGas": 646503
         },
         {
           "key": "pub span k2",
           "test": "test_model_publish_span()",
           "kernelFrameGas": 740289,
-          "gas": 1010387,
-          "frameGas": 1006039
+          "gas": 1010603,
+          "frameGas": 1006255
         },
         {
           "key": "pub text 24 k1",
           "test": "test_model_publish_text()",
           "kernelFrameGas": 430431,
-          "gas": 546508,
-          "frameGas": 542725
+          "gas": 546616,
+          "frameGas": 542833
         },
         {
           "key": "pub text 24 k2",
           "test": "test_model_publish_text()",
-          "kernelFrameGas": 593533,
-          "gas": 752275,
-          "frameGas": 747936
+          "kernelFrameGas": 593545,
+          "gas": 752503,
+          "frameGas": 748164
         },
         {
           "key": "pub topic k1",
           "test": "test_model_publish_topic()",
           "kernelFrameGas": 477377,
-          "gas": 661417,
-          "frameGas": 657618
+          "gas": 661525,
+          "frameGas": 657726
         },
         {
           "key": "pub topic k2",
           "test": "test_model_publish_topic()",
           "kernelFrameGas": 675445,
-          "gas": 919830,
-          "frameGas": 915472
+          "gas": 920046,
+          "frameGas": 915688
         },
         {
           "key": "pub topic word 12 k1",
           "test": "test_model_publish_topic_word_12()",
           "kernelFrameGas": 428005,
-          "gas": 544082,
-          "frameGas": 540299
+          "gas": 544190,
+          "frameGas": 540407
         },
         {
           "key": "pub topic word 12 k2",
           "test": "test_model_publish_topic_word_12()",
           "kernelFrameGas": 588693,
-          "gas": 747435,
-          "frameGas": 743096
+          "gas": 747651,
+          "frameGas": 743312
         },
         {
           "key": "pub topic word 40 k1",
           "test": "test_model_publish_topic_word_40()",
           "kernelFrameGas": 454656,
-          "gas": 570736,
-          "frameGas": 566950
+          "gas": 570844,
+          "frameGas": 567058
         },
         {
           "key": "pub topic word 40 k2",
           "test": "test_model_publish_topic_word_40()",
           "kernelFrameGas": 642024,
-          "gas": 800772,
-          "frameGas": 796427
+          "gas": 800988,
+          "frameGas": 796643
         },
         {
           "key": "release broader k1",
           "test": "test_model_release_broader()",
           "kernelFrameGas": 310546,
-          "gas": 435089,
-          "frameGas": 431284
+          "gas": 435524,
+          "frameGas": 431719
         },
         {
           "key": "release broader k2",
           "test": "test_model_release_broader()",
           "kernelFrameGas": 371620,
-          "gas": 580513,
-          "frameGas": 576149
+          "gas": 581383,
+          "frameGas": 577019
         },
         {
           "key": "release folder k1",
           "test": "test_model_release_folder()",
           "kernelFrameGas": 310546,
-          "gas": 457576,
-          "frameGas": 453802
+          "gas": 458010,
+          "frameGas": 454236
         },
         {
           "key": "release folder k2",
           "test": "test_model_release_folder()",
           "kernelFrameGas": 371620,
-          "gas": 614766,
-          "frameGas": 610434
+          "gas": 615634,
+          "frameGas": 611302
         },
         {
           "key": "release property k1",
           "test": "test_model_release_property()",
           "kernelFrameGas": 310546,
-          "gas": 434870,
-          "frameGas": 431060
+          "gas": 435305,
+          "frameGas": 431495
         },
         {
           "key": "release property k2",
           "test": "test_model_release_property()",
           "kernelFrameGas": 371620,
-          "gas": 580070,
-          "frameGas": 575701
+          "gas": 580940,
+          "frameGas": 576571
         },
         {
           "key": "release same k1",
           "test": "test_model_release_same()",
           "kernelFrameGas": 310546,
-          "gas": 435066,
-          "frameGas": 431261
+          "gas": 435501,
+          "frameGas": 431696
         },
         {
           "key": "release same k2",
           "test": "test_model_release_same()",
           "kernelFrameGas": 371620,
-          "gas": 580467,
-          "frameGas": 576103
+          "gas": 581337,
+          "frameGas": 576973
         },
         {
           "key": "release tag k1",
           "test": "test_model_release_tag()",
           "kernelFrameGas": 310546,
-          "gas": 453432,
-          "frameGas": 449644
+          "gas": 453866,
+          "frameGas": 450078
         },
         {
           "key": "release tag k2",
           "test": "test_model_release_tag()",
           "kernelFrameGas": 371620,
-          "gas": 608751,
-          "frameGas": 604404
+          "gas": 609619,
+          "frameGas": 605272
         },
         {
           "key": "restore broader k1",
           "test": "test_model_restore_broader()",
-          "kernelFrameGas": 340835,
-          "gas": 464806,
-          "frameGas": 460995
+          "kernelFrameGas": 340847,
+          "gas": 465202,
+          "frameGas": 461391
         },
         {
           "key": "restore broader k2",
           "test": "test_model_restore_broader()",
           "kernelFrameGas": 432278,
-          "gas": 640022,
-          "frameGas": 635651
+          "gas": 640790,
+          "frameGas": 636419
         },
         {
           "key": "restore same k1",
           "test": "test_model_restore_same()",
           "kernelFrameGas": 340847,
-          "gas": 464795,
-          "frameGas": 460984
+          "gas": 465179,
+          "frameGas": 461368
         },
         {
           "key": "restore same k2",
           "test": "test_model_restore_same()",
           "kernelFrameGas": 432278,
-          "gas": 639976,
-          "frameGas": 635605
+          "gas": 640744,
+          "frameGas": 636373
         },
         {
           "key": "restore tag k1",
           "test": "test_model_restore_tag()",
           "kernelFrameGas": 343055,
-          "gas": 485305,
-          "frameGas": 481510
+          "gas": 485689,
+          "frameGas": 481894
         },
         {
           "key": "restore tag k2",
           "test": "test_model_restore_tag()",
-          "kernelFrameGas": 436682,
-          "gas": 672533,
-          "frameGas": 668179
+          "kernelFrameGas": 436694,
+          "gas": 673313,
+          "frameGas": 668959
         },
         {
           "key": "reuse k1",
           "test": "test_model_reuse()",
           "kernelFrameGas": 360592,
-          "gas": 494696,
-          "frameGas": 490925
+          "gas": 494804,
+          "frameGas": 491033
         },
         {
           "key": "reuse k2",
           "test": "test_model_reuse()",
           "kernelFrameGas": 459863,
-          "gas": 675207,
-          "frameGas": 670882
+          "gas": 675423,
+          "frameGas": 671098
         },
         {
           "key": "tag level all existing k1",
           "test": "test_model_tag_level_all_existing()",
           "kernelFrameGas": 468946,
-          "gas": 748778,
-          "frameGas": 744960
+          "gas": 749164,
+          "frameGas": 745346
         },
         {
           "key": "tag level all existing k2",
           "test": "test_model_tag_level_all_existing()",
           "kernelFrameGas": 468946,
-          "gas": 901682,
-          "frameGas": 897857
+          "gas": 902068,
+          "frameGas": 898243
         },
         {
           "key": "tag level all new k1",
           "test": "test_model_tag_level_all_new()",
           "kernelFrameGas": 468946,
-          "gas": 795583,
-          "frameGas": 791776
+          "gas": 795969,
+          "frameGas": 792162
         },
         {
           "key": "tag level all new k2",
           "test": "test_model_tag_level_all_new()",
           "kernelFrameGas": 468946,
-          "gas": 1042655,
-          "frameGas": 1038841
+          "gas": 1043041,
+          "frameGas": 1039227
         },
         {
           "key": "tag level mine existing k1",
           "test": "test_model_tag_level_mine_existing()",
           "kernelFrameGas": 350946,
-          "gas": 577905,
-          "frameGas": 574079
+          "gas": 578270,
+          "frameGas": 574444
         },
         {
           "key": "tag level mine existing k2",
           "test": "test_model_tag_level_mine_existing()",
           "kernelFrameGas": 350958,
-          "gas": 669396,
-          "frameGas": 665562
+          "gas": 669761,
+          "frameGas": 665927
         },
         {
           "key": "tag level mine new k1",
           "test": "test_model_tag_level_mine_new()",
           "kernelFrameGas": 350958,
-          "gas": 601180,
-          "frameGas": 597365
+          "gas": 601545,
+          "frameGas": 597730
         },
         {
           "key": "tag level mine new k2",
           "test": "test_model_tag_level_mine_new()",
           "kernelFrameGas": 350946,
-          "gas": 739697,
-          "frameGas": 735874
+          "gas": 740062,
+          "frameGas": 736239
         },
         {
           "key": "unbind broader k1",
           "test": "test_model_unbind_broader()",
           "kernelFrameGas": 311719,
-          "gas": 436239,
-          "frameGas": 432434
+          "gas": 436674,
+          "frameGas": 432869
         },
         {
           "key": "unbind broader k2",
           "test": "test_model_unbind_broader()",
           "kernelFrameGas": 374004,
-          "gas": 582851,
-          "frameGas": 578487
+          "gas": 583721,
+          "frameGas": 579357
         },
         {
           "key": "unbind folder k1",
           "test": "test_model_unbind_folder()",
           "kernelFrameGas": 311731,
-          "gas": 456738,
-          "frameGas": 452964
+          "gas": 457172,
+          "frameGas": 453398
         },
         {
           "key": "unbind folder k2",
           "test": "test_model_unbind_folder()",
           "kernelFrameGas": 374016,
-          "gas": 616949,
-          "frameGas": 612617
+          "gas": 617817,
+          "frameGas": 613485
         },
         {
           "key": "unbind property k1",
           "test": "test_model_unbind_property()",
           "kernelFrameGas": 311731,
-          "gas": 436032,
-          "frameGas": 432222
+          "gas": 436467,
+          "frameGas": 432657
         },
         {
           "key": "unbind property k2",
           "test": "test_model_unbind_property()",
           "kernelFrameGas": 374016,
-          "gas": 582420,
-          "frameGas": 578051
+          "gas": 583290,
+          "frameGas": 578921
         },
         {
           "key": "unbind same k1",
           "test": "test_model_unbind_same()",
           "kernelFrameGas": 311719,
-          "gas": 436216,
-          "frameGas": 432411
+          "gas": 436651,
+          "frameGas": 432846
         },
         {
           "key": "unbind same k2",
           "test": "test_model_unbind_same()",
           "kernelFrameGas": 374016,
-          "gas": 582817,
-          "frameGas": 578453
+          "gas": 583687,
+          "frameGas": 579323
         },
         {
           "key": "unbind tag k1",
           "test": "test_model_unbind_tag()",
           "kernelFrameGas": 311731,
-          "gas": 454594,
-          "frameGas": 450806
+          "gas": 455028,
+          "frameGas": 451240
         },
         {
           "key": "unbind tag k2",
           "test": "test_model_unbind_tag()",
           "kernelFrameGas": 374016,
-          "gas": 611101,
-          "frameGas": 606754
+          "gas": 611969,
+          "frameGas": 607622
         },
         {
           "key": "unbind tag lone k1",
           "test": "test_model_unbind_tag_lone()",
           "kernelFrameGas": 415802,
-          "gas": 653750,
-          "frameGas": 649958
+          "gas": 654115,
+          "frameGas": 650323
         },
         {
           "key": "unbind tag lone k2",
           "test": "test_model_unbind_tag_lone()",
           "kernelFrameGas": 582158,
-          "gas": 1009512,
-          "frameGas": 1005161
+          "gas": 1010242,
+          "frameGas": 1005891
         },
         {
           "key": "validate 40kb last publication",
           "test": "test_model_validate_40kb_last_publication()",
           "kernelFrameGas": 7904299,
-          "gas": 9051515,
-          "frameGas": 9041542
+          "gas": 9053261,
+          "frameGas": 9043288
         },
         {
           "key": "validate create file",
           "test": "test_model_validate_recipes()",
-          "kernelFrameGas": 1127782,
-          "gas": 1648394,
-          "frameGas": 1642400
+          "kernelFrameGas": 1127794,
+          "gas": 1649499,
+          "frameGas": 1643505
         },
         {
           "key": "validate edit",
           "test": "test_model_validate_recipes()",
           "kernelFrameGas": 584072,
-          "gas": 824140,
-          "frameGas": 819785
+          "gas": 824700,
+          "frameGas": 820345
         },
         {
           "key": "validate label new text",
           "test": "test_model_validate_label_new_text()",
-          "kernelFrameGas": 646860,
-          "gas": 894434,
-          "frameGas": 890079
+          "kernelFrameGas": 646848,
+          "gas": 894916,
+          "frameGas": 890561
         },
         {
           "key": "validate rename move",
           "test": "test_model_validate_recipes()",
           "kernelFrameGas": 710355,
-          "gas": 1108563,
-          "frameGas": 1103658
+          "gas": 1109491,
+          "frameGas": 1104586
         },
         {
           "key": "validate tag 6 words all new",
           "test": "test_model_validate_deep_tag()",
           "kernelFrameGas": 468946,
-          "gas": 1042648,
-          "frameGas": 1038841
+          "gas": 1043034,
+          "frameGas": 1039227
         },
         {
           "key": "validate two chunks",
           "test": "test_model_validate_two_chunks()",
           "kernelFrameGas": 12361144,
-          "gas": 12487477,
-          "frameGas": 12481401
+          "gas": 12487693,
+          "frameGas": 12481617
         },
         {
           "key": "withdraw k1",
           "test": "test_model_withdraw()",
           "kernelFrameGas": 332629,
-          "gas": 444391,
-          "frameGas": 440618
+          "gas": 444533,
+          "frameGas": 440760
         },
         {
           "key": "withdraw k2",
           "test": "test_model_withdraw()",
           "kernelFrameGas": 414383,
-          "gas": 596610,
-          "frameGas": 592280
+          "gas": 596894,
+          "frameGas": 592564
         }
       ],
       "validation": [
         {
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
-          "measured": 1642400,
-          "predicted": 1547144,
+          "measured": 1643505,
+          "predicted": 1548249,
           "errorPercent": -5.8,
-          "measuredKernelGas": 1127782,
-          "predictedKernelGas": 1132980
+          "measuredKernelGas": 1127794,
+          "predictedKernelGas": 1132992
         },
         {
           "key": "validate edit",
           "what": "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
-          "measured": 819785,
-          "predicted": 840586,
+          "measured": 820345,
+          "predicted": 841158,
           "errorPercent": 2.54,
           "measuredKernelGas": 584072,
-          "predictedKernelGas": 578508
+          "predictedKernelGas": 578520
         },
         {
           "key": "validate rename move",
           "what": "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
-          "measured": 1103658,
-          "predicted": 1056468,
-          "errorPercent": -4.28,
+          "measured": 1104586,
+          "predicted": 1057396,
+          "errorPercent": -4.27,
           "measuredKernelGas": 710355,
           "predictedKernelGas": 725229
         },
         {
           "key": "validate two chunks",
           "what": "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
-          "measured": 12481401,
-          "predicted": 12475862,
+          "measured": 12481617,
+          "predicted": 12476078,
           "errorPercent": -0.04,
           "measuredKernelGas": 12361144,
           "predictedKernelGas": 12363477
@@ -1266,29 +1266,29 @@
         {
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-          "measured": 9041542,
-          "predicted": 8938781,
+          "measured": 9043288,
+          "predicted": 8940539,
           "errorPercent": -1.14,
           "measuredKernelGas": 7904299,
-          "predictedKernelGas": 7903486
+          "predictedKernelGas": 7903498
         },
         {
           "key": "validate tag 6 words all new",
           "what": "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
-          "measured": 1038841,
-          "predicted": 1038810,
+          "measured": 1039227,
+          "predicted": 1039184,
           "errorPercent": 0,
           "measuredKernelGas": 468946,
-          "predictedKernelGas": 486489
+          "predictedKernelGas": 486477
         },
         {
           "key": "validate label new text",
           "what": "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
-          "measured": 890079,
-          "predicted": 849666,
+          "measured": 890561,
+          "predicted": 850172,
           "errorPercent": -4.54,
-          "measuredKernelGas": 646860,
-          "predictedKernelGas": 645383
+          "measuredKernelGas": 646848,
+          "predictedKernelGas": 645395
         }
       ],
       "maxAbsErrorPercent": 5.8
@@ -1300,52 +1300,52 @@
         "perWord": 110649,
         "perByte": 11.8,
         "publishNew": {
-          "files-bytes/1": 516968,
-          "files-span/1": 994464,
-          "files-content/1 carrier 0": 437836,
-          "files-content/1 carrier 2": 545475,
-          "files-external/1": 682066,
-          "files-directory/1": 517150,
-          "files-name/2": 342598,
-          "files-root/1 form 0": 412663,
-          "files-root/1 form 1": 526788,
-          "files-child/1 form 0": 756405,
-          "files-child/1 form 1": 870584,
-          "topic-word/1": 547983,
-          "topic/1": 592200,
-          "text/1": 548457
+          "files-bytes/1": 517076,
+          "files-span/1": 994560,
+          "files-content/1 carrier 0": 437961,
+          "files-content/1 carrier 2": 545600,
+          "files-external/1": 682179,
+          "files-directory/1": 517258,
+          "files-name/2": 342706,
+          "files-root/1 form 0": 412783,
+          "files-root/1 form 1": 526908,
+          "files-child/1 form 0": 756501,
+          "files-child/1 form 1": 870680,
+          "topic-word/1": 548091,
+          "topic/1": 592296,
+          "text/1": 548565
         },
-        "publishExisting": 535652,
-        "reuse": 539103,
-        "create": 362302,
-        "bindHeadFresh": 1299172,
-        "bindHeadRebind": 592369,
-        "bindFolderFreshFile": 1633834,
-        "bindFolderFreshDirectory": 1633592,
-        "bindFolderRebind": 587354,
-        "unbindFolder": 364493,
-        "releaseFolder": 361472,
-        "bindTagFresh": 1646135,
-        "bindTagSecondAuthor": 1119035,
-        "bindTagNumberChange": 432180,
-        "unbindTagLone": 1323189,
-        "unbindTag": 360788,
-        "releaseTag": 359600,
-        "restoreTag": 486741,
-        "bindPropertyFresh": 1303651,
-        "bindPropertyRebind": 584252,
-        "unbindProperty": 350669,
-        "releaseProperty": 349481,
-        "bindSameFreshWord": 1413376,
-        "bindSameFreshPath": 1413308,
-        "unbindSame": 350858,
-        "releaseSame": 349682,
-        "restoreSame": 474657,
-        "bindBroaderFresh": 1413387,
-        "unbindBroader": 350893,
-        "releaseBroader": 349693,
-        "restoreBroader": 474680,
-        "withdraw": 430022,
+        "publishExisting": 535760,
+        "reuse": 539211,
+        "create": 362407,
+        "bindHeadFresh": 1299546,
+        "bindHeadRebind": 592809,
+        "bindFolderFreshFile": 1634220,
+        "bindFolderFreshDirectory": 1633990,
+        "bindFolderRebind": 587794,
+        "unbindFolder": 364927,
+        "releaseFolder": 361906,
+        "bindTagFresh": 1646521,
+        "bindTagSecondAuthor": 1119421,
+        "bindTagNumberChange": 432593,
+        "unbindTagLone": 1323554,
+        "unbindTag": 361222,
+        "releaseTag": 360034,
+        "restoreTag": 487125,
+        "bindPropertyFresh": 1304037,
+        "bindPropertyRebind": 584704,
+        "unbindProperty": 351104,
+        "releaseProperty": 349916,
+        "bindSameFreshWord": 1413762,
+        "bindSameFreshPath": 1413694,
+        "unbindSame": 351293,
+        "releaseSame": 350117,
+        "restoreSame": 475029,
+        "bindBroaderFresh": 1413785,
+        "unbindBroader": 351328,
+        "releaseBroader": 350128,
+        "restoreBroader": 475064,
+        "withdraw": 430164,
         "firstWriteSurcharge": 85506,
         "tagLevel": {
           "mineNew": 122659,
@@ -1360,52 +1360,52 @@
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 125288,
-            "files-span/1": 211104,
-            "files-content/1 carrier 0": 144076,
-            "files-content/1 carrier 2": 153795,
-            "files-external/1": 192466,
-            "files-directory/1": 125470,
-            "files-name/2": 146758,
-            "files-root/1 form 0": 118903,
-            "files-root/1 form 1": 135108,
-            "files-child/1 form 0": 168885,
-            "files-child/1 form 1": 185144,
-            "topic-word/1": 156303,
-            "topic/1": 200520,
-            "text/1": 156777
+            "files-bytes/1": 125396,
+            "files-span/1": 211200,
+            "files-content/1 carrier 0": 144201,
+            "files-content/1 carrier 2": 153920,
+            "files-external/1": 192579,
+            "files-directory/1": 125578,
+            "files-name/2": 146866,
+            "files-root/1 form 0": 119023,
+            "files-root/1 form 1": 135228,
+            "files-child/1 form 0": 168981,
+            "files-child/1 form 1": 185240,
+            "topic-word/1": 156411,
+            "topic/1": 200616,
+            "text/1": 156885
           },
-          "publishExisting": 143972,
-          "reuse": 147423,
-          "create": 68542,
-          "bindHeadFresh": 222052,
-          "bindHeadRebind": 200689,
-          "bindFolderFreshFile": 262954,
-          "bindFolderFreshDirectory": 262712,
-          "bindFolderRebind": 195674,
-          "unbindFolder": 168653,
-          "releaseFolder": 165632,
-          "bindTagFresh": 275255,
-          "bindTagSecondAuthor": 237755,
-          "bindTagNumberChange": 138420,
-          "unbindTagLone": 246069,
-          "unbindTag": 164948,
-          "releaseTag": 163760,
-          "restoreTag": 192981,
-          "bindPropertyFresh": 226531,
-          "bindPropertyRebind": 192572,
-          "unbindProperty": 154829,
-          "releaseProperty": 153641,
-          "bindSameFreshWord": 238336,
-          "bindSameFreshPath": 238268,
-          "unbindSame": 155018,
-          "releaseSame": 153842,
-          "restoreSame": 180897,
-          "bindBroaderFresh": 238347,
-          "unbindBroader": 155053,
-          "releaseBroader": 153853,
-          "restoreBroader": 180920,
-          "withdraw": 136262,
+          "publishExisting": 144080,
+          "reuse": 147531,
+          "create": 68647,
+          "bindHeadFresh": 222426,
+          "bindHeadRebind": 201129,
+          "bindFolderFreshFile": 263340,
+          "bindFolderFreshDirectory": 263110,
+          "bindFolderRebind": 196114,
+          "unbindFolder": 169087,
+          "releaseFolder": 166066,
+          "bindTagFresh": 275641,
+          "bindTagSecondAuthor": 238141,
+          "bindTagNumberChange": 138833,
+          "unbindTagLone": 246434,
+          "unbindTag": 165382,
+          "releaseTag": 164194,
+          "restoreTag": 193365,
+          "bindPropertyFresh": 226917,
+          "bindPropertyRebind": 193024,
+          "unbindProperty": 155264,
+          "releaseProperty": 154076,
+          "bindSameFreshWord": 238722,
+          "bindSameFreshPath": 238654,
+          "unbindSame": 155453,
+          "releaseSame": 154277,
+          "restoreSame": 181269,
+          "bindBroaderFresh": 238745,
+          "unbindBroader": 155488,
+          "releaseBroader": 154288,
+          "restoreBroader": 181304,
+          "withdraw": 136404,
           "firstWriteSurcharge": -12414,
           "tagLevel": {
             "mineNew": 24739,
@@ -1520,16 +1520,16 @@
         ],
         "publishNewBaseBySize": {
           "files-external/1": {
-            "264": 680530,
-            "624": 683602
+            "264": 680643,
+            "624": 683715
           },
           "files-name/2": {
-            "12": 326513,
-            "200": 358682
+            "12": 326621,
+            "200": 358790
           },
           "topic-word/1": {
-            "12": 546173,
-            "40": 549794
+            "12": 546281,
+            "40": 549902
           }
         },
         "impliedFixedByPair": {
@@ -1539,30 +1539,30 @@
           "pub bytes 1024": 914817,
           "pub bytes 4096": 913545,
           "pub bytes 8192": 911131,
-          "pub span": 701207,
-          "pub content c0": 921018,
-          "pub content c2": 921018,
+          "pub span": 701219,
+          "pub content c0": 920994,
+          "pub content c2": 920994,
           "pub external 40": 1168001,
           "pub external 400": 1167894,
           "pub directory": 915067,
           "pub name 12": 1306696,
           "pub name 200": 1306660,
-          "pub root f0": 915007,
-          "pub root f1": 917073,
-          "pub child f0": 699066,
-          "pub child f1": 701130,
+          "pub root f0": 914983,
+          "pub root f1": 917049,
+          "pub child f0": 699090,
+          "pub child f1": 701154,
           "pub topic word 12": 1061062,
           "pub topic word 40": 1061033,
-          "pub topic": 1365872,
+          "pub topic": 1365896,
           "pub text 24": 1061062,
           "pub existing": 887067,
           "reuse": 887088,
           "create": 815342,
-          "bind head fresh": 754851,
-          "bind head rebind": 840713,
+          "bind head fresh": 754863,
+          "bind head rebind": 840725,
           "bind folder fresh file": 682879,
-          "bind folder fresh dir": 682915,
-          "bind folder rebind": 854721,
+          "bind folder fresh dir": 682903,
+          "bind folder rebind": 854733,
           "unbind folder": 847797,
           "release folder": 851656,
           "bind tag fresh": 782824,
@@ -1580,8 +1580,8 @@
           "bind same fresh path": 838745,
           "unbind same": 833691,
           "release same": 833705,
-          "restore same": 833673,
-          "bind broader fresh": 838757,
+          "restore same": 833685,
+          "bind broader fresh": 838745,
           "unbind broader": 833679,
           "release broader": 833717,
           "restore broader": 833673,
@@ -1688,28 +1688,28 @@
           "perByte": 11.8,
           "publishNew": {
             "files-bytes/1": 93683,
-            "files-span/1": 124487,
-            "files-content/1 carrier 0": 78788,
-            "files-content/1 carrier 2": 88507,
+            "files-span/1": 124475,
+            "files-content/1 carrier 0": 78800,
+            "files-content/1 carrier 2": 88519,
             "files-external/1": 101443,
             "files-directory/1": 93865,
             "files-name/2": 115119,
-            "files-root/1 form 0": 87298,
-            "files-root/1 form 1": 103503,
-            "files-child/1 form 0": 97756,
-            "files-child/1 form 1": 114015,
+            "files-root/1 form 0": 87310,
+            "files-root/1 form 1": 103515,
+            "files-child/1 form 0": 97744,
+            "files-child/1 form 1": 114003,
             "topic-word/1": 99928,
-            "topic/1": 112168,
+            "topic/1": 112156,
             "text/1": 100402
           },
           "publishExisting": 83143,
           "reuse": 86571,
           "create": 59427,
-          "bindHeadFresh": 123724,
-          "bindHeadRebind": 86815,
+          "bindHeadFresh": 123712,
+          "bindHeadRebind": 86803,
           "bindFolderFreshFile": 140487,
-          "bindFolderFreshDirectory": 138255,
-          "bindFolderRebind": 91407,
+          "bindFolderFreshDirectory": 138267,
+          "bindFolderRebind": 91395,
           "unbindFolder": 59485,
           "releaseFolder": 58274,
           "bindTagFresh": 140475,
@@ -1727,8 +1727,8 @@
           "bindSameFreshPath": 138267,
           "unbindSame": 59473,
           "releaseSame": 58274,
-          "restoreSame": 78707,
-          "bindBroaderFresh": 138255,
+          "restoreSame": 78695,
+          "bindBroaderFresh": 138267,
           "unbindBroader": 59485,
           "releaseBroader": 58262,
           "restoreBroader": 78707,
@@ -1747,984 +1747,984 @@
           "key": "bind broader fresh k1",
           "test": "test_model_bind_broader_fresh()",
           "kernelFrameGas": 339083,
-          "gas": 2255942,
-          "frameGas": 489584,
+          "gas": 2256328,
+          "frameGas": 489970,
           "frameStateGas": 1762560
         },
         {
           "key": "bind broader fresh k2",
           "test": "test_model_bind_broader_fresh()",
-          "kernelFrameGas": 477338,
-          "gas": 3669888,
-          "frameGas": 727931,
+          "kernelFrameGas": 477350,
+          "gas": 3670672,
+          "frameGas": 728715,
           "frameStateGas": 2937600
         },
         {
           "key": "bind folder fresh dir k1",
           "test": "test_model_bind_folder_fresh_dir()",
           "kernelFrameGas": 339083,
-          "gas": 2320283,
-          "frameGas": 553947,
+          "gas": 2320669,
+          "frameGas": 554333,
           "frameStateGas": 1762560
         },
         {
           "key": "bind folder fresh dir k2",
           "test": "test_model_bind_folder_fresh_dir()",
-          "kernelFrameGas": 477338,
-          "gas": 3954432,
-          "frameGas": 816659,
+          "kernelFrameGas": 477350,
+          "gas": 3955216,
+          "frameGas": 817443,
           "frameStateGas": 3133440
         },
         {
           "key": "bind folder fresh file k1",
           "test": "test_model_bind_folder_fresh_file()",
           "kernelFrameGas": 341279,
-          "gas": 2320489,
-          "frameGas": 554153,
+          "gas": 2320875,
+          "frameGas": 554539,
           "frameStateGas": 1762560
         },
         {
           "key": "bind folder fresh file k2",
           "test": "test_model_bind_folder_fresh_file()",
           "kernelFrameGas": 481766,
-          "gas": 3954880,
-          "frameGas": 817107,
+          "gas": 3955652,
+          "frameGas": 817879,
           "frameStateGas": 3133440
         },
         {
           "key": "bind folder rebind k1",
           "test": "test_model_bind_folder_rebind()",
           "kernelFrameGas": 292235,
-          "gas": 1445851,
-          "frameGas": 462875,
+          "gas": 1446303,
+          "frameGas": 463327,
           "frameStateGas": 979200
         },
         {
           "key": "bind folder rebind k2",
           "test": "test_model_bind_folder_rebind()",
-          "kernelFrameGas": 383642,
-          "gas": 2033762,
-          "frameGas": 658549,
+          "kernelFrameGas": 383630,
+          "gas": 2034654,
+          "frameGas": 659441,
           "frameStateGas": 1370880
         },
         {
           "key": "bind head fresh k1",
           "test": "test_model_bind_head_fresh()",
           "kernelFrameGas": 326564,
-          "gas": 2057799,
-          "frameGas": 487303,
+          "gas": 2058185,
+          "frameGas": 487689,
           "frameStateGas": 1566720
         },
         {
           "key": "bind head fresh k2",
           "test": "test_model_bind_head_fresh()",
-          "kernelFrameGas": 450288,
-          "gas": 3357528,
-          "frameGas": 709355,
+          "kernelFrameGas": 450276,
+          "gas": 3358288,
+          "frameGas": 710115,
           "frameStateGas": 2643840
         },
         {
           "key": "bind head rebind k1",
           "test": "test_model_bind_head_rebind()",
           "kernelFrameGas": 289631,
-          "gas": 1436858,
-          "frameGas": 453882,
+          "gas": 1437310,
+          "frameGas": 454334,
           "frameStateGas": 979200
         },
         {
           "key": "bind head rebind k2",
           "test": "test_model_bind_head_rebind()",
-          "kernelFrameGas": 376446,
-          "gas": 2029784,
-          "frameGas": 654571,
+          "kernelFrameGas": 376434,
+          "gas": 2030676,
+          "frameGas": 655463,
           "frameStateGas": 1370880
         },
         {
           "key": "bind property fresh k1",
           "test": "test_model_bind_property_fresh()",
           "kernelFrameGas": 339083,
-          "gas": 2240125,
-          "frameGas": 473763,
+          "gas": 2240511,
+          "frameGas": 474149,
           "frameStateGas": 1762560
         },
         {
           "key": "bind property fresh k2",
           "test": "test_model_bind_property_fresh()",
           "kernelFrameGas": 475350,
-          "gas": 3544335,
-          "frameGas": 700294,
+          "gas": 3545107,
+          "frameGas": 701066,
           "frameStateGas": 2839680
         },
         {
           "key": "bind property rebind k1",
           "test": "test_model_bind_property_rebind()",
           "kernelFrameGas": 290027,
-          "gas": 1423711,
-          "frameGas": 440701,
+          "gas": 1424163,
+          "frameGas": 441153,
           "frameStateGas": 979200
         },
         {
           "key": "bind property rebind k2",
           "test": "test_model_bind_property_rebind()",
           "kernelFrameGas": 377238,
-          "gas": 2008523,
-          "frameGas": 633273,
+          "gas": 2009427,
+          "frameGas": 634177,
           "frameStateGas": 1370880
         },
         {
           "key": "bind same fresh path k1",
           "test": "test_model_bind_same_fresh_path()",
           "kernelFrameGas": 339083,
-          "gas": 2255857,
-          "frameGas": 489493,
+          "gas": 2256243,
+          "frameGas": 489879,
           "frameStateGas": 1762560
         },
         {
           "key": "bind same fresh path k2",
           "test": "test_model_bind_same_fresh_path()",
           "kernelFrameGas": 477350,
-          "gas": 3669737,
-          "frameGas": 727761,
+          "gas": 3670509,
+          "frameGas": 728533,
           "frameStateGas": 2937600
         },
         {
           "key": "bind same fresh word k1",
           "test": "test_model_bind_same_fresh_word()",
           "kernelFrameGas": 339083,
-          "gas": 2255919,
-          "frameGas": 489561,
+          "gas": 2256305,
+          "frameGas": 489947,
           "frameStateGas": 1762560
         },
         {
           "key": "bind same fresh word k2",
           "test": "test_model_bind_same_fresh_word()",
           "kernelFrameGas": 477350,
-          "gas": 3669855,
-          "frameGas": 727897,
+          "gas": 3670627,
+          "frameGas": 728669,
           "frameStateGas": 2937600
         },
         {
           "key": "bind tag fresh k1",
           "test": "test_model_bind_tag_fresh()",
           "kernelFrameGas": 341291,
-          "gas": 2432747,
-          "frameGas": 568479,
+          "gas": 2433133,
+          "frameGas": 568865,
           "frameStateGas": 1860480
         },
         {
           "key": "bind tag fresh k2",
           "test": "test_model_bind_tag_fresh()",
           "kernelFrameGas": 481766,
-          "gas": 4079441,
-          "frameGas": 843734,
+          "gas": 4080213,
+          "frameGas": 844506,
           "frameStateGas": 3231360
         },
         {
           "key": "bind tag number change k1",
           "test": "test_model_bind_tag_number_change()",
           "kernelFrameGas": 282118,
-          "gas": 1281687,
-          "frameGas": 396617,
+          "gas": 1282100,
+          "frameGas": 397030,
           "frameStateGas": 881280
         },
         {
           "key": "bind tag number change k2",
           "test": "test_model_bind_tag_number_change()",
           "kernelFrameGas": 363420,
-          "gas": 1714426,
-          "frameGas": 535037,
+          "gas": 1715252,
+          "frameGas": 535863,
           "frameStateGas": 1175040
         },
         {
           "key": "bind tag second author k1",
           "test": "test_model_bind_tag_second_author()",
           "kernelFrameGas": 306359,
-          "gas": 2112663,
-          "frameGas": 542152,
+          "gas": 2113049,
+          "frameGas": 542538,
           "frameStateGas": 1566720
         },
         {
           "key": "bind tag second author k2",
           "test": "test_model_bind_tag_second_author()",
           "kernelFrameGas": 412443,
-          "gas": 3232258,
-          "frameGas": 779907,
+          "gas": 3233030,
+          "frameGas": 780679,
           "frameStateGas": 2448000
         },
         {
           "key": "create k1",
           "test": "test_model_create()",
           "kernelFrameGas": 259702,
-          "gas": 1181420,
-          "frameGas": 296364,
+          "gas": 1181525,
+          "frameGas": 296469,
           "frameStateGas": 881280
         },
         {
           "key": "create k2",
           "test": "test_model_create()",
           "kernelFrameGas": 319129,
-          "gas": 1544275,
-          "frameGas": 364906,
+          "gas": 1544485,
+          "frameGas": 365116,
           "frameStateGas": 1175040
         },
         {
           "key": "first write fresh",
           "test": "test_model_first_write()",
           "kernelFrameGas": 397910,
-          "gas": 2203493,
-          "frameGas": 534514,
+          "gas": 2203706,
+          "frameGas": 534727,
           "frameStateGas": 1664640
         },
         {
           "key": "first write warm",
           "test": "test_model_first_write()",
           "kernelFrameGas": 397922,
-          "gas": 2117996,
-          "frameGas": 546928,
+          "gas": 2118209,
+          "frameGas": 547141,
           "frameStateGas": 1566720
         },
         {
           "key": "pub bytes 100 k1",
           "test": "test_model_publish_bytes_100()",
           "kernelFrameGas": 365051,
-          "gas": 1879778,
-          "frameGas": 505103,
+          "gas": 1879886,
+          "frameGas": 505211,
           "frameStateGas": 1370880
         },
         {
           "key": "pub bytes 100 k2",
           "test": "test_model_publish_bytes_100()",
           "kernelFrameGas": 511050,
-          "gas": 2841308,
-          "frameGas": 682707,
+          "gas": 2841524,
+          "frameGas": 682923,
           "frameStateGas": 2154240
         },
         {
           "key": "pub bytes 1000 k1",
           "test": "test_model_publish_bytes_1000()",
           "kernelFrameGas": 731421,
-          "gas": 4988023,
-          "frameGas": 871473,
+          "gas": 4988131,
+          "frameGas": 871581,
           "frameStateGas": 4112640
         },
         {
           "key": "pub bytes 1000 k2",
           "test": "test_model_publish_bytes_1000()",
           "kernelFrameGas": 1243956,
-          "gas": 9057936,
-          "frameGas": 1415613,
+          "gas": 9058152,
+          "frameGas": 1415829,
           "frameStateGas": 7637760
         },
         {
           "key": "pub bytes 1024 k1",
           "test": "test_model_publish_bytes_1024()",
           "kernelFrameGas": 731859,
-          "gas": 4988461,
-          "frameGas": 871911,
+          "gas": 4988569,
+          "frameGas": 872019,
           "frameStateGas": 4112640
         },
         {
           "key": "pub bytes 1024 k2",
           "test": "test_model_publish_bytes_1024()",
           "kernelFrameGas": 1244868,
-          "gas": 9058848,
-          "frameGas": 1416525,
+          "gas": 9059064,
+          "frameGas": 1416741,
           "frameStateGas": 7637760
         },
         {
           "key": "pub bytes 4096 k1",
           "test": "test_model_publish_bytes_4096()",
           "kernelFrameGas": 1988150,
-          "gas": 15645468,
-          "frameGas": 2128202,
+          "gas": 15645576,
+          "frameGas": 2128310,
           "frameStateGas": 13512960
         },
         {
           "key": "pub bytes 4096 k2",
           "test": "test_model_publish_bytes_4096()",
           "kernelFrameGas": 3758722,
-          "gas": 30374033,
-          "frameGas": 3930379,
+          "gas": 30374249,
+          "frameGas": 3930595,
           "frameStateGas": 26438400
         },
         {
           "key": "pub bytes 64 k1",
           "test": "test_model_publish_bytes_64()",
           "kernelFrameGas": 339432,
-          "gas": 1658310,
-          "frameGas": 479484,
+          "gas": 1658418,
+          "frameGas": 479592,
           "frameStateGas": 1175040
         },
         {
           "key": "pub bytes 64 k2",
           "test": "test_model_publish_bytes_64()",
           "kernelFrameGas": 459740,
-          "gas": 2398304,
-          "frameGas": 631397,
+          "gas": 2398520,
+          "frameGas": 631613,
           "frameStateGas": 1762560
         },
         {
           "key": "pub bytes 8192 k1",
           "test": "test_model_publish_bytes_8192()",
           "kernelFrameGas": 3664372,
-          "gas": 29855978,
-          "frameGas": 3804424,
+          "gas": 29856086,
+          "frameGas": 3804532,
           "frameStateGas": 26046720
         },
         {
           "key": "pub bytes 8192 k2",
           "test": "test_model_publish_bytes_8192()",
           "kernelFrameGas": 7113580,
-          "gas": 58797332,
-          "frameGas": 7285237,
+          "gas": 58797548,
+          "frameGas": 7285453,
           "frameStateGas": 51505920
         },
         {
           "key": "pub child f0 k1",
           "test": "test_model_publish_child_form0()",
-          "kernelFrameGas": 412142,
-          "gas": 2236128,
-          "frameGas": 567683,
+          "kernelFrameGas": 412154,
+          "gas": 2236248,
+          "frameGas": 567803,
           "frameStateGas": 1664640
         },
         {
           "key": "pub child f0 k2",
           "test": "test_model_publish_child_form0()",
           "kernelFrameGas": 601310,
-          "gas": 3769960,
-          "frameGas": 827980,
+          "gas": 3770176,
+          "frameGas": 828196,
           "frameStateGas": 2937600
         },
         {
           "key": "pub child f1 k1",
           "test": "test_model_publish_child_form1()",
-          "kernelFrameGas": 391477,
-          "gas": 2019607,
-          "frameGas": 547018,
+          "kernelFrameGas": 391489,
+          "gas": 2019727,
+          "frameGas": 547138,
           "frameStateGas": 1468800
         },
         {
           "key": "pub child f1 k2",
           "test": "test_model_publish_child_form1()",
           "kernelFrameGas": 557916,
-          "gas": 3334860,
-          "frameGas": 784586,
+          "gas": 3335076,
+          "frameGas": 784802,
           "frameStateGas": 2545920
         },
         {
           "key": "pub content c0 k1",
           "test": "test_model_publish_content_carrier0()",
-          "kernelFrameGas": 432900,
-          "gas": 2472928,
-          "frameGas": 608634,
+          "kernelFrameGas": 432888,
+          "gas": 2473029,
+          "frameGas": 608735,
           "frameStateGas": 1860480
         },
         {
           "key": "pub content c0 k2",
           "test": "test_model_publish_content_carrier0()",
           "kernelFrameGas": 642748,
-          "gas": 4021608,
-          "frameGas": 883770,
+          "gas": 4021834,
+          "frameGas": 883996,
           "frameStateGas": 3133440
         },
         {
           "key": "pub content c2 k1",
           "test": "test_model_publish_content_carrier2()",
-          "kernelFrameGas": 442619,
-          "gas": 2580568,
-          "frameGas": 618353,
+          "kernelFrameGas": 442607,
+          "gas": 2580669,
+          "frameGas": 618454,
           "frameStateGas": 1958400
         },
         {
           "key": "pub content c2 k2",
           "test": "test_model_publish_content_carrier2()",
           "kernelFrameGas": 662186,
-          "gas": 4236889,
-          "frameGas": 903208,
+          "gas": 4237115,
+          "frameGas": 903434,
           "frameStateGas": 3329280
         },
         {
           "key": "pub directory k1",
           "test": "test_model_publish_directory()",
           "kernelFrameGas": 339177,
-          "gas": 1658053,
-          "frameGas": 479229,
+          "gas": 1658161,
+          "frameGas": 479337,
           "frameStateGas": 1175040
         },
         {
           "key": "pub directory k2",
           "test": "test_model_publish_directory()",
           "kernelFrameGas": 459254,
-          "gas": 2397816,
-          "frameGas": 630911,
+          "gas": 2398032,
+          "frameGas": 631127,
           "frameStateGas": 1762560
         },
         {
           "key": "pub existing k1",
           "test": "test_model_publish_existing()",
           "kernelFrameGas": 296243,
-          "gas": 1426505,
-          "frameGas": 443519,
+          "gas": 1426613,
+          "frameGas": 443627,
           "frameStateGas": 979200
         },
         {
           "key": "pub existing k2",
           "test": "test_model_publish_existing()",
           "kernelFrameGas": 379386,
-          "gas": 1962717,
-          "frameGas": 587491,
+          "gas": 1962933,
+          "frameGas": 587707,
           "frameStateGas": 1370880
         },
         {
           "key": "pub external 40 k1",
           "test": "test_model_publish_external_40()",
           "kernelFrameGas": 444647,
-          "gas": 2851293,
-          "frameGas": 595323,
+          "gas": 2851406,
+          "frameGas": 595436,
           "frameStateGas": 2252160
         },
         {
           "key": "pub external 40 k2",
           "test": "test_model_publish_external_40()",
           "kernelFrameGas": 662226,
-          "gas": 4531356,
-          "frameGas": 903925,
+          "gas": 4531582,
+          "frameGas": 904151,
           "frameStateGas": 3623040
         },
         {
           "key": "pub external 400 k1",
           "test": "test_model_publish_external_400()",
           "kernelFrameGas": 591872,
-          "gas": 4075675,
-          "frameGas": 742548,
+          "gas": 4075788,
+          "frameGas": 742661,
           "frameStateGas": 3329280
         },
         {
           "key": "pub external 400 k2",
           "test": "test_model_publish_external_400()",
           "kernelFrameGas": 956783,
-          "gas": 6980224,
-          "frameGas": 1198482,
+          "gas": 6980450,
+          "frameGas": 1198708,
           "frameStateGas": 5777280
         },
         {
           "key": "pub name 12 k1",
           "test": "test_model_publish_name_12()",
           "kernelFrameGas": 331021,
-          "gas": 1747778,
-          "frameGas": 471039,
+          "gas": 1747886,
+          "frameGas": 471147,
           "frameStateGas": 1272960
         },
         {
           "key": "pub name 12 k2",
           "test": "test_model_publish_name_12()",
           "kernelFrameGas": 442925,
-          "gas": 2185639,
-          "frameGas": 614582,
+          "gas": 2185855,
+          "frameGas": 614798,
           "frameStateGas": 1566720
         },
         {
           "key": "pub name 200 k1",
           "test": "test_model_publish_name_200()",
           "kernelFrameGas": 441744,
-          "gas": 2446041,
-          "frameGas": 581762,
+          "gas": 2446149,
+          "frameGas": 581870,
           "frameStateGas": 1860480
         },
         {
           "key": "pub name 200 k2",
           "test": "test_model_publish_name_200()",
           "kernelFrameGas": 664407,
-          "gas": 3582199,
-          "frameGas": 836064,
+          "gas": 3582415,
+          "frameGas": 836280,
           "frameStateGas": 2741760
         },
         {
           "key": "pub root f0 k1",
           "test": "test_model_publish_root_form0()",
-          "kernelFrameGas": 384644,
-          "gas": 1997298,
-          "frameGas": 524696,
+          "kernelFrameGas": 384632,
+          "gas": 1997394,
+          "frameGas": 524792,
           "frameStateGas": 1468800
         },
         {
           "key": "pub root f0 k2",
           "test": "test_model_publish_root_form0()",
           "kernelFrameGas": 550248,
-          "gas": 3076358,
-          "frameGas": 721905,
+          "gas": 3076574,
+          "frameGas": 722121,
           "frameStateGas": 2350080
         },
         {
           "key": "pub root f1 k1",
           "test": "test_model_publish_root_form1()",
-          "kernelFrameGas": 363927,
-          "gas": 1780724,
-          "frameGas": 503979,
+          "kernelFrameGas": 363915,
+          "gas": 1780820,
+          "frameGas": 504075,
           "frameStateGas": 1272960
         },
         {
           "key": "pub root f1 k2",
           "test": "test_model_publish_root_form1()",
           "kernelFrameGas": 506748,
-          "gas": 2641154,
-          "frameGas": 678405,
+          "gas": 2641370,
+          "frameGas": 678621,
           "frameStateGas": 1958400
         },
         {
           "key": "pub span k1",
           "test": "test_model_publish_span()",
           "kernelFrameGas": 388884,
-          "gas": 2032534,
-          "frameGas": 559949,
+          "gas": 2032642,
+          "frameGas": 560057,
           "frameStateGas": 1468800
         },
         {
           "key": "pub span k2",
           "test": "test_model_publish_span()",
-          "kernelFrameGas": 552689,
-          "gas": 3360640,
-          "frameGas": 810371,
+          "kernelFrameGas": 552677,
+          "gas": 3360844,
+          "frameGas": 810575,
           "frameStateGas": 2545920
         },
         {
           "key": "pub text 24 k1",
           "test": "test_model_publish_text()",
           "kernelFrameGas": 332531,
-          "gas": 1724234,
-          "frameGas": 447491,
+          "gas": 1724342,
+          "frameGas": 447599,
           "frameStateGas": 1272960
         },
         {
           "key": "pub text 24 k2",
           "test": "test_model_publish_text()",
           "kernelFrameGas": 445945,
-          "gas": 2384179,
-          "frameGas": 617280,
+          "gas": 2384395,
+          "frameGas": 617496,
           "frameStateGas": 1762560
         },
         {
           "key": "pub topic k1",
           "test": "test_model_publish_topic()",
-          "kernelFrameGas": 369477,
-          "gas": 2183923,
-          "frameGas": 515484,
+          "kernelFrameGas": 369489,
+          "gas": 2184043,
+          "frameGas": 515604,
           "frameStateGas": 1664640
         },
         {
           "key": "pub topic k2",
           "test": "test_model_publish_topic()",
           "kernelFrameGas": 507857,
-          "gas": 2998735,
-          "frameGas": 742216,
+          "gas": 2998951,
+          "frameGas": 742432,
           "frameStateGas": 2252160
         },
         {
           "key": "pub topic word 12 k1",
           "test": "test_model_publish_topic_word_12()",
           "kernelFrameGas": 330105,
-          "gas": 1721808,
-          "frameGas": 445065,
+          "gas": 1721916,
+          "frameGas": 445173,
           "frameStateGas": 1272960
         },
         {
           "key": "pub topic word 12 k2",
           "test": "test_model_publish_topic_word_12()",
           "kernelFrameGas": 441093,
-          "gas": 2379327,
-          "frameGas": 612428,
+          "gas": 2379543,
+          "frameGas": 612644,
           "frameStateGas": 1762560
         },
         {
           "key": "pub topic word 40 k1",
           "test": "test_model_publish_topic_word_40()",
           "kernelFrameGas": 346756,
-          "gas": 1836382,
-          "frameGas": 461716,
+          "gas": 1836490,
+          "frameGas": 461824,
           "frameStateGas": 1370880
         },
         {
           "key": "pub topic word 40 k2",
           "test": "test_model_publish_topic_word_40()",
           "kernelFrameGas": 474424,
-          "gas": 2608505,
-          "frameGas": 645759,
+          "gas": 2608721,
+          "frameGas": 645975,
           "frameStateGas": 1958400
         },
         {
           "key": "release broader k1",
           "test": "test_model_release_broader()",
           "kernelFrameGas": 259146,
-          "gas": 1187215,
-          "frameGas": 400050,
+          "gas": 1187650,
+          "frameGas": 400485,
           "frameStateGas": 783360
         },
         {
           "key": "release broader k2",
           "test": "test_model_release_broader()",
           "kernelFrameGas": 317408,
-          "gas": 1537467,
-          "frameGas": 553903,
+          "gas": 1538337,
+          "frameGas": 554773,
           "frameStateGas": 979200
         },
         {
           "key": "release folder k1",
           "test": "test_model_release_folder()",
           "kernelFrameGas": 259146,
-          "gas": 1216902,
-          "frameGas": 429768,
+          "gas": 1217336,
+          "frameGas": 430202,
           "frameStateGas": 783360
         },
         {
           "key": "release folder k2",
           "test": "test_model_release_folder()",
           "kernelFrameGas": 317420,
-          "gas": 1578932,
-          "frameGas": 595400,
+          "gas": 1579800,
+          "frameGas": 596268,
           "frameStateGas": 979200
         },
         {
           "key": "release property k1",
           "test": "test_model_release_property()",
           "kernelFrameGas": 259146,
-          "gas": 1186996,
-          "frameGas": 399826,
+          "gas": 1187431,
+          "frameGas": 400261,
           "frameStateGas": 783360
         },
         {
           "key": "release property k2",
           "test": "test_model_release_property()",
           "kernelFrameGas": 317420,
-          "gas": 1537037,
-          "frameGas": 553467,
+          "gas": 1537907,
+          "frameGas": 554337,
           "frameStateGas": 979200
         },
         {
           "key": "release same k1",
           "test": "test_model_release_same()",
           "kernelFrameGas": 259146,
-          "gas": 1187192,
-          "frameGas": 400027,
+          "gas": 1187627,
+          "frameGas": 400462,
           "frameStateGas": 783360
         },
         {
           "key": "release same k2",
           "test": "test_model_release_same()",
           "kernelFrameGas": 317420,
-          "gas": 1537433,
-          "frameGas": 553869,
+          "gas": 1538303,
+          "frameGas": 554739,
           "frameStateGas": 979200
         },
         {
           "key": "release tag k1",
           "test": "test_model_release_tag()",
           "kernelFrameGas": 259146,
-          "gas": 1212758,
-          "frameGas": 425610,
+          "gas": 1213192,
+          "frameGas": 426044,
           "frameStateGas": 783360
         },
         {
           "key": "release tag k2",
           "test": "test_model_release_tag()",
           "kernelFrameGas": 317420,
-          "gas": 1572917,
-          "frameGas": 589370,
+          "gas": 1573785,
+          "frameGas": 590238,
           "frameStateGas": 979200
         },
         {
           "key": "restore broader k1",
           "test": "test_model_restore_broader()",
           "kernelFrameGas": 279547,
-          "gas": 1312164,
-          "frameGas": 427073,
+          "gas": 1312548,
+          "frameGas": 427457,
           "frameStateGas": 881280
         },
         {
           "key": "restore broader k2",
           "test": "test_model_restore_broader()",
           "kernelFrameGas": 358254,
-          "gas": 1787404,
-          "frameGas": 607993,
+          "gas": 1788172,
+          "frameGas": 608761,
           "frameStateGas": 1175040
         },
         {
           "key": "restore same k1",
           "test": "test_model_restore_same()",
           "kernelFrameGas": 279547,
-          "gas": 1312141,
-          "frameGas": 427050,
+          "gas": 1312525,
+          "frameGas": 427434,
           "frameStateGas": 881280
         },
         {
           "key": "restore same k2",
           "test": "test_model_restore_same()",
-          "kernelFrameGas": 358254,
-          "gas": 1787358,
-          "frameGas": 607947,
+          "kernelFrameGas": 358242,
+          "gas": 1788114,
+          "frameGas": 608703,
           "frameStateGas": 1175040
         },
         {
           "key": "restore tag k1",
           "test": "test_model_restore_tag()",
           "kernelFrameGas": 281755,
-          "gas": 1339851,
-          "frameGas": 454776,
+          "gas": 1340235,
+          "frameGas": 455160,
           "frameStateGas": 881280
         },
         {
           "key": "restore tag k2",
           "test": "test_model_restore_tag()",
           "kernelFrameGas": 362694,
-          "gas": 1827151,
-          "frameGas": 647757,
+          "gas": 1827919,
+          "frameGas": 648525,
           "frameStateGas": 1175040
         },
         {
           "key": "reuse k1",
           "test": "test_model_reuse()",
           "kernelFrameGas": 299692,
-          "gas": 1429962,
-          "frameGas": 446991,
+          "gas": 1430070,
+          "frameGas": 447099,
           "frameStateGas": 979200
         },
         {
           "key": "reuse k2",
           "test": "test_model_reuse()",
           "kernelFrameGas": 386263,
-          "gas": 1969619,
-          "frameGas": 594414,
+          "gas": 1969835,
+          "frameGas": 594630,
           "frameStateGas": 1370880
         },
         {
           "key": "tag level all existing k1",
           "test": "test_model_tag_level_all_existing()",
           "kernelFrameGas": 340746,
-          "gas": 2497624,
-          "frameGas": 633326,
+          "gas": 2498010,
+          "frameGas": 633712,
           "frameStateGas": 1860480
         },
         {
           "key": "tag level all existing k2",
           "test": "test_model_tag_level_all_existing()",
           "kernelFrameGas": 340746,
-          "gas": 2765762,
-          "frameGas": 901457,
+          "gas": 2766148,
+          "frameGas": 901843,
           "frameStateGas": 1860480
         },
         {
           "key": "tag level all new k1",
           "test": "test_model_tag_level_all_new()",
           "kernelFrameGas": 340746,
-          "gas": 2838909,
-          "frameGas": 582942,
+          "gas": 2839295,
+          "frameGas": 583328,
           "frameStateGas": 2252160
         },
         {
           "key": "tag level all new k2",
           "test": "test_model_tag_level_all_new()",
           "kernelFrameGas": 340746,
-          "gas": 3790175,
-          "frameGas": 750841,
+          "gas": 3790561,
+          "frameGas": 751227,
           "frameStateGas": 3035520
         },
         {
           "key": "tag level mine existing k1",
           "test": "test_model_tag_level_mine_existing()",
           "kernelFrameGas": 272458,
-          "gas": 1689223,
-          "frameGas": 510357,
+          "gas": 1689588,
+          "frameGas": 510722,
           "frameStateGas": 1175040
         },
         {
           "key": "tag level mine existing k2",
           "test": "test_model_tag_level_mine_existing()",
           "kernelFrameGas": 272458,
-          "gas": 1838302,
-          "frameGas": 659428,
+          "gas": 1838667,
+          "frameGas": 659793,
           "frameStateGas": 1175040
         },
         {
           "key": "tag level mine new k1",
           "test": "test_model_tag_level_mine_new()",
           "kernelFrameGas": 272458,
-          "gas": 1859726,
-          "frameGas": 485031,
+          "gas": 1860091,
+          "frameGas": 485396,
           "frameStateGas": 1370880
         },
         {
           "key": "tag level mine new k2",
           "test": "test_model_tag_level_mine_new()",
           "kernelFrameGas": 272458,
-          "gas": 2350369,
-          "frameGas": 583986,
+          "gas": 2350734,
+          "frameGas": 584351,
           "frameStateGas": 1762560
         },
         {
           "key": "unbind broader k1",
           "test": "test_model_unbind_broader()",
           "kernelFrameGas": 260331,
-          "gas": 1188377,
-          "frameGas": 401212,
+          "gas": 1188812,
+          "frameGas": 401647,
           "frameStateGas": 783360
         },
         {
           "key": "unbind broader k2",
           "test": "test_model_unbind_broader()",
           "kernelFrameGas": 319816,
-          "gas": 1539829,
-          "frameGas": 556265,
+          "gas": 1540699,
+          "frameGas": 557135,
           "frameStateGas": 979200
         },
         {
           "key": "unbind folder k1",
           "test": "test_model_unbind_folder()",
           "kernelFrameGas": 260331,
-          "gas": 1216064,
-          "frameGas": 428930,
+          "gas": 1216498,
+          "frameGas": 429364,
           "frameStateGas": 783360
         },
         {
           "key": "unbind folder k2",
           "test": "test_model_unbind_folder()",
           "kernelFrameGas": 319816,
-          "gas": 1581115,
-          "frameGas": 597583,
+          "gas": 1581983,
+          "frameGas": 598451,
           "frameStateGas": 979200
         },
         {
           "key": "unbind property k1",
           "test": "test_model_unbind_property()",
           "kernelFrameGas": 260331,
-          "gas": 1188158,
-          "frameGas": 400988,
+          "gas": 1188593,
+          "frameGas": 401423,
           "frameStateGas": 783360
         },
         {
           "key": "unbind property k2",
           "test": "test_model_unbind_property()",
           "kernelFrameGas": 319816,
-          "gas": 1539387,
-          "frameGas": 555817,
+          "gas": 1540257,
+          "frameGas": 556687,
           "frameStateGas": 979200
         },
         {
           "key": "unbind same k1",
           "test": "test_model_unbind_same()",
           "kernelFrameGas": 260331,
-          "gas": 1188354,
-          "frameGas": 401189,
+          "gas": 1188789,
+          "frameGas": 401624,
           "frameStateGas": 783360
         },
         {
           "key": "unbind same k2",
           "test": "test_model_unbind_same()",
           "kernelFrameGas": 319804,
-          "gas": 1539771,
-          "frameGas": 556207,
+          "gas": 1540641,
+          "frameGas": 557077,
           "frameStateGas": 979200
         },
         {
           "key": "unbind tag k1",
           "test": "test_model_unbind_tag()",
           "kernelFrameGas": 260331,
-          "gas": 1213920,
-          "frameGas": 426772,
+          "gas": 1214354,
+          "frameGas": 427206,
           "frameStateGas": 783360
         },
         {
           "key": "unbind tag k2",
           "test": "test_model_unbind_tag()",
           "kernelFrameGas": 319816,
-          "gas": 1575267,
-          "frameGas": 591720,
+          "gas": 1576135,
+          "frameGas": 592588,
           "frameStateGas": 979200
         },
         {
           "key": "unbind tag lone k1",
           "test": "test_model_unbind_tag_lone()",
           "kernelFrameGas": 307402,
-          "gas": 2109836,
-          "frameGas": 539324,
+          "gas": 2110201,
+          "frameGas": 539689,
           "frameStateGas": 1566720
         },
         {
           "key": "unbind tag lone k2",
           "test": "test_model_unbind_tag_lone()",
           "kernelFrameGas": 413958,
-          "gas": 3433584,
-          "frameGas": 785393,
+          "gas": 3434314,
+          "frameGas": 786123,
           "frameStateGas": 2643840
         },
         {
           "key": "validate 40kb last publication",
           "test": "test_model_validate_40kb_last_publication()",
           "kernelFrameGas": 4810887,
-          "gas": 38933691,
-          "frameGas": 5826758,
+          "gas": 38935437,
+          "frameGas": 5828504,
           "frameStateGas": 33096960
         },
         {
           "key": "validate create file",
           "test": "test_model_validate_recipes()",
-          "kernelFrameGas": 791482,
-          "gas": 5788246,
-          "frameGas": 1277932,
+          "kernelFrameGas": 791494,
+          "gas": 5789351,
+          "frameGas": 1279037,
           "frameStateGas": 4504320
         },
         {
           "key": "validate edit",
           "test": "test_model_validate_recipes()",
           "kernelFrameGas": 460548,
-          "gas": 2506841,
-          "frameGas": 739927,
+          "gas": 2507401,
+          "frameGas": 740487,
           "frameStateGas": 1762560
         },
         {
           "key": "validate label new text",
           "test": "test_model_validate_label_new_text()",
           "kernelFrameGas": 469360,
-          "gas": 3062080,
-          "frameGas": 707645,
+          "gas": 3062574,
+          "frameGas": 708139,
           "frameStateGas": 2350080
         },
         {
           "key": "validate rename move",
           "test": "test_model_validate_recipes()",
           "kernelFrameGas": 530055,
-          "gas": 3583369,
-          "frameGas": 934624,
+          "gas": 3584297,
+          "frameGas": 935552,
           "frameStateGas": 2643840
         },
         {
           "key": "validate tag 6 words all new",
           "test": "test_model_validate_deep_tag()",
           "kernelFrameGas": 340734,
-          "gas": 3790156,
-          "frameGas": 750829,
+          "gas": 3790542,
+          "frameGas": 751215,
           "frameStateGas": 3035520
         },
         {
           "key": "validate two chunks",
           "test": "test_model_validate_two_chunks()",
           "kernelFrameGas": 7113544,
-          "gas": 58797197,
-          "frameGas": 7285201,
+          "gas": 58797413,
+          "frameGas": 7285417,
           "frameStateGas": 51505920
         },
         {
           "key": "withdraw k1",
           "test": "test_model_withdraw()",
           "kernelFrameGas": 278529,
-          "gas": 1284037,
-          "frameGas": 398984,
+          "gas": 1284179,
+          "frameGas": 399126,
           "frameStateGas": 881280
         },
         {
           "key": "withdraw k2",
           "test": "test_model_withdraw()",
           "kernelFrameGas": 354783,
-          "gas": 1714617,
-          "frameGas": 535246,
+          "gas": 1714901,
+          "frameGas": 535530,
           "frameStateGas": 1175040
         }
       ],
@@ -2732,103 +2732,103 @@
         {
           "key": "validate create file",
           "what": "M1 create file: CREATE, PUBLISH root form 0 (18-byte document), PUBLISH name (10 B), BIND HEAD, BIND FOLDER (first entry of a folder)",
-          "measured": 5782252,
-          "predicted": 5393358,
-          "errorPercent": -6.73,
-          "measuredKernelGas": 791482,
+          "measured": 5783357,
+          "predicted": 5394451,
+          "errorPercent": -6.72,
+          "measuredKernelGas": 791494,
           "predictedKernelGas": 796268,
-          "measuredExecutionGas": 1277932,
-          "predictedExecutionGas": 1164448,
+          "measuredExecutionGas": 1279037,
+          "predictedExecutionGas": 1165541,
           "measuredStateGas": 4504320,
           "predictedStateGas": 4210560
         },
         {
           "key": "validate edit",
           "what": "edit: PUBLISH child form 0 (18-byte document), BIND HEAD rebind",
-          "measured": 2502487,
-          "predicted": 2691822,
-          "errorPercent": 7.57,
+          "measured": 2503047,
+          "predicted": 2692358,
+          "errorPercent": 7.56,
           "measuredKernelGas": 460548,
-          "predictedKernelGas": 455044,
-          "measuredExecutionGas": 739927,
-          "predictedExecutionGas": 715072,
+          "predictedKernelGas": 455020,
+          "measuredExecutionGas": 740487,
+          "predictedExecutionGas": 715608,
           "measuredStateGas": 1762560,
           "predictedStateGas": 1958400
         },
         {
           "key": "validate rename move",
           "what": "rename + move (EfsFiles.move): PUBLISH name (9 B), RELEASE FOLDER, BIND FOLDER fresh (another folder)",
-          "measured": 3578464,
-          "predicted": 3347768,
+          "measured": 3579392,
+          "predicted": 3348696,
           "errorPercent": -6.45,
           "measuredKernelGas": 530055,
           "predictedKernelGas": 544929,
-          "measuredExecutionGas": 934624,
-          "predictedExecutionGas": 881418,
+          "measuredExecutionGas": 935552,
+          "predictedExecutionGas": 882346,
           "measuredStateGas": 2643840,
           "predictedStateGas": 2448000
         },
         {
           "key": "validate two chunks",
           "what": "two 8,192-byte files-bytes/1 records (16,384 body bytes, the publication cap)",
-          "measured": 58791121,
-          "predicted": 58778382,
+          "measured": 58791337,
+          "predicted": 58778598,
           "errorPercent": -0.02,
           "measuredKernelGas": 7113544,
           "predictedKernelGas": 7115877,
-          "measuredExecutionGas": 7285201,
-          "predictedExecutionGas": 7254112,
+          "measuredExecutionGas": 7285417,
+          "predictedExecutionGas": 7254328,
           "measuredStateGas": 51505920,
           "predictedStateGas": 51505920
         },
         {
           "key": "validate 40kb last publication",
           "what": "last publication of a 40,000-byte file: chunk 4 (7,392 B), four spans, files-content/1 carrier 2, CREATE, root form 1, name (7 B), BIND HEAD, BIND FOLDER",
-          "measured": 38923718,
-          "predicted": 38637501,
+          "measured": 38925464,
+          "predicted": 38639211,
           "errorPercent": -0.74,
           "measuredKernelGas": 4810887,
-          "predictedKernelGas": 4808570,
-          "measuredExecutionGas": 5826758,
-          "predictedExecutionGas": 5620111,
+          "predictedKernelGas": 4808534,
+          "measuredExecutionGas": 5828504,
+          "predictedExecutionGas": 5621821,
           "measuredStateGas": 33096960,
           "predictedStateGas": 32999040
         },
         {
           "key": "validate tag 6 words all new",
           "what": "a first tag on a fresh 6-word path: the fresh-position term plus five levels, every per-author and shared roll-up new",
-          "measured": 3786349,
-          "predicted": 3734318,
+          "measured": 3786735,
+          "predicted": 3734704,
           "errorPercent": -1.37,
           "measuredKernelGas": 340734,
           "predictedKernelGas": 358689,
-          "measuredExecutionGas": 750829,
-          "predictedExecutionGas": 778368,
+          "measuredExecutionGas": 751215,
+          "predictedExecutionGas": 778754,
           "measuredStateGas": 3035520,
           "predictedStateGas": 2937600
         },
         {
           "key": "validate label new text",
           "what": "a label with its text (EfsTopics.label): PUBLISH a new 24-byte text/1, BIND PROPERTY labelKey(\"en\") to it (a first statement)",
-          "measured": 3057725,
-          "predicted": 2862150,
+          "measured": 3058219,
+          "predicted": 2862644,
           "errorPercent": -6.4,
           "measuredKernelGas": 469360,
           "predictedKernelGas": 467895,
-          "measuredExecutionGas": 707645,
-          "predictedExecutionGas": 689560,
+          "measuredExecutionGas": 708139,
+          "predictedExecutionGas": 690054,
           "measuredStateGas": 2350080,
           "predictedStateGas": 2154240
         }
       ],
-      "maxAbsErrorPercent": 7.57
+      "maxAbsErrorPercent": 7.56
     }
   },
   "source": {
     "test": "test/integration/GasModel.t.sol",
-    "commit": "7e1e299509bbd3c09ecd10e1789b592adaa72db4",
+    "commit": "2b3e5b10758c95587c0f4750c87d067f968eb70e",
     "dirtyFiles": 0,
-    "date": "2026-11-26T01:44:55.414Z",
+    "date": "2026-11-26T02:42:16.781Z",
     "foundry": "forge Version: 1.8.3"
   },
   "reads": {
@@ -2846,144 +2846,144 @@
     "schedules": {
       "prague": {
         "rows": {
-          "about page=10": 473312,
-          "about page=10 sample=4": 1166265,
-          "about page=20": 801645,
-          "authorCount 300 authors": 84978,
-          "byName 300 authors page=10": 363552,
-          "byName 300 authors page=50": 1273552,
-          "children 16": 895604,
-          "children page=1": 185839,
-          "entryCount exact 2000 entries": 82975,
-          "everyone below lens=8 page=10": 1315800,
-          "everyone below lens=8 page=50": 6179928,
-          "everyone exact lens=8 page=10": 1088934,
-          "everyone exact lens=8 page=50": 5207289,
-          "everyone worst below lens=8 page=10": 1808942,
-          "everyone worst below lens=8 page=50": 8694793,
-          "mine lens=1 depth=1 page=10": 576311,
-          "mine lens=1 depth=1 page=50": 2362056,
-          "mine lens=1 depth=64 page=10": 563287,
-          "mine lens=1 depth=64 page=50": 2427380,
-          "mine lens=1 depth=8 page=10": 563287,
-          "mine lens=1 depth=8 page=50": 2427380,
-          "mine lens=32 depth=1 page=10": 2501815,
-          "mine lens=32 depth=1 page=50": 7528585,
-          "mine lens=32 depth=64 page=10": 2308626,
-          "mine lens=32 depth=64 page=50": 7577632,
-          "mine lens=32 depth=8 page=10": 2308626,
-          "mine lens=32 depth=8 page=50": 7577632,
-          "mine lens=64 depth=1 page=10": 5278602,
-          "mine lens=64 depth=1 page=50": 12239714,
-          "mine lens=64 depth=64 page=10": 4798516,
-          "mine lens=64 depth=64 page=50": 11877565,
-          "mine lens=64 depth=8 page=10": 4798516,
-          "mine lens=64 depth=8 page=50": 11877565,
-          "mine lens=8 depth=1 page=10": 1043425,
-          "mine lens=8 depth=1 page=50": 3574491,
-          "mine lens=8 depth=64 page=10": 1100363,
-          "mine lens=8 depth=64 page=50": 3671333,
-          "mine lens=8 depth=8 page=10": 1100363,
-          "mine lens=8 depth=8 page=50": 3671333,
-          "mine worst lens=1 depth=8 page=10": 686792,
-          "mine worst lens=1 depth=8 page=50": 2929520,
-          "mine worst lens=32 depth=8 page=10": 3826619,
-          "mine worst lens=32 depth=8 page=50": 13802288,
-          "mine worst lens=64 depth=8 page=10": 8822965,
-          "mine worst lens=64 depth=8 page=50": 23182606,
-          "mine worst lens=8 depth=8 page=10": 1569872,
-          "mine worst lens=8 depth=8 page=50": 5866919,
-          "placeCount 2000 positions": 84955,
-          "raw below page=10": 619607,
-          "raw below page=50": 2673140,
-          "raw exact page=10": 538650,
-          "raw exact page=50": 2449198,
-          "skip below lens=1 page=60": 2371853,
-          "skip below lens=1 per entry": 36158,
-          "skip below lens=64 page=60": 2373354,
-          "skip below lens=64 per entry": 36169,
-          "skip below lens=8 page=60": 2372019,
-          "skip below lens=8 per entry": 36159,
-          "skip exact lens=1 page=60": 2338726,
-          "skip exact lens=1 per entry": 35992,
-          "skip exact lens=64 page=60": 2340219,
-          "skip exact lens=64 per entry": 36003,
-          "skip exact lens=8 page=60": 2338891,
-          "skip exact lens=8 per entry": 35993,
-          "wordPage places=1": 151612,
-          "wordPage places=20": 1067382,
-          "wordPage places=5": 355447
+          "about page=10": 487820,
+          "about page=10 sample=4": 1192863,
+          "about page=20": 828243,
+          "authorCount 300 authors": 86187,
+          "byName 300 authors page=10": 365970,
+          "byName 300 authors page=50": 1275971,
+          "children 16": 936710,
+          "children page=1": 190675,
+          "entryCount exact 2000 entries": 84184,
+          "everyone below lens=8 page=10": 1347234,
+          "everyone below lens=8 page=50": 6315336,
+          "everyone exact lens=8 page=10": 1104651,
+          "everyone exact lens=8 page=50": 5274993,
+          "everyone worst below lens=8 page=10": 1840376,
+          "everyone worst below lens=8 page=50": 8830201,
+          "mine lens=1 depth=1 page=10": 578729,
+          "mine lens=1 depth=1 page=50": 2364474,
+          "mine lens=1 depth=64 page=10": 566914,
+          "mine lens=1 depth=64 page=50": 2434634,
+          "mine lens=1 depth=8 page=10": 566914,
+          "mine lens=1 depth=8 page=50": 2434634,
+          "mine lens=32 depth=1 page=10": 2541712,
+          "mine lens=32 depth=1 page=50": 7568482,
+          "mine lens=32 depth=64 page=10": 2360613,
+          "mine lens=32 depth=64 page=50": 7639291,
+          "mine lens=32 depth=8 page=10": 2360613,
+          "mine lens=32 depth=8 page=50": 7639291,
+          "mine lens=64 depth=1 page=10": 5357187,
+          "mine lens=64 depth=1 page=50": 12318299,
+          "mine lens=64 depth=64 page=10": 4877101,
+          "mine lens=64 depth=64 page=50": 11956150,
+          "mine lens=64 depth=8 page=10": 4877101,
+          "mine lens=64 depth=8 page=50": 11956150,
+          "mine lens=8 depth=1 page=10": 1054306,
+          "mine lens=8 depth=1 page=50": 3585372,
+          "mine lens=8 depth=64 page=10": 1120918,
+          "mine lens=8 depth=64 page=50": 3691888,
+          "mine lens=8 depth=8 page=10": 1120918,
+          "mine lens=8 depth=8 page=50": 3691888,
+          "mine worst lens=1 depth=8 page=10": 690419,
+          "mine worst lens=1 depth=8 page=50": 2936774,
+          "mine worst lens=32 depth=8 page=10": 3890696,
+          "mine worst lens=32 depth=8 page=50": 13917143,
+          "mine worst lens=64 depth=8 page=10": 8913640,
+          "mine worst lens=64 depth=8 page=50": 23318014,
+          "mine worst lens=8 depth=8 page=10": 1596472,
+          "mine worst lens=8 depth=8 page=50": 5923744,
+          "placeCount 2000 positions": 86164,
+          "raw below page=10": 638951,
+          "raw below page=50": 2748098,
+          "raw exact page=10": 554367,
+          "raw exact page=50": 2516902,
+          "skip below lens=1 page=60": 2451647,
+          "skip below lens=1 per entry": 37397,
+          "skip below lens=64 page=60": 2453148,
+          "skip below lens=64 per entry": 37408,
+          "skip below lens=8 page=60": 2451813,
+          "skip below lens=8 per entry": 37398,
+          "skip exact lens=1 page=60": 2417311,
+          "skip exact lens=1 per entry": 37231,
+          "skip exact lens=64 page=60": 2418804,
+          "skip exact lens=64 per entry": 37242,
+          "skip exact lens=8 page=60": 2417476,
+          "skip exact lens=8 per entry": 37232,
+          "wordPage places=1": 155239,
+          "wordPage places=20": 1118160,
+          "wordPage places=5": 369955
         },
         "terms": {
           "mineExact": {
-            "opening": 192317,
-            "openingPerLensAuthor": 28381,
+            "opening": 193526,
+            "openingPerLensAuthor": 29590,
             "perRow": 35574,
             "perLensIndex": 6617,
             "maxAbsErrorPercent": 11.5
           },
           "mineBelow": {
-            "opening": 339563,
-            "openingPerLensAuthor": 20666,
-            "perRow": 38833,
-            "perLensIndex": 15375,
-            "maxAbsErrorPercent": 31.4
+            "opening": 348825,
+            "openingPerLensAuthor": 21663,
+            "perRow": 39183,
+            "perLensIndex": 15421,
+            "maxAbsErrorPercent": 32.7
           },
           "mineBelowQuiet": {
-            "opening": 238048,
-            "openingPerLensAuthor": 19233,
-            "perRow": 37358,
-            "perLensIndex": 6737,
-            "maxAbsErrorPercent": 24
+            "opening": 245366,
+            "openingPerLensAuthor": 20400,
+            "perRow": 37458,
+            "perLensIndex": 6735,
+            "maxAbsErrorPercent": 24.8
           },
           "everyoneExact": {
-            "opening": 61010,
-            "perRow": 47764,
-            "perLensAuthor": 6899,
+            "opening": 63737,
+            "perRow": 49063,
+            "perLensAuthor": 6900,
             "perSkippedEntryByLens": {
-              "1": 35992,
-              "8": 35993,
-              "64": 36003
+              "1": 37231,
+              "8": 37232,
+              "64": 37242
             }
           },
           "everyoneBelow": {
-            "opening": 106227,
-            "perRow": 51338,
-            "perLensAuthor": 15101,
+            "opening": 111661,
+            "perRow": 52729,
+            "perLensAuthor": 15252,
             "perSkippedEntryByLens": {
-              "1": 36158,
-              "8": 36159,
-              "64": 36169
+              "1": 37397,
+              "8": 37398,
+              "64": 37408
             }
           },
           "everyoneBelowQuiet": {
-            "opening": 106227,
-            "perRow": 51338,
-            "perLensAuthor": 8783
+            "opening": 111661,
+            "perRow": 52729,
+            "perLensAuthor": 8934
           },
           "rawExact": {
-            "opening": 61010,
-            "perRow": 47764
+            "opening": 63737,
+            "perRow": 49063
           },
           "rawBelow": {
-            "opening": 106227,
-            "perRow": 51338
+            "opening": 111661,
+            "perRow": 52729
           },
           "byName": {
-            "opening": 136052,
+            "opening": 138470,
             "perRow": 22750
           },
           "about": {
-            "opening": 144982,
-            "perRow": 32833
+            "opening": 147400,
+            "perRow": 34042
           },
           "wordPage": {
-            "opening": 118137,
-            "perRow": 47462
+            "opening": 120555,
+            "perRow": 49880
           },
           "children": {
-            "opening": 138521,
-            "perRow": 47318
+            "opening": 140939,
+            "perRow": 49736
           }
         },
         "bounds": {
@@ -2992,15 +2992,15 @@
               "maxRows": 208
             },
             "mineBelow": {
-              "maxRows": 159
+              "maxRows": 158
             },
             "everyoneExact": {
-              "maxRows": 163,
-              "maxSkippedEntries": 248
+              "maxRows": 159,
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
-              "maxRows": 133,
-              "maxSkippedEntries": 245
+              "maxRows": 130,
+              "maxSkippedEntries": 237
             }
           },
           "8": {
@@ -3011,28 +3011,28 @@
               "maxRows": 52
             },
             "everyoneExact": {
-              "maxRows": 86,
-              "maxSkippedEntries": 248
+              "maxRows": 85,
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
-              "maxRows": 51,
-              "maxSkippedEntries": 245
+              "maxRows": 50,
+              "maxSkippedEntries": 237
             }
           },
           "16": {
             "mineExact": {
-              "maxRows": 59
+              "maxRows": 58
             },
             "mineBelow": {
               "maxRows": 29
             },
             "everyoneExact": {
               "maxRows": 56,
-              "maxSkippedEntries": 248
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
-              "maxRows": 30,
-              "maxSkippedEntries": 245
+              "maxRows": 29,
+              "maxSkippedEntries": 237
             }
           },
           "32": {
@@ -3040,15 +3040,15 @@
               "maxRows": 31
             },
             "mineBelow": {
-              "maxRows": 15
+              "maxRows": 14
             },
             "everyoneExact": {
               "maxRows": 33,
-              "maxSkippedEntries": 248
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
               "maxRows": 16,
-              "maxSkippedEntries": 245
+              "maxSkippedEntries": 237
             }
           },
           "64": {
@@ -3060,11 +3060,11 @@
             },
             "everyoneExact": {
               "maxRows": 18,
-              "maxSkippedEntries": 248
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
               "maxRows": 8,
-              "maxSkippedEntries": 245
+              "maxSkippedEntries": 237
             }
           }
         },
@@ -3072,153 +3072,153 @@
           "pageTimesLens": {
             "mineExact": 768,
             "mineBelow": 416,
-            "everyoneExact": 688,
-            "everyoneBelow": 408
+            "everyoneExact": 680,
+            "everyoneBelow": 400
           },
           "maxRows": 150,
-          "limitEntries": 245
+          "limitEntries": 237
         }
       },
       "amsterdam": {
         "rows": {
-          "about page=10": 477112,
-          "about page=10 sample=4": 1172065,
-          "about page=20": 805445,
-          "authorCount 300 authors": 88178,
-          "byName 300 authors page=10": 367352,
-          "byName 300 authors page=50": 1277352,
-          "children 16": 900504,
-          "children page=1": 189239,
-          "entryCount exact 2000 entries": 86175,
-          "everyone below lens=8 page=10": 1319800,
-          "everyone below lens=8 page=50": 6185128,
-          "everyone exact lens=8 page=10": 1092934,
-          "everyone exact lens=8 page=50": 5212489,
-          "everyone worst below lens=8 page=10": 1812942,
-          "everyone worst below lens=8 page=50": 8699993,
-          "mine lens=1 depth=1 page=10": 580511,
-          "mine lens=1 depth=1 page=50": 2366856,
-          "mine lens=1 depth=64 page=10": 567487,
-          "mine lens=1 depth=64 page=50": 2432180,
-          "mine lens=1 depth=8 page=10": 567487,
-          "mine lens=1 depth=8 page=50": 2432180,
-          "mine lens=32 depth=1 page=10": 2506015,
-          "mine lens=32 depth=1 page=50": 7533385,
-          "mine lens=32 depth=64 page=10": 2312826,
-          "mine lens=32 depth=64 page=50": 7582432,
-          "mine lens=32 depth=8 page=10": 2312826,
-          "mine lens=32 depth=8 page=50": 7582432,
-          "mine lens=64 depth=1 page=10": 5282802,
-          "mine lens=64 depth=1 page=50": 12244514,
-          "mine lens=64 depth=64 page=10": 4802716,
-          "mine lens=64 depth=64 page=50": 11882365,
-          "mine lens=64 depth=8 page=10": 4802716,
-          "mine lens=64 depth=8 page=50": 11882365,
-          "mine lens=8 depth=1 page=10": 1047625,
-          "mine lens=8 depth=1 page=50": 3579291,
-          "mine lens=8 depth=64 page=10": 1104563,
-          "mine lens=8 depth=64 page=50": 3676133,
-          "mine lens=8 depth=8 page=10": 1104563,
-          "mine lens=8 depth=8 page=50": 3676133,
-          "mine worst lens=1 depth=8 page=10": 690992,
-          "mine worst lens=1 depth=8 page=50": 2934320,
-          "mine worst lens=32 depth=8 page=10": 3830819,
-          "mine worst lens=32 depth=8 page=50": 13807088,
-          "mine worst lens=64 depth=8 page=10": 8827165,
-          "mine worst lens=64 depth=8 page=50": 23187406,
-          "mine worst lens=8 depth=8 page=10": 1574072,
-          "mine worst lens=8 depth=8 page=50": 5871719,
-          "placeCount 2000 positions": 88155,
-          "raw below page=10": 623407,
-          "raw below page=50": 2677540,
-          "raw exact page=10": 542450,
-          "raw exact page=50": 2453598,
-          "skip below lens=1 page=60": 2376253,
-          "skip below lens=1 per entry": 36168,
-          "skip below lens=64 page=60": 2377754,
-          "skip below lens=64 per entry": 36179,
-          "skip below lens=8 page=60": 2376419,
-          "skip below lens=8 per entry": 36169,
-          "skip exact lens=1 page=60": 2343126,
-          "skip exact lens=1 per entry": 36002,
-          "skip exact lens=64 page=60": 2344619,
-          "skip exact lens=64 per entry": 36013,
-          "skip exact lens=8 page=60": 2343291,
-          "skip exact lens=8 per entry": 36003,
-          "wordPage places=1": 154912,
-          "wordPage places=20": 1072582,
-          "wordPage places=5": 359147
+          "about page=10": 491620,
+          "about page=10 sample=4": 1198663,
+          "about page=20": 832043,
+          "authorCount 300 authors": 89387,
+          "byName 300 authors page=10": 369770,
+          "byName 300 authors page=50": 1279771,
+          "children 16": 941610,
+          "children page=1": 194075,
+          "entryCount exact 2000 entries": 87384,
+          "everyone below lens=8 page=10": 1351234,
+          "everyone below lens=8 page=50": 6320536,
+          "everyone exact lens=8 page=10": 1108651,
+          "everyone exact lens=8 page=50": 5280193,
+          "everyone worst below lens=8 page=10": 1844376,
+          "everyone worst below lens=8 page=50": 8835401,
+          "mine lens=1 depth=1 page=10": 582929,
+          "mine lens=1 depth=1 page=50": 2369274,
+          "mine lens=1 depth=64 page=10": 571114,
+          "mine lens=1 depth=64 page=50": 2439434,
+          "mine lens=1 depth=8 page=10": 571114,
+          "mine lens=1 depth=8 page=50": 2439434,
+          "mine lens=32 depth=1 page=10": 2545912,
+          "mine lens=32 depth=1 page=50": 7573282,
+          "mine lens=32 depth=64 page=10": 2364813,
+          "mine lens=32 depth=64 page=50": 7644091,
+          "mine lens=32 depth=8 page=10": 2364813,
+          "mine lens=32 depth=8 page=50": 7644091,
+          "mine lens=64 depth=1 page=10": 5361387,
+          "mine lens=64 depth=1 page=50": 12323099,
+          "mine lens=64 depth=64 page=10": 4881301,
+          "mine lens=64 depth=64 page=50": 11960950,
+          "mine lens=64 depth=8 page=10": 4881301,
+          "mine lens=64 depth=8 page=50": 11960950,
+          "mine lens=8 depth=1 page=10": 1058506,
+          "mine lens=8 depth=1 page=50": 3590172,
+          "mine lens=8 depth=64 page=10": 1125118,
+          "mine lens=8 depth=64 page=50": 3696688,
+          "mine lens=8 depth=8 page=10": 1125118,
+          "mine lens=8 depth=8 page=50": 3696688,
+          "mine worst lens=1 depth=8 page=10": 694619,
+          "mine worst lens=1 depth=8 page=50": 2941574,
+          "mine worst lens=32 depth=8 page=10": 3894896,
+          "mine worst lens=32 depth=8 page=50": 13921943,
+          "mine worst lens=64 depth=8 page=10": 8917840,
+          "mine worst lens=64 depth=8 page=50": 23322814,
+          "mine worst lens=8 depth=8 page=10": 1600672,
+          "mine worst lens=8 depth=8 page=50": 5928544,
+          "placeCount 2000 positions": 89364,
+          "raw below page=10": 642751,
+          "raw below page=50": 2752498,
+          "raw exact page=10": 558167,
+          "raw exact page=50": 2521302,
+          "skip below lens=1 page=60": 2456047,
+          "skip below lens=1 per entry": 37407,
+          "skip below lens=64 page=60": 2457548,
+          "skip below lens=64 per entry": 37418,
+          "skip below lens=8 page=60": 2456213,
+          "skip below lens=8 per entry": 37408,
+          "skip exact lens=1 page=60": 2421711,
+          "skip exact lens=1 per entry": 37241,
+          "skip exact lens=64 page=60": 2423204,
+          "skip exact lens=64 per entry": 37252,
+          "skip exact lens=8 page=60": 2421876,
+          "skip exact lens=8 per entry": 37242,
+          "wordPage places=1": 158539,
+          "wordPage places=20": 1123360,
+          "wordPage places=5": 373655
         },
         "terms": {
           "mineExact": {
-            "opening": 196367,
-            "openingPerLensAuthor": 28381,
+            "opening": 197576,
+            "openingPerLensAuthor": 29590,
             "perRow": 35589,
             "perLensIndex": 6617,
             "maxAbsErrorPercent": 11.4
           },
           "mineBelow": {
-            "opening": 343613,
-            "openingPerLensAuthor": 20666,
-            "perRow": 38848,
-            "perLensIndex": 15375,
-            "maxAbsErrorPercent": 31.2
+            "opening": 352875,
+            "openingPerLensAuthor": 21663,
+            "perRow": 39198,
+            "perLensIndex": 15421,
+            "maxAbsErrorPercent": 32.6
           },
           "mineBelowQuiet": {
-            "opening": 242098,
-            "openingPerLensAuthor": 19233,
-            "perRow": 37373,
-            "perLensIndex": 6737,
-            "maxAbsErrorPercent": 23.8
+            "opening": 249416,
+            "openingPerLensAuthor": 20400,
+            "perRow": 37473,
+            "perLensIndex": 6735,
+            "maxAbsErrorPercent": 24.7
           },
           "everyoneExact": {
-            "opening": 64660,
-            "perRow": 47779,
+            "opening": 67387,
+            "perRow": 49078,
             "perLensAuthor": 6901,
             "perSkippedEntryByLens": {
-              "1": 36002,
-              "8": 36003,
-              "64": 36013
+              "1": 37241,
+              "8": 37242,
+              "64": 37252
             }
           },
           "everyoneBelow": {
-            "opening": 109877,
-            "perRow": 51353,
-            "perLensAuthor": 15103,
+            "opening": 115311,
+            "perRow": 52744,
+            "perLensAuthor": 15254,
             "perSkippedEntryByLens": {
-              "1": 36168,
-              "8": 36169,
-              "64": 36179
+              "1": 37407,
+              "8": 37408,
+              "64": 37418
             }
           },
           "everyoneBelowQuiet": {
-            "opening": 109877,
-            "perRow": 51353,
-            "perLensAuthor": 8785
+            "opening": 115311,
+            "perRow": 52744,
+            "perLensAuthor": 8936
           },
           "rawExact": {
-            "opening": 64660,
-            "perRow": 47779
+            "opening": 67387,
+            "perRow": 49078
           },
           "rawBelow": {
-            "opening": 109877,
-            "perRow": 51353
+            "opening": 115311,
+            "perRow": 52744
           },
           "byName": {
-            "opening": 139852,
+            "opening": 142270,
             "perRow": 22750
           },
           "about": {
-            "opening": 148782,
-            "perRow": 32833
+            "opening": 151200,
+            "perRow": 34042
           },
           "wordPage": {
-            "opening": 121337,
-            "perRow": 47562
+            "opening": 123755,
+            "perRow": 49980
           },
           "children": {
-            "opening": 141821,
-            "perRow": 47418
+            "opening": 144239,
+            "perRow": 49836
           }
         },
         "bounds": {
@@ -3227,15 +3227,15 @@
               "maxRows": 207
             },
             "mineBelow": {
-              "maxRows": 159
+              "maxRows": 157
             },
             "everyoneExact": {
-              "maxRows": 163,
-              "maxSkippedEntries": 248
+              "maxRows": 159,
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
-              "maxRows": 133,
-              "maxSkippedEntries": 245
+              "maxRows": 130,
+              "maxSkippedEntries": 237
             }
           },
           "8": {
@@ -3246,28 +3246,28 @@
               "maxRows": 52
             },
             "everyoneExact": {
-              "maxRows": 86,
-              "maxSkippedEntries": 248
+              "maxRows": 85,
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
-              "maxRows": 51,
-              "maxSkippedEntries": 245
+              "maxRows": 50,
+              "maxSkippedEntries": 237
             }
           },
           "16": {
             "mineExact": {
-              "maxRows": 59
+              "maxRows": 58
             },
             "mineBelow": {
               "maxRows": 29
             },
             "everyoneExact": {
               "maxRows": 56,
-              "maxSkippedEntries": 248
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
-              "maxRows": 30,
-              "maxSkippedEntries": 245
+              "maxRows": 29,
+              "maxSkippedEntries": 237
             }
           },
           "32": {
@@ -3275,15 +3275,15 @@
               "maxRows": 31
             },
             "mineBelow": {
-              "maxRows": 15
+              "maxRows": 14
             },
             "everyoneExact": {
               "maxRows": 33,
-              "maxSkippedEntries": 248
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
               "maxRows": 16,
-              "maxSkippedEntries": 245
+              "maxSkippedEntries": 237
             }
           },
           "64": {
@@ -3295,11 +3295,11 @@
             },
             "everyoneExact": {
               "maxRows": 18,
-              "maxSkippedEntries": 248
+              "maxSkippedEntries": 239
             },
             "everyoneBelow": {
               "maxRows": 8,
-              "maxSkippedEntries": 245
+              "maxSkippedEntries": 237
             }
           }
         },
@@ -3307,11 +3307,11 @@
           "pageTimesLens": {
             "mineExact": 768,
             "mineBelow": 416,
-            "everyoneExact": 688,
-            "everyoneBelow": 408
+            "everyoneExact": 680,
+            "everyoneBelow": 400
           },
           "maxRows": 150,
-          "limitEntries": 245
+          "limitEntries": 237
         }
       }
     }

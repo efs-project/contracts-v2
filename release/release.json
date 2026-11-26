@@ -3,8 +3,8 @@
   "version": "0.0.0-s1b.3-local",
   "status": "local fixture release (not reviewed, not published)",
   "source": {
-    "commit": "7e1e299509bbd3c09ecd10e1789b592adaa72db4",
-    "tree": "77f4327deb0db7926cf4fa4adf6e284f4af2460b",
+    "commit": "2b3e5b10758c95587c0f4750c87d067f968eb70e",
+    "tree": "bbf67e6b445352fae98164a2b6fb35c9a4073849",
     "dirty": 5,
     "standardJsonInputHash": null
   },
@@ -41,12 +41,12 @@
     "src/core/layout/Layout.sol": "0x7d20b949922e092744c75bf42dd4f9b42bad6a9a91b164d03b187c86434bbcb4",
     "src/core/storage/LedgerStorage.sol": "0x4f6914894ee60e13645d6e1de6b697180c5f179f22d5981311400308d6ecb363",
     "src/interfaces/Actions.sol": "0x26e98f79e9a2a02f6622d67870c9619a861be81321e981aa25a0312eeb503990",
-    "src/interfaces/Errors.sol": "0x6a13c365763572d67bbc63ce0d28b96957aee7926b3d7cf59359d6bf8b3d41c2",
+    "src/interfaces/Errors.sol": "0x3143edd339ab9ce2b2b66e76d9c96061c93bdf2d4fc741267c5d3e49cceab524",
     "src/interfaces/IAcceptor.sol": "0x7d6949f47c4a6213d8953aba8371f5bea1e07d98bde065550822ead75fd3d7e0",
     "src/interfaces/IIndexReads.sol": "0xc042e66807ee393cb29e89e5a16fc41431724bf303ce5cfc9a439120f63c02b1",
     "src/interfaces/ILedgerCommitments.sol": "0x57e828bf351bea28e0f5dc4cc5915f6b4b844d89aafba2f48d3d1c7246702c85",
     "src/interfaces/ILedgerHot.sol": "0x1b70d70b5656436f46ff9f388895376515aef3bb533d1bf8f3b79e29881b53b5",
-    "src/interfaces/IRealmIndex.sol": "0xac9ca526d5f044cdcb508dcd34b83de3c523f8cc6ea739da895941584798c267",
+    "src/interfaces/IRealmIndex.sol": "0x78bade9e082cb5a86790a5e304d85a320a194f8c2edd87d2bd17ef45e84c97d1",
     "src/interfaces/ITypeRegistry.sol": "0x0f7323f9c6f9982c1e2d37fefb2792ee04dd5bb5e7853f7928986709d594eb1c",
     "src/interfaces/Index.sol": "0x4b3c247bc7876869a310e53f51fd826cf87e444658d464f4323e5b0726ac82d9",
     "src/interfaces/Limits.sol": "0xb66538ac9546f5baf085c8e86a5a7033400240ece9ad4208e4ae054332af9d52",
@@ -102,8 +102,8 @@
     "src/index/BitmapStore.sol": "0x6dc9c264cba5cceaae2a42d29f2f2227bf1bbde67fddbf8dfd01f02f06101b13",
     "src/interfaces/IBitmapStore.sol": "0xd80f64c9080cd88bc154f17b63e615b0e71cb1fef72b1a813c569dc234e1f107",
     "src/index/IndexProfiles.sol": "0x491e06a7f71a825f9a8614810b36bcde559f05a3a18de7060f5ab86fedc2d7fd",
-    "src/index/IndexReads.sol": "0xbd48e17eca2c22fcaa799d6e1eb9c9a470330879810be3b977e3faca352ac80b",
-    "src/index/RealmIndex.sol": "0x00d7a71a4f6e8464ec3eff7fa0b7522f99342bd9f1a1116182204e664ed4fcee",
+    "src/index/IndexReads.sol": "0xe2baba3b8a46acc9ea41d6eb5f8fd0e805823dd627c74e76c27f9e032ebbb433",
+    "src/index/RealmIndex.sol": "0x7d6a935b4b74ee2f627cb1538bce6abc4d4c01b5d062d1137278ad02e1547f8a",
     "src/index/storage/GenerationStorage.sol": "0x41f833ac25103535f0a09c1206fc1c8bc2dc2516016b7175f13c3ec5724578ff",
     "src/interfaces/IIndexHook.sol": "0xfcd1409fc84c60c4bc255bdf028965ad0bf54f27fa2b91d45f51f7a646d93632",
     "src/profiles/FilesFinalValidator.sol": "0xab8406b87d255fd0eb13b23bd469a44bf3651e462021a17ed6cf99ebf3a1b81d",
@@ -900,87 +900,87 @@
     },
     "IndexReads": {
       "source": "src/index/IndexReads.sol",
-      "runtimeHash": "0xbe1ff45d0cf4c8be85a4854fa15cb4cd30a5b411ff54b68335bc24f979810ab3",
-      "deployedBytecodeHash": "0xf2a3c37af52f5eb94d63e4a3657498c14fc76b12843f2576fe91019026e3d5bf",
-      "initcodeHash": "0xb9895f96aa4114f2510da39ab35d97e8064d796f7f8711842546f1fd368818be",
-      "initcodeWithArgsHash": "0xec59d5448d218032dc4d609c2b7838b7a465d068abd8e078221a118edd5c77c7",
-      "address": "0x87f9534C28987CBb7d7A145449eb90930Eb605BB",
+      "runtimeHash": "0x110a2927bbd7359750116303bc0a4677680ec1e5b4253a0f98d70ee708edbfde",
+      "deployedBytecodeHash": "0x5c2e7fbdde924d716254d80bd120463fb838070764c12f4a1165bae19c636e51",
+      "initcodeHash": "0xe8bdf41e2188f09a5e8f9c84216afa4b456f00541ba9c7c2a0cace95e4238a96",
+      "initcodeWithArgsHash": "0xf56bc45e2c3a935359004197637d3f9098191a4aa48a59cd4d67b904c2f1f5cf",
+      "address": "0x0c8342FcBa52e8D69eD5d6e222C571705B935a6D",
       "realmSpecific": true,
       "planStep": "G19a",
       "immutables": [
         {
           "name": "BITMAP",
           "offsets": [
-            3025,
-            8960,
-            10310
+            3563,
+            9417,
+            10797
           ]
         },
         {
           "name": "F_BY_RECORD",
           "offsets": [
-            5215
+            5753
           ]
         },
         {
           "name": "F_DIGEST",
           "offsets": [
-            7671
+            7927
           ]
         },
         {
           "name": "HOT_ABI_ID",
           "offsets": [
-            1060,
-            1594
+            1329,
+            1863
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
-            1367,
-            1445,
-            1517,
-            3253,
-            4253,
-            5610,
-            6330,
-            7926,
-            8154,
-            8287,
-            8766
+            1636,
+            1714,
+            1786,
+            3791,
+            4791,
+            6148,
+            6868,
+            8182,
+            8410,
+            8543,
+            9226
           ]
         },
         {
           "name": "POSTING",
           "offsets": [
-            3972,
-            5365,
-            6101,
-            7807,
-            8908,
-            10260
+            4510,
+            5903,
+            6639,
+            8063,
+            9370,
+            10747
           ]
         },
         {
           "name": "TOPIC_TYPE",
           "offsets": [
-            869,
-            2708
+            1138,
+            3246
           ]
         },
         {
           "name": "TOPIC_WORD_TYPE",
           "offsets": [
-            2743,
-            2804
+            3281,
+            3342
           ]
         }
       ],
       "sizes": {
-        "runtime": 11127,
-        "initcode": 22395,
-        "initcodeWithArgs": 23771
+        "runtime": 11645,
+        "initcode": 22913,
+        "initcodeWithArgs": 24289
       },
       "budget": {
         "runtime": 19660,
@@ -989,11 +989,11 @@
     },
     "RealmIndex": {
       "source": "src/index/RealmIndex.sol",
-      "runtimeHash": "0x2218cd99f7ab64976601d5583f7c97e62520f084bd30725ccf2305bc40feb055",
-      "deployedBytecodeHash": "0x2a9a1b5f50d9a7bb66881ffdc648784432ee9de2a07995fc97ebc43fca64df68",
-      "initcodeHash": "0xd3675058dc3210fe5d121dbea7c2f7994191e33e5faf63cb8aa25cad2ca00e19",
-      "initcodeWithArgsHash": "0x7f90348bedcaa5498851e943eb2e58f57e8953bd9b4aa95f519591a97df1eb89",
-      "address": "0x40275a9f07D1E21300399fD57aBAc345f9662839",
+      "runtimeHash": "0xe8a1bf7f66c9f82bfb6547ea4cbc51206f9a7fd0ac399a8d66c3bf9373ecf2c6",
+      "deployedBytecodeHash": "0x8246b8aca3c96efaa22c41ff93ca2a391e0f947a6d6e4cae996947d39aa0b797",
+      "initcodeHash": "0x994cbd870fd53651d1580c9a0bd0222af79c8868307c873fd78b1a889a9438bd",
+      "initcodeWithArgsHash": "0xc4eec71a3fb1d8bb9b32242738c30187f859344ac583b884c3a34c2bbd965489",
+      "address": "0xe12318239118a93F7edE13bC3636D473a174Dc8b",
       "realmSpecific": true,
       "planStep": "G19",
       "immutables": [
@@ -1001,136 +1001,140 @@
           "name": "BITMAP",
           "offsets": [
             451,
-            2974,
-            9305,
-            9426
+            7855,
+            7945,
+            12754
           ]
         },
         {
           "name": "DECODER",
           "offsets": [
-            4124,
-            6877
+            2958,
+            5144,
+            6882,
+            8436,
+            8663
           ]
         },
         {
           "name": "F_BACKLINK",
           "offsets": [
-            9998,
-            11073
+            10949,
+            11445
           ]
         },
         {
           "name": "F_BY_AUTHOR",
           "offsets": [
-            8009,
-            11462
+            9972,
+            11844
           ]
         },
         {
           "name": "F_BY_RECORD",
           "offsets": [
-            8181,
-            8334,
-            12143,
-            12286
+            10144,
+            10299,
+            12478,
+            12621
           ]
         },
         {
           "name": "F_BY_TYPE",
           "offsets": [
-            7894,
-            11406
+            9857,
+            11788
           ]
         },
         {
           "name": "F_DIGEST",
           "offsets": [
-            11626
+            12008
           ]
         },
         {
           "name": "F_HISTORY",
           "offsets": [
-            9578
+            10676
           ]
         },
         {
           "name": "F_LIVE_SCOPE",
           "offsets": [
-            10076,
-            10445,
-            10780
+            13026,
+            13344
           ]
         },
         {
           "name": "F_PLACE",
           "offsets": [
-            14430
+            14867
           ]
         },
         {
           "name": "F_PLACE_BELOW",
           "offsets": [
-            16741
+            17732
           ]
         },
         {
           "name": "F_POSITION_AUTHORS",
           "offsets": [
-            10602,
-            10932,
-            14109
+            11078,
+            11263,
+            14546
           ]
         },
         {
           "name": "F_REFERENCE_POSITION",
           "offsets": [
-            11574
+            11956
           ]
         },
         {
           "name": "F_ROLE_PLACES",
           "offsets": [
-            14345
+            14782
           ]
         },
         {
           "name": "F_ROLE_SCOPE",
           "offsets": [
-            9894
+            10840
           ]
         },
         {
           "name": "F_SCOPE",
           "offsets": [
-            9740
+            12891
           ]
         },
         {
           "name": "F_SCOPE_BELOW",
           "offsets": [
-            16668
+            17659
           ]
         },
         {
           "name": "F_UNIQUE_BY_TYPE",
           "offsets": [
-            11535
+            11917
           ]
         },
         {
           "name": "LEDGER",
           "offsets": [
-            997,
-            1678,
-            2441,
-            3273,
-            6974,
-            7667,
-            11660,
-            12215,
-            16366
+            998,
+            1288,
+            2096,
+            4880,
+            6978,
+            7425,
+            8352,
+            8589,
+            12042,
+            12550,
+            17357
           ]
         },
         {
@@ -1142,50 +1146,50 @@
         {
           "name": "POSTING",
           "offsets": [
-            2555,
-            4056,
-            7821,
-            9255,
-            9463,
-            12068,
-            14004,
-            14706
+            2890,
+            7804,
+            7898,
+            9784,
+            10578,
+            12403,
+            14441,
+            15137
           ]
         },
         {
           "name": "READS",
           "offsets": [
-            2623,
-            4193,
-            4296,
-            9200
+            3027,
+            3130,
+            5023,
+            8745
           ]
         },
         {
           "name": "READS_CODEHASH",
           "offsets": [
-            4237,
-            4366
+            3071,
+            3200
           ]
         },
         {
           "name": "TOPIC_T",
           "offsets": [
-            14272,
-            16418
+            14709,
+            17409
           ]
         },
         {
           "name": "WORD_T",
           "offsets": [
-            16809
+            17800
           ]
         }
       ],
       "sizes": {
-        "runtime": 17144,
-        "initcode": 23297,
-        "initcodeWithArgs": 23393
+        "runtime": 18135,
+        "initcode": 24316,
+        "initcodeWithArgs": 24412
       },
       "budget": {
         "runtime": 19660,
@@ -2256,13 +2260,13 @@
     "wrappers": [],
     "index": {
       "generation": 1,
-      "address": "0x40275a9f07D1E21300399fD57aBAc345f9662839",
-      "runtimeCodehash": "0x2a9a1b5f50d9a7bb66881ffdc648784432ee9de2a07995fc97ebc43fca64df68",
+      "address": "0xe12318239118a93F7edE13bC3636D473a174Dc8b",
+      "runtimeCodehash": "0x8246b8aca3c96efaa22c41ff93ca2a391e0f947a6d6e4cae996947d39aa0b797",
       "reads": {
-        "address": "0x87f9534C28987CBb7d7A145449eb90930Eb605BB",
-        "runtimeCodehash": "0xf2a3c37af52f5eb94d63e4a3657498c14fc76b12843f2576fe91019026e3d5bf"
+        "address": "0x0c8342FcBa52e8D69eD5d6e222C571705B935a6D",
+        "runtimeCodehash": "0x5c2e7fbdde924d716254d80bd120463fb838070764c12f4a1165bae19c636e51"
       },
-      "manifestHash": "0xbadcd8102461d41530f6069a471662e629e21dc5824a56e530bc70c9c50eac10",
+      "manifestHash": "0x3bbafe392a3d019270422f061f1dae0adfc8f39990094fac4889e7f12e6da5ca",
       "families": [
         {
           "familyId": "0x6e9951606fbc96e12b5da9d5c55cec8c09a145840b260cb897a2b8f4be21fca4",
@@ -2768,7 +2772,7 @@
   "gasModel": {
     "schema": "efs-gas-model/1",
     "path": "gas/model.json",
-    "sha256": "0x0e947666b430a32ed15c55b6b533421c74485963cb2cc39d36fe94eaab1f44b6",
+    "sha256": "0x58c06d857c1e7b712de6a83ddfa327f82961f51565d1b8ba07406e4136576424",
     "note": "Planning only, keyed by fee schedule: never apply one schedule's constants on a chain running the other. gas(publication) = fixed + Σ actions; a new PUBLISH costs publishNew[type] + perWord × ceil(bodyBytes / 32) + perByte × bodyBytes. Excludes the 21,000 intrinsic cost and calldata, which the caller adds from the encoded transaction. eth_estimateGas on the exact call stays the authority before sending.",
     "schedules": {
       "prague": {
@@ -2782,52 +2786,52 @@
           "perWord": 22729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 164888,
-            "files-span/1": 290326,
-            "files-content/1 carrier 0": 173786,
-            "files-content/1 carrier 2": 193393,
-            "files-external/1": 220700,
-            "files-directory/1": 165070,
-            "files-name/2": 152124,
-            "files-root/1 form 0": 148603,
-            "files-root/1 form 1": 174696,
-            "files-child/1 form 0": 228261,
-            "files-child/1 form 1": 254468,
-            "topic-word/1": 181737,
-            "topic/1": 211642,
-            "text/1": 182199
+            "files-bytes/1": 164996,
+            "files-span/1": 290434,
+            "files-content/1 carrier 0": 173899,
+            "files-content/1 carrier 2": 193506,
+            "files-external/1": 220801,
+            "files-directory/1": 165190,
+            "files-name/2": 152232,
+            "files-root/1 form 0": 148711,
+            "files-root/1 form 1": 174804,
+            "files-child/1 form 0": 228369,
+            "files-child/1 form 1": 254576,
+            "topic-word/1": 181845,
+            "topic/1": 211750,
+            "text/1": 182319
           },
-          "publishExisting": 176506,
-          "reuse": 179957,
-          "create": 98342,
-          "bindHeadFresh": 331198,
-          "bindHeadRebind": 204277,
-          "bindFolderFreshFile": 409088,
-          "bindFolderFreshDirectory": 408858,
-          "bindFolderRebind": 206474,
-          "unbindFolder": 159653,
-          "releaseFolder": 156632,
-          "bindTagFresh": 414189,
-          "bindTagSecondAuthor": 312777,
-          "bindTagNumberChange": 153742,
-          "unbindTagLone": 355203,
-          "unbindTag": 155948,
-          "releaseTag": 154760,
-          "restoreTag": 186669,
-          "bindPropertyFresh": 328665,
-          "bindPropertyRebind": 196172,
-          "unbindProperty": 145829,
-          "releaseProperty": 144641,
-          "bindSameFreshWord": 357506,
-          "bindSameFreshPath": 357402,
-          "unbindSame": 146042,
-          "releaseSame": 144842,
-          "restoreSame": 174621,
-          "bindBroaderFresh": 357493,
-          "unbindBroader": 146053,
-          "releaseBroader": 144865,
-          "restoreBroader": 174656,
-          "withdraw": 151662,
+          "publishExisting": 176614,
+          "reuse": 180065,
+          "create": 98447,
+          "bindHeadFresh": 331596,
+          "bindHeadRebind": 204741,
+          "bindFolderFreshFile": 409474,
+          "bindFolderFreshDirectory": 409256,
+          "bindFolderRebind": 206914,
+          "unbindFolder": 160087,
+          "releaseFolder": 157066,
+          "bindTagFresh": 414563,
+          "bindTagSecondAuthor": 313175,
+          "bindTagNumberChange": 154167,
+          "unbindTagLone": 355568,
+          "unbindTag": 156382,
+          "releaseTag": 155194,
+          "restoreTag": 187065,
+          "bindPropertyFresh": 329051,
+          "bindPropertyRebind": 196624,
+          "unbindProperty": 146264,
+          "releaseProperty": 145076,
+          "bindSameFreshWord": 357892,
+          "bindSameFreshPath": 357788,
+          "unbindSame": 146477,
+          "releaseSame": 145277,
+          "restoreSame": 175005,
+          "bindBroaderFresh": 357867,
+          "unbindBroader": 146488,
+          "releaseBroader": 145300,
+          "restoreBroader": 175028,
+          "withdraw": 151804,
           "firstWriteSurcharge": 11786,
           "tagLevel": {
             "mineNew": 34627,
@@ -2931,8 +2935,8 @@
               "files-span/1": 164175,
               "files-content/1 carrier 0": 88764,
               "files-content/1 carrier 2": 108371,
-              "files-external/1": 141143,
-              "files-directory/1": 133565,
+              "files-external/1": 141131,
+              "files-directory/1": 133577,
               "files-name/2": 154819,
               "files-root/1 form 0": 117098,
               "files-root/1 form 1": 143191,
@@ -2940,25 +2944,25 @@
               "files-child/1 form 1": 153739,
               "topic-word/1": 139628,
               "topic/1": 151856,
-              "text/1": 140090
+              "text/1": 140102
             },
             "publishExisting": 95843,
             "reuse": 99271,
             "create": 89227,
-            "bindHeadFresh": 193336,
-            "bindHeadRebind": 92303,
+            "bindHeadFresh": 193348,
+            "bindHeadRebind": 92315,
             "bindFolderFreshFile": 220087,
-            "bindFolderFreshDirectory": 217867,
-            "bindFolderRebind": 96907,
+            "bindFolderFreshDirectory": 217879,
+            "bindFolderRebind": 96895,
             "unbindFolder": 62285,
             "releaseFolder": 61074,
-            "bindTagFresh": 220075,
-            "bindTagSecondAuthor": 155772,
-            "bindTagNumberChange": 93990,
+            "bindTagFresh": 220063,
+            "bindTagSecondAuthor": 155784,
+            "bindTagNumberChange": 94002,
             "unbindTagLone": 166356,
             "unbindTag": 62285,
             "releaseTag": 61074,
-            "restoreTag": 93627,
+            "restoreTag": 93639,
             "bindPropertyFresh": 215867,
             "bindPropertyRebind": 92711,
             "unbindProperty": 62285,
@@ -2968,10 +2972,10 @@
             "unbindSame": 62297,
             "releaseSame": 61074,
             "restoreSame": 91431,
-            "bindBroaderFresh": 217867,
+            "bindBroaderFresh": 217855,
             "unbindBroader": 62285,
             "releaseBroader": 61074,
-            "restoreBroader": 91443,
+            "restoreBroader": 91431,
             "withdraw": 81754,
             "firstWriteSurcharge": 17088,
             "tagLevel": {
@@ -2994,52 +2998,52 @@
           "perWord": 110649,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 516968,
-            "files-span/1": 994464,
-            "files-content/1 carrier 0": 437836,
-            "files-content/1 carrier 2": 545475,
-            "files-external/1": 682066,
-            "files-directory/1": 517150,
-            "files-name/2": 342598,
-            "files-root/1 form 0": 412663,
-            "files-root/1 form 1": 526788,
-            "files-child/1 form 0": 756405,
-            "files-child/1 form 1": 870584,
-            "topic-word/1": 547983,
-            "topic/1": 592200,
-            "text/1": 548457
+            "files-bytes/1": 517076,
+            "files-span/1": 994560,
+            "files-content/1 carrier 0": 437961,
+            "files-content/1 carrier 2": 545600,
+            "files-external/1": 682179,
+            "files-directory/1": 517258,
+            "files-name/2": 342706,
+            "files-root/1 form 0": 412783,
+            "files-root/1 form 1": 526908,
+            "files-child/1 form 0": 756501,
+            "files-child/1 form 1": 870680,
+            "topic-word/1": 548091,
+            "topic/1": 592296,
+            "text/1": 548565
           },
-          "publishExisting": 535652,
-          "reuse": 539103,
-          "create": 362302,
-          "bindHeadFresh": 1299172,
-          "bindHeadRebind": 592369,
-          "bindFolderFreshFile": 1633834,
-          "bindFolderFreshDirectory": 1633592,
-          "bindFolderRebind": 587354,
-          "unbindFolder": 364493,
-          "releaseFolder": 361472,
-          "bindTagFresh": 1646135,
-          "bindTagSecondAuthor": 1119035,
-          "bindTagNumberChange": 432180,
-          "unbindTagLone": 1323189,
-          "unbindTag": 360788,
-          "releaseTag": 359600,
-          "restoreTag": 486741,
-          "bindPropertyFresh": 1303651,
-          "bindPropertyRebind": 584252,
-          "unbindProperty": 350669,
-          "releaseProperty": 349481,
-          "bindSameFreshWord": 1413376,
-          "bindSameFreshPath": 1413308,
-          "unbindSame": 350858,
-          "releaseSame": 349682,
-          "restoreSame": 474657,
-          "bindBroaderFresh": 1413387,
-          "unbindBroader": 350893,
-          "releaseBroader": 349693,
-          "restoreBroader": 474680,
-          "withdraw": 430022,
+          "publishExisting": 535760,
+          "reuse": 539211,
+          "create": 362407,
+          "bindHeadFresh": 1299546,
+          "bindHeadRebind": 592809,
+          "bindFolderFreshFile": 1634220,
+          "bindFolderFreshDirectory": 1633990,
+          "bindFolderRebind": 587794,
+          "unbindFolder": 364927,
+          "releaseFolder": 361906,
+          "bindTagFresh": 1646521,
+          "bindTagSecondAuthor": 1119421,
+          "bindTagNumberChange": 432593,
+          "unbindTagLone": 1323554,
+          "unbindTag": 361222,
+          "releaseTag": 360034,
+          "restoreTag": 487125,
+          "bindPropertyFresh": 1304037,
+          "bindPropertyRebind": 584704,
+          "unbindProperty": 351104,
+          "releaseProperty": 349916,
+          "bindSameFreshWord": 1413762,
+          "bindSameFreshPath": 1413694,
+          "unbindSame": 351293,
+          "releaseSame": 350117,
+          "restoreSame": 475029,
+          "bindBroaderFresh": 1413785,
+          "unbindBroader": 351328,
+          "releaseBroader": 350128,
+          "restoreBroader": 475064,
+          "withdraw": 430164,
           "firstWriteSurcharge": 85506,
           "tagLevel": {
             "mineNew": 122659,
@@ -3053,52 +3057,52 @@
           "perWord": 12729,
           "perByte": 11.8,
           "publishNew": {
-            "files-bytes/1": 125288,
-            "files-span/1": 211104,
-            "files-content/1 carrier 0": 144076,
-            "files-content/1 carrier 2": 153795,
-            "files-external/1": 192466,
-            "files-directory/1": 125470,
-            "files-name/2": 146758,
-            "files-root/1 form 0": 118903,
-            "files-root/1 form 1": 135108,
-            "files-child/1 form 0": 168885,
-            "files-child/1 form 1": 185144,
-            "topic-word/1": 156303,
-            "topic/1": 200520,
-            "text/1": 156777
+            "files-bytes/1": 125396,
+            "files-span/1": 211200,
+            "files-content/1 carrier 0": 144201,
+            "files-content/1 carrier 2": 153920,
+            "files-external/1": 192579,
+            "files-directory/1": 125578,
+            "files-name/2": 146866,
+            "files-root/1 form 0": 119023,
+            "files-root/1 form 1": 135228,
+            "files-child/1 form 0": 168981,
+            "files-child/1 form 1": 185240,
+            "topic-word/1": 156411,
+            "topic/1": 200616,
+            "text/1": 156885
           },
-          "publishExisting": 143972,
-          "reuse": 147423,
-          "create": 68542,
-          "bindHeadFresh": 222052,
-          "bindHeadRebind": 200689,
-          "bindFolderFreshFile": 262954,
-          "bindFolderFreshDirectory": 262712,
-          "bindFolderRebind": 195674,
-          "unbindFolder": 168653,
-          "releaseFolder": 165632,
-          "bindTagFresh": 275255,
-          "bindTagSecondAuthor": 237755,
-          "bindTagNumberChange": 138420,
-          "unbindTagLone": 246069,
-          "unbindTag": 164948,
-          "releaseTag": 163760,
-          "restoreTag": 192981,
-          "bindPropertyFresh": 226531,
-          "bindPropertyRebind": 192572,
-          "unbindProperty": 154829,
-          "releaseProperty": 153641,
-          "bindSameFreshWord": 238336,
-          "bindSameFreshPath": 238268,
-          "unbindSame": 155018,
-          "releaseSame": 153842,
-          "restoreSame": 180897,
-          "bindBroaderFresh": 238347,
-          "unbindBroader": 155053,
-          "releaseBroader": 153853,
-          "restoreBroader": 180920,
-          "withdraw": 136262,
+          "publishExisting": 144080,
+          "reuse": 147531,
+          "create": 68647,
+          "bindHeadFresh": 222426,
+          "bindHeadRebind": 201129,
+          "bindFolderFreshFile": 263340,
+          "bindFolderFreshDirectory": 263110,
+          "bindFolderRebind": 196114,
+          "unbindFolder": 169087,
+          "releaseFolder": 166066,
+          "bindTagFresh": 275641,
+          "bindTagSecondAuthor": 238141,
+          "bindTagNumberChange": 138833,
+          "unbindTagLone": 246434,
+          "unbindTag": 165382,
+          "releaseTag": 164194,
+          "restoreTag": 193365,
+          "bindPropertyFresh": 226917,
+          "bindPropertyRebind": 193024,
+          "unbindProperty": 155264,
+          "releaseProperty": 154076,
+          "bindSameFreshWord": 238722,
+          "bindSameFreshPath": 238654,
+          "unbindSame": 155453,
+          "releaseSame": 154277,
+          "restoreSame": 181269,
+          "bindBroaderFresh": 238745,
+          "unbindBroader": 155488,
+          "releaseBroader": 154288,
+          "restoreBroader": 181304,
+          "withdraw": 136404,
           "firstWriteSurcharge": -12414,
           "tagLevel": {
             "mineNew": 24739,
@@ -3199,28 +3203,28 @@
             "perByte": 11.8,
             "publishNew": {
               "files-bytes/1": 93683,
-              "files-span/1": 124487,
-              "files-content/1 carrier 0": 78788,
-              "files-content/1 carrier 2": 88507,
+              "files-span/1": 124475,
+              "files-content/1 carrier 0": 78800,
+              "files-content/1 carrier 2": 88519,
               "files-external/1": 101443,
               "files-directory/1": 93865,
               "files-name/2": 115119,
-              "files-root/1 form 0": 87298,
-              "files-root/1 form 1": 103503,
-              "files-child/1 form 0": 97756,
-              "files-child/1 form 1": 114015,
+              "files-root/1 form 0": 87310,
+              "files-root/1 form 1": 103515,
+              "files-child/1 form 0": 97744,
+              "files-child/1 form 1": 114003,
               "topic-word/1": 99928,
-              "topic/1": 112168,
+              "topic/1": 112156,
               "text/1": 100402
             },
             "publishExisting": 83143,
             "reuse": 86571,
             "create": 59427,
-            "bindHeadFresh": 123724,
-            "bindHeadRebind": 86815,
+            "bindHeadFresh": 123712,
+            "bindHeadRebind": 86803,
             "bindFolderFreshFile": 140487,
-            "bindFolderFreshDirectory": 138255,
-            "bindFolderRebind": 91407,
+            "bindFolderFreshDirectory": 138267,
+            "bindFolderRebind": 91395,
             "unbindFolder": 59485,
             "releaseFolder": 58274,
             "bindTagFresh": 140475,
@@ -3238,8 +3242,8 @@
             "bindSameFreshPath": 138267,
             "unbindSame": 59473,
             "releaseSame": 58274,
-            "restoreSame": 78707,
-            "bindBroaderFresh": 138255,
+            "restoreSame": 78695,
+            "bindBroaderFresh": 138267,
             "unbindBroader": 59485,
             "releaseBroader": 58262,
             "restoreBroader": 78707,
@@ -3253,7 +3257,7 @@
             }
           }
         },
-        "maxAbsErrorPercent": 7.57
+        "maxAbsErrorPercent": 7.56
       }
     },
     "planning": {
@@ -3285,21 +3289,21 @@
           "pageTimesLens": {
             "mineExact": 768,
             "mineBelow": 416,
-            "everyoneExact": 688,
-            "everyoneBelow": 408
+            "everyoneExact": 680,
+            "everyoneBelow": 400
           },
           "maxRows": 150,
-          "limitEntries": 245
+          "limitEntries": 237
         },
         "amsterdam": {
           "pageTimesLens": {
             "mineExact": 768,
             "mineBelow": 416,
-            "everyoneExact": 688,
-            "everyoneBelow": 408
+            "everyoneExact": 680,
+            "everyoneBelow": 400
           },
           "maxRows": 150,
-          "limitEntries": 245
+          "limitEntries": 237
         }
       }
     },
@@ -3349,76 +3353,76 @@
         "editSmall": {
           "count": 23,
           "boundBy": "gas",
-          "gasEach": 593954,
-          "gasOfPublication": 13976727
+          "gasEach": 594526,
+          "gasOfPublication": 13989883
         },
         "edit1k": {
           "count": 11,
           "boundBy": "gas",
-          "gasEach": 1241269,
-          "gasOfPublication": 13969749
+          "gasEach": 1241841,
+          "gasOfPublication": 13976041
         },
         "createSmall": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 1300535,
-          "gasOfPublication": 13321138
+          "gasEach": 1301640,
+          "gasOfPublication": 13332188
         },
         "create1k": {
           "count": 7,
           "boundBy": "gas",
-          "gasEach": 1947850,
-          "gasOfPublication": 13950740
+          "gasEach": 1948955,
+          "gasOfPublication": 13958475
         },
         "chunk": {
           "count": 2,
           "boundBy": "gas",
-          "gasEach": 6080178,
-          "gasOfPublication": 12476145
+          "gasEach": 6080286,
+          "gasOfPublication": 12476361
         },
         "spanNode": {
           "count": 38,
           "boundBy": "gas",
-          "gasEach": 359646,
-          "gasOfPublication": 13982330
+          "gasEach": 359754,
+          "gasOfPublication": 13986434
         }
       },
       "amsterdam": {
         "editSmall": {
           "count": 30,
           "boundBy": "gas",
-          "gasEach": 2125630,
-          "gasOfPublication": 64668004
+          "gasEach": 2126166,
+          "gasOfPublication": 64684084
         },
         "edit1k": {
           "count": 14,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 5234705,
-          "gasOfPublication": 74184980
+          "gasEach": 5235241,
+          "gasOfPublication": 74192484
         },
         "createSmall": {
           "count": 12,
           "boundBy": "maxActions",
-          "gasEach": 4827189,
-          "gasOfPublication": 58825376
+          "gasEach": 4828282,
+          "gasOfPublication": 58838492
         },
         "create1k": {
           "count": 10,
           "boundBy": "gas",
-          "gasEach": 7936264,
-          "gasOfPublication": 80261750
+          "gasEach": 7937357,
+          "gasOfPublication": 80272680
         },
         "chunk": {
           "count": 2,
           "boundBy": "maxBodyBytesPerPublication",
-          "gasEach": 28939778,
-          "gasOfPublication": 58778665
+          "gasEach": 28939886,
+          "gasOfPublication": 58778881
         },
         "spanNode": {
           "count": 55,
           "boundBy": "gas",
-          "gasEach": 1327544,
-          "gasOfPublication": 73914019
+          "gasEach": 1327640,
+          "gasOfPublication": 73919299
         }
       }
     }
@@ -3448,7 +3452,7 @@
   },
   "errors": {
     "path": "release/errors.json",
-    "sha256": "0x7006b4f32264fa248dad6f9935334640a4c383b51c6a8b6109c44ef674b73506",
+    "sha256": "0xea31f431bcc91317e046df868d04c8d6f75110303865a8a85c2c30da6ec19f26",
     "count": 111
   },
   "abi": {
@@ -3461,7 +3465,7 @@
     "test/vectors/media.json": "0x5bab21ac11d16645abd04c71ec40324d32e6b9a4e998b28806cb8aa5a6616206",
     "test/vectors/numbers.json": "0x32239292bbf0733f1ef315d2407c9a772ebd6485803835269da5a82d81d67ccf",
     "test/vectors/topics.json": "0x846dd7ccb1d357d104004b378e1f02f070ce1b6e26bca8e1d40ddf06c55b1eb2",
-    "test/vectors/floor-plan.json": "0x780506444bb1f1dd2d4d21d4d7779f46f5aad6006d0320a22c1ad018ab57e74d"
+    "test/vectors/floor-plan.json": "0x3c8c19c2875076a3be0557c0ca132bd65bbf1fb7a673eed6f52ec4c6f3c4ebd4"
   },
   "dependencyRoot": null,
   "deployPlan": {
