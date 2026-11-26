@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { planVectors, planner, priceAsNew, shapes } from "../gas-plan.mjs";
+import { PURPOSE, isRebind, planVectors, planner, priceAsNew, purposeOf, shapes } from "../gas-plan.mjs";
+import { PURPOSE as PLAN_PURPOSE, WORK_MODEL } from "../deploy-plan.mjs";
 
 const root = join(fileURLToPath(import.meta.url), "../../..");
 const committed = () => JSON.parse(readFileSync(join(root, "gas/model.json"), "utf8"));
@@ -22,7 +23,7 @@ test("the planner imports nothing but node:assert, so it can use only the model 
 });
 
 test("every shape plans on every schedule of a frozen model", () => {
-  const model = freeze(committed());
+  const model = freeze(formula3());
   for (const s of schedules(model)) {
     const pl = planner(model, s);
     for (const [name, sh] of Object.entries(shapes(model))) {
@@ -35,8 +36,33 @@ test("every shape plans on every schedule of a frozen model", () => {
   }
 });
 
-test("the quote is the kernel's formula (design §10.4) on a hand-computed publication", () => {
-  const model = committed();
+/** The committed model with the deploy plan's work model (formula 3) on every schedule: until the release is
+ *  regenerated the committed gas/model.json may carry an older formula, and these tests check the planner's formula,
+ *  not the committed numbers. */
+const formula3 = () => {
+  const m = committed();
+  for (const p of Object.values(m.profiles)) p.floor.workModel = { ...WORK_MODEL };
+  return m;
+};
+
+test("the planner's purpose words are the deploy plan's", () => {
+  assert.deepEqual(PURPOSE, PLAN_PURPOSE);
+  assert.equal(purposeOf({ cost: "bindHeadRebind" }), PURPOSE.HEAD);
+  assert.equal(purposeOf({ cost: "releaseFolder" }), PURPOSE.FOLDER);
+  assert.equal(purposeOf({ cost: "unbindTagLone" }), PURPOSE.TAG);
+  assert.equal(purposeOf({ cost: "bindTagFresh", purpose: PURPOSE.SAME }), PURPOSE.SAME, "an explicit purpose wins");
+  assert.deepEqual(["bindHeadRebind", "bindFolderRebind", "bindTagNumberChange", "bindPropertyRebind"].map((cost) => isRebind({ cost })), [true, true, true, true]);
+  assert.deepEqual(["unbindTag", "releaseFolder", "restoreTag", "restoreSame"].map((cost) => isRebind({ cost })), [false, false, false, false]);
+});
+
+test("the planner refuses a work model of another formula", () => {
+  const m = formula3();
+  m.profiles.prague.floor.workModel.formulaVersion = 2;
+  assert.throws(() => planner(m, "prague"), /formula 3/);
+});
+
+test("the quote is the kernel's formula (design §10.4, formula 3) on a hand-computed publication", () => {
+  const model = formula3();
   for (const s of schedules(model)) {
     const { workModel: w, limits: l, types } = model.profiles[s].floor;
     const acts = [
@@ -47,21 +73,53 @@ test("the quote is the kernel's formula (design §10.4) on a hand-computed publi
       { kind: "bind", cost: "bindHeadRebind", first: false },
     ];
     const t = types["files-child/1"];
-    // the existing files-bytes/1 pays freshPerPublishExisting, the HEAD re-bind (a later statement) rwPerBindLater
-    const fresh10 = w.freshPerPublication + w.freshPerPublishFresh + w.freshPerDigestSpec * t.specs + w.freshPerRef * t.refs + w.freshPerRef * types["files-bytes/1"].refs + w.freshPerPublishExisting + w.freshPerBindFresh;
-    const rw10 = w.rwPerPublication + 2 * w.rwPerPublish + 2 * w.rwPerBind + w.rwPerBindLater;
+    // the existing files-bytes/1 pays freshPerPublishExisting; the first HEAD statement the first row, the HEAD
+    // re-bind the re-bind row
+    const fresh10 = w.freshPerPublication + w.freshPerPublishFresh + w.freshPerDigestSpec * t.specs + w.freshPerRef * t.refs + w.freshPerRef * types["files-bytes/1"].refs + w.freshPerPublishExisting + w.freshPerBindFirst + w.freshPerRebind;
+    const rw10 = w.rwPerPublication + 2 * w.rwPerPublish + w.rwPerBindFirst + w.rwPerRebind;
     const fresh = Math.ceil(fresh10 / 10);
     const rw = Math.ceil(rw10 / 10);
     const q = planner(model, s).quote(acts);
     assert.equal(q.freshSlots, fresh);
     assert.equal(q.rewrites, rw);
-    assert.equal(q.prefixFloor, w.computeBase + 5 * w.computePerAction + 2 * w.computePerHookEffect + fresh * l.floorFreshGas + rw * l.floorRewriteGas);
+    assert.equal(q.prefixFloor, w.computeBase + 5 * w.computePerAction + w.computePerBindFirst + w.computePerRebind + fresh * l.floorFreshGas + rw * l.floorRewriteGas);
     assert.equal(q.finalReserve, w.finalComputeBase + 2 * w.finalComputePerBind + 2 * w.finalComputePerPublish);
   }
 });
 
+test("the surcharge charges its purpose only, and every WITHDRAW after the first pays the later row", () => {
+  const model = formula3();
+  for (const s of schedules(model)) {
+    const w = model.profiles[s].floor.workModel;
+    const plain = planner(model, s);
+    const tag = [{ kind: "bind", cost: "unbindTagLone", first: true }, { kind: "bind", cost: "unbindTag", first: false }];
+    const head = [{ kind: "bind", cost: "bindHeadFresh", first: true }, { kind: "bind", cost: "bindHeadRebind", first: false }];
+    const m = formula3();
+    Object.assign(m.profiles[s].floor.workModel, {
+      surchargePurpose: PURPOSE.HEAD, surchargeFreshFirst: 10, surchargeRwFirst: 10, surchargeComputeFirst: 4500,
+      surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0,
+      surchargeFreshLater: 0, surchargeRwLater: 10, surchargeComputeLater: 10_000,
+    });
+    const sur = planner(m, s);
+    assert.deepEqual(sur.quote(tag), plain.quote(tag), `${s}: TAG statements pay nothing for a HEAD surcharge`);
+    const a = plain.quote(head);
+    const b = sur.quote(head);
+    assert.equal(b.freshSlots - a.freshSlots, 1);
+    assert.equal(b.rewrites - a.rewrites, 1, "the re-bind's surcharge share is zero");
+    const l = model.profiles[s].floor.limits;
+    assert.equal(b.prefixFloor - a.prefixFloor, l.floorFreshGas + l.floorRewriteGas + 4500);
+    const mask = [{ kind: "bind", cost: "unbindTag", first: false, purpose: PURPOSE.HEAD }];
+    assert.equal(sur.quote(mask).prefixFloor - plain.quote(mask).prefixFloor, l.floorRewriteGas + 10_000, `${s}: a HEAD mask pays the later share`);
+    // withdraws: the first pays computePerAction only, every later one the later row
+    const one = plain.quote([{ kind: "withdraw" }]);
+    const two = plain.quote([{ kind: "withdraw" }, { kind: "withdraw" }]);
+    assert.equal(two.prefixFloor - one.prefixFloor, w.computePerAction + w.computePerBindLater
+      + (two.freshSlots - one.freshSlots) * l.floorFreshGas + (two.rewrites - one.rewrites) * l.floorRewriteGas);
+  }
+});
+
 test("V adds the two 63/64 steps, the dispatch overhead, the final reserve and the kernel tail", () => {
-  const model = committed();
+  const model = formula3();
   const f = model.profiles.prague.floor;
   const pl = planner(model, "prague");
   const P = 1_000_000;
@@ -89,7 +147,7 @@ const STATEMENTS = {
 };
 
 test("labels, SAME and BROADER statements are priced from the model alone, on every schedule", () => {
-  const model = freeze(committed());
+  const model = freeze(formula3());
   for (const s of schedules(model)) {
     const p = model.profiles[s];
     const exec = s === "prague" ? p.constants : p.split.executionGas;
@@ -112,7 +170,7 @@ test("labels, SAME and BROADER statements are priced from the model alone, on ev
 });
 
 test("the Realm limits refuse before gas", () => {
-  const model = committed();
+  const model = formula3();
   const pl = planner(model, "prague");
   const create = { kind: "create" };
   assert.equal(pl.check(Array(model.planning.limits.maxActions + 1).fill(create)).refused, "maxActions");

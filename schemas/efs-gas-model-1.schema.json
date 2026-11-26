@@ -295,18 +295,39 @@
                     "freshPerPublishFresh",
                     "freshPerPublishExisting",
                     "rwPerPublish",
-                    "freshPerBindFresh",
-                    "rwPerBind",
-                    "rwPerBindLater",
                     "freshPerRef",
                     "freshPerDigestSpec",
                     "computeBase",
                     "computePerAction",
-                    "computePerHookEffect",
                     "finalComputeBase",
                     "finalComputePerBind",
-                    "finalComputePerPublish"
+                    "finalComputePerPublish",
+                    "freshPerBindFirst",
+                    "rwPerBindFirst",
+                    "computePerBindFirst",
+                    "freshPerRebind",
+                    "rwPerRebind",
+                    "computePerRebind",
+                    "freshPerBindLater",
+                    "rwPerBindLater",
+                    "computePerBindLater",
+                    "surchargePurpose",
+                    "surchargeFreshFirst",
+                    "surchargeRwFirst",
+                    "surchargeComputeFirst",
+                    "surchargeFreshRebind",
+                    "surchargeRwRebind",
+                    "surchargeComputeRebind",
+                    "surchargeFreshLater",
+                    "surchargeRwLater",
+                    "surchargeComputeLater"
                   ],
+                  "properties": {
+                    "surchargePurpose": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{64}$"
+                    }
+                  },
                   "additionalProperties": {
                     "type": "integer"
                   }
@@ -496,18 +517,39 @@
                     "freshPerPublishFresh",
                     "freshPerPublishExisting",
                     "rwPerPublish",
-                    "freshPerBindFresh",
-                    "rwPerBind",
-                    "rwPerBindLater",
                     "freshPerRef",
                     "freshPerDigestSpec",
                     "computeBase",
                     "computePerAction",
-                    "computePerHookEffect",
                     "finalComputeBase",
                     "finalComputePerBind",
-                    "finalComputePerPublish"
+                    "finalComputePerPublish",
+                    "freshPerBindFirst",
+                    "rwPerBindFirst",
+                    "computePerBindFirst",
+                    "freshPerRebind",
+                    "rwPerRebind",
+                    "computePerRebind",
+                    "freshPerBindLater",
+                    "rwPerBindLater",
+                    "computePerBindLater",
+                    "surchargePurpose",
+                    "surchargeFreshFirst",
+                    "surchargeRwFirst",
+                    "surchargeComputeFirst",
+                    "surchargeFreshRebind",
+                    "surchargeRwRebind",
+                    "surchargeComputeRebind",
+                    "surchargeFreshLater",
+                    "surchargeRwLater",
+                    "surchargeComputeLater"
                   ],
+                  "properties": {
+                    "surchargePurpose": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{64}$"
+                    }
+                  },
                   "additionalProperties": {
                     "type": "integer"
                   }

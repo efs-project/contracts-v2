@@ -144,15 +144,27 @@ export const LIMITS = {
   maxBodyBytesPerPublication: 16384, maxFreshSlotsPerPublication: 600, maxReadIds: 64, maxReadCount: 256,
   ...floorPrices("prague"), kernelTail: 20000,
 };
-/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): slot counts (×10) and compute
- *  terms measured with the step-3b lists on both schedules plus a margin (docs/TAG-NUMBERS.md "The floor"); no release
- *  work model exists in src/. */
+/** test/harness/doubles/IndexDoubles.sol IndexDoubleDefaults.workModel(): work-model formula 3 (docs/WORK-MODEL-V3.md
+ *  §3.4), slot counts ×10 and compute, in the struct's field order (the ingress reads the ABI reply as raw words, so the
+ *  order is part of the formula). The first-statement, re-bind and later-statement rows are measured per action on both
+ *  schedules (test/integration/FloorSplit.t.sol): each slot count is the largest of its class, and compute covers the
+ *  dearest whole shape of the class the floor claims (later statements: lists of up to LIST_LENGTH_CLAIM = 1,024
+ *  entries per author per place, test/harness/doubles/IndexDoubles.sol). Generation 1 keeps no list for one purpose, so
+ *  the surcharge is zero. No release work model exists in src/. */
 export const WORK_MODEL = {
-  formulaVersion: 2, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, freshPerPublishExisting: 29,
-  rwPerPublish: 46, freshPerBindFresh: 55, rwPerBind: 40, rwPerBindLater: 120, freshPerRef: 30, freshPerDigestSpec: 10,
-  computeBase: 54000, computePerAction: 8000, computePerHookEffect: 34000, finalComputeBase: 20000,
-  finalComputePerBind: 7400, finalComputePerPublish: 2800,
+  formulaVersion: 3, freshPerPublication: 30, rwPerPublication: 10, freshPerPublishFresh: 6, freshPerPublishExisting: 29,
+  rwPerPublish: 46, freshPerRef: 30, freshPerDigestSpec: 10, computeBase: 54000, computePerAction: 8000,
+  finalComputeBase: 20000, finalComputePerBind: 7400, finalComputePerPublish: 2800,
+  freshPerBindFirst: 55, rwPerBindFirst: 20, computePerBindFirst: 44000,
+  freshPerRebind: 20, rwPerRebind: 40, computePerRebind: 42000,
+  freshPerBindLater: 20, rwPerBindLater: 50, computePerBindLater: 85000,
+  surchargePurpose: ZERO, surchargeFreshFirst: 0, surchargeRwFirst: 0, surchargeComputeFirst: 0,
+  surchargeFreshRebind: 0, surchargeRwRebind: 0, surchargeComputeRebind: 0, surchargeFreshLater: 0, surchargeRwLater: 0, surchargeComputeLater: 0,
 };
+/** src/interfaces/Index.sol WORK_MODEL_WORDS and FORMULA_VERSION: the work model's ABI words (one per field) and the
+ *  formula the ingress implements. */
+export const WORK_MODEL_WORDS = 32;
+export const FORMULA_VERSION = 3;
 /** The floor prices a Realm on a Glamsterdam (EIP-8037/8038) chain activates: execution-gas prices only, because the GAS
  *  opcode never sees the state-gas reservoir (design §10.4): the regular 12,100 of a fresh slot, never the all-in
  *  ≈ 110,020, and the 12,100 of a cold rewrite (GAS_SCHEDULES). `KernelDeploy.s1Limits()` uses them under
