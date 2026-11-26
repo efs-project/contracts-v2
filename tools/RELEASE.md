@@ -1292,7 +1292,7 @@ already applies the surcharge by purpose).
 - **The floor's margin, as the tests assert it and nowhere more** (`FloorSplit.t.sol` `_row`, per action): at least
   **1.03 on prague** for every bind-kind statement and every WITHDRAW after the first inside the claim (PUBLISH, REUSE
   and CREATE, whose terms formula 3 did not change, at least 1.005; lowest measured 1.025, a new name record), and at
-  least **1.05 on amsterdam**, where every shape inside the claim holds it. The binding cell is a yes after a lone no
+  least **1.05 on amsterdam** for every per-action cell inside the claim (each further action of a publication). A publication of ONE action alone is a separate assertion, at least 1.03 on both schedules: the lowest on amsterdam is a single WITHDRAW, priced by the per-publication terms, at 1.034. The binding cell is a yes after a lone no
   across places in lists of 1,023 entries on prague, **1.031**; the lowest on amsterdam is a folder re-bind across
   folders, **1.057**. Why 1,023 is dearer than 1,025: each probe of the entry search also reads the word its entry sits
   in, so the cost follows probes plus distinct words read, not length (10 probes and 9 words at 1,023 entries, 10 and 8

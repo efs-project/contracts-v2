@@ -173,7 +173,8 @@ words). Where this section and the sections below differ, this section is what t
 9. **The floor's margin, as the tests assert it and nowhere more** (the integration owner's ruling, applied at the
    join). `FloorSplit.t.sol` `_row` asserts per action at least **1.03 on prague** for every bind-kind statement and
    every WITHDRAW after the first inside the claim (PUBLISH, REUSE and CREATE at least 1.005; lowest 1.025, a new name
-   record) and at least **1.05 on amsterdam**, which every shape inside the claim holds. Measured lowest: **1.031 on
+   record) and at least **1.05 on amsterdam** for every per-action cell inside the claim (each further action of a
+   publication). A publication of ONE action alone is a separate assertion, at least 1.03 on both schedules: the lowest on amsterdam is a single WITHDRAW, priced by the per-publication terms, at 1.034. Measured lowest per action: **1.031 on
    prague**, a yes after a lone no across places in lists of 1,023 entries (the binding cell of the later row's
    compute); **1.057 on amsterdam**, folder re-binds across folders. 1,023 entries are dearer than 1,025 because each
    probe of the entry search also reads the word its entry sits in, so the cost follows probes plus distinct words read,
@@ -643,7 +644,7 @@ Formula 3 keeps the lowest ratio at or above 1 the way formula 2 does: every slo
 measured for its class, and each class's compute term is set so that its dearest measured shape stays at or above
 1.035 (first statements, prague, unchanged from formula 2) and 1.05 (later statements, both schedules), as fitted at
 the formula-3 release. (Since the list release the later row's binding cell is a yes after a lone no at 1,023 entries
-on prague at 1.031: the tests assert at least 1.03 on prague and 1.05 on amsterdam, lowest 1.057, "Landed: the list
+on prague at 1.031: the tests assert per action at least 1.03 on prague and 1.05 on amsterdam, lowest 1.057, and 1.03 for a publication of one action alone, "Landed: the list
 release" item 9.) The measured
 whole-publication ratios, formula 3 (`FloorPlan.t.sol` at the planned k; `FloorStates.t.sol`; `IndexFloor.t.sol`;
 `FloorReconcile.t.sol`; `HeadAuthorsFloor.t.sol`; all passing on both profiles in `v3t0` and `v3t2`):
@@ -673,7 +674,7 @@ after a lone no is covered within the claim and the limits beyond it are 3,586 e
   re-bind, in a list of any length and at any number of places (it never searches); every mask and release, and every
   restore but one kind, in an author's list of up to 1,024 entries at one place, at any entry, with any number of
   distinct places in one publication, quoted at 1.05× or more of its spend on both schedules as measured then (lowest
-  1.062 prague, 1.052 amsterdam; today at least 1.03 / 1.05 as the tests assert, lowest 1.031 / 1.057); every WITHDRAW. The one
+  1.062 prague, 1.052 amsterdam; today per action at least 1.03 / 1.05 as the tests assert, lowest 1.031 / 1.057); every WITHDRAW after the first (a publication of a single WITHDRAW measures 1.41 / 1.03). The one
   kind is a yes after a lone no, covered on prague only in lists of up to 256 entries (below). The list is one author's entries at
   one exact place, keyed by author, purpose and subject: for a tag, everything one author filed under one exact topic or
   address; for a folder, one author's entries in that folder; a file's HEAD list has one entry, so edits and version
