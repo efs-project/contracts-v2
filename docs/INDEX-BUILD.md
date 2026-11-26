@@ -36,14 +36,17 @@ So **neither `PostingStore` nor `BitmapStore` has to change for a later generati
 change a digest spec or replay everything.** The design §10.6 note that "`retain`, `release` and the uncounted
 append all refuse in backfill mode" is true, but a build never runs in backfill mode.
 
-One store defect matters, and it is in `BitmapStore`. `openCoverage` refuses backfill mode (`BitmapStore.sol:142`),
-and only the live generation writes the genesis `BitmapStore`. So a BITMAP family added **in place** (the reserved
-`roster` family, kind 17) can open a coverage slot only for a scope that some publication touches after the family
-is declared. A pre-declaration scope that nobody touches again never gets a slot, `backfillOr`/`backfillSet` refuse
-it (`BitmapStore.sol:162, 182`), and its coverage can never become COMPLETE. The genesis `BitmapStore` is a lasting
-contract, so **this one-line change must land before the first lasting deployment** if the in-place route for
-`roster` is to stay in the design. If it does not land, `roster` (or any later BITMAP family) can still be added,
-but only by building a fresh bitmap store from history (§2.3), which is far dearer.
+One store defect mattered, and it was in `BitmapStore`. `openCoverage` refused backfill mode, and only the live
+generation writes the genesis `BitmapStore`. So a BITMAP family added **in place** (the reserved `roster` family,
+kind 17) could open a coverage slot only for a scope that some publication touches after the family is declared. A
+pre-declaration scope that nobody touches again never got a slot, `backfillOr`/`backfillSet` refuse a scope without
+one, and its coverage could never become COMPLETE. The genesis `BitmapStore` is a lasting contract, so the fix had to
+land before the first lasting deployment for the in-place route for `roster` to stay in the design. **It landed in
+this release:** `openCoverage` now accepts the live generation while idle (the writer and family rule is unchanged,
+`E_COVERAGE(1)` still refuses an open slot, and the store still does not judge `liveFrom`), and the store's ABI tag
+is `efs/bitmap-store/2` (`test/index/Stores.t.sol` opens, backfills and completes an untouched scope). Without it,
+`roster` (or any later BITMAP family) could have been added only by building a fresh bitmap store from history
+(§2.3), which is far dearer.
 
 Everything else this proposal needs is in code that is replaceable until the Realm is frozen: the new generation
 itself, a deployer that can carry some stores and create others, its reads contract, and one more readiness check
@@ -113,8 +116,9 @@ gas of a replay step.
    (`LedgerControl.sol:359-364`); it does not check that the last range belongs to the live index, nor that a
    fresh store names the candidate as `INITIAL_WRITER`. §5.3 explains why that matters.
 7. §4.6 says a coverage slot "exists only for scopes that predate the family's declaration ordinal; absent =
-   covered by construction". With `openCoverage` refused in backfill mode, "absent" can also mean "predates the
-   declaration and was never touched again", which is not covered (§0).
+   covered by construction". While `openCoverage` refused backfill mode, "absent" could also mean "predates
+   the declaration and was never touched again", which is not covered (§0); since `efs/bitmap-store/2` the live
+   generation opens such a slot while idle, so the gap is the generation's to close, not the store's.
 8. §8.7 lists `replayNextPublication`, `build` and `backfill` as `DELEGATECALL`s into `IndexBuild`. Withdrawn
    (§10.1 note); generation 1 replays in its own code.
 
@@ -167,12 +171,13 @@ entries [100, 200].
 
 **A built list inherits history as it was admitted.** A build folds every admitted statement, and a later
 validator cannot refuse a statement after the fact. So a rule that keeps junk out of a list has to be in the
-validator before the statements are made, not in the generation that later lists them. One case exists today: a
-first "not this" at HEAD (an UNBIND with no earlier statement) is not judged, so anyone can make one about an id
-that names no file. Nothing lists it now. A `head-authors` build would give that id a list with one uncounted
-entry. The fix is the rule code 15 already applies to TAG and FOLDER (`FilesFinalValidator`): a first mask at HEAD
+validator before the statements are made, not in the generation that later lists them. One case existed until
+this release: a first "not this" at HEAD (an UNBIND with no earlier statement) was not judged, so anyone could make
+one about an id that names no file. Nothing lists it. A `head-authors` build would have given that id a list with
+one uncounted entry. The fix is the rule code 15 already applies to TAG and FOLDER (`FilesFinalValidator`): a first mask at HEAD
 must name a created subject. It costs one read on a rare action, and it has the same deadline as any validator
-change: before the first lasting deployment. It is scheduled with the next release.
+change: before the first lasting deployment. It landed in this release as code 16: a first "not this" at HEAD must
+name a subject created strictly before it (`test/integration/HeadLaw.t.sol`).
 
 ### 2.3 (c) Add a BITMAP family
 
@@ -181,11 +186,11 @@ Example: `roster` (kind 17), reserved in generation 1 as `NOT_MAINTAINED` with C
 
 A BITMAP family's bits are indexed by the entries of the scope list (kind 10) **in the same store**:
 `setBit` and `backfillSet` refuse an entry index at or beyond that store's own scope count
-(`BitmapStore.sol:118, 184-185`). That leaves three routes:
+(`BitmapStore.sol:118, 186-187`). That leaves three routes:
 
 1. **In place, in the genesis `BitmapStore`** (design §10.6 backfill): possible only for a family the genesis store
    already lists. Its family set is `scope`, `roster`, `live-scope` (`tools/deploy-plan.mjs:171`), so only `roster`.
-   It needs the `openCoverage` fix (§0, §7.2).
+   It needed the `openCoverage` fix (§0, §7.2), which landed in this release (`efs/bitmap-store/2`).
 2. **A fresh `BitmapStore` built from history.** It must rebuild kind 10 and `live-scope` too, because the bits
    need the scope lists beside them. Correct with today's code (`MODE_BUILD` accepts `appendScopeEntry`, `setBit`,
    `stamp`), but it costs about one fresh slot per scope ever bound plus the entries (estimated from §10.2's slot
@@ -216,7 +221,7 @@ exists today for a generation-1-shaped generation (§1.1). What it lacks is a te
 | (b) new APPEND family | **yes** | It is the promise the release gate is about (Q52). |
 | (d) digest spec | yes, same machinery | Once (b) can put any manifest family in a fresh store, (d) is (b) for family 15. Its test can follow. |
 | (e) full replay | exists; add the busy-Realm test | The code is there; the race and transition procedure are not tested. |
-| (c) BITMAP family | **no**, except the `openCoverage` fix | No BITMAP family is planned (`roster` is reserved, Q16's codec-2 families are later). The fix is the only part with a deadline, because the genesis `BitmapStore` is lasting. |
+| (c) BITMAP family | **no**; the `openCoverage` fix landed in this release | No BITMAP family is planned (`roster` is reserved, Q16's codec-2 families are later). The fix was the only part with a deadline, because the genesis `BitmapStore` is lasting; it is in `efs/bitmap-store/2`. |
 
 **Planning rule: batch later lists into one generation.** One walk builds every built family, and the walk is
 most of the cost (§6.2). Two lists added in two generations pay for two walks of the whole history; added together
@@ -352,7 +357,7 @@ write's effect depends on it (`PostingStore.sol:112-187`). In `BitmapStore`, the
 admission check: a live write must stamp the frontier, a build write may stamp any admission up to it
 (`StoreBase.sol:83-92`). The build passes the admission it folds, which is the frontier the live write had, so the
 stamp is the same (`Stores.t.sol:545-562`). One exception, not used by any fold today: `retireCoverage` stamps the
-*current* frontier (`BitmapStore.sol:201-208`), so a built family must never call it (§9, Q10).
+*current* frontier (`BitmapStore.sol:203-210`), so a built family must never call it (§9, Q10).
 
 Two properties make a wrong build fail loudly instead of diverging: the order law (`E_ORDER` on an entry not above
 `last`, `PostingStore.sol:173`) and the counter bounds (`release` below zero, `retain` above `count`:
@@ -594,12 +599,13 @@ set are refused, QUESTIONS Q11).
 
 - **`PostingStore`: no change.** A fresh store for a later family can be today's code. `STORE_ABI_ID` stays
   `efs/posting-store/2`.
-- **`BitmapStore`: one change, before the first lasting deployment, if the in-place route for `roster` stays.**
-  `openCoverage` should also accept `MODE_BACKFILL` (the live generation while idle), so a pre-declaration scope
-  can get its slot without waiting for a publication to touch it. The ABI does not change, so the selector-derived
-  `STORE_ABI_ID` would not move by itself; this proposal recommends bumping the tag to `efs/bitmap-store/2` so the
-  changed behavior is visible in the id, as was done for the posting store's step-3b amendment. The alternative is
-  to drop the in-place route from the design and add every later BITMAP family through a fresh store (§2.3).
+- **`BitmapStore`: one change, landed in this release.** `openCoverage` also accepts `MODE_BACKFILL` (the live
+  generation while idle), so a pre-declaration scope gets its slot without waiting for a publication to touch it;
+  this keeps the in-place route for `roster`, which the genesis store's lasting deployment would otherwise have
+  closed. The ABI did not change, so the selector-derived `STORE_ABI_ID` would not have moved by itself; the tag is
+  now `efs/bitmap-store/2` so the changed behavior is visible in the id, as was done for the posting store's step-3b
+  amendment. The alternative, dropping the in-place route and adding every later BITMAP family through a fresh store
+  (§2.3), is no longer needed.
 - **The genesis `BitmapStore`'s family set** is fixed forever at deployment: `scope`, `roster`, `live-scope`
   (capacity 4). Only those can ever be BITMAP families in place. Decide before the first lasting deployment
   whether to reserve a fourth id; with route 3 of §2.3 available, this proposal reserves nothing more.
@@ -655,8 +661,8 @@ Each runs on both fee profiles.
 4. **Kernel checks of §5.3.** In `LedgerControl`, or only in the generation? *Recommend both, landed before freeze
    (and in the terminal implementation if posture B is chosen).*
 5. **`openCoverage` in backfill mode.** Fix the genesis `BitmapStore` before the first lasting deployment, or drop
-   in-place BITMAP backfill from the design? *Recommend fix it: one line, and it is the only cheap route for
-   `roster`.*
+   in-place BITMAP backfill from the design? *Fixed: landed in this release (`efs/bitmap-store/2`). One line, and it
+   is the only cheap route for `roster`.*
 6. **Reserved BITMAP ids.** Reserve a fourth family id in the genesis `BitmapStore`? *Recommend no; route 3 of
    §2.3 covers later families.*
 7. **A filtered decoder** that skips leaves a build does not need. *Recommend not in the first build; later, only

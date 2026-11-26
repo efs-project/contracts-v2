@@ -209,22 +209,66 @@ this release's tree. CI now runs `pnpm check --built` after the build, which fai
 consumer that relied on "CI is green" for those three properties in earlier commits should know they were checked
 locally, not by CI.
 
+### Since the tag release (this release against `899767e`)
+
+A consumer that vendored the tag release (`899767e`, digest `0xfebf6886…8495`) re-vendors the same directories again.
+These are the changes; everything else in the consumer surface is as above.
+
+**17. Thirteen gas rows for statements about topics.** `gas/model.json` prices `PROPERTY`, `SAME` and `BROADER` on
+both schedules: `bindPropertyFresh`, `bindPropertyRebind`, `unbindProperty`, `releaseProperty`, `bindSameFreshWord`,
+`bindSameFreshPath`, `unbindSame`, `releaseSame`, `restoreSame`, `bindBroaderFresh`, `unbindBroader`,
+`releaseBroader`, `restoreBroader` ("The planning model" has the table and the nearest existing rows). A label with a
+new text is the `text/1` publish row plus `bindPropertyFresh` (composite `validate label new text`). The planner
+prices them by their constants key, with no code change.
+
+**18. The anchor rule for `fixed`.** `fixed` is the median of `2·k1 − k2` over the forty anchor pairs only
+(`fit.fixedAnchors`, `tools/gas-fit.mjs`), so adding a row never changes the price of an existing action. `fixed` is
+315,778 on prague (315,790 at `899767e`) and 899,110 on amsterdam (899,098): the anchor rows themselves moved by 12 to
+36 gas with this release's code, not the new rows. The schema now requires `fit.fixedAnchors`.
+
+**19. The label language rule.** `EfsTopics.labelKey(tag)` lowercases ASCII `A`–`Z` in the BCP 47 tag before deriving
+the key, so `pt-BR` and `pt-br` are one key (`label:pt-br`), and so are `EN` and `en`. The chain cannot check it (the
+key is a hash): the SDK's twin must fold the same way (`test/vectors/topics.json` `labelKeys`).
+
+**20. The bitmap store: `efs/bitmap-store/2`.** `IBitmapStore.openCoverage` now also accepts the live generation
+while the ledger is idle (backfill mode), so a scope that no publication touches after a later BITMAP family is
+declared can still get a coverage slot and be backfilled to COMPLETE. Nothing else changed: the writer and family
+rule is the same, `E_COVERAGE(1)` still refuses an open slot, and the store does not judge `liveFrom` (for an idle
+open the generation passes the frontier plus one). The ABI is unchanged, but the id's tag is now
+`efs/bitmap-store/2`, so `STORE_ABI_ID` is `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (was
+`0xb3240a15…5d6f`). This was the one store change that had to land before the first lasting deployment
+(docs/INDEX-BUILD.md §0, §7.2): **it is done.**
+
+**21. Refusal code 16.** `FilesFinalValidator` refuses a first "not this" at HEAD (an UNBIND with no earlier statement
+by its author) whose subject is not a subject created strictly before it: `E_FILES_FINAL(16, leaf)` inside
+`E_INDEX_CALL`. Every subject a HEAD BIND can pass code 8 on is such a file, so nothing that can have a version loses
+its "not this"; masks and releases of an existing HEAD are still never judged. The validator's codes are now 1–16. It
+adds 5,236 gas to a lone HEAD "not this" on prague and 5,224 of execution gas on amsterdam (no state gas), and on 64
+of them the final phase uses 93% of the final reserve on both schedules.
+
+**22. Identities.** Moved: the release digest, the plan hash, the execution set, the index obligations and manifest
+hash, the index (generation 1) and its reads contract, `BitmapStore` and `FilesFinalValidator` (address, initcode and
+runtime codehash), the bitmap store ABI id, and in `artifacts/` only `BitmapStore.json` and `FilesFinalValidator.json`.
+Not moved: the layout id, the hot ABI ids, the posting store ABI id, every Type id, the ledger proxy and
+implementation, the registry, every reader and the gateway, the seed (`efs-fixture-seed/4`, the root directory record
+`0xf7547aa6…c037`, `docs`, `readme.txt`, `big.bin`, `remote.txt`). The table below has the values.
+
 ### The identity table (this release against `cc59d0c`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`). Addresses are the fixture Realm's; on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. "Moved" is against `cc59d0c`.
 
 | pin | this release | moved |
 |---|---|---|
-| release digest (`sha256(release.json)`) | `0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495` | yes (was `0x3080c7d497d248404e07169de87a5ebe0c657b2c6dce97ce3b97a4535be94045`) |
-| plan hash | `0xf5cbe78320301e69e205453876294a8ec6344810d41c42df643e13f6626b9904` | yes (was `0x12fc89b5ba9692557865a0078c648bb9b21daa89c651a021686fe691deb4caf0`) |
-| execution set | `0xf5514949f83a07bdd6811d62d6d2afb6d4b3499e1553b8cd18ad0b260e38f00d` | yes (was `0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9`) |
-| index obligations | `0xfa019dab971c12742de361bd2e8ee26e6f1dcf40820204a5e1ce5f1d40a1315f` | yes (was `0x7a7c39be2aa7dc061f901c8eded0a2a5cbcb282c15895c35c89bf88608e822b2`) |
-| index manifest hash | `0x781779c5f741c993be5bd402403b3a31b87e92788692e61d586d426a7056cbc0` | yes (was `0x5156a9991e6bde7401ee2ace2cfab0e42c448636fcd80b3ffe53ba4efbaae710`) |
+| release digest (`sha256(release.json)`) | `0x580ede64a8178920a10ea6be524954a1b39289779e587204bee27e9713fbd04e` (`0xfebf6886ce02d5c6593437dc9bc08484df921c1c1ddf53f8cad1ca91fbc68495` at `899767e`) | yes (was `0x3080c7d497d248404e07169de87a5ebe0c657b2c6dce97ce3b97a4535be94045`) |
+| plan hash | `0xff2f4490eeb7ab6bc9ed796be42199ac6f3868a73f15a481b4aeec04888f6d83` (`0xf5cbe783…9904` at `899767e`) | yes (was `0x12fc89b5ba9692557865a0078c648bb9b21daa89c651a021686fe691deb4caf0`) |
+| execution set | `0x3a9a6aea417492210568a60a5383e17bea5cffae424aafaaded4cb835fd793e4` (`0xf5514949…f00d` at `899767e`) | yes (was `0x7bf58895ff02feb5e2c1ad9c4ed9a5ab20c1f10bafcc3e6699e2adf9cd070ad9`) |
+| index obligations | `0x9150afe9de8bc7ab2a529ad497d3cf423a3eee085b4669d427777950613f6524` (`0xfa019dab…315f` at `899767e`) | yes (was `0x7a7c39be2aa7dc061f901c8eded0a2a5cbcb282c15895c35c89bf88608e822b2`) |
+| index manifest hash | `0x608cabe72eb6b4a5177a6355ecae7e6824ee9790e0b4e1d36824e13af285006c` (`0x781779c5…cbc0` at `899767e`) | yes (was `0x5156a9991e6bde7401ee2ace2cfab0e42c448636fcd80b3ffe53ba4efbaae710`) |
 | layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | yes (was `0x9d4ccbe1ae4334a5bb9aeed2d233ce33a92dbde2df0e4437297fca2e06529deb`) |
 | hot ABI id `efs/ledger-hot/2` (release) | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | yes (was `0x68a7724bb4fb83d63bb8fc75f650d8502abd055f74e41efc3d1ed4391b481a99`) |
 | hot ABI id `efs/ledger-hot/2:test` (suites) | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | yes (was `0x953f29e98a1f402cd1ab51c0b2d59b1b60f6067df47ca0969e4b8a855a36a76b`) |
 | posting store ABI id `efs/posting-store/2` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` | yes (was `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229`) |
-| bitmap store ABI id `efs/bitmap-store/1` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | yes (was `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425`) |
+| bitmap store ABI id `efs/bitmap-store/2` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (`efs/bitmap-store/1` `0xb3240a15…5d6f` at `899767e`) | yes (was `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425`) |
 | Type id `files-root/1` | `0xc0cd1cb0ae8a822b60380bdc63e7359005c642c9c5b758f436e1bc8ef7bad41c` | no |
 | Type id `files-child/1` | `0xac734de0aa9841fab3eb4903db9ac72ff7fcdb722838b85978106322acf04120` | no |
 | Type id `files-directory/1` | `0xc1416234ef270e67d4ea6797f53f8f4e221bf6da1adb57f192220ae108dabcba` | no |
@@ -239,7 +283,7 @@ Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs
 | Type id `topic/1` (provisional) | `0x4ea9b8b24cedad9ad6d9b1dea15789d261812620dfc5ab2c28926c06b832d4cf` | new |
 | Type id `text/1` (provisional) | `0x0b71fa4391f889f8a5c5b80499ad7b3921ec96111ed99aa0d60410a3bdb26a06` | new |
 | ledger proxy | `0x83DbD3411050C131bD2F4e1493Ff5750D80530C6` | yes (was `0x870aa1d6873256e38F82E348c23F707B7E890c1c`) |
-| index (generation 1) | `0x00f2a5C0D3EfEd3A20F2858AC462A1c6828f03C6` | yes (was `0xa09CB554d43a121318DFB7deE4F7e46Aa56219dd`) |
+| index (generation 1) | `0xCa5A752AC91AE1796574E964C30Cbe06c67ad4Dc` (`0x00f2a5C0…03C6` at `899767e`) | yes (was `0xa09CB554d43a121318DFB7deE4F7e46Aa56219dd`) |
 | `readers.ledgerReads` | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366` | yes (was `0x02c6Cb67a439788469FD03A410E51EC90554837a`) |
 | `readers.ledgerViews` | `0xdf43CDcc94948Ce810eC640615b21C0BE1fE5648` | yes (was `0xFeD47e0060dBA4Acf18198c6DDc0CFBbd8A0dd55`) |
 | `readers.readerDirectory` | `0x77865D8B084589021D9695865475cBED4fc16c31` | no |
@@ -531,7 +575,7 @@ inputs are covered by the selector, events and errors are not part of the id. Co
 | hot (release) | `efs/ledger-hot/2` | `ILedgerHot.json` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | `0xfd9aff95b7af2d5718baa9825d35c983d09264fa99fd1c1fe50ef7c4de1b8dc0` |
 | hot (suites) | `efs/ledger-hot/2:test` | `ILedgerHot.json` | `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0` | `0xb9163fed951b51bb8d2d13b3bd410b5de236799b79c7b1f86b9699d1d90dc603` |
 | posting store | `efs/posting-store/2` | `IPostingStore.json` | `0x420c69c26d04ae5ba1cacc694d440d5257b35567851f953775e889406066128a` (step 3b amended: `retain` added; `efs/posting-store/1` was `0xef300c267b843366fadb9548283d8ed29eb662770572621fab8f4429d9433554`) | `0xe6e24a4f8c7ff837e49cb1ce542fa5f6091a3ff5fa0bc27c9c8d1f42a79e4229` (under `/1`) |
-| bitmap store | `efs/bitmap-store/1` | `IBitmapStore.json` | `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f` | `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425` |
+| bitmap store | `efs/bitmap-store/2` | `IBitmapStore.json` | `0x2d01560e82c334b2278e6228309ae5d2129bc4d82e60e7111ee8b9276987ba36` (same ABI as `/1`, `0xb3240a15cf3c59f820603f4f856a802b9935547ac7d6fa01e892fcfbbfbe5d6f`; the tag moved with the idle `openCoverage`) | `0x92e2ac66b9cd53934d7ffa76ad5c6e89ebc4ceb1da733342e6d2371947fee425` |
 
 The release hot-ABI id is `HOT_ABI_ID` in `tools/deploy-plan.mjs` (name `HOT_ABI_ID_STRING`): `LedgerCore`'s
 `HOT_ABI_ID` constructor argument (so `supportedHotAbiIds() == [it]`), `IndexReads`' `hotAbiId` constructor argument
@@ -734,8 +778,11 @@ amsterdam; the residual is the grammar's own validation, about 87 gas a byte aga
 `pnpm gas:model` (`node tools/gas-model.mjs [--skip-amsterdam 1]`, forge under the same watchdog and `out/amsterdam`
 rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fixed + Σ cost(action)`, with `PUBLISH` new `= publishNew[shape] + perWord·ceil(n/32)
 + perByte·n` and one constant per other action kind and purpose, plus a once-per-principal first-write surcharge
-(amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only). It
-is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
+(amsterdam constants are also split into execution and state gas, since the EIP-7825 cap counts execution only).
+`fixed` is the median of `2·k1 − k2` over the **anchor pairs** only (`fit.fixedAnchors`: the forty pairs the model had
+at `899767e`, frozen in `tools/gas-fit.mjs`). A row added later is fitted as its own constant and keeps its implied
+fixed cost in `fit.impliedFixedByPair`, but it never changes `fixed`, so adding a row never re-prices an existing
+action (`tools/test/gas-fit.test.mjs`). It is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
 guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
 script predicts seven composites it never fits (create file, edit, rename + move, two chunks, the last publication of
 a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and exits 1 if a prague prediction is off by more than 15%.

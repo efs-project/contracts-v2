@@ -118,7 +118,7 @@ A tag is a bind at position (TAG, topic, thing), targeting the thing.
 
 A nonzero number costs 12 gas more than zero.
 
-**The validator's laws, in plain words** (`FilesFinalValidator`, refusal codes 1 to 15). It judges only HEAD, FOLDER,
+**The validator's laws, in plain words** (`FilesFinalValidator`, refusal codes 1 to 16). It judges only HEAD, FOLDER,
 TAG, SAME and BROADER, and only a statement that asserts something or creates a new position for its author: an
 author can always mask or release a binding of theirs that already exists, and no law refuses that.
 
@@ -126,7 +126,9 @@ author can always mask or release a binding of theirs that already exists, and n
   cannot point at its own folder. 4: a file it names must already exist. 5: a record it names must be a folder.
   6: nothing else may be named, an address included (it would confirm and never be readable). Codes 1 and 2 apply
   to a first "not this" too, so it can only be said about an entry that could exist.
-- **A file's HEAD.** 7: never an address. 8: it names a revision record of that same file.
+- **A file's HEAD.** 7: never an address. 8: it names a revision record of that same file. 16: a first "not this"
+  names a file, a subject created strictly before it (as 15 does for tags). Anything that can have a version is such
+  a file, so this never stops anyone saying "not this" about something others can publish a version of.
 - **Tags.** 9: a first statement (either sign) sits under a home or under a topic registered strictly before it, in
   an earlier action (a topic registered later in the same publication would silently miss its list entries).
   14: a tag's target is the thing it names (its role). 15: a first "not this" names something that exists: a record
