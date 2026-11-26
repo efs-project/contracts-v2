@@ -84,9 +84,9 @@ against `3ca53ba`. What a consumer must change, as one list:
   48, `claimEntries` 1,024, `rule`, `note`); per profile `maxUnderErrorPercent`, `maxUnderErrorComposite` and
   `maximaExcludeStates` (`["beyondClaim"]`), and on amsterdam `maxUnderExecutionErrorPercent` and
   `maxUnderExecutionErrorComposite`; `method.laterLists` and `method.maxima`; 37 new constants (item 47); new validation
-  states `acrossPlaces`, `acrossPlacesBitsWord`, `longLists`, `beyondClaim`. Nothing was renamed or removed in the model
-  itself; the floor's `workModel` now has formula 3's 32 fields (`freshPerBindFresh`, `rwPerBind` and
-  `computePerHookEffect` are gone). **A headroom check of the 2^24 cap condition reads `maxUnderErrorPercent` on prague
+  states `acrossPlaces`, `acrossPlacesBitsWord`, `longLists`, `beyondClaim`. No field was renamed; the only fields
+  removed are formula 2's under `floor.workModel` (`freshPerBindFresh`, `rwPerBind`, `computePerHookEffect`), which now
+  holds formula 3's 32 (the three rows, `surchargePurpose` and the surcharge rows). **A headroom check of the 2^24 cap condition reads `maxUnderErrorPercent` on prague
   and `maxUnderExecutionErrorPercent` on amsterdam** (`planning.headroomCovers` says so).
 - **Batch sizes** (item 43; `test/vectors/floor-plan.json`): prague tag masks, releases and masks of masks 64 → 58, tag
   restores 60 → 51, number changes 60 → 62, folder re-binds 60 → 62; amsterdam masks, releases and masks of masks
@@ -909,7 +909,6 @@ New `E_PIN` code 13 (the index's work model could not be held as a data contract
 a data contract (one STOP byte, then the 32 words), bound by address and codehash; the manifest hash still folds the same
 `work` struct, so it commits to the exact words.
 
-
 **45. Keeping an index never asks its readiness; only its work model is read.** An activation that keeps the live
 index (`set.components.index == index()`) used to call `IRealmIndex(index).replayReadiness().phase` for reason 2,
 uncaught, so a live index whose readiness no longer answered made every activation that kept it revert with that
@@ -950,6 +949,7 @@ amsterdam, with 253 gas of formula 3's example-generation code on top: a cold ca
 execution (+0.46%; 575,683 → 577,824 in all, +0.37%, amsterdam), docs/INDEX-BUILD.md §6.2. The decoder's code changed
 (5,404 → 5,578 B), so its runtime codehash and its address (CREATE2 of its initcode) move; generation 1's index pins it
 as an immutable (`DECODER`, a constructor argument), so the index's runtime codehash and address move with it (item 48).
+
 **47. The gas model prices later statements across places and in long lists.** Consumer change:
 `gas/model.json` gains the list tiers (tools/RELEASE.md "The list tiers"; design §10.4), so a planner's E for masks,
 releases and restores no longer comes out 14–24% low for later statements at an author's entry 48 or beyond, or in
@@ -965,7 +965,7 @@ lists of up to 1,024 entries.
   `unbindTag`, `releaseTag`, `restoreTag`, `unbindFolder`, `releaseFolder`, `restoreFolder`, `unbindProperty`,
   `releaseProperty`, `unbindSame`, `releaseSame`, `restoreSame`, `unbindBroader`, `releaseBroader`, `restoreBroader`
   (36 rows), and `restoreFolder` itself (a folder restore had no row); 37 new constants, each its own pair, none an
-  anchor: `fixed` and every existing row are unchanged. New validation `state` values: `acrossPlaces`,
+  anchor: the tiers change neither `fixed` nor any existing row (both moved with this release's code only, below). New validation `state` values: `acrossPlaces`,
   `acrossPlacesBitsWord`, `longLists`, `beyondClaim`; 39 new composites.
 - **What a planner passes** for each later statement: `firstAtPlace` (no earlier later statement of the same
   publication at the same (purpose, subject); omitted: true) and `entries` (the author's entry count at the place,
