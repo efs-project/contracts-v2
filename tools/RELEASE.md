@@ -212,13 +212,20 @@ rule, never from `indexFloor`.
   kernel refusal was needed); the reader test for partial coverage (every topic view: UNKNOWN is a refusal with no
   rows, PARTIAL a PRESENT page that states its coverage, never COMPLETE); a new unit's fold hook built with the walk;
   and the written rule for a fold hook and history (rule (i), docs/INDEX-BUILD.md §3.6). So "a later generation can
-  add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **What remains
-  of the gate:** the measured gas of a build on both schedules (step 4); the liveness gate below; a re-pin that adds a
-  unit with a fold hook builds no history for it (docs/INDEX-BUILD.md §3.6: a generation adding such a unit needs a
-  fresh store, nothing refuses the other shape); case (d), a digest spec rebuilt in a fresh store (its test, §8 test
-  9); and, if a real later generation adds a HEAD list, a per-purpose work-model term or an accepted over-quote of TAG
-  and FOLDER statements (docs/INDEX-BUILD.md §10 item 27). A build walks the whole history, so a later list has a
-  price (its §6.2).
+  add this list" (for example the all-authors list on a file's versions, QUESTIONS Q52) is now shown. **Done (step 4, item 36): the
+  measured gas of a build** on both schedules (`test/index/BuildGas.t.sol`, docs/INDEX-BUILD.md §6): adding
+  `head-authors` later to a Realm of 1,000,000 files costs 484.6B gas in 28,920 transactions on prague (484,560 a file)
+  and 582.4B on amsterdam (474.7B of execution in 28,330 transactions and 107.7B of state gas), against 51,167 /
+  149,608 a file to keep it from genesis (9.5× / 3.9×); 10,000 files cost 4.85B / 5.82B; a full replay of the same
+  history 1,237.6B / 3,121.3B; every admitted publication builds in one call under 2^24, both for a later list and
+  for a full replay, so a build never needs to resume inside a publication. **What remains of the gate:** the
+  liveness gate below; a re-pin that adds a unit with a fold hook builds no history for it (docs/INDEX-BUILD.md §3.6:
+  a generation adding such a unit needs a fresh store, nothing refuses the other shape); case (d), a digest spec
+  rebuilt in a fresh store (its test, §8 test 9); if a real later generation adds a HEAD list, a per-purpose
+  work-model term or an accepted over-quote of TAG and FOLDER statements (docs/INDEX-BUILD.md §6.2: lone negatives
+  38 → 32 on prague, 54 → 47 on amsterdam; create files 10 → 9 on prague); and the amsterdam rewrite price of the
+  floor (docs/INDEX-BUILD.md §10 item 29, an open finding: no planned transaction fails, but the quote is 0.969× a
+  create-file recipe's spend in a folder where the author already has files).
 - **Activation must not depend on the live index answering** (docs/INDEX-BUILD.md §10, new with step 2). The kernel's
   check 12 and the generation's carried check read the live index's `replayReadiness().families` whenever the
   candidate carries a store. If that read reverts, the kernel's activation reverts with the live index's own error and
@@ -512,6 +519,21 @@ from genesis, and the dropped-list, fold-hook and partial-coverage tests of the 
 and the floor-plan vectors' measured figures. Not moved: the index manifest hash (it folds the reads contract, not the
 index), the reads contract (`IndexReads`' runtime is byte-identical) and every other address and codehash, the layout
 id, the hot and store ABI ids, every Type id, `release/errors.json`, the ABI snapshots and the seed.
+
+**36. The measured gas of a build (build from history, step 4).** Measurement and docs only: no `src/` file, no
+release file, no ABI, identity, gas-model row or floor-plan vector moved, so a consumer does not re-vendor for it. The
+figures (docs/INDEX-BUILD.md §6, `test/index/BuildGas.t.sol`, both schedules): adding a list later is priced by the walk
+of the whole history, about 26k a publication plus 11k to 24k a leaf (a create-file recipe 148,259, an edit 91,462),
+plus the list's own writes, plus a fixed share of about 0.49M–0.52M a cold call; for 1,000,000 files of a create, three
+edits and a few second versions and masks each, 484.6B gas on prague and 582.4B on amsterdam (state gas included),
+9.5× and 3.9× the price of keeping the list from genesis. Every admitted publication builds in one 2^24 call (the
+least headroom: a full replay of 64 lone negatives on prague, 4.34M). **One finding for consumers** (docs/INDEX-BUILD.md
+§10 item 29, `test/integration/FloorReconcile.t.sol`): on amsterdam the plan's max(E, V) is execution gas; a
+transaction needs the state gas on top, and a single create-file sent with exactly max(E, V) plus its state gas was
+refused (14k to 56k short; with the 15% headroom it is admitted, and every planned batch is admitted with exactly the
+plan). Take the gas limit from `eth_estimateGas`, as the planning rule says, never from V; on prague the plan covers
+every measured shape with no headroom (41,534 to spare for the tightest). A callback that runs out never lets a
+publication land unindexed: it is refused `E_INDEX_GAS` and nothing is admitted.
 
 ### The identity table (this release against `0fb4804`)
 

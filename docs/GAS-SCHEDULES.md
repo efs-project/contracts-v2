@@ -13,6 +13,38 @@ Facts from EIP-8037 that matter for the design (read from the EIP text):
   total `tx.gas` may exceed it, drawn from a state-gas reservoir, up to `TX_MAX_TOTAL_GAS_LIMIT` (2^32 − 1) and the
   block's per-dimension gas limit. An 8,192-byte inline body (≈ 28M of state gas as 256 fresh slots) is therefore
   still *sendable* after Glamsterdam, but costs about thirteen times more than today.
+- **What counts against the 2^24 cap, and where state gas comes from** (re-read from the EIP pages on 2026-11-26,
+  EIP-8037 in Last Call; quoted lines are the EIP's):
+  - Intrinsic gas counts. It is "charged entirely in execution-gas (base transaction cost, calldata, access lists,
+    …)", and the budget is `execution_gas_budget = TX_MAX_GAS_LIMIT - intrinsic_gas`. So the 21,000 and the calldata
+    (16 gas per nonzero byte, 4 per zero byte) come out of the 16,777,216.
+  - The EIP-7623 calldata floor is a separate condition, not a charge on top. Validity needs
+    `max(intrinsic_gas, calldata_floor_gas_cost) <= TX_MAX_GAS_LIMIT`, and at the end the transaction's execution-gas
+    part is at least the floor ("compared against the transaction's execution-gas portion alone"). A publication's
+    execution gas is far above its floor, so the floor does not bind in practice; a planner checks "floor ≤ cap"
+    once and budgets calldata at the ordinary price.
+  - The reservoir is only the overflow above the execution budget: `gas_left = min(execution_gas_budget,
+    tx.gas - intrinsic_gas)` and `state_gas_reservoir = (tx.gas - intrinsic_gas) - gas_left`. **A transaction whose
+    `tx.gas` is at or below 2^24 has an empty reservoir**, and its state gas is drawn from ordinary gas ("When the
+    reservoir is exhausted, the remainder deducts from `gas_left`"). `GAS` "returns `gas_left` only".
+  - Consequences for EFS. (1) A sender must be free to set `tx.gas` ABOVE 2^24 on Glamsterdam: `tx.gas = 2^24 +
+    state gas` gives the whole execution budget and pays state gas from the reservoir. Capping the gas limit at 2^24
+    makes every unit of state gas eat the execution budget; a first tag on a depth-64 topic (about 3.3M execution
+    and 14.4M state gas) then cannot be sent at all. The bound a planner respects is on execution gas (the cap less
+    intrinsic gas), never on `tx.gas`. (2) The kernel's index reservation is quoted in execution gas and checked with
+    `GAS`. With state gas funded from the reservoir that quote is exactly what the callbacks draw from `gas_left`.
+    Under the cap the callbacks' state gas comes out of the same `gas_left`, which the quote does not count, so a
+    transaction sent near the quote can be refused with `E_INDEX_GAS`; it is never admitted unindexed
+    (`test/integration/FloorReconcile.t.sol`). (3) Foundry's amsterdam profile has no reservoir, which matches the
+    chain for a transaction at or below the cap and is harsher than the chain above it; the fixture tool runs only
+    osaka and prague, so the above-cap path is not confirmed by anything in this repository yet.
+  - **Decision (integration owner, 2026-11-26):** the floor quote stays in execution gas and is not changed to count
+    state gas. A transaction with much state gas funds it through the reservoir (`tx.gas` above 2^24); a small one
+    takes its gas limit from `eth_estimateGas`, which already includes the state gas it will draw. A consumer's
+    state-gas figure per shape is `gas/model.json` → `profiles.amsterdam.split.stateGas` (the same keys and formula
+    as `constants`). Still open: confirming the above-cap path end to end on a chain that runs the new rules.
+  - The EIP text is not consistent on one point that does not touch EFS: it says account-creation costs are no
+    longer part of intrinsic gas, and elsewhere that a value transfer to a new account adds to it.
 - A slot set and reset within one transaction, a reverted frame, or a failed `CREATE` produces a state-gas
   **refill**; the publication lock would be refilled, but the kernel uses transient storage for it anyway.
 - Code deposit is state gas at 1,530 gas per byte: a 24 KiB implementation costs ≈ 37.8M to deploy, and every
