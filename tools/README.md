@@ -53,6 +53,14 @@ reference implementation for the SDK's planner that reads only the model it is g
 `test/vectors/floor-plan.json` from it (`planVectors`), `pnpm release:check` compares it byte for byte, and
 `tools/test/gas-plan.test.mjs` tests the rule.
 
+## gas-plan-later.mjs
+
+The planning rule of `gas-plan.mjs`, unchanged, on a copy of `gas/model.json` whose `floor.workModel` is that of a
+generation that adds one list later (the `head-authors` example of docs/INDEX-BUILD.md §2.2, a test harness), for the
+reservation part of that list's price (docs/INDEX-BUILD.md §6.2): the largest planned publication of five shapes under
+generation 1's model and under the example's. `node tools/gas-plan-later.mjs [--json]`; it writes nothing and no gate
+runs it.
+
 ## gas-fit.mjs
 
 The anchor rule of `gas/model.json`'s `fixed` term: `FIXED_ANCHORS` (the k1/k2 pairs the model had at `899767e`) and
