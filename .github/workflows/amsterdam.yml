@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: MIT
+# The whole suite on the Glamsterdam schedule (FOUNDRY_PROFILE=amsterdam, EIP-8037/8038; docs/GAS-SCHEDULES.md
+# "How we measure"). Every release quotes amsterdam numbers, and check.yml runs prague only, so without this an
+# amsterdam-only failure could sit unseen. It runs after a push to main that touches what the suites compile or read,
+# never on pull requests. A workflow of its own because GitHub's `paths` filter applies to a whole workflow: put on
+# check.yml it would also skip the prague job.
+name: amsterdam
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "test/**"
+      - "tools/**"
+      - "foundry.toml"
+      - "soldeer.lock"
+      - "remappings.txt"
+      - ".github/workflows/amsterdam.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to main supersedes a run still going: a regression it would have caught is still in the newer commit.
+concurrency:
+  group: amsterdam-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  amsterdam:
+    runs-on: ubuntu-24.04
+    # Measured locally (10 cores): the amsterdam build 637 s, then all 1,363 tests 19 s wall (170 s CPU). The build is
+    # nearly the whole cost, so the full suite runs rather than a subset. check.yml's prague build is about 8 minutes on
+    # the runner against 329 s locally, which puts this job at roughly 15 to 18 minutes; the limit leaves headroom.
+    timeout-minutes: 40
+    # Its own output and cache directories, never the default out/ (release bytes come only from the prague build). The
+    # profile's own gas_limit (foundry.toml) covers the suites that write many fresh slots; no override is needed here.
+    env:
+      FOUNDRY_PROFILE: amsterdam
+      FOUNDRY_OUT: out/amsterdam
+      FOUNDRY_CACHE_PATH: cache/amsterdam
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
+        with:
+          version: v1.8.3
+      - run: forge soldeer install
+      # Built once; `forge test` below reuses the build (same profile, output and cache directories).
+      - run: forge build
+      - run: forge test
