@@ -462,7 +462,12 @@ async function deploy({ plan, rpc, pub, wallet, log, instance = {} }) {
       for (const c of step.creates) assert.equal(keccak256(await codeAt(c.address)), c.runtimeCodehash, `G18 ${c.label}: runtime codehash differs from the plan`);
     } else if (step.id === "G20") {
       if ((await read(pub, ledger, "LedgerCore", "revision")) === 0) await send(step, step.to, step.data);
-      assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.activation.expectedExecutionSet, "G20 executionSet");
+      // on a resumed deployment the Realm may already be past genesis (G20b); the genesis set is checked only while it is live
+      if ((await read(pub, ledger, "LedgerCore", "revision")) === 1) assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.genesisActivation.expectedExecutionSet, "G20 executionSet");
+    } else if (step.id === "G20b") {
+      if ((await read(pub, ledger, "LedgerCore", "revision")) === 1) await send(step, step.to, step.data);
+      assert.equal(await read(pub, ledger, "LedgerCore", "revision"), plan.activation.revision, "G20b revision");
+      assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.activation.expectedExecutionSet, "G20b executionSet");
     } else if (["R3", "R4", "R9", "R10", "R11"].includes(step.id)) {
       const [l, kind, reader] = step.args;
       const listed = await read(pub, step.to, "ReaderDirectory", "readers", [l, kind, 0, 16]);
@@ -564,7 +569,9 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     realmSalt: plan.realmSalt,
     factory: { address: FACTORY.address, method: factoryMethod, deployer: FACTORY.deployer, presignedTx: FACTORY.presignedTx, runtimeCodehash: keccak256(FACTORY_RUNTIME()), harnessRuntimeMatches: plan.local.harnessFactoryRuntime === null ? null : plan.local.harnessFactoryRuntime === FACTORY_RUNTIME() },
     genesis: { address: a.genesis, nonces: plan.genesis.nonces, txHash: tx.G18?.txHash ?? null, blockNumber: tx.G18?.blockNumber ?? null, blockHash: tx.G18?.blockHash ?? null },
-    activation: { revision: 1, executionSet: d.executionSet, txHash: tx.G20?.txHash ?? null, blockNumber: tx.G20?.blockNumber ?? null, capabilities: 0, acceptedChainId: plan.chainId, dependencyRoot: plan.activation.dependencyRoot, set: jsonable(plan.activation) },
+    // `activation` is the LIVE set (revision 2: the guard capability, step G20b); `genesisActivation` is revision 1 (G20)
+    activation: { revision: plan.activation.revision, executionSet: d.executionSet, txHash: tx.G20b?.txHash ?? null, blockNumber: tx.G20b?.blockNumber ?? null, capabilities: plan.activation.capabilities, acceptedChainId: plan.chainId, dependencyRoot: plan.activation.dependencyRoot, set: jsonable(plan.activation) },
+    genesisActivation: { revision: plan.genesisActivation.revision, executionSet: plan.genesisActivation.expectedExecutionSet, txHash: tx.G20?.txHash ?? null, blockNumber: tx.G20?.blockNumber ?? null, capabilities: plan.genesisActivation.capabilities },
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
     hotAbiIdString: plan.hotAbiIdString,
@@ -645,7 +652,7 @@ function expectedDocument(plan, deployment) {
     chainId: plan.chainId,
     ledger: plan.addresses.ledgerProxy,
     executionSet: plan.activation.expectedExecutionSet,
-    revision: 1,
+    revision: plan.activation.revision,
     root: s.root,
     folder: s.folder,
     file: { ...s.file, body: s.file.body },
@@ -804,15 +811,15 @@ export async function verify(o = {}) {
   eq("controller NOTICE_TYPE", await read(pub, a.controller, "RealmController", "NOTICE_TYPE"), plan.profile.find((p) => p.type === "realm-notice/1").typeId);
   eq("registry ledger", await read(pub, a.registryProxy, "TypeRegistry", "ledger"), a.ledgerProxy);
   eq("registry implementation", await read(pub, a.registryProxy, "TypeRegistry", "implementation"), a.registryImpl);
-  eq("registry activeRevision", await read(pub, a.registryProxy, "TypeRegistry", "activeRevision"), 1);
+  eq("registry activeRevision", await read(pub, a.registryProxy, "TypeRegistry", "activeRevision"), plan.activation.revision);
 
   // 5. describe(): every field against the plan
   const d = await read(pub, a.ledgerReads, "LedgerReads", "describe", [a.ledgerProxy]);
   const set = plan.activation;
   const want = {
     realmId: plan.realm.realmId, realmOrigin: plan.realm.realmOrigin, realmSalt: plan.realmSalt, genesisChainId: BigInt(plan.chainId), acceptedChainId: BigInt(plan.chainId),
-    chainNamespace: toHex("eip155", { size: 8 }), chainReference: pad(toHex(plan.chainId), { size: 32 }), executionSet: set.expectedExecutionSet, revision: 1, layoutId: plan.layoutId,
-    hotAbiId: plan.hotAbiId, executionProfileId: plan.executionProfileId, capabilities: 0, ledgerImpl: a.ledgerImpl, ledgerImplCodehash: set.components.ledgerImplCodehash,
+    chainNamespace: toHex("eip155", { size: 8 }), chainReference: pad(toHex(plan.chainId), { size: 32 }), executionSet: set.expectedExecutionSet, revision: set.revision, layoutId: plan.layoutId,
+    hotAbiId: plan.hotAbiId, executionProfileId: plan.executionProfileId, capabilities: set.capabilities, ledgerImpl: a.ledgerImpl, ledgerImplCodehash: set.components.ledgerImplCodehash,
     ingress: a.ingress, ingressCodehash: set.components.ingressCodehash, applyDelegate: a.apply, applyCodehash: set.components.applyCodehash, registry: a.registryProxy,
     registryImpl: a.registryImpl, registryImplCodehash: set.components.registryImplCodehash, catalogCount: BigInt(plan.profile.length), index: a.index, indexCodehash: set.components.indexCodehash,
     indexGeneration: 1, indexManifestHash: plan.index.manifestHash, indexObligations: plan.realm.indexObligations, controller: a.controller, controllerCodehash: set.components.controllerCodehash,

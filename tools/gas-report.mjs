@@ -99,6 +99,7 @@ if (statePath && existsSync(statePath)) {
       { row: `Descriptor blobs (G11, ${by((id) => id.startsWith("G11.")).length} DescriptorStore.put)`, gasUsed: sum(by((id) => id.startsWith("G11."))), transactions: by((id) => id.startsWith("G11.")).length },
       { row: "Readers and views (R0 KeysView, R1 LensReader, R2 FilesPageReader, R3–R4 ReaderDirectory.list, R5a EfsWeb3Content, R5 EfsWeb3Gateway, R6 TopicMineReader, R7 TopicEveryoneReader, R8 TopicLookupReader, R9–R11 ReaderDirectory.list)", gasUsed: sum(by((id) => /^R[0-9]+a?$/.test(id))), transactions: by((id) => /^R[0-9]+a?$/.test(id)).length },
       { row: "Activation (genesis, G20)", gasUsed: sum(by((id) => id === "G20")), design: { prague: "≈ 1.1–1.9M", amsterdam: "≈ 3.5–4.3M" } },
+      { row: "Activation (the guard capability b0, same code, G20b)", gasUsed: sum(by((id) => id === "G20b")) },
       ...by((id) => id.startsWith("G21.")).map((j) => ({ row: `Described registration, NATIVE (${j.id})`, gasUsed: j.gasUsed, design: { prague: "≈ 0.30M", amsterdam: "≈ 1.55M" } })),
       ...by((id) => id.startsWith("G22.")).map((j) => ({ row: `Seed ${j.label}`, gasUsed: j.gasUsed })),
     ],

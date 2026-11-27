@@ -78,6 +78,19 @@ moved these, before genesis, so each is simply a new value:
 | index physical profile, manifest header guard, store ABI ids | no | no index or store storage changed |
 | `LedgerReads.head` / `admission` hand-encoded lengths | yes | 10 and 13 words (a `Head` is nine words, an `AdmissionRow` twelve) |
 
+### The head-snapshot profile after the guard release
+
+The table above is what the binding number moved. The guard release then moved one identity and no storage:
+
+| Identity | Moved? | Why |
+| --- | --- | --- |
+| head-snapshot profile (`headSnapshotHash`, read-set preimages) | **yes: profile 2** | it hashes `(state, revision, admission, stored target word)`. The stored word is the current target of a BOUND head, the last bound target of a MASKED or RELEASED head, and 0 for a head never bound. Profile 1 hashed the canonical target (0 unless BOUND), so only the hash of a once-bound MASKED or RELEASED head differs |
+| `Layout.LAYOUT_ID`, `HOT_ABI_ID`, the callback profile, the index and store identities | no | no storage, hot read or callback changed. The head row's second word was always kept on MASK and RELEASE; it is now compared, so the state digest of the test harness hashes it as stored |
+
+No Realm had the guard capability (b0) before this profile, so no guarded publication was ever made under profile 1
+and nothing needs to tell the two apart on chain. A later change of what the snapshot hashes is a new ingress build
+and a new activation; the revision row's ingress codehash says which profile a guarded publication was checked under.
+
 The facet-layout rule (design §5.7) follows from `LAYOUT_ID`: every facet, reader and decoder built against the old id
 returns `UNSUPPORTED` against a ledger with the new one.
 

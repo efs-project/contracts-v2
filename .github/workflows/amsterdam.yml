@@ -34,7 +34,9 @@ jobs:
     # Measured locally (10 cores): the amsterdam build 637 s, then all 1,363 tests 19 s wall (170 s CPU). The build is
     # nearly the whole cost, so the full suite runs rather than a subset. check.yml's prague build is about 8 minutes on
     # the runner against 329 s locally, which puts this job at roughly 15 to 18 minutes; the limit leaves headroom.
-    timeout-minutes: 40
+    # After the list release the run on 04526b1 took 38m30s of 40 (the suite grew), so the limit is 60 as check.yml's is;
+    # splitting or trimming the slow suites is recorded in tools/RELEASE.md §15.
+    timeout-minutes: 60
     # Its own output and cache directories, never the default out/ (release bytes come only from the prague build). The
     # profile's own gas_limit (foundry.toml) covers the suites that write many fresh slots; no override is needed here.
     env:

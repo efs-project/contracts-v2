@@ -137,9 +137,11 @@ export const floorPrices = (schedule) => ({
   floorFreshGas: GAS_SCHEDULES[schedule].freshSlot.executionGas,
   floorRewriteGas: GAS_SCHEDULES[schedule].rewriteColdSlot.executionGas,
 });
+/** Capability b0 (src/interfaces/Actions.sol `Capability.NATIVE_GUARD`): a publication may carry a read set. */
+export const CAPABILITY_NATIVE_GUARD = 1;
 /** test/harness/KernelDeploy.sol s1Limits() — the design's §4.2 values (prague floor prices). */
 export const LIMITS = {
-  maxActions: 64, maxBody: 8192, maxRefs: 8, maxReadSetPrincipals: 64, maxReadSetPositions: 4, maxWitness: 4096,
+  maxActions: 64, maxBody: 8192, maxRefs: 8, maxReadSetPrincipals: 64, maxReadSetPositions: 128, maxWitness: 4096,
   maxTransitionBlocks: 7200, inlineWordMax: 256, witnessRetention: 1, maxBindsPerPublication: 64,
   maxBodyBytesPerPublication: 16384, maxFreshSlotsPerPublication: 600, maxReadIds: 64, maxReadCount: 256,
   ...floorPrices("prague"), kernelTail: 20000,
@@ -667,6 +669,14 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
   const set = { revision: 1, components, layoutId, executionProfileId, capabilities: 0, acceptedChainId: BigInt(chainId), limits: LIMITS, expectedExecutionSet: ZERO, dependencyRoot: ZERO, noticePrincipal: ZERO, migrationScope: [], migration: "0x" };
   set.expectedExecutionSet = executionSet(set, ledgerProxy);
   steps.push({ id: "G20", kind: "CALL", contract: "RealmController", to: controller, from: owner, function: "activate(ActivationSet)", args: jsonable([set]), postCheck: "ledger.executionSet() == expectedExecutionSet; revision 1; index installed", data: encodeFunctionData({ abi: artifact("RealmController").abi, functionName: "activate", args: [set] }) });
+  // G20b: the second activation turns on the native read-set guard (capability b0). Genesis activates with no
+  // capability (design §8.2 G20); a capability arrives by an activation of its own. Same components, so a same-code
+  // reactivation: revision 2, a new execution set, and everything after this step is published under it. The signed
+  // lane (b1) stays off.
+  const genesisSet = set;
+  const liveSet = { ...genesisSet, revision: 2, capabilities: CAPABILITY_NATIVE_GUARD, expectedExecutionSet: ZERO };
+  liveSet.expectedExecutionSet = executionSet(liveSet, ledgerProxy);
+  steps.push({ id: "G20b", kind: "CALL", contract: "RealmController", to: controller, from: owner, function: "activate(ActivationSet)", args: jsonable([liveSet]), postCheck: "ledger.executionSet() == expectedExecutionSet; revision 2; capabilities 1 (b0 NATIVE_GUARD)", data: encodeFunctionData({ abi: artifact("RealmController").abi, functionName: "activate", args: [liveSet] }) });
 
   // R1–R4: the two readers (their constructors read layoutId() from the ledger proxy, so they follow G18) and their
   // permissionless ReaderDirectory listings (advisory discovery hints; design §5.13)
@@ -720,7 +730,7 @@ async function computePlan({ chainId = DEFAULTS.chainId, realmSalt = DEFAULTS.re
     readers: { lens: { address: lens.address, kind: READER_KINDS.lens, kindLabel: "efs/reader/lens/1", runtimeCodehash: lens.runtimeCodehash }, filesPage: { address: page.address, kind: READER_KINDS.filesPage, kindLabel: "efs/reader/files-page/1", runtimeCodehash: page.runtimeCodehash }, topicMine: { address: topicMine.address, kind: READER_KINDS.topicMine, kindLabel: "efs/reader/topic-mine/1", runtimeCodehash: topicMine.runtimeCodehash }, topicEveryone: { address: topicEveryone.address, kind: READER_KINDS.topicEveryone, kindLabel: "efs/reader/topic-everyone/1", runtimeCodehash: topicEveryone.runtimeCodehash }, topicLookup: { address: topicLookup.address, kind: READER_KINDS.topicLookup, kindLabel: "efs/reader/topic-lookup/1", runtimeCodehash: topicLookup.runtimeCodehash } },
     gateway: { address: gateway.address, runtimeCodehash: gateway.runtimeCodehash, resolveMode: "5219", rootDirectory, pager: page.address, content: { address: web3Content.address, runtimeCodehash: web3Content.runtimeCodehash }, urlBase: `web3://${gateway.address}:${chainId}/` },
     hotAbiIdString: HOT_ABI_ID_STRING,
-    realm, activation: set, index: { address: index.address, runtimeCodehash: index.runtimeCodehash, reads: { address: indexReads.address, runtimeCodehash: indexReads.runtimeCodehash }, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
+    realm, activation: liveSet, genesisActivation: genesisSet, index: { address: index.address, runtimeCodehash: index.runtimeCodehash, reads: { address: indexReads.address, runtimeCodehash: indexReads.runtimeCodehash }, manifestHash: mHash, families, units: unitsList, specs, validatorIdentity },
     profile, seed: seed.expected, units, steps,
     local: {
       artifacts: artifactSource(),
