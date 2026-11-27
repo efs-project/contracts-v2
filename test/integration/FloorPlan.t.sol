@@ -5,8 +5,10 @@ import {FloorBase} from "./FloorBase.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, Capability, Native, Purpose} from "../../src/interfaces/Actions.sol";
-import {E_BATCH_SHAPE, E_INDEX_GAS} from "../../src/interfaces/Errors.sol";
+import {Action, Capability, Native, Purpose, ReadSet} from "../../src/interfaces/Actions.sol";
+import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
+import {Layout} from "../../src/core/layout/Layout.sol";
+import {E_BATCH_SHAPE, E_INDEX_GAS, E_READSET_SHAPE} from "../../src/interfaces/Errors.sol";
 
 /// @notice The planning rule of `gas/model.json` (design §10.4; `tools/gas-plan.mjs`, which reads only that file, wrote
 ///         `test/vectors/floor-plan.json`): for each shape, the largest publication the rule plans on this profile's
@@ -83,10 +85,24 @@ contract FloorPlanTest is FloorBase {
         Action[] memory a1,
         bytes[] memory b1
     ) internal returns (Spend memory sp) {
+        return _proveG(shape, a, b, "", a1, b1, "");
+    }
+
+    /// `_prove` for a guarded shape: `g` guards the planned publication and `g1` the one unit more (both empty for an
+    /// unguarded shape).
+    function _proveG(
+        string memory shape,
+        Action[] memory a,
+        bytes[] memory b,
+        bytes memory g,
+        Action[] memory a1,
+        bytes[] memory b1,
+        bytes memory g1
+    ) internal returns (Spend memory sp) {
         assertEq(a.length, _u(shape, "actions"), "the vectors' publication");
-        Need memory w = _need(a, b, address(0));
+        Need memory w = _need(a, b, address(0), g);
         _log(shape, w);
-        sp.finalPhase = _finalPhase(a, b, w.exec);
+        sp.finalPhase = _finalPhase(a, b, w.exec, g);
         sp.prefix = w.exec - w.kernel - sp.finalPhase;
         sp.prefixRatio = uint256(w.prefixFloor) * 1000 / sp.prefix;
         sp.finalRatio = uint256(w.finalReserve) * 1000 / sp.finalPhase;
@@ -108,17 +124,31 @@ contract FloorPlanTest is FloorBase {
             uint256 snap = vm.snapshotState();
             Native memory c = _ctx(a);
             _coolRealm();
-            r.ledger.execute{gas: w.room}(a, b, c, "");
+            r.ledger.execute{gas: w.room}(a, b, c, g);
             vm.revertToStateAndDelete(snap);
         }
-        _next(shape, a1, b1);
+        _next(shape, a1, b1, g1);
     }
 
-    function _next(string memory shape, Action[] memory a1, bytes[] memory b1) internal {
+    function _next(string memory shape, Action[] memory a1, bytes[] memory b1, bytes memory g1)
+        internal
+    {
+        string memory refused = vm.parseJsonString(json, _key(shape, "next.refused"));
+        // a shape fixed at its size (the vectors' `fixedK`) has no one unit more
+        if (keccak256(bytes(refused)) == keccak256("fixedK")) return;
         Native memory c = _ctx(a1);
+        // one unit more is past a read-set limit: the kernel refuses its guard (E_READSET_SHAPE 1, 2 or 5)
+        if (keccak256(bytes(refused)) == keccak256("maxReadCount")) {
+            uint256 snap0 = vm.snapshotState();
+            vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(5)));
+            r.ledger.execute(a1, b1, c, g1);
+            vm.revertToStateAndDelete(snap0);
+            emit log_named_string(string.concat("floor ", shape, " next refused by"), refused);
+            return;
+        }
         if (a1.length > 64) {
             uint256 snap = vm.snapshotState();
-            try r.ledger.execute(a1, b1, c, "") {
+            try r.ledger.execute(a1, b1, c, g1) {
                 revert("a 65-action publication admitted");
             } catch (bytes memory err) {
                 assertEq(bytes4(err), E_BATCH_SHAPE.selector, "past the action limit");
@@ -126,10 +156,9 @@ contract FloorPlanTest is FloorBase {
             vm.revertToStateAndDelete(snap);
             return;
         }
-        string memory refused = vm.parseJsonString(json, _key(shape, "next.refused"));
         assertGt(bytes(refused).length, 0, "the rule refuses one unit more");
         emit log_named_string(string.concat("floor ", shape, " next refused by"), refused);
-        Need memory w = _need(a1, b1, address(0));
+        Need memory w = _need(a1, b1, address(0), g1);
         assertEq(w.prefixFloor, _u(shape, "next.prefixFloor"), "the rule's prefix floor (k + 1)");
         assertEq(w.finalReserve, _u(shape, "next.finalReserve"), "the rule's final reserve (k + 1)");
         emit log_named_uint(string.concat("floor ", shape, " next exec"), w.exec);
@@ -137,7 +166,7 @@ contract FloorPlanTest is FloorBase {
         if (_amsterdam()) return;
         uint256 snap2 = vm.snapshotState();
         _coolRealm();
-        try r.ledger.execute{gas: w.room}(a1, b1, c, "") {
+        try r.ledger.execute{gas: w.room}(a1, b1, c, g1) {
             emit log_named_string(string.concat("floor ", shape, " next on prague"), "admitted");
         } catch (bytes memory err) {
             assertTrue(
@@ -692,5 +721,318 @@ contract FloorPlanTest is FloorBase {
 
     function test_plan_moves_into_removed_names_no_name() public {
         _movesIntoRemoved("movesIntoRemovedNamesNoName", 2, 33, false);
+    }
+
+    // ---- guarded publications (design §5.1; gas/model.json profiles.<schedule>.guard) -----------------------------
+    // Each guarded shape is built from the same state as its unguarded twin, and its guard names the heads the
+    // vectors' `guard` describes, with expected heads as stored now (head-snapshot profile 2).
+
+    /// The guard over `pr` × `pos` (position-major), expected heads as stored now, hashed as the ingress hashes them.
+    function _guardOf(bytes32[] memory pr, bytes32[] memory pos)
+        internal
+        view
+        returns (bytes memory)
+    {
+        uint256 n = pr.length;
+        uint256 m = pos.length;
+        bytes32[] memory h = new bytes32[](n * m);
+        ILedgerCommitments cm = ILedgerCommitments(r.hot.ingress());
+        for (uint256 j; j < m; ++j) {
+            for (uint256 i; i < n; ++i) {
+                uint256 slot = Layout.bindingsHeadsSlot(Keys.binding(pr[i], pos[j]));
+                (uint8 st, uint48 rev, uint48 adm, uint8 tk,,,,) =
+                    Layout.unpackHeadRowWord0(r.hot.extsload(bytes32(slot)));
+                bytes32 t;
+                if (tk != 0) t = r.hot.extsload(bytes32(slot + 1));
+                h[j * n + i] = cm.headSnapshotHash(st, uint64(rev), uint64(adm), t);
+            }
+        }
+        return abi.encode(ReadSet(pr, pos, h));
+    }
+
+    /// The vectors' read set of `shape` at `field` ("guard" or "next.guard") has `n` principals and `m` positions.
+    function _assertGuardShape(string memory shape, string memory field, uint256 n, uint256 m)
+        internal
+        view
+    {
+        assertEq(_u(shape, string.concat(field, ".principals")), n, "the vectors' guard principals");
+        assertEq(_u(shape, string.concat(field, ".positions")), m, "the vectors' guard positions");
+    }
+
+    function _mineOf(bytes32[] memory pos, uint256 n) internal view returns (bytes memory) {
+        bytes32[] memory pr = new bytes32[](1);
+        pr[0] = p;
+        bytes32[] memory x = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            x[i] = pos[i];
+        }
+        return _guardOf(pr, x);
+    }
+
+    /// A guarded or unguarded shape whose guard is one principal (the author) over the first `perUnit`·k positions
+    /// of `pos` (the heads the batch writes, in order); `a1`'s guard covers one unit more when it is within the limits.
+    function _proveMine(
+        string memory shape,
+        bool guarded,
+        Action[] memory all,
+        bytes[] memory bodies,
+        uint256 units,
+        bytes32[] memory pos,
+        uint256 perUnit
+    ) internal returns (Spend memory) {
+        uint256 k = _k(shape);
+        uint256 m = (k + 1) * units > 64 ? 65 : (k + 1) * units;
+        if (m > all.length) m = all.length;
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k * units);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        bytes memory g;
+        bytes memory g1;
+        if (guarded) {
+            _assertGuardShape(shape, "guard", 1, perUnit * k);
+            g = _mineOf(pos, perUnit * k);
+            uint256 n1 = perUnit * (k + 1);
+            if (m <= 64 && n1 <= pos.length) g1 = _mineOf(pos, n1);
+        }
+        return _proveG(shape, a, b, g, a1, b1, g1);
+    }
+
+    /// k moves of root-folder files to fresh names in another folder (the names published first, no name PUBLISH):
+    /// RELEASE at the root and BIND FOLDER at the destination; guarded over both heads of every move.
+    function _movesFresh(string memory shape, bool guarded) internal returns (Spend memory) {
+        uint256 k = _k(shape);
+        uint256 n = k + 1 > 32 ? 32 : k + 1;
+        Action[] memory d = new Action[](1);
+        bytes[] memory db = new bytes[](1);
+        (d[0], db[0]) = _publish(
+            T_DIRECTORY, EfsFiles.directoryBody(p, keccak256(abi.encode("floor-plan moves", shape)))
+        );
+        bytes32 dest = _id(T_DIRECTORY, db[0]);
+        _send(address(this), d, db);
+        bytes32[] memory file = _filesIn("mv-", n);
+        Action[] memory names = new Action[](n);
+        bytes[] memory nb = new bytes[](n);
+        for (uint256 i; i < n; ++i) {
+            (names[i], nb[i]) = _name(_nm("mw-", i));
+        }
+        _send(address(this), names, nb);
+        Action[] memory all = new Action[](0);
+        bytes[] memory bodies = new bytes[](0);
+        bytes32[] memory pos = new bytes32[](2 * n);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y) = EfsFiles.move(
+                _filesTypes(), file[i], rootDir, _nm("mv-", i), 1, dest, _nm("mw-", i), 0, false
+            );
+            (all, bodies) = EfsFiles.concat(all, bodies, x, y);
+            pos[2 * i] = Keys.position(Purpose.FOLDER, rootDir, keccak256(_nm("mv-", i)));
+            pos[2 * i + 1] = Keys.position(Purpose.FOLDER, dest, keccak256(_nm("mw-", i)));
+        }
+        return _proveMine(shape, guarded, all, bodies, 2, pos, 2);
+    }
+
+    function test_plan_moves_to_fresh() public {
+        _covers(_movesFresh("movesToFresh", false), false);
+    }
+
+    function test_plan_moves_to_fresh_guarded() public {
+        _covers(_movesFresh("movesToFreshGuarded", true), false);
+    }
+
+    /// k masks (`restores` false) or restores to the kept files (true) of root-folder entries; guarded over their heads.
+    function _folderLater(string memory shape, bool restores, bool guarded)
+        internal
+        returns (Spend memory)
+    {
+        uint256 k = _k(shape);
+        uint256 n = k + 1 > 64 ? 64 : k + 1;
+        bytes32[] memory file = _filesIn("fm-", n);
+        bytes32[] memory pos = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            pos[i] = Keys.position(Purpose.FOLDER, rootDir, keccak256(_nm("fm-", i)));
+        }
+        Action[] memory all = new Action[](65);
+        for (uint256 i; i < 65; ++i) {
+            all[i] = EfsFiles.unbind(Purpose.FOLDER, rootDir, keccak256(_nm("fm-", i)), 1);
+        }
+        if (restores) {
+            _send(address(this), _prefix(all, n), _bodies(n));
+            for (uint256 i; i < 65; ++i) {
+                all[i] = EfsFiles.bind(
+                    Purpose.FOLDER, rootDir, keccak256(_nm("fm-", i)), file[i % n], 2
+                );
+            }
+        }
+        return _proveMine(shape, guarded, all, _bodies(65), 1, pos, 1);
+    }
+
+    function test_plan_folder_masks() public {
+        _covers(_folderLater("folderMasks", false, false), false);
+    }
+
+    function test_plan_folder_masks_guarded() public {
+        _covers(_folderLater("folderMasksGuarded", false, true), false);
+    }
+
+    function test_plan_folder_restores() public {
+        _covers(_folderLater("folderRestores", true, false), false);
+    }
+
+    function test_plan_folder_restores_guarded() public {
+        _covers(_folderLater("folderRestoresGuarded", true, true), false);
+    }
+
+    /// Number changes of asserted tags on the one-word topic, guarded over their heads.
+    function test_plan_tag_number_changes_guarded() public {
+        string memory shape = "tagNumberChangesGuarded";
+        uint256 k = _k(shape);
+        uint256 n = k + 1 > 64 ? 64 : k + 1;
+        Action[] memory first = new Action[](n);
+        bytes32[] memory pos = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            first[i] = EfsTopics.tag(topic, _thing(shape, i), 0, 0);
+            pos[i] = Keys.position(Purpose.TAG, topic, _thing(shape, i));
+        }
+        _send(address(this), first, _bodies(n));
+        Action[] memory all = new Action[](65);
+        for (uint256 i; i < 65; ++i) {
+            all[i] = EfsTopics.tag(topic, _thing(shape, i), 1, 7);
+        }
+        _covers(_proveMine(shape, true, all, _bodies(65), 1, pos, 1), true);
+    }
+
+    /// `n` files `<pre>xyz.txt` in the root folder and their root records (as `_filesIn`).
+    function _filesWithRoots(string memory pre, uint256 n)
+        internal
+        returns (bytes32[] memory f, bytes32[] memory root)
+    {
+        f = new bytes32[](n);
+        root = new bytes32[](n);
+        Action[] memory a = new Action[](n * 5);
+        bytes[] memory b = new bytes[](n * 5);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 file, bytes32 rootRecord) = EfsFiles.createFile(
+                _filesTypes(),
+                p,
+                rootDir,
+                keccak256(abi.encode("floor-plan edit", pre, i)),
+                _nm(pre, i),
+                "Meeting at 10:00.\n",
+                true
+            );
+            (f[i], root[i]) = (file, rootRecord);
+            for (uint256 j; j < 5; ++j) {
+                (a[i * 5 + j], b[i * 5 + j]) = (x[j], y[j]);
+            }
+        }
+        _sendSliced(address(this), a, b, 50);
+    }
+
+    /// The lens's other authors (63 EOAs).
+    function _lensAuthor(uint256 i) internal pure returns (address) {
+        return address(uint160(uint256(keccak256(abi.encode("floor-plan lens", i)))));
+    }
+
+    /// k edits of the author's files (PUBLISH files-child/1 form 0, 114 bytes; BIND HEAD re-bind). With a lens, 63
+    /// other authors first bind each file's HEAD to its root, and the guard is the 64 principals × the first `lensFiles`
+    /// files' HEAD positions (k of them for the lens edits, 1 for the one-edit shape).
+    function _edits(string memory shape, uint256 lens) internal returns (Spend memory) {
+        uint256 k = _k(shape);
+        uint256 n = k + 1 > 32 ? 32 : k + 1;
+        (bytes32[] memory f, bytes32[] memory root) = _filesWithRoots("ed-", n);
+        Action[] memory all = new Action[](0);
+        bytes[] memory bodies = new bytes[](0);
+        bytes32[] memory pos = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y,) =
+                EfsFiles.edit(_filesTypes(), f[i], root[i], "Meeting at 10:00.\n", 1);
+            assertEq(y[0].length, 114);
+            (all, bodies) = EfsFiles.concat(all, bodies, x, y);
+            pos[i] = Keys.position(Purpose.HEAD, f[i], 0);
+        }
+        uint256 m = (k + 1) * 2 > 64 ? 65 : (k + 1) * 2;
+        if (m > all.length) m = all.length;
+        (Action[] memory a, bytes[] memory b) = _slice(all, bodies, k * 2);
+        (Action[] memory a1, bytes[] memory b1) = _slice(all, bodies, m);
+        if (lens == 0) return _proveG(shape, a, b, "", a1, b1, "");
+        bytes32[] memory pr = new bytes32[](64);
+        pr[0] = p;
+        uint256 files = lens == 1 ? 1 : n;
+        for (uint256 i = 1; i < 64; ++i) {
+            address who = _lensAuthor(i);
+            pr[i] = Keys.principal(who);
+            Action[] memory h = new Action[](files);
+            for (uint256 j; j < files; ++j) {
+                h[j] = EfsFiles.bind(Purpose.HEAD, f[j], 0, root[j], 0);
+            }
+            _send(who, h, _bodies(files));
+        }
+        uint256 gk = lens == 1 ? 1 : k;
+        _assertGuardShape(shape, "guard", 64, gk);
+        bytes memory g = _guardOf(pr, _firstN(pos, gk));
+        bytes memory g1 = lens == 1 ? bytes("") : _guardOf(pr, _firstN(pos, k + 1));
+        return _proveG(shape, a, b, g, a1, b1, g1);
+    }
+
+    function _firstN(bytes32[] memory l, uint256 n) internal pure returns (bytes32[] memory x) {
+        x = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            x[i] = l[i];
+        }
+    }
+
+    function test_plan_edits() public {
+        _covers(_edits("edits", 0), false);
+    }
+
+    function test_plan_edits_lens_guarded() public {
+        _covers(_edits("editsLensGuarded", 2), false);
+    }
+
+    function test_plan_edit_lens_one_guarded() public {
+        _covers(_edits("editsLensOneGuarded", 1), false);
+    }
+
+    /// k CREATEs, unguarded or guarded over `principals` × 128 BOUND TAG heads none of them writes (the author's tags
+    /// on the one-word topic, and OTHER's at the same positions).
+    function _creates(string memory shape, uint256 principals) internal returns (Spend memory) {
+        uint256 k = _k(shape);
+        Action[] memory all = new Action[](65);
+        for (uint256 i; i < 65; ++i) {
+            all[i] = _create(keccak256(abi.encode("floor-plan create", i)));
+        }
+        uint256 m = k + 1 > 64 ? 65 : k + 1;
+        if (principals == 0) {
+            return _proveG(shape, _prefix(all, k), _bodies(k), "", _prefix(all, m), _bodies(m), "");
+        }
+        Action[] memory t = new Action[](128);
+        bytes32[] memory pos = new bytes32[](128);
+        for (uint256 i; i < 128; ++i) {
+            t[i] = EfsTopics.tag(topic, _thing("guard maxima", i), 0, 0);
+            pos[i] = Keys.position(Purpose.TAG, topic, _thing("guard maxima", i));
+        }
+        _sendSliced(address(this), t, _bodies(128), 32);
+        bytes32[] memory pr = new bytes32[](principals);
+        pr[0] = p;
+        if (principals == 2) {
+            _sendSliced(OTHER, t, _bodies(128), 32);
+            pr[1] = Keys.principal(OTHER);
+        }
+        _assertGuardShape(shape, "guard", principals, 128);
+        bytes memory g = _guardOf(pr, pos);
+        return _proveG(shape, _prefix(all, k), _bodies(k), g, _prefix(all, m), _bodies(m), g);
+    }
+
+    // The final phase of 64 CREATEs (the index's afterPublication over 64 new subjects) is above the final reserve,
+    // which has terms for binds and publishes only (design §10.4; F covers 0.116 of it here): only the planner's E pays
+    // it, as for create-file recipes and folder re-binds, so only the prefix quote is asserted.
+    function test_plan_creates() public {
+        _covers(_creates("creates", 0), false);
+    }
+
+    function test_plan_creates_guarded_1x128() public {
+        _covers(_creates("createsGuarded1x128", 1), false);
+    }
+
+    function test_plan_creates_guarded_2x128() public {
+        _covers(_creates("createsGuarded2x128", 2), false);
     }
 }

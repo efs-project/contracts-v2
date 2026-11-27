@@ -116,6 +116,17 @@ abstract contract FloorBase is FilesRecipesBase {
         Native memory c,
         address sender
     ) internal returns (uint32 quoted) {
+        return _kernelPrefixFloor(a, b, c, sender, "");
+    }
+
+    /// As above for a guarded publication (`guard` empty: none); the guard does not change the quote.
+    function _kernelPrefixFloor(
+        Action[] memory a,
+        bytes[] memory b,
+        Native memory c,
+        address sender,
+        bytes memory guard
+    ) internal returns (uint32 quoted) {
         // In steps of 50k, and of 1k from the last refusal when a step jumps straight to admission. A publication
         // with no BIND or UNBIND may have no window at all: each PUBLISH and REUSE first requires its acceptor's
         // validation gas (300k by default) to be available, which can cover the floor's check before the callback
@@ -125,7 +136,7 @@ abstract contract FloorBase is FilesRecipesBase {
             uint256 snap = vm.snapshotState();
             _coolRealm();
             if (sender != address(0)) vm.prank(sender, sender);
-            try r.ledger.execute{gas: g}(a, b, c, "") {
+            try r.ledger.execute{gas: g}(a, b, c, guard) {
                 vm.revertToStateAndDelete(snap);
                 if (step == 1000) {
                     for (uint256 i; i < a.length; ++i) {
@@ -158,11 +169,19 @@ abstract contract FloorBase is FilesRecipesBase {
         internal
         returns (Need memory w)
     {
+        return _need(a, b, sender, "");
+    }
+
+    /// As above for a guarded publication (`guard` empty: none): the calldata counts the guard's bytes.
+    function _need(Action[] memory a, bytes[] memory b, address sender, bytes memory guard)
+        internal
+        returns (Need memory w)
+    {
         (w.prefixFloor, w.finalReserve, w.fresh, w.rewrites) =
             ILedgerCommitments(r.hot.ingress()).indexFloor(address(r.ledger), a);
         Native memory c = _ctx(a);
-        w.prefixFloor = _kernelPrefixFloor(a, b, c, sender);
-        w.calldataGas = _calldataGas(abi.encodeCall(ILedger.execute, (a, b, c, "")));
+        w.prefixFloor = _kernelPrefixFloor(a, b, c, sender, guard);
+        w.calldataGas = _calldataGas(abi.encodeCall(ILedger.execute, (a, b, c, guard)));
         w.room = CAP - TX_BASE - w.calldataGas;
         uint256 snap = vm.snapshotState();
         address index = address(r.g.index);
@@ -178,13 +197,13 @@ abstract contract FloorBase is FilesRecipesBase {
         );
         _coolRealm();
         if (sender != address(0)) vm.prank(sender, sender);
-        r.ledger.execute(a, b, c, "");
+        r.ledger.execute(a, b, c, guard);
         w.kernel = vm.lastFrameGas().gasTotalUsed;
         vm.clearMockedCalls();
         vm.revertToState(snap);
         _coolRealm();
         if (sender != address(0)) vm.prank(sender, sender);
-        r.ledger.execute(a, b, c, "");
+        r.ledger.execute(a, b, c, guard);
         Vm.Gas memory f = vm.lastFrameGas();
         w.exec = f.gasTotalUsed;
         w.state = f.gasStateUsed;
@@ -199,6 +218,14 @@ abstract contract FloorBase is FilesRecipesBase {
         internal
         returns (uint256)
     {
+        return _finalPhase(a, b, exec, "");
+    }
+
+    /// As above for a guarded publication.
+    function _finalPhase(Action[] memory a, bytes[] memory b, uint256 exec, bytes memory guard)
+        internal
+        returns (uint256)
+    {
         Native memory c = _ctx(a);
         uint256 snap = vm.snapshotState();
         vm.mockCall(
@@ -207,7 +234,7 @@ abstract contract FloorBase is FilesRecipesBase {
             abi.encode(IRealmIndex.afterPublication.selector)
         );
         _coolRealm();
-        r.ledger.execute(a, b, c, "");
+        r.ledger.execute(a, b, c, guard);
         uint256 without = vm.lastFrameGas().gasTotalUsed;
         vm.clearMockedCalls();
         vm.revertToStateAndDelete(snap);
