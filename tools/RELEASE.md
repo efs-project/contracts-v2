@@ -50,10 +50,55 @@ tooling tests; pass options after `--`, e.g. `pnpm fixture:up -- --name mine --j
 
 ## What changes for a consumer in this release
 
-**This release IS a re-vendor point: the list release** (items 49 to 59, against `6d11858`, the SDK's current pin).
-Re-vendor `release/`, `artifacts/`, `deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/` (no
-snapshot changed), `vectors/layout.json` (unchanged) and `test/vectors/` together, and re-pin every value of "The
-identity table" below, which compares against `6d11858`. What a consumer must change, as one list:
+**This release IS a re-vendor point: the guard release** (items 60 to 70, against `04526b1`, the SDK's current pin).
+Re-vendor `release/`, `artifacts/`, `deploy/plan.json`, `gas/model.json`, `schemas/`, `test/snapshots/abi/` (two
+snapshots changed: `ILedgerViews`, `ILedgerCommitments`), `vectors/layout.json` (unchanged) and `test/vectors/`
+(`floor-plan.json` changed) together, and re-pin every value of "The identity table (this release against `04526b1`)".
+What a consumer must change, as one list:
+
+- **The Realm has the read-set guard** (items 60, 68): capability b0 is on in the fixture's live set, which is
+  **revision 2**. `release/efs-deployment.json` `activation` describes that live set (same shape; `revision` 2,
+  `capabilities` 1) and a new `genesisActivation` records revision 1. The execution set a plan binds is the live one.
+- **How to build a guard** (item 61): guard every head the publication writes and every head read to decide and not
+  written. **Compute each expected snapshot from the values the plan was decided on; never copy a hash from
+  `headSnapshots`.** The snapshot is over the head's STORED target: a MASKED or RELEASED head hashes its last bound
+  target (0 if it never bound). For TAG, SAME and BROADER that is the position's role; for every other purpose, an
+  app's own included, read it. A restore binds the value it hashed.
+- **`headSnapshots` returns two arrays** (item 62): `(snapshots, targets)`; `targets` is the last bound target of a
+  head that is not BOUND, and says only what a restore would bind again.
+- **Limits** (item 63): 64 principals, 128 positions, and principals × positions ≤ 256 (`E_READSET_SHAPE(5)`). A
+  planner splits by this grid as well as by gas: under a lens of n guarded authors a publication carries ⌊256 ÷ n⌋
+  positions.
+- **A refused guard** (items 60, 61): `E_READSET_STALE(position, principalId)` is reprepare, like `E_CAS`, and names
+  only the first mismatch: re-read every guarded head. A resend of the same plan carries byte-identical guard bytes
+  (other bytes at the same nonce are `E_NONCE`).
+- **Gas** (item 64): new required `profiles.<schedule>.guard` in `gas/model.json` (`efs-gas-model/1`): eight terms,
+  added once per guarded publication to E and to K; `planning.limits` carries the three read-set limits. The floor
+  formula and the work model did not change. Guarded batches lose one entry: prague moves 20 → 20, folder masks 54 →
+  53, folder restores 48 → 47, tag number changes 62 → 61; amsterdam moves 25 → 24, masks 54 → 53, restores 48 → 47,
+  number changes 64 → 63. Unguarded sizes did not change.
+- **Later statements in a list of 49 to 1,023 entries are over-priced beyond 15%** (item 65): at most **17.25% on
+  prague and 20.57% of execution gas on amsterdam** (`maxMidListOverErrorPercent`,
+  `maxMidListOverExecutionErrorPercent`; validation state `midList`). The safe direction: earlier splitting, never a
+  short send. A funds message (INSUFFICIENT_FUNDS) built on the model should quote these figures, not 15%.
+- **The model's rows include the 21,000 intrinsic cost and the calldata** (item 66; every earlier release said
+  excluded). **Keep adding the intrinsic cost and the encoded call's calldata on top, as today:** the rows carry the
+  measured publications' calldata, not a real one's, so dropping the addition could under-count. The double count is
+  the safe side. The floor's margins are not affected.
+- **Stated maxima** (item 67): unchanged but for amsterdam's all-gas under-prediction, 6.63 → 6.62. Amsterdam's
+  execution under-prediction is 10.52: 0.22 points from a tripwire at 10.74, as before. Every existing constant moved
+  by −5 to +105 gas (the ingress was rebuilt).
+
+What did not change: the layout id, the hot ABI ids, both store ABI ids, the status vocabulary id, every Type id,
+every action and write ABI, every error's selector, `LedgerApply`, `ledgerReads`, the registry implementation, the
+rules and the validator, `keysView`, the seed, the work model, every read bound and recommended read limit. What
+moved beyond the items above: the limits profile id (`maxReadSetPositions`), and with the ingress's code every
+genesis address on the fixture Realm, so the ledger proxy, the realm id and origin and the domain separator.
+
+### The list release's consumer list (the SDK's earlier re-vendor, against `6d11858`)
+
+The list release (items 49 to 59) was a re-vendor point too; a consumer already on `04526b1` has done this list. It
+compares against `6d11858` ("The identity table of the list release"). What a consumer had to change:
 
 - **Remove the interim rules when you vendor this model; keeping them double-counts.** Three end here:
   - the **"yes after a lone no" rule** (two fresh slots added by hand: the kernel's to E and K, the index's history
@@ -382,6 +427,9 @@ this release.
 
 **Done:**
 
+- **The native read-set guard** (the guard release, items 60 to 69): tested on the write path for the first time,
+  compares a hidden or released head's last bound target (head-snapshot profile 2), priced in the gas model on both
+  schedules, and on in the fixture's Realm by a second activation.
 - **The build from history, steps 1 to 4** (docs/INDEX-BUILD.md, reviewed 2026-11-25). A later index generation that
   carries the stores it names can be built and activated on a Realm with history, and the kernel checks carried and
   fresh stores (`E_INDEX_NOT_READY` 12 and 13; step 1, item 23); the budgeted walk of history rebuilds generation 1's
@@ -470,6 +518,21 @@ Newly done in the list release (items 49 to 59):
   with it, including the 0.22-point margin between amsterdam's execution under-prediction (10.52%) and the SDK
   tripwire's firing point (10.74%). Until then `FloorPlan.t.sol` executing every planned shape's largest batch on both
   schedules is the guard (item 51).
+- **Price a later statement per search step, not by two tiers** (item 65; with the entry above, at the next model
+  release). Between 49 and 1,023 entries the long-tier rows over-price a later statement: measured at most 17.25% of a
+  publication on prague and 20.57% of execution gas on amsterdam, stated as `midList`. A planner already reads
+  `entries`, so the price can follow the search's step count; mid-size folders then get their larger batches.
+- **Take the intrinsic cost and the calldata out of the model** (item 66; the same release). Every row carries the
+  21,000 and the measured call's calldata, because forge runs each measured call as a transaction of its own. The
+  model should exclude both (measured inside the frame, or with them subtracted), and a consumer add the real
+  values; until then a consumer keeps adding them and counts them twice, which is the safe side.
+- **A guard covers heads only** (item 60). A plan decided from a record's body, a name or a list's membership is not
+  bound by a read set. No design exists for binding those.
+- **A read set is a full grid** (item 63): n principals × m positions, at most 256 heads. A save that depends on a
+  wide lens at many positions splits by publication (4 positions under 64 authors). A sparse form (a list of
+  (principal, position) pairs) would lift that; not designed, and nothing in the tag or Files model needs it today.
+- **The signed lane (b1) is off in the fixture's Realm.** Its verifier and its guard are tested (`Guard.t.sol`); turning
+  it on is an activation like G20b and waits on the session-lane question (QUESTIONS Q47).
 - **No CI job runs the full `gas-model --check`.** `pnpm gas:model:check` (the `check` workflow) passes
   `--skip-amsterdam`, and the `amsterdam` workflow builds and tests but does not run the model check. So the amsterdam
   constants, the 10.52% figure that sits 0.22 points from the SDK's tripwire, and the `laterRows` notes that quote both
@@ -479,8 +542,8 @@ Newly done in the list release (items 49 to 59):
   (measured on `04526b1`: `check` builds in 20 minutes and tests in 17, where the tests took 6 before; `amsterdam`
   builds in 21 and tests in 17). The growth is in the gas suites this release added or lengthened (the long-list
   composites of `GasModel.t.sol`, `KernelGrowth.t.sol` at 60 actions, `LoneNoGas.t.sol`). `check`'s limit is raised
-  from 40 to 60 minutes so a healthy run does not fail; **`amsterdam.yml`'s limit is still 40 and must be raised in the
-  next release's commit** (a change to that file triggers a run of its own, so it rides the next release). When the n²
+  from 40 to 60 minutes so a healthy run does not fail, and `amsterdam.yml`'s likewise since the guard release
+  (which adds the guard suites and 13 planned shapes to both jobs: expect both to be longer again). When the n²
   term is modelled: measure which suites account for the growth and propose a split (fast on every push, slow per
   release) or a cut. No test is dropped without the integration owner's review.
 - **An unexplained receipt timeout in CI (recorded so a second occurrence is matched to this one).** `check` on
@@ -1709,7 +1772,7 @@ an embedded id), `EfsWeb3Gateway` 15,391 → 15,565 B (4,095 left), `FilesPageRe
 embedded id), `IndexReads` 12,960 → 12,960 B (6,700 left; an embedded address), `PostingStore` 6,651 → 6,699 B (12,961
 left), `TopicWordRule` 1,897 → 1,934 B (17,726 left), `FilesNameRule` 1,683 → 1,627 B (18,033 left).
 
-### The identity table (this release against `6d11858`)
+### The identity table of the list release (against `6d11858`)
 
 Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture
 configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`) of this release, against the same files at
@@ -1820,6 +1883,312 @@ differs from `6d11858` in `EfsWeb3Gateway`, `FilesNameRule`, `IndexReads`, `Post
 | `TopicMineReader` (address, runtime codehash) | `0x45772331A92Bf67Ce3A16c2A15E733777499CE33 / 0xdac80a0c60d729f134153d0ed02901cafb902f5ee0091b0766882bb930efe0fd` | no |
 | `TopicEveryoneReader` (address, runtime codehash) | `0x6082241a955e214432b069beC81A5a57c2EC39A0 / 0xbae87c8a30fec9efcd372dba070dc0a0b9dfc649b0ff22b51df8a25d41751d41` | no |
 | `TopicLookupReader` (address, runtime codehash) | `0x3c57C6dfaEdF8B57077A721b9297921CcbDBA0Aa / 0xcd36e8e69853a45574df8dda96c641ab4c6f629fb485587453643be80ffca091` | yes (was `0xF9176797…d1a9 / 0x48c379a6…4487`) |
+| seed version | `efs-fixture-seed/4` | no |
+| seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
+
+### The guard release (against `04526b1`)
+
+One piece: the native read-set guard (capability b0, design §5.1) is tested, compares what a restore depends on, is
+priced, and is on in the fixture's Realm. The guard existed in the ingress since the first kernel build, but no test
+had ever sent one and no Realm had the capability. Items 60 to 69. Every gas figure is measured on this release's code
+on both schedules.
+
+**60. What a guard is, and what it compares now (head-snapshot profile 2).** A publication on either lane may carry
+`guard = abi.encode(ReadSet{principals[n], positions[m], expectedHeads[n·m]})` (`src/interfaces/Actions.sol`;
+`expectedHeads[j·n + i]` is the head of `principals[i]` at `positions[j]`). The ingress compares every named head with
+its expected snapshot before any action applies, and refuses the whole publication with
+`E_READSET_STALE(position, principalId)` on the first mismatch. The CAS on an action binds only a head's revision; a
+guard binds its state and its target too, so an endpoint that reports a false state at the true revision, or a swapped
+target, cannot turn a reviewed save into another one.
+
+- **The snapshot:** `ILedgerCommitments.headSnapshotHash(state, revision, admission, target)` =
+  `keccak256(abi.encode(uint8, uint64, uint64, bytes32))`. `target` is the head's STORED target word: the current
+  target of a BOUND head; the **last bound target** of a MASKED or RELEASED head; 0 for a head never bound (UNSET, or
+  a hide with no bind before it: `targetKind` 0). Profile 1 (never live: no Realm had b0) hashed the canonical target,
+  0 unless BOUND, so it did not bind what a restore brings back. Only the hash of a once-bound MASKED or RELEASED
+  head differs between the two.
+- **The kept word is now a fact.** A MASK or RELEASE has always kept the head's target word, to save a fresh slot at a
+  later restore. It is the target of the head's last BIND, so it follows from the statement history alone and a
+  rebuild or an import reproduces it. It is 0 exactly when `targetKind` is 0 (a BIND's target is never 0, `E_SHAPE`; a
+  first mask writes neither; no MASK or RELEASE writes either): `test/unit/ingress/GuardHeads.t.sol` walks every
+  admitted sequence of up to four statements (231 steps) and checks it after each. The test harness's state digest
+  hashes the word as stored, so a kernel that cleared it would be caught.
+- **The head READS are unchanged and stay canonical:** `ILedgerHot.head`, `LedgerReads.head`, `heads`, `headsAt`,
+  `historyAt` and the lens reader serve target 0 for every head that is not BOUND.
+- **Checked against the state before the publication's own actions.** A publication that binds a head and guards it
+  names the head's state before the bind.
+- **A retry of an admitted guarded publication answers `AlreadyAdmitted`** even when its guard is stale now (the retry
+  compare runs first). The native intent digest includes `keccak256(guard)`: the same actions with other guard bytes
+  at the same nonce are `E_NONCE`, so a resend carries byte-identical guard bytes.
+- **On the signed lane** `intent.readSetHash` must equal `keccak256(guard)` (`E_INTENT(5)`). That lane (b1) is tested
+  here and stays off in the fixture.
+- **What a guard does not cover:** anything a plan decided from a read that is not a head (a record's body, a name, a
+  list's membership).
+
+**61. How a planner builds a guard** (the contract a consumer codes against).
+
+- **Which heads:** every head the publication writes, and every head whose value decided an action and that it does
+  not write (for example the other authors' heads an edit's base was chosen from).
+- **The expected hash is computed from the values the plan was decided on, never copied from a read.** An endpoint
+  that lied in a head read can serve the true hash in `headSnapshots`; a copied hash then passes while the save was
+  planned on the lie. Per head a planner needs `(state, revision, admission)` from the head read it planned with, and
+  the target:
+
+  | Head as the plan saw it | Target in the snapshot | Source |
+  |---|---|---|
+  | BOUND | its target | the head read |
+  | UNSET, or `targetKind` 0 | 0 | the invariant of item 60; no read |
+  | MASKED or RELEASED, purpose TAG, SAME or BROADER | the position's role | `FilesFinalValidator` refuses a bind whose target is not the role (codes 14, 13). A profile rule, not a kernel rule |
+  | MASKED or RELEASED, any other purpose (FOLDER, HEAD, PROPERTY, an app's own) | the last bound target | a read: `headSnapshots`' `targets` (item 62), or a history walk |
+
+  The read's source need not be trusted: the kernel compares, so a lie there can only make the publication revert.
+- **A restore** binds the value it hashed: the plan's restore target IS the snapshot's target for that head.
+- **On `E_READSET_STALE`** (retry class reprepare, like `E_CAS`, a different selector): the arguments name the first
+  mismatch only, positions outer and principals inner. Re-read every guarded head, not only the named one.
+- **The grid.** A read set is every principal at every position, so n·m heads, of which every one needs a true
+  expected hash. A wide lens and many positions cannot share one publication (item 63).
+
+**62. `LedgerViews.headSnapshots` returns two arrays.** `headSnapshots(ledger, principals, positions) returns
+(bytes32[] snapshots, bytes32[] targets)`, position-major. `snapshots[k]` is profile 2, what the ingress would compare
+now (a preflight and a self-check, never the source of an expected hash). `targets[k]` is the target word that hash is
+over: one batch call gives the last bound target of up to 256 heads, with no depth limit, where a history walk costs
+one bounded walk per head. The reader rule, on the interface: for a head that is not BOUND, `targets[k]` says only what
+a restore would bind again. It does not say what the statement is about (a statement that was only ever negative
+stores 0), nor that anything applies or is shown; it is never used in a lens walk; it may name a record whose author
+has since withdrawn it. The ABI snapshot of `ILedgerViews` changed (two outputs; the selector did not), and
+`ILedgerCommitments.headSnapshotHash`'s fourth parameter is named `target`.
+
+**63. Limits and refusals.** `maxReadSetPositions` is 128 (was 4); `maxReadSetPrincipals` stays 64; and a new bound:
+principals × positions ≤ `limits.maxReadCount` (256, an existing limit, so no Limits field or layout changed). The
+ingress and `headSnapshots` refuse alike with `E_READSET_SHAPE(reason)`, in this order: 1 principals (0 or over the
+limit; the view admits 0), 2 positions, 3 `expectedHeads` is not n·m long (ingress only), **5 n·m over
+`maxReadCount`** (new), 4 the bytes are not the canonical encoding (ingress only). `E_UNSUPPORTED_GUARD` when the
+Realm's b0 is clear.
+
+- **The grid rule for a consumer:** guarded heads per publication ≤ 256, as n principals × m positions. One principal
+  carries 128 positions, which is two per action at the action limit. With a lens of n authors a publication carries
+  ⌊256 ÷ n⌋ positions: under a 64-author lens, 4 files' HEAD positions (the measured extreme, item 64). A planner
+  splits by this limit as well as by gas. A consumer that guards only the lens prefix up to and including the
+  deciding author (n = that author's place, as the SDK does) keeps its batch size for an edit of the author's own or
+  the creator's version.
+
+**64. The gas of a guard, and batch sizes** (`gas/model.json` `profiles.<schedule>.guard`; `tools/gas-plan.mjs`
+`guardCost`, `guardBytes`; `test/integration/GasModel.t.sol` section 11). The guard is checked inside prepare, before
+the index floor is set, and the index does the same work guarded or not: **the floor formula and the work model are
+unchanged** (formula 3). A guard is kernel gas only. A planner adds, once per guarded publication, to E and to K:
+
+`guardFixed + (n − 1)·guardPrincipal + (m − 1)·guardPosition + Σ over the n·m heads + guardMemoryQuadratic·(n + m + 3nm)²`
+
+| Term | prague | amsterdam |
+|---|---|---|
+| `guardFixed` | 35,555 | 25,555 execution + 97,920 state |
+| `guardPrincipal` / `guardPosition` | 988 / 1,054 | the same |
+| `guardHeadWritten` (a head this publication writes) | 2,948 | the same |
+| `guardHeadWrittenUnread` (a head it UNBINDs or RELEASEs while MASKED or RELEASED with `targetKind` ≠ 0) | 4,946 | the same |
+| `guardHeadTwoWords` (not written; `targetKind` ≠ 0) | 6,943 | the same |
+| `guardHeadOneWord` (not written; `targetKind` 0) | 4,682 | the same |
+| `guardMemoryQuadratic` | 0.0634 | the same |
+
+- The planner's input: `check(actions, { guard: { principals, positions, written, writtenUnread, twoWords, oneWord } })`,
+  the four head counts summing to n·m (asserted). A read set over a limit is refused with the limit's name.
+- The memory term is needed: a linear model is 2.15% to 3.64% low at the maxima (1 × 128, 2 × 128, 64 × 4); with it
+  the model is within 0.04%. Its variable is an empirical fit, not a count.
+- The terms include the guard's calldata (224 + 32·(n + m + n·m) bytes), as every constant includes its action's
+  (item 66).
+- Inside a large batch the guard's memory lands on the batch's and the guard is under-predicted by 1.3% to 7.4% of its
+  own cost, at most 22,539 gas (about 0.2% of the publication). No term is added; the guarded composites are counted
+  in the stated under-prediction maxima (item 65).
+- An estimate computed before the measurement and quoted in the design discussion (about 0.14M for a 50-position
+  guard) was about 40% low. The rows above are measured.
+
+Largest planned batch, unguarded → guarded, each executed for real at that size on both schedules by
+`test/integration/FloorPlan.t.sol` (35 cases a schedule):
+
+| Shape | prague | amsterdam | Guard (heads, bytes) |
+|---|---|---|---|
+| moves to fresh names (2 actions each) | 20 → 20 | 25 → 24 | 1 × 40 (2,816 B) / 1 × 48 (3,328 B) |
+| folder masks | 54 → 53 | 54 → 53 | 1 × 53 (3,648 B) |
+| folder restores to kept files | 48 → 47 | 48 → 47 | 1 × 47 (3,264 B) |
+| tag number changes | 62 → 61 | 64 → 63 | 1 × 61 (4,160 B) / 1 × 63 (4,288 B) |
+| edits under a 64-principal lens (2 actions each) | 24 → 4 | 28 → 4 | 64 × 4 (10,592 B); stopped by the grid, not gas |
+| one edit under a 64-principal lens | 1 | 1 | 64 × 1 (4,352 B); the guard costs 532,770 / 522,794 |
+| 64 CREATEs under a 1 × 128 guard | 64 | 64 | 8,448 B; the guard costs 1,072,562 / 1,062,502 |
+| 64 CREATEs under a 2 × 128 guard | 64 | 64 | 12,576 B; the guard costs 1,994,205 / 1,984,145 |
+
+A guard over the written heads of a batch costs 198,838 to 303,591 gas on prague (224,041 to 303,224 of execution gas
+on amsterdam, plus 97,920 of state gas). One unit more than each size is refused: for gas (the batch shapes), with
+`E_READSET_SHAPE(5)` (the fifth edit under the 64-principal lens), or at the action limit.
+
+**65. Later statements in a mid-size list are over-priced beyond the 15% bound** (found while measuring the guard; it
+is in the model the list release shipped, and the guard is not its cause). A later statement (a mask, release or
+restore) in a list of more than 48 entries is priced by the long-tier rows, which were measured at entry 1,024 of
+1,025. No composite had covered a list between 49 and 1,023 entries.
+
+- **Measured** (a new validation state, `midList`: every composite with a later statement the long tier prices in a
+  list under the claim; reported, excluded from the stated maxima as `beyondClaim` is, and stated on its own as
+  `maxMidListOverErrorPercent` and, on amsterdam, the execution-gas figure):
+
+  | Composite | prague all gas | amsterdam all gas | amsterdam execution |
+  |---|---|---|---|
+  | tag releases, 32 of 49 at one topic (the maximum) | 17.25% | 9.63% | 20.57% |
+  | tag masks, 32 of 49 | 17.11% | 9.59% | 20.42% |
+  | folder releases, 32 of 49 | 17.17% | 9.60% | 20.50% |
+  | folder masks, 32 of 49 | 17.04% | 9.56% | 20.34% |
+  | 53 folder masks, unguarded / guarded | 15.88% / 15.30% | 9.09% / 8.87% | 19.16% / 18.54% |
+
+  TAG and FOLDER masks and releases have the largest long-over-short row ratios (1.24 to 1.29); PROPERTY, SAME and
+  BROADER are below them and were not measured. Seven older composites are `midList` by the rule (0.9% to 10.8%);
+  none had set a maximum.
+- **The statement that holds:** over-prediction of the gas a cap counts is at most 15% for lists of up to 48 entries
+  and at the claim (1,024); between, it is at most **17.25% on prague and 20.57% of execution gas on amsterdam**. A
+  `midList` composite under-predicted beyond 15% still fails the model run; none is under-predicted.
+- **The effect** is the safe one: a save in a folder or place of 49 to about 1,000 entries is split earlier than it
+  needs to be. Nothing is sent short.
+- **For a consumer:** an over-prediction also raises a gas limit derived from the model, and so the balance a wallet
+  must hold; a funds message should quote these maxima, not 15%.
+- **The fix** is a price per search step in place of the two tiers (a planner already reads `entries`), with the
+  long-tier work at the next model release (§15).
+
+**66. The measured rows include the 21,000 intrinsic cost and the calldata** (a correction to a statement every
+earlier release of the model made; text only, no number changed). forge 1.8.3 runs each state-changing call a test
+makes as a transaction of its own (`forge config` reports `isolate = true`; nothing in this repository sets it), so
+`vm.lastFrameGas().gasTotalUsed` is that transaction's gas. Three throwaway probes: one call measures 26,410 gas with
+isolation and 406 without (21,000 + 204 for its 36 bytes of calldata + 4,800 for the cold accesses of a new
+transaction); a calldata word with no zero byte costs 31 × 12 gas more than one with 31, on a kernel publication and
+on a trivial call alike; a call given 12,000 gas that needs about 5,000 succeeds, so only the reported gas carries the
+intrinsic cost.
+
+- `fixed` carries the 21,000 once; every constant carries its action's calldata at 16 / 4 gas per non-zero / zero
+  byte; `floor.<schedule>.kernel` carries both too.
+- E estimates a transaction's gas used before refunds. K and V are high by 21,000 plus the calldata's gas against the
+  visible execution gas they are compared with: conservative, and unchanged in this release so that the planned sizes
+  are the ones `FloorPlan.t.sol` executes.
+- **A consumer that adds the intrinsic cost and the encoded call's calldata to E, K or V counts them twice, and must
+  KEEP adding them in this release.** The rows carry the calldata of the MEASURED publications, at the suite's byte
+  values, not a real publication's: a non-zero byte costs four times a zero one, the suite's bodies are short (a body
+  term is extrapolated per byte from them to a 16 KiB chunk), and its ids and bodies are not a real save's. Dropping
+  the addition could under-count; keeping it is the safe side, a few percent smaller batches. The next model release separates the two cleanly: the model will exclude
+  the 21,000 and the calldata, and the consumer adds the real values (§15).
+- **The work model and the floor's margins are not affected.** `FloorSplit.t.sol` takes the index's spend as E − K −
+  the final phase (`FloorBase._need`, `_finalPhase`), three runs of the identical call from the same state, so the
+  intrinsic cost and the calldata cancel exactly. The on-chain rows fitted from that spend, and the stated margins
+  (1.03 on prague, 1.05 per action on amsterdam, the 1.031 cell), stand as stated.
+- This is also why rows moved by 12, 24 or 36 gas when the capability or a limit changed: the execution-set and
+  acceptance-profile words are calldata, and their zero bytes changed. Earlier notes that put a move of exactly ±12
+  down to "code placement" (item 32's gas line; docs/INDEX-BUILD.md) are most likely this effect, since each of those
+  releases changed the execution set; they were not re-traced.
+- `planning.headroomCovers` no longer lists the intrinsic cost and calldata; the schema's description and the model's
+  note say included.
+
+**67. Every existing row was re-measured, and moved a little.** The ingress was rebuilt, and its code generation
+shifted: all 335 earlier rows move by −131 to +3,389 gas (at most 0.147% of a row on prague, 0.156% on amsterdam), and
+106 constants per profile by −5 to +105 gas (for example `unbindFolder` 160,393 → 160,498 on prague). Amsterdam's state
+gas did not move. 176 read figures moved by +1 to +2,782 gas (at most 0.10%); no read bound moved. The stated maxima:
+
+| Maximum | list release | this release | bound |
+|---|---|---|---|
+| prague under-prediction | 9.68% | 9.68% | 15% |
+| prague over-prediction | 11.15% | 11.15% | 15% (lists ≤ 48 entries and at the claim; item 65) |
+| amsterdam all gas, under | 6.63% | 6.62% | 15% |
+| amsterdam all gas, over | 18.42% | 18.42% | its per-composite bound (nearest by 2.95 points) |
+| amsterdam execution, under | 10.52% | **10.52%** | 15%; the SDK's tripwire is 10.74 |
+| amsterdam execution, over | 13.89% | 13.89% | 15% (as prague) |
+
+The guarded composites (20 and 24 moves, 47 folder restores, 61 and 63 tag number changes, the lens edit, CREATE under
+1 × 128 and 2 × 128) are counted in these; their errors run −2.90% to +3.43% on prague and −3.05% to +5.00% of
+execution gas on amsterdam. The model has 397 rows. `planning.limits` carries the three read-set limits.
+
+**68. The fixture's Realm has the guard on, by a second activation.** Genesis activates with no capability, as the
+design says (G20). A new step **G20b** then activates revision 2 with the same components and capability b0
+(`NATIVE_GUARD`) only, before the Types, the readers' listings and the seed, so everything else is published under the
+live set. b1 (the signed lane) stays off.
+
+- `release/efs-deployment.json`: `activation` keeps its shape and describes the LIVE set (`revision` 2,
+  `capabilities` 1, G20b's transaction and block); a new `genesisActivation` records revision 1 (its execution set,
+  transaction, block, capabilities 0). `describe()` answers revision 2, capabilities 1 and registry mutations 2 (one
+  per activation). `deploy/plan.json`: `activation` is the live set and `genesisActivation` the genesis one.
+- A plan bound to the genesis execution set is refused `E_EXECUTION_SET` after G20b, as after any activation.
+- Turning the capability on is one-way only at a freeze: a plain activation may clear b0 or lower a limit; a freeze
+  requires a superset of both, and a frozen Realm with b0 runs its freeze canary guarded (tested here).
+
+**69. Tests** (no consumer change). `test/unit/ingress/Guard.t.sol` (25 tests: b0 clear; a passing guard's event and
+evidence; stale for each hashed field; the stored word of MASKED, RELEASED and never-bound heads; the pre-state rule;
+the position-major order; shapes 1 to 5 and their order; another author's head; retry and `E_NONCE`; the signed lane),
+`GuardHeads.t.sol` (the invariant), `test/readers/Facets.t.sol` (both returns of `headSnapshots`, its bounds, the kept
+word of a masked head beside the canonical head reads), `test/control/RealmController.t.sol` (the freeze canary is
+guarded with b0 and unguarded without), `test/unit/Harness.t.sol` (the digest keeps a kept target),
+`test/integration/GasModel.t.sol` section 11 and `FloorPlan.t.sol`'s guarded cases. `KernelFixture` and `FilesFixture`
+gained an overridable `_capabilities()`; `GasModel.t.sol` and `FloorPlan.t.sol` run with b0 on, the fixture's live
+set.
+
+**70. Identities of this release** (items 60 to 69 together, against `04526b1`, the commit the SDK is pinned to; every
+value is in the table below). **Source changed in two contracts:** `LedgerIngress` (the guard's snapshot and the
+product bound) and `LedgerViews` (`headSnapshots`); in `artifacts/` exactly `LedgerIngress.json` and
+`LedgerViews.json`. **Moved:** the release digest, the plan hash, the execution set (now the live set of revision 2;
+the genesis set is new beside it), the limits profile id (`maxReadSetPositions` 128), the index obligations and
+manifest hash (the index's address and the units it names moved); the ingress's address and code, and through it
+`LedgerControl` and `LedgerCore` (each embeds the ingress), `RealmGenesis` and so **every genesis address: the
+controller, both proxies and their admins, so the ledger proxy, the realm origin and id and the domain separator**;
+the stores, `RealmIndex`, `IndexReads`, `LedgerViews`, every reader and both gateway contracts (each embeds a moved
+address); `release/errors.json` (`E_READSET_SHAPE`'s reasons are listed); `gas/model.json` and its schema;
+`test/vectors/floor-plan.json`; the ABI snapshots of `ILedgerViews` (two outputs) and `ILedgerCommitments` (a
+parameter name). **Not moved:** the layout id, the hot ABI ids (release `0xf37d24d0…9856`, test `0x79a1dd51…cce0`),
+both store ABI ids, the status vocabulary id, every selector, every Type id and rule, `LedgerApply`, `LedgerReads`,
+`DescriptorStore`, `IndexReplayDecoder`, `ReaderDirectory`, `RefuseAllPolicy`, `FilesFinalValidator`, the registry
+implementation, `KeysView`, the work model, every read bound, `vectors/layout.json`, the other `test/vectors/` files,
+and the seed (`efs-fixture-seed/4`, root `0xf7547aa6…c037`). Sizes of the two contracts whose code changed (runtime
+bytes; budget 19,660 B): `LedgerIngress` 18,955 → 19,027 B (633 left), `LedgerViews` 18,575 → 18,867 B (793 left).
+
+### The identity table (this release against `04526b1`)
+
+Read from `release/release.json`, `deploy/plan.json` and the sample `release/efs-deployment.json` (default fixture
+configuration: chain 31337, salt `keccak256("efs/fixture/realm/1")`) of this release, against the same files at
+`04526b1` (`git show 04526b1:<file>`), the commit the SDK is pinned to. The ABI ids are computed from
+`test/snapshots/abi/` with `tools/abi-id.mjs`; none moved (`pnpm abi:check`), and the test id `efs/ledger-hot/2:test`
+is `0x79a1dd51f600e8d16b964d895a4b415cde8c0a3ba9abe66846842a2f12cbcce0`, unchanged. Addresses are the fixture Realm's;
+on any other `(chainId, realmSalt)` recompute them with `tools/deploy-plan.mjs`. A "runtime" that moved without a
+source change is an embedded address (immutables are part of the runtime codehash). No read bound moved: prague and
+amsterdam limitEntries, maxRows and pageTimesLens are `245, 150, 768 / 416 / 688 / 408`.
+
+| pin | this release | moved against `04526b1` |
+|---|---|---|
+| release digest (`sha256(release/release.json)`) | `0xed89411182376bfc42455720f900dadaaef8a8dbeae7538bf9ebca1618c1bcca` | yes (was `0xe6972acb…8612`) |
+| plan hash | `0xec19c449dad7977ff221a770e397ce03c579360a02279d40e026788554511db2` | yes (was `0x2206022b…e509`) |
+| execution set (the live set: revision 2, capability b0) | `0xbc587f0e8bdade1b5516745f0f8239dd4d03d5de6c91834adbf0239c3c5c3b75` | yes (was `0x478c92b5…7d24`) |
+| genesis execution set (revision 1, `genesisActivation`) | `0x35a597817b42e89d6a623602c1bdb98b23e8dd3fb2ad2b836b0c50a579139854` | new field (the list release's only set was `0x478c92b5…7d24`) |
+| index obligations | `0xa1a5dfec37dfe755a73488047be84fa82d692c9edf822bf1fc14e72c918740b9` | yes (was `0xd1ec8dd9…b20b`) |
+| index manifest hash | `0xfc9d3bb351c59d20629a8076b4075167b6945c28e93de93ae87f44f6527c4ecb` | yes (was `0x14f48551…e148`) |
+| layout id | `0xc59a1669be13ef347b3e85757f16896d2f324b1bdbc062719a24496e7173b212` | no |
+| ABI id `efs/ledger-hot/2` | `0xf37d24d0ced96ce84fa2a8dd011fc0594eec8f33e3212c27762b76fc9e469856` | no |
+| limits profile id | `0xb52ff16cc1562ad12f4db14bdf87874da17a06b33eb927deb9ee890a2bd21183` | yes (was `0x0ee9b6c0…5055`) |
+| realm id | `0xb0bc374c748b3d12d43bfecd806fb3eec7e08007eda33037fcc7865cb1ed1d0e` | yes (was `0xdfef48c9…460e`) |
+| realm origin | `0x04508ea4199508f841063fe9dbb142d2439899aff51bd89d101ada6422aa6d65` | yes (was `0x9eb21172…af86`) |
+| domain separator | `0xdd27eb3c16b33a736b2cc85dae41c65a49a71c4cf49d79b6f0c71ebaeaeb42f9` | yes (was `0xef73e634…77d7`) |
+| ledger proxy | `0xBfe0D63fe8bEe7e225ed521756f9AA15f68e03C5` | yes (was `0xe942147e…3429`) |
+| registry proxy | `0x2286f131F684819b6D779f40C0C77f647aC0074D` | yes (was `0x6cD3F5A2…B415`) |
+| `gas/model.json` sha256 | `0x8c054dccd8b7995b359e286bb0ad5165eea22b47ef9cc3ac5fcbc4952bce08fa` | yes (was `0x2862faf9…699f`) |
+| `release/errors.json` sha256 | `0x6f74cddca908d1110cce98dc57ee46473b799c5092efb84c85f67c90fe951500` | yes (was `0xa5fd5d86…8b63`) |
+| `test/vectors/floor-plan.json` sha256 | `0x5d397bc30e5b51b063b94d9037756755d02ff585ce7069b0db8db58611471431` | yes (was `0x8cd73d4a…13c9`) |
+| `LedgerCore` (address, runtime codehash) | `0x16aCCC3Ff676bC80F566b139f6bC14B9F8F72692 / 0x0806060003db340a491efa65ea562c16f379aaad7db350797bcdcb89cbc0b5a1` | yes, address and runtime (was `0x13b04891…342E / 0x2fdc95dd…f23f`) |
+| `LedgerIngress` (address, runtime codehash) | `0x30C74eB10B83bd40e4D579aD1053D4c81dB32D58 / 0x66e46be64c258da040dbf8f001a6cf34e623dd9b4fb98f75826da782da7c041f` | yes, address and runtime (was `0x064cB343…8319 / 0xd3e3e0cf…728e`) |
+| `LedgerApply` (address, runtime codehash) | `0x4Eb1ab68E26a13a5aFB7dc4866eEAd6d6eA88343 / 0x7d788fac98935e8c48d36d9e4886246093bef0a0eb20d445a7d28db275637669` | no |
+| `LedgerControl` (address, runtime codehash) | `0xE7535F4D849a37e6b2ade25e7220737722016B5d / 0xe8684aee2878a85db878cbec8af8fde38ffb3ceb66a865e8c6816d0def6ec106` | yes, address and runtime (was `0x99248253…7722 / 0xa0386f81…a6da`) |
+| `LedgerReads` (address, runtime codehash) | `0x76E3Fb2DF9cbce48C4819b2C51c17216668E9366 / 0x7aafb133b4b1b130b239da67027f7de118918861850b94584b68c101e0b71657` | no |
+| `LedgerViews` (address, runtime codehash) | `0x54d177c72277283a97f5c7A11ceD8b948B30D4cB / 0x24642309b6289562d6d0803dcf2c7ac29e44489a6f735fcbbb0673d56a2a16e7` | yes, address and runtime (was `0xdf43CDcc…5648 / 0xf15400a4…eb03`) |
+| `RealmController` (address, runtime codehash) | `0x96d683FE78383A574AB78bD1322A9cED48E0E898 / 0x9bca8d252c52e02d86801d7058f2957da7d5d26be3fb7c706433c4ab6610d157` | yes, address and runtime (was `0xb89a7b73…F770 / 0x93341dc0…3930`) |
+| `RealmIndex` (address, runtime codehash) | `0x37A793109EAa3767947def459CA11FDa4eF1D568 / 0x3dd317e6d4dfe7c8a46895f0bfb8e551129e8863f30548c156b69d0725391b92` | yes, address and runtime (was `0x412812D2…5f5D / 0xc901315f…6849`) |
+| `IndexReads` (address, runtime codehash) | `0xCd1C862AFeFF0b07f118C6b99d621952EEb9Aa69 / 0x37a201ce8653b36c8acf45713046d295b3c403b3d27fcebad988bced6f67368a` | yes, address and runtime (was `0x1421c4C9…123F / 0xaaa24233…4378`) |
+| `PostingStore` (address, runtime codehash) | `0x445Adc287bE173b99d43b53Ffb7caD5c0f6c87C9 / 0x256dff59adb799909ea6953b60a7c475c40ad2d6ca2086ea544ecea865844ee5` | yes, address and runtime (was `0xf948095e…718C / 0x5d1f9c2f…5807`) |
+| `BitmapStore` (address, runtime codehash) | `0x058644673E3eb00D6B6773A5EA66e4b261b29a5F / 0xb60edaff99f20d541dcba4907599c715fb1901bdc5a5c5714e114dc354565084` | yes, address and runtime (was `0xCEe929eC…7088 / 0xd8b36e1b…2fdd`) |
+| `LensReader` (address, runtime codehash) | `0x76aC4EaEF8dC01614C1Bc7c1D4882927D9593a13 / 0xe273b886d1b079ecf6a3ce28f209ae6fde6d11ab17d82936ef4d7f21205ff4c3` | yes, address and runtime (was `0xbb20026c…E374 / 0x862b4571…32d1`) |
+| `FilesPageReader` (address, runtime codehash) | `0x16Fb0a61A74f6C1D6b6a79d220AE2a7a07BE2dEf / 0xcace635ef5e5086d1fb867cbed954ecb1d4e40ef23bed0b3b6351df8cc8da48f` | yes, address and runtime (was `0xbd90fE59…34d9 / 0x10d41bb0…a2ce`) |
+| `TopicMineReader` (address, runtime codehash) | `0x6DaF20f45f52bd80e81399C6626F1d59F4CBaA38 / 0x7e75f416febaa61b200e90163c81dee5c49a45a53cf9e3a7e43ce08f674740ee` | yes, address and runtime (was `0x45772331…CE33 / 0xdac80a0c…e0fd`) |
+| `TopicEveryoneReader` (address, runtime codehash) | `0x7d97EA09063231DE65FC6375A0DE76A4d375Cd98 / 0xffd8db4d768751309a0356e518cc5ca1a577000aae6d256d17c3459cee066187` | yes, address and runtime (was `0x6082241a…39A0 / 0xbae87c8a…1d41`) |
+| `TopicLookupReader` (address, runtime codehash) | `0x06d4E948c027Df63c93A6C8e534897b09a77aE20 / 0x32ae3d9d1ec674143b91b9ec62a2672bd226a910452dc9ecb0a5a2511b623555` | yes, address and runtime (was `0x3c57C6df…A0Aa / 0xcd36e8e6…a091`) |
+| `EfsWeb3Content` (address, runtime codehash) | `0xdC98b2896553038E79D78195Dc7Dc2253bdF167C / 0x15cb80fecd6f9d8cf46bc4cf7ea88774fd054ebe985bd657fa8a74b562c3ca5b` | yes, address and runtime (was `0x8d06AbED…5E47 / 0x91096216…5a66`) |
+| `EfsWeb3Gateway` (address, runtime codehash) | `0x3B1Bf7B99B23FA1e1D772C10ceE4FEDca16744cc / 0x381688011e18f43deb88c4f303e26f19b11617c1a1a7919242ce7bb7cde8820d` | yes, address and runtime (was `0x386F52cC…5f10 / 0x5d9ab2e9…587d`) |
+| `FilesFinalValidator` (address, runtime codehash) | `0x5232Bb9c585F8d992d80dA5f477371bFEe49182B / 0xeb744b64ca0d1d994bc0a1b260382c55b768b53fbbc55ba7bbac9fa7e1cb1619` | no |
+| `KeysView` (address, runtime codehash) | `0x50dE57E374C6a44B18b28Cdc5092EeC45e74757F / 0xaede6581bd6c30cad13acfdab4ccf0792e45c4e1686c453545d4559831201ab3` | no |
 | seed version | `efs-fixture-seed/4` | no |
 | seed root directory record | `0xf7547aa65ac7374a944085cc67bd05c48c17a2fef819390b06350f8d4a76c037` | no |
 
@@ -2115,7 +2484,7 @@ and the `FilesFinalValidator` unit's `hotAbiId`. The suites' id is `KernelDeploy
 
 `LensReader(ledger, views, reads)` and `FilesPageReader(ledger, views, reads, files-name/2, files-root/1,
 files-child/1)` are CREATE2 steps **R1** and **R2**. Their constructors read `layoutId()` from the ledger proxy, so
-they follow G18; they run after the genesis activation (G20). **R3** and **R4** list them permissionlessly in the
+they follow G18; they run after the genesis activation (G20) and the guard activation (G20b, item 68). **R3** and **R4** list them permissionlessly in the
 `ReaderDirectory` under the kind labels `keccak256("efs/reader/lens/1")` and
 `keccak256("efs/reader/files-page/1")` (the strings `test/periphery/ReaderDirectory.t.sol` uses; the directory does
 not interpret them). **R6** `TopicMineReader(ledger, views, reads)` (the lens view), **R7**
@@ -2167,13 +2536,13 @@ equal; see HARNESS-BUG below).
 | `tools/release.mjs` | Writes `release/release.json`, `release/errors.json` and `artifacts/`. |
 | `tools/gas-report.mjs` | Writes `gas/report.json`. |
 | `script/Genesis.s.sol` | Simulation only, never broadcast. `profile(address key)` deploys the thirteen rules, `RefuseAllPolicy` and `FilesFinalValidator` (six Type ids: name, directory, root, child, topic, topic-word) through the factory in forge's EVM and returns `FilesTypes`' and `TopicTypes`' descriptors and ids. `release.mjs` requires the JS twin to match it byte for byte. |
-| `deploy/plan.json` | `efs-deploy-plan/1`: 78 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, R0–R4, thirteen G21 registrations, R5a and R5 the `web3://` gateway's content server and entry point, R6–R11 the three topic readers and their listings, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the genesis activation set with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
+| `deploy/plan.json` | `efs-deploy-plan/1`: 79 steps (F0, G1–G20 with thirteen G10 rules and G11 blobs, G20b the activation of revision 2 with the guard capability, R0–R4, thirteen G21 registrations, R5a and R5 the `web3://` gateway's content server and entry point, R6–R11 the three topic readers and their listings, and the six seed publications G22.root, G22.folder, G22.file, G22.big.0–1, G22.remote), each with kind, contract, address, initcode hash, constructor arguments, runtime codehash, calldata hash and post-check, plus the predicted addresses, realm ids, the live activation set (`activation`, revision 2) and the genesis one (`genesisActivation`), each with `expectedExecutionSet`, the index manifest, the thirteen Type ids and descriptors, the seed and `planHash`. |
 | `release/release.json` | `efs-contracts-release/1` (design §13). It records the source commit, tree and dirty count; toolchain pins (`bytecode_hash = "none"`, CBOR trailer kept); the build platform; double-build reproducibility (36/36 units with identical runtime and creation code across `out/` and `out/release-ast`); sha256 of all 90 source files the units compile from; and, per unit, `runtimeHash` (immutables zero), `deployedBytecodeHash` (planned immutables), `initcodeHash`, `initcodeWithArgsHash`, address, named immutable offsets (empty for every `profiles/` contract, which is asserted), sizes and budgets. It also covers the profile (thirteen Types with shape, descriptor, ruleId, instance, blob and declaration signature; `RefuseAllPolicy`; the index manifest, families, units, digest specs, work model and stores), `limits`, `layoutId`, `hotAbiId` and its preimage, the readers (addresses, codehashes, kind labels, facets), `statusVocabularyId`, store ABI ids, index profile ids, `constants` (action kinds, capability bits, the three purpose ids with their preimages, the Status and Coverage codes, and the Files form, carrier, hash, alias and target-kind codes with the chunk payload: all parsed from the Solidity sources, so a consumer never types a protocol string), the consumer pragma floor, privileged roles, the error-catalog pointer and hash, the ABI pointers and the vector hashes. Digest = `sha256(file)`. |
 | `test/vectors/media.json` | `efs/vectors/media/1`, written by `tools/release.mjs` (or alone by `node tools/media-vectors.mjs`) and compared byte for byte by `release:check`: `files-content/1` and `files-external/1` bodies with their inputs, release Type ids and record ids, and about forty media strings with the grammar's code and each rule's refusal code (`docs/LARGE-FILES.md` "Media types"). `test/profiles/FilesMediaType.t.sol` asserts it against the rules, `EfsFiles`, `Keys` and `script/Genesis.s.sol`'s Type ids. |
 | `test/vectors/topics.json` | `efs/vectors/topics/1`, written by `tools/release.mjs` (or alone by `node tools/topic-vectors.mjs`) and compared byte for byte by `release:check`: the `topic-word/1` and `text/1` verdicts with their codes, the refused code point table (`TopicProfile.REFUSED`), path ids for 1, 2, 3 and 64 words, `PROPERTY` keys, the purposes and the `EfsTopics` builder encodings, for the release Type ids. `test/profiles/TopicVectors.t.sol` asserts every vector. |
 | `release/errors.json` | `efs-errors/1`: 107 file-level errors from `src/`, each with selector, signature, args, source, retry class (the first word of the trailing comment; required, the generator refuses an error without one) and meaning (the rest of that comment, else the `///` lines above the error). Every selector in `test/snapshots/abi/Errors.json` is reproduced. |
 | `artifacts/<Unit>.json` | `efs-artifact/1` per deployable unit: ABI, method identifiers, creation and runtime bytecode, named immutable offsets. `LedgerCore.json`'s ABI is the union of the kernel ABI with the events and errors of `LedgerApply`, `LedgerIngress` and `LedgerControl`. Interface ABIs are not copied: `abi.interfaces` points at `test/snapshots/abi/` (tools/abi-snapshot.mjs), and storage layouts at `test/snapshots/layout/`. |
-| `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the activation (revision 1, execution set, tx, full set), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader`/`TopicPageReader`/`TopicLookupReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids (for the topic lookup reader, the two topic Type ids), plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, principalId}` (a folder is a record, never a subject); `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
+| `release/efs-deployment.json` | `efs-deployment/1` (design §13). It records the release digest, plan hash, chain id, `realmId`/`realmOrigin`/`realmSalt`, the factory and how it was deployed, the genesis address, nonces and tx/block, the live activation (`activation`: revision 2, execution set, tx, full set) and the genesis one (`genesisActivation`: revision 1, execution set, tx, capabilities), the layout and hot-ABI ids, the profile id, limits and `limitsProfileId`, the domain separator and `noticePrincipal`. It covers the controller (owner, pending owner, frozen); both proxies (live implementation slot, ERC-1967 admin, `ProxyAdmin.owner()`, the `_admin` immutable offsets, the initializer calldata); every contract with address, runtime hash, step and tx; the index (generation, manifest, obligations, stores, families, units, digest specs, work model); the Type ids and profile rows; privileged roles; the readers (`LedgerReads`, `LedgerViews`, `ReaderDirectory`, and `LensReader`/`FilesPageReader`/`TopicPageReader`/`TopicLookupReader` with address, runtime codehash, kind, bound ledger, facets, layout and, for the page reader, the three Type ids (for the topic lookup reader, the two topic Type ids), plus the directory's listing rows as read back from chain); the seed (version and the three transactions with their actions and bodies); `root {directoryRecordId, principalId}` (a folder is a record, never a subject); `defaultLensPrincipals`; the actors; an RPC hint; and the evidence grade `local-fixture`. |
 | `release/expected.json` | `efs-fixture-expected/1`: the seed's post-checks (root, folder, the three files with their ids, lengths, sha256 and, for big.bin and remote.txt, the descriptor, span-root and sentinel ids; counts 27 admissions / 17 records / 7 bindings / 6 publications; seven heads; thirteen records; catalog count 13). |
 | `<home>/instances/<name>/` | One instance's runtime state (never tracked): `anvil.pid`, `anvil.log`, `fixture.json` (rpc, pid, ttl, factory method, signing, RPC method counts, the journal of all 79 transactions with hash, block and gasUsed, and the two read estimates), its own `efs-deployment.json` and `expected.json`, and `up.json`. `release/efs-deployment.json` and `release/expected.json` are the committed sample, written only by `up --write-release`. |
 | `artifacts/index.json` | `efs-artifacts-index/1`: `layoutId`, `hotAbiId`, the unit list; lets `artifacts/` deploy alone. |
@@ -2278,7 +2647,7 @@ five codehashes against `describe()` and the release.
 - **Inputs.** Every component codehash is computed offline from the artifact runtime with immutables filled. That
   covers the ledger implementation, the registry implementation, the index (whose manifest hash is also computed
   offline), ingress, apply and the controller (whose immutables are the nonce-derived proxy and admin addresses).
-- **Where it is asserted.** First, on chain: G20 passes `expectedExecutionSet` into `RealmController.activate`, and
+- **Where it is asserted.** First, on chain: G20 and G20b each pass their `expectedExecutionSet` into `RealmController.activate`, and
   both `LedgerControl` and the controller revert with `E_EXPECTED_SET` on any difference, so the genesis activation
   landing is itself the proof. Second, in `up`: `ledger.executionSet()` must equal the plan. Third, in `verify`: the
   live value must equal the plan, and a recomputation from the on-chain revision row's components must equal the
@@ -2680,4 +3049,4 @@ Where §8.2/§13 and the code disagree. The code is followed in every case.
   are measured on both schedules in `gas/model.json` `reads`).
 - **`vectors/execution-set.json`, `manifest.json`, `hot-abi.json`, `names.json` and the other §13 vectors.** These are
   generator work for `tools/vectors.mjs`'s owner. `release.json` hashes the two vector files that exist.
-- **The wrapper, the signed lane, guards, freeze and upgrades.** Out of S1b.3.
+- **The wrapper, freeze and upgrades.** Out of S1b.3. (Since the guard release the native guard is built, tested and on in the fixture, and the secp256k1 lane with a guard is tested; item 60.)
