@@ -816,6 +816,7 @@ export async function verify(o = {}) {
   // 5. describe(): every field against the plan
   const d = await read(pub, a.ledgerReads, "LedgerReads", "describe", [a.ledgerProxy]);
   const set = plan.activation;
+  // registryMutations: one registry mutation per activation (G20, G20b); a described registration is not one
   const want = {
     realmId: plan.realm.realmId, realmOrigin: plan.realm.realmOrigin, realmSalt: plan.realmSalt, genesisChainId: BigInt(plan.chainId), acceptedChainId: BigInt(plan.chainId),
     chainNamespace: toHex("eip155", { size: 8 }), chainReference: pad(toHex(plan.chainId), { size: 32 }), executionSet: set.expectedExecutionSet, revision: set.revision, layoutId: plan.layoutId,
@@ -826,7 +827,7 @@ export async function verify(o = {}) {
     controllerOwner: plan.owner, steward: zeroAddress, frozen: false, phase: 0, readerDirectory: a.readerDirectory, thisFacet: a.ledgerReads, thisFacetCodehash: plan.units.LedgerReads.runtimeCodehash,
     facetVersion: 1, admissions: BigInt(exp.counts.admissions), records: BigInt(exp.counts.records), bindings: BigInt(exp.counts.bindings), publications: BigInt(exp.counts.publications),
     domainSeparator: plan.realm.domainSeparator, limitsProfileId: plan.realm.limitsProfileId, statusVocabularyId: keccak256(toHex("efs/status-vocabulary/1")),
-    revisionBlock: BigInt(dep.activation.blockNumber), revisionAdmissionHigh: 0n, registryMutations: 1n,
+    revisionBlock: BigInt(dep.activation.blockNumber), revisionAdmissionHigh: 0n, registryMutations: BigInt(set.revision),
     verifierProfilesRoot: pad("0x", { size: 32 }), dependencyRoot: pad("0x", { size: 32 }), noticePrincipal: pad("0x", { size: 32 }),
   };
   for (const [k, v] of Object.entries(want)) eq(`describe ${k}`, d[k], v);
