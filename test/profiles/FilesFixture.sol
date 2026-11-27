@@ -7,6 +7,7 @@ import {
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {KernelDeploy} from "../harness/KernelDeploy.sol";
 import {IndexDeploy} from "../harness/IndexDeploy.sol";
+import {ExecutionSets} from "../harness/ExecutionSets.sol";
 import {Factory} from "../harness/doubles/Factory.sol";
 import {TypeRegistry} from "../../src/types/TypeRegistry.sol";
 import {DescriptorStore} from "../../src/types/DescriptorStore.sol";
@@ -14,7 +15,7 @@ import {Keys} from "../../src/lib/Keys.sol";
 import {Purpose} from "../../src/interfaces/Actions.sol";
 import {ILedger} from "../../src/interfaces/ILedger.sol";
 import {ILedgerHot} from "../../src/interfaces/ILedgerHot.sol";
-import {ILedgerControl} from "../../src/interfaces/ILedgerControl.sol";
+import {ActivationSet, ILedgerControl} from "../../src/interfaces/ILedgerControl.sol";
 import {ITypeRegistry} from "../../src/interfaces/ITypeRegistry.sol";
 import {DigestSpec, Unit} from "../../src/interfaces/Index.sol";
 import {FilesTypes} from "../../src/profiles/FilesTypes.sol";
@@ -234,17 +235,27 @@ abstract contract FilesFixture is Test {
         r.hot = ILedgerHot(r.k.proxy);
         r.g = _gen1(r.k.proxy);
         r.registry.activate(1);
-        ILedgerControl(r.k.proxy)
-            .activate(
-                KernelDeploy.genesisSet(
-                    r.k,
-                    address(this),
-                    address(r.registryImpl),
-                    address(r.g.index),
-                    r.g.index.manifestHash()
-                )
-            );
+        ActivationSet memory set = KernelDeploy.genesisSet(
+            r.k,
+            address(this),
+            address(r.registryImpl),
+            address(r.g.index),
+            r.g.index.manifestHash()
+        );
+        uint16 caps = _capabilities();
+        if (caps != 0) {
+            set.capabilities = caps;
+            set.expectedExecutionSet = ExecutionSets.executionSet(set, r.k.proxy);
+        }
+        ILedgerControl(r.k.proxy).activate(set);
         r.principal = Keys.principalFor(address(this), r.hot.realmOrigin());
+    }
+
+    /// The capability bits of the genesis activation (`Capability`, design §4.2). Default 0: only the plain native
+    /// lane. A suite that measures guarded publications overrides it with b0 `NATIVE_GUARD` (it moves
+    /// unguarded rows by a few gas: the execution set's value differs).
+    function _capabilities() internal view virtual returns (uint16) {
+        return 0;
     }
 
     /// The Realm's generation-1 index: the topic lists ride on the validator, which guarantees a tagged topic was
