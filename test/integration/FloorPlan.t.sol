@@ -5,7 +5,7 @@ import {FloorBase} from "./FloorBase.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, Native, Purpose} from "../../src/interfaces/Actions.sol";
+import {Action, Capability, Native, Purpose} from "../../src/interfaces/Actions.sol";
 import {E_BATCH_SHAPE, E_INDEX_GAS} from "../../src/interfaces/Errors.sol";
 
 /// @notice The planning rule of `gas/model.json` (design §10.4; `tools/gas-plan.mjs`, which reads only that file, wrote
@@ -29,6 +29,12 @@ contract FloorPlanTest is FloorBase {
     bytes32 internal topic; // a registered one-word topic
     string internal json;
     address internal constant OTHER = address(0x0DD);
+
+    /// b0 `NATIVE_GUARD` is ON: the Realm the model describes is the fixture's live set (revision 2 with b0,
+    /// tools/deploy-plan.mjs G20b), as in `GasModel.t.sol`.
+    function _capabilities() internal pure override returns (uint16) {
+        return Capability.NATIVE_GUARD;
+    }
 
     function setUp() public override {
         super.setUp();
