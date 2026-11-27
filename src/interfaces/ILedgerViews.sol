@@ -46,12 +46,14 @@ interface ILedgerViews {
             BasisCommit memory
         );
 
-    /// n·m, position-major; the read-set preflight.
+    /// n·m, position-major: each head's snapshot hash (`ILedgerCommitments.headSnapshotHash`) and the target
+    /// word that hash is over. At most maxReadSetPrincipals principals, maxReadSetPositions positions and
+    /// maxReadCount heads (`E_READSET_SHAPE` 1, 2, 5).
     function headSnapshots(
         address ledger,
         bytes32[] calldata principals,
         bytes32[] calldata positions
-    ) external view returns (bytes32[] memory);
+    ) external view returns (bytes32[] memory snapshots, bytes32[] memory targets);
 
     /// Binding ordinal → its position and the position's cell, at most maxReadIds ordinals (the entries of the
     /// first-statement lists, design §10.2).

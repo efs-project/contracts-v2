@@ -1140,7 +1140,7 @@ abstract contract FacetSuite is FacetFixture {
         positions[0] = posName;
         positions[1] = posZero;
         positions[2] = posName2;
-        bytes32[] memory out = views.headSnapshots(k.proxy, principals, positions);
+        (bytes32[] memory out,) = views.headSnapshots(k.proxy, principals, positions);
         assertEq(out.length, 9);
         ILedgerCommitments c = ILedgerCommitments(address(k.ingress));
         for (uint256 j; j < 3; ++j) {
@@ -1161,7 +1161,8 @@ abstract contract FacetSuite is FacetFixture {
         views.headSnapshots(k.proxy, new bytes32[](65), one);
         vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(2)));
         views.headSnapshots(k.proxy, one, new bytes32[](5));
-        assertEq(views.headSnapshots(k.proxy, new bytes32[](64), new bytes32[](4)).length, 256);
+        (bytes32[] memory big,) = views.headSnapshots(k.proxy, new bytes32[](64), new bytes32[](4));
+        assertEq(big.length, 256);
     }
 
     function testHistoryAtReproducesEveryCapturedHead() public view {

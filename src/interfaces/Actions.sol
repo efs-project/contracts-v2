@@ -61,8 +61,8 @@ struct Intent {
 }
 
 /// The guard a lane may carry (design §5.1): n principals × m positions, `expectedHeads` position-major
-/// (n·m head snapshot hashes). Decoded only by `LedgerIngress`; n ≤ limits.maxReadSetPrincipals,
-/// m ≤ limits.maxReadSetPositions.
+/// (n·m head snapshot hashes, `ILedgerCommitments.headSnapshotHash`). Decoded only by `LedgerIngress`;
+/// n ≤ limits.maxReadSetPrincipals, m ≤ limits.maxReadSetPositions and n·m ≤ limits.maxReadCount.
 struct ReadSet {
     bytes32[] principals;
     bytes32[] positions;

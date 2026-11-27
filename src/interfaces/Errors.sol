@@ -28,7 +28,7 @@ error E_EXPIRED(uint64 deadline, uint64 now); // reprepare
 error E_INTENT(uint8 field); // reprepare: 1 realm 2 execution 3 profile 4 index 5 readset
 error E_SIGNATURE(uint8 reason); // reprepare: 0 unknown profile 1 length 2 malleable 3 recover 4 wallet refused 5 code-less/key-classified author 6 author does not derive principalId
 error E_WALLET_GAS(uint32 forwarded); // resubmit
-error E_READSET_SHAPE(uint8 reason); // none
+error E_READSET_SHAPE(uint8 reason); // none: 1 principals 2 positions 3 heads length 4 not the canonical encoding 5 principals x positions over maxReadCount
 error E_READSET_STALE(bytes32 position, bytes32 principalId); // reprepare
 error E_UNSUPPORTED_GUARD(); // none
 error E_VERIFIER_PROFILE(uint16 profile); // none

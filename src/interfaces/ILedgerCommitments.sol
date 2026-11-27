@@ -43,12 +43,17 @@ interface ILedgerCommitments {
     /// requires the raw guard bytes to be the canonical encoding.
     function readSetHash(ReadSet calldata rs) external pure returns (bytes32);
 
-    function headSnapshotHash(
-        uint8 state,
-        uint64 revision,
-        uint64 admission,
-        bytes32 canonicalTarget
-    ) external pure returns (bytes32);
+    /// Head-snapshot profile 2, what a read set's `expectedHeads` entry must equal:
+    /// `keccak256(abi.encode(state, revision, admission, target))`, where `target` is the head's STORED target
+    /// word: the current target of a BOUND head, the LAST BOUND target of a MASKED or RELEASED head, and 0 for a
+    /// head that was never bound (UNSET, or a hide with no bind before it; its `targetKind` is 0). It is not the
+    /// canonical target the head reads serve, which is 0 for every head that is not BOUND.
+    /// A caller computes it from the values its plan was decided on. A hash copied from a read proves nothing
+    /// about what the caller saw.
+    function headSnapshotHash(uint8 state, uint64 revision, uint64 admission, bytes32 target)
+        external
+        pure
+        returns (bytes32);
 
     function acceptanceProfileOf(address ledger, Action[] calldata actions)
         external
