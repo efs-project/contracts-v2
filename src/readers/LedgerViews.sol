@@ -319,34 +319,48 @@ contract LedgerViews is ILedgerViews {
     }
 
     /// @inheritdoc ILedgerViews
-    /// @dev `headSnapshotHash(state, revision, admission, canonicalTarget) = keccak256(abi.encode(...))`
-    ///      (`ILedgerCommitments.headSnapshotHash`) of `binding(principals[i], positions[j])` at index
-    ///      `j * n + i`. Bounded by the read-set shape the ingress accepts: more than
-    ///      `limits.maxReadSetPrincipals` principals revert `E_READSET_SHAPE(1)`, more than
-    ///      `limits.maxReadSetPositions` positions `E_READSET_SHAPE(2)`.
+    /// @dev Index `j * n + i` is `binding(principals[i], positions[j])`. `snapshots[k]` is head-snapshot profile 2
+    ///      (`ILedgerCommitments.headSnapshotHash`), what the ingress compares a read set with; `targets[k]` is
+    ///      the target word it is over: the head's STORED word, read only when `targetKind != 0`.
+    ///      For a head that is not BOUND, `targets[k]` is only what a restore would bind again (the interface
+    ///      states the reader rule): the head reads (`headsAt`, `heads`, `historyAt`) serve target 0 there and
+    ///      are the ones to read a head's meaning from.
+    ///      Bounded as the ingress bounds a read set: more than `limits.maxReadSetPrincipals` principals revert
+    ///      `E_READSET_SHAPE(1)`, more than `limits.maxReadSetPositions` positions `E_READSET_SHAPE(2)`, more
+    ///      than `limits.maxReadCount` heads `E_READSET_SHAPE(5)`. Empty arrays answer empty.
     function headSnapshots(
         address ledger,
         bytes32[] calldata principals,
         bytes32[] calldata positions
-    ) external view returns (bytes32[] memory out) {
+    ) external view returns (bytes32[] memory snapshots, bytes32[] memory targets) {
         LedgerRows.requireLayout(ledger);
+        bytes32[] memory lw = LedgerRows.loadRun(ledger, LedgerRows.REALM + 13, 2);
         (,,, uint16 maxPrincipals, uint8 maxPositions,,,,,,,,) =
-            Layout.unpackRealmStorageWord13(LedgerRows.load(ledger, LedgerRows.REALM + 13));
+            Layout.unpackRealmStorageWord13(lw[0]);
+        (uint16 maxReadCount,,,) = Layout.unpackRealmStorageWord14(lw[1]);
         uint256 n = principals.length;
         uint256 m = positions.length;
         if (n > maxPrincipals) revert E_READSET_SHAPE(1);
         if (m > maxPositions) revert E_READSET_SHAPE(2);
-        bytes32[] memory keys = new bytes32[](n * m);
+        if (n * m > maxReadCount) revert E_READSET_SHAPE(5);
+        bytes32[] memory s = new bytes32[](2 * n * m);
         for (uint256 j; j < m; ++j) {
             for (uint256 i; i < n; ++i) {
-                keys[j * n + i] = Keys.binding(principals[i], positions[j]);
+                uint256 slot = Layout.bindingsHeadsSlot(Keys.binding(principals[i], positions[j]));
+                s[2 * (j * n + i)] = bytes32(slot);
+                s[2 * (j * n + i) + 1] = bytes32(slot + 1);
             }
         }
-        Head[] memory hs = _heads(ledger, keys);
-        out = new bytes32[](hs.length);
-        for (uint256 k; k < hs.length; ++k) {
-            Head memory h = hs[k];
-            out[k] = keccak256(abi.encode(h.state, h.revision, h.admission, h.target));
+        bytes32[] memory w = LedgerRows.loadAll(ledger, s);
+        snapshots = new bytes32[](n * m);
+        targets = new bytes32[](n * m);
+        for (uint256 k; k < n * m; ++k) {
+            (uint8 state, uint48 revision, uint48 admission, uint8 targetKind,,,,) =
+                Layout.unpackHeadRowWord0(w[2 * k]);
+            bytes32 t;
+            if (targetKind != 0) t = w[2 * k + 1];
+            targets[k] = t;
+            snapshots[k] = keccak256(abi.encode(state, uint64(revision), uint64(admission), t));
         }
     }
 

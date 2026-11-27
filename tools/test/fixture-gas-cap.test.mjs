@@ -19,7 +19,7 @@ import { after, test } from "node:test";
 import { createPublicClient, createWalletClient, encodeFunctionData, http, keccak256, sha256, concat, toHex, pad } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { ACTION, FIXTURE_KEY, T, buildPlan, keys } from "../deploy-plan.mjs";
-import { HARDFORKS, down, up } from "../efs-fixture.mjs";
+import { HARDFORKS, down, receiptOrReport, up } from "../efs-fixture.mjs";
 
 const home = mkdtempSync(join(tmpdir(), "efs-fixture-gas-cap-"));
 const CAP = HARDFORKS.osaka.txGasCap;
@@ -87,7 +87,7 @@ test("a publication over the per-transaction gas cap is refused; split, it is ad
 
   // 2. at the cap: it is mined, runs out of gas, and admits nothing
   const hash = await wallet.sendTransaction({ to: ledger, data: await call(big), gas: BigInt(CAP) });
-  const receipt = await pub.waitForTransactionReceipt({ hash });
+  const receipt = await receiptOrReport(pub, hash, { step: "2: the whole publication at the cap", sender: account.address, pid: r.pid, logPath: r.log });
   assert.equal(receipt.status, "reverted", "the publication needs more gas than one transaction may carry");
   assert.equal(await nonceOf(), before, "an out-of-gas publication admits nothing");
 
@@ -95,7 +95,7 @@ test("a publication over the per-transaction gas cap is refused; split, it is ad
   for (let i = 0; i < 4; i++) {
     const part = { actions: big.actions.slice(i * 16, i * 16 + 16), bodies: big.bodies.slice(i * 16, i * 16 + 16) };
     const h = await wallet.sendTransaction({ to: ledger, data: await call(part) });
-    const rc = await pub.waitForTransactionReceipt({ hash: h });
+    const rc = await receiptOrReport(pub, h, { step: `3: part ${i} of 4`, sender: account.address, pid: r.pid, logPath: r.log });
     assert.equal(rc.status, "success");
     assert.ok(rc.gasUsed < BigInt(CAP), `part ${i} used ${rc.gasUsed}`);
   }
@@ -114,7 +114,7 @@ test("a publication over the per-transaction gas cap is refused; split, it is ad
   const pub2 = createPublicClient({ chain, transport: http(p.rpcUrl), pollingInterval: 50 });
   assert.equal(p.ledger, ledger, "the same plan gives the same ledger address");
   const h2 = await wallet2.sendTransaction({ to: ledger, data: await call(big, pub2), gas: 29_000_000n });
-  const whole = await pub2.waitForTransactionReceipt({ hash: h2 });
+  const whole = await receiptOrReport(pub2, h2, { step: "prague: the whole publication", sender: account.address, pid: p.pid, logPath: p.log });
   assert.equal(whole.status, "success");
   assert.ok(whole.gasUsed > BigInt(CAP), `the whole publication used ${whole.gasUsed}, more than the cap`);
   await down({ name: "uncapped", home });

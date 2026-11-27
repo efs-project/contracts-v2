@@ -1131,6 +1131,9 @@ abstract contract FacetSuite is FacetFixture {
         views.heads(k.proxy, many);
     }
 
+    /// Head-snapshot profile 2 over the STORED target word: at the end of the history (s1, 0) of p1 is RELEASED
+    /// from BOUND and keeps s1, and (s1, name) of p2 is RELEASED from MASKED and keeps r4, while the head reads
+    /// serve target 0 for both.
     function testHeadSnapshotsArePositionMajor() public view {
         bytes32[] memory principals = new bytes32[](3);
         principals[0] = p1;
@@ -1140,19 +1143,64 @@ abstract contract FacetSuite is FacetFixture {
         positions[0] = posName;
         positions[1] = posZero;
         positions[2] = posName2;
-        bytes32[] memory out = views.headSnapshots(k.proxy, principals, positions);
+        (bytes32[] memory out, bytes32[] memory targets) =
+            views.headSnapshots(k.proxy, principals, positions);
         assertEq(out.length, 9);
+        assertEq(targets.length, 9);
         ILedgerCommitments c = ILedgerCommitments(address(k.ingress));
         for (uint256 j; j < 3; ++j) {
             for (uint256 i; i < 3; ++i) {
-                Head memory h = _hotHead(Keys.binding(principals[i], positions[j]));
+                bytes32 key = Keys.binding(principals[i], positions[j]);
+                uint256 slot = Layout.bindingsHeadsSlot(key);
+                (uint8 state, uint48 revision, uint48 admission, uint8 targetKind,,,,) =
+                    Layout.unpackHeadRowWord0(vm.load(k.proxy, bytes32(slot)));
+                bytes32 word = vm.load(k.proxy, bytes32(slot + 1));
+                assertEq(word == 0, targetKind == 0, "the word is 0 iff targetKind is 0");
+                assertEq(targets[j * 3 + i], word, "targets: the stored word");
                 assertEq(
                     out[j * 3 + i],
-                    c.headSnapshotHash(h.state, h.revision, h.admission, h.target),
-                    "the ingress's head snapshot"
+                    c.headSnapshotHash(state, revision, admission, word),
+                    "the ingress's head snapshot over the stored word"
                 );
+                Head memory h = _hotHead(key);
+                if (h.state != 1) assertEq(h.target, 0, "a head read serves 0 when not BOUND");
             }
         }
+        assertEq(targets[1 * 3 + 0], s1, "p1 (s1, 0) RELEASED from BOUND keeps s1");
+        assertEq(targets[0 * 3 + 1], r4, "p2 (s1, name) RELEASED from MASKED keeps r4");
+        assertEq(targets[0 * 3 + 0], r1, "p1 (s1, name) BOUND to r1");
+        assertEq(targets[0 * 3 + 2], 0, "p3 never bound");
+    }
+
+    /// A MASKED head that was bound before: `headSnapshots` serves the kept word (what a restore brings back),
+    /// `heads` and `headsAt` serve target 0 for the same head.
+    function testHeadSnapshotsServeTheKeptWordOfAMaskedHead() public {
+        Action[] memory a = new Action[](1);
+        a[0] = _unbind(s1, ROLE_NAME, 4);
+        _exec(address(this), 5, a, new bytes[](1));
+        bytes32 key = Keys.binding(p1, posName);
+        bytes32[] memory principals = new bytes32[](1);
+        principals[0] = p1;
+        bytes32[] memory positions = new bytes32[](1);
+        positions[0] = posName;
+        (bytes32[] memory out, bytes32[] memory targets) =
+            views.headSnapshots(k.proxy, principals, positions);
+        assertEq(targets[0], r1, "the kept word");
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = key;
+        (Head[] memory hs,) = views.heads(k.proxy, keys);
+        assertEq(hs[0].state, 2, "MASKED");
+        assertEq(hs[0].targetKind, 1, "once bound to a record");
+        assertEq(hs[0].target, 0, "heads serves target 0");
+        (Status st, Head memory sel,,,) = views.headsAt(k.proxy, principals, posName);
+        _st(st, Status.MASKED, "headsAt");
+        assertEq(sel.target, 0, "headsAt serves target 0");
+        assertEq(
+            out[0],
+            ILedgerCommitments(address(k.ingress))
+                .headSnapshotHash(2, hs[0].revision, hs[0].admission, r1),
+            "the snapshot is over the kept word, not the served 0"
+        );
     }
 
     function testHeadSnapshotsRefuseShapesTheIngressRefuses() public {
@@ -1160,8 +1208,24 @@ abstract contract FacetSuite is FacetFixture {
         vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(1)));
         views.headSnapshots(k.proxy, new bytes32[](65), one);
         vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(2)));
-        views.headSnapshots(k.proxy, one, new bytes32[](5));
-        assertEq(views.headSnapshots(k.proxy, new bytes32[](64), new bytes32[](4)).length, 256);
+        views.headSnapshots(k.proxy, one, new bytes32[](129));
+        vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(5)));
+        views.headSnapshots(k.proxy, new bytes32[](3), new bytes32[](128));
+        vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(5)));
+        views.headSnapshots(k.proxy, new bytes32[](64), new bytes32[](5));
+        vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(1)));
+        views.headSnapshots(k.proxy, new bytes32[](65), new bytes32[](129)); // 1 before 2 before 5
+        vm.expectRevert(abi.encodeWithSelector(E_READSET_SHAPE.selector, uint8(2)));
+        views.headSnapshots(k.proxy, new bytes32[](3), new bytes32[](129)); // 2 before 5
+        (bytes32[] memory big, bytes32[] memory bigTargets) =
+            views.headSnapshots(k.proxy, new bytes32[](64), new bytes32[](4));
+        assertEq(big.length, 256);
+        assertEq(bigTargets.length, 256);
+        (big, bigTargets) = views.headSnapshots(k.proxy, new bytes32[](2), new bytes32[](128));
+        assertEq(big.length, 256);
+        assertEq(bigTargets.length, 256);
+        (big, bigTargets) = views.headSnapshots(k.proxy, new bytes32[](0), new bytes32[](0));
+        assertEq(big.length + bigTargets.length, 0, "empty arrays answer empty");
     }
 
     function testHistoryAtReproducesEveryCapturedHead() public view {

@@ -6,7 +6,16 @@ import {FilesRecipesBase} from "./FilesRecipesBase.sol";
 import {EfsFiles} from "../../src/lib/EfsFiles.sol";
 import {EfsTopics} from "../../src/lib/EfsTopics.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, ActionKind, Native, Purpose} from "../../src/interfaces/Actions.sol";
+import {
+    Action,
+    ActionKind,
+    Capability,
+    Native,
+    Purpose,
+    ReadSet
+} from "../../src/interfaces/Actions.sol";
+import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
+import {Layout} from "../../src/core/layout/Layout.sol";
 import {IRealmIndex} from "../../src/interfaces/IRealmIndex.sol";
 
 /// @notice The measurements behind `gas/model.json` (`tools/gas-model.mjs`): a per-action gas model for the SDK's
@@ -47,6 +56,12 @@ contract GasModelTest is FilesRecipesBase {
     bytes32[11] internal kids; // files-child/1 of roots[8..11) at kids[8..11) (HEAD rebind targets)
 
     // ---- setup ----------------------------------------------------------------------------------------------------
+
+    /// b0 `NATIVE_GUARD` (design §5.1) is ON: the Realm the model describes is the fixture's live set (revision 2 with
+    /// b0, tools/deploy-plan.mjs G20b), and section 11 measures guarded publications against unguarded ones in it.
+    function _capabilities() internal pure override returns (uint16) {
+        return Capability.NATIVE_GUARD;
+    }
 
     function setUp() public override {
         filesTypesOnly = true; // the Topics Types are registered inside the rows that use them
@@ -2912,11 +2927,29 @@ contract GasModelTest is FilesRecipesBase {
     /// `k` moves of the author's files from the root folder to fresh names in another folder; without a name PUBLISH
     /// the names are published first (unmeasured).
     function _moveToFresh(uint256 k, bool withName) internal {
+        (Action[] memory a, bytes[] memory b,) = _movesBuilt(k, withName);
+        _exec(
+            string.concat(
+                "model validate move ",
+                vm.toString(k),
+                " files to fresh names",
+                withName ? ", name published" : ", no name publish"
+            ),
+            a,
+            b
+        );
+    }
+
+    /// The state and the actions of `_moveToFresh` (the state is written unmeasured; the actions are returned).
+    function _movesBuilt(uint256 k, bool withName)
+        internal
+        returns (Action[] memory a, bytes[] memory b, bytes32 dest)
+    {
         vm.pauseGasMetering();
-        Action[] memory a = new Action[](1);
-        bytes[] memory b = new bytes[](1);
+        a = new Action[](1);
+        b = new bytes[](1);
         (a[0], b[0]) = _publish(T_DIRECTORY, EfsFiles.directoryBody(p, _salt("fresh dest", k)));
-        bytes32 dest = _id(T_DIRECTORY, b[0]);
+        dest = _id(T_DIRECTORY, b[0]);
         bytes32[] memory file = new bytes32[](k);
         for (uint256 i; i < k; ++i) {
             (Action[] memory x, bytes[] memory y, bytes32 fl,) = EfsFiles.createFile(
@@ -2946,15 +2979,538 @@ contract GasModelTest is FilesRecipesBase {
             );
             (a, b) = EfsFiles.concat(a, b, x, y);
         }
-        _exec(
-            string.concat(
-                "model validate move ",
-                vm.toString(k),
-                " files to fresh names",
-                withName ? ", name published" : ", no name publish"
-            ),
+    }
+
+    // ---- 10b. mid-list composites (never fitted): later statements in a list of 49 entries --------------------------
+    // Between 49 and 1,023 entries a later statement is priced by the long-tier rows, measured at entry 1,024 of 1,025:
+    // these measure the over-price where it is largest (gas/model.json state `midList`): 32 masks or releases at ONE
+    // place whose author's list holds exactly 49 entries, of entries 17..48 (entry 48 alone in its bits word). TAG and
+    // FOLDER masks and releases are the four rows with the largest long-over-short ratios on both schedules.
+
+    uint256 internal constant MID_LIST = 49;
+    uint256 internal constant MID_K = 32;
+
+    function test_model_validate_mid_list_tags() public {
+        vm.pauseGasMetering();
+        bytes32 t = _topicsN("ml-", 1)[0];
+        Action[] memory f = new Action[](MID_LIST);
+        bytes32[] memory th = new bytes32[](MID_LIST);
+        for (uint256 j; j < MID_LIST; ++j) {
+            th[j] = _filler("ml-", 0, j);
+            f[j] = _bind(Purpose.TAG, t, th[j], th[j], 0);
+        }
+        _doIn(f, new bytes[](MID_LIST), 64);
+        vm.resumeGasMetering();
+        uint256 snap = vm.snapshotState();
+        for (uint256 kind; kind < 2; ++kind) {
+            Action[] memory a = new Action[](MID_K);
+            for (uint256 i; i < MID_K; ++i) {
+                bytes32 x = th[MID_LIST - MID_K + i];
+                a[i] = kind == 0
+                    ? EfsFiles.unbind(Purpose.TAG, t, x, 1)
+                    : EfsFiles.release(Purpose.TAG, t, x, 1);
+            }
+            _exec(
+                string.concat(
+                    "model validate tag ",
+                    kind == 0 ? "masks" : "releases",
+                    " of 32 entries of 49 at one topic"
+                ),
+                a,
+                new bytes[](MID_K)
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    function test_model_validate_mid_list_folders() public {
+        _rootFiles("ml-", MID_LIST);
+        uint256 snap = vm.snapshotState();
+        for (uint256 kind; kind < 2; ++kind) {
+            Action[] memory a = new Action[](MID_K);
+            for (uint256 i; i < MID_K; ++i) {
+                bytes32 role = keccak256(_fname("ml-", MID_LIST - MID_K + i));
+                a[i] = kind == 0
+                    ? EfsFiles.unbind(Purpose.FOLDER, rootDir, role, 1)
+                    : EfsFiles.release(Purpose.FOLDER, rootDir, role, 1);
+            }
+            _exec(
+                string.concat(
+                    "model validate folder ",
+                    kind == 0 ? "masks" : "releases",
+                    " of 32 entries of 49 in one folder"
+                ),
+                a,
+                new bytes[](MID_K)
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    // ---- 11. guarded publications (design §5.1; tools/gas-model.mjs `guard`) ---------------------------------------
+    // A guard is checked by the ingress inside prepare, before any action applies and before the index floor is set,
+    // and the core stores one fresh evidence word (`readSetHash`) and emits `ReadSetChecked` with the guard's bytes.
+    // The index does the same work guarded or not, so every row here is a pair from one state: `guard <key> plain`
+    // (the publication without a guard) and `guard <key> guarded` (the same publication with the guard), both
+    // measured as every other row (cooled, with the kernel-only run); the script fits the differences.
+
+    /// The guard over `pr` × `pos` (position-major) whose expected heads are the heads as stored now, hashed as the
+    /// ingress hashes them (head-snapshot profile 2: word 0, and the target word only when targetKind != 0).
+    function _guardOf(bytes32[] memory pr, bytes32[] memory pos)
+        internal
+        view
+        returns (bytes memory)
+    {
+        uint256 n = pr.length;
+        uint256 m = pos.length;
+        bytes32[] memory h = new bytes32[](n * m);
+        ILedgerCommitments cm = ILedgerCommitments(r.hot.ingress());
+        for (uint256 j; j < m; ++j) {
+            for (uint256 i; i < n; ++i) {
+                uint256 slot = Layout.bindingsHeadsSlot(Keys.binding(pr[i], pos[j]));
+                (uint8 st, uint48 rev, uint48 adm, uint8 tk,,,,) =
+                    Layout.unpackHeadRowWord0(r.hot.extsload(bytes32(slot)));
+                bytes32 t;
+                if (tk != 0) t = r.hot.extsload(bytes32(slot + 1));
+                h[j * n + i] = cm.headSnapshotHash(st, uint64(rev), uint64(adm), t);
+            }
+        }
+        return abi.encode(ReadSet(pr, pos, h));
+    }
+
+    /// One measured run of `a` with `guard` (empty: none), as `_exec` measures (kernel-only run first, same state).
+    function _execG(string memory label, Action[] memory a, bytes[] memory b, bytes memory guard)
+        internal
+    {
+        Native memory cx = _ctx(a);
+        uint256 snap = vm.snapshotState();
+        address index = address(r.g.index);
+        vm.mockCall(
+            index,
+            abi.encodeWithSelector(IRealmIndex.onAdmission.selector),
+            abi.encode(IRealmIndex.onAdmission.selector)
+        );
+        vm.mockCall(
+            index,
+            abi.encodeWithSelector(IRealmIndex.afterPublication.selector),
+            abi.encode(IRealmIndex.afterPublication.selector)
+        );
+        _beforeExecute();
+        r.ledger.execute(a, b, cx, guard);
+        emit log_named_uint(
+            string.concat(label, " kernel frame gas"), vm.lastFrameGas().gasTotalUsed
+        );
+        vm.clearMockedCalls();
+        vm.revertToStateAndDelete(snap);
+        _beforeExecute();
+        uint256 before = gasleft();
+        r.ledger.execute(a, b, cx, guard);
+        uint256 used = before - gasleft();
+        Vm.Gas memory f = vm.lastFrameGas();
+        emit log_named_uint(string.concat(label, " gas"), used);
+        emit log_named_uint(string.concat(label, " frame gas"), f.gasTotalUsed);
+        if (f.gasStateUsed != 0) {
+            emit log_named_int(string.concat(label, " frame state gas"), f.gasStateUsed);
+        }
+    }
+
+    /// `guard <key> plain` and, from the same state, `guarded` (the label `guardedLabel` when it is not empty).
+    function _guardPair(
+        string memory key,
+        Action[] memory a,
+        bytes[] memory b,
+        bytes memory guard,
+        string memory guardedLabel
+    ) internal {
+        uint256 snap = vm.snapshotState();
+        _execG(string.concat("model guard ", key, " plain"), a, b, "");
+        vm.revertToState(snap);
+        _execG(
+            bytes(guardedLabel).length != 0
+                ? guardedLabel
+                : string.concat("model guard ", key, " guarded"),
             a,
+            b,
+            guard
+        );
+        vm.revertToStateAndDelete(snap);
+    }
+
+    function _ids(string memory seed, uint256 n) internal pure returns (bytes32[] memory l) {
+        l = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            l[i] = keccak256(abi.encode("gas-model guard", seed, i));
+        }
+    }
+
+    function _one32(bytes32 v) internal pure returns (bytes32[] memory l) {
+        l = new bytes32[](1);
+        l[0] = v;
+    }
+
+    function _folderPos(bytes32 dir, uint256 name) internal pure returns (bytes32) {
+        return Keys.position(Purpose.FOLDER, dir, keccak256(_bindName(name)));
+    }
+
+    /// Never-bound heads (UNSET: the guard reads one word each) of made-up principals and positions under a one-CREATE
+    /// publication: the small grid (n, m ∈ {1, 2, 4}) the linear terms are fitted from, and the larger sizes and the
+    /// maxima (n ≤ 64, m ≤ 128, n·m ≤ 256) the fit is checked against (the kernel's memory grows with the guard).
+    function test_model_guard_unset() public {
+        (Action[] memory a, bytes[] memory b) = _one(_create(_salt("guard create", 0)), "");
+        uint256 snap = vm.snapshotState();
+        _execG("model guard create plain", a, b, "");
+        vm.revertToState(snap);
+        uint256[2][15] memory nm = [
+            [uint256(1), 1],
+            [uint256(2), 1],
+            [uint256(4), 1],
+            [uint256(1), 2],
+            [uint256(2), 2],
+            [uint256(4), 2],
+            [uint256(1), 4],
+            [uint256(2), 4],
+            [uint256(4), 4],
+            [uint256(16), 16],
+            [uint256(1), 64],
+            [uint256(1), 128],
+            [uint256(2), 128],
+            [uint256(64), 1],
+            [uint256(64), 4]
+        ];
+        for (uint256 x; x < nm.length; ++x) {
+            bytes memory g = _guardOf(_ids("principal", nm[x][0]), _ids("position", nm[x][1]));
+            _execG(
+                string.concat(
+                    "model guard create unset n",
+                    vm.toString(nm[x][0]),
+                    " m",
+                    vm.toString(nm[x][1]),
+                    " guarded"
+                ),
+                a,
+                b,
+                g
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    /// One head not written by the publication (a CREATE), by its state as stored: BOUND (two words), MASKED with a
+    /// kept target (two words), and a lone no (MASKED, never bound: one word).
+    function test_model_guard_unwritten() public {
+        (Action[] memory a, bytes[] memory b) = _one(_create(_salt("guard create", 1)), "");
+        // BOUND: p's HEAD of s[8] (setUp P5)
+        bytes32 head8 = Keys.position(Purpose.HEAD, s[8], 0);
+        _guardPair("create bound", a, b, _guardOf(_one32(p), _one32(head8)), "");
+        // MASKED with a kept target: d1 name 9 (bound to s[29 + 0] in setUp) masked first, unmeasured
+        _do(
+            _one1(_bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(9)), 0, 1)),
+            new bytes[](1)
+        );
+        _guardPair("create masked kept", a, b, _guardOf(_one32(p), _one32(_folderPos(d1, 9))), "");
+        // a lone no: d1 name 0 masked at an UNSET head (targetKind 0)
+        _do(
+            _one1(_bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(0)), 0, 0)),
+            new bytes[](1)
+        );
+        _guardPair("create lone no", a, b, _guardOf(_one32(p), _one32(_folderPos(d1, 0))), "");
+    }
+
+    /// One head the publication writes (its only action), by the head's state and targetKind before the action and
+    /// the action's kind: what the planner sees. Apply reads the target word on every BIND and on an UNBIND or RELEASE
+    /// of a BOUND head, so the guard finds both words warm there; on an UNBIND or RELEASE of a MASKED head with a kept
+    /// target apply never reads it, so the guard's read is cold.
+    function test_model_guard_written() public {
+        bytes[] memory b = new bytes[](1);
+        uint256 snap = vm.snapshotState();
+        // UNSET: a first bind, a first mask
+        _writtenPair("bind unset", _bind(Purpose.FOLDER, d1, keccak256(_bindName(0)), s[26], 0), 0);
+        _writtenPair(
+            "unbind unset",
+            _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(1)), 0, 0),
+            1
+        );
+        // BOUND (setUp P5: names 6..15 bound in d1)
+        _writtenPair("bind bound", _bind(Purpose.FOLDER, d1, keccak256(_bindName(6)), s[32], 1), 6);
+        _writtenPair(
+            "unbind bound",
+            _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(9)), 0, 1),
+            9
+        );
+        _writtenPair(
+            "release bound",
+            _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d1, keccak256(_bindName(12)), 0, 1),
+            12
+        );
+        // MASKED, never bound (targetKind 0): a yes after a lone no
+        _do(
+            _one1(_bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(2)), 0, 0)),
             b
+        );
+        _writtenPair(
+            "bind masked never bound",
+            _bind(Purpose.FOLDER, d1, keccak256(_bindName(2)), s[27], 1),
+            2
+        );
+        vm.revertToState(snap);
+        // MASKED with a kept target: d1 name 0 bound to s[0], then masked (unmeasured)
+        _do(_one1(_bind(Purpose.FOLDER, d1, keccak256(_bindName(0)), s[0], 0)), b);
+        _do(
+            _one1(_bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(0)), 0, 1)),
+            b
+        );
+        _writtenPair(
+            "bind masked kept", _bind(Purpose.FOLDER, d1, keccak256(_bindName(0)), s[0], 2), 0
+        );
+        _writtenPair(
+            "unbind masked kept",
+            _bindKind(ActionKind.UNBIND, Purpose.FOLDER, d1, keccak256(_bindName(0)), 0, 2),
+            0
+        );
+        _writtenPair(
+            "release masked kept",
+            _bindKind(ActionKind.RELEASE, Purpose.FOLDER, d1, keccak256(_bindName(0)), 0, 2),
+            0
+        );
+        vm.revertToStateAndDelete(snap);
+    }
+
+    function _writtenPair(string memory what, Action memory x, uint256 name) internal {
+        _guardPair(
+            string.concat("written ", what),
+            _one1(x),
+            new bytes[](1),
+            _guardOf(_one32(p), _one32(_folderPos(d1, name))),
+            ""
+        );
+    }
+
+    // ---- 11b. guarded composites (never fitted): the shapes of tools/gas-plan.mjs `shapes`, guarded --------------
+    // Sizes: the planner's largest guarded batch of each shape on each schedule (tools/gas-plan.mjs on this release's
+    // gas/model.json), measured on both schedules; each beside its plain twin (`guard <key> plain`).
+    uint256 internal constant G_MOVES_PRAGUE = 20;
+    uint256 internal constant G_MOVES_AMSTERDAM = 24;
+    uint256 internal constant G_MASKS_PRAGUE = 53;
+    uint256 internal constant G_MASKS_AMSTERDAM = 53;
+    uint256 internal constant G_RESTORES_PRAGUE = 47;
+    uint256 internal constant G_RESTORES_AMSTERDAM = 47;
+    uint256 internal constant G_NUMBERS_PRAGUE = 61;
+    uint256 internal constant G_NUMBERS_AMSTERDAM = 63;
+
+    function _distinct(uint256 a, uint256 b) internal pure returns (uint256[] memory l) {
+        l = new uint256[](a == b ? 1 : 2);
+        l[0] = a;
+        if (a != b) l[1] = b;
+    }
+
+    /// The guard's one principal (the author) over `pos`.
+    function _mine(bytes32[] memory pos) internal view returns (bytes memory) {
+        return _guardOf(_one32(p), pos);
+    }
+
+    /// k moves of root-folder files to fresh names in another folder, no name PUBLISH (as `_moveToFresh`), guarding
+    /// both heads of every move: 1 principal × 2k positions, all written (a RELEASE of a BOUND head, a first bind).
+    function test_model_validate_guarded_moves() public {
+        uint256[] memory ks = _distinct(G_MOVES_PRAGUE, G_MOVES_AMSTERDAM);
+        uint256 snap = vm.snapshotState();
+        for (uint256 x; x < ks.length; ++x) {
+            uint256 k = ks[x];
+            (Action[] memory a, bytes[] memory b, bytes32 dest) = _movesBuilt(k, false);
+            bytes32[] memory pos = new bytes32[](2 * k);
+            for (uint256 i; i < k; ++i) {
+                pos[2 * i] = Keys.position(Purpose.FOLDER, rootDir, keccak256(_fname("fa-", i)));
+                pos[2 * i + 1] = Keys.position(Purpose.FOLDER, dest, keccak256(_fname("fb-", i)));
+            }
+            string memory what = string.concat(vm.toString(k), " moves");
+            _guardPair(
+                what,
+                a,
+                b,
+                _mine(pos),
+                string.concat(
+                    "model validate guarded ",
+                    what,
+                    " guarding their ",
+                    vm.toString(2 * k),
+                    " heads"
+                )
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    /// `n` files created in the root folder (unmeasured); their root-folder positions.
+    function _rootFiles(string memory pre, uint256 n)
+        internal
+        returns (bytes32[] memory file, bytes32[] memory pos)
+    {
+        vm.pauseGasMetering();
+        file = new bytes32[](n);
+        pos = new bytes32[](n);
+        Action[] memory a = new Action[](0);
+        bytes[] memory b = new bytes[](0);
+        for (uint256 i; i < n; ++i) {
+            (Action[] memory x, bytes[] memory y, bytes32 fl,) = EfsFiles.createFile(
+                _types(), p, rootDir, _salt(pre, i), _fname(pre, i), "Folder notes.\n", true
+            );
+            file[i] = fl;
+            pos[i] = Keys.position(Purpose.FOLDER, rootDir, keccak256(_fname(pre, i)));
+            (a, b) = EfsFiles.concat(a, b, x, y);
+        }
+        _doIn(a, b, 60);
+        vm.resumeGasMetering();
+    }
+
+    /// k masks of root-folder entries (UNBIND of BOUND heads) and k restores of masked entries to their kept files
+    /// (BIND of MASKED heads with a kept target), each guarding its k written heads (1 principal × k positions).
+    function test_model_validate_guarded_folder_masks_and_restores() public {
+        uint256 snap = vm.snapshotState();
+        for (uint256 kind; kind < 2; ++kind) {
+            uint256[] memory ks = kind == 0
+                ? _distinct(G_MASKS_PRAGUE, G_MASKS_AMSTERDAM)
+                : _distinct(G_RESTORES_PRAGUE, G_RESTORES_AMSTERDAM);
+            for (uint256 x; x < ks.length; ++x) {
+                uint256 k = ks[x];
+                (bytes32[] memory file, bytes32[] memory pos) = _rootFiles("gm-", k);
+                Action[] memory a = new Action[](k);
+                for (uint256 i; i < k; ++i) {
+                    a[i] = EfsFiles.unbind(Purpose.FOLDER, rootDir, keccak256(_fname("gm-", i)), 1);
+                }
+                if (kind == 1) {
+                    vm.pauseGasMetering();
+                    _do(a, new bytes[](k));
+                    vm.resumeGasMetering();
+                    for (uint256 i; i < k; ++i) {
+                        a[i] = EfsFiles.bind(
+                            Purpose.FOLDER, rootDir, keccak256(_fname("gm-", i)), file[i], 2
+                        );
+                    }
+                }
+                string memory what = string.concat(
+                    vm.toString(k), kind == 0 ? " folder masks" : " folder restores to kept files"
+                );
+                _guardPair(
+                    what,
+                    a,
+                    new bytes[](k),
+                    _mine(pos),
+                    string.concat("model validate guarded ", what, " guarding their heads")
+                );
+                vm.revertToState(snap);
+            }
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    /// k number changes of asserted tags at one topic (re-binds of BOUND heads), guarding their k heads.
+    function test_model_validate_guarded_tag_number_changes() public {
+        _tagged();
+        uint256[] memory ks = _distinct(G_NUMBERS_PRAGUE, G_NUMBERS_AMSTERDAM);
+        uint256 snap = vm.snapshotState();
+        for (uint256 x; x < ks.length; ++x) {
+            uint256 k = ks[x];
+            bytes32[] memory th = _things("gn", k);
+            Action[] memory a = new Action[](k);
+            bytes32[] memory pos = new bytes32[](k);
+            for (uint256 i; i < k; ++i) {
+                a[i] = EfsTopics.tag(TOPIC, th[i], 0, 0);
+                pos[i] = Keys.position(Purpose.TAG, TOPIC, th[i]);
+            }
+            vm.pauseGasMetering();
+            _doIn(a, new bytes[](k), 16);
+            vm.resumeGasMetering();
+            for (uint256 i; i < k; ++i) {
+                a[i] = EfsTopics.tag(TOPIC, th[i], 1, 7);
+            }
+            string memory what = string.concat(vm.toString(k), " tag number changes");
+            _guardPair(
+                what,
+                a,
+                new bytes[](k),
+                _mine(pos),
+                string.concat("model validate guarded ", what, " guarding their heads")
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    /// `n` address-shaped things (TAG targets that need no record).
+    function _things(string memory seed, uint256 n) internal pure returns (bytes32[] memory t) {
+        t = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            t[i] = bytes32(
+                uint256(uint160(uint256(keccak256(abi.encode("gas-model thing", seed, i)))))
+            );
+        }
+    }
+
+    /// An edit of one file (PUBLISH files-child/1 form 0, 114 bytes; BIND HEAD re-bind) guarding a 64-principal lens
+    /// at the file's HEAD position: the author's head (written) and 63 other authors' BOUND HEADs (two words each).
+    function test_model_validate_guarded_lens_edit() public {
+        bytes32[] memory pr = new bytes32[](64);
+        pr[0] = p;
+        vm.pauseGasMetering();
+        for (uint256 i = 1; i < 64; ++i) {
+            address who = address(uint160(uint256(keccak256(abi.encode("gas-model lens", i)))));
+            _as(who);
+            pr[i] = p;
+            _send(who, _one1(_bind(Purpose.HEAD, s[8], 0, roots[8], 0)));
+        }
+        _as(address(0));
+        vm.resumeGasMetering();
+        (Action[] memory a, bytes[] memory b,) =
+            EfsFiles.edit(_types(), s[8], roots[8], "Meeting at 10:00.\n", 1);
+        assertEq(b[0].length, 114);
+        _guardPair(
+            "lens edit",
+            a,
+            b,
+            _guardOf(pr, _one32(Keys.position(Purpose.HEAD, s[8], 0))),
+            "model validate guarded lens edit 64 principals"
+        );
+    }
+
+    /// The guard maxima on a one-CREATE publication: 1 × 128 and 2 × 128 BOUND heads (two words each) of TAG
+    /// positions the author (and a second author) asserted, none written.
+    function test_model_validate_guarded_maxima() public {
+        _tagged();
+        bytes32[] memory th = _things("gx", 128);
+        bytes32[] memory pos = new bytes32[](128);
+        Action[] memory t = new Action[](128);
+        for (uint256 i; i < 128; ++i) {
+            t[i] = EfsTopics.tag(TOPIC, th[i], 0, 0);
+            pos[i] = Keys.position(Purpose.TAG, TOPIC, th[i]);
+        }
+        vm.pauseGasMetering();
+        _doIn(t, new bytes[](128), 16);
+        _as(LEVEL_B);
+        for (uint256 i; i < 128; i += 16) {
+            Action[] memory x = new Action[](16);
+            for (uint256 j; j < 16; ++j) {
+                x[j] = t[i + j];
+            }
+            _send(LEVEL_B, x);
+        }
+        _as(address(0));
+        vm.resumeGasMetering();
+        (Action[] memory a, bytes[] memory b) = _one(_create(_salt("guard create", 2)), "");
+        _guardPair(
+            "create bound n1 m128", a, b, _mine(pos), "model validate guarded create 1 x 128 bound"
+        );
+        bytes32[] memory pr = new bytes32[](2);
+        pr[0] = p;
+        pr[1] = Keys.principalFor(LEVEL_B, r.hot.realmOrigin());
+        _guardPair(
+            "create bound n2 m128",
+            a,
+            b,
+            _guardOf(pr, pos),
+            "model validate guarded create 2 x 128 bound"
         );
     }
 

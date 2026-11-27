@@ -21,6 +21,12 @@
 //     more, or unknown: <row>LongNewPlace (first at its place) | <row>LongSamePlace (the rest), measured at entry 1,024;
 //     a re-bind never searches the list and has no tier
 //
+// the read-set guard of a guarded publication (GasModel.t.sol section 11; profiles.<schedule>.guard): kernel gas only,
+//
+//   cost(guard of n principals × m positions) = guardFixed + (n − 1)·guardPrincipal + (m − 1)·guardPosition
+//     + Σ over the n·m heads: guardHeadWritten | guardHeadWrittenUnread | guardHeadTwoWords | guardHeadOneWord
+//     + guardMemoryQuadratic·(n + m + 3·n·m)²
+//
 // and predicts the suite's validation composites (never fitted). Exit 1 when a validation error within the claim
 // exceeds 15% (all gas, and execution gas on amsterdam; composites in state beyondClaim are reported, not bounded).
 //
@@ -232,6 +238,14 @@ const acrossK = (cost, k, entries) => Array.from({ length: k }, () => later(cost
 /** k later statements `cost` at one place whose list holds `entries`. */
 const oneK = (cost, k, entries) => Array.from({ length: k }, (_, i) => later(cost, i === 0, entries));
 const BEYOND_CLAIM = "beyondClaim";
+/** A composite whose later statements run in a list of more than laterLists.shortTierMaxEntries and fewer than
+ *  laterLists.claimEntries entries (assigned from its actions, whatever state it names). */
+const MID_LIST = "midList";
+const MID_LIST_NOTE = "midList: between 49 and 1,023 entries a later statement is priced by the long-tier rows, which are measured at entry 1,024 of a 1,025-entry list, so it is over-priced. midList composites are predicted and reported like every composite and are excluded from the stated maxima (maximaExcludeStates); their over-prediction is stated on its own (maxMidListOverErrorPercent, and on amsterdam maxMidListOverExecutionErrorPercent), taken over the midList composites, among them the measured worst cases (32 TAG or FOLDER masks or releases at one place holding exactly 49 entries: the rows with the largest long-over-short ratios). Their UNDER-prediction is still held to 15%: a midList composite under-predicted beyond 15% (all gas, or execution gas on amsterdam) fails the run.";
+/** The guarded composites' sizes, [prague, amsterdam]: the planner's largest guarded batch of each shape
+ *  (tools/gas-plan.mjs shapes movesToFreshGuarded, folderMasksGuarded, folderRestoresGuarded,
+ *  tagNumberChangesGuarded), the constants G_* of GasModel.t.sol. */
+const GUARDED = { moves: [20, 24], masks: [53, 53], restores: [47, 47], numbers: [61, 63] };
 /** The removed-names composites (GasModel.t.sol `_sizes`): [create, withName, k] for k = 2 and the planner's largest
  *  batch of the shape on each schedule (the constants CREATE_REMOVED_* and MOVE_REMOVED_* there). */
 const REMOVED_NAMES = [
@@ -322,10 +336,88 @@ const VALIDATION = [
         { state: "listsNew", key: `validate move ${k} files to fresh names, ${freshHow}`, what: `the same ${k} moves to fresh names (an ordinary batch, for comparison), ${withName ? "each name PUBLISH new" : "the names published before"}`, actions: fresh },
       ];
   }),
+  // guarded publications (GasModel.t.sol section 11b): the planner's largest guarded batch of each shape on each
+  // schedule (GUARDED, the constants G_* there), the guard naming every head the batch writes with one principal
+  ...[...new Set(GUARDED.moves)].map((k) => ({ state: "guarded", key: `validate guarded ${k} moves guarding their ${2 * k} heads`, what: `${k} moves of root-folder files to fresh names in another folder (no name PUBLISH: RELEASE, BIND FOLDER fresh), guarded over their ${2 * k} heads (1 principal × ${2 * k} positions, all written)`,
+    actions: Array.from({ length: k }, (_, j) => [later("releaseFolder", j === 0, k), "bindFolderFreshFile"]).flat(), guard: { principals: 1, positions: 2 * k, written: 2 * k } })),
+  ...[...new Set(GUARDED.masks)].map((k) => ({ state: "guarded", key: `validate guarded ${k} folder masks guarding their heads`, what: `${k} masks of root-folder entries (UNBIND of BOUND heads, the author's list holding ${k}), guarded over their ${k} heads`,
+    actions: oneK("unbindFolder", k, k), guard: { principals: 1, positions: k, written: k } })),
+  ...[...new Set(GUARDED.restores)].map((k) => ({ state: "guarded", key: `validate guarded ${k} folder restores to kept files guarding their heads`, what: `${k} restores of masked root-folder entries to their kept files (priced by restoreFolder, the new-target row), guarded over their ${k} heads`,
+    actions: oneK("restoreFolder", k, k), guard: { principals: 1, positions: k, written: k } })),
+  ...[...new Set(GUARDED.numbers)].map((k) => ({ state: "guarded", key: `validate guarded ${k} tag number changes guarding their heads`, what: `${k} number changes of asserted tags at one topic (the author's list holding ${k + 3}), guarded over their ${k} heads`,
+    actions: oneK("bindTagNumberChange", k, k + 3), guard: { principals: 1, positions: k, written: k } })),
+  { state: "guarded", key: "validate guarded lens edit 64 principals", what: "an edit of one file (PUBLISH child form 0, 114 B; BIND HEAD rebind) guarded by a 64-principal lens at its HEAD position: the author's head written, 63 other authors' BOUND HEADs (two words)",
+    actions: [pub("files-child/1 form 0", 114), "bindHeadRebind"], guard: { principals: 64, positions: 1, written: 1, twoWords: 63 } },
+  { state: "guarded", key: "validate guarded create 1 x 128 bound", what: "one CREATE guarded over 1 × 128 BOUND TAG heads (two words each, none written)", actions: ["create"], guard: { principals: 1, positions: 128, twoWords: 128 } },
+  { state: "guarded", key: "validate guarded create 2 x 128 bound", what: "one CREATE guarded over 2 × 128 BOUND TAG heads (two words each, none written)", actions: ["create"], guard: { principals: 2, positions: 128, twoWords: 256 } },
+  // mid-list (GasModel.t.sol section 10b and the guarded masks' plain twin): later statements at one place of 49 entries
+  ...[["tag masks", "unbindTag", "at one topic"], ["tag releases", "releaseTag", "at one topic"], ["folder masks", "unbindFolder", "in one folder"], ["folder releases", "releaseFolder", "in one folder"]].map(([kind, cost, where]) => ({
+    state: MID_LIST, key: `validate ${kind} of 32 entries of 49 ${where}`, what: `${kind} of 32 entries (17..48) of a 49-entry list ${where}: the mid-list worst case`, actions: oneK(cost, 32, 49) })),
+  ...[...new Set(GUARDED.masks)].map((k) => ({ state: MID_LIST, key: `guard ${k} folder masks plain`, what: `the unguarded twin of "validate guarded ${k} folder masks guarding their heads": ${k} masks of root-folder entries, the author's list holding ${k}`, actions: oneK("unbindFolder", k, k) })),
   { state: "acrossPlaces", key: "validate untag a file from six topics", what: "untag one file from six topics (six RELEASEs), the author's list at each holding three entries", actions: acrossK("releaseTag", 6, 3) },
   { state: "acrossPlaces", key: "validate delete six files from three folders", what: "delete (RELEASE) six files from three folders, two from each, each folder holding four of the author's entries",
     actions: Array.from({ length: 6 }, (_, i) => later("releaseFolder", i % 2 === 0, 4)) },
 ];
+
+// ---- the read-set guard (GasModel.t.sol section 11) ------------------------------------------------------------------
+// Every guard row is a pair from one state: `guard <key> plain` (the publication without a guard) and `guard <key>
+// guarded` (the same with it); the constants are fitted from the differences. The linear terms come from never-bound
+// heads under a one-CREATE publication at n, m ∈ {1, 2, 4} together with the memory term, which is fitted on those and
+// on the three mid sizes (16 × 16, 1 × 64, 64 × 1) and checked at the three largest (1 × 128, 2 × 128, 64 × 4:
+// guard.nonLinearity).
+const GUARD_GRID = [[1, 1], [2, 1], [4, 1], [1, 2], [2, 2], [4, 2], [1, 4], [2, 4], [4, 4]];
+const GUARD_MID = [[16, 16], [1, 64], [64, 1]];
+const GUARD_CHECK = [[1, 128], [2, 128], [64, 4]];
+/** The memory term's variable: the guard's decoded words weigh n + m + 3·n·m (fitted, see guard.note). */
+const guardX = (n, m) => n + m + 3 * n * m;
+/** Written heads by what a planner sees (the head's state and targetKind before the action, the action's kind). */
+const GUARD_WRITTEN = {
+  guardHeadWritten: ["bind unset", "unbind unset", "bind bound", "unbind bound", "release bound", "bind masked never bound", "bind masked kept"],
+  guardHeadWrittenUnread: ["unbind masked kept", "release masked kept"],
+};
+const GUARD_NOTE = "The read-set guard of a guarded publication (design §5.1; ILedger.execute's `guard` = abi.encode(ReadSet{principals[n], positions[m], expectedHeads[n·m]}), n ≤ planning.limits.maxReadSetPrincipals, m ≤ maxReadSetPositions, n·m ≤ maxReadCount). The ingress checks it inside prepare, before any action applies and before the index floor is set, and the core stores one fresh evidence word (readSetHash) and emits ReadSetChecked with the guard's bytes; the index does the same work guarded or not, so the guard is kernel gas only (`kernel` equals `constants`, and on amsterdam split.executionGas) and the floor formula and the work model are unchanged. A planner adds, once per guarded publication, guardFixed + (n − 1)·guardPrincipal + (m − 1)·guardPosition + Σ over the n·m heads of one head term + guardMemoryQuadratic·(n + m + 3·n·m)², to E (prague: constants; amsterdam: split.executionGas) and the same terms of `kernel` to K (tools/gas-plan.mjs guardCost). The head terms, by what the planner reads of the head (LedgerReads.head or LedgerViews.headsAt: state and targetKind before this publication) and whether this publication writes it: guardHeadWritten, a head one of this publication's actions writes, except the next case (the action's own access warms the head, and a BIND, or an UNBIND or RELEASE of a BOUND head, reads its target word too; measured at the dearest of a first bind, a first mask, a re-bind, a mask and a release of a BOUND head, a yes after a lone no and a restore to the kept target, which differ by less than 300 gas on both schedules: guard.parts); guardHeadWrittenUnread, a head this publication UNBINDs or RELEASEs while it is MASKED or RELEASED with targetKind ≠ 0 (apply never reads the kept target word, so the guard's read of it is cold); guardHeadTwoWords, a head not written whose targetKind ≠ 0 (BOUND, or MASKED or RELEASED with a kept target: the ingress loads the head's word and its stored target word); guardHeadOneWord, a head not written whose targetKind is 0 (UNSET, or a lone no: one word). The memory term is the kernel's quadratic memory cost of the guard's words (it decodes and re-encodes the read set and copies the guard into the event); its variable n + m + 3·n·m is an empirical fit, not a count (see nonLinearity). Calldata: the guard adds 224 + 32·(n + m + n·m) bytes to ILedger.execute's calldata (the abi encoding of the ReadSet; an empty guard already carries its offset and length words). The measured publications are transactions of their own (the model's note), so these terms already include those bytes at 16 / 4 gas per non-zero / zero byte, as the action constants include the actions' calldata. In a large batch the guard's memory lands on the kernel's larger memory and costs more than these terms, measured on a one-CREATE publication, predict: inside the validate guarded batches the guard itself is under-predicted by 1.3% (20 moves) to 7.4% (63 tag number changes), at most 22,539 gas, about 0.2% of the publication; no term is added for it, and the guarded composites are counted in the stated under-prediction maxima (except the folder masks, in a 53-entry list: midList). An earlier computed estimate (about 0.14M gas for a 50-position guard) was about 40% below the measurement; the rows here are measured.";
+
+/** The guard constants from one measured quantity per row (`q(row)`). */
+function fitGuard(rows, q) {
+  const by = Object.fromEntries(rows.map((r) => [r.key, r]));
+  const get = (k) => { assert.ok(by[k], `no "model ${k}" measurement`); return q(by[k]); };
+  const d = (key) => get(`guard ${key} guarded`) - get(`guard ${key} plain`);
+  const unset = (n, m) => get(`guard create unset n${n} m${m} guarded`) - get("guard create plain");
+  const sizes = [...GUARD_GRID, ...GUARD_MID];
+  const [guardFixed, guardPrincipal, guardPosition, guardHeadOneWord, guardMemoryQuadratic] =
+    lsq(sizes.map(([n, m]) => [1, n - 1, m - 1, n * m, guardX(n, m) ** 2]), sizes.map(([n, m]) => unset(n, m)));
+  const parts = { headTwoWordsBound: d("create bound") - guardFixed, headTwoWordsMaskedKept: d("create masked kept") - guardFixed, headOneWordLoneNo: d("create lone no") - guardFixed };
+  const g = { guardFixed, guardPrincipal, guardPosition, guardHeadOneWord, guardMemoryQuadratic, guardHeadTwoWords: Math.max(parts.headTwoWordsBound, parts.headTwoWordsMaskedKept) };
+  for (const [name, keys] of Object.entries(GUARD_WRITTEN)) {
+    for (const k of keys) parts[`written ${k}`] = d(`written ${k}`) - guardFixed;
+    g[name] = Math.max(...keys.map((k) => parts[`written ${k}`]));
+  }
+  const predicted = (n, m) => guardCost(g, { principals: n, positions: m, written: 0, writtenUnread: 0, twoWords: 0, oneWord: n * m });
+  const nonLinearity = [...GUARD_MID, ...GUARD_CHECK].map(([n, m]) => {
+    const measured = unset(n, m);
+    const linear = g.guardFixed + (n - 1) * g.guardPrincipal + (m - 1) * g.guardPosition + n * m * g.guardHeadOneWord;
+    return { principals: n, positions: m, fitted: GUARD_MID.some(([a, b]) => a === n && b === m), measured, linearPredicted: round(linear), linearErrorGas: round(linear - measured), linearErrorPercent: Number((((linear - measured) / measured) * 100).toFixed(2)), predicted: round(predicted(n, m)), errorGas: round(predicted(n, m) - measured), errorPercent: Number((((predicted(n, m) - measured) / measured) * 100).toFixed(2)) };
+  });
+  return { ...g, parts, nonLinearity };
+}
+
+/** The guard's cost under fitted guard constants `g` (tools/gas-plan.mjs guardCost is the planner's copy). */
+function guardCost(g, x) {
+  return g.guardFixed + (x.principals - 1) * g.guardPrincipal + (x.positions - 1) * g.guardPosition
+    + (x.written ?? 0) * g.guardHeadWritten + (x.writtenUnread ?? 0) * g.guardHeadWrittenUnread
+    + (x.twoWords ?? 0) * g.guardHeadTwoWords + (x.oneWord ?? 0) * g.guardHeadOneWord
+    + g.guardMemoryQuadratic * guardX(x.principals, x.positions) ** 2;
+}
+const GUARD_KEYS = ["guardFixed", "guardPrincipal", "guardPosition", "guardHeadWritten", "guardHeadWrittenUnread", "guardHeadTwoWords", "guardHeadOneWord", "guardMemoryQuadratic"];
+const roundedGuard = (g) => Object.fromEntries(GUARD_KEYS.map((k) => [k, k === "guardMemoryQuadratic" ? Number(g[k].toFixed(4)) : round(g[k])]));
+
+// every composite with a later statement the long tier prices in a list under the claim is midList, whatever state it names
+for (const v of VALIDATION) {
+  if (v.state === BEYOND_CLAIM) continue;
+  // a later statement the long tier prices (a re-bind has no tier and never searches the list) in a list under the claim
+  const longTier = (a) => /Long/.test(laterKey((k) => k in ACTIONS, { cost: a.later, first: false, firstAtPlace: a.firstAtPlace, entries: a.entries }, LATER_LISTS));
+  if (v.actions.some((a) => a && typeof a === "object" && a.later && Number.isInteger(a.entries) && a.entries < LATER_LISTS.claimEntries && longTier(a))) v.state = MID_LIST;
+}
 
 /** Least squares y = X·β (normal equations, Gaussian elimination; tiny systems). */
 function lsq(X, y) {
@@ -374,11 +466,11 @@ function fit(rows, q) {
   const firstWriteSurcharge = get("first write fresh") - get("first write warm");
   const level = Object.fromEntries(Object.entries(LEVEL_ROWS).map(([k, key]) => [k, marginal(key) / LEVEL_SPAN]));
   const tagLevel = { mineNew: level.mineNew, mineExisting: level.mineExisting, sharedNew: level.allNew - level.mineNew, sharedExisting: level.allExisting - level.mineExisting };
-  return { fixed, perWord, perByte, publishBase, action, firstWriteSurcharge, tagLevel, publishBaseBySize, fixedByPair, sameTarget };
+  return { fixed, perWord, perByte, publishBase, action, firstWriteSurcharge, tagLevel, publishBaseBySize, fixedByPair, sameTarget, guard: fitGuard(rows, q) };
 }
 
-function predict(c, actions) {
-  let g = c.fixed;
+function predict(c, actions, guard) {
+  let g = c.fixed + (guard ? guardCost(c.guard, guard) : 0);
   for (const a of actions) {
     if (typeof a === "string") g += c.action[a];
     else if (a.later) {
@@ -415,7 +507,7 @@ const FLOOR_FORMULA = [
   "The kernel's quote (LedgerIngress._foldAndQuote, work-model formula 3, docs/WORK-MODEL-V3.md) over a publication of n actions: fresh10 = workModel.freshPerPublication + Σ over PUBLISH/REUSE (freshPerRef·types[T].refs, plus freshPerPublishFresh + freshPerDigestSpec·types[T].specs when the record is new, or freshPerPublishExisting when it exists: a repeat PUBLISH or any REUSE) + Σ over rows (fresh); rw10 = rwPerPublication + rwPerPublish per PUBLISH/REUSE + Σ over rows (rw); compute = computeBase + n·computePerAction + Σ over rows (compute). Each BIND/UNBIND/RELEASE adds one row by class: (freshPerBindFirst, rwPerBindFirst, computePerBindFirst) for a first statement (a BIND or UNBIND whose author's head at the position is UNSET), (freshPerRebind, rwPerRebind, computePerRebind) for a re-bind (a BIND on a BOUND head: a new target, or the same target with a new number), and (freshPerBindLater, rwPerBindLater, computePerBindLater) for every other later statement (a mask, a release, a restore; a RELEASE always); when its purpose word equals surchargePurpose (plain equality, as the kernel compares them; a statement's purpose is never zero, so a zero surchargePurpose surcharges nothing) the surcharge row of the same class is added too (surchargeFreshFirst, surchargeRwFirst, surchargeComputeFirst; surchargeFreshRebind, surchargeRwRebind, surchargeComputeRebind; surchargeFreshLater, surchargeRwLater, surchargeComputeLater). Every WITHDRAW after the first of a publication adds the later-statement row (without the surcharge). With no principal (indexFloor) every bind-kind action adds the largest of the three rows field by field, surcharge included. freshSlots = ceil(fresh10 / 10), rewrites = ceil(rw10 / 10). The kernel refuses a work model whose reply is not 32 words or whose formulaVersion is not 3 (E_WORK_MODEL).",
   "prefixFloor P = compute + freshSlots·limits.floorFreshGas + rewrites·limits.floorRewriteGas; finalReserve F = finalComputeBase + binds·finalComputePerBind + publishes·finalComputePerPublish (binds = the BIND/UNBIND/RELEASE count, publishes = the PUBLISH/REUSE count).",
   "The checks (design §6.4, §6.5): before callback i the kernel requires its gasleft g > F + T and forwards (g − F − T)·63/64 to the ingress, which spends at most dispatchOverhead, then requires (its gasleft)·63/64 ≥ R_i = max(0, P − the callbacks' spend so far) (E_INDEX_GAS otherwise); before the final phase it requires (g − T)·63/64 ≥ F. T = limits.kernelTail.",
-  "Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T.",
+  "Sufficient visible execution gas (G = the gas limit less intrinsic gas and calldata; E and K as measured carry the intrinsic cost and the calldata too, the model's note, so the condition is conservative by that much): G ≥ V = max(K + ceil((ceil(P·64/63) + dispatchOverhead)·64/63), E) + ceil(F·64/63) + T, where E is the publication's execution gas and K the kernel's own share of it (callbacks excluded): at callback i the gas spent so far is at most K plus the callbacks' spend s, and R_i·(64/63)² ≥ P·(64/63)² − s, so the kernel's spend and the floor never need more than K + P·(64/63)²; the final check needs at most E + F·64/63 + T.",
   "A planner uses the model's execution estimate for E (prague: constants; amsterdam: split.executionGas) and floor.kernel (the same model fitted with the callbacks removed) for K.",
   "ILedgerCommitments.indexFloor quotes without a principal, so it prices every bind-kind action with the largest of the three rows field by field: it is an upper bound on P only, and a consumer plans from this rule, never from indexFloor.",
 ].join(" ");
@@ -468,19 +560,29 @@ function profile({ rows, types }, name) {
   const kernelFit = floor._kernel;
   delete floor._kernel;
   out.floor = floor;
+  const roundParts = (g) => Object.fromEntries(Object.entries(g.parts).map(([k, v]) => [k, round(v)]));
+  out.guard = {
+    note: GUARD_NOTE,
+    bytes: "224 + 32·(n + m + n·m): the guard's length, what it adds to ILedger.execute's calldata",
+    constants: roundedGuard(c.guard),
+    ...(amsterdam ? { split: { executionGas: roundedGuard(ex.guard), stateGas: roundedGuard(st.guard) } } : {}),
+    kernel: roundedGuard(kernelFit.guard),
+    parts: { [amsterdam ? "allGas" : "gas"]: roundParts(c.guard), ...(amsterdam ? { executionGas: roundParts(ex.guard) } : {}), kernel: roundParts(kernelFit.guard) },
+    nonLinearity: { [amsterdam ? "allGas" : "gas"]: c.guard.nonLinearity, ...(amsterdam ? { executionGas: ex.guard.nonLinearity } : {}) },
+  };
   out.rows = rows;
   const by = Object.fromEntries(rows.map((r) => [r.key, r]));
   out.validation = VALIDATION.map((v) => {
     const m = by[v.key];
     assert.ok(m, `no "model ${v.key}" measurement`);
     const measured = total(m);
-    const predicted = round(predict(c, v.actions));
-    const row = { key: v.key, state: v.state, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions)), laterStatements: v.actions.filter((a) => a && typeof a === "object" && a.later).length };
+    const predicted = round(predict(c, v.actions, v.guard));
+    const row = { key: v.key, state: v.state, what: v.what, measured, predicted, errorPercent: Number((((predicted - measured) / measured) * 100).toFixed(2)), measuredKernelGas: m.kernelFrameGas, predictedKernelGas: round(predict(kernelFit, v.actions, v.guard)), laterStatements: v.actions.filter((a) => a && typeof a === "object" && a.later).length };
     if (amsterdam) {
       row.measuredExecutionGas = m.frameGas;
-      row.predictedExecutionGas = round(predict(ex, v.actions));
+      row.predictedExecutionGas = round(predict(ex, v.actions, v.guard));
       row.measuredStateGas = m.frameStateGas ?? 0;
-      row.predictedStateGas = round(predict(st, v.actions));
+      row.predictedStateGas = round(predict(st, v.actions, v.guard));
       row.executionErrorPercent = Number((((row.predictedExecutionGas - row.measuredExecutionGas) / row.measuredExecutionGas) * 100).toFixed(2));
       row.allGasOverBoundPercent = Number(allGasOverBoundPercent(row, LIMIT_PERCENT, FRESH_SLOT_STATE_GAS).toFixed(2));
     }
@@ -488,8 +590,14 @@ function profile({ rows, types }, name) {
   });
   // The stated maxima cover every composite within the claim; composites in state beyondClaim are reported with their
   // errors and excluded (maximaExcludeStates), as the floor excludes lists beyond its claim.
-  out.maximaExcludeStates = [BEYOND_CLAIM];
+  out.maximaExcludeStates = [BEYOND_CLAIM, MID_LIST];
   const counted = out.validation.filter((v) => !out.maximaExcludeStates.includes(v.state));
+  // the mid-list over-prediction, stated on its own (MID_LIST_NOTE)
+  const mid = out.validation.filter((v) => v.state === MID_LIST);
+  const midOver = (field) => { const v = mid.reduce((a, b) => (b[field] > a[field] ? b : a)); return [Number(v[field].toFixed(2)), v.key]; };
+  out.midList = { note: MID_LIST_NOTE, composites: mid.map((v) => v.key) };
+  [out.maxMidListOverErrorPercent, out.maxMidListOverErrorComposite] = midOver("errorPercent");
+  if (amsterdam) [out.maxMidListOverExecutionErrorPercent, out.maxMidListOverExecutionErrorComposite] = midOver("executionErrorPercent");
   // the largest composite error on ALL gas (prague: all gas is what the cap counts; amsterdam: execution + state gas,
   // the constants), and the composite that sets it
   const worst = (field) => counted.reduce((a, v) => (Math.abs(v[field]) > Math.abs(a[field]) ? v : a));
@@ -518,12 +626,12 @@ function profile({ rows, types }, name) {
 const TAG_LEVELS_METHOD = `a first TAG statement (either sign) on an n-word topic = bindTagFresh (no author has stated anything at the position) or bindTagSecondAuthor (the position exists; measured as a first yes, which files one place entry, so it is an upper bound for a first no there) + Σ over its n − 1 proper ancestors of tagLevel.mineNew | mineExisting (the author's scope-below list at that ancestor is empty | not) + (a fresh position, either sign, or a first yes at an existing position: every filing) tagLevel.sharedNew | sharedExisting (the place-below list at that ancestor is empty | not); a list with exactly 1 entry or a multiple of 5 takes a fresh word on its next append, so price it as new (tagLists.priceAsNew). Measured: (k2 − k1) / ${LEVEL_SPAN} of a first statement on a 2-word and on a 6-word topic from the same state (rows "tag level all new | all existing": a first tag at a fresh position; "mine new | mine existing": a first no at an existing position, which files nothing below); shared = all − mine`;
 /** The planning rule (tools/gas-plan.mjs implements it; tools/release.mjs reads txGasCap and headroomPercent from here). */
 const PLANNING = {
-  rule: "A publication is planned when it is inside limits (1 ≤ actions ≤ maxActions, bind-kind actions ≤ maxBindsPerPublication, PUBLISH body bytes ≤ maxBodyBytesPerPublication) and max(E, V) ≤ floor(txGasCap × (100 − headroomPercent) / 100), on the schedule of the chain: E the model's execution estimate (prague: constants; amsterdam: split.executionGas), V the floor's visible-gas requirement (profiles.<schedule>.floor.formula). A shape that does not fit is split into publications before it is signed, never shortened; eth_estimateGas on the exact call stays the authority before sending, and the gas limit comes from the estimate, never from V.",
+  rule: "A publication is planned when it is inside limits (1 ≤ actions ≤ maxActions, bind-kind actions ≤ maxBindsPerPublication, PUBLISH body bytes ≤ maxBodyBytesPerPublication) and max(E, V) ≤ floor(txGasCap × (100 − headroomPercent) / 100), on the schedule of the chain: E the model's execution estimate (prague: constants; amsterdam: split.executionGas), V the floor's visible-gas requirement (profiles.<schedule>.floor.formula). A guarded publication is also inside the read-set limits (principals ≤ maxReadSetPrincipals, positions ≤ maxReadSetPositions, principals × positions ≤ maxReadCount) and its E and K carry profiles.<schedule>.guard once. A shape that does not fit is split into publications before it is signed, never shortened; eth_estimateGas on the exact call stays the authority before sending, and the gas limit comes from the estimate, never from V.",
   txGasCap: 16777216,
   txGasCapRule: "EIP-7825 (on amsterdam, EIP-8037: the cap counts execution gas only)",
   headroomPercent: 15,
-  headroomCovers: "the 21,000 intrinsic cost, calldata (EIP-2028/7623) and the model's own error over the validation composites in both states (the author's lists new and existing). The cap condition is tested against the under-prediction of the gas the cap counts (headroom exists to stop a plan coming out too small; an over-prediction only costs batch size): on prague all gas, profiles.prague.maxUnderErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxUnderExecutionErrorPercent. The maximum-error fields keep their meaning (maxAbsErrorPercent, and on amsterdam maxAbsExecutionErrorPercent); profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxUnderErrorComposite, maxAbsExecutionErrorComposite, maxUnderExecutionErrorComposite), each is taken over the composites whose state is not in maximaExcludeStates. The under-prediction fields and the over-prediction of the gas the cap counts (profiles.prague.maxOverErrorPercent, profiles.amsterdam.maxOverExecutionErrorPercent) are at most headroomPercent; profiles.amsterdam.maxOverErrorPercent (all gas) is stated with a per-composite bound (method.maxima)",
-  limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication },
+  headroomCovers: "the model's own error over the validation composites (the 21,000 intrinsic cost and the calldata are inside E, K and V: the model's note; earlier releases listed them here) in both states (the author's lists new and existing). The cap condition is tested against the under-prediction of the gas the cap counts (headroom exists to stop a plan coming out too small; an over-prediction only costs batch size): on prague all gas, profiles.prague.maxUnderErrorPercent; on amsterdam execution gas only, profiles.amsterdam.maxUnderExecutionErrorPercent. The maximum-error fields keep their meaning (maxAbsErrorPercent, and on amsterdam maxAbsExecutionErrorPercent); profiles.amsterdam.maxAbsErrorPercent is the all-gas error (execution + state gas), which bounds the publication's total against the block, never the 2^24 cap. Each figure names its composite (maxAbsErrorComposite, maxUnderErrorComposite, maxAbsExecutionErrorComposite, maxUnderExecutionErrorComposite), each is taken over the composites whose state is not in maximaExcludeStates. The under-prediction fields and the over-prediction of the gas the cap counts (profiles.prague.maxOverErrorPercent, profiles.amsterdam.maxOverExecutionErrorPercent) are at most headroomPercent; profiles.amsterdam.maxOverErrorPercent (all gas) is stated with a per-composite bound (method.maxima)",
+  limits: { maxActions: LIMITS.maxActions, maxBindsPerPublication: LIMITS.maxBindsPerPublication, maxBodyBytesPerPublication: LIMITS.maxBodyBytesPerPublication, maxReadSetPrincipals: LIMITS.maxReadSetPrincipals, maxReadSetPositions: LIMITS.maxReadSetPositions, maxReadCount: LIMITS.maxReadCount },
 };
 /** Read by the planner with the tagLevel terms (design §10.4). */
 const TAG_LISTS = {
@@ -558,7 +666,7 @@ for (const p of [prague, amsterdam].filter(Boolean)) delete p._sameTarget;
 
 const model = {
   schema: "efs-gas-model/1",
-  note: "Planning only: predicts the gas of one native-lane ILedger.execute publication from its actions, so the SDK can split a large write into publications without an eth_estimateGas round trip per guess. eth_estimateGas stays the authority before sending. Excluded: the 21,000 intrinsic cost and calldata (EIP-2028/7623; computable from the encoded transaction), refunds (EIP-3529; not applied, so the model errs high on clears), the signed lane, guards and STAGE/COMMIT.",
+  note: "Planning only: predicts the gas of one native-lane ILedger.execute publication from its actions, so the SDK can split a large write into publications without an eth_estimateGas round trip per guess. eth_estimateGas stays the authority before sending. INCLUDED, in every measured publication (corrected at the guard release; earlier releases of this note said excluded): the 21,000 intrinsic cost and the call's calldata at 16 / 4 gas per non-zero / zero byte. The suites run under Foundry's isolate mode (forge 1.8.3 reports `isolate = true` in `forge config`; nothing in this repository sets it), where each state-changing call a test makes is a transaction of its own, so `vm.lastFrameGas().gasTotalUsed` is that transaction's gas. Shown by a probe: one call measures 26,410 gas with isolation and 406 without, the difference being 21,000 + 204 (its 36 bytes of calldata) + 4,800 (the cold accesses a new transaction pays); and a 32-byte calldata word with no zero byte costs 372 gas (31 × 12) more than one with 31. So `fixed` carries the 21,000 once, every constant carries its action's calldata, and floor.<schedule>.kernel carries both too: E estimates the transaction's gas used before refunds, and K and V are high by 21,000 plus the calldata's gas against the visible execution gas they are compared with (conservative). A planner that also adds the intrinsic cost or the calldata from the encoded transaction counts them twice (conservative). One visible effect: turning b0 on or changing a Realm limit changes the execution-set and acceptance-profile words the call sends, and each byte of them that turns zero or non-zero moves a row by 12 gas. Excluded: any EIP-7623 floor excess (it applies only when execution gas is small against calldata, never here), refunds (EIP-3529; not applied, so the model errs high on clears), the signed lane and STAGE/COMMIT. A guarded publication adds profiles.<schedule>.guard (kernel gas only; its terms include the guard's calldata, as the action constants include the actions'). The measured Realm is the fixture's live set (b0 NATIVE_GUARD on).",
   method: {
     suite: SUITE,
     prague: "FOUNDRY_PROFILE=default (evm prague, the release bytes)",
@@ -571,7 +679,7 @@ const model = {
     keys: "PUBLISH new: publishNew[shape] + perWord·ceil(n/32) + perByte·n, n = body bytes; FOLDER binds run FilesFinalValidator; rebind = CAS to a new target; UNBIND/RELEASE from BOUND; restore = BIND from MASKED to the kept target; PROPERTY binds are a label (labelKey(\"en\") on a word page → an existing text/1; a label with a new text is publishNew[\"text/1\"] + its body terms + bindPropertyFresh, validated by \"validate label new text\"); SAME and BROADER first statements run FilesFinalValidator's topic checks on subject and role (word page to word page; bindSameFreshPath 2-word path to path), their later statements are on word pages; WITHDRAW of one occurrence",
     tagLevels: TAG_LEVELS_METHOD,
     laterLists: "later statements are priced by laterLists (the list tiers); the tier rows are their own k1/k2 pairs (GasModel.t.sol section 9: `<row> new place` at three places whose lists hold one entry; `<row> long new place` at three places whose lists hold 1,025 entries, each statement at entry 1,024; `<row> long same place` at one place of 1,025 entries, k1 the entry at 512, k2 those at 256 and 768), never anchors, so no tier row moves `fixed` or an existing row; PROPERTY, SAME and BROADER rows are already measured at distinct subjects, so they carry no `NewPlace` row",
-    maxima: "Every maximum is taken over the validation composites whose state is not in maximaExcludeStates (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception). maxAbsErrorPercent is the largest |error| on all gas (the larger of maxUnderErrorPercent and maxOverErrorPercent), and on amsterdam maxAbsExecutionErrorPercent the same on execution gas; each names its composite. What tools/gas-model.mjs refuses (tools/gas-fit.mjs overBound): an UNDER-prediction above 15% anywhere (prague all gas, amsterdam all gas, amsterdam execution gas: maxUnderErrorPercent, maxUnderExecutionErrorPercent); an OVER-prediction above 15% of the gas the 2^24 cap counts (prague all gas, maxOverErrorPercent; amsterdam execution gas, maxOverExecutionErrorPercent); and on amsterdam an all-gas over-prediction above the composite's own allGasOverBoundPercent = 15 + laterStatements × freshSlot.stateGas (97,920, docs/GAS-SCHEDULES.md) × 100 / measured. That last term is the later rows' worst-case state: each is measured where its target's backlink word and its binding's history word open, which a planner cannot see, and on amsterdam one such word is a fresh slot of state gas only, so a composite whose statements open none is over-stated by up to one slot a statement. So amsterdam's maxAbsErrorPercent and maxOverErrorPercent are stated, not bounded at 15%: they bound a publication's total against the block, never the cap",
+    maxima: "Every maximum is taken over the validation composites whose state is not in maximaExcludeStates (beyondClaim: lists over laterLists.claimEntries, the floor's documented exception; midList: lists of 49 to 1,023 entries, whose over-prediction is stated on its own, profiles.<schedule>.midList and maxMidListOver*, and whose under-prediction is still held to 15%). maxAbsErrorPercent is the largest |error| on all gas (the larger of maxUnderErrorPercent and maxOverErrorPercent), and on amsterdam maxAbsExecutionErrorPercent the same on execution gas; each names its composite. What tools/gas-model.mjs refuses (tools/gas-fit.mjs overBound): an UNDER-prediction above 15% anywhere (prague all gas, amsterdam all gas, amsterdam execution gas: maxUnderErrorPercent, maxUnderExecutionErrorPercent); an OVER-prediction above 15% of the gas the 2^24 cap counts (prague all gas, maxOverErrorPercent; amsterdam execution gas, maxOverExecutionErrorPercent); and on amsterdam an all-gas over-prediction above the composite's own allGasOverBoundPercent = 15 + laterStatements × freshSlot.stateGas (97,920, docs/GAS-SCHEDULES.md) × 100 / measured. That last term is the later rows' worst-case state: each is measured where its target's backlink word and its binding's history word open, which a planner cannot see, and on amsterdam one such word is a fresh slot of state gas only, so a composite whose statements open none is over-stated by up to one slot a statement. So amsterdam's maxAbsErrorPercent and maxOverErrorPercent are stated, not bounded at 15%: they bound a publication's total against the block, never the cap",
   },
   planning: PLANNING,
   tagLists: TAG_LISTS,
@@ -613,7 +721,7 @@ if (bad.length) {
  *  counts, amsterdam all-gas over-predictions per composite at LIMIT_PERCENT plus its later statements' fresh-slot
  *  state gas. */
 function overBound(profiles) {
-  return overBoundOf(profiles, { limitPercent: LIMIT_PERCENT, freshSlotStateGas: FRESH_SLOT_STATE_GAS });
+  return overBoundOf(profiles, { limitPercent: LIMIT_PERCENT, freshSlotStateGas: FRESH_SLOT_STATE_GAS, underOnlyStates: [MID_LIST] });
 }
 
 /** Paths at which `a` and `b` (parsed JSON) differ, each with both values. */
@@ -636,7 +744,7 @@ function check(committed) {
   for (const [name, p] of Object.entries(fresh.profiles)) {
     const c = committed.profiles?.[name];
     if (!c) { differences.push(`profiles.${name}: absent from the committed gas/model.json`); continue; }
-    for (const k of ["constants", "split", "floor", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
+    for (const k of ["constants", "split", "floor", "guard", "rows"]) diff(c[k], p[k], `profiles.${name}.${k}`, differences);
   }
   for (const k of ["planning", "tagLists", "laterLists"]) diff(committed[k], fresh[k], k, differences);
   // laterRows: its rows' notes quote every measured schedule, so with a schedule skipped only the positions, the rule

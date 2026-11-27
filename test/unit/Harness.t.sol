@@ -63,7 +63,7 @@ contract HarnessTest is Test {
         k.bindingKeys[0] = key;
     }
 
-    function testDigestTracksOnlyTrackedRowsAndProjectsHeads() public {
+    function testDigestTracksOnlyTrackedRowsAndKeptTargets() public {
         bytes32 id = keccak256("r");
         bytes32 key = keccak256("k");
         StateDigest.LedgerKeys memory k = keysFor(id, key);
@@ -79,11 +79,12 @@ contract HarnessTest is Test {
         f.mask(key);
         bytes32 d3 = StateDigest.ledger(address(f), k);
         assertTrue(d3 != d2, "mask changes the digest");
-        // canonical projection: a masked head with a kept target digests like a masked head with none
+        // the target word as stored (head-snapshot profile 2 compares it): a masked head with a kept target
+        // does not digest like a masked head with none
         DigestFixture g = new DigestFixture();
         g.touchRecord(id, 40, bytes32(uint256(1)));
         g.mask(key);
-        assertEq(StateDigest.ledger(address(g), k), d3, "kept target word is projected away");
+        assertTrue(StateDigest.ledger(address(g), k) != d3, "the kept target word is in the digest");
         f.bumpCounter();
         assertTrue(StateDigest.ledger(address(f), k) != d3, "counters are part of the realm digest");
     }

@@ -253,6 +253,9 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
     }
 
     /// Decodes and checks a non-empty guard; returns its hash (= the canonical read-set hash).
+    /// Shape reasons in the order checked: 1 principals (0 or over `maxReadSetPrincipals`), 2 positions (0 or over
+    /// `maxReadSetPositions`), 3 `expectedHeads` is not n·m long, 5 n·m over `maxReadCount`, 4 the bytes are not
+    /// the canonical encoding. Every head is compared as it stood BEFORE this publication's own actions.
     function _checkGuard(RealmStorage storage $, bytes calldata guard)
         private
         view
@@ -265,12 +268,19 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         if (n == 0 || n > $.limits.maxReadSetPrincipals) revert E_READSET_SHAPE(1);
         if (m == 0 || m > $.limits.maxReadSetPositions) revert E_READSET_SHAPE(2);
         if (rs.expectedHeads.length != n * m) revert E_READSET_SHAPE(3);
+        if (n * m > $.limits.maxReadCount) revert E_READSET_SHAPE(5);
         if (keccak256(abi.encode(rs)) != keccak256(guard)) revert E_READSET_SHAPE(4); // canonical encoding only
         for (uint256 j; j < m; ++j) {
             for (uint256 i; i < n; ++i) {
-                bytes32 key = Keys.binding(rs.principals[i], rs.positions[j]);
-                (uint8 state, uint48 revision, uint48 admission, bytes32 target) =
-                    _headState(address(this), key);
+                uint256 s =
+                    Layout.bindingsHeadsSlot(Keys.binding(rs.principals[i], rs.positions[j]));
+                (uint8 state, uint48 revision, uint48 admission, uint8 targetKind,,,,) =
+                    Layout.unpackHeadRowWord0(_load(address(this), s));
+                // head-snapshot profile 2: the STORED target word of a head that was ever bound, so a MASKED
+                // or RELEASED head is compared with its last bound target (what a restore brings back). The word
+                // is 0 exactly when `targetKind` is 0 (a BIND's target is never 0; a first mask writes neither)
+                bytes32 target;
+                if (targetKind != 0) target = _load(address(this), s + 1);
                 if (
                     headSnapshotHash(state, revision, admission, target)
                         != rs.expectedHeads[j * n + i]
@@ -916,13 +926,12 @@ contract LedgerIngress is ILedgerIngress, ILedgerCommitments, LedgerStorage {
         return keccak256(abi.encode(rs));
     }
 
-    function headSnapshotHash(
-        uint8 state,
-        uint64 revision,
-        uint64 admission,
-        bytes32 canonicalTarget
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encode(state, revision, admission, canonicalTarget));
+    function headSnapshotHash(uint8 state, uint64 revision, uint64 admission, bytes32 target)
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(state, revision, admission, target));
     }
 
     function acceptanceProfileOf(address ledger, Action[] calldata actions)

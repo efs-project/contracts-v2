@@ -226,7 +226,7 @@ export async function up(o = {}) {
     const { rpc, pub, wallet, account } = clients(url, chainId, { forbid: UNSIGNED });
     const signer = await signerProbe(url, unlocked);
     if (signer.signerCapable !== unlocked) fail("SIGNER", `anvil reports ${signer.accounts} unlocked account(s), expected ${unlocked ? DEFAULT_ACCOUNTS.length : 0}`, EXIT.FAILURE);
-    const { journal, factoryMethod } = await deploy({ plan, rpc, pub, wallet, log });
+    const { journal, factoryMethod } = await deploy({ plan, rpc, pub, wallet, log, instance: { pid: info.pid, log: meta.log } });
     const reads = await readEstimates(rpc, plan, account.address);
     log(`efs-fixture: genesis + registration + seed done (${journal.length} transactions, all eth_sendRawTransaction; factory via ${factoryMethod})`);
 
@@ -389,11 +389,44 @@ function upResult(lease, plan, { home, releaseWritten }) {
   };
 }
 
-async function deploy({ plan, rpc, pub, wallet, log }) {
+/**
+ * The receipt of `hash`, or a failure that says what the chain knew. viem's receipt wait swallows RPC errors while it
+ * polls, so by itself a timeout cannot tell a dead node from an unmined transaction (seen once in CI: run 45902367913,
+ * attempt 1). On a timeout this reads, straight from the node: the transaction by hash, its receipt, the head, the
+ * sender's latest and pending nonces and the pool's content; and, when the caller knows them, whether the instance's
+ * anvil process is alive and the tail of its log. The wait is 30 s by default, far above the 50 to 100 ms a local send
+ * takes, so a stuck send fails fast.
+ */
+export async function receiptOrReport(pub, hash, { step = "?", sender = null, pid = null, logPath = null, timeoutMs = 30_000 } = {}) {
+  try {
+    return await pub.waitForTransactionReceipt({ hash, timeout: timeoutMs });
+  } catch (e) {
+    const ask = async (method, params = []) => { try { return await pub.request({ method, params }); } catch (x) { return `ERROR ${x.shortMessage ?? x.message}`.slice(0, 200); } };
+    const tx = await ask("eth_getTransactionByHash", [hash]);
+    const rc = await ask("eth_getTransactionReceipt", [hash]);
+    let alive = null;
+    if (pid !== null) { try { process.kill(pid, 0); alive = true; } catch { alive = false; } }
+    let logTail = null;
+    if (logPath) { try { logTail = readFileSync(logPath, "utf8").trim().split("\n").slice(-25); } catch (x) { logTail = `unreadable: ${x.message}`; } }
+    const found = {
+      step, hash, error: e.name, anvilPid: pid, anvilAlive: alive,
+      transaction: tx && typeof tx === "object" ? { blockNumber: tx.blockNumber, nonce: tx.nonce, gas: tx.gas, from: tx.from } : tx,
+      receipt: rc && typeof rc === "object" ? { blockNumber: rc.blockNumber, status: rc.status, gasUsed: rc.gasUsed } : rc,
+      head: await ask("eth_blockNumber"),
+      nonceLatest: sender ? await ask("eth_getTransactionCount", [sender, "latest"]) : null,
+      noncePending: sender ? await ask("eth_getTransactionCount", [sender, "pending"]) : null,
+      txpool: await ask("txpool_content"),
+      logTail,
+    };
+    throw new Error(`no receipt for ${hash} within ${timeoutMs / 1000} s at step "${step}"; what the chain knew:\n${JSON.stringify(found, null, 2)}`, { cause: e });
+  }
+}
+
+async function deploy({ plan, rpc, pub, wallet, log, instance = {} }) {
   const { read } = bind(plan);
   const journal = [];
   const record = async (step, hash) => {
-    const r = await pub.waitForTransactionReceipt({ hash });
+    const r = await receiptOrReport(pub, hash, { step: step.id, sender: wallet.account.address, pid: instance.pid ?? null, logPath: instance.log ?? null });
     assert.equal(r.status, "success", `${step.id} reverted (${hash})`);
     journal.push({ id: step.id, label: step.label ?? step.contract, txHash: hash, blockNumber: Number(r.blockNumber), blockHash: r.blockHash, gasUsed: Number(r.gasUsed) });
     return r;
@@ -429,7 +462,12 @@ async function deploy({ plan, rpc, pub, wallet, log }) {
       for (const c of step.creates) assert.equal(keccak256(await codeAt(c.address)), c.runtimeCodehash, `G18 ${c.label}: runtime codehash differs from the plan`);
     } else if (step.id === "G20") {
       if ((await read(pub, ledger, "LedgerCore", "revision")) === 0) await send(step, step.to, step.data);
-      assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.activation.expectedExecutionSet, "G20 executionSet");
+      // on a resumed deployment the Realm may already be past genesis (G20b); the genesis set is checked only while it is live
+      if ((await read(pub, ledger, "LedgerCore", "revision")) === 1) assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.genesisActivation.expectedExecutionSet, "G20 executionSet");
+    } else if (step.id === "G20b") {
+      if ((await read(pub, ledger, "LedgerCore", "revision")) === 1) await send(step, step.to, step.data);
+      assert.equal(await read(pub, ledger, "LedgerCore", "revision"), plan.activation.revision, "G20b revision");
+      assert.equal(await read(pub, ledger, "LedgerCore", "executionSet"), plan.activation.expectedExecutionSet, "G20b executionSet");
     } else if (["R3", "R4", "R9", "R10", "R11"].includes(step.id)) {
       const [l, kind, reader] = step.args;
       const listed = await read(pub, step.to, "ReaderDirectory", "readers", [l, kind, 0, 16]);
@@ -440,7 +478,7 @@ async function deploy({ plan, rpc, pub, wallet, log }) {
       // already done: its subject exists, or (a chunk-only publication) its last record does
       if (step.marker?.subject && (await read(pub, ledger, "LedgerCore", "subjectCreatedAt", [step.marker.subject])) !== 0n) continue;
       if (step.marker?.record && (await read(pub, ledger, "LedgerCore", "recordHeader", [step.marker.record]))[0] !== pad("0x", { size: 32 })) continue;
-      await execute(pub, wallet, plan, step);
+      await execute(pub, wallet, plan, step, instance);
       const r = await pub.getTransactionReceipt({ hash: step.txHash });
       journal.push({ id: step.id, label: step.label, txHash: step.txHash, blockNumber: Number(r.blockNumber), blockHash: r.blockHash, gasUsed: Number(r.gasUsed), publication: step.publication });
     }
@@ -449,7 +487,7 @@ async function deploy({ plan, rpc, pub, wallet, log }) {
 }
 
 /** One native publication with both expectations bound (design Q22; `EfsNative.currentBind`). */
-async function execute(pub, wallet, plan, step) {
+async function execute(pub, wallet, plan, step, instance = {}) {
   const { read, abiOf } = bind(plan);
   const ledger = plan.addresses.ledgerProxy;
   const actions = step.actions.map((a) => ({ ...a, expectedRevision: BigInt(a.expectedRevision) }));
@@ -465,7 +503,7 @@ async function execute(pub, wallet, plan, step) {
   const sim = await pub.call({ account: wallet.account.address, to: ledger, data });
   const [publication] = decodeFunctionResult({ abi: abiOf("LedgerCore"), functionName: "execute", data: sim.data });
   const hash = await wallet.sendTransaction({ to: ledger, data });
-  const r = await pub.waitForTransactionReceipt({ hash });
+  const r = await receiptOrReport(pub, hash, { step: step.id, sender: wallet.account.address, pid: instance.pid ?? null, logPath: instance.log ?? null });
   assert.equal(r.status, "success", `${step.id} reverted`);
   step.txHash = hash;
   step.publication = Number(publication);
@@ -531,7 +569,9 @@ async function deploymentDocument({ plan, planHash, pub, url, factoryMethod, jou
     realmSalt: plan.realmSalt,
     factory: { address: FACTORY.address, method: factoryMethod, deployer: FACTORY.deployer, presignedTx: FACTORY.presignedTx, runtimeCodehash: keccak256(FACTORY_RUNTIME()), harnessRuntimeMatches: plan.local.harnessFactoryRuntime === null ? null : plan.local.harnessFactoryRuntime === FACTORY_RUNTIME() },
     genesis: { address: a.genesis, nonces: plan.genesis.nonces, txHash: tx.G18?.txHash ?? null, blockNumber: tx.G18?.blockNumber ?? null, blockHash: tx.G18?.blockHash ?? null },
-    activation: { revision: 1, executionSet: d.executionSet, txHash: tx.G20?.txHash ?? null, blockNumber: tx.G20?.blockNumber ?? null, capabilities: 0, acceptedChainId: plan.chainId, dependencyRoot: plan.activation.dependencyRoot, set: jsonable(plan.activation) },
+    // `activation` is the LIVE set (revision 2: the guard capability, step G20b); `genesisActivation` is revision 1 (G20)
+    activation: { revision: plan.activation.revision, executionSet: d.executionSet, txHash: tx.G20b?.txHash ?? null, blockNumber: tx.G20b?.blockNumber ?? null, capabilities: plan.activation.capabilities, acceptedChainId: plan.chainId, dependencyRoot: plan.activation.dependencyRoot, set: jsonable(plan.activation) },
+    genesisActivation: { revision: plan.genesisActivation.revision, executionSet: plan.genesisActivation.expectedExecutionSet, txHash: tx.G20?.txHash ?? null, blockNumber: tx.G20?.blockNumber ?? null, capabilities: plan.genesisActivation.capabilities },
     layoutId: plan.layoutId,
     hotAbiId: plan.hotAbiId,
     hotAbiIdString: plan.hotAbiIdString,
@@ -612,7 +652,7 @@ function expectedDocument(plan, deployment) {
     chainId: plan.chainId,
     ledger: plan.addresses.ledgerProxy,
     executionSet: plan.activation.expectedExecutionSet,
-    revision: 1,
+    revision: plan.activation.revision,
     root: s.root,
     folder: s.folder,
     file: { ...s.file, body: s.file.body },
@@ -771,22 +811,23 @@ export async function verify(o = {}) {
   eq("controller NOTICE_TYPE", await read(pub, a.controller, "RealmController", "NOTICE_TYPE"), plan.profile.find((p) => p.type === "realm-notice/1").typeId);
   eq("registry ledger", await read(pub, a.registryProxy, "TypeRegistry", "ledger"), a.ledgerProxy);
   eq("registry implementation", await read(pub, a.registryProxy, "TypeRegistry", "implementation"), a.registryImpl);
-  eq("registry activeRevision", await read(pub, a.registryProxy, "TypeRegistry", "activeRevision"), 1);
+  eq("registry activeRevision", await read(pub, a.registryProxy, "TypeRegistry", "activeRevision"), plan.activation.revision);
 
   // 5. describe(): every field against the plan
   const d = await read(pub, a.ledgerReads, "LedgerReads", "describe", [a.ledgerProxy]);
   const set = plan.activation;
+  // registryMutations: one registry mutation per activation (G20, G20b); a described registration is not one
   const want = {
     realmId: plan.realm.realmId, realmOrigin: plan.realm.realmOrigin, realmSalt: plan.realmSalt, genesisChainId: BigInt(plan.chainId), acceptedChainId: BigInt(plan.chainId),
-    chainNamespace: toHex("eip155", { size: 8 }), chainReference: pad(toHex(plan.chainId), { size: 32 }), executionSet: set.expectedExecutionSet, revision: 1, layoutId: plan.layoutId,
-    hotAbiId: plan.hotAbiId, executionProfileId: plan.executionProfileId, capabilities: 0, ledgerImpl: a.ledgerImpl, ledgerImplCodehash: set.components.ledgerImplCodehash,
+    chainNamespace: toHex("eip155", { size: 8 }), chainReference: pad(toHex(plan.chainId), { size: 32 }), executionSet: set.expectedExecutionSet, revision: set.revision, layoutId: plan.layoutId,
+    hotAbiId: plan.hotAbiId, executionProfileId: plan.executionProfileId, capabilities: set.capabilities, ledgerImpl: a.ledgerImpl, ledgerImplCodehash: set.components.ledgerImplCodehash,
     ingress: a.ingress, ingressCodehash: set.components.ingressCodehash, applyDelegate: a.apply, applyCodehash: set.components.applyCodehash, registry: a.registryProxy,
     registryImpl: a.registryImpl, registryImplCodehash: set.components.registryImplCodehash, catalogCount: BigInt(plan.profile.length), index: a.index, indexCodehash: set.components.indexCodehash,
     indexGeneration: 1, indexManifestHash: plan.index.manifestHash, indexObligations: plan.realm.indexObligations, controller: a.controller, controllerCodehash: set.components.controllerCodehash,
     controllerOwner: plan.owner, steward: zeroAddress, frozen: false, phase: 0, readerDirectory: a.readerDirectory, thisFacet: a.ledgerReads, thisFacetCodehash: plan.units.LedgerReads.runtimeCodehash,
     facetVersion: 1, admissions: BigInt(exp.counts.admissions), records: BigInt(exp.counts.records), bindings: BigInt(exp.counts.bindings), publications: BigInt(exp.counts.publications),
     domainSeparator: plan.realm.domainSeparator, limitsProfileId: plan.realm.limitsProfileId, statusVocabularyId: keccak256(toHex("efs/status-vocabulary/1")),
-    revisionBlock: BigInt(dep.activation.blockNumber), revisionAdmissionHigh: 0n, registryMutations: 1n,
+    revisionBlock: BigInt(dep.activation.blockNumber), revisionAdmissionHigh: 0n, registryMutations: BigInt(set.revision),
     verifierProfilesRoot: pad("0x", { size: 32 }), dependencyRoot: pad("0x", { size: 32 }), noticePrincipal: pad("0x", { size: 32 }),
   };
   for (const [k, v] of Object.entries(want)) eq(`describe ${k}`, d[k], v);

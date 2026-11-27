@@ -298,9 +298,17 @@ HeadRow { uint256 meta; bytes32 target }                           (2 slots per 
       stored (BindingNumber.numberOf): BOUND → strength (0..65,535), MASKED → −1 − strength (−1..−65,536),
       UNSET/RELEASED → none. It shares the meta word, so a number costs no slot
   The target word is KEPT on MASK and RELEASE (never cleared): a later RESTORE or re-bind to the same target
-  rewrites instead of re-creating a fresh slot (5,000 / 12,100 instead of 22,100 / 110,020). The canonical target
-  is defined as 0 whenever state != BOUND: Layout.canonicalTarget, ILedgerHot.head, LedgerReads.head, headSnapshotHash
-  and the raw-slot digest's canonical projection all apply that rule; absent/masked/released reads touch meta only.
+  rewrites instead of re-creating a fresh slot (5,000 / 12,100 instead of 22,100 / 110,020).
+  The kept word is a fact, not only a saving (the guard release): it is the LAST BOUND TARGET, the target of the
+  head's last BIND, and the read-set guard compares it (head-snapshot profile 2, §5.8). It follows from the statement
+  history alone, so a rebuild or an import reproduces it. It is 0 exactly when targetKind is 0: a BIND's target is
+  never 0 (E_SHAPE), a first mask writes neither, and no MASK or RELEASE writes either. The test harness's state
+  digest (test/harness/StateDigest.sol) hashes the word as stored, so a kernel that cleared or changed it is caught.
+  The canonical target, what every head READ serves, is still 0 whenever state != BOUND: ILedgerHot.head,
+  LedgerReads.head (so heads, headsAt, historyAt and the lens reader) apply that rule, and absent/masked/released
+  reads touch meta only. A non-BOUND head's kept word says only what a restore would bind again; it never says what
+  the statement is about or whether it applies. Two things read it: the ingress when a read set names the head, and
+  LedgerViews.headSnapshots, which serves it as `targets` beside the snapshot hashes.
 
 PositionCell { bytes32 purpose; bytes32 subject; bytes32 role }   (3 slots, write-once, shared by all authors;
                                                                     role == 0 is a zero write, not a slot)
@@ -575,7 +583,7 @@ event TransitionEnded(uint32 indexed targetRevision, uint8 how);                
 | `E_INTENT` | `(uint8 field)` 1 realm 2 execution 3 profile 4 index 5 readset | ingress (signed) | reprepare |
 | `E_SIGNATURE` | `(uint8 reason)` 0 unknown profile 1 length 2 malleable 3 recover 4 wallet refused 5 code-less or key-classified author 6 author does not derive principalId | ingress | reprepare |
 | `E_WALLET_GAS` | `(uint32 forwarded)` | ingress profile 2: `isValidSignature` failed with empty returndata having consumed ≥ forwarded − 2,000 | resubmit |
-| `E_READSET_SHAPE` | `(uint8 reason)` | ingress | none |
+| `E_READSET_SHAPE` | `(uint8 reason)` | ingress, `headSnapshots` | none. 1 principals (0 or over `maxReadSetPrincipals`), 2 positions (0 or over `maxReadSetPositions`), 3 `expectedHeads` not n·m long, 5 n·m over `maxReadCount`, 4 not the canonical encoding; checked in that order |
 | `E_READSET_STALE` | `(bytes32 position, bytes32 principalId)` | ingress | reprepare |
 | `E_UNSUPPORTED_GUARD` | `()` | ingress (capability b0 clear) | none |
 | `E_VERIFIER_PROFILE` | `(uint16 profile)` | ingress | none |
@@ -665,7 +673,7 @@ function records(address ledger, bytes32[] calldata ids) external view returns (
 function heads(address ledger, bytes32[] calldata keys) external view returns (Head[] memory, BasisCommit memory);
 function headStates(address ledger, bytes32[] calldata keys) external view returns (uint8[] memory states, BasisCommit memory);   // the state word alone of each head (one storage word per key; a reserved state as stored); bounds and gate as heads(); the topic readers' viewed-place check
 function headsAt(address ledger, bytes32[] calldata principals, bytes32 position) external view returns (Status, Head memory selected, uint8 selectedIndex, Head[] memory all, BasisCommit memory);   // ordered first-touch: BOUND or MASKED wins; UNSET/RELEASED fall through
-function headSnapshots(address ledger, bytes32[] calldata principals, bytes32[] calldata positions) external view returns (bytes32[] memory);   // n·m, position-major; the read-set preflight
+function headSnapshots(address ledger, bytes32[] calldata principals, bytes32[] calldata positions) external view returns (bytes32[] memory snapshots, bytes32[] memory targets);   // n·m, position-major: each head's snapshot hash (profile 2, §5.8) and the stored target word it is over (the last bound target of a MASKED or RELEASED head; 0 for a head never bound). Bounded as a read set is: E_READSET_SHAPE 1 (principals), 2 (positions), 5 (n·m over maxReadCount). A planner computes its expected hashes from the values its plan was decided on and never copies `snapshots`
 function acceptanceBasis(address ledger, uint64 ordinal) external view returns (Status, AcceptanceBasis memory);
 function historyAt(address ledger, bytes32 bindingKey, uint64 asOf, uint16 maxHops) external view returns (History, Head memory);   // prev-chain walk; UNKNOWN beyond maxHops; the strength is the found row's
 // the first-statement lists' entries (§10.2), batched for the topic readers (§5.13); each ≤ maxReadIds entries, blanket statuses as records()
@@ -693,7 +701,7 @@ function publicationIdOf(bytes32 principalId, bytes32 intentDigest) external pur
 function readSetHash(ReadSet calldata rs) external pure returns (bytes32);
     // = keccak(abi.encode(rs)); equal to guardHash = keccak(raw guard bytes) for every accepted guarded publication, because the ingress requires the raw bytes
     // to be the canonical encoding; evidence w7 stores it, so native guarded digests are recomputable from the row without the preimage
-function headSnapshotHash(uint8 state, uint64 revision, uint64 admission, bytes32 canonicalTarget) external pure returns (bytes32);
+function headSnapshotHash(uint8 state, uint64 revision, uint64 admission, bytes32 target) external pure returns (bytes32);   // head-snapshot profile 2: `target` is the STORED word (§4.3): the current target when BOUND, the last bound target when MASKED or RELEASED, 0 when never bound
 function acceptanceProfileOf(address ledger, Action[] calldata actions) external view returns (bytes32);
 function indexObligationsOf(address ledger) external view returns (bytes32);
 function indexFloor(address ledger, Action[] calldata actions) external view returns (uint32 prefixFloor, uint32 finalReserve, uint32 freshSlots, uint32 rewrites);   // estimation; the floor the dispatcher will demand
@@ -1049,7 +1057,7 @@ Both lanes produce one fixed-size `Prepared` struct and run one private `_run`. 
 
 The ingress, in ledger context, reads `realm.*` and `principal[...]` through `Layout` and returns `Prepared{ principalId, principalKind, proofKind, verifierProfile, v, author, witness0, witness1, nonce, deadline, actionsHash, acceptanceProfile, indexObligations, readSetHash, intentDigest, prefixFloor, finalReserve, freshSlots, rewrites, leafCount, flags }` (21 words, 672 B; §5.15).
 
-- **Native:** `ctx.deadline == 0 || block.timestamp <= ctx.deadline` (`E_EXPIRED`); `ctx.expectedExecutionSet == 0 || == realm.executionSet` (`E_EXECUTION_SET`; flag b3 when bound); if `ctx.expectedAcceptanceProfile != 0`, fold the acceptance profile (below) and require equality (`E_ACCEPTANCE_PROFILE`; flag b4 when bound; the fold is skipped when unbound); if `guard` is non-empty, capability b0 must be set (`E_UNSUPPORTED_GUARD`) and the read set is decoded, shape-checked, required to equal its canonical re-encoding (`E_READSET_SHAPE`, so `guardHash` is reproducible) and compared against live head snapshots (`E_READSET_STALE`); `acceptanceProfile`/`indexObligations` are returned zero for storage.
+- **Native:** `ctx.deadline == 0 || block.timestamp <= ctx.deadline` (`E_EXPIRED`); `ctx.expectedExecutionSet == 0 || == realm.executionSet` (`E_EXECUTION_SET`; flag b3 when bound); if `ctx.expectedAcceptanceProfile != 0`, fold the acceptance profile (below) and require equality (`E_ACCEPTANCE_PROFILE`; flag b4 when bound; the fold is skipped when unbound); if `guard` is non-empty, capability b0 must be set (`E_UNSUPPORTED_GUARD`) and the read set is decoded, shape-checked, required to equal its canonical re-encoding (`E_READSET_SHAPE`, so `guardHash` is reproducible) and compared against live head snapshots (`E_READSET_STALE(position, principalId)`, the first mismatch in position-major order; each head as it stood before this publication's own actions; profile 2, the stored target word, §4.3 and §5.8; at most `maxReadSetPrincipals` × `maxReadSetPositions` and `maxReadCount` heads in all, `E_READSET_SHAPE(5)`); `acceptanceProfile`/`indexObligations` are returned zero for storage.
 - **Signed:** `deadline != 0 && block.timestamp <= deadline` (`E_EXPIRED`); `realmId`/`realmOrigin` (`E_INTENT(1)`); `executionSet` (`E_INTENT(2)`); `acceptanceProfile` recomputed (`E_INTENT(3)`); `indexObligations == realm.indexObligations` (`E_INTENT(4)`); `readSetHash == readSetHash(guard)` (`E_INTENT(5)`); `authorityId == 0 && authEpoch == 0` unless capability b8 (`E_RESERVED`); head snapshots (`E_READSET_STALE`); then the witness under `verifierProfile`: **1** = exactly 65 bytes, low-s, `v ∈ {27, 28}`, `ecrecover(signingDigest) == principalId` as padded address and `intent.author ∈ {0, recovered}` (`E_SIGNATURE`); **2** = `intent.author` has real code, is not key-classified (not an EOA, not the 23-byte designator) and `Keys.contractPrincipal(realmOrigin, intent.author) == intent.principalId` (`E_SIGNATURE(5)`/`(6)`, *new*, before any call), `witness.length ≤ limits.maxWitness`; `available = (gasleft() − limits.kernelTail) × 63/64` must be ≥ `WALLET_GAS_FLOOR` (300,000, a closure constant; `E_GAS(0, needed, available)`, resubmit) and is forwarded whole: bounded assembly `STATICCALL isValidSignature(signingDigest, witness)` with a 32-byte output buffer, magic exact (`E_SIGNATURE(4)`); a failure with empty returndata having consumed ≥ available − 2,000 is `E_WALLET_GAS(available)` (resubmit), so a wallet whose check grows under a repricing is never permanently refused (I11); `evidenceHash = keccak(witness)`; the bytes go to `WitnessRetained` (`limits.witnessRetention == LOG_ONLY`, `w9.store = 0`) or, by one `CALL`, to the ingress build's pinned `SIGNATURE_STORE` (`STATE`, `w9.store = SIGNATURE_STORE`, flag b5) — the only external write the ingress ever causes, landing in the store's own namespace keyed by the calling proxy, which the S5 zero-write state-diff test allows exactly and nothing else; `author` := the wallet; unknown profile → `E_VERIFIER_PROFILE`.
 - **Both:** when the acceptance fold runs (signed lanes always; native only when `expectedAcceptanceProfile != 0`) it refuses unknown Types before any callback (`E_UNKNOWN_TYPE`), and an unbound native call meets an unknown Type at the kernel's per-leaf `typeInfo` load instead; `(prefixFloor, finalReserve, freshSlots, rewrites) = indexFloor(realm.index.workModel, actions, limits)` (§10.4).
 
@@ -1165,6 +1173,9 @@ G19  RealmIndex/1(ledgerProxy, layoutId, decoder, [postingStore], bitmapStore, b
 G20  controller.activate(genesisSet{revision 1, components, capabilities = 0, acceptedChainId = genesis, limits, noticePrincipal, expected})
        -> fresh-genesis readiness (frontier 0 == admissions 0; stores empty; every manifest family in its store's FAMILY_IDS), installs the index, records
           revision 1, clears the transition (lastTarget stays 0), caches executionSet; post-check: ledger.executionSet() == plan.expectedExecutionSet
+G20b controller.activate(set{revision 2, the same components, capabilities = b0 NATIVE_GUARD, the same limits, expected})   (the guard release)
+       -> a same-code reactivation: revision 2 and a new executionSet; a capability arrives by an activation of its own, never at genesis.
+          The local fixture runs it before G21, so the Types, the readers' listings and the seed are published under the live set
 G21  permissionless registerDescribed for the §12.1 and §12.5 Types (idempotent by construction: NATIVE instances are deterministic, §9.3)
 G22  the seed (§12.2 Root, then the sample folder and file) by the fixture principal; post-check: expected.json
 ```

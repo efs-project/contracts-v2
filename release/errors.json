@@ -1039,7 +1039,7 @@
       ],
       "source": "src/interfaces/Errors.sol",
       "retryClass": "none",
-      "meaning": null
+      "meaning": "1 principals 2 positions 3 heads length 4 not the canonical encoding 5 principals x positions over maxReadCount"
     },
     "0x381bf267": {
       "name": "E_READSET_STALE",

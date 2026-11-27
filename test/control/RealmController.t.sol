@@ -18,7 +18,18 @@ import {TypeRegistry} from "../../src/types/TypeRegistry.sol";
 import {DescriptorStore} from "../../src/types/DescriptorStore.sol";
 import {DescribedCodec} from "../../src/types/DescribedCodec.sol";
 import {Keys} from "../../src/lib/Keys.sol";
-import {Action, ActionKind, Capability, Intent, Native} from "../../src/interfaces/Actions.sol";
+import {
+    Action,
+    ActionKind,
+    Capability,
+    Intent,
+    Native,
+    Purpose,
+    ReadSet
+} from "../../src/interfaces/Actions.sol";
+import {LedgerReads} from "../../src/readers/LedgerReads.sol";
+import {Evidence} from "../../src/interfaces/Views.sol";
+import {Status} from "../../src/interfaces/Results.sol";
 import {Layout} from "../../src/core/layout/Layout.sol";
 import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 import {TypeInfo} from "../../src/interfaces/ITypeRegistry.sol";
@@ -549,5 +560,47 @@ contract RealmControllerTest is Test {
         assertEq(_proofKind(before + 2), 2, "secp256k1");
         // a canary that publishes something other than a realm notice is refused: not testable here without
         // a second registered Type on the signed lane; covered by the proof-kind check above
+    }
+
+    /// A final set with b0 (NATIVE_GUARD): the native canary carries a one-entry read set over the controller's
+    /// own UNSET canary head (`RealmController._nativeCanary`), so the freeze runs the guard codec once. The
+    /// current revision's capabilities (0) are a subset of the final set's.
+    function testTheNativeCanaryIsGuardedWhenTheFinalSetHasB0() public {
+        ActivationSet memory finalSet = _final(2, address(controller), address(this));
+        finalSet.capabilities = Capability.NATIVE_GUARD;
+        finalSet.expectedExecutionSet = ExecutionSets.executionSet(finalSet, k.proxy);
+        bytes32 principal = Keys.contractPrincipal(hot.realmOrigin(), address(controller));
+        ReadSet memory rs;
+        rs.principals = new bytes32[](1);
+        rs.principals[0] = principal;
+        rs.positions = new bytes32[](1);
+        rs.positions[0] = Keys.position(Purpose.HEAD, keccak256("efs/notice/canary/1"), bytes32(0));
+        rs.expectedHeads = new bytes32[](1);
+        rs.expectedHeads[0] = keccak256(abi.encode(uint8(0), uint64(0), uint64(0), bytes32(0)));
+        bytes memory guard = abi.encode(rs);
+        (,,, uint64 before) = hot.counts();
+        vm.expectEmit(true, true, false, true, k.proxy);
+        emit ILedger.ReadSetChecked(before + 1, keccak256(guard), guard);
+        controller.freeze(finalSet, new bytes[](0));
+        assertTrue(controller.frozen());
+        (,,, uint64 after_) = hot.counts();
+        assertEq(after_, before + 1, "the native canary");
+        (Status st, Evidence memory e) = new LedgerReads().evidence(k.proxy, after_);
+        assertEq(uint8(st), uint8(Status.PRESENT));
+        assertEq(e.principalId, principal, "the controller's contract principal");
+        assertEq(e.proofKind, 1, "native");
+        assertTrue(e.guarded, "guarded");
+        assertEq(e.readSetHash, keccak256(guard));
+        assertTrue(e.executionBound, "bound to the terminal execution set");
+    }
+
+    /// Without b0 the canary carries no guard.
+    function testTheNativeCanaryIsUnguardedWithoutB0() public {
+        ActivationSet memory finalSet = _final(2, address(controller), address(this));
+        controller.freeze(finalSet, new bytes[](0));
+        (,,, uint64 publications) = hot.counts();
+        (, Evidence memory e) = new LedgerReads().evidence(k.proxy, publications);
+        assertFalse(e.guarded);
+        assertEq(e.readSetHash, 0);
     }
 }

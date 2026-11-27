@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { PURPOSE, historyWordAdds, isRebind, laterKey, opensHistoryWord, planVectors, planner, priceAsNew, purposeOf, shapes } from "../gas-plan.mjs";
+import { PURPOSE, guardBytes, guardCost, historyWordAdds, isRebind, laterKey, opensHistoryWord, planVectors, planner, priceAsNew, purposeOf, shapes } from "../gas-plan.mjs";
 import { PURPOSE as PLAN_PURPOSE, WORK_MODEL } from "../deploy-plan.mjs";
 
 const root = join(fileURLToPath(import.meta.url), "../../..");
@@ -232,8 +232,20 @@ test("the stated maximum errors: all gas on every schedule, execution gas on ams
     const excluded = p.maximaExcludeStates ?? [];
     const rows = p.validation.filter((v) => !excluded.includes(v.state));
     if (model.laterLists) {
-      assert.deepEqual(excluded, ["beyondClaim"], `${s}: only beyondClaim is excluded`);
+      assert.deepEqual(excluded, ["beyondClaim", "midList"], `${s}: beyondClaim and midList are excluded`);
       assert.ok(p.validation.some((v) => v.state === "beyondClaim"), `${s}: the beyond-the-claim composites are still reported`);
+      // midList: its over-prediction stated on its own, its under-prediction held to the headroom
+      const mid = p.validation.filter((v) => v.state === "midList");
+      assert.ok(mid.length >= 4, `${s}: the mid-list composites are reported`);
+      const midOver = (field) => { const v = mid.reduce((a, x) => (x[field] > a[field] ? x : a)); return [Number(v[field].toFixed(2)), v.key]; };
+      assert.deepEqual([p.maxMidListOverErrorPercent, p.maxMidListOverErrorComposite], midOver("errorPercent"), `${s}: maxMidListOverErrorPercent`);
+      if (s === "amsterdam") assert.deepEqual([p.maxMidListOverExecutionErrorPercent, p.maxMidListOverExecutionErrorComposite], midOver("executionErrorPercent"), `${s}: maxMidListOverExecutionErrorPercent`);
+      for (const v of mid) {
+        assert.ok(-v.errorPercent <= model.planning.headroomPercent, `${s} ${v.key}: a midList composite is not under-predicted beyond the headroom`);
+        if (s === "amsterdam") assert.ok(-v.executionErrorPercent <= model.planning.headroomPercent, `${s} ${v.key}: nor on execution gas`);
+      }
+      // the guarded composites are counted in the stated maxima, except those in a mid-sized list
+      for (const v of p.validation.filter((x) => /^validate guarded/.test(x.key))) assert.ok(v.state === "guarded" || v.state === "midList", `${s} ${v.key}: state ${v.state}`);
       assert.deepEqual([p.maxUnderErrorPercent, p.maxUnderErrorComposite], under(rows, "errorPercent"), `${s}: maxUnderErrorPercent names the largest under-prediction`);
       assert.ok(p.maxUnderErrorPercent <= model.planning.headroomPercent, `${s}: the all-gas under-prediction is inside the headroom`);
       if (s === "amsterdam") {
@@ -340,5 +352,96 @@ test("every later row of the committed model states its measured position, and t
     // the symmetric correction on a yes after a lone no at revision 2 (no → release → yes)
     const yes = (revisionBefore) => [{ kind: "bind", cost: "bindTagAfterNo", first: false, entries: 1, revisionBefore }];
     assert.equal(pl.check(yes(2)).E - pl.check(yes(1)).E, 0 - exec.historyWordOpen + 0, `${s}: revision 2 subtracts one history word`);
+  }
+});
+
+// ---- guarded publications (design §5.1; profiles.<schedule>.guard) --------------------------------------------------
+
+const GUARD = { principals: 2, positions: 3, written: 1, writtenUnread: 1, twoWords: 2, oneWord: 2 };
+
+test("the guard's terms: guardCost is the model's formula, guardBytes the read set's encoding, and the head counts must sum to n·m", () => {
+  const g = { guardFixed: 1000, guardPrincipal: 10, guardPosition: 20, guardHeadWritten: 3, guardHeadWrittenUnread: 5, guardHeadTwoWords: 7, guardHeadOneWord: 11, guardMemoryQuadratic: 0.5 };
+  const x = 2 + 3 + 3 * 6;
+  assert.equal(guardCost(g, GUARD), 1000 + 10 + 2 * 20 + 3 + 5 + 2 * 7 + 2 * 11 + 0.5 * x * x);
+  assert.equal(guardBytes(GUARD), 224 + 32 * (2 + 3 + 6));
+  assert.equal(guardBytes({ principals: 1, positions: 1 }), 320, "abi.encode(ReadSet) of one head is 10 words");
+  assert.throws(() => guardCost(g, { ...GUARD, oneWord: 1 }), /must equal principals × positions/);
+  assert.throws(() => guardCost(g, { ...GUARD, written: 4, oneWord: 0 }), /must equal principals × positions/);
+  assert.throws(() => guardCost(g, { ...GUARD, twoWords: -1, oneWord: 5 }), /must be a count/);
+  assert.throws(() => guardCost(g, { principals: 0, positions: 1 }), /at least one principal/);
+});
+
+test("a guard over the read-set limits is refused with its reason, as the kernel refuses it (E_READSET_SHAPE)", () => {
+  const model = committed();
+  for (const s of schedules(model)) {
+    const pl = planner(model, s);
+    const L = model.planning.limits;
+    assert.deepEqual([L.maxReadSetPrincipals, L.maxReadSetPositions, L.maxReadCount], [64, 128, 256]);
+    const acts = [{ kind: "create" }];
+    const g = (n, m) => ({ principals: n, positions: m, oneWord: n * m });
+    assert.equal(pl.check(acts, { guard: g(64, 4) }).fits, true, `${s}: 64 × 4 = 256 heads is inside every limit`);
+    assert.equal(pl.check(acts, { guard: g(65, 1) }).refused, "maxReadSetPrincipals");
+    assert.equal(pl.check(acts, { guard: g(1, 129) }).refused, "maxReadSetPositions");
+    assert.equal(pl.check(acts, { guard: g(64, 5) }).refused, "maxReadCount");
+    assert.equal(pl.check(acts, { guard: g(3, 128) }).refused, "maxReadCount");
+    assert.equal(pl.check(Array(65).fill({ kind: "create" }), { guard: g(1, 1) }).refused, "maxActions", "the Realm limits come first");
+  }
+});
+
+test("a guarded plan is the unguarded plan of the same actions plus exactly the guard's terms in E and K, on both schedules", () => {
+  const model = committed();
+  for (const s of schedules(model)) {
+    const p = model.profiles[s];
+    const pl = planner(model, s);
+    const exec = s === "prague" ? p.guard.constants : p.guard.split.executionGas;
+    assert.deepEqual(p.guard.kernel, exec, `${s}: the guard is kernel gas only (kernel = execution terms)`);
+    if (s === "amsterdam") for (const k of Object.keys(p.guard.constants)) assert.ok(Math.abs(p.guard.constants[k] - p.guard.split.executionGas[k] - p.guard.split.stateGas[k]) <= 1e-3 + 1, `${s}: ${k} = execution + state`);
+    const acts = [{ kind: "publish", shape: "files-child/1 form 0", bytes: 114, fresh: true }, { kind: "bind", cost: "bindHeadRebind", first: false }];
+    for (const guard of [GUARD, { principals: 64, positions: 1, written: 1, twoWords: 63 }, { principals: 2, positions: 128, twoWords: 256 }]) {
+      const plain = pl.check(acts);
+      const guarded = pl.check(acts, { guard });
+      const ge = guardCost(exec, guard);
+      const gk = guardCost(p.guard.kernel, guard);
+      const estimate = (c) => c.fixed + c.publishNew["files-child/1 form 0"] + c.perWord * 4 + c.perByte * 114 + c.bindHeadRebind;
+      assert.equal(guarded.E, Math.round(estimate(s === "prague" ? p.constants : p.split.executionGas) + ge), `${s}: E carries the guard once`);
+      assert.equal(guarded.K, Math.round(estimate(p.floor.kernel) + gk), `${s}: K carries the guard once`);
+      assert.ok(Math.abs(guarded.E - plain.E - ge) <= 1 && Math.abs(guarded.K - plain.K - gk) <= 1, `${s}: the difference is the guard's terms (rounding)`);
+      for (const k of ["prefixFloor", "finalReserve", "freshSlots", "rewrites"]) assert.equal(guarded[k], plain[k], `${s}: the floor's quote does not change with a guard (${k})`);
+      assert.equal(guarded.V, pl.visible(guarded.E, guarded.K, guarded), `${s}: V is the formula's on the guarded E and K`);
+    }
+  }
+});
+
+test("unguarded planning is unchanged: every unguarded shape plans with no guard, and the guard-free check ignores the guard terms", () => {
+  const model = committed();
+  const stripped = JSON.parse(JSON.stringify(model));
+  for (const p of Object.values(stripped.profiles)) delete p.guard;
+  for (const s of schedules(model)) {
+    const a = planner(model, s);
+    const b = planner(stripped, s);
+    for (const [name, sh] of Object.entries(shapes(model))) {
+      if (sh.guard) continue;
+      const max = Math.floor(model.planning.limits.maxActions / sh.units);
+      const k = a.largest(sh.of, max);
+      assert.equal(k, b.largest(sh.of, max), `${s} ${name}: the same largest batch without the guard terms in the model`);
+      assert.deepEqual(a.check(sh.of(k)), b.check(sh.of(k)), `${s} ${name}: the same verdict`);
+    }
+    assert.throws(() => b.check([{ kind: "create" }], { guard: { principals: 1, positions: 1, oneWord: 1 } }), /no .* guard terms/);
+  }
+});
+
+test("every guarded shape has its unguarded twin, and the vectors carry each guard and its bytes", () => {
+  const model = committed();
+  const sh = shapes(model);
+  const v = planVectors(model);
+  for (const [name, s] of Object.entries(sh).filter(([, x]) => x.guard)) {
+    const twin = name.replace(/(Lens.*)?Guarded.*$/, "");
+    assert.ok(sh[twin] && !sh[twin].guard, `${name}: its unguarded twin ${twin}`);
+    for (const schedule of schedules(model)) {
+      const row = v.schedules[schedule][name];
+      assert.deepEqual(row.guard, s.guard(row.k));
+      assert.equal(row.guardBytes, guardBytes(row.guard));
+      assert.ok(row.k <= v.schedules[schedule][twin].k || name === "createsGuarded1x128" || name === "createsGuarded2x128", `${schedule} ${name}: a guard never grows the batch`);
+    }
   }
 });

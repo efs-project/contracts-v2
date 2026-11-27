@@ -52,7 +52,7 @@ library KernelDeploy {
         l.maxBody = 8_192;
         l.maxRefs = 8;
         l.maxReadSetPrincipals = 64;
-        l.maxReadSetPositions = 4;
+        l.maxReadSetPositions = 128;
         l.maxWitness = 4_096;
         l.maxTransitionBlocks = 7_200;
         l.inlineWordMax = 256;

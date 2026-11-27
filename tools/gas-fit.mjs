@@ -43,8 +43,10 @@ export function allGasOverBoundPercent(v, limitPercent, freshSlotStateGas) {
   return limitPercent + ((v.laterStatements ?? 0) * freshSlotStateGas * 100) / v.measured;
 }
 
-/** Every bound a profile's composites break (empty when none), for the composites the maxima count. */
-export function overBound(profiles, { limitPercent, freshSlotStateGas }) {
+/** Every bound a profile's composites break (empty when none), for the composites the maxima count. A composite whose
+ *  state is in `underOnlyStates` (excluded from the maxima, gas/model.json `midList`) is still held to `limitPercent` of
+ *  UNDER-prediction, on all gas and, on amsterdam, on execution gas. */
+export function overBound(profiles, { limitPercent, freshSlotStateGas, underOnlyStates = [] }) {
   const out = [];
   for (const [name, p] of Object.entries(profiles)) {
     const amsterdam = name === "amsterdam";
@@ -52,6 +54,11 @@ export function overBound(profiles, { limitPercent, freshSlotStateGas }) {
       if (p[k] !== undefined && p[k] > limitPercent) out.push(`${name} ${k} ${p[k]}% exceeds ${limitPercent}%`);
     }
     for (const v of p.validation) {
+      if (underOnlyStates.includes(v.state)) {
+        if (-v.errorPercent > limitPercent) out.push(`${name} "${v.key}" (${v.state}) predicted ${v.predicted}, measured ${v.measured}: under-predicted ${-v.errorPercent}%, over ${limitPercent}%`);
+        if (v.executionErrorPercent !== undefined && -v.executionErrorPercent > limitPercent) out.push(`${name} "${v.key}" (${v.state}) execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: under-predicted ${-v.executionErrorPercent}%, over ${limitPercent}%`);
+        continue;
+      }
       if ((p.maximaExcludeStates ?? []).includes(v.state)) continue;
       if (-v.errorPercent > limitPercent) out.push(`${name} "${v.key}" predicted ${v.predicted}, measured ${v.measured}: under-predicted ${-v.errorPercent}%, over ${limitPercent}%`);
       if (v.executionErrorPercent !== undefined && Math.abs(v.executionErrorPercent) > limitPercent) out.push(`${name} "${v.key}" execution gas predicted ${v.predictedExecutionGas}, measured ${v.measuredExecutionGas}: ${v.executionErrorPercent}% exceeds ±${limitPercent}%`);

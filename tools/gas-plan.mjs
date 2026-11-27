@@ -41,6 +41,16 @@
 //                                             itself is the planner's choice from the head it reads (laterRows.rule):
 //                                             a BIND on a MASKED or RELEASED head is bind<P>AfterNo when the head's
 //                                             targetKind is 0 (it never bound), else restore<P>
+//
+// A guarded publication (ILedger.execute's `guard`, design §5.1) passes `check(actions, { guard })` with
+//   guard = { principals: n, positions: m, written, writtenUnread, twoWords, oneWord }
+// the read set's shape and its n·m heads by what the planner read of each before this publication
+// (profiles.<schedule>.guard.note): written = a head one of the publication's actions writes, except writtenUnread = a
+// head it UNBINDs or RELEASEs while MASKED or RELEASED with targetKind ≠ 0; twoWords = a head not written with
+// targetKind ≠ 0; oneWord = a head not written with targetKind 0. The counts must sum to n·m (asserted); a read set over
+// the Realm's read-set limits is refused (maxReadSetPrincipals, maxReadSetPositions, maxReadCount), as the kernel refuses
+// it (E_READSET_SHAPE). The guard's terms (guardCost) are added once to E and once to K; they carry the
+// guard's calldata (guard.bytes), as the action constants carry the actions' (gas/model.json note).
 import assert from "node:assert/strict";
 
 const ceilDiv = (a, b) => Math.floor((a + b - 1) / b);
@@ -104,6 +114,25 @@ export function historyWordAdds(laterRows, key, revisionBefore) {
   assert.ok(row, `laterRows has no ${key}`);
   const opens = opensHistoryWord(revisionBefore);
   return opens === row.opensHistoryWord ? 0 : opens ? 1 : -1;
+}
+
+/** The guard's memory term's variable (gas/model.json profiles.<schedule>.guard.note). */
+const guardX = (n, m) => n + m + 3 * n * m;
+/** The guard's bytes (`guard.bytes`): abi.encode(ReadSet) of n principals and m positions. */
+export const guardBytes = (x) => 224 + 32 * (x.principals + x.positions + x.principals * x.positions);
+
+/** The cost of the read-set guard `x` under one schedule's guard terms `g` (profiles.<schedule>.guard: `constants` on
+ *  prague, `split.executionGas` on amsterdam for E; `kernel` for K). Asserts the head counts sum to n·m. */
+export function guardCost(g, x) {
+  const heads = ["written", "writtenUnread", "twoWords", "oneWord"];
+  for (const k of ["principals", "positions", ...heads]) assert.ok(x[k] === undefined ? heads.includes(k) : Number.isInteger(x[k]) && x[k] >= 0, `guard.${k} must be a count`);
+  assert.ok(x.principals >= 1 && x.positions >= 1, "a guard names at least one principal and one position");
+  const sum = heads.reduce((t, k) => t + (x[k] ?? 0), 0);
+  assert.equal(sum, x.principals * x.positions, "guard: written + writtenUnread + twoWords + oneWord must equal principals × positions");
+  return g.guardFixed + (x.principals - 1) * g.guardPrincipal + (x.positions - 1) * g.guardPosition
+    + (x.written ?? 0) * g.guardHeadWritten + (x.writtenUnread ?? 0) * g.guardHeadWrittenUnread
+    + (x.twoWords ?? 0) * g.guardHeadTwoWords + (x.oneWord ?? 0) * g.guardHeadOneWord
+    + g.guardMemoryQuadratic * guardX(x.principals, x.positions) ** 2;
 }
 
 /** `tagLists.priceAsNew`: whether a roll-up list holding `entries` entries is priced as a new list. */
@@ -196,29 +225,45 @@ export function planner(model, schedule) {
   const visible = (E, K, q) => Math.max(K + prefixNeed(q.prefixFloor), E) + ceilDiv(q.finalReserve * den, num) + limits.kernelTail;
   const budget = Math.floor((plan.txGasCap * (100 - plan.headroomPercent)) / 100);
 
-  /** The rule's verdict on one publication (`firstWrite`: the principal has never written). */
-  function check(actions, { firstWrite = false } = {}) {
+  /** The rule's verdict on one publication (`firstWrite`: the principal has never written; `guard`: its read set). */
+  function check(actions, { firstWrite = false, guard = null } = {}) {
     const q = quote(actions);
-    const E = Math.round(estimate(exec, actions, firstWrite));
-    const K = Math.round(estimate(kernel, actions, firstWrite));
+    const L = plan.limits;
+    let E;
+    let K;
+    let guardRefused = null;
+    if (guard) {
+      assert.ok(p.guard, `gas/model.json has no ${schedule} guard terms`);
+      const ge = guardCost(schedule === "prague" ? p.guard.constants : p.guard.split.executionGas, guard);
+      const gk = guardCost(p.guard.kernel, guard);
+      E = Math.round(estimate(exec, actions, firstWrite) + ge);
+      K = Math.round(estimate(kernel, actions, firstWrite) + gk);
+      for (const k of ["maxReadSetPrincipals", "maxReadSetPositions", "maxReadCount"]) assert.ok(Number.isInteger(L[k]), `planning.limits.${k} is missing`);
+      guardRefused = guard.principals > L.maxReadSetPrincipals ? "maxReadSetPrincipals"
+        : guard.positions > L.maxReadSetPositions ? "maxReadSetPositions"
+        : guard.principals * guard.positions > L.maxReadCount ? "maxReadCount" : null;
+    } else {
+      E = Math.round(estimate(exec, actions, firstWrite));
+      K = Math.round(estimate(kernel, actions, firstWrite));
+    }
     const V = visible(E, K, q);
     const bodyBytes = actions.reduce((s, a) => s + (a.kind === "publish" ? a.bytes : 0), 0);
-    const L = plan.limits;
     const refused = actions.length < 1 ? "empty"
       : actions.length > L.maxActions ? "maxActions"
       : q.binds > L.maxBindsPerPublication ? "maxBindsPerPublication"
       : bodyBytes > L.maxBodyBytesPerPublication ? "maxBodyBytesPerPublication"
-      : Math.max(E, V) > budget ? "gas" : null;
+      : guardRefused ?? (Math.max(E, V) > budget ? "gas" : null);
     return { fits: refused === null, refused, E, K, V, budget, bodyBytes, ...q };
   }
 
-  /** The largest k (0 when none) for which `shape(k)` is planned, checking every k from 1 (shapes need not be monotone). */
-  function largest(shape, max = plan.limits.maxActions) {
+  /** The largest k (0 when none) for which `shape(k)` is planned, checking every k from 1 (shapes need not be monotone);
+   *  `guardOf(k)` is the read set of a guarded shape. */
+  function largest(shape, max = plan.limits.maxActions, guardOf = null) {
     let best = 0;
     for (let k = 1; k <= max; k++) {
       const acts = shape(k);
       if (acts.length > plan.limits.maxActions) break;
-      if (check(acts).fits) best = k;
+      if (check(acts, guardOf ? { guard: guardOf(k) } : {}).fits) best = k;
     }
     return best;
   }
@@ -269,6 +314,21 @@ export const NAME_BYTES = 10;
 /** FloorPlan.t.sol's removed-names shapes: how many entries the author's list holds at each place (the names it removed
  *  and the files it moves: one more than the 64-action limit allows units, so the shape's k + 1 is built). */
 export const REMOVED_NAMES = { create: 13, createNoName: 17, move: 22, moveNoName: 33 };
+
+/** FloorPlan.t.sol's moves: the root folder holds min(k + 1, 32) of the author's files before them (the builder creates
+ *  one more than it moves, at most 32), and every destination name record exists. */
+const movesToFresh = (k) => range(k).flatMap((j) => [
+  { kind: "bind", cost: "releaseFolder", first: false, firstAtPlace: j === 0, entries: Math.min(k + 1, 32) },
+  { kind: "bind", cost: "bindFolderFreshFile", first: true },
+]);
+/** FloorPlan.t.sol's edit document: files-child/1 form 0, a 96-byte header and an 18-byte document. */
+export const EDIT_CHILD_BYTES = 96 + 18;
+const edits = (k) => range(k).flatMap(() => [
+  { kind: "publish", shape: "files-child/1 form 0", bytes: EDIT_CHILD_BYTES, fresh: true },
+  { kind: "bind", cost: "bindHeadRebind", first: false },
+]);
+/** The lens of the guarded edits: the author and 63 other authors. */
+export const LENS_PRINCIPALS = 64;
 
 export function shapes(model) {
   return {
@@ -329,6 +389,21 @@ export function shapes(model) {
         { kind: "bind", cost: "restoreFolder", first: false, firstAtPlace: j === 0, entries: REMOVED_NAMES.moveNoName },
       ]),
     },
+    // ---- guarded publications (design §5.1): each shape beside its unguarded twin; the guard names every head the
+    // batch writes with one principal (the author), except the lens edits
+    movesToFresh: { what: "moves of root-folder files to fresh names in another folder, the names published before (2 actions each: RELEASE at the root, BIND FOLDER fresh)", units: 2, of: movesToFresh },
+    movesToFreshGuarded: { what: "the same moves guarded over both heads of every move (1 principal × 2k positions, all written)", units: 2, of: movesToFresh, guard: (k) => ({ principals: 1, positions: 2 * k, written: 2 * k, writtenUnread: 0, twoWords: 0, oneWord: 0 }) },
+    folderMasks: { what: "masks of root-folder entries (UNBIND of BOUND heads)", units: 1, of: atOnePlace("unbindFolder") },
+    folderMasksGuarded: { what: "the same masks guarded over their heads (1 × k, all written)", units: 1, of: atOnePlace("unbindFolder"), guard: (k) => ({ principals: 1, positions: k, written: k, writtenUnread: 0, twoWords: 0, oneWord: 0 }) },
+    folderRestores: { what: "restores of masked root-folder entries to their kept files (BIND of MASKED heads with a kept target; priced by restoreFolder)", units: 1, of: atOnePlace("restoreFolder") },
+    folderRestoresGuarded: { what: "the same restores guarded over their heads (1 × k, all written)", units: 1, of: atOnePlace("restoreFolder"), guard: (k) => ({ principals: 1, positions: k, written: k, writtenUnread: 0, twoWords: 0, oneWord: 0 }) },
+    tagNumberChangesGuarded: { what: "number changes on asserted tags on a one-word topic, guarded over their heads (1 × k, all written)", units: 1, of: atOnePlace("bindTagNumberChange"), guard: (k) => ({ principals: 1, positions: k, written: k, writtenUnread: 0, twoWords: 0, oneWord: 0 }) },
+    edits: { what: "edits of the author's files (PUBLISH files-child/1 form 0 with an 18-byte document, BIND HEAD re-bind; 2 actions each)", units: 2, of: edits },
+    editsLensGuarded: { what: "the same edits guarded by a 64-principal lens at each file's HEAD position (64 × k: the author's k heads written, 63 other authors' BOUND HEADs per file, two words each)", units: 2, of: edits, guard: (k) => ({ principals: LENS_PRINCIPALS, positions: k, written: k, writtenUnread: 0, twoWords: (LENS_PRINCIPALS - 1) * k, oneWord: 0 }) },
+    editsLensOneGuarded: { what: "one edit guarded by a 64-principal lens at the file's HEAD position (64 × 1: the author's head written, 63 other authors' BOUND HEADs, two words each); fixed at one edit", units: 2, fixedK: 1, of: edits, guard: () => ({ principals: LENS_PRINCIPALS, positions: 1, written: 1, writtenUnread: 0, twoWords: LENS_PRINCIPALS - 1, oneWord: 0 }) },
+    creates: { what: "CREATEs (a publication that touches no head)", units: 1, of: repeat({ kind: "create" }) },
+    createsGuarded1x128: { what: "the same CREATEs guarded over 1 × 128 BOUND TAG heads none of them writes (two words each)", units: 1, of: repeat({ kind: "create" }), guard: () => ({ principals: 1, positions: 128, written: 0, writtenUnread: 0, twoWords: 128, oneWord: 0 }) },
+    createsGuarded2x128: { what: "the same CREATEs guarded over 2 × 128 BOUND TAG heads none of them writes (two words each)", units: 1, of: repeat({ kind: "create" }), guard: () => ({ principals: 2, positions: 128, written: 0, writtenUnread: 0, twoWords: 256, oneWord: 0 }) },
     createFiles: {
       what: "create-file recipes into the root folder (5 actions each)", units: 5,
       of: (k) => range(k).flatMap(() => [
@@ -351,15 +426,19 @@ export function planVectors(model) {
     const rows = {};
     for (const [name, s] of Object.entries(shapes(model))) {
       const max = Math.floor(model.planning.limits.maxActions / s.units);
-      const k = pl.largest(s.of, max);
+      const opt = (j) => (s.guard ? { guard: s.guard(j) } : {});
+      // a shape with `fixedK` is checked at that size only (it must be planned); it has no "one unit more"
+      const k = s.fixedK ?? pl.largest(s.of, max, s.guard);
       assert.ok(k > 0, `${schedule} ${name}: the rule plans no publication of this shape`);
-      const at = pl.check(s.of(k));
-      const next = (k + 1) * s.units <= model.planning.limits.maxActions ? pl.check(s.of(k + 1)) : null;
+      const at = pl.check(s.of(k), opt(k));
+      if (s.fixedK) assert.ok(at.fits, `${schedule} ${name}: the fixed size ${k} is not planned (${at.refused})`);
+      const next = !s.fixedK && (k + 1) * s.units <= model.planning.limits.maxActions ? pl.check(s.of(k + 1), opt(k + 1)) : null;
       if (next) assert.equal(next.fits, false, `${schedule} ${name}: k + 1 planned, so k is not the largest`);
       const pick = (c) => ({ E: c.E, K: c.K, V: c.V, prefixFloor: c.prefixFloor, finalReserve: c.finalReserve, freshSlots: c.freshSlots, rewrites: c.rewrites });
+      const guardOf = (j) => (s.guard ? { guard: s.guard(j), guardBytes: guardBytes(s.guard(j)) } : {});
       rows[name] = {
-        what: s.what, units: s.units, ...(s.depth ? { depth: s.depth } : {}), k, actions: k * s.units, budget: at.budget, ...pick(at),
-        next: next ? { k: k + 1, refused: next.refused, ...pick(next) } : { k: k + 1, refused: "maxActions" },
+        what: s.what, units: s.units, ...(s.depth ? { depth: s.depth } : {}), k, actions: k * s.units, budget: at.budget, ...pick(at), ...guardOf(k),
+        next: next ? { k: k + 1, refused: next.refused, ...pick(next), ...guardOf(k + 1) } : { k: k + 1, refused: s.fixedK ? "fixedK" : "maxActions" },
       };
     }
     out.schedules[schedule] = rows;

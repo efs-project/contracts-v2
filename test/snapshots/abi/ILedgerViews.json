@@ -745,7 +745,12 @@
       ],
       "outputs": [
         {
-          "name": "",
+          "name": "snapshots",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        },
+        {
+          "name": "targets",
           "type": "bytes32[]",
           "internalType": "bytes32[]"
         }

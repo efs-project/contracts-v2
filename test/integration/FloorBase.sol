@@ -20,6 +20,13 @@ import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 ///         G ≥ E. K errs high (the mocked run still pays each callback's dispatch, encoding and CALL), so the bound is
 ///         conservative.
 ///
+///         Isolation (found at the guard release): forge runs each state-changing call a test makes as a transaction
+///         of its own (`isolate = true` in `forge config` on forge 1.8.3; nothing here sets it), so the measured E and
+///         K already carry the 21,000 intrinsic cost and the call's calldata. Only the REPORTED gas carries them: a
+///         call given `room` gas has all of `room` for execution (a probe call needing about 5,000 of execution gas
+///         succeeds when given 12,000). So a run here at `room` is a run at G, as stated, and the planner's E, K and
+///         V are high against G by 21,000 plus the calldata's gas, which is conservative.
+///
 ///         What Foundry's amsterdam profile does NOT emulate: it has no state-gas reservoir and no 2^24 cap. State gas
 ///         is drawn from the call's own gas, so the GAS opcode inside the kernel sees state gas being spent, and a call
 ///         capped at 2^24 runs out where a chain would draw from the reservoir. On amsterdam the suites therefore run
@@ -116,6 +123,17 @@ abstract contract FloorBase is FilesRecipesBase {
         Native memory c,
         address sender
     ) internal returns (uint32 quoted) {
+        return _kernelPrefixFloor(a, b, c, sender, "");
+    }
+
+    /// As above for a guarded publication (`guard` empty: none); the guard does not change the quote.
+    function _kernelPrefixFloor(
+        Action[] memory a,
+        bytes[] memory b,
+        Native memory c,
+        address sender,
+        bytes memory guard
+    ) internal returns (uint32 quoted) {
         // In steps of 50k, and of 1k from the last refusal when a step jumps straight to admission. A publication
         // with no BIND or UNBIND may have no window at all: each PUBLISH and REUSE first requires its acceptor's
         // validation gas (300k by default) to be available, which can cover the floor's check before the callback
@@ -125,7 +143,7 @@ abstract contract FloorBase is FilesRecipesBase {
             uint256 snap = vm.snapshotState();
             _coolRealm();
             if (sender != address(0)) vm.prank(sender, sender);
-            try r.ledger.execute{gas: g}(a, b, c, "") {
+            try r.ledger.execute{gas: g}(a, b, c, guard) {
                 vm.revertToStateAndDelete(snap);
                 if (step == 1000) {
                     for (uint256 i; i < a.length; ++i) {
@@ -158,11 +176,19 @@ abstract contract FloorBase is FilesRecipesBase {
         internal
         returns (Need memory w)
     {
+        return _need(a, b, sender, "");
+    }
+
+    /// As above for a guarded publication (`guard` empty: none): the calldata counts the guard's bytes.
+    function _need(Action[] memory a, bytes[] memory b, address sender, bytes memory guard)
+        internal
+        returns (Need memory w)
+    {
         (w.prefixFloor, w.finalReserve, w.fresh, w.rewrites) =
             ILedgerCommitments(r.hot.ingress()).indexFloor(address(r.ledger), a);
         Native memory c = _ctx(a);
-        w.prefixFloor = _kernelPrefixFloor(a, b, c, sender);
-        w.calldataGas = _calldataGas(abi.encodeCall(ILedger.execute, (a, b, c, "")));
+        w.prefixFloor = _kernelPrefixFloor(a, b, c, sender, guard);
+        w.calldataGas = _calldataGas(abi.encodeCall(ILedger.execute, (a, b, c, guard)));
         w.room = CAP - TX_BASE - w.calldataGas;
         uint256 snap = vm.snapshotState();
         address index = address(r.g.index);
@@ -178,13 +204,13 @@ abstract contract FloorBase is FilesRecipesBase {
         );
         _coolRealm();
         if (sender != address(0)) vm.prank(sender, sender);
-        r.ledger.execute(a, b, c, "");
+        r.ledger.execute(a, b, c, guard);
         w.kernel = vm.lastFrameGas().gasTotalUsed;
         vm.clearMockedCalls();
         vm.revertToState(snap);
         _coolRealm();
         if (sender != address(0)) vm.prank(sender, sender);
-        r.ledger.execute(a, b, c, "");
+        r.ledger.execute(a, b, c, guard);
         Vm.Gas memory f = vm.lastFrameGas();
         w.exec = f.gasTotalUsed;
         w.state = f.gasStateUsed;
@@ -199,6 +225,14 @@ abstract contract FloorBase is FilesRecipesBase {
         internal
         returns (uint256)
     {
+        return _finalPhase(a, b, exec, "");
+    }
+
+    /// As above for a guarded publication.
+    function _finalPhase(Action[] memory a, bytes[] memory b, uint256 exec, bytes memory guard)
+        internal
+        returns (uint256)
+    {
         Native memory c = _ctx(a);
         uint256 snap = vm.snapshotState();
         vm.mockCall(
@@ -207,7 +241,7 @@ abstract contract FloorBase is FilesRecipesBase {
             abi.encode(IRealmIndex.afterPublication.selector)
         );
         _coolRealm();
-        r.ledger.execute(a, b, c, "");
+        r.ledger.execute(a, b, c, guard);
         uint256 without = vm.lastFrameGas().gasTotalUsed;
         vm.clearMockedCalls();
         vm.revertToStateAndDelete(snap);
