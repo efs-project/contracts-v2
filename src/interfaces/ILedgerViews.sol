@@ -49,6 +49,16 @@ interface ILedgerViews {
     /// n·m, position-major: each head's snapshot hash (`ILedgerCommitments.headSnapshotHash`) and the target
     /// word that hash is over. At most maxReadSetPrincipals principals, maxReadSetPositions positions and
     /// maxReadCount heads (`E_READSET_SHAPE` 1, 2, 5).
+    /// @return snapshots For each head, what a read set's `expectedHeads` entry must equal now. A planner computes
+    ///         its expected hashes from the values its plan was decided on and never copies these: an endpoint
+    ///         that lied in a head read can serve the true hash here.
+    /// @return targets For each head, the target word its snapshot hashes: the current target when BOUND; the
+    ///         target of the head's last BIND when MASKED or RELEASED; 0 when UNSET or never bound (target
+    ///         kind 0). For a head that is not BOUND this word says only what a restore would bind again.
+    ///         It does not say what the statement is about: a statement that was only ever negative stores 0,
+    ///         so read the position's subject and role for that. It does not say that anything applies or is
+    ///         shown: read the head's state and number for that, and never use this word in a lens walk.
+    ///         It may name a record whose author has since withdrawn it.
     function headSnapshots(
         address ledger,
         bytes32[] calldata principals,

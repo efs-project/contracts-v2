@@ -322,11 +322,9 @@ contract LedgerViews is ILedgerViews {
     /// @dev Index `j * n + i` is `binding(principals[i], positions[j])`. `snapshots[k]` is head-snapshot profile 2
     ///      (`ILedgerCommitments.headSnapshotHash`), what the ingress compares a read set with; `targets[k]` is
     ///      the target word it is over: the head's STORED word, read only when `targetKind != 0`.
-    ///      For a head that is not BOUND, `targets[k]` is only what a restore would bring back (its last bound
-    ///      target). It never says what the statement is about, and never whether it applies: the head reads
-    ///      (`headsAt`, `heads`, `historyAt`) serve target 0 there and are the ones to read a head's meaning from.
-    ///      A planner computes its expected hashes from the values its plan was decided on, never by copying
-    ///      `snapshots`: an endpoint that lied in a head read can serve the true hash here.
+    ///      For a head that is not BOUND, `targets[k]` is only what a restore would bind again (the interface
+    ///      states the reader rule): the head reads (`headsAt`, `heads`, `historyAt`) serve target 0 there and
+    ///      are the ones to read a head's meaning from.
     ///      Bounded as the ingress bounds a read set: more than `limits.maxReadSetPrincipals` principals revert
     ///      `E_READSET_SHAPE(1)`, more than `limits.maxReadSetPositions` positions `E_READSET_SHAPE(2)`, more
     ///      than `limits.maxReadCount` heads `E_READSET_SHAPE(5)`. Empty arrays answer empty.
