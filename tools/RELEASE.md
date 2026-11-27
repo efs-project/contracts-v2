@@ -2661,7 +2661,7 @@ five codehashes against `describe()` and the release.
 sha256, and a **joint envelope**. The Realm limits allow a publication of 64 actions and 16,384 body bytes, which can
 need about 28M gas, more than the 16,777,216 one transaction may carry (EIP-7825). `gasModel.envelope` therefore
 states what one atomic publication realistically holds, as the smallest of the gas budget (the cap less
-`planning.headroomPercent` (15%) for intrinsic gas, calldata and the model's error, less the fixed cost) and the two Realm limits, for six named
+`planning.headroomPercent` (15%) for the model's error, less the fixed cost; item 66: the intrinsic cost and the calldata are inside the rows) and the two Realm limits, for six named
 shapes: a small and a 1 KB edit, a small and a 1 KB create, an 8 KB chunk and a span node. It is for user-facing
 messages ("this save is too large to be atomic"); a planner uses the constants and confirms with `eth_estimateGas`.
 Regenerate the model after any change to the kernel, the index or a Files rule, then `pnpm run release`. Media
@@ -2678,7 +2678,7 @@ rule) runs `test/integration/GasModel.t.sol` on both profiles and fits `gas = fi
 at `899767e`, frozen in `tools/gas-fit.mjs`). A row added later is fitted as its own constant and keeps its implied
 fixed cost in `fit.impliedFixedByPair`, but it never changes `fixed`, so adding a row never re-prices an existing
 action (`tools/test/gas-fit.test.mjs`). It is for planning: the SDK splits a large write into publications from it without one `eth_estimateGas` round trip per
-guess, and `eth_estimateGas` stays the authority before sending. It excludes intrinsic, calldata and refunds. The
+guess, and `eth_estimateGas` stays the authority before sending. It INCLUDES the 21,000 intrinsic cost and the measured call's calldata (item 66; said excluded before the guard release) and excludes refunds. The
 script predicts seven composites it never fits (create file, edit, rename + move, two chunks, the last publication of
 a 40 KB file, a first tag on a fresh 6-word path, a label with a new text) and exits 1 if a prague prediction is off by more than 15%.
 
@@ -2841,8 +2841,8 @@ gas: every `GasModel.t.sol` publication is also run from the same state with the
   estimate (prague `constants`, amsterdam `split.executionGas`) and K from `floor.kernel` with the same composition.
 
 The rule (`planning`): a publication is planned when it is inside `planning.limits` (64 actions, 64 bind-kind actions,
-16,384 body bytes) and `max(E, V) ≤ ⌊txGasCap × (100 − headroomPercent) / 100⌋` (2^24 and 15%: intrinsic gas, calldata
-and the model's error); anything larger is split before it is signed. **A consumer's headroom check of the cap
+16,384 body bytes) and `max(E, V) ≤ ⌊txGasCap × (100 − headroomPercent) / 100⌋` (2^24 and 15%: the model's error; the
+intrinsic cost and the calldata are inside E, K and V, item 66); anything larger is split before it is signed. **A consumer's headroom check of the cap
 condition reads the UNDER-prediction field**: `profiles.prague.maxUnderErrorPercent` on prague (the cap counts all gas)
 and `profiles.amsterdam.maxUnderExecutionErrorPercent` on amsterdam (it counts execution gas only), each with its
 composite (`maxUnderErrorComposite`, `maxUnderExecutionErrorComposite`). Headroom exists to stop a plan coming out too
