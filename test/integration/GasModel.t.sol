@@ -2981,6 +2981,74 @@ contract GasModelTest is FilesRecipesBase {
         }
     }
 
+    // ---- 10b. mid-list composites (never fitted): later statements in a list of 49 entries --------------------------
+    // Between 49 and 1,023 entries a later statement is priced by the long-tier rows, measured at entry 1,024 of 1,025:
+    // these measure the over-price where it is largest (gas/model.json state `midList`): 32 masks or releases at ONE
+    // place whose author's list holds exactly 49 entries, of entries 17..48 (entry 48 alone in its bits word). TAG and
+    // FOLDER masks and releases are the four rows with the largest long-over-short ratios on both schedules.
+
+    uint256 internal constant MID_LIST = 49;
+    uint256 internal constant MID_K = 32;
+
+    function test_model_validate_mid_list_tags() public {
+        vm.pauseGasMetering();
+        bytes32 t = _topicsN("ml-", 1)[0];
+        Action[] memory f = new Action[](MID_LIST);
+        bytes32[] memory th = new bytes32[](MID_LIST);
+        for (uint256 j; j < MID_LIST; ++j) {
+            th[j] = _filler("ml-", 0, j);
+            f[j] = _bind(Purpose.TAG, t, th[j], th[j], 0);
+        }
+        _doIn(f, new bytes[](MID_LIST), 64);
+        vm.resumeGasMetering();
+        uint256 snap = vm.snapshotState();
+        for (uint256 kind; kind < 2; ++kind) {
+            Action[] memory a = new Action[](MID_K);
+            for (uint256 i; i < MID_K; ++i) {
+                bytes32 x = th[MID_LIST - MID_K + i];
+                a[i] = kind == 0
+                    ? EfsFiles.unbind(Purpose.TAG, t, x, 1)
+                    : EfsFiles.release(Purpose.TAG, t, x, 1);
+            }
+            _exec(
+                string.concat(
+                    "model validate tag ",
+                    kind == 0 ? "masks" : "releases",
+                    " of 32 entries of 49 at one topic"
+                ),
+                a,
+                new bytes[](MID_K)
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
+    function test_model_validate_mid_list_folders() public {
+        _rootFiles("ml-", MID_LIST);
+        uint256 snap = vm.snapshotState();
+        for (uint256 kind; kind < 2; ++kind) {
+            Action[] memory a = new Action[](MID_K);
+            for (uint256 i; i < MID_K; ++i) {
+                bytes32 role = keccak256(_fname("ml-", MID_LIST - MID_K + i));
+                a[i] = kind == 0
+                    ? EfsFiles.unbind(Purpose.FOLDER, rootDir, role, 1)
+                    : EfsFiles.release(Purpose.FOLDER, rootDir, role, 1);
+            }
+            _exec(
+                string.concat(
+                    "model validate folder ",
+                    kind == 0 ? "masks" : "releases",
+                    " of 32 entries of 49 in one folder"
+                ),
+                a,
+                new bytes[](MID_K)
+            );
+            vm.revertToState(snap);
+        }
+        vm.revertToStateAndDelete(snap);
+    }
+
     // ---- 11. guarded publications (design §5.1; tools/gas-model.mjs `guard`) ---------------------------------------
     // A guard is checked by the ingress inside prepare, before any action applies and before the index floor is set,
     // and the core stores one fresh evidence word (`readSetHash`) and emits `ReadSetChecked` with the guard's bytes.
