@@ -86,6 +86,14 @@ abstract contract KernelFixture is Test {
         return address(new RecordingIndex(ledger_));
     }
 
+    /// The capability bits every activation of this fixture carries (`Capability`, design §4.2). Default 0: every
+    /// lane but the plain native one is refused. A suite that needs the read-set guard (b0) or the secp256k1 lane
+    /// (b1) overrides this; the genesis activation and every later `_activateNext` use the same bits, so a later
+    /// activation never narrows them.
+    function _capabilities() internal view virtual returns (uint16) {
+        return 0;
+    }
+
     function _readiness(address idx, uint64 admissions, uint64 publications)
         internal
         view
@@ -116,6 +124,7 @@ abstract contract KernelFixture is Test {
         );
         set.revision = rev;
         set.limits = limits;
+        set.capabilities = _capabilities();
         set.expectedExecutionSet = ExecutionSets.executionSet(set, k.proxy);
         ILedgerControl(k.proxy).activate(set);
     }
