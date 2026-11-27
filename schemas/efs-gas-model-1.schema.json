@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "efs-gas-model/1",
   "title": "efs-gas-model/1 \u2014 a per-action gas model of one native-lane publication",
-  "description": "Written by tools/gas-model.mjs from test/integration/GasModel.t.sol. gas(publication) = fixed + \u03a3 cost(action); PUBLISH new = publishNew[shape] + perWord\u00b7ceil(n/32) + perByte\u00b7n; a first TAG on an n-word topic adds tagLevel terms per proper ancestor. Planning only: eth_estimateGas stays the authority before sending. Excludes intrinsic, calldata and refunds. profiles.<schedule>.floor carries the kernel's index-floor quote inputs and the kernel's own share (design \u00a710.4); planning the rule a planner sizes a publication by: max(E, V) \u2264 floor(txGasCap \u00d7 (100 \u2212 headroomPercent) / 100).",
+  "description": "Written by tools/gas-model.mjs from test/integration/GasModel.t.sol. gas(publication) = fixed + \u03a3 cost(action); PUBLISH new = publishNew[shape] + perWord\u00b7ceil(n/32) + perByte\u00b7n; a first TAG on an n-word topic adds tagLevel terms per proper ancestor. Planning only: eth_estimateGas stays the authority before sending. Includes the 21,000 intrinsic cost and the call's calldata (the measured publications are transactions of their own; the model's note); excludes refunds. profiles.<schedule>.floor carries the kernel's index-floor quote inputs and the kernel's own share (design \u00a710.4); planning the rule a planner sizes a publication by: max(E, V) \u2264 floor(txGasCap \u00d7 (100 \u2212 headroomPercent) / 100).",
   "type": "object",
   "required": [
     "schema",

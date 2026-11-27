@@ -20,6 +20,13 @@ import {ILedgerCommitments} from "../../src/interfaces/ILedgerCommitments.sol";
 ///         G ≥ E. K errs high (the mocked run still pays each callback's dispatch, encoding and CALL), so the bound is
 ///         conservative.
 ///
+///         Isolation (found at the guard release): forge runs each state-changing call a test makes as a transaction
+///         of its own (`isolate = true` in `forge config` on forge 1.8.3; nothing here sets it), so the measured E and
+///         K already carry the 21,000 intrinsic cost and the call's calldata. Only the REPORTED gas carries them: a
+///         call given `room` gas has all of `room` for execution (a probe call needing about 5,000 of execution gas
+///         succeeds when given 12,000). So a run here at `room` is a run at G, as stated, and the planner's E, K and
+///         V are high against G by 21,000 plus the calldata's gas, which is conservative.
+///
 ///         What Foundry's amsterdam profile does NOT emulate: it has no state-gas reservoir and no 2^24 cap. State gas
 ///         is drawn from the call's own gas, so the GAS opcode inside the kernel sees state gas being spent, and a call
 ///         capped at 2^24 runs out where a chain would draw from the reservoir. On amsterdam the suites therefore run

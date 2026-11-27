@@ -49,8 +49,8 @@
 // head it UNBINDs or RELEASEs while MASKED or RELEASED with targetKind ≠ 0; twoWords = a head not written with
 // targetKind ≠ 0; oneWord = a head not written with targetKind 0. The counts must sum to n·m (asserted); a read set over
 // the Realm's read-set limits is refused (maxReadSetPrincipals, maxReadSetPositions, maxReadCount), as the kernel refuses
-// it (E_READSET_SHAPE). The guard's terms (guardCost) are added once to E and once to K; the guard's calldata
-// (guard.bytes) is excluded, as the actions' is.
+// it (E_READSET_SHAPE). The guard's terms (guardCost) are added once to E and once to K; they carry the
+// guard's calldata (guard.bytes), as the action constants carry the actions' (gas/model.json note).
 import assert from "node:assert/strict";
 
 const ceilDiv = (a, b) => Math.floor((a + b - 1) / b);
