@@ -63,7 +63,8 @@ What a consumer must change, as one list:
   written. **Compute each expected snapshot from the values the plan was decided on; never copy a hash from
   `headSnapshots`.** The snapshot is over the head's STORED target: a MASKED or RELEASED head hashes its last bound
   target (0 if it never bound). For TAG, SAME and BROADER that is the position's role; for every other purpose, an
-  app's own included, read it. A restore binds the value it hashed.
+  app's own included, read it. A restore of the entry binds the target it hashed; a new target bound at a removed
+  position still hashes the stored last target and binds its own.
 - **`headSnapshots` returns two arrays** (item 62): `(snapshots, targets)`; `targets` is the last bound target of a
   head that is not BOUND, and says only what a restore would bind again.
 - **Limits** (item 63): 64 principals, 128 positions, and principals × positions ≤ 256 (`E_READSET_SHAPE(5)`). A
@@ -1942,7 +1943,10 @@ target, cannot turn a reviewed save into another one.
   | MASKED or RELEASED, any other purpose (FOLDER, HEAD, PROPERTY, an app's own) | the last bound target | a read: `headSnapshots`' `targets` (item 62), or a history walk |
 
   The read's source need not be trusted: the kernel compares, so a lie there can only make the publication revert.
-- **A restore** binds the value it hashed: the plan's restore target IS the snapshot's target for that head.
+- **A restore of the entry binds the target it hashed:** the plan's restore target IS the snapshot's target for that
+  head. **A NEW target bound at a removed position** (a create or a move into a removed name: the head there is MASKED
+  or RELEASED and once bound) **still hashes the stored last target, and binds its own.** A consumer that hashed the
+  new target there would meet `E_READSET_STALE` on every re-place.
 - **On `E_READSET_STALE`** (retry class reprepare, like `E_CAS`, a different selector): the arguments name the first
   mismatch only, positions outer and principals inner. Re-read every guarded head, not only the named one.
 - **The grid.** A read set is every principal at every position, so n·m heads, of which every one needs a true
