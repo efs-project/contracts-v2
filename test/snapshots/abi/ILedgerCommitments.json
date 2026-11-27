@@ -329,7 +329,7 @@
           "internalType": "uint64"
         },
         {
-          "name": "canonicalTarget",
+          "name": "target",
           "type": "bytes32",
           "internalType": "bytes32"
         }
