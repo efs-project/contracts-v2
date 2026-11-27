@@ -48,6 +48,7 @@
             "constants",
             "fit",
             "floor",
+            "guard",
             "rows",
             "validation",
             "maxAbsErrorPercent",
@@ -56,9 +57,55 @@
             "maxUnderErrorComposite",
             "maxOverErrorPercent",
             "maxOverErrorComposite",
-            "maximaExcludeStates"
+            "maximaExcludeStates",
+            "midList",
+            "maxMidListOverErrorPercent",
+            "maxMidListOverErrorComposite"
           ],
           "properties": {
+              "guard": {
+                "type": "object",
+                "description": "the read-set guard (design §5.1): kernel gas only; a planner adds these terms to E and to K once per guarded publication (tools/gas-plan.mjs guardCost)",
+                "required": [
+                  "note",
+                  "bytes",
+                  "constants",
+                  "kernel",
+                  "parts",
+                  "nonLinearity"
+                ],
+                "properties": {
+                  "bytes": {
+                    "type": "string"
+                  },
+                  "constants": {
+                    "type": "object",
+                    "required": [
+                      "guardFixed",
+                      "guardPrincipal",
+                      "guardPosition",
+                      "guardHeadWritten",
+                      "guardHeadWrittenUnread",
+                      "guardHeadTwoWords",
+                      "guardHeadOneWord",
+                      "guardMemoryQuadratic"
+                    ]
+                  },
+                  "kernel": {
+                    "type": "object",
+                    "required": [
+                      "guardFixed",
+                      "guardPrincipal",
+                      "guardPosition",
+                      "guardHeadWritten",
+                      "guardHeadWrittenUnread",
+                      "guardHeadTwoWords",
+                      "guardHeadOneWord",
+                      "guardMemoryQuadratic"
+                    ]
+                  }
+                }
+              },
             "constants": {
               "type": "object",
               "required": [
@@ -315,7 +362,7 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "withinClaim", "longLists", "beyondClaim"],
+                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "withinClaim", "longLists", "beyondClaim", "midList", "guarded"],
                     "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists longer than the short tier and shorter than the claim (withinClaim), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
                   }
                 },
@@ -497,6 +544,7 @@
             "split",
             "fit",
             "floor",
+            "guard",
             "rows",
             "validation",
             "maxAbsErrorPercent",
@@ -511,9 +559,65 @@
             "maxOverErrorComposite",
             "maxOverExecutionErrorPercent",
             "maxOverExecutionErrorComposite",
-            "maximaExcludeStates"
+            "maximaExcludeStates",
+            "midList",
+            "maxMidListOverErrorPercent",
+            "maxMidListOverErrorComposite",
+            "maxMidListOverExecutionErrorPercent",
+            "maxMidListOverExecutionErrorComposite"
           ],
           "properties": {
+              "guard": {
+                "type": "object",
+                "description": "the read-set guard (design §5.1): kernel gas only; a planner adds these terms to E and to K once per guarded publication (tools/gas-plan.mjs guardCost)",
+                "required": [
+                  "note",
+                  "bytes",
+                  "constants",
+                  "kernel",
+                  "parts",
+                  "nonLinearity",
+                  "split"
+                ],
+                "properties": {
+                  "bytes": {
+                    "type": "string"
+                  },
+                  "constants": {
+                    "type": "object",
+                    "required": [
+                      "guardFixed",
+                      "guardPrincipal",
+                      "guardPosition",
+                      "guardHeadWritten",
+                      "guardHeadWrittenUnread",
+                      "guardHeadTwoWords",
+                      "guardHeadOneWord",
+                      "guardMemoryQuadratic"
+                    ]
+                  },
+                  "kernel": {
+                    "type": "object",
+                    "required": [
+                      "guardFixed",
+                      "guardPrincipal",
+                      "guardPosition",
+                      "guardHeadWritten",
+                      "guardHeadWrittenUnread",
+                      "guardHeadTwoWords",
+                      "guardHeadOneWord",
+                      "guardMemoryQuadratic"
+                    ]
+                  },
+                  "split": {
+                    "type": "object",
+                    "required": [
+                      "executionGas",
+                      "stateGas"
+                    ]
+                  }
+                }
+              },
             "split": {
               "type": "object",
               "required": [
@@ -543,7 +647,7 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "withinClaim", "longLists", "beyondClaim"],
+                    "enum": ["listsNew", "listsExist", "acrossPlaces", "acrossPlacesBitsWord", "withinClaim", "longLists", "beyondClaim", "midList", "guarded"],
                     "description": "The state the composite is measured in: the author's lists at the positions it touches are new (listsNew) or already hold entries (listsExist, the ordinary case); for later statements: at distinct places with the author's lists at most laterLists.shortTierMaxEntries long (acrossPlaces), at entry 48 of a 49-entry list, alone in its bits word (acrossPlacesBitsWord), in lists longer than the short tier and shorter than the claim (withinClaim), in lists of laterLists.claimEntries + 1 entries (longLists, the floor's claim), or in longer lists (beyondClaim: reported with its errors, excluded from the stated maxima and from the 15% bound, maximaExcludeStates)."
                   },
                   "allGasOverBoundPercent": {

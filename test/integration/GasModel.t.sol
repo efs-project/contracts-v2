@@ -3105,8 +3105,11 @@ contract GasModelTest is FilesRecipesBase {
         vm.clearMockedCalls();
         vm.revertToStateAndDelete(snap);
         _beforeExecute();
+        uint256 before = gasleft();
         r.ledger.execute(a, b, cx, guard);
+        uint256 used = before - gasleft();
         Vm.Gas memory f = vm.lastFrameGas();
+        emit log_named_uint(string.concat(label, " gas"), used);
         emit log_named_uint(string.concat(label, " frame gas"), f.gasTotalUsed);
         if (f.gasStateUsed != 0) {
             emit log_named_int(string.concat(label, " frame state gas"), f.gasStateUsed);
